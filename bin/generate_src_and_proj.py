@@ -1,4 +1,31 @@
-#!/usr/bin/env python
+# Copyright (c) 2010 Minor Gordon
+# All rights reserved
+# 
+# This source file is part of the XtreemFS project.
+# It is licensed under the New BSD license:
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+# * Neither the name of the XtreemFS project nor the
+# names of its contributors may be used to endorse or promote products
+# derived from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 import sys
 from os import chdir, listdir, sep as os_sep
@@ -10,7 +37,7 @@ from optparse import OptionParser
 MY_DIR_PATH = dirname( abspath( sys.modules[__name__].__file__ ) )
 
 GOOGLE_BREAKPAD_DIR_PATH = join( MY_DIR_PATH, "..", "share", "google-breakpad" )
-GOOGLE_BREAKPAD_INCLUDE_DIR_PATHS = ( join( GOOGLE_BREAKPAD_DIR_PATH, "src" ), )                   
+GOOGLE_BREAKPAD_INCLUDE_DIR_PATHS = ( join( GOOGLE_BREAKPAD_DIR_PATH, "src" ), )
 GOOGLE_BREAKPAD_OUTPUT_FILE_PATH = join( MY_DIR_PATH, "..", "lib", "google-breakpad" )
 
 YIDL_DIR_PATH = abspath( join( MY_DIR_PATH, "..", "..", "yidl" ) )
@@ -23,11 +50,12 @@ XTREEMFS_DIR_PATH = abspath( join( MY_DIR_PATH, ".." ) )
 DEFINES = ( "YIELD_IPC_HAVE_OPENSSL", )
 
 INCLUDE_DIR_PATHS = \
-( 
-    join( XTREEMFS_DIR_PATH, "include" ), 
+(
+    join( XTREEMFS_DIR_PATH, "include" ),
     join( XTREEMFS_DIR_PATH, "share", "yidl", "include" ),
-    join( XTREEMFS_DIR_PATH, "share", "yield", "include" ),                      
-    join( XTREEMFS_DIR_PATH, "share", "yieldfs", "include" )
+    join( XTREEMFS_DIR_PATH, "share", "yield", "include" ),
+    join( XTREEMFS_DIR_PATH, "share", "yieldfs", "include" ),
+    join( GOOGLE_BREAKPAD_DIR_PATH, "src" )
 )
 
 IMPORTS = \
@@ -39,10 +67,10 @@ IMPORTS = \
 ]
 
 INTERFACES_DIR_PATH = join( XTREEMFS_DIR_PATH, "src", "interfaces", "org", "xtreemfs", "interfaces" )
-                    
+
 LIB_DIR_PATHS = ( join( XTREEMFS_DIR_PATH, "lib" ), )
-                    
-                    
+
+
 try:
     import yidl
 except ImportError:
@@ -51,7 +79,7 @@ except ImportError:
 from yidl.compiler.idl_parser import parseIDL
 from yidl.generators import generate_proj, generate_SConscript, generate_vcproj
 from yidl.generators import generate_yield_cpp
-from yidl.utilities import copy_file, format_src, pad, write_file 
+from yidl.utilities import copy_file, format_src, pad, write_file
 
 
 assert __name__ == "__main__"
@@ -76,7 +104,7 @@ for file_stem in ( "concurrency", "ipc", "platform" ):
 # yield/platform _test.h's
 for test_h_file_prefix in ( "directory", "file", "volume" ):
     copy_file_paths[join( YIELD_DIR_PATH, "src", "yield", "platform", test_h_file_prefix + "_test.h" )] = join( XTREEMFS_DIR_PATH, "share", "yield", "src", "yield", "platform", test_h_file_prefix + "_test.h" )
-   
+
 # YieldFS
 copy_file_paths[join( YIELDFS_DIR_PATH, "include", "yieldfs.h" )] = join( XTREEMFS_DIR_PATH, "share", "yieldfs", "include", "yieldfs.h" )
 copy_file_paths[join( YIELDFS_DIR_PATH, "src", "yieldfs.cpp" )] = join( XTREEMFS_DIR_PATH, "share", "yieldfs", "src", "yieldfs.cpp" )
@@ -89,29 +117,29 @@ for source_file_path, target_file_path in copy_file_paths.iteritems():
 # Generate .h interface definitions from .idl
 for interface_idl_file_name in listdir( INTERFACES_DIR_PATH ):
     if interface_idl_file_name.endswith( ".idl" ):
-		if interface_idl_file_name == "nettest_interface.idl":
-			generate_yield_cpp( 
+        if interface_idl_file_name == "nettest_interface.idl":
+            generate_yield_cpp(
               join( INTERFACES_DIR_PATH, interface_idl_file_name ),
-			  join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs", "nettest_interface.h" ),
-              force=options.force 
+              join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs", "nettest_interface.h" ),
+              force=options.force
             )
-		else:
-			generate_yield_cpp( 
-				join( INTERFACES_DIR_PATH, interface_idl_file_name ), 
-				join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces", splitext( interface_idl_file_name )[0] + ".h" ),
+        else:
+            generate_yield_cpp(
+                join( INTERFACES_DIR_PATH, interface_idl_file_name ),
+                join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces", splitext( interface_idl_file_name )[0] + ".h" ),
                 force=options.force
-            ) 
+            )
 
 
-# Add copyright notices to the source, strip white space on the right        
-format_src( 
+# Add copyright notices to the source, strip white space on the right
+format_src(
     author="Minor Gordon",
     force=options.force,
-    project="XtreemFS", 
-    src_paths=( 
+    project="XtreemFS",
+    src_paths=(
         join( XTREEMFS_DIR_PATH, "bin", "generate_src_and_proj.py" ),
         join( XTREEMFS_DIR_PATH, "include" ),
-        join( XTREEMFS_DIR_PATH, "include", "xtreemfs" ),                        
+        join( XTREEMFS_DIR_PATH, "include", "xtreemfs" ),
         join( XTREEMFS_DIR_PATH, "src", "libxtreemfs" ),
         join( XTREEMFS_DIR_PATH, "src", "lsfs.xtreemfs" ),
         join( XTREEMFS_DIR_PATH, "src", "mkfs.xtreemfs" ),
@@ -125,8 +153,8 @@ format_src(
 
 # Generate project files
 chdir( join( XTREEMFS_DIR_PATH, "proj", "libxtreemfs" ) )
-generate_proj( 
-    "libxtreemfs",      
+generate_proj(
+    "libxtreemfs",
     defines=DEFINES,
     force=options.force,
     include_dir_paths=INCLUDE_DIR_PATHS,
@@ -134,7 +162,7 @@ generate_proj(
     libs_win=( "libeay32.lib", "ssleay32.lib" ),
     libs_unix=( "crypto", "fuse", "ssl", ),
     output_file_path=join( XTREEMFS_DIR_PATH, "lib", "xtreemfs" ),
-    src_paths=( 
+    src_paths=(
         join( XTREEMFS_DIR_PATH, "include", "xtreemfs" ),
         join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces" ),
         join( XTREEMFS_DIR_PATH, "share", "yield", "src", "yield" ),
@@ -143,31 +171,31 @@ generate_proj(
         join( XTREEMFS_DIR_PATH, "src", "libxtreemfs" ),
     )
 )
-                     
+
 for binary_name in ( "lsfs.xtreemfs", "mkfs.xtreemfs", "mount.xtreemfs", "nettest.xtreemfs", "rmfs.xtreemfs", "xtfs_vivaldi" ):
     chdir( join( XTREEMFS_DIR_PATH, "proj", binary_name ) )
-    generate_proj( 
-                   binary_name, 
-                   dependency_SConscripts=( 
+    generate_proj(
+                   binary_name,
+                   dependency_SConscripts=(
                                             join( XTREEMFS_DIR_PATH, "proj", "libxtreemfs", "libxtreemfs.SConscript" ),
                                             join( XTREEMFS_DIR_PATH, "proj", "google-breakpad", "google-breakpad.SConscript" ),
                                           ),
                    defines=DEFINES,
-                   include_dir_paths=INCLUDE_DIR_PATHS + ( join( GOOGLE_BREAKPAD_DIR_PATH, "src" ), ),
+                   include_dir_paths=INCLUDE_DIR_PATHS,
                    force=options.force,
-                   lib_dir_paths=LIB_DIR_PATHS,                   
+                   lib_dir_paths=LIB_DIR_PATHS,
                    libs=( "xtreemfs_d.lib", ),
                    output_file_path=join( XTREEMFS_DIR_PATH, "bin", binary_name ),
                    src_paths=( join( XTREEMFS_DIR_PATH, "src", binary_name ), ),
                    type="exe",
                  )
 
-                                      
+
 chdir( join( XTREEMFS_DIR_PATH, "proj", "google-breakpad" ) )
 
 generate_SConscript( "google-breakpad", force=options.force )
 
-generate_SConscript( 
+generate_SConscript(
     "google-breakpad_linux",
     force=options.force,
     include_dir_paths=GOOGLE_BREAKPAD_INCLUDE_DIR_PATHS,
@@ -183,8 +211,8 @@ generate_SConscript(
     )
 )
 
-generate_SConscript( 
-    "google-breakpad_windows", 
+generate_SConscript(
+    "google-breakpad_windows",
     defines=( "UNICODE", ),
     force=options.force,
     include_dir_paths=GOOGLE_BREAKPAD_INCLUDE_DIR_PATHS,
@@ -199,7 +227,7 @@ generate_SConscript(
     )
 )
 
-generate_vcproj( 
+generate_vcproj(
     "google-breakpad",
     defines=( "UNICODE", ),
     force=options.force,
@@ -222,27 +250,27 @@ from yidl.compiler.targets.java_target import *
 
 
 class XtreemFSJavaBufferType(JavaBufferType):
-    def getDeclarationTypeName( self ): 
+    def getDeclarationTypeName( self ):
         return "ReusableBuffer"
-    
-    def getUnmarshalCall( self, decl_identifier, value_identifier ): 
+
+    def getUnmarshalCall( self, decl_identifier, value_identifier ):
         return value_identifier + """ = ( ReusableBuffer )unmarshaller.readBuffer( %(decl_identifier)s );""" % locals()
-    
+
 
 class XtreemFSJavaExceptionType(JavaExceptionType):
-    def generate( self ): 
+    def generate( self ):
         XtreemFSJavaStructType( self.getScope(), self.getQualifiedName(), self.getTag(), ( "org.xtreemfs.interfaces.utils.ONCRPCException", ), self.getMembers() ).generate()
-        
-    def getExceptionFactory( self ): 
+
+    def getExceptionFactory( self ):
         return ( INDENT_SPACES * 3 ) + "case %i: return new %s();\n" % ( self.getTag(), self.getName() )
 
 
-class XtreemFSJavaInterface(JavaInterface, JavaClass):    
-    def generate( self ):                            
-        class_header = self.getClassHeader()        
+class XtreemFSJavaInterface(JavaInterface, JavaClass):
+    def generate( self ):
+        class_header = self.getClassHeader()
         constants = pad( "\n" + INDENT_SPACES, ( "\n" + INDENT_SPACES ).join( [repr( constant ) for constant in self.getConstants()] ), "\n\n" )
         prog = 0x20000000 + self.getTag()
-        version = self.getTag()            
+        version = self.getTag()
         out = """\
 %(class_header)s%(constants)s
     public static long getProg() { return %(prog)ul; }
@@ -250,7 +278,7 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
 """ % locals()
 
         exception_factories = "".join( [exception_type.getExceptionFactory() for exception_type in self.getExceptionTypes()] )
-        if len( exception_factories ) > 0:                
+        if len( exception_factories ) > 0:
             out += """
     public static ONCRPCException createException( int accept_stat ) throws Exception
     {
@@ -261,9 +289,9 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
         }
     }
 """ % locals()
-        
+
         request_factories = "".join( [operation.getRequestFactory() for operation in self.getOperations()] )
-        if len( request_factories ) > 0:                
+        if len( request_factories ) > 0:
             out += """
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
     {
@@ -276,8 +304,8 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
 """ % locals()
 
         response_factories = "".join( [operation.getResponseFactory() for operation in self.getOperations()] )
-        if len( response_factories ) > 0:    
-                out += """            
+        if len( response_factories ) > 0:
+                out += """
     public static Response createResponse( ONCRPCResponseHeader header ) throws Exception
     {
         switch( header.getXID() )
@@ -285,38 +313,38 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
 %(response_factories)s
             default: throw new Exception( "unknown response XID " + Integer.toString( header.getXID() ) );
         }
-    }    
+    }
 """ % locals()
 
         out += self.getClassFooter()
-                
-        write_file( self.getFilePath(), out )            
+
+        write_file( self.getFilePath(), out )
 
         for operation in self.getOperations():
             operation.generate()
-            
+
         for exception_type in self.getExceptionTypes():
             exception_type.generate()
-            
-    def getImports( self ): 
+
+    def getImports( self ):
         return JavaClass.getImports( self ) + IMPORTS
 
-    def getPackageDirPath( self ):                
+    def getPackageDirPath( self ):
         return os_sep.join( self.getQualifiedName() )
-    
-    def getPackageName( self ): 
+
+    def getPackageName( self ):
         return ".".join( self.getQualifiedName() )
 
 
 class XtreemFSJavaMapType(JavaMapType):
-    def getImports( self ): 
+    def getImports( self ):
         return JavaMapType.getImports( self ) + IMPORTS
 
     def getOtherMethods( self ):
         return """
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -326,16 +354,16 @@ class XtreemFSJavaMapType(JavaMapType):
     }
 """
 
-                    
+
 class XtreemFSJavaSequenceType(JavaSequenceType):
-    def getImports( self ): 
+    def getImports( self ):
         return JavaSequenceType.getImports( self ) + IMPORTS
-    
+
     def getOtherMethods( self ):
         return """
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -346,15 +374,15 @@ class XtreemFSJavaSequenceType(JavaSequenceType):
 """
 
 
-class XtreemFSJavaStructType(JavaStructType):        
+class XtreemFSJavaStructType(JavaStructType):
     def getImports( self ):
-        return JavaStructType.getImports( self ) + IMPORTS    
+        return JavaStructType.getImports( self ) + IMPORTS
 
     def getOtherMethods( self ):
         return """
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -363,45 +391,44 @@ class XtreemFSJavaStructType(JavaStructType):
         return string_writer.toString();
     }
 """
-    
-class XtreemFSJavaOperation(JavaOperation):        
+
+class XtreemFSJavaOperation(JavaOperation):
     def generate( self ):
         self._getRequestType().generate()
         self._getResponseType( "returnValue" ).generate()
-                
-    def getRequestFactory( self ): 
+
+    def getRequestFactory( self ):
         return ( INDENT_SPACES * 3 ) + "case %i: return new %sRequest();\n" % ( self.getTag(), self.getName() )
-                        
-    def getResponseFactory( self ): 
+
+    def getResponseFactory( self ):
         if self.isOneway():
             return ""
         else:
-            return ( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( self.getTag(), self.getName() ) )                 
+            return ( ( INDENT_SPACES * 3 ) + "case %i: return new %sResponse();" % ( self.getTag(), self.getName() ) )
 
 class XtreemFSJavaRequestType(XtreemFSJavaStructType):
-    def getOtherMethods( self ):        
-        response_type_name = self.getName()[:self.getName().index( "Request" )] + "Response"   
+    def getOtherMethods( self ):
+        response_type_name = self.getName()[:self.getName().index( "Request" )] + "Response"
         return XtreemFSJavaStructType.getOtherMethods( self ) + """
     // Request
     public Response createDefaultResponse() { return new %(response_type_name)s(); }
 """ % locals()
 
     def getParentTypeNames( self ):
-        return ( "org.xtreemfs.interfaces.utils.Request", )            
+        return ( "org.xtreemfs.interfaces.utils.Request", )
 
 class XtreemFSJavaResponseType(XtreemFSJavaStructType):
     def getParentTypeNames( self ):
-        return ( "org.xtreemfs.interfaces.utils.Response", )            
+        return ( "org.xtreemfs.interfaces.utils.Response", )
 
 
 class XtreemFSJavaTarget(JavaTarget): pass
 
 
 # Generate .java interfaces from .idl
-chdir( join( MY_DIR_PATH, "..", "src", "servers", "src" ) )        
+chdir( join( MY_DIR_PATH, "..", "src", "servers", "src" ) )
 for interface_idl_file_name in listdir( INTERFACES_DIR_PATH ):
     if interface_idl_file_name.endswith( ".idl" ):
         target = XtreemFSJavaTarget()
         parseIDL( join( INTERFACES_DIR_PATH, interface_idl_file_name ), target )
         target.generate()
-

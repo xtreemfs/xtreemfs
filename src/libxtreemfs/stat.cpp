@@ -138,9 +138,9 @@ void Stat::set_etag( uint64_t etag )
   this->etag = etag;
 }
 
-void Stat::set_group_id( const string& group_id ) 
-{ 
-  this->group_id = group_id; 
+void Stat::set_group_id( const string& group_id )
+{
+  this->group_id = group_id;
 }
 
 void Stat::set_truncate_epoch( uint32_t truncate_epoch )
@@ -149,6 +149,6 @@ void Stat::set_truncate_epoch( uint32_t truncate_epoch )
 }
 
 void Stat::set_user_id( const string& user_id )
-{ 
-  this->user_id = user_id; 
+{
+  this->user_id = user_id;
 }

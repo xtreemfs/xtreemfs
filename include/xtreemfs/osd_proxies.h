@@ -27,35 +27,63 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#include "xtreemfs/proxy_exception_response.h"
-using namespace xtreemfs;
+#ifndef _XTREEMFS_OSD_PROXIES_H_
+#define _XTREEMFS_OSD_PROXIES_H_
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
-#include <errno.h>
+#include "xtreemfs/osd_proxy.h"
 
 
-uint32_t ProxyExceptionResponse::get_platform_error_code() const
+namespace xtreemfs
 {
-  uint32_t error_code = get_error_code();
+  class DIRProxy;
+  using org::xtreemfs::interfaces::XLocSet;
+  using yield::concurrency::StageGroup;
 
-  switch ( error_code )
+
+  class OSDProxies
+    : public yidl::runtime::Object,
+      private map<string, OSDProxy*>
   {
-#if defined(_WIN32)
-    case EACCES: return ERROR_ACCESS_DENIED;
-    case EEXIST: return ERROR_ALREADY_EXISTS;
-    case EINVAL: return ERROR_INVALID_PARAMETER;
-    case ENOENT: return ERROR_FILE_NOT_FOUND;
-    case WSAETIMEDOUT: return ERROR_NETWORK_BUSY;
-#elif defined(__FreeBSD__) || defined(__MACH__)
-    case 11: return EAGAIN; // Not sure why they renumbered this one.
-    case 39: return ENOTEMPTY; // 39 is EDESTADDRREQ on FreeBSD
-    case 61: return ENOATTR; // 61 is ENODATA on Linux,
-                             // returned when an xattr is not present
+  public:
+    OSDProxies
+    (
+      DIRProxy& dir_proxy,
+      uint16_t concurrency_level = OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
+      uint32_t flags = OSDProxy::FLAGS_DEFAULT,
+      Log* log = NULL,
+      const Time& operation_timeout = OSDProxy::OPERATION_TIMEOUT_DEFAULT,
+      uint8_t reconnect_tries_max = OSDProxy::RECONNECT_TRIES_MAX_DEFAULT,
+      SSLContext* ssl_context = NULL,
+      StageGroup* stage_group = NULL,
+      UserCredentialsCache* user_credentials_cache = NULL
+    );
+
+    ~OSDProxies();
+
+    // yidl::runtime::Object
+    OSDProxies& inc_ref() { return yidl::runtime::Object::inc_ref( *this ); }
+
+    OSDProxy& get_osd_proxy
+    (
+      uint64_t object_number,
+      size_t& selected_file_replica_i,
+      const XLocSet& xlocs
+    );
+
+    OSDProxy& get_osd_proxy( const string& osd_uuid );
+
+  private:
+    uint16_t concurrency_level;
+    DIRProxy& dir_proxy;
+    uint32_t flags;
+    yield::platform::Mutex lock;
+    Log* log;
+    Time operation_timeout;
+    uint8_t reconnect_tries_max;
+    SSLContext* ssl_context;
+    StageGroup* stage_group;
+    UserCredentialsCache* user_credentials_cache;
+  };
+};
+
 #endif
-    case 0: DebugBreak(); return 0;
-    default: return error_code;
-  }
-}

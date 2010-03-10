@@ -44,7 +44,7 @@
 
 namespace xtreemfs
 {
-  class MRCProxy 
+  class MRCProxy
     : public Proxy
              <
                org::xtreemfs::interfaces::MRCInterface,

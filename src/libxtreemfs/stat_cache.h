@@ -40,7 +40,7 @@ using std::map;
 
 
 namespace xtreemfs
-{ 
+{
   using org::xtreemfs::interfaces::XCap;
   using yield::platform::Path;
 
@@ -49,8 +49,8 @@ namespace xtreemfs
   {
   public:
     StatCache
-    ( 
-      MRCProxy& mrc_proxy, 
+    (
+      MRCProxy& mrc_proxy,
       const Time& read_ttl,
       UserCredentialsCache& user_credentials_cache,
       const string& volume_name_utf8,
@@ -61,9 +61,9 @@ namespace xtreemfs
 
     void evict( const Path& path );
 
-    void 
+    void
     fsetattr
-    ( 
+    (
       const Path& path,
       const Stat& stbuf,
       uint32_t to_set,
@@ -74,10 +74,10 @@ namespace xtreemfs
 
     void metadatasync( const Path& path, const XCap& write_xcap );
 
-    void 
+    void
     setattr
-    ( 
-      const Path& path, 
+    (
+      const Path& path,
       const Stat& stbuf,
       uint32_t to_set
     );
@@ -85,7 +85,7 @@ namespace xtreemfs
   private:
     void _setattr( const Path& path, const Stat& stbuf, uint32_t to_set );
 
-  private:    
+  private:
     MRCProxy& mrc_proxy;
     Time read_ttl; // Time to keep Stats read from the server
     UserCredentialsCache& user_credentials_cache;

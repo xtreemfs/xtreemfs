@@ -72,7 +72,7 @@ UserCredentialsCache::~UserCredentialsCache()
 {
   for
   (
-    vector<SharedLibrary*>::iterator 
+    vector<SharedLibrary*>::iterator
       policy_shared_library_i = policy_shared_libraries.begin();
     policy_shared_library_i != policy_shared_libraries.end();
     policy_shared_library_i++
@@ -148,7 +148,7 @@ UserCredentials* UserCredentialsCache::getCurrentUserCredentials()
     &&
     user_info != NULL
   )
-  {    
+  {
     iconv* iconv = iconv::open( iconv::CODE_CHAR, iconv::CODE_UTF8 );
     if ( iconv != NULL )
     {
@@ -224,7 +224,7 @@ void* UserCredentialsCache::getPolicyFunction( const char* name )
         if ( volume->isfile( *policy_dir_path_i / dirent->get_name() ) )
         {
           const Path::string_type& file_name = dirent->get_name();
-          Path::string_type::size_type dll_pos 
+          Path::string_type::size_type dll_pos
             = file_name.find( SharedLibrary::SHLIBSUFFIX );
 
           if
@@ -239,7 +239,7 @@ void* UserCredentialsCache::getPolicyFunction( const char* name )
 
             if ( policy_shared_library != NULL )
             {
-              void* policy_function 
+              void* policy_function
                 = policy_shared_library->getFunction( name );
               if ( policy_function != NULL )
                 policy_shared_libraries.push_back( policy_shared_library );

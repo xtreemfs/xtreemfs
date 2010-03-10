@@ -1,8 +1,9 @@
-#ifndef _1632354135_H_
-#define _1632354135_H_
+#ifndef _935969465_H_
+#define _935969465_H_
 
 
 #include "yield/concurrency.h"
+#include "yidl.h"
 
 
 namespace org
@@ -20,16 +21,21 @@ namespace org
   
         uint32_t get_tag() const { return 2010031316; }
   
+  
+  
         virtual void nop() { }
+  
         virtual void send_buffer( ::yidl::runtime::Buffer* data ) { }
+  
         virtual void recv_buffer( uint32_t size, ::yidl::runtime::Buffer*& data ) { }
       };
   
+  
       // Use this macro in an implementation class to get all of the prototypes for the operations in NettestInterface
-      #define ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_PROTOTYPES \
+      #define ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_PROTOTYPES\
       virtual void nop();\
       virtual void send_buffer( ::yidl::runtime::Buffer* data );\
-      virtual void recv_buffer( uint32_t size, ::yidl::runtime::Buffer*& data );
+      virtual void recv_buffer( uint32_t size, ::yidl::runtime::Buffer*& data );\
   
   
       #ifndef ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
@@ -70,8 +76,7 @@ namespace org
       class NettestInterfaceEvents
       {
       public:
-        // Request/response pair definitions for the operations in NettestInterface
-  
+      // Request/response pair definitions for the operations in NettestInterface
         class nopRequest : public ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
@@ -87,6 +92,7 @@ namespace org
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
+  
   
         class nopResponse : public ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_RESPONSE_PARENT_CLASS
         {
@@ -104,11 +110,18 @@ namespace org
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
   
+  
         class send_bufferRequest : public ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
-          send_bufferRequest() : data( NULL ) { }
-          send_bufferRequest( ::yidl::runtime::Buffer* data ) : data( ::yidl::runtime::Object::inc_ref( data ) ) { }
+          send_bufferRequest()
+            : data( NULL )
+          { }
+  
+          send_bufferRequest( ::yidl::runtime::Buffer* data )
+            : data( ::yidl::runtime::Object::inc_ref( data ) )
+          { }
+  
           virtual ~send_bufferRequest() { ::yidl::runtime::Buffer::dec_ref( data ); }
   
           ::yidl::runtime::Buffer* get_data() const { return data; }
@@ -137,6 +150,7 @@ namespace org
           ::yidl::runtime::Buffer* data;
         };
   
+  
         class send_bufferResponse : public ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
@@ -153,11 +167,18 @@ namespace org
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
   
+  
         class recv_bufferRequest : public ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
-          recv_bufferRequest() : size( 0 ) { }
-          recv_bufferRequest( uint32_t size ) : size( size ) { }
+          recv_bufferRequest()
+            : size( 0 )
+          { }
+  
+          recv_bufferRequest( uint32_t size )
+            : size( size )
+          { }
+  
           virtual ~recv_bufferRequest() {  }
   
           uint32_t get_size() const { return size; }
@@ -186,11 +207,18 @@ namespace org
           uint32_t size;
         };
   
+  
         class recv_bufferResponse : public ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
-          recv_bufferResponse() : data( NULL ) { }
-          recv_bufferResponse( ::yidl::runtime::Buffer* data ) : data( ::yidl::runtime::Object::inc_ref( data ) ) { }
+          recv_bufferResponse()
+            : data( NULL )
+          { }
+  
+          recv_bufferResponse( ::yidl::runtime::Buffer* data )
+            : data( ::yidl::runtime::Object::inc_ref( data ) )
+          { }
+  
           virtual ~recv_bufferResponse() { ::yidl::runtime::Buffer::dec_ref( data ); }
   
           ::yidl::runtime::Buffer* get_data() const { return data; }
@@ -451,15 +479,6 @@ namespace org
             ::yidl::runtime::auto_Object<nopResponse> __response = __response_queue->dequeue();
           }
   
-          virtual void nop( uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<nopRequest> __request( new nopRequest() );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<nopResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<nopResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<nopResponse> __response = __response_queue->dequeue( response_timeout_ns );
-          }
-  
           virtual void send_buffer( ::yidl::runtime::Buffer* data )
           {
             ::yidl::runtime::auto_Object<send_bufferRequest> __request( new send_bufferRequest( data ) );
@@ -469,15 +488,6 @@ namespace org
             ::yidl::runtime::auto_Object<send_bufferResponse> __response = __response_queue->dequeue();
           }
   
-          virtual void send_buffer( ::yidl::runtime::Buffer* data, uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<send_bufferRequest> __request( new send_bufferRequest( data ) );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<send_bufferResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<send_bufferResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<send_bufferResponse> __response = __response_queue->dequeue( response_timeout_ns );
-          }
-  
           virtual void recv_buffer( uint32_t size, ::yidl::runtime::Buffer*& data )
           {
             ::yidl::runtime::auto_Object<recv_bufferRequest> __request( new recv_bufferRequest( size ) );
@@ -485,15 +495,6 @@ namespace org
             __request->set_response_target( &__response_queue.get() );
             event_target.send( __request->inc_ref() );
             ::yidl::runtime::auto_Object<recv_bufferResponse> __response = __response_queue->dequeue();data = __response->get_data();
-          }
-  
-          virtual void recv_buffer( uint32_t size, ::yidl::runtime::Buffer*& data, uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<recv_bufferRequest> __request( new recv_bufferRequest( size ) );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<recv_bufferResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<recv_bufferResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<recv_bufferResponse> __response = __response_queue->dequeue( response_timeout_ns );data = __response->get_data();
           }
   
       private:

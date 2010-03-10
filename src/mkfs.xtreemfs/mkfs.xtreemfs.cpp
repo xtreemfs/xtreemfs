@@ -259,7 +259,7 @@ namespace mkfs_xtreemfs
           }
         }
       }
-  
+
       fs.set_default_striping_policy( fs_default_striping_policy );
       createMRCProxy( *mrc_uri, mrc_password.c_str() )->xtreemfs_mkvol( fs );
 

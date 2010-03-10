@@ -181,7 +181,7 @@ namespace nettest_xtreemfs
         rpc_time_total.as_unix_time_ms() << "ms" << std::endl;
 
       std::cout << "Average time per RPC: " <<
-        ( rpc_time_total.as_unix_time_ms() / 
+        ( rpc_time_total.as_unix_time_ms() /
           static_cast<double>( num_calls ) ) <<
         "ms" << std::endl;
 
@@ -193,7 +193,7 @@ namespace nettest_xtreemfs
       std::cout << "KB/s: " << kb_per_s << std::endl;
 */
       double mb_per_s
-        = static_cast<double>( io_total_kb ) / 1024.0 
+        = static_cast<double>( io_total_kb ) / 1024.0
           / wall_time_total.as_unix_time_s();
       std::cout << "MB/s: " << mb_per_s << std::endl;
 

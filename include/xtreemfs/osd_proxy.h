@@ -31,8 +31,6 @@
 #define _XTREEMFS_OSD_PROXY_H_
 
 #include "xtreemfs/proxy.h"
-#include "xtreemfs/osd_proxy_request.h"
-#include "xtreemfs/osd_proxy_response.h"
 
 #ifdef _WIN32
 #pragma warning( push )

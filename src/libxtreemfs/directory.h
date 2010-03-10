@@ -30,14 +30,16 @@
 #ifndef _LIBXTREEMFS_DIRECTORY_H_
 #define _LIBXTREEMFS_DIRECTORY_H_
 
-#include "xtreemfs/mrc_proxy.h"
-#include "xtreemfs/user_credentials_cache.h"
+#include "xtreemfs/interfaces/mrc_interface.h"
+
+#include "yield.h"
 
 
 namespace xtreemfs
 {
-  using org::xtreemfs::interfaces::DirectoryEntry;
+  class Volume;
   using org::xtreemfs::interfaces::DirectoryEntrySet;
+  using yield::platform::Path;
 
 
   class Directory : public yield::platform::Directory
@@ -46,8 +48,8 @@ namespace xtreemfs
     const static uint64_t LIMIT_DIRECTORY_ENTRIES_COUNT_DEFAULT = 100;
 
     Directory
-    ( 
-      const DirectoryEntrySet& first_directory_entries,      
+    (
+      const DirectoryEntrySet& first_directory_entries,
       bool names_only,
       Volume& parent_volume,
       const Path& path
@@ -60,7 +62,6 @@ namespace xtreemfs
 
   private:
     DirectoryEntrySet directory_entries;
-    MRCProxy& mrc_proxy;
     bool names_only;
     Volume& parent_volume;
     Path path;

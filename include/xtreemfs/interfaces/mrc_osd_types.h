@@ -1,8 +1,9 @@
-#ifndef _227436644_H_
-#define _227436644_H_
+#ifndef _436457455_H_
+#define _436457455_H_
 
 
 #include "types.h"
+#include "yidl.h"
 
 
 namespace org
@@ -21,8 +22,14 @@ namespace org
       class NewFileSize : public ::yidl::runtime::Struct
       {
       public:
-        NewFileSize() : size_in_bytes( 0 ), truncate_epoch( 0 ) { }
-        NewFileSize( uint64_t size_in_bytes, uint32_t truncate_epoch ) : size_in_bytes( size_in_bytes ), truncate_epoch( truncate_epoch ) { }
+        NewFileSize()
+          : size_in_bytes( 0 ), truncate_epoch( 0 )
+        { }
+  
+        NewFileSize( uint64_t size_in_bytes, uint32_t truncate_epoch )
+          : size_in_bytes( size_in_bytes ), truncate_epoch( truncate_epoch )
+        { }
+  
         virtual ~NewFileSize() {  }
   
         uint64_t get_size_in_bytes() const { return size_in_bytes; }
@@ -96,7 +103,14 @@ namespace org
       {
       public:
         OSDWriteResponse() { }
-        OSDWriteResponse( const org::xtreemfs::interfaces::NewFileSizeSet& new_file_size ) : new_file_size( new_file_size ) { }
+  
+        OSDWriteResponse
+        (
+          const org::xtreemfs::interfaces::NewFileSizeSet& new_file_size
+        )
+          : new_file_size( new_file_size )
+        { }
+  
         virtual ~OSDWriteResponse() {  }
   
         const org::xtreemfs::interfaces::NewFileSizeSet& get_new_file_size() const { return new_file_size; }
@@ -128,8 +142,19 @@ namespace org
       class StripingPolicy : public ::yidl::runtime::Struct
       {
       public:
-        StripingPolicy() : type( STRIPING_POLICY_RAID0 ), stripe_size( 0 ), width( 0 ) { }
-        StripingPolicy( org::xtreemfs::interfaces::StripingPolicyType type, uint32_t stripe_size, uint32_t width ) : type( type ), stripe_size( stripe_size ), width( width ) { }
+        StripingPolicy()
+          : type( STRIPING_POLICY_RAID0 ), stripe_size( 0 ), width( 0 )
+        { }
+  
+        StripingPolicy
+        (
+          org::xtreemfs::interfaces::StripingPolicyType type,
+          uint32_t stripe_size,
+          uint32_t width
+        )
+          : type( type ), stripe_size( stripe_size ), width( width )
+        { }
+  
         virtual ~StripingPolicy() {  }
   
         org::xtreemfs::interfaces::StripingPolicyType get_type() const { return type; }
@@ -175,8 +200,21 @@ namespace org
       class Replica : public ::yidl::runtime::Struct
       {
       public:
-        Replica() : replication_flags( 0 ) { }
-        Replica( const org::xtreemfs::interfaces::StringSet& osd_uuids, uint32_t replication_flags, const org::xtreemfs::interfaces::StripingPolicy& striping_policy ) : osd_uuids( osd_uuids ), replication_flags( replication_flags ), striping_policy( striping_policy ) { }
+        Replica()
+          : replication_flags( 0 )
+        { }
+  
+        Replica
+        (
+          const org::xtreemfs::interfaces::StringSet& osd_uuids,
+          uint32_t replication_flags,
+          const org::xtreemfs::interfaces::StripingPolicy& striping_policy
+        )
+          : osd_uuids( osd_uuids ),
+            replication_flags( replication_flags ),
+            striping_policy( striping_policy )
+        { }
+  
         virtual ~Replica() {  }
   
         const org::xtreemfs::interfaces::StringSet& get_osd_uuids() const { return osd_uuids; }
@@ -256,8 +294,21 @@ namespace org
       class VivaldiCoordinates : public ::yidl::runtime::Struct
       {
       public:
-        VivaldiCoordinates() : x_coordinate( 0 ), y_coordinate( 0 ), local_error( 0 ) { }
-        VivaldiCoordinates( double x_coordinate, double y_coordinate, double local_error ) : x_coordinate( x_coordinate ), y_coordinate( y_coordinate ), local_error( local_error ) { }
+        VivaldiCoordinates()
+          : x_coordinate( 0 ), y_coordinate( 0 ), local_error( 0 )
+        { }
+  
+        VivaldiCoordinates
+        (
+          double x_coordinate,
+          double y_coordinate,
+          double local_error
+        )
+          : x_coordinate( x_coordinate ),
+            y_coordinate( y_coordinate ),
+            local_error( local_error )
+        { }
+  
         virtual ~VivaldiCoordinates() {  }
   
         double get_x_coordinate() const { return x_coordinate; }
@@ -303,8 +354,41 @@ namespace org
       class XCap : public ::yidl::runtime::Struct
       {
       public:
-        XCap() : access_mode( 0 ), expire_time_s( 0 ), expire_timeout_s( 0 ), replicate_on_close( false ), truncate_epoch( 0 ), snap_config( SNAP_CONFIG_SNAPS_DISABLED ), snap_timestamp( 0 ) { }
-        XCap( uint32_t access_mode, const string& client_identity, uint64_t expire_time_s, uint32_t expire_timeout_s, const string& file_id, bool replicate_on_close, const string& server_signature, uint32_t truncate_epoch, org::xtreemfs::interfaces::SnapConfig snap_config, uint64_t snap_timestamp ) : access_mode( access_mode ), client_identity( client_identity ), expire_time_s( expire_time_s ), expire_timeout_s( expire_timeout_s ), file_id( file_id ), replicate_on_close( replicate_on_close ), server_signature( server_signature ), truncate_epoch( truncate_epoch ), snap_config( snap_config ), snap_timestamp( snap_timestamp ) { }
+        XCap()
+          : access_mode( 0 ),
+            expire_time_s( 0 ),
+            expire_timeout_s( 0 ),
+            replicate_on_close( false ),
+            truncate_epoch( 0 ),
+            snap_config( SNAP_CONFIG_SNAPS_DISABLED ),
+            snap_timestamp( 0 )
+        { }
+  
+        XCap
+        (
+          uint32_t access_mode,
+          const string& client_identity,
+          uint64_t expire_time_s,
+          uint32_t expire_timeout_s,
+          const string& file_id,
+          bool replicate_on_close,
+          const string& server_signature,
+          uint32_t truncate_epoch,
+          org::xtreemfs::interfaces::SnapConfig snap_config,
+          uint64_t snap_timestamp
+        )
+          : access_mode( access_mode ),
+            client_identity( client_identity ),
+            expire_time_s( expire_time_s ),
+            expire_timeout_s( expire_timeout_s ),
+            file_id( file_id ),
+            replicate_on_close( replicate_on_close ),
+            server_signature( server_signature ),
+            truncate_epoch( truncate_epoch ),
+            snap_config( snap_config ),
+            snap_timestamp( snap_timestamp )
+        { }
+  
         virtual ~XCap() {  }
   
         uint32_t get_access_mode() const { return access_mode; }
@@ -399,8 +483,23 @@ namespace org
       class XLocSet : public ::yidl::runtime::Struct
       {
       public:
-        XLocSet() : read_only_file_size( 0 ), version( 0 ) { }
-        XLocSet( uint64_t read_only_file_size, const org::xtreemfs::interfaces::ReplicaSet& replicas, const string& replica_update_policy, uint32_t version ) : read_only_file_size( read_only_file_size ), replicas( replicas ), replica_update_policy( replica_update_policy ), version( version ) { }
+        XLocSet()
+          : read_only_file_size( 0 ), version( 0 )
+        { }
+  
+        XLocSet
+        (
+          uint64_t read_only_file_size,
+          const org::xtreemfs::interfaces::ReplicaSet& replicas,
+          const string& replica_update_policy,
+          uint32_t version
+        )
+          : read_only_file_size( read_only_file_size ),
+            replicas( replicas ),
+            replica_update_policy( replica_update_policy ),
+            version( version )
+        { }
+  
         virtual ~XLocSet() {  }
   
         uint64_t get_read_only_file_size() const { return read_only_file_size; }
@@ -454,7 +553,15 @@ namespace org
       {
       public:
         FileCredentials() { }
-        FileCredentials( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::XLocSet& xlocs ) : xcap( xcap ), xlocs( xlocs ) { }
+  
+        FileCredentials
+        (
+          const org::xtreemfs::interfaces::XCap& xcap,
+          const org::xtreemfs::interfaces::XLocSet& xlocs
+        )
+          : xcap( xcap ), xlocs( xlocs )
+        { }
+  
         virtual ~FileCredentials() {  }
   
         const org::xtreemfs::interfaces::XCap& get_xcap() const { return xcap; }

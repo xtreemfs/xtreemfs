@@ -26,36 +26,48 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#ifndef _XTREEMFS_CRASH_REPORTER_H_
+#define _XTREEMFS_CRASH_REPORTER_H_
 
-#ifndef _LIBXTREEMFS_OPEN_FILE_H_
-#define _LIBXTREEMFS_OPEN_FILE_H_
+#if defined(_WIN32)
+#define XTREEMFS_HAVE_GOOGLE_BREAKPAD 1
+#elif defined(__linux)
+#define XTREEMFS_HAVE_GOOGLE_BREAKPAD 1
+#endif
 
-#include "shared_file.h"
+#ifdef XTREEMFS_HAVE_GOOGLE_BREAKPAD
+namespace google_breakpad { class ExceptionHandler; }
+#endif
+
+#include "yield.h"
 
 
 namespace xtreemfs
 {
-  class OpenFile : public yield::platform::File
+  using yield::ipc::URI;
+  using yield::platform::Log;
+  using yield::platform::Path;
+
+
+  class CrashReporter
   {
   public:
-    OpenFile( SharedFile& parent_shared_file, const XCap& xcap );
-    ~OpenFile();
+    CrashReporter* create( const URI& put_crash_dump_uri, Log* log = NULL );
+    ~CrashReporter();
 
-    SharedFile& get_parent_shared_file() const { return parent_shared_file; }
-    const org::xtreemfs::interfaces::XCap& get_xcap() const { return xcap; }
-
-    // yield::platform::File
-    YIELD_PLATFORM_FILE_PROTOTYPES;
-    size_t getpagesize();
+#ifdef XTREEMFS_HAVE_GOOGLE_BREAKPAD
+    bool MinidumpCallback( const Path&, const Path&, bool );
+#endif
 
   private:
-    class XCapTimer;
+    CrashReporter( Log* log, const URI& put_crash_dump_uri );
 
   private:
-    bool closed;
-    SharedFile& parent_shared_file;
-    XCap xcap;
-    XCapTimer* xcap_timer;
+#ifdef XTREEMFS_HAVE_GOOGLE_BREAKPAD
+    google_breakpad::ExceptionHandler* exception_handler;
+#endif
+    Log* log;
+    URI put_crash_dump_uri;
   };
 };
 

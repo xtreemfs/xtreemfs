@@ -2167,6 +2167,14 @@ namespace yield
         : Log( level ), file_path( file_path )
       { }
 
+      FileLog( File& file, const string& level )
+        : Log( level ), file( &file )
+      { }
+
+      FileLog( const Path& file_path, const string& level ) // Lazy open
+        : Log( level ), file_path( file_path )
+      { }
+
       ~FileLog()
       {
         File::dec_ref( file );
@@ -2198,6 +2206,10 @@ namespace yield
         : Log( level ), underlying_ostream( underlying_ostream )
       { }
 
+      ostreamLog( ostream& underlying_ostream, const string& level )
+        : Log( level ), underlying_ostream( underlying_ostream )
+      { }
+
       // Log
       void write( const char* str, size_t str_len )
       {
@@ -2226,19 +2238,17 @@ Log::Stream::~Stream()
     ostringstream stamped_oss;
     stamped_oss << static_cast<string>( Time() );
     stamped_oss << " ";
-    const char* level_str;
     switch ( level )
     {
-      case LOG_EMERG: level_str = "EMERG"; break;
-      case LOG_ALERT: level_str = "ALERT"; break;
-      case LOG_CRIT: level_str = "CRIT"; break;
-      case LOG_ERR: level_str = "ERR"; break;
-      case LOG_WARNING: level_str = "WARNING"; break;
-      case LOG_NOTICE: level_str = "NOTICE"; break;
-      case LOG_INFO: level_str = "INFO"; break;
-      default: level_str = "DEBUG"; break;
+      case LOG_EMERG: stamped_oss << "EMERG"; break;
+      case LOG_ALERT: stamped_oss << "ALERT"; break;
+      case LOG_CRIT: stamped_oss << "CRIT"; break;
+      case LOG_ERR: stamped_oss << "ERR"; break;
+      case LOG_WARNING: stamped_oss << "WARNING"; break;
+      case LOG_NOTICE: stamped_oss << "NOTICE"; break;
+      case LOG_INFO: stamped_oss << "INFO"; break;
+      default: stamped_oss << "DEBUG"; break;
     }
-    stamped_oss << level_str;
     stamped_oss << ": ";
     stamped_oss << oss.str();
     stamped_oss << endl;
@@ -2250,14 +2260,108 @@ Log::Stream::~Stream()
 }
 
 
+Log::Log( Level level )
+  : level( level )
+{ }
+
+Log::Log( const string& level )
+  : level( LEVEL_DEFAULT )
+{
+  uint8_t level_uint8 = static_cast<uint8_t>( atoi( level.c_str() ) );
+  if ( level_uint8 == 0 )
+  {
+    if
+    (
+      level == "LOG_EMERG" ||
+      level == "EMERG" ||
+      level == "EMERGENCY" ||
+      level == "FATAL" ||
+      level == "FAIL"
+    )
+      this->level = Log::LOG_EMERG;
+
+    else if
+    (
+      level == "LOG_ALERT" ||
+      level == "ALERT"
+    )
+      this->level = Log::LOG_ALERT;
+
+    else if
+    (
+      level == "LOG_CRIT" ||
+      level == "CRIT" ||
+      level == "CRITICAL"
+    )
+      this->level = Log::LOG_CRIT;
+
+    else if
+    (
+      level == "LOG_ERR" ||
+      level == "ERR" ||
+      level == "ERROR"
+    )
+      this->level = Log::LOG_ERR;
+
+    else if
+    (
+      level == "LOG_WARNING" ||
+      level == "WARNING" ||
+      level == "WARN"
+    )
+      this->level = Log::LOG_WARNING;
+
+    else if
+    (
+      level == "LOG_NOTICE" ||
+      level == "NOTICE"
+    )
+      this->level = Log::LOG_NOTICE;
+
+    else if
+    (
+      level == "LOG_INFO" ||
+      level == "INFO"
+    )
+      this->level = Log::LOG_INFO;
+
+    else if
+    (
+      level == "LOG_DEBUG" ||
+      level == "DEBUG" ||
+      level == "TRACE"
+    )
+      this->level = Log::LOG_DEBUG;
+
+    else
+      this->level = Log::LOG_EMERG;
+  }
+  else if ( level_uint8 <= Log::LOG_DEBUG )
+    this->level = static_cast<Log::Level>( level_uint8 );
+}
+
 Log& Log::open( ostream& underlying_ostream, Level level )
 {
   return *new ostreamLog( underlying_ostream, level );
 }
 
-Log& Log::open( const Path& file_path, Level level, bool lazy )
+Log& Log::open( const Path& file_path, const string& level, bool lazy_open )
 {
-  if ( lazy )
+  if ( lazy_open )
+    return *new FileLog( file_path, level );
+  else
+  {
+    File* file = Volume().open( file_path, O_CREAT|O_WRONLY|O_APPEND );
+    if ( file != NULL )
+      return *new FileLog( *file, level );
+    else
+      throw Exception();
+  }
+}
+
+Log& Log::open( const Path& file_path, Level level, bool lazy_open )
+{
+  if ( lazy_open )
     return *new FileLog( file_path, level );
   else
   {
@@ -3912,14 +4016,19 @@ typedef CSimpleOptTempl<wchar_t> CSimpleOptW;
 /* end SimpleOpt.h */
 
 
-void
-OptionParser::add_option
-(
-  const string& arg,
-  bool require_value
-)
+void OptionParser::add_option( const string& arg )
+{
+  add_option( arg, string(), false );
+}
+
+void OptionParser::add_option( const string& arg, bool require_value )
 {
   add_option( arg, string(), require_value );
+}
+
+void OptionParser::add_option( const string& arg, const string& help )
+{
+  add_option( arg, help, false );
 }
 
 void
@@ -3949,7 +4058,7 @@ OptionParser::parse_args
 (
   int argc,
   char** argv,
-  vector<Option>& parsed_options
+  vector<ParsedOption>& parsed_options
 )
 {
   vector<CSimpleOpt::SOption> simpleopt_options;
@@ -4005,13 +4114,9 @@ OptionParser::parse_args
           if ( option.get_arg() == args.OptionText() )
           {
             if ( option.get_require_value() )
-            {
-              Option copied_option( option );
-              copied_option.set_value( args.OptionArg() );
-              parsed_options.push_back( copied_option );
-            }
+              parsed_options.push_back( ParsedOption( option, args.OptionArg() ) );
             else
-              parsed_options.push_back( option );
+              parsed_options.push_back( ParsedOption( option ) );
           }
         }
       }
@@ -4070,26 +4175,11 @@ OptionParser::parse_args
   return argc - args.FileCount();
 }
 
-void
-OptionParser::print_usage
-(
-  const string& program_name,
-  const char* program_description,
-  const char* files_usage
-)
+string OptionParser::usage()
 {
-  cout << endl;
-  cout << program_name;
-  if ( program_description )
-    cout << ": " << program_description;
-  cout << endl;
-  cout << endl;
-  cout << "Usage:" << endl;
-  cout << "  " << program_name << " [options]";
-  if ( files_usage )
-    cout << " " << files_usage;
-  cout << endl;
-  cout << endl;
+  ostringstream usage;
+
+  usage << "Options:" << endl;
 
   sort( options.begin(), options.end() );
   for
@@ -4100,13 +4190,29 @@ OptionParser::print_usage
   )
   {
     const Option& option = *option_i;
-    cout << "  " << option.get_arg();
-    cout << "\t" << option.get_help();
-    cout << endl;
+    usage << "  " << option.get_arg();
+    usage << "\t" << option.get_help();
+    usage << endl;
   }
 
-  cout << endl;
+  usage << endl;
+
+  return usage.str();
 }
+
+
+OptionParser::Option::Option( const string& arg, const string& help, bool require_value )
+  : arg( arg ), help( help ), require_value( require_value )
+{ }
+
+
+OptionParser::ParsedOption::ParsedOption( Option& option )
+  : Option( option )
+{ }
+
+OptionParser::ParsedOption::ParsedOption( Option& option, const string& value )
+  : Option( option ), value( value )
+{ }
 
 
 // ostream.cpp

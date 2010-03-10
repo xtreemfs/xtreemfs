@@ -32,9 +32,9 @@ using namespace xtreemfs;
 
 
 GridSSLSocket::GridSSLSocket
-( 
-  int domain, 
-  yield::platform::socket_t socket_, 
+(
+  int domain,
+  yield::platform::socket_t socket_,
   SSL* ssl,
   SSLContext& ssl_context
 )
@@ -87,7 +87,7 @@ GridSSLSocket* GridSSLSocket::create( int domain, SSLContext& ssl_context )
 ssize_t GridSSLSocket::recv( void* buf, size_t buflen, int flags )
 {
   if ( check_handshake() )
-    return TCPSocket::recv( buffer, buffer_len, flags );
+    return TCPSocket::recv( buf, buflen, flags );
   else
     return -1;
 }
@@ -95,16 +95,16 @@ ssize_t GridSSLSocket::recv( void* buf, size_t buflen, int flags )
 ssize_t GridSSLSocket::send( const void* buf, size_t buflen, int flags )
 {
   if ( check_handshake() )
-    return TCPSocket::send( buffer, buffer_len, flags );
+    return TCPSocket::send( buf, buflen, flags );
   else
     return -1;
 }
 
 ssize_t GridSSLSocket::sendmsg
-( 
-  const struct iovec* iov, 
-  uint32_t iovlen, 
-  int flags 
+(
+  const struct iovec* iov,
+  uint32_t iovlen,
+  int flags
 )
 {
   if ( check_handshake() )

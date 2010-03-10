@@ -75,9 +75,9 @@ DIRProxy::DIRProxy
     org::xtreemfs::interfaces::DIRInterfaceEventFactory,
     org::xtreemfs::interfaces::DIRInterfaceEventSender
   >
-  ( 
-    concurrency_level, 
-    flags, 
+  (
+    concurrency_level,
+    flags,
     io_queue,
     log,
     operation_timeout,

@@ -1,5 +1,8 @@
-#ifndef _1413937531_H_
-#define _1413937531_H_
+#ifndef _802211508_H_
+#define _802211508_H_
+
+
+#include "yidl.h"
 
 
 namespace org
@@ -47,7 +50,16 @@ namespace org
       {
       public:
         UserCredentials() { }
-        UserCredentials( const string& user_id, const org::xtreemfs::interfaces::StringSet& group_ids, const string& password ) : user_id( user_id ), group_ids( group_ids ), password( password ) { }
+  
+        UserCredentials
+        (
+          const string& user_id,
+          const org::xtreemfs::interfaces::StringSet& group_ids,
+          const string& password
+        )
+          : user_id( user_id ), group_ids( group_ids ), password( password )
+        { }
+  
         virtual ~UserCredentials() {  }
   
         const string& get_user_id() const { return user_id; }

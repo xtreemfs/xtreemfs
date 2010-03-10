@@ -32,16 +32,19 @@
 
 #include "xtreemfs/dir_proxy.h"
 #include "xtreemfs/mrc_proxy.h"
-#include "xtreemfs/osd_proxy_mux.h"
+#include "xtreemfs/osd_proxies.h"
 
 
 namespace xtreemfs
 {
-  class SharedFile;
+  class File;
+  class OpenFileTable;
   class Stat;
   class StatCache;
   using org::xtreemfs::interfaces::VivaldiCoordinates;
   using org::xtreemfs::interfaces::XCap;
+  using yield::concurrency::ExceptionResponse;
+  using yield::concurrency::StageGroup;
 
 
   class Volume : public yield::platform::Volume
@@ -91,23 +94,18 @@ namespace xtreemfs
     Log* get_log() const { return log; }
     MRCProxy& get_mrc_proxy() const { return mrc_proxy; }
     const std::string& get_name() const { return name_utf8; }
-    OSDProxyMux& get_osd_proxy_mux() const { return osd_proxy_mux; }
+    OSDProxies& get_osd_proxies() const { return osd_proxies; }
     const string& get_uuid() const { return uuid; }
-
-    UserCredentialsCache& get_user_credentials_cache() const
-    { 
-      return user_credentials_cache; 
-    }
-
+    UserCredentialsCache& get_user_credentials_cache() const;
     VivaldiCoordinates get_vivaldi_coordinates() const;
-
     bool has_flag( uint32_t flag ) { return ( flags & flag ) == flag; }
-
     void metadatasync( const Path& path, const XCap& write_xcap );
-    void release( SharedFile& );
+    void release( File& file );
+    void set_errno( const char* operation_name, ExceptionResponse& );
+    void set_errno( const char* operation_name, std::exception& );
 
-    void set_errno( const char*, ProxyExceptionResponse& );
-    void set_errno( const char*, std::exception& );
+    // yidl::runtime::Object
+    Volume& inc_ref() { return Object::inc_ref( *this ); }
 
     // yield::platform::Volume
     YIELD_PLATFORM_VOLUME_PROTOTYPES;
@@ -120,13 +118,11 @@ namespace xtreemfs
       Log* log,
       MRCProxy& mrc_proxy,
       const string& name_utf8,
-      OSDProxyMux& osd_proxy_mux,
-      yield::concurrency::StageGroup& stage_group,
+      OSDProxies& osd_proxies,
+      StageGroup& stage_group,
       UserCredentialsCache& user_credentials_cache,
       const Path& vivaldi_coordinates_file_path
     );
-
-    SharedFile& get_shared_file( const Path& path );
 
   private:
     DIRProxy& dir_proxy;
@@ -134,10 +130,9 @@ namespace xtreemfs
     Log* log;
     MRCProxy& mrc_proxy;
     std::string name_utf8;
-    OSDProxyMux& osd_proxy_mux;
-    map<string, SharedFile*> shared_files;
-    yield::platform::Mutex shared_files_lock;
-    yield::concurrency::StageGroup& stage_group;
+    OpenFileTable* open_file_table;
+    OSDProxies& osd_proxies;
+    StageGroup& stage_group;
     string uuid;
     StatCache* stat_cache;
     UserCredentialsCache& user_credentials_cache;

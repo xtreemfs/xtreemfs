@@ -2,7 +2,7 @@
 #define _10122450_H_
 
 
-#include <string>
+#include "yidl.h"
 
 
 namespace org

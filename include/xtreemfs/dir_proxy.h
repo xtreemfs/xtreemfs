@@ -47,7 +47,7 @@ namespace xtreemfs
   using org::xtreemfs::interfaces::AddressMappingSet;
 
 
-  class DIRProxy 
+  class DIRProxy
     : public Proxy
              <
                org::xtreemfs::interfaces::DIRInterface,
@@ -93,7 +93,7 @@ namespace xtreemfs
 
   private:
     class CachedAddressMappings;
-    map<string, CachedAddressMappings*> 
+    map<string, CachedAddressMappings*>
       uuid_to_address_mappings_cache;
     yield::platform::Mutex uuid_to_address_mappings_cache_lock;
   };

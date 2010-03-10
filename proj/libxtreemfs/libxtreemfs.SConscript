@@ -67,7 +67,7 @@ for define in defines:
     else: define_switch = "-D" + define
     if not define_switch in build_env["CCFLAGS"]: build_env["CCFLAGS"] += define_switch + " "
 
-include_dir_paths = [os.path.abspath( '../../share/yieldfs/include' ), os.path.abspath( '../../share/yidl/include' ), os.path.abspath( '../../share/yield/include' ), os.path.abspath( '../../include' )]
+include_dir_paths = [os.path.abspath( '../../share/yieldfs/include' ), os.path.abspath( '../../share/yidl/include' ), os.path.abspath( '../../share/yield/include' ), os.path.abspath( '../../share/google-breakpad/src' ), os.path.abspath( '../../include' )]
 for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
 
@@ -95,15 +95,17 @@ build_env.Library( "../../lib/xtreemfs", (
     r"../../share/yield/src/yield/ipc.cpp",
     r"../../share/yield/src/yield/platform.cpp",
     r"../../share/yieldfs/src/yieldfs.cpp",
+    r"../../src/libxtreemfs/crash_reporter.cpp",
     r"../../src/libxtreemfs/dir_proxy.cpp",
     r"../../src/libxtreemfs/directory.cpp",
+    r"../../src/libxtreemfs/file.cpp",
     r"../../src/libxtreemfs/grid_ssl_socket.cpp",
+    r"../../src/libxtreemfs/main.cpp",
     r"../../src/libxtreemfs/mrc_proxy.cpp",
-    r"../../src/libxtreemfs/open_file.cpp",
+    r"../../src/libxtreemfs/open_file_table.cpp",
+    r"../../src/libxtreemfs/options.cpp",
+    r"../../src/libxtreemfs/osd_proxies.cpp",
     r"../../src/libxtreemfs/osd_proxy.cpp",
-    r"../../src/libxtreemfs/osd_proxy_mux.cpp",
-    r"../../src/libxtreemfs/proxy_exception_response.cpp",
-    r"../../src/libxtreemfs/shared_file.cpp",
     r"../../src/libxtreemfs/stat.cpp",
     r"../../src/libxtreemfs/stat_cache.cpp",
     r"../../src/libxtreemfs/user_credentials_cache.cpp",

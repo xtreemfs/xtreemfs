@@ -29,19 +29,22 @@
 
 #include "xtreemfs/volume.h"
 #include "directory.h"
-#include "open_file.h"
-#include "shared_file.h"
+#include "file.h"
+#include "open_file_table.h"
 #include "stat.h"
 #include "stat_cache.h"
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/osd_proxy.h"
+using namespace xtreemfs;
 using org::xtreemfs::interfaces::DirectoryEntrySet;
+using org::xtreemfs::interfaces::FileCredentials;
 using org::xtreemfs::interfaces::FileCredentialsSet;
 using org::xtreemfs::interfaces::StatSet;
 using org::xtreemfs::interfaces::StatVFSSet;
 using org::xtreemfs::interfaces::StringSet;
+
+#include "yield.h"
 using yield::concurrency::StageGroup;
-using namespace xtreemfs;
 
 #include <errno.h>
 #ifdef _WIN32
@@ -55,14 +58,14 @@ using namespace xtreemfs;
   try
 
 #define VOLUME_OPERATION_END( OperationName ) \
-  catch ( ProxyExceptionResponse& proxy_exception_response ) \
+  catch ( ExceptionResponse& exception_response ) \
   { \
-    set_errno( log, #OperationName, proxy_exception_response ); \
+    set_errno( #OperationName, exception_response ); \
   } \
   catch ( std::exception& exc ) \
   { \
-    set_errno( log, #OperationName, exc ); \
-  } \
+    set_errno( #OperationName, exc ); \
+  }
 
 
 Volume::Volume
@@ -72,8 +75,8 @@ Volume::Volume
   Log* log,
   MRCProxy& mrc_proxy,
   const string& name_utf8,
-  OSDProxyMux& osd_proxy_mux,
-  yield::concurrency::StageGroup& stage_group,
+  OSDProxies& osd_proxies,
+  StageGroup& stage_group,
   UserCredentialsCache& user_credentials_cache,
   const Path& vivaldi_coordinates_file_path
 )
@@ -82,11 +85,13 @@ Volume::Volume
     log( Object::inc_ref( log ) ),
     mrc_proxy( mrc_proxy ),
     name_utf8( name_utf8 ),
-    osd_proxy_mux( osd_proxy_mux ),
+    osd_proxies( osd_proxies ),
     stage_group( stage_group ),
     user_credentials_cache( user_credentials_cache ),
     vivaldi_coordinates_file_path( vivaldi_coordinates_file_path )
 {
+  open_file_table = new OpenFileTable;
+
   double stat_cache_read_ttl_s;
   uint32_t stat_cache_write_back_attrs;
 
@@ -111,14 +116,14 @@ Volume::Volume
     stat_cache_write_back_attrs = 0;
   }
 
-  stat_cache 
+  stat_cache
     = new StatCache
-          ( 
-            mrc_proxy, 
-            stat_cache_read_ttl_s, 
-            user_credentials_cache, 
-            name_utf8, 
-            stat_cache_write_back_attrs 
+          (
+            mrc_proxy,
+            stat_cache_read_ttl_s,
+            user_credentials_cache,
+            name_utf8,
+            stat_cache_write_back_attrs
           );
 
   uuid = yield::ipc::UUID();
@@ -128,10 +133,11 @@ Volume::~Volume()
 {
   DIRProxy::dec_ref( dir_proxy );
   Log::dec_ref( log );
-  OSDProxyMux::dec_ref( osd_proxy_mux );
-  yield::concurrency::StageGroup::dec_ref( stage_group );
-  UserCredentialsCache::dec_ref( user_credentials_cache );
+  OSDProxies::dec_ref( osd_proxies );
+  delete open_file_table;
+  StageGroup::dec_ref( stage_group );
   delete stat_cache;
+  UserCredentialsCache::dec_ref( user_credentials_cache );
 }
 
 bool Volume::access( const Path&, int )
@@ -155,7 +161,7 @@ Volume::create
 {
   UserCredentialsCache* user_credentials_cache = new UserCredentialsCache;
 
-  DIRProxy& dir_proxy 
+  DIRProxy& dir_proxy
     = DIRProxy::create
       (
         dir_uri,
@@ -168,14 +174,14 @@ Volume::create
         user_credentials_cache
       );
 
-  URI mrc_uri;  
+  URI mrc_uri;
   string::size_type at_pos = name_utf8.find( '@' );
   if ( at_pos != string::npos )
     mrc_uri = dir_proxy.getVolumeURIFromVolumeName( name_utf8.substr( 0, at_pos ) );
   else
     mrc_uri = dir_proxy.getVolumeURIFromVolumeName( name_utf8 );
 
-  MRCProxy& mrc_proxy 
+  MRCProxy& mrc_proxy
     = MRCProxy::create
       (
         mrc_uri,
@@ -192,23 +198,23 @@ Volume::create
   StatSet stbuf;
   mrc_proxy.getattr( name_utf8, "/", 0, stbuf );
 
-  OSDProxyMux& osd_proxy_mux 
-    = OSDProxyMux::create
-      (
-        dir_proxy,
-        OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
-        proxy_flags,
-        log,
-        proxy_operation_timeout,
-        proxy_reconnect_tries_max,
-        proxy_ssl_context,
-        user_credentials_cache
-      );
-
-  StageGroup& stage_group = *new yield::concurrency::SEDAStageGroup;
-  stage_group.createStage( dir_proxy );
-  stage_group.createStage( mrc_proxy );
-  stage_group.createStage( osd_proxy_mux );
+  StageGroup* stage_group = new yield::concurrency::SEDAStageGroup;
+  stage_group->createStage( dir_proxy );
+  stage_group->createStage( mrc_proxy );
+  
+  OSDProxies* osd_proxies 
+    = new OSDProxies
+          ( 
+            dir_proxy,
+            OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
+            proxy_flags,
+            log,
+            proxy_operation_timeout,
+            proxy_reconnect_tries_max,
+            proxy_ssl_context,
+            stage_group,
+            user_credentials_cache
+          );
 
   return *new Volume
               (
@@ -217,8 +223,8 @@ Volume::create
                 log,
                 mrc_proxy,
                 name_utf8,
-                osd_proxy_mux,
-                stage_group,
+                *osd_proxies,
+                *stage_group,
                 *user_credentials_cache,
                 vivaldi_coordinates_file_path
               );
@@ -234,17 +240,17 @@ Volume::fsetattr
 )
 {
   stat_cache->fsetattr
-  ( 
-    path.encode( iconv::CODE_UTF8 ), 
-    stbuf, 
-    to_set, 
-    write_xcap 
+  (
+    path.encode( iconv::CODE_UTF8 ),
+    stbuf,
+    to_set,
+    write_xcap
   );
 }
 
 yield::platform::Stat* Volume::getattr( const Path& path )
 {
-  VOLUME_OPERATION_BEGIN( stat ) 
+  VOLUME_OPERATION_BEGIN( stat )
   {
     return stat_cache->getattr( path );
   }
@@ -252,28 +258,9 @@ yield::platform::Stat* Volume::getattr( const Path& path )
   return NULL;
 }
 
-SharedFile& Volume::get_shared_file( const Path& path )
+UserCredentialsCache& Volume::get_user_credentials_cache() const
 {
-  SharedFile* shared_file;
-
-  shared_files_lock.acquire();
-
-  map<string, SharedFile*>::const_iterator shared_file_i
-    = shared_files.find( path );
-
-  if ( shared_file_i != shared_files.end() )
-    shared_file = shared_file_i->second;
-  else
-  {
-    shared_file = new SharedFile( *this, path );
-    shared_files[path] = shared_file;
-  }
-
-  shared_file->inc_ref();
-
-  shared_files_lock.release();
-
-  return *shared_file;
+  return user_credentials_cache;
 }
 
 VivaldiCoordinates
@@ -294,7 +281,7 @@ Volume::get_vivaldi_coordinates() const
       vivaldi_coordinates_file->read( vivaldi_coordinates_buffer );
       yield::platform::File::dec_ref( *vivaldi_coordinates_file );
 
-      yidl::runtime::XDRUnmarshaller 
+      yidl::runtime::XDRUnmarshaller
         xdr_unmarshaller( vivaldi_coordinates_buffer );
       vivaldi_coordinates.unmarshal( xdr_unmarshaller );
     }
@@ -303,7 +290,7 @@ Volume::get_vivaldi_coordinates() const
   return vivaldi_coordinates;
 }
 
-bool 
+bool
 Volume::getxattr
 (
   const Path& path,
@@ -316,11 +303,11 @@ Volume::getxattr
   VOLUME_OPERATION_BEGIN( getxattr )
   {
     mrc_proxy.getxattr
-    ( 
-      this->name_utf8, 
-      path.encode( iconv::CODE_UTF8 ), 
-      name, 
-      out_value 
+    (
+      this->name_utf8,
+      path.encode( iconv::CODE_UTF8 ),
+      name,
+      out_value
     );
     return true;
   }
@@ -371,7 +358,7 @@ Volume::listxattr
   return false;
 }
 
-void 
+void
 Volume::metadatasync
 (
   const Path& path,
@@ -428,38 +415,38 @@ Volume::open
 #if defined(__FreeBSD__) || defined(__linux__) || defined(__MACH__)
     if ( ( flags & O_WRONLY ) == O_WRONLY )
     {
-	    system_v_flags |= SYSTEM_V_FCNTL_H_O_WRONLY;
-	    flags ^= O_WRONLY;
+      system_v_flags |= SYSTEM_V_FCNTL_H_O_WRONLY;
+      flags ^= O_WRONLY;
     }
 
     if ( ( flags & O_RDWR ) == O_RDWR )
     {
-	    system_v_flags |= SYSTEM_V_FCNTL_H_O_RDWR;
-	    flags ^= O_RDWR;
+      system_v_flags |= SYSTEM_V_FCNTL_H_O_RDWR;
+      flags ^= O_RDWR;
     }
 
     if ( ( flags & O_APPEND ) == O_APPEND )
     {
-	    system_v_flags |= SYSTEM_V_FCNTL_H_O_APPEND;
-	    flags ^= O_APPEND;
+      system_v_flags |= SYSTEM_V_FCNTL_H_O_APPEND;
+      flags ^= O_APPEND;
     }
 
     if ( ( flags & O_CREAT ) == O_CREAT )
     {
-	    system_v_flags |= SYSTEM_V_FCNTL_H_O_CREAT;
-	    flags ^= O_CREAT;
+      system_v_flags |= SYSTEM_V_FCNTL_H_O_CREAT;
+      flags ^= O_CREAT;
     }
 
     if ( ( flags & O_TRUNC ) == O_TRUNC )
     {
-	    system_v_flags |= SYSTEM_V_FCNTL_H_O_TRUNC;
-	    flags ^= O_TRUNC;
+      system_v_flags |= SYSTEM_V_FCNTL_H_O_TRUNC;
+      flags ^= O_TRUNC;
     }
 
     if ( ( flags & O_EXCL ) == O_EXCL )
     {
-	    system_v_flags |= SYSTEM_V_FCNTL_H_O_EXCL;
-	    flags ^= O_EXCL;
+      system_v_flags |= SYSTEM_V_FCNTL_H_O_EXCL;
+      flags ^= O_EXCL;
     }
 #endif
     system_v_flags |= flags;
@@ -468,7 +455,7 @@ Volume::open
     FileCredentials file_credentials;
     mrc_proxy.open
     (
-      name_utf8, 
+      name_utf8,
       path.encode( iconv::CODE_UTF8 ),
       system_v_flags,
       mode,
@@ -477,10 +464,11 @@ Volume::open
       file_credentials
     );
 
-    SharedFile& shared_file = get_shared_file( path );
-    OpenFile& open_file = shared_file.open( file_credentials );
-    SharedFile::dec_ref( shared_file );
-    return &open_file;
+    DebugBreak();
+    //SharedFile& shared_file = get_shared_file( path );
+    //File& file = shared_file.open( file_credentials );
+    //SharedFile::dec_ref( shared_file );
+    //return &file;
   }
   VOLUME_OPERATION_END( open );
   return NULL;
@@ -493,14 +481,14 @@ yield::platform::Directory* Volume::opendir( const Path& path  )
     DirectoryEntrySet first_directory_entries;
 
     mrc_proxy.readdir
-    ( 
+    (
       name_utf8,
       path.encode( iconv::CODE_UTF8 ),
       0, // known_etag
       Directory::LIMIT_DIRECTORY_ENTRIES_COUNT_DEFAULT,
       false, // names_only
       0, // seen_directory_entries_count
-      first_directory_entries 
+      first_directory_entries
     );
 
 #ifdef _DEBUG
@@ -509,8 +497,8 @@ yield::platform::Directory* Volume::opendir( const Path& path  )
 #endif
 
     return new Directory
-               ( 
-                 first_directory_entries, 
+               (
+                 first_directory_entries,
                  false,
                  *this,
                  path
@@ -526,10 +514,10 @@ Path* Volume::readlink( const Path& path )
   {
     string link_target_path;
     mrc_proxy.readlink
-    ( 
-      name_utf8, 
-      path.encode( iconv::CODE_UTF8 ), 
-      link_target_path 
+    (
+      name_utf8,
+      path.encode( iconv::CODE_UTF8 ),
+      link_target_path
     );
     return new Path( link_target_path, iconv::CODE_UTF8 );
   }
@@ -537,22 +525,23 @@ Path* Volume::readlink( const Path& path )
   return NULL;
 }
 
-void Volume::release( SharedFile& shared_file )
+void Volume::release( File& file )
 {
-  shared_files_lock.acquire();
+  DebugBreak();
+  //files_lock.acquire();
 
-  map<string, SharedFile*>::iterator shared_file_i
-    = shared_files.find( shared_file.get_path() );
+  //map<string, SharedFile*>::iterator shared_file_i
+  //  = shared_files.find( shared_file.get_path() );
 
-  if ( shared_file_i != shared_files.end() )
-  {
-    shared_files.erase( shared_file_i );
-    SharedFile::dec_ref( shared_file );
-  }
-  else
-    DebugBreak();
+  //if ( shared_file_i != shared_files.end() )
+  //{
+  //  shared_files.erase( shared_file_i );
+  //  SharedFile::dec_ref( shared_file );
+  //}
+  //else
+  //  DebugBreak();
 
-  shared_files_lock.release();
+  //shared_files_lock.release();
 }
 
 bool Volume::removexattr( const Path& path, const string& name )
@@ -568,7 +557,7 @@ bool Volume::removexattr( const Path& path, const string& name )
 
 bool Volume::rename( const Path& from_path, const Path& to_path )
 {
-  // Don't evict from_path or to_path in case there are 
+  // Don't evict from_path or to_path in case there are
   // outstanding file size updates
   stat_cache->evict( from_path.parent_path() );
   stat_cache->evict( to_path.parent_path() );
@@ -588,9 +577,9 @@ bool Volume::rename( const Path& from_path, const Path& to_path )
     if ( !file_credentials_set.empty() )
     {
       DebugBreak();
-      //osd_proxy_mux.unlink
-      //( 
-      //  file_credentials_set[0], 
+      //osd_proxies.unlink
+      //(
+      //  file_credentials_set[0],
       //  file_credentials_set[0].get_xcap().get_file_id()
       //);
     }
@@ -604,7 +593,7 @@ bool Volume::rename( const Path& from_path, const Path& to_path )
 bool Volume::rmdir( const Path& path )
 {
   VOLUME_OPERATION_BEGIN( rmdir )
-  {    
+  {
     mrc_proxy.rmdir( name_utf8, path.encode( iconv::CODE_UTF8 ) );
     stat_cache->evict( path );
     return true;
@@ -625,10 +614,10 @@ Volume::setattr
   {
     Stat stbuf( _stbuf );
 #ifndef _WIN32
-    if 
-    ( 
+    if
+    (
       ( to_set & SETATTR_UID ) == SETATTR_UID &&
-      ( to_set & SETATTR_GID ) == SETATTR_GID 
+      ( to_set & SETATTR_GID ) == SETATTR_GID
     )
     {
       UserCredentials user_credentials
@@ -660,9 +649,9 @@ Volume::setattr
 
       if ( user_credentials != NULL )
       {
-        stbuf.set_user_id( user_credentials->get_user_id() );        
+        stbuf.set_user_id( user_credentials->get_user_id() );
         UserCredentials::dec_ref( *user_credentials );
-      }        
+      }
       else
         throw yield::platform::Exception( "could not look up uid" );
     }
@@ -697,14 +686,29 @@ Volume::setattr
 void
 Volume::set_errno
 (
-  Log* log,
   const char* operation_name,
-  ProxyExceptionResponse& proxy_exception_response
+  ExceptionResponse& exception_response
 )
 {
+  uint32_t error_code = exception_response.get_error_code();
+
+  switch( error_code )
+  {
+#if defined(_WIN32)
+    case EACCES: error_code = ERROR_ACCESS_DENIED;
+    case EEXIST: error_code = ERROR_ALREADY_EXISTS;
+    case EINVAL: error_code = ERROR_INVALID_PARAMETER;
+#elif defined(__FreeBSD__) || defined(__MACH__)
+    case 11: return EAGAIN; // Not sure why they renumbered this one.
+    case 39: return ENOTEMPTY; // 39 is EDESTADDRREQ on FreeBSD
+    case 61: return ENOATTR; // 61 is ENODATA on Linux,
+                             // returned when an xattr is not present
+#endif
+  }
+
   if ( log != NULL )
   {
-    switch ( proxy_exception_response.get_platform_error_code() )
+    switch ( error_code )
     {
 #ifdef _WIN32
       case ERROR_FILE_NOT_FOUND:
@@ -722,27 +726,20 @@ Volume::set_errno
       {
         log->get_stream( Log::LOG_ERR ) <<
           "xtreemfs: caught exception on " <<
-          operation_name << ": " << proxy_exception_response;
+          operation_name << ": " << exception_response;
       }
       break;
     }
   }
 
 #ifdef _WIN32
-    SetLastError( proxy_exception_response.get_platform_error_code() );
+  SetLastError( error_code );
 #else
-    errno
-      = static_cast<int>( proxy_exception_response.get_platform_error_code() );
+  errno = static_cast<int>( error_code );
 #endif
 }
 
-void
-Volume::set_errno
-(
-  Log* log,
-  const char* operation_name,
-  std::exception& exc
-)
+void Volume::set_errno( const char* operation_name, std::exception& exc )
 {
   if ( log != NULL )
     log->get_stream( Log::LOG_ERR ) <<
@@ -769,12 +766,12 @@ Volume::setxattr
   VOLUME_OPERATION_BEGIN( setxattr )
   {
     mrc_proxy.setxattr
-    ( 
-      name_utf8, 
-      path.encode( iconv::CODE_UTF8 ), 
-      name, 
-      value, 
-      flags 
+    (
+      name_utf8,
+      path.encode( iconv::CODE_UTF8 ),
+      name,
+      value,
+      flags
     );
     return true;
   }
@@ -810,9 +807,9 @@ Volume::symlink
   VOLUME_OPERATION_BEGIN( symlink )
   {
     mrc_proxy.symlink
-    ( 
+    (
       name_utf8,
-      to_path.encode( iconv::CODE_UTF8 ), 
+      to_path.encode( iconv::CODE_UTF8 ),
       from_path.encode( iconv::CODE_UTF8 )
     );
     stat_cache->evict( from_path.parent_path() );
@@ -826,7 +823,7 @@ bool Volume::truncate( const Path& path, uint64_t new_size )
 {
   VOLUME_OPERATION_BEGIN( truncate )
   {
-    yield::platform::File* file 
+    yield::platform::File* file
       = yield::platform::Volume::open( path, O_TRUNC );
 
     if ( file != NULL )
@@ -848,23 +845,23 @@ bool Volume::unlink( const Path& path )
   {
     FileCredentialsSet file_credentials_set;
     mrc_proxy.unlink
-    ( 
-      name_utf8, 
-      path.encode( iconv::CODE_UTF8 ), 
-      file_credentials_set 
+    (
+      name_utf8,
+      path.encode( iconv::CODE_UTF8 ),
+      file_credentials_set
     );
 
     if ( !file_credentials_set.empty() )
     {
       DebugBreak();
-      //osd_proxy_mux->unlink
-      //( 
-      //  file_credentials_set[0], 
+      //osd_proxies->unlink
+      //(
+      //  file_credentials_set[0],
       //  file_credentials_set[0].get_xcap().get_file_id()
       //);
     }
 
-    // Don't stat_cache->evict( path ) in case there are 
+    // Don't stat_cache->evict( path ) in case there are
     // outstanding file size updates
 
     return true;

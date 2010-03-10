@@ -33,7 +33,6 @@
 #include "xtreemfs/grid_ssl_socket.h"
 #include "xtreemfs/interfaces/constants.h"
 #include "xtreemfs/interfaces/types.h"
-#include "xtreemfs/proxy_exception_response.h"
 #include "xtreemfs/user_credentials_cache.h"
 
 
@@ -61,13 +60,13 @@ namespace xtreemfs
   using yield::platform::Time;
 
 
-  template 
+  template
   <
     class InterfaceType,
     class InterfaceEventFactoryType,
     class InterfaceEventSenderType
   >
-  class Proxy 
+  class Proxy
     : public InterfaceEventSenderType,
       public yield::ipc::ONCRPCClient
   {
@@ -78,9 +77,9 @@ namespace xtreemfs
       uint16_t concurrency_level,
       uint32_t flags,
       IOQueue& io_queue,
-      Log* log,      
+      Log* log,
       const Time& operation_timeout,
-      SocketAddress& peername,      
+      SocketAddress& peername,
       uint16_t reconnect_tries_max,
       SocketFactory& socket_factory,
       UserCredentialsCache* user_credentials_cache
@@ -99,7 +98,7 @@ namespace xtreemfs
         reconnect_tries_max,
         socket_factory,
         InterfaceType::TAG
-      )  
+      )
     {
       if ( user_credentials_cache != NULL )
         this->user_credentials_cache = Object::inc_ref( user_credentials_cache );
@@ -122,10 +121,10 @@ namespace xtreemfs
         user_credentials = NULL;
 
       return *new ONCRPCRequest
-                  ( 
-                    body, 
-                    body.get_type_id(), 
-                    get_prog(), 
+                  (
+                    body,
+                    body.get_type_id(),
+                    get_prog(),
                     get_vers(),
                     user_credentials
                   );

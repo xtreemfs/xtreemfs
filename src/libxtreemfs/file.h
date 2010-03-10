@@ -27,37 +27,54 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#ifndef _XTREEMFS_OSD_PROXY_RESPONSE_H_
-#define _XTREEMFS_OSD_PROXY_RESPONSE_H_
+#ifndef _LIBXTREEMFS_FILE_H_
+#define _LIBXTREEMFS_FILE_H_
 
+#include "xtreemfs/interfaces/mrc_osd_types.h"
 #include "yield.h"
 
 
 namespace xtreemfs
 {
-  class OSDProxyResponse : public yield::concurrency::Response
+  class Volume;
+  using org::xtreemfs::interfaces::XCap;
+  using org::xtreemfs::interfaces::XLocSet;
+  using yield::platform::Path;
+
+
+  class File : public yield::platform::File
   {
   public:
-    ssize_t get_selected_file_replica() const
-    {
-      return selected_file_replica;
-    }
+    File
+    ( 
+      Volume& parent_volume, 
+      const Path& path, 
+      const XCap& xcap, 
+      const XLocSet& xlocs 
+    );
 
-    void set_selected_file_replica( ssize_t selected_file_replica )
-    {
-      this->selected_file_replica = selected_file_replica;
-    }
+    ~File();
 
-  protected:
-    OSDProxyResponse()
-      : selected_file_replica( 0 )
-    { }
+    // yidl::runtime::Object
+    File& inc_ref() { return Object::inc_ref( *this ); }
+
+    // yield::platform::File
+    YIELD_PLATFORM_FILE_PROTOTYPES;
+    size_t getpagesize();
 
   private:
-    ssize_t selected_file_replica;
+    class WriteBuffer;
+    class XCapTimer;
+
+  private:
+    bool closed;
+    Path path;
+    Volume& parent_volume;
+    size_t selected_file_replica_i;
+    XCap xcap;
+    XCapTimer* xcap_timer;
+    XLocSet xlocs;
   };
 };
-
-#define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS ::xtreemfs::OSDProxyResponse
 
 #endif

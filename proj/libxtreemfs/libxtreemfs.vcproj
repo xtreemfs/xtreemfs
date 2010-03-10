@@ -27,7 +27,7 @@
             <Tool
                 Name="VCCLCompilerTool"
                 Optimization="0"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yieldfs\include"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yieldfs\include;$(ProjectDir)..\..\share\google-breakpad\src"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_IPC_HAVE_OPENSSL"
                 BasicRuntimeChecks="3"
                 RuntimeLibrary="3"
@@ -73,7 +73,7 @@
             >
             <Tool
                 Name="VCCLCompilerTool"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yieldfs\include"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yieldfs\include;$(ProjectDir)..\..\share\google-breakpad\src"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_IPC_HAVE_OPENSSL"
                 StringPooling="false"
                 RuntimeLibrary="2"
@@ -118,7 +118,7 @@
             >
             <Tool
                 Name="VCCLCompilerTool"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yieldfs\include"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yieldfs\include;$(ProjectDir)..\..\share\google-breakpad\src"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_IPC_HAVE_OPENSSL"
                 StringPooling="false"
                 RuntimeLibrary="2"
@@ -162,6 +162,10 @@
             UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
             >
             <File
+    RelativePath="..\..\include\xtreemfs\crash_reporter.h"
+    >
+</File>
+<File
     RelativePath="..\..\include\xtreemfs\dir_proxy.h"
     >
 </File>
@@ -178,19 +182,15 @@
     >
 </File>
 <File
+    RelativePath="..\..\include\xtreemfs\options.h"
+    >
+</File>
+<File
+    RelativePath="..\..\include\xtreemfs\osd_proxies.h"
+    >
+</File>
+<File
     RelativePath="..\..\include\xtreemfs\osd_proxy.h"
-    >
-</File>
-<File
-    RelativePath="..\..\include\xtreemfs\osd_proxy_mux.h"
-    >
-</File>
-<File
-    RelativePath="..\..\include\xtreemfs\osd_proxy_request.h"
-    >
-</File>
-<File
-    RelativePath="..\..\include\xtreemfs\osd_proxy_response.h"
     >
 </File>
 <File
@@ -199,10 +199,6 @@
 </File>
 <File
     RelativePath="..\..\include\xtreemfs\proxy.h"
-    >
-</File>
-<File
-    RelativePath="..\..\include\xtreemfs\proxy_exception_response.h"
     >
 </File>
 <File
@@ -364,11 +360,11 @@
     >
 </File>
 <File
-    RelativePath="..\..\src\libxtreemfs\open_file.h"
+    RelativePath="..\..\src\libxtreemfs\file.h"
     >
 </File>
 <File
-    RelativePath="..\..\src\libxtreemfs\shared_file.h"
+    RelativePath="..\..\src\libxtreemfs\open_file_table.h"
     >
 </File>
 <File
@@ -380,6 +376,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\src\libxtreemfs\crash_reporter.cpp"
+    >
+</File>
+<File
     RelativePath="..\..\src\libxtreemfs\dir_proxy.cpp"
     >
 </File>
@@ -388,7 +388,15 @@
     >
 </File>
 <File
+    RelativePath="..\..\src\libxtreemfs\file.cpp"
+    >
+</File>
+<File
     RelativePath="..\..\src\libxtreemfs\grid_ssl_socket.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\libxtreemfs\main.cpp"
     >
 </File>
 <File
@@ -396,23 +404,19 @@
     >
 </File>
 <File
-    RelativePath="..\..\src\libxtreemfs\open_file.cpp"
+    RelativePath="..\..\src\libxtreemfs\open_file_table.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\libxtreemfs\options.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\libxtreemfs\osd_proxies.cpp"
     >
 </File>
 <File
     RelativePath="..\..\src\libxtreemfs\osd_proxy.cpp"
-    >
-</File>
-<File
-    RelativePath="..\..\src\libxtreemfs\osd_proxy_mux.cpp"
-    >
-</File>
-<File
-    RelativePath="..\..\src\libxtreemfs\proxy_exception_response.cpp"
-    >
-</File>
-<File
-    RelativePath="..\..\src\libxtreemfs\shared_file.cpp"
     >
 </File>
 <File

@@ -19,7 +19,7 @@
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 // DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
-// MRCECT, INMRCECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 // LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -50,9 +50,9 @@ MRCProxy::MRCProxy
     org::xtreemfs::interfaces::MRCInterfaceEventFactory,
     org::xtreemfs::interfaces::MRCInterfaceEventSender
   >
-  ( 
-    concurrency_level, 
-    flags, 
+  (
+    concurrency_level,
+    flags,
     io_queue,
     log,
     operation_timeout,
@@ -98,7 +98,7 @@ ONCRPCRequest& MRCProxy::createONCRPCRequest( MarshallableObject& body )
   UserCredentials* user_credentials;
   if ( get_user_credentials_cache() != NULL )
   {
-    user_credentials 
+    user_credentials
       = get_user_credentials_cache()->getCurrentUserCredentials();
 
     if ( user_credentials != NULL )
@@ -108,10 +108,10 @@ ONCRPCRequest& MRCProxy::createONCRPCRequest( MarshallableObject& body )
     user_credentials = NULL;
 
   return *new ONCRPCRequest
-              ( 
-                body, 
-                body.get_type_id(), 
-                get_prog(), 
+              (
+                body,
+                body.get_type_id(),
+                get_prog(),
                 get_vers(),
                 user_credentials
               );

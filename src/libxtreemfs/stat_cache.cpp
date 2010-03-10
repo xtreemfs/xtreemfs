@@ -51,8 +51,8 @@ public:
   }
 
   Entry( const Stat& stbuf, uint32_t write_back_attrs ) // From a setattr
-  : refresh_time( static_cast<uint64_t>( 0 ) ), 
-    stbuf( new Stat( stbuf ) ), 
+  : refresh_time( static_cast<uint64_t>( 0 ) ),
+    stbuf( new Stat( stbuf ) ),
     write_back_attrs( write_back_attrs )
   {
     // refresh_time = 0 = this entry has never come from the server
@@ -62,7 +62,7 @@ public:
   {
     if ( this->stbuf != NULL )
       this->stbuf->set( stbuf, to_set );
-    else // This is an entry for a missing file, 
+    else // This is an entry for a missing file,
          // which now has metadata set on it?!
       this->stbuf = new Stat( stbuf );
   }
@@ -141,7 +141,7 @@ public:
 
   void set_write_back_attrs( uint32_t write_back_attrs )
   {
-    this->write_back_attrs = write_back_attrs; 
+    this->write_back_attrs = write_back_attrs;
   }
 
 private:
@@ -161,15 +161,15 @@ private:
 
 
 StatCache::StatCache
-( 
-  MRCProxy& mrc_proxy, 
-  const Time& read_ttl, 
+(
+  MRCProxy& mrc_proxy,
+  const Time& read_ttl,
   UserCredentialsCache& user_credentials_cache,
   const string& volume_name_utf8,
   uint32_t write_back_attrs
-) 
-: mrc_proxy( mrc_proxy.inc_ref() ), 
-  read_ttl( read_ttl ), 
+)
+: mrc_proxy( mrc_proxy.inc_ref() ),
+  read_ttl( read_ttl ),
   user_credentials_cache( user_credentials_cache.inc_ref() ),
   volume_name_utf8( volume_name_utf8 ),
   write_back_attrs( write_back_attrs )
@@ -177,11 +177,11 @@ StatCache::StatCache
 
 StatCache::~StatCache()
 {
-  for 
-  ( 
-    EntryMap::iterator entry_i = entries.begin(); 
-    entry_i != entries.end(); 
-    entry_i++ 
+  for
+  (
+    EntryMap::iterator entry_i = entries.begin();
+    entry_i != entries.end();
+    entry_i++
   )
     delete entry_i->second;
 
@@ -203,9 +203,9 @@ void StatCache::evict( const Path& path )
   entries_lock.release();
 }
 
-void 
+void
 StatCache::fsetattr
-( 
+(
   const Path& path,
   const Stat& stbuf,
   uint32_t to_set,
@@ -214,9 +214,9 @@ StatCache::fsetattr
 {
   uint32_t write_through_attrs = ~write_back_attrs & to_set;
   if ( write_through_attrs != 0 )
-  {    
+  {
     mrc_proxy.fsetattr
-    ( 
+    (
       stbuf,
       write_through_attrs,
       write_xcap
@@ -230,7 +230,7 @@ Stat* StatCache::getattr( const Path& path )
 {
   entries_lock.acquire();
 
-  Entry* entry; 
+  Entry* entry;
   uint64_t entry_etag;
 
   EntryMap::iterator entry_i = entries.find( path );
@@ -242,7 +242,7 @@ Stat* StatCache::getattr( const Path& path )
     {
       if ( Time() - entry->get_refresh_time() < read_ttl )
       {
-        Stat* stbuf = entry->get_stat(); 
+        Stat* stbuf = entry->get_stat();
         entries_lock.release();
         if ( stbuf != NULL )
           return stbuf;
@@ -273,18 +273,18 @@ Stat* StatCache::getattr( const Path& path )
   try
   {
     mrc_proxy.getattr
-    ( 
-      volume_name_utf8, 
-      path.encode( iconv::CODE_UTF8 ), 
-      entry_etag, 
-      if_stbuf 
+    (
+      volume_name_utf8,
+      path.encode( iconv::CODE_UTF8 ),
+      entry_etag,
+      if_stbuf
     );
   }
   catch ( ... ) // Probably not found
   {
     if ( entry == NULL ) // No entry for this path in the cache
       entries[path] = new Entry; // Placeholder for a missing file
-    else if ( entry->get_stat() != NULL ) // i.e. this is not a placeholder       
+    else if ( entry->get_stat() != NULL ) // i.e. this is not a placeholder
     {                                      // for a missing file
       delete entry; // Discard any unflushed changes
       entry_i->second = new Entry;
@@ -298,8 +298,8 @@ Stat* StatCache::getattr( const Path& path )
   }
 
   // Here the server getattr has been successful
-  if ( entry == NULL || !if_stbuf.empty() )                                            
-  {                                         
+  if ( entry == NULL || !if_stbuf.empty() )
+  {
     if ( entry == NULL ) // The Stat has never been seen by the client
     {
       entry = new Entry( if_stbuf[0] );
@@ -348,7 +348,7 @@ void StatCache::metadatasync( const Path& path, const XCap& write_xcap )
         try
         {
           mrc_proxy.fsetattr
-          ( 
+          (
             *entry->get_stat(),
             entry->get_write_back_attrs(),
             write_xcap
@@ -382,11 +382,11 @@ void StatCache::setattr( const Path& path, const Stat& stbuf, uint32_t to_set )
   if ( write_through_attrs != 0 )
   {
     mrc_proxy.setattr
-    ( 
-      volume_name_utf8, 
-      path.encode( iconv::CODE_UTF8 ), 
-      stbuf, 
-      write_through_attrs 
+    (
+      volume_name_utf8,
+      path.encode( iconv::CODE_UTF8 ),
+      stbuf,
+      write_through_attrs
     );
   }
 
@@ -405,8 +405,8 @@ void StatCache::_setattr( const Path& path, const Stat& stbuf, uint32_t to_set )
     entry_i->second->change( stbuf, to_set );
 
     entry_i->second->set_write_back_attrs
-    ( 
-      entry_i->second->get_write_back_attrs() | write_back_attrs 
+    (
+      entry_i->second->get_write_back_attrs() | write_back_attrs
     );
   }
   else
@@ -414,4 +414,3 @@ void StatCache::_setattr( const Path& path, const Stat& stbuf, uint32_t to_set )
 
   entries_lock.release();
 }
-

@@ -97,7 +97,7 @@ using std::ostringstream;
 
 #include <sys/stat.h>
 #include <sys/types.h>
-
+  
 #include <utility>
 using std::make_pair;
 using std::pair;
@@ -136,6 +136,22 @@ using std::pair;
 #define YIELD_PLATFORM_DIRECTORY_PROTOTYPES \
   virtual yield::platform::Directory::Entry* readdir();
 
+#define YIELD_PLATFORM_EXCEPTION_SUBCLASS( ClassName ) \
+  class ClassName : public yield::platform::Exception \
+  { \
+  public: \
+    ClassName() { }\
+    ClassName( uint32_t error_code ) : Exception( error_code ) { } \
+    ClassName( const char* error_message ) : Exception( error_message ) { } \
+    ClassName( const string& error_message ) : Exception( error_message ) { } \
+    ClassName( uint32_t error_code, const char* error_message ) \
+      : Exception( error_code, error_message ) \
+    { } \
+    ClassName( uint32_t error_code, const string& error_message ) \
+      : Exception( error_code, error_message ) \
+    { } \
+    ClassName( const ClassName& other ) : Exception( other ) { } \
+  }; 
 
 #define YIELD_PLATFORM_FILE_PROTOTYPES \
   virtual bool close(); \
@@ -1056,6 +1072,8 @@ namespace yield
         LOG_DEBUG = 7
       };
 
+      const static Level LEVEL_DEFAULT = LOG_ERR;
+
 
       class Stream
       {
@@ -1083,8 +1101,24 @@ namespace yield
       };
 
 
-      static Log& open( ostream&, Level );
-      static Log& open( const Path& path, Level level, bool lazy = false );
+      static Log& open( ostream&, Level level = LEVEL_DEFAULT );
+      static Log& open( ostream&, const std::string& level );
+
+      static Log& 
+      open
+      ( 
+        const Path& file_path, 
+        Level level = LEVEL_DEFAULT, 
+        bool lazy_open = false 
+      );
+
+      static Log& 
+      open
+      ( 
+        const Path& file_path, 
+        const std::string& level,
+        bool lazy_open = false 
+      );
 
       Level get_level() const { return level; }
       Stream get_stream() { return Stream( inc_ref(), level ); }
@@ -1101,10 +1135,8 @@ namespace yield
       Log& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
-      Log( Level level )
-        : level( level )
-      { }
-
+      Log( Level level );
+      Log( const std::string& level );
       virtual ~Log() { }
 
       virtual void write( const char* str, size_t str_len ) = 0;
@@ -1286,100 +1318,52 @@ namespace yield
       class Option
       {
       public:
-       Option
-        ( 
-          const string& arg,
-          const string& help,
-          bool require_value = false
-        )
-        : arg( arg ), help( help ), require_value( require_value )
-        { }
+        Option( const string& arg, const string& help, bool require_value );
 
         const string& get_arg() const { return arg; }
         const string& get_help() const { return help; }
         bool get_require_value() const { return require_value; }
-        const string& get_value() const { return value; }
 
         bool operator<( const Option& other ) const
         {
           return arg.compare( other.arg ) < 0;
         }
 
-        void set_value( const string& value ) { this->value = value; }
-
       private:
         string arg, help;
         bool require_value;
+      };
+
+
+      class ParsedOption : public Option
+      {
+      public:
+        ParsedOption( Option& option );
+        ParsedOption( Option& option, const string& value );
+
+        const string& get_value() const { return value; }
+
+      private:
         string value;
       };
 
 
-      class InvalidValueException : public Exception
-      {
-      public:
-        InvalidValueException( const string& error_message )
-          : Exception( 1, error_message )
-        { }
-      };
+      YIELD_PLATFORM_EXCEPTION_SUBCLASS( InvalidValueException );
+      YIELD_PLATFORM_EXCEPTION_SUBCLASS( MissingValueException );
+      YIELD_PLATFORM_EXCEPTION_SUBCLASS( UnexpectedValueException );
+      YIELD_PLATFORM_EXCEPTION_SUBCLASS( UnregisteredOptionException );
 
 
-      class MissingValueException : public Exception
-      {
-      public:
-        MissingValueException( const string& error_message )
-          : Exception( 1, error_message )
-        { }
-      };
+      void add_option( const string& arg );
+      void add_option( const string& arg, bool require_value );
+      void add_option( const string& arg, const string& help );
+      void add_option( const string& arg, const string& help, bool require_value );
 
+      // Returns the number of argv strings parsed
+      // Throws exceptions on errors
+      int parse_args( int argc, char** argv, vector<ParsedOption>& );
 
-      class UnexpectedValueException : public Exception
-      {
-      public:
-        UnexpectedValueException( const string& error_message )
-          : Exception( 1, error_message )
-        { }
-      };
-
-
-      class UnregisteredOptionException : public Exception
-      {
-      public:
-        UnregisteredOptionException( const string& error_message )
-          : Exception( 1, error_message )
-        { }
-      };
-
-
-      void 
-      add_option
-      ( 
-        const string& arg, 
-        bool require_value = false 
-      );
-
-      void
-      add_option
-      ( 
-        const string& arg, 
-        const string& help, 
-        bool require_value = false 
-      );
-
-      int // Returns the number of argv strings parsed
-      parse_args // Throws exceptions on errors
-      ( 
-        int argc, 
-        char** argv, 
-        vector<Option>& parsed_options
-      );
-
-      void 
-      print_usage
-      ( 
-        const string& program_name,
-        const char* program_description = NULL,
-        const char* files_usage = NULL
-      );
+      std::string usage();
 
     private:
       vector<Option> options;

@@ -27,64 +27,44 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#ifndef _XTREEMFS_PROXY_EXCEPTION_RESPONSE_H_
-#define _XTREEMFS_PROXY_EXCEPTION_RESPONSE_H_
-
-#include "yield.h"
+#include "open_file_table.h"
+using namespace xtreemfs;
 
 
-namespace xtreemfs
+class OpenFileTable::Entry
 {
-  class ProxyExceptionResponse : public yield::concurrency::ExceptionResponse
-  {
-  public:
-    virtual ~ProxyExceptionResponse() throw()
-    { }
+public:
+  Entry( uint32_t reader_count, uint32_t writer_count )
+    : reader_count( reader_count ), writer_count( writer_count )
+  { }
 
-    virtual uint32_t get_error_code() const { return 0; }
-    uint32_t get_platform_error_code() const;
+  uint32_t get_reader_count() const { return reader_count; }
+  uint32_t get_writer_count() const { return writer_count; }
+  void inc_reader_count() { ++reader_count; }
+  void inc_writer_count() { ++writer_count; }
+  uint32_t dec_reader_count() { return --reader_count; }
+  uint32_t dec_writer_count() { return --writer_count; }
 
-    virtual const string& get_error_message() const
-    {
-      return empty_error_message;
-    }
-
-    virtual const string& get_stack_trace() const
-    {
-      return empty_stack_trace;
-    }
-
-    virtual void set_error_code( uint32_t ) { }
-
-    operator const char*() const throw()
-    {
-      if ( what_str.empty() )
-      {
-        ostringstream what_oss;
-        what_oss << "errno = " << get_error_code();
-        what_oss << ", strerror = " << get_error_message();
-        if ( !get_stack_trace().empty() )
-          what_oss << ", stack = " << get_stack_trace();
-        const_cast<ProxyExceptionResponse*>( this )->what_str = what_oss.str();
-      }
-
-      return what_str.c_str();
-    }
-
-  protected:
-    ProxyExceptionResponse()
-    { }
-
-    ProxyExceptionResponse( const char* )
-    {
-      DebugBreak();
-    }
-
-  private:
-    string empty_error_message, empty_stack_trace, what_str;
-  };
+private:
+  uint32_t reader_count, writer_count;
 };
 
-#define ORG_XTREEMFS_INTERFACES_EXCEPTION_RESPONSE_PARENT_CLASS ::xtreemfs::ProxyExceptionResponse
 
-#endif
+OpenFileTable::~OpenFileTable()
+{
+  for
+  (
+    map<Path, Entry*>::iterator entry_i = entries.begin();
+    entry_i != entries.end();
+    ++entry_i
+  )
+    delete entry_i->second;
+}
+
+void OpenFileTable::open( const Path& path, bool writer )
+{
+}
+
+void OpenFileTable::release( const Path& path, bool writer )
+{
+}

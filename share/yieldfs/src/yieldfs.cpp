@@ -3,6 +3,11 @@ using namespace yieldfs;
 
 
 // tracing_directory.h
+#ifndef _YIELDFS_TRACING_DIRECTORY_H_
+#define _YIELDFS_TRACING_DIRECTORY_H_
+
+
+
 namespace yieldfs
 {
   class TracingDirectory : public StackableDirectory
@@ -14,17 +19,27 @@ namespace yieldfs
       const Path& path,
       Directory& underlying_directory
     );
+
     virtual ~TracingDirectory();
+
     // yield::platform::Directory
     YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
+
   private:
     Log& log;
     Path path;
   };
 };
 
+#endif
+
 
 // tracing_file.h
+#ifndef _YIELDFS_TRACING_FILE_H_
+#define _YIELDFS_TRACING_FILE_H_
+
+
+
 namespace yieldfs
 {
   class TracingFile : public StackableFile
@@ -32,17 +47,27 @@ namespace yieldfs
   public:
     TracingFile( Log& log, const Path& path, File& underlying_file );
     virtual ~TracingFile();
+
     // yield::platform::File
     YIELD_PLATFORM_FILE_PROTOTYPES;
+
   private:
     Log& log;
     Path path;
   };
 };
 
+#endif
+
 
 // unix_fuse.h
+#ifndef _YIELDFS_FUSE_UNIX_H_
+#define _YIELDFS_FUSE_UNIX_H_
+
+
+#ifndef _WIN32
 #define FUSE_USE_VERSION 26
+#include <fuse.h>
 #endif
 
 
@@ -199,12 +224,21 @@ namespace yieldfs
 };
 
 
+#endif
+
+
 // win32_fuse.h
+#ifndef _YIELDFS_FUSE_WIN32_H_
+#define _YIELDFS_FUSE_WIN32_H_
+
+
 #ifdef _WIN32
 #include <windows.h>
 #include <dokan.h>
 #pragma comment( lib, "dokan.lib" )
 #endif
+
+
 namespace yieldfs
 {
 #ifdef _WIN32
@@ -212,8 +246,10 @@ namespace yieldfs
   {
   public:
     Win32FUSE( uint32_t flags, Volume& volume );
+
     // FUSE
     int main( const Path& mount_point );
+
   private:
     static int DOKAN_CALLBACK
     CreateFile
@@ -225,36 +261,42 @@ namespace yieldfs
       DWORD FlagsAndAttributes,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     CreateDirectory
     (
       LPCWSTR FileName,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     CloseFile
     (
       LPCWSTR, // FileName,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     Cleanup
     (
       LPCWSTR FileName,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     DeleteDirectory
     (
       LPCWSTR FileName,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     DeleteFile
     (
       LPCWSTR, // FileName,
       PDOKAN_FILE_INFO
     );
+
     static int DOKAN_CALLBACK
     FindFiles
     (
@@ -262,12 +304,14 @@ namespace yieldfs
       PFillFindData FillFindData,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     FlushFileBuffers
     (
       LPCWSTR, // FileName,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     GetDiskFreeSpace
     (
@@ -276,10 +320,12 @@ namespace yieldfs
       PULONGLONG TotalNumberOfFreeBytes,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static inline File* get_file( PDOKAN_FILE_INFO DokanFileInfo )
     {
       return reinterpret_cast<File*>( DokanFileInfo->Context );
     }
+
     static int DOKAN_CALLBACK
     GetFileInformation
     (
@@ -287,6 +333,7 @@ namespace yieldfs
       LPBY_HANDLE_FILE_INFORMATION HandleFileInformation,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static inline Volume& get_volume( PDOKAN_FILE_INFO DokanFileInfo )
     {
       return reinterpret_cast<FUSE*>
@@ -294,6 +341,7 @@ namespace yieldfs
         DokanFileInfo->DokanOptions->GlobalContext
       )->get_volume();
     }
+
     static int DOKAN_CALLBACK
     GetVolumeInformation
     (
@@ -306,6 +354,7 @@ namespace yieldfs
       DWORD, // FileSystemNameSize,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     LockFile
     (
@@ -314,6 +363,7 @@ namespace yieldfs
       LONGLONG Length,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     MoveFile
     (
@@ -322,12 +372,14 @@ namespace yieldfs
       BOOL ReplaceIfExisting,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     OpenDirectory
     (
       LPCWSTR FileName,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     ReadFile
     (
@@ -338,6 +390,7 @@ namespace yieldfs
       LONGLONG Offset,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     SetEndOfFile
     (
@@ -345,6 +398,7 @@ namespace yieldfs
       LONGLONG ByteOffset,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     SetFileAttributes
     (
@@ -352,6 +406,7 @@ namespace yieldfs
       DWORD FileAttributes,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     SetFileTime
     (
@@ -361,6 +416,7 @@ namespace yieldfs
       CONST FILETIME*  LastWriteTime,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     UnlockFile
     (
@@ -369,8 +425,10 @@ namespace yieldfs
       LONGLONG Length,
       PDOKAN_FILE_INFO DokanFileInfo
     );
+
     static int DOKAN_CALLBACK
     Unmount( PDOKAN_FILE_INFO );
+
     static int DOKAN_CALLBACK
     WriteFile
     (
@@ -384,6 +442,9 @@ namespace yieldfs
   };
 #endif
 };
+
+
+#endif
 
 
 // fuse.cpp

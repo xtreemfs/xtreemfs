@@ -27,16 +27,50 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#ifndef _XTREEMFS_H_
-#define _XTREEMFS_H_
+#ifndef _XTREEMFS_OPTIONS_H_
+#define _XTREEMFS_OPTIONS_H_
 
-#include "xtreemfs/crash_reporter.h"
-#include "xtreemfs/dir_proxy.h"
-#include "xtreemfs/grid_ssl_socket.h"
-#include "xtreemfs/mrc_proxy.h"
-#include "xtreemfs/osd_proxy.h"
-#include "xtreemfs/osd_proxies.h"
-#include "xtreemfs/user_credentials_cache.h"
-#include "xtreemfs/volume.h"
+
+#include "yield.h"
+
+
+namespace xtreemfs
+{
+  using yield::ipc::SSLContext;
+  using yield::ipc::URI;
+  using yield::platform::OptionParser;
+  using yield::platform::Time;
+
+
+  class Options : public vector<OptionParser::ParsedOption>
+  {
+  public: 
+    const std::string& get_log_file_path() const { return log_file_path; }
+    const std::string& get_log_level() const { return log_level; }
+    uint32_t get_proxy_flags() const { return proxy_flags; }
+    SSLContext* get_ssl_context() const { return ssl_context; }
+    const Time& get_timeout() const { return timeout; }
+
+    static Options parse( int argc, char** argv );
+    static Options parse( int argc, char** argv, OptionParser& );
+
+  private:
+    Options
+    ( 
+      const string& log_file_path,        
+      const string& log_level,
+      const vector<OptionParser::ParsedOption>& parsed_options,
+      uint32_t proxy_flags,
+      SSLContext* ssl_context,
+      const Time& timeout
+    );
+
+  private:
+    string log_file_path, log_level;    
+    uint32_t proxy_flags;
+    Time timeout;
+    SSLContext* ssl_context;
+  };
+};
 
 #endif

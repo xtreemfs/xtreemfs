@@ -49,11 +49,11 @@ namespace xtreemfs
 {
   class Stat : public yield::platform::Stat
   {
-  public:    
+  public:
     Stat( const yield::platform::Stat& stbuf );
     Stat( const org::xtreemfs::interfaces::Stat& stbuf );
     Stat( const org::xtreemfs::interfaces::OSDWriteResponse& );
-    
+
     uint64_t get_etag() const { return etag; }
     const string& get_group_id() const { return group_id; }
     uint32_t get_truncate_epoch() const { return truncate_epoch; }
@@ -62,7 +62,7 @@ namespace xtreemfs
     operator org::xtreemfs::interfaces::Stat() const;
 
     void set_etag( uint64_t etag );
-    void set_group_id( const string& group_id ); 
+    void set_group_id( const string& group_id );
     void set_truncate_epoch( uint32_t truncate_epoch );
     void set_user_id( const string& user_id );
 

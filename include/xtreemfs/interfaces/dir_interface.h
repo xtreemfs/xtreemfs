@@ -1,10 +1,11 @@
-#ifndef _962331829_H_
-#define _962331829_H_
+#ifndef _1095945624_H_
+#define _1095945624_H_
 
 
 #include "constants.h"
 #include "types.h"
 #include "yield/concurrency.h"
+#include "yidl.h"
 
 
 namespace org
@@ -19,8 +20,31 @@ namespace org
       class AddressMapping : public ::yidl::runtime::Struct
       {
       public:
-        AddressMapping() : version( 0 ), port( 0 ), ttl_s( 0 ) { }
-        AddressMapping( const string& uuid, uint64_t version, const string& protocol, const string& address, uint16_t port, const string& match_network, uint32_t ttl_s, const string& uri ) : uuid( uuid ), version( version ), protocol( protocol ), address( address ), port( port ), match_network( match_network ), ttl_s( ttl_s ), uri( uri ) { }
+        AddressMapping()
+          : version( 0 ), port( 0 ), ttl_s( 0 )
+        { }
+  
+        AddressMapping
+        (
+          const string& uuid,
+          uint64_t version,
+          const string& protocol,
+          const string& address,
+          uint16_t port,
+          const string& match_network,
+          uint32_t ttl_s,
+          const string& uri
+        )
+          : uuid( uuid ),
+            version( version ),
+            protocol( protocol ),
+            address( address ),
+            port( port ),
+            match_network( match_network ),
+            ttl_s( ttl_s ),
+            uri( uri )
+        { }
+  
         virtual ~AddressMapping() {  }
   
         const string& get_uuid() const { return uuid; }
@@ -139,7 +163,7 @@ namespace org
       public:
         virtual ~ServiceDataMap() { }
   
-        // yidl::runtime::RTTIObject
+          // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ServiceDataMap, 2010030948 );
   
         // yidl::runtime::MarshallableObject
@@ -170,8 +194,27 @@ namespace org
       class Service : public ::yidl::runtime::Struct
       {
       public:
-        Service() : type( SERVICE_TYPE_MIXED ), version( 0 ), last_updated_s( 0 ) { }
-        Service( org::xtreemfs::interfaces::ServiceType type, const string& uuid, uint64_t version, const string& name, uint64_t last_updated_s, const org::xtreemfs::interfaces::ServiceDataMap& data ) : type( type ), uuid( uuid ), version( version ), name( name ), last_updated_s( last_updated_s ), data( data ) { }
+        Service()
+          : type( SERVICE_TYPE_MIXED ), version( 0 ), last_updated_s( 0 )
+        { }
+  
+        Service
+        (
+          org::xtreemfs::interfaces::ServiceType type,
+          const string& uuid,
+          uint64_t version,
+          const string& name,
+          uint64_t last_updated_s,
+          const org::xtreemfs::interfaces::ServiceDataMap& data
+        )
+          : type( type ),
+            uuid( uuid ),
+            version( version ),
+            name( name ),
+            last_updated_s( last_updated_s ),
+            data( data )
+        { }
+  
         virtual ~Service() {  }
   
         org::xtreemfs::interfaces::ServiceType get_type() const { return type; }
@@ -272,8 +315,23 @@ namespace org
       class DirService : public ::yidl::runtime::Struct
       {
       public:
-        DirService() : port( 0 ), interface_version( 0 ) { }
-        DirService( const string& address, uint16_t port, const string& protocol, uint32_t interface_version ) : address( address ), port( port ), protocol( protocol ), interface_version( interface_version ) { }
+        DirService()
+          : port( 0 ), interface_version( 0 )
+        { }
+  
+        DirService
+        (
+          const string& address,
+          uint16_t port,
+          const string& protocol,
+          uint32_t interface_version
+        )
+          : address( address ),
+            port( port ),
+            protocol( protocol ),
+            interface_version( interface_version )
+        { }
+  
         virtual ~DirService() {  }
   
         const string& get_address() const { return address; }
@@ -327,50 +385,140 @@ namespace org
       class DIRInterface
       {
       public:
+        const static uint32_t HTTP_PORT_DEFAULT = 30638;
+        const static uint32_t ONCRPC_PORT_DEFAULT = 32638;
+        const static uint32_t ONCRPCG_PORT_DEFAULT = 32638;
+        const static uint32_t ONCRPCS_PORT_DEFAULT = 32638;
+        const static uint32_t ONCRPCU_PORT_DEFAULT = 32638;
         const static uint32_t TAG = 2010031016;
   
         virtual ~DIRInterface() { }
   
         uint32_t get_tag() const { return 2010031016; }
   
-        const static uint32_t HTTP_PORT_DEFAULT = 30638;
-        const static uint32_t ONCRPC_PORT_DEFAULT = 32638;
-        const static uint32_t ONCRPCG_PORT_DEFAULT = 32638;
-        const static uint32_t ONCRPCS_PORT_DEFAULT = 32638;
-        const static uint32_t ONCRPCU_PORT_DEFAULT = 32638;
   
-        virtual void xtreemfs_address_mappings_get( const string& uuid, org::xtreemfs::interfaces::AddressMappingSet& address_mappings ) { }
+  
+        virtual void
+        xtreemfs_address_mappings_get
+        (
+          const string& uuid,
+          org::xtreemfs::interfaces::AddressMappingSet& address_mappings
+        )
+        { }
+  
         virtual void xtreemfs_address_mappings_remove( const string& uuid ) { }
-        virtual uint64_t xtreemfs_address_mappings_set( const org::xtreemfs::interfaces::AddressMappingSet& address_mappings ) { return 0; }
+  
+        virtual uint64_t
+        xtreemfs_address_mappings_set
+        (
+          const org::xtreemfs::interfaces::AddressMappingSet& address_mappings
+        ){
+          return 0;
+        }
+  
         virtual void xtreemfs_checkpoint() { }
-        virtual void xtreemfs_discover_dir( org::xtreemfs::interfaces::DirService& dir_service ) { }
-        virtual uint64_t xtreemfs_global_time_s_get() { return 0; }
+  
+        virtual void
+        xtreemfs_discover_dir
+        (
+          org::xtreemfs::interfaces::DirService& dir_service
+        )
+        { }
+  
+        virtual uint64_t xtreemfs_global_time_s_get(){
+          return 0;
+        }
+  
         virtual void xtreemfs_replication_to_master() { }
+  
         virtual void xtreemfs_service_deregister( const string& uuid ) { }
-        virtual void xtreemfs_service_get_by_name( const string& name, org::xtreemfs::interfaces::ServiceSet& services ) { }
-        virtual void xtreemfs_service_get_by_type( org::xtreemfs::interfaces::ServiceType type, org::xtreemfs::interfaces::ServiceSet& services ) { }
-        virtual void xtreemfs_service_get_by_uuid( const string& uuid, org::xtreemfs::interfaces::ServiceSet& services ) { }
+  
+        virtual void
+        xtreemfs_service_get_by_name
+        (
+          const string& name,
+          org::xtreemfs::interfaces::ServiceSet& services
+        )
+        { }
+  
+        virtual void
+        xtreemfs_service_get_by_type
+        (
+          org::xtreemfs::interfaces::ServiceType type,
+          org::xtreemfs::interfaces::ServiceSet& services
+        )
+        { }
+  
+        virtual void
+        xtreemfs_service_get_by_uuid
+        (
+          const string& uuid,
+          org::xtreemfs::interfaces::ServiceSet& services
+        )
+        { }
+  
         virtual void xtreemfs_service_offline( const string& uuid ) { }
-        virtual uint64_t xtreemfs_service_register( const org::xtreemfs::interfaces::Service& service ) { return 0; }
+  
+        virtual uint64_t
+        xtreemfs_service_register
+        (
+          const org::xtreemfs::interfaces::Service& service
+        ){
+          return 0;
+        }
+  
         virtual void xtreemfs_shutdown() { }
       };
   
+  
       // Use this macro in an implementation class to get all of the prototypes for the operations in DIRInterface
-      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_PROTOTYPES \
-      virtual void xtreemfs_address_mappings_get( const string& uuid, org::xtreemfs::interfaces::AddressMappingSet& address_mappings );\
+      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_PROTOTYPES\
+      virtual void\
+      xtreemfs_address_mappings_get\
+      (\
+        const string& uuid,\
+        org::xtreemfs::interfaces::AddressMappingSet& address_mappings\
+      );\
       virtual void xtreemfs_address_mappings_remove( const string& uuid );\
-      virtual uint64_t xtreemfs_address_mappings_set( const org::xtreemfs::interfaces::AddressMappingSet& address_mappings );\
+      virtual uint64_t\
+      xtreemfs_address_mappings_set\
+      (\
+        const org::xtreemfs::interfaces::AddressMappingSet& address_mappings\
+      );\
       virtual void xtreemfs_checkpoint();\
-      virtual void xtreemfs_discover_dir( org::xtreemfs::interfaces::DirService& dir_service );\
+      virtual void\
+      xtreemfs_discover_dir\
+      (\
+        org::xtreemfs::interfaces::DirService& dir_service\
+      );\
       virtual uint64_t xtreemfs_global_time_s_get();\
       virtual void xtreemfs_replication_to_master();\
       virtual void xtreemfs_service_deregister( const string& uuid );\
-      virtual void xtreemfs_service_get_by_name( const string& name, org::xtreemfs::interfaces::ServiceSet& services );\
-      virtual void xtreemfs_service_get_by_type( org::xtreemfs::interfaces::ServiceType type, org::xtreemfs::interfaces::ServiceSet& services );\
-      virtual void xtreemfs_service_get_by_uuid( const string& uuid, org::xtreemfs::interfaces::ServiceSet& services );\
+      virtual void\
+      xtreemfs_service_get_by_name\
+      (\
+        const string& name,\
+        org::xtreemfs::interfaces::ServiceSet& services\
+      );\
+      virtual void\
+      xtreemfs_service_get_by_type\
+      (\
+        org::xtreemfs::interfaces::ServiceType type,\
+        org::xtreemfs::interfaces::ServiceSet& services\
+      );\
+      virtual void\
+      xtreemfs_service_get_by_uuid\
+      (\
+        const string& uuid,\
+        org::xtreemfs::interfaces::ServiceSet& services\
+      );\
       virtual void xtreemfs_service_offline( const string& uuid );\
-      virtual uint64_t xtreemfs_service_register( const org::xtreemfs::interfaces::Service& service );\
-      virtual void xtreemfs_shutdown();
+      virtual uint64_t\
+      xtreemfs_service_register\
+      (\
+        const org::xtreemfs::interfaces::Service& service\
+      );\
+      virtual void xtreemfs_shutdown();\
   
   
       #ifndef ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
@@ -411,13 +559,16 @@ namespace org
       class DIRInterfaceEvents
       {
       public:
-        // Request/response pair definitions for the operations in DIRInterface
-  
+      // Request/response pair definitions for the operations in DIRInterface
         class xtreemfs_address_mappings_getRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
           xtreemfs_address_mappings_getRequest() { }
-          xtreemfs_address_mappings_getRequest( const string& uuid ) : uuid( uuid ) { }
+  
+          xtreemfs_address_mappings_getRequest( const string& uuid )
+            : uuid( uuid )
+          { }
+  
           virtual ~xtreemfs_address_mappings_getRequest() {  }
   
           const string& get_uuid() const { return uuid; }
@@ -446,11 +597,19 @@ namespace org
           string uuid;
         };
   
+  
         class xtreemfs_address_mappings_getResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
           xtreemfs_address_mappings_getResponse() { }
-          xtreemfs_address_mappings_getResponse( const org::xtreemfs::interfaces::AddressMappingSet& address_mappings ) : address_mappings( address_mappings ) { }
+  
+          xtreemfs_address_mappings_getResponse
+          (
+            const org::xtreemfs::interfaces::AddressMappingSet& address_mappings
+          )
+            : address_mappings( address_mappings )
+          { }
+  
           virtual ~xtreemfs_address_mappings_getResponse() {  }
   
           const org::xtreemfs::interfaces::AddressMappingSet& get_address_mappings() const { return address_mappings; }
@@ -479,11 +638,16 @@ namespace org
           org::xtreemfs::interfaces::AddressMappingSet address_mappings;
         };
   
+  
         class xtreemfs_address_mappings_removeRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
           xtreemfs_address_mappings_removeRequest() { }
-          xtreemfs_address_mappings_removeRequest( const string& uuid ) : uuid( uuid ) { }
+  
+          xtreemfs_address_mappings_removeRequest( const string& uuid )
+            : uuid( uuid )
+          { }
+  
           virtual ~xtreemfs_address_mappings_removeRequest() {  }
   
           const string& get_uuid() const { return uuid; }
@@ -512,6 +676,7 @@ namespace org
           string uuid;
         };
   
+  
         class xtreemfs_address_mappings_removeResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
@@ -528,11 +693,19 @@ namespace org
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
   
+  
         class xtreemfs_address_mappings_setRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
           xtreemfs_address_mappings_setRequest() { }
-          xtreemfs_address_mappings_setRequest( const org::xtreemfs::interfaces::AddressMappingSet& address_mappings ) : address_mappings( address_mappings ) { }
+  
+          xtreemfs_address_mappings_setRequest
+          (
+            const org::xtreemfs::interfaces::AddressMappingSet& address_mappings
+          )
+            : address_mappings( address_mappings )
+          { }
+  
           virtual ~xtreemfs_address_mappings_setRequest() {  }
   
           const org::xtreemfs::interfaces::AddressMappingSet& get_address_mappings() const { return address_mappings; }
@@ -561,11 +734,18 @@ namespace org
           org::xtreemfs::interfaces::AddressMappingSet address_mappings;
         };
   
+  
         class xtreemfs_address_mappings_setResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
-          xtreemfs_address_mappings_setResponse() : _return_value( 0 ) { }
-          xtreemfs_address_mappings_setResponse( uint64_t _return_value ) : _return_value( _return_value ) { }
+          xtreemfs_address_mappings_setResponse()
+            : _return_value( 0 )
+          { }
+  
+          xtreemfs_address_mappings_setResponse( uint64_t _return_value )
+            : _return_value( _return_value )
+          { }
+  
           virtual ~xtreemfs_address_mappings_setResponse() {  }
   
           uint64_t get__return_value() const { return _return_value; }
@@ -594,6 +774,7 @@ namespace org
           uint64_t _return_value;
         };
   
+  
         class xtreemfs_checkpointRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
@@ -609,6 +790,7 @@ namespace org
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
+  
   
         class xtreemfs_checkpointResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
@@ -626,6 +808,7 @@ namespace org
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
   
+  
         class xtreemfs_discover_dirRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
@@ -642,11 +825,19 @@ namespace org
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
   
+  
         class xtreemfs_discover_dirResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
           xtreemfs_discover_dirResponse() { }
-          xtreemfs_discover_dirResponse( const org::xtreemfs::interfaces::DirService& dir_service ) : dir_service( dir_service ) { }
+  
+          xtreemfs_discover_dirResponse
+          (
+            const org::xtreemfs::interfaces::DirService& dir_service
+          )
+            : dir_service( dir_service )
+          { }
+  
           virtual ~xtreemfs_discover_dirResponse() {  }
   
           const org::xtreemfs::interfaces::DirService& get_dir_service() const { return dir_service; }
@@ -675,6 +866,7 @@ namespace org
           org::xtreemfs::interfaces::DirService dir_service;
         };
   
+  
         class xtreemfs_global_time_s_getRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
@@ -691,11 +883,18 @@ namespace org
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
   
+  
         class xtreemfs_global_time_s_getResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
-          xtreemfs_global_time_s_getResponse() : _return_value( 0 ) { }
-          xtreemfs_global_time_s_getResponse( uint64_t _return_value ) : _return_value( _return_value ) { }
+          xtreemfs_global_time_s_getResponse()
+            : _return_value( 0 )
+          { }
+  
+          xtreemfs_global_time_s_getResponse( uint64_t _return_value )
+            : _return_value( _return_value )
+          { }
+  
           virtual ~xtreemfs_global_time_s_getResponse() {  }
   
           uint64_t get__return_value() const { return _return_value; }
@@ -724,6 +923,7 @@ namespace org
           uint64_t _return_value;
         };
   
+  
         class xtreemfs_replication_to_masterRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
@@ -739,6 +939,7 @@ namespace org
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
+  
   
         class xtreemfs_replication_to_masterResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
@@ -756,11 +957,16 @@ namespace org
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
   
+  
         class xtreemfs_service_deregisterRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
           xtreemfs_service_deregisterRequest() { }
-          xtreemfs_service_deregisterRequest( const string& uuid ) : uuid( uuid ) { }
+  
+          xtreemfs_service_deregisterRequest( const string& uuid )
+            : uuid( uuid )
+          { }
+  
           virtual ~xtreemfs_service_deregisterRequest() {  }
   
           const string& get_uuid() const { return uuid; }
@@ -789,6 +995,7 @@ namespace org
           string uuid;
         };
   
+  
         class xtreemfs_service_deregisterResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
@@ -805,11 +1012,16 @@ namespace org
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
   
+  
         class xtreemfs_service_get_by_nameRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
           xtreemfs_service_get_by_nameRequest() { }
-          xtreemfs_service_get_by_nameRequest( const string& name ) : name( name ) { }
+  
+          xtreemfs_service_get_by_nameRequest( const string& name )
+            : name( name )
+          { }
+  
           virtual ~xtreemfs_service_get_by_nameRequest() {  }
   
           const string& get_name() const { return name; }
@@ -838,11 +1050,19 @@ namespace org
           string name;
         };
   
+  
         class xtreemfs_service_get_by_nameResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
           xtreemfs_service_get_by_nameResponse() { }
-          xtreemfs_service_get_by_nameResponse( const org::xtreemfs::interfaces::ServiceSet& services ) : services( services ) { }
+  
+          xtreemfs_service_get_by_nameResponse
+          (
+            const org::xtreemfs::interfaces::ServiceSet& services
+          )
+            : services( services )
+          { }
+  
           virtual ~xtreemfs_service_get_by_nameResponse() {  }
   
           const org::xtreemfs::interfaces::ServiceSet& get_services() const { return services; }
@@ -871,11 +1091,21 @@ namespace org
           org::xtreemfs::interfaces::ServiceSet services;
         };
   
+  
         class xtreemfs_service_get_by_typeRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
-          xtreemfs_service_get_by_typeRequest() : type( SERVICE_TYPE_MIXED ) { }
-          xtreemfs_service_get_by_typeRequest( org::xtreemfs::interfaces::ServiceType type ) : type( type ) { }
+          xtreemfs_service_get_by_typeRequest()
+            : type( SERVICE_TYPE_MIXED )
+          { }
+  
+          xtreemfs_service_get_by_typeRequest
+          (
+            org::xtreemfs::interfaces::ServiceType type
+          )
+            : type( type )
+          { }
+  
           virtual ~xtreemfs_service_get_by_typeRequest() {  }
   
           org::xtreemfs::interfaces::ServiceType get_type() const { return type; }
@@ -904,11 +1134,19 @@ namespace org
           org::xtreemfs::interfaces::ServiceType type;
         };
   
+  
         class xtreemfs_service_get_by_typeResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
           xtreemfs_service_get_by_typeResponse() { }
-          xtreemfs_service_get_by_typeResponse( const org::xtreemfs::interfaces::ServiceSet& services ) : services( services ) { }
+  
+          xtreemfs_service_get_by_typeResponse
+          (
+            const org::xtreemfs::interfaces::ServiceSet& services
+          )
+            : services( services )
+          { }
+  
           virtual ~xtreemfs_service_get_by_typeResponse() {  }
   
           const org::xtreemfs::interfaces::ServiceSet& get_services() const { return services; }
@@ -937,11 +1175,16 @@ namespace org
           org::xtreemfs::interfaces::ServiceSet services;
         };
   
+  
         class xtreemfs_service_get_by_uuidRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
           xtreemfs_service_get_by_uuidRequest() { }
-          xtreemfs_service_get_by_uuidRequest( const string& uuid ) : uuid( uuid ) { }
+  
+          xtreemfs_service_get_by_uuidRequest( const string& uuid )
+            : uuid( uuid )
+          { }
+  
           virtual ~xtreemfs_service_get_by_uuidRequest() {  }
   
           const string& get_uuid() const { return uuid; }
@@ -970,11 +1213,19 @@ namespace org
           string uuid;
         };
   
+  
         class xtreemfs_service_get_by_uuidResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
           xtreemfs_service_get_by_uuidResponse() { }
-          xtreemfs_service_get_by_uuidResponse( const org::xtreemfs::interfaces::ServiceSet& services ) : services( services ) { }
+  
+          xtreemfs_service_get_by_uuidResponse
+          (
+            const org::xtreemfs::interfaces::ServiceSet& services
+          )
+            : services( services )
+          { }
+  
           virtual ~xtreemfs_service_get_by_uuidResponse() {  }
   
           const org::xtreemfs::interfaces::ServiceSet& get_services() const { return services; }
@@ -1003,11 +1254,16 @@ namespace org
           org::xtreemfs::interfaces::ServiceSet services;
         };
   
+  
         class xtreemfs_service_offlineRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
           xtreemfs_service_offlineRequest() { }
-          xtreemfs_service_offlineRequest( const string& uuid ) : uuid( uuid ) { }
+  
+          xtreemfs_service_offlineRequest( const string& uuid )
+            : uuid( uuid )
+          { }
+  
           virtual ~xtreemfs_service_offlineRequest() {  }
   
           const string& get_uuid() const { return uuid; }
@@ -1036,6 +1292,7 @@ namespace org
           string uuid;
         };
   
+  
         class xtreemfs_service_offlineResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
@@ -1052,11 +1309,19 @@ namespace org
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
   
+  
         class xtreemfs_service_registerRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
           xtreemfs_service_registerRequest() { }
-          xtreemfs_service_registerRequest( const org::xtreemfs::interfaces::Service& service ) : service( service ) { }
+  
+          xtreemfs_service_registerRequest
+          (
+            const org::xtreemfs::interfaces::Service& service
+          )
+            : service( service )
+          { }
+  
           virtual ~xtreemfs_service_registerRequest() {  }
   
           const org::xtreemfs::interfaces::Service& get_service() const { return service; }
@@ -1085,11 +1350,18 @@ namespace org
           org::xtreemfs::interfaces::Service service;
         };
   
+  
         class xtreemfs_service_registerResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
-          xtreemfs_service_registerResponse() : _return_value( 0 ) { }
-          xtreemfs_service_registerResponse( uint64_t _return_value ) : _return_value( _return_value ) { }
+          xtreemfs_service_registerResponse()
+            : _return_value( 0 )
+          { }
+  
+          xtreemfs_service_registerResponse( uint64_t _return_value )
+            : _return_value( _return_value )
+          { }
+  
           virtual ~xtreemfs_service_registerResponse() {  }
   
           uint64_t get__return_value() const { return _return_value; }
@@ -1118,6 +1390,7 @@ namespace org
           uint64_t _return_value;
         };
   
+  
         class xtreemfs_shutdownRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
@@ -1133,6 +1406,7 @@ namespace org
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
+  
   
         class xtreemfs_shutdownResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
@@ -1150,13 +1424,18 @@ namespace org
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
   
+  
         class ConcurrentModificationException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
         {
         public:
           ConcurrentModificationException() { }
-          ConcurrentModificationException( const string& stack_trace ) : stack_trace( stack_trace ) { }
+  
+          ConcurrentModificationException( const string& stack_trace )
+            : stack_trace( stack_trace )
+          { }
+  
           ConcurrentModificationException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
-          virtual ~ConcurrentModificationException() throw() { }
+          virtual ~ConcurrentModificationException() throw() { ; }
   
           const string& get_stack_trace() const { return stack_trace; }
           void set_stack_trace( const string& stack_trace ) { this->stack_trace = stack_trace; }
@@ -1187,13 +1466,27 @@ namespace org
           string stack_trace;
         };
   
+  
         class DIRException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
         {
         public:
-          DIRException() : error_code( 0 ) { }
-          DIRException( uint32_t error_code, const string& error_message, const string& stack_trace ) : error_code( error_code ), error_message( error_message ), stack_trace( stack_trace ) { }
+          DIRException()
+            : error_code( 0 )
+          { }
+  
+          DIRException
+          (
+            uint32_t error_code,
+            const string& error_message,
+            const string& stack_trace
+          )
+            : error_code( error_code ),
+              error_message( error_message ),
+              stack_trace( stack_trace )
+          { }
+  
           DIRException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
-          virtual ~DIRException() throw() { }
+          virtual ~DIRException() throw() { ; }
   
           uint32_t get_error_code() const { return error_code; }
           const string& get_error_message() const { return error_message; }
@@ -1234,13 +1527,18 @@ namespace org
           string stack_trace;
         };
   
+  
         class InvalidArgumentException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
         {
         public:
           InvalidArgumentException() { }
-          InvalidArgumentException( const string& error_message ) : error_message( error_message ) { }
+  
+          InvalidArgumentException( const string& error_message )
+            : error_message( error_message )
+          { }
+  
           InvalidArgumentException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
-          virtual ~InvalidArgumentException() throw() { }
+          virtual ~InvalidArgumentException() throw() { ; }
   
           const string& get_error_message() const { return error_message; }
           void set_error_message( const string& error_message ) { this->error_message = error_message; }
@@ -1271,13 +1569,27 @@ namespace org
           string error_message;
         };
   
+  
         class ProtocolException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
         {
         public:
-          ProtocolException() : accept_stat( 0 ), error_code( 0 ) { }
-          ProtocolException( uint32_t accept_stat, uint32_t error_code, const string& stack_trace ) : accept_stat( accept_stat ), error_code( error_code ), stack_trace( stack_trace ) { }
+          ProtocolException()
+            : accept_stat( 0 ), error_code( 0 )
+          { }
+  
+          ProtocolException
+          (
+            uint32_t accept_stat,
+            uint32_t error_code,
+            const string& stack_trace
+          )
+            : accept_stat( accept_stat ),
+              error_code( error_code ),
+              stack_trace( stack_trace )
+          { }
+  
           ProtocolException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
-          virtual ~ProtocolException() throw() { }
+          virtual ~ProtocolException() throw() { ; }
   
           uint32_t get_accept_stat() const { return accept_stat; }
           uint32_t get_error_code() const { return error_code; }
@@ -1318,13 +1630,20 @@ namespace org
           string stack_trace;
         };
   
+  
         class RedirectException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
         {
         public:
-          RedirectException() : port( 0 ) { }
-          RedirectException( const string& address, uint16_t port ) : address( address ), port( port ) { }
+          RedirectException()
+            : port( 0 )
+          { }
+  
+          RedirectException( const string& address, uint16_t port )
+            : address( address ), port( port )
+          { }
+  
           RedirectException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
-          virtual ~RedirectException() throw() { }
+          virtual ~RedirectException() throw() { ; }
   
           const string& get_address() const { return address; }
           uint16_t get_port() const { return port; }
@@ -2030,22 +2349,18 @@ namespace org
         {
           ::yield::concurrency::EventTarget::dec_ref( event_target );
         }
-          virtual void xtreemfs_address_mappings_get( const string& uuid, org::xtreemfs::interfaces::AddressMappingSet& address_mappings )
+          virtual void
+          xtreemfs_address_mappings_get
+          (
+            const string& uuid,
+            org::xtreemfs::interfaces::AddressMappingSet& address_mappings
+          )
           {
             ::yidl::runtime::auto_Object<xtreemfs_address_mappings_getRequest> __request( new xtreemfs_address_mappings_getRequest( uuid ) );
             ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_getResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_getResponse> );
             __request->set_response_target( &__response_queue.get() );
             event_target.send( __request->inc_ref() );
             ::yidl::runtime::auto_Object<xtreemfs_address_mappings_getResponse> __response = __response_queue->dequeue();address_mappings = __response->get_address_mappings();
-          }
-  
-          virtual void xtreemfs_address_mappings_get( const string& uuid, org::xtreemfs::interfaces::AddressMappingSet& address_mappings, uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<xtreemfs_address_mappings_getRequest> __request( new xtreemfs_address_mappings_getRequest( uuid ) );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_getResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_getResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<xtreemfs_address_mappings_getResponse> __response = __response_queue->dequeue( response_timeout_ns );address_mappings = __response->get_address_mappings();
           }
   
           virtual void xtreemfs_address_mappings_remove( const string& uuid )
@@ -2057,31 +2372,17 @@ namespace org
             ::yidl::runtime::auto_Object<xtreemfs_address_mappings_removeResponse> __response = __response_queue->dequeue();
           }
   
-          virtual void xtreemfs_address_mappings_remove( const string& uuid, uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<xtreemfs_address_mappings_removeRequest> __request( new xtreemfs_address_mappings_removeRequest( uuid ) );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_removeResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_removeResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<xtreemfs_address_mappings_removeResponse> __response = __response_queue->dequeue( response_timeout_ns );
-          }
-  
-          virtual uint64_t xtreemfs_address_mappings_set( const org::xtreemfs::interfaces::AddressMappingSet& address_mappings )
+          virtual uint64_t
+          xtreemfs_address_mappings_set
+          (
+            const org::xtreemfs::interfaces::AddressMappingSet& address_mappings
+          )
           {
             ::yidl::runtime::auto_Object<xtreemfs_address_mappings_setRequest> __request( new xtreemfs_address_mappings_setRequest( address_mappings ) );
             ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_setResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_setResponse> );
             __request->set_response_target( &__response_queue.get() );
             event_target.send( __request->inc_ref() );
             ::yidl::runtime::auto_Object<xtreemfs_address_mappings_setResponse> __response = __response_queue->dequeue();uint64_t _return_value = __response->get__return_value(); return _return_value;
-          }
-  
-          virtual uint64_t xtreemfs_address_mappings_set( const org::xtreemfs::interfaces::AddressMappingSet& address_mappings, uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<xtreemfs_address_mappings_setRequest> __request( new xtreemfs_address_mappings_setRequest( address_mappings ) );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_setResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_setResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<xtreemfs_address_mappings_setResponse> __response = __response_queue->dequeue( response_timeout_ns );uint64_t _return_value = __response->get__return_value(); return _return_value;
           }
   
           virtual void xtreemfs_checkpoint()
@@ -2093,31 +2394,17 @@ namespace org
             ::yidl::runtime::auto_Object<xtreemfs_checkpointResponse> __response = __response_queue->dequeue();
           }
   
-          virtual void xtreemfs_checkpoint( uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<xtreemfs_checkpointRequest> __request( new xtreemfs_checkpointRequest() );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_checkpointResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_checkpointResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<xtreemfs_checkpointResponse> __response = __response_queue->dequeue( response_timeout_ns );
-          }
-  
-          virtual void xtreemfs_discover_dir( org::xtreemfs::interfaces::DirService& dir_service )
+          virtual void
+          xtreemfs_discover_dir
+          (
+            org::xtreemfs::interfaces::DirService& dir_service
+          )
           {
             ::yidl::runtime::auto_Object<xtreemfs_discover_dirRequest> __request( new xtreemfs_discover_dirRequest() );
             ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_discover_dirResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_discover_dirResponse> );
             __request->set_response_target( &__response_queue.get() );
             event_target.send( __request->inc_ref() );
             ::yidl::runtime::auto_Object<xtreemfs_discover_dirResponse> __response = __response_queue->dequeue();dir_service = __response->get_dir_service();
-          }
-  
-          virtual void xtreemfs_discover_dir( org::xtreemfs::interfaces::DirService& dir_service, uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<xtreemfs_discover_dirRequest> __request( new xtreemfs_discover_dirRequest() );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_discover_dirResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_discover_dirResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<xtreemfs_discover_dirResponse> __response = __response_queue->dequeue( response_timeout_ns );dir_service = __response->get_dir_service();
           }
   
           virtual uint64_t xtreemfs_global_time_s_get()
@@ -2129,15 +2416,6 @@ namespace org
             ::yidl::runtime::auto_Object<xtreemfs_global_time_s_getResponse> __response = __response_queue->dequeue();uint64_t _return_value = __response->get__return_value(); return _return_value;
           }
   
-          virtual uint64_t xtreemfs_global_time_s_get( uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<xtreemfs_global_time_s_getRequest> __request( new xtreemfs_global_time_s_getRequest() );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_global_time_s_getResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_global_time_s_getResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<xtreemfs_global_time_s_getResponse> __response = __response_queue->dequeue( response_timeout_ns );uint64_t _return_value = __response->get__return_value(); return _return_value;
-          }
-  
           virtual void xtreemfs_replication_to_master()
           {
             ::yidl::runtime::auto_Object<xtreemfs_replication_to_masterRequest> __request( new xtreemfs_replication_to_masterRequest() );
@@ -2145,15 +2423,6 @@ namespace org
             __request->set_response_target( &__response_queue.get() );
             event_target.send( __request->inc_ref() );
             ::yidl::runtime::auto_Object<xtreemfs_replication_to_masterResponse> __response = __response_queue->dequeue();
-          }
-  
-          virtual void xtreemfs_replication_to_master( uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<xtreemfs_replication_to_masterRequest> __request( new xtreemfs_replication_to_masterRequest() );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_replication_to_masterResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_replication_to_masterResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<xtreemfs_replication_to_masterResponse> __response = __response_queue->dequeue( response_timeout_ns );
           }
   
           virtual void xtreemfs_service_deregister( const string& uuid )
@@ -2165,16 +2434,12 @@ namespace org
             ::yidl::runtime::auto_Object<xtreemfs_service_deregisterResponse> __response = __response_queue->dequeue();
           }
   
-          virtual void xtreemfs_service_deregister( const string& uuid, uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<xtreemfs_service_deregisterRequest> __request( new xtreemfs_service_deregisterRequest( uuid ) );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_deregisterResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_deregisterResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<xtreemfs_service_deregisterResponse> __response = __response_queue->dequeue( response_timeout_ns );
-          }
-  
-          virtual void xtreemfs_service_get_by_name( const string& name, org::xtreemfs::interfaces::ServiceSet& services )
+          virtual void
+          xtreemfs_service_get_by_name
+          (
+            const string& name,
+            org::xtreemfs::interfaces::ServiceSet& services
+          )
           {
             ::yidl::runtime::auto_Object<xtreemfs_service_get_by_nameRequest> __request( new xtreemfs_service_get_by_nameRequest( name ) );
             ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_nameResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_nameResponse> );
@@ -2183,16 +2448,12 @@ namespace org
             ::yidl::runtime::auto_Object<xtreemfs_service_get_by_nameResponse> __response = __response_queue->dequeue();services = __response->get_services();
           }
   
-          virtual void xtreemfs_service_get_by_name( const string& name, org::xtreemfs::interfaces::ServiceSet& services, uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<xtreemfs_service_get_by_nameRequest> __request( new xtreemfs_service_get_by_nameRequest( name ) );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_nameResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_nameResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<xtreemfs_service_get_by_nameResponse> __response = __response_queue->dequeue( response_timeout_ns );services = __response->get_services();
-          }
-  
-          virtual void xtreemfs_service_get_by_type( org::xtreemfs::interfaces::ServiceType type, org::xtreemfs::interfaces::ServiceSet& services )
+          virtual void
+          xtreemfs_service_get_by_type
+          (
+            org::xtreemfs::interfaces::ServiceType type,
+            org::xtreemfs::interfaces::ServiceSet& services
+          )
           {
             ::yidl::runtime::auto_Object<xtreemfs_service_get_by_typeRequest> __request( new xtreemfs_service_get_by_typeRequest( type ) );
             ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_typeResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_typeResponse> );
@@ -2201,31 +2462,18 @@ namespace org
             ::yidl::runtime::auto_Object<xtreemfs_service_get_by_typeResponse> __response = __response_queue->dequeue();services = __response->get_services();
           }
   
-          virtual void xtreemfs_service_get_by_type( org::xtreemfs::interfaces::ServiceType type, org::xtreemfs::interfaces::ServiceSet& services, uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<xtreemfs_service_get_by_typeRequest> __request( new xtreemfs_service_get_by_typeRequest( type ) );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_typeResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_typeResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<xtreemfs_service_get_by_typeResponse> __response = __response_queue->dequeue( response_timeout_ns );services = __response->get_services();
-          }
-  
-          virtual void xtreemfs_service_get_by_uuid( const string& uuid, org::xtreemfs::interfaces::ServiceSet& services )
+          virtual void
+          xtreemfs_service_get_by_uuid
+          (
+            const string& uuid,
+            org::xtreemfs::interfaces::ServiceSet& services
+          )
           {
             ::yidl::runtime::auto_Object<xtreemfs_service_get_by_uuidRequest> __request( new xtreemfs_service_get_by_uuidRequest( uuid ) );
             ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_uuidResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_uuidResponse> );
             __request->set_response_target( &__response_queue.get() );
             event_target.send( __request->inc_ref() );
             ::yidl::runtime::auto_Object<xtreemfs_service_get_by_uuidResponse> __response = __response_queue->dequeue();services = __response->get_services();
-          }
-  
-          virtual void xtreemfs_service_get_by_uuid( const string& uuid, org::xtreemfs::interfaces::ServiceSet& services, uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<xtreemfs_service_get_by_uuidRequest> __request( new xtreemfs_service_get_by_uuidRequest( uuid ) );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_uuidResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_uuidResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<xtreemfs_service_get_by_uuidResponse> __response = __response_queue->dequeue( response_timeout_ns );services = __response->get_services();
           }
   
           virtual void xtreemfs_service_offline( const string& uuid )
@@ -2237,31 +2485,17 @@ namespace org
             ::yidl::runtime::auto_Object<xtreemfs_service_offlineResponse> __response = __response_queue->dequeue();
           }
   
-          virtual void xtreemfs_service_offline( const string& uuid, uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<xtreemfs_service_offlineRequest> __request( new xtreemfs_service_offlineRequest( uuid ) );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_offlineResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_offlineResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<xtreemfs_service_offlineResponse> __response = __response_queue->dequeue( response_timeout_ns );
-          }
-  
-          virtual uint64_t xtreemfs_service_register( const org::xtreemfs::interfaces::Service& service )
+          virtual uint64_t
+          xtreemfs_service_register
+          (
+            const org::xtreemfs::interfaces::Service& service
+          )
           {
             ::yidl::runtime::auto_Object<xtreemfs_service_registerRequest> __request( new xtreemfs_service_registerRequest( service ) );
             ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_registerResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_registerResponse> );
             __request->set_response_target( &__response_queue.get() );
             event_target.send( __request->inc_ref() );
             ::yidl::runtime::auto_Object<xtreemfs_service_registerResponse> __response = __response_queue->dequeue();uint64_t _return_value = __response->get__return_value(); return _return_value;
-          }
-  
-          virtual uint64_t xtreemfs_service_register( const org::xtreemfs::interfaces::Service& service, uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<xtreemfs_service_registerRequest> __request( new xtreemfs_service_registerRequest( service ) );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_registerResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_registerResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<xtreemfs_service_registerResponse> __response = __response_queue->dequeue( response_timeout_ns );uint64_t _return_value = __response->get__return_value(); return _return_value;
           }
   
           virtual void xtreemfs_shutdown()
@@ -2271,15 +2505,6 @@ namespace org
             __request->set_response_target( &__response_queue.get() );
             event_target.send( __request->inc_ref() );
             ::yidl::runtime::auto_Object<xtreemfs_shutdownResponse> __response = __response_queue->dequeue();
-          }
-  
-          virtual void xtreemfs_shutdown( uint64_t response_timeout_ns )
-          {
-            ::yidl::runtime::auto_Object<xtreemfs_shutdownRequest> __request( new xtreemfs_shutdownRequest() );
-            ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_shutdownResponse> > __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_shutdownResponse> );
-            __request->set_response_target( &__response_queue.get() );
-            event_target.send( __request->inc_ref() );
-            ::yidl::runtime::auto_Object<xtreemfs_shutdownResponse> __response = __response_queue->dequeue( response_timeout_ns );
           }
   
       private:

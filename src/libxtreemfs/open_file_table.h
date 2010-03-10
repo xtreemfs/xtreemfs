@@ -27,37 +27,32 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#ifndef _XTREEMFS_OSD_PROXY_REQUEST_H_
-#define _XTREEMFS_OSD_PROXY_REQUEST_H_
+#ifndef _LIBXTREEMFS_OPEN_FILE_TABLE_H_
+#define _LIBXTREEMFS_OPEN_FILE_TABLE_H_
 
 #include "yield.h"
 
 
 namespace xtreemfs
 {
-  class OSDProxyRequest : public yield::concurrency::Request
+  using yield::platform::Path;
+
+
+  class OpenFileTable
   {
   public:
-    ssize_t get_selected_file_replica() const
-    {
-      return selected_file_replica;
-    }
+    ~OpenFileTable();
 
-    void set_selected_file_replica( ssize_t selected_file_replica )
-    {
-      this->selected_file_replica = selected_file_replica;
-    }
-
-  protected:
-    OSDProxyRequest()
-      : selected_file_replica( 0 )
-    { }
+    void open( const Path& path, bool writer );
+    void release( const Path& path, bool writer );
 
   private:
-    ssize_t selected_file_replica;
+    class Entry;
+
+  private:
+    map<Path, Entry*> entries;
+    yield::platform::Mutex entries_lock;
   };
 };
-
-#define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS ::xtreemfs::OSDProxyRequest
 
 #endif

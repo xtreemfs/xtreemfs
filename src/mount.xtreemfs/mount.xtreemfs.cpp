@@ -176,8 +176,8 @@ namespace mount_xtreemfs
     {
       // Make sure the log level is set high enough for any
       // --trace options to show up
-      if 
-      ( 
+      if
+      (
         get_log_level() < Log::LOG_INFO &&
         (
           get_proxy_flags() != 0
@@ -351,7 +351,7 @@ namespace mount_xtreemfs
         break;
 
         case MOUNT_XTREEMFS_OPTION_TRACE_VOLUME_OPERATIONS:
-        {          
+        {
           trace_volume_operations = true;
           fuse_flags |= yieldfs::FUSE::FLAG_DEBUG;
         }
@@ -383,8 +383,8 @@ namespace mount_xtreemfs
 
         case MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_FILE_SIZE_CACHE:
         {
-          if 
-          ( 
+          if
+          (
             ( volume_flags & Volume::FLAG_WRITE_BACK_FILE_SIZE_CACHE )
               == Volume::FLAG_WRITE_BACK_FILE_SIZE_CACHE
           )
