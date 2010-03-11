@@ -21,23 +21,23 @@ public class xtreemfs_lock_checkRequest extends org.xtreemfs.interfaces.utils.Re
     public xtreemfs_lock_checkRequest( FileCredentials file_credentials, String client_uuid, int client_pid, String file_id, long offset, long length, boolean exclusive ) { this.file_credentials = file_credentials; this.client_uuid = client_uuid; this.client_pid = client_pid; this.file_id = file_id; this.offset = offset; this.length = length; this.exclusive = exclusive; }
 
     public FileCredentials getFile_credentials() { return file_credentials; }
-    public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
     public String getClient_uuid() { return client_uuid; }
-    public void setClient_uuid( String client_uuid ) { this.client_uuid = client_uuid; }
     public int getClient_pid() { return client_pid; }
-    public void setClient_pid( int client_pid ) { this.client_pid = client_pid; }
     public String getFile_id() { return file_id; }
-    public void setFile_id( String file_id ) { this.file_id = file_id; }
     public long getOffset() { return offset; }
-    public void setOffset( long offset ) { this.offset = offset; }
     public long getLength() { return length; }
-    public void setLength( long length ) { this.length = length; }
     public boolean getExclusive() { return exclusive; }
+    public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
+    public void setClient_uuid( String client_uuid ) { this.client_uuid = client_uuid; }
+    public void setClient_pid( int client_pid ) { this.client_pid = client_pid; }
+    public void setFile_id( String file_id ) { this.file_id = file_id; }
+    public void setOffset( long offset ) { this.offset = offset; }
+    public void setLength( long length ) { this.length = length; }
     public void setExclusive( boolean exclusive ) { this.exclusive = exclusive; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -48,7 +48,6 @@ public class xtreemfs_lock_checkRequest extends org.xtreemfs.interfaces.utils.Re
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_lock_checkResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031267;
@@ -92,8 +91,6 @@ public class xtreemfs_lock_checkRequest extends org.xtreemfs.interfaces.utils.Re
         exclusive = unmarshaller.readBoolean( "exclusive" );
     }
 
-    
-
     private FileCredentials file_credentials;
     private String client_uuid;
     private int client_pid;
@@ -101,6 +98,4 @@ public class xtreemfs_lock_checkRequest extends org.xtreemfs.interfaces.utils.Re
     private long offset;
     private long length;
     private boolean exclusive;
-
 }
-

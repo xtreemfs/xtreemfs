@@ -21,15 +21,15 @@ public class renameRequest extends org.xtreemfs.interfaces.utils.Request
     public renameRequest( String volume_name, String source_path, String target_path ) { this.volume_name = volume_name; this.source_path = source_path; this.target_path = target_path; }
 
     public String getVolume_name() { return volume_name; }
-    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
     public String getSource_path() { return source_path; }
-    public void setSource_path( String source_path ) { this.source_path = source_path; }
     public String getTarget_path() { return target_path; }
+    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
+    public void setSource_path( String source_path ) { this.source_path = source_path; }
     public void setTarget_path( String target_path ) { this.target_path = target_path; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -40,7 +40,6 @@ public class renameRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new renameResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031129;
@@ -72,11 +71,7 @@ public class renameRequest extends org.xtreemfs.interfaces.utils.Request
         target_path = unmarshaller.readString( "target_path" );
     }
 
-    
-
     private String volume_name;
     private String source_path;
     private String target_path;
-
 }
-

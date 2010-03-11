@@ -17,15 +17,15 @@ public class xtreemfs_lock_checkResponse extends org.xtreemfs.interfaces.utils.R
 {
     public static final int TAG = 2010031267;
 
-    public xtreemfs_lock_checkResponse() { returnValue = new Lock();  }
-    public xtreemfs_lock_checkResponse( Lock returnValue ) { this.returnValue = returnValue; }
+    public xtreemfs_lock_checkResponse() { _return_value = new Lock();  }
+    public xtreemfs_lock_checkResponse( Lock _return_value ) { this._return_value = _return_value; }
 
-    public Lock getReturnValue() { return returnValue; }
-    public void setReturnValue( Lock returnValue ) { this.returnValue = returnValue; }
+    public Lock get_return_value() { return _return_value; }
+    public void set_return_value( Lock _return_value ) { this._return_value = _return_value; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_lock_checkResponse extends org.xtreemfs.interfaces.utils.R
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031267;
@@ -45,23 +44,19 @@ public class xtreemfs_lock_checkResponse extends org.xtreemfs.interfaces.utils.R
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += returnValue.getXDRSize(); // returnValue
+        my_size += _return_value.getXDRSize(); // _return_value
         return my_size;
     }
 
     public void marshal( Marshaller marshaller )
     {
-        marshaller.writeStruct( "returnValue", returnValue );
+        marshaller.writeStruct( "_return_value", _return_value );
     }
 
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        returnValue = new Lock(); unmarshaller.readStruct( "returnValue", returnValue );
+        _return_value = new Lock(); unmarshaller.readStruct( "_return_value", _return_value );
     }
 
-    
-
-    private Lock returnValue;
-
+    private Lock _return_value;
 }
-

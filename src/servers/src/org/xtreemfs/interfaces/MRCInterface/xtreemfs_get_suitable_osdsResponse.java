@@ -24,8 +24,8 @@ public class xtreemfs_get_suitable_osdsResponse extends org.xtreemfs.interfaces.
     public void setOsd_uuids( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_get_suitable_osdsResponse extends org.xtreemfs.interfaces.
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031149;
@@ -59,9 +58,5 @@ public class xtreemfs_get_suitable_osdsResponse extends org.xtreemfs.interfaces.
         osd_uuids = new StringSet(); unmarshaller.readSequence( "osd_uuids", osd_uuids );
     }
 
-    
-
     private StringSet osd_uuids;
-
 }
-

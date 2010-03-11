@@ -24,8 +24,8 @@ public class xtreemfs_address_mappings_setRequest extends org.xtreemfs.interface
     public void setAddress_mappings( AddressMappingSet address_mappings ) { this.address_mappings = address_mappings; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class xtreemfs_address_mappings_setRequest extends org.xtreemfs.interface
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_address_mappings_setResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031019;
@@ -62,9 +61,5 @@ public class xtreemfs_address_mappings_setRequest extends org.xtreemfs.interface
         address_mappings = new AddressMappingSet(); unmarshaller.readSequence( "address_mappings", address_mappings );
     }
 
-    
-
     private AddressMappingSet address_mappings;
-
 }
-

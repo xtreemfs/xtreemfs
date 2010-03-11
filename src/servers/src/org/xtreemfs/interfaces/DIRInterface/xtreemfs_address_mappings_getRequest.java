@@ -24,8 +24,8 @@ public class xtreemfs_address_mappings_getRequest extends org.xtreemfs.interface
     public void setUuid( String uuid ) { this.uuid = uuid; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class xtreemfs_address_mappings_getRequest extends org.xtreemfs.interface
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_address_mappings_getResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031017;
@@ -62,9 +61,5 @@ public class xtreemfs_address_mappings_getRequest extends org.xtreemfs.interface
         uuid = unmarshaller.readString( "uuid" );
     }
 
-    
-
     private String uuid;
-
 }
-

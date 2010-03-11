@@ -24,8 +24,8 @@ public class xtreemfs_replica_listRequest extends org.xtreemfs.interfaces.utils.
     public void setFile_id( String file_id ) { this.file_id = file_id; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class xtreemfs_replica_listRequest extends org.xtreemfs.interfaces.utils.
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_replica_listResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031156;
@@ -62,9 +61,5 @@ public class xtreemfs_replica_listRequest extends org.xtreemfs.interfaces.utils.
         file_id = unmarshaller.readString( "file_id" );
     }
 
-    
-
     private String file_id;
-
 }
-

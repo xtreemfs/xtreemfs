@@ -24,8 +24,8 @@ public class ConcurrentModificationException extends org.xtreemfs.interfaces.uti
     public void setStack_trace( String stack_trace ) { this.stack_trace = stack_trace; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class ConcurrentModificationException extends org.xtreemfs.interfaces.uti
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031036;
@@ -59,9 +58,5 @@ public class ConcurrentModificationException extends org.xtreemfs.interfaces.uti
         stack_trace = unmarshaller.readString( "stack_trace" );
     }
 
-    
-
     private String stack_trace;
-
 }
-

@@ -17,15 +17,15 @@ public class xtreemfs_internal_get_gmaxResponse extends org.xtreemfs.interfaces.
 {
     public static final int TAG = 2010031256;
 
-    public xtreemfs_internal_get_gmaxResponse() { returnValue = new InternalGmax();  }
-    public xtreemfs_internal_get_gmaxResponse( InternalGmax returnValue ) { this.returnValue = returnValue; }
+    public xtreemfs_internal_get_gmaxResponse() { _return_value = new InternalGmax();  }
+    public xtreemfs_internal_get_gmaxResponse( InternalGmax _return_value ) { this._return_value = _return_value; }
 
-    public InternalGmax getReturnValue() { return returnValue; }
-    public void setReturnValue( InternalGmax returnValue ) { this.returnValue = returnValue; }
+    public InternalGmax get_return_value() { return _return_value; }
+    public void set_return_value( InternalGmax _return_value ) { this._return_value = _return_value; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_internal_get_gmaxResponse extends org.xtreemfs.interfaces.
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031256;
@@ -45,23 +44,19 @@ public class xtreemfs_internal_get_gmaxResponse extends org.xtreemfs.interfaces.
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += returnValue.getXDRSize(); // returnValue
+        my_size += _return_value.getXDRSize(); // _return_value
         return my_size;
     }
 
     public void marshal( Marshaller marshaller )
     {
-        marshaller.writeStruct( "returnValue", returnValue );
+        marshaller.writeStruct( "_return_value", _return_value );
     }
 
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        returnValue = new InternalGmax(); unmarshaller.readStruct( "returnValue", returnValue );
+        _return_value = new InternalGmax(); unmarshaller.readStruct( "_return_value", _return_value );
     }
 
-    
-
-    private InternalGmax returnValue;
-
+    private InternalGmax _return_value;
 }
-

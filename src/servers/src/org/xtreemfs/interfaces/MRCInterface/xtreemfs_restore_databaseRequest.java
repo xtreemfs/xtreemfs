@@ -24,8 +24,8 @@ public class xtreemfs_restore_databaseRequest extends org.xtreemfs.interfaces.ut
     public void setDump_file( String dump_file ) { this.dump_file = dump_file; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class xtreemfs_restore_databaseRequest extends org.xtreemfs.interfaces.ut
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_restore_databaseResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031158;
@@ -62,9 +61,5 @@ public class xtreemfs_restore_databaseRequest extends org.xtreemfs.interfaces.ut
         dump_file = unmarshaller.readString( "dump_file" );
     }
 
-    
-
     private String dump_file;
-
 }
-

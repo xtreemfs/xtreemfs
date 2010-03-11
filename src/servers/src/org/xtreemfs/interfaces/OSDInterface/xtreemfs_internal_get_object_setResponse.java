@@ -17,15 +17,15 @@ public class xtreemfs_internal_get_object_setResponse extends org.xtreemfs.inter
 {
     public static final int TAG = 2010031260;
 
-    public xtreemfs_internal_get_object_setResponse() { returnValue = new ObjectList();  }
-    public xtreemfs_internal_get_object_setResponse( ObjectList returnValue ) { this.returnValue = returnValue; }
+    public xtreemfs_internal_get_object_setResponse() { _return_value = new ObjectList();  }
+    public xtreemfs_internal_get_object_setResponse( ObjectList _return_value ) { this._return_value = _return_value; }
 
-    public ObjectList getReturnValue() { return returnValue; }
-    public void setReturnValue( ObjectList returnValue ) { this.returnValue = returnValue; }
+    public ObjectList get_return_value() { return _return_value; }
+    public void set_return_value( ObjectList _return_value ) { this._return_value = _return_value; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_internal_get_object_setResponse extends org.xtreemfs.inter
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031260;
@@ -45,23 +44,19 @@ public class xtreemfs_internal_get_object_setResponse extends org.xtreemfs.inter
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += returnValue.getXDRSize(); // returnValue
+        my_size += _return_value.getXDRSize(); // _return_value
         return my_size;
     }
 
     public void marshal( Marshaller marshaller )
     {
-        marshaller.writeStruct( "returnValue", returnValue );
+        marshaller.writeStruct( "_return_value", _return_value );
     }
 
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        returnValue = new ObjectList(); unmarshaller.readStruct( "returnValue", returnValue );
+        _return_value = new ObjectList(); unmarshaller.readStruct( "_return_value", _return_value );
     }
 
-    
-
-    private ObjectList returnValue;
-
+    private ObjectList _return_value;
 }
-

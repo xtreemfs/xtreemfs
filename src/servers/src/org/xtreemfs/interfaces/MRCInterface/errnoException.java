@@ -21,15 +21,15 @@ public class errnoException extends org.xtreemfs.interfaces.utils.ONCRPCExceptio
     public errnoException( int error_code, String error_message, String stack_trace ) { this.error_code = error_code; this.error_message = error_message; this.stack_trace = stack_trace; }
 
     public int getError_code() { return error_code; }
-    public void setError_code( int error_code ) { this.error_code = error_code; }
     public String getError_message() { return error_message; }
-    public void setError_message( String error_message ) { this.error_message = error_message; }
     public String getStack_trace() { return stack_trace; }
+    public void setError_code( int error_code ) { this.error_code = error_code; }
+    public void setError_message( String error_message ) { this.error_message = error_message; }
     public void setStack_trace( String stack_trace ) { this.stack_trace = stack_trace; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -37,7 +37,6 @@ public class errnoException extends org.xtreemfs.interfaces.utils.ONCRPCExceptio
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031167;
@@ -69,11 +68,7 @@ public class errnoException extends org.xtreemfs.interfaces.utils.ONCRPCExceptio
         stack_trace = unmarshaller.readString( "stack_trace" );
     }
 
-    
-
     private int error_code;
     private String error_message;
     private String stack_trace;
-
 }
-

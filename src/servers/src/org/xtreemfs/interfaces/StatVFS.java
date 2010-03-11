@@ -20,33 +20,33 @@ public class StatVFS implements Struct
     public StatVFS( int bsize, long bavail, long blocks, String fsid, int namemax, AccessControlPolicyType access_control_policy, StripingPolicy default_striping_policy, long etag, int mode, String name, String owner_group_id, String owner_user_id ) { this.bsize = bsize; this.bavail = bavail; this.blocks = blocks; this.fsid = fsid; this.namemax = namemax; this.access_control_policy = access_control_policy; this.default_striping_policy = default_striping_policy; this.etag = etag; this.mode = mode; this.name = name; this.owner_group_id = owner_group_id; this.owner_user_id = owner_user_id; }
 
     public int getBsize() { return bsize; }
-    public void setBsize( int bsize ) { this.bsize = bsize; }
     public long getBavail() { return bavail; }
-    public void setBavail( long bavail ) { this.bavail = bavail; }
     public long getBlocks() { return blocks; }
-    public void setBlocks( long blocks ) { this.blocks = blocks; }
     public String getFsid() { return fsid; }
-    public void setFsid( String fsid ) { this.fsid = fsid; }
     public int getNamemax() { return namemax; }
-    public void setNamemax( int namemax ) { this.namemax = namemax; }
     public AccessControlPolicyType getAccess_control_policy() { return access_control_policy; }
-    public void setAccess_control_policy( AccessControlPolicyType access_control_policy ) { this.access_control_policy = access_control_policy; }
     public StripingPolicy getDefault_striping_policy() { return default_striping_policy; }
-    public void setDefault_striping_policy( StripingPolicy default_striping_policy ) { this.default_striping_policy = default_striping_policy; }
     public long getEtag() { return etag; }
-    public void setEtag( long etag ) { this.etag = etag; }
     public int getMode() { return mode; }
-    public void setMode( int mode ) { this.mode = mode; }
     public String getName() { return name; }
-    public void setName( String name ) { this.name = name; }
     public String getOwner_group_id() { return owner_group_id; }
-    public void setOwner_group_id( String owner_group_id ) { this.owner_group_id = owner_group_id; }
     public String getOwner_user_id() { return owner_user_id; }
+    public void setBsize( int bsize ) { this.bsize = bsize; }
+    public void setBavail( long bavail ) { this.bavail = bavail; }
+    public void setBlocks( long blocks ) { this.blocks = blocks; }
+    public void setFsid( String fsid ) { this.fsid = fsid; }
+    public void setNamemax( int namemax ) { this.namemax = namemax; }
+    public void setAccess_control_policy( AccessControlPolicyType access_control_policy ) { this.access_control_policy = access_control_policy; }
+    public void setDefault_striping_policy( StripingPolicy default_striping_policy ) { this.default_striping_policy = default_striping_policy; }
+    public void setEtag( long etag ) { this.etag = etag; }
+    public void setMode( int mode ) { this.mode = mode; }
+    public void setName( String name ) { this.name = name; }
+    public void setOwner_group_id( String owner_group_id ) { this.owner_group_id = owner_group_id; }
     public void setOwner_user_id( String owner_user_id ) { this.owner_user_id = owner_user_id; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -54,7 +54,6 @@ public class StatVFS implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030960;
@@ -113,8 +112,6 @@ public class StatVFS implements Struct
         owner_user_id = unmarshaller.readString( "owner_user_id" );
     }
 
-    
-
     private int bsize;
     private long bavail;
     private long blocks;
@@ -127,6 +124,4 @@ public class StatVFS implements Struct
     private String name;
     private String owner_group_id;
     private String owner_user_id;
-
 }
-

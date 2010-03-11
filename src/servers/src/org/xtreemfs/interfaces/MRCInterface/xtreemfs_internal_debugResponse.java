@@ -24,8 +24,8 @@ public class xtreemfs_internal_debugResponse extends org.xtreemfs.interfaces.uti
     public void setResult( String result ) { this.result = result; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_internal_debugResponse extends org.xtreemfs.interfaces.uti
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031150;
@@ -59,9 +58,5 @@ public class xtreemfs_internal_debugResponse extends org.xtreemfs.interfaces.uti
         result = unmarshaller.readString( "result" );
     }
 
-    
-
     private String result;
-
 }
-

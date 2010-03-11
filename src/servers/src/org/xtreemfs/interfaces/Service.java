@@ -20,21 +20,21 @@ public class Service implements Struct
     public Service( ServiceType type, String uuid, long version, String name, long last_updated_s, ServiceDataMap data ) { this.type = type; this.uuid = uuid; this.version = version; this.name = name; this.last_updated_s = last_updated_s; this.data = data; }
 
     public ServiceType getType() { return type; }
-    public void setType( ServiceType type ) { this.type = type; }
     public String getUuid() { return uuid; }
-    public void setUuid( String uuid ) { this.uuid = uuid; }
     public long getVersion() { return version; }
-    public void setVersion( long version ) { this.version = version; }
     public String getName() { return name; }
-    public void setName( String name ) { this.name = name; }
     public long getLast_updated_s() { return last_updated_s; }
-    public void setLast_updated_s( long last_updated_s ) { this.last_updated_s = last_updated_s; }
     public ServiceDataMap getData() { return data; }
+    public void setType( ServiceType type ) { this.type = type; }
+    public void setUuid( String uuid ) { this.uuid = uuid; }
+    public void setVersion( long version ) { this.version = version; }
+    public void setName( String name ) { this.name = name; }
+    public void setLast_updated_s( long last_updated_s ) { this.last_updated_s = last_updated_s; }
     public void setData( ServiceDataMap data ) { this.data = data; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -42,7 +42,6 @@ public class Service implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030950;
@@ -83,14 +82,10 @@ public class Service implements Struct
         data = new ServiceDataMap(); unmarshaller.readMap( "data", data );
     }
 
-    
-
     private ServiceType type;
     private String uuid;
     private long version;
     private String name;
     private long last_updated_s;
     private ServiceDataMap data;
-
 }
-

@@ -21,15 +21,15 @@ public class xtreemfs_lock_releaseRequest extends org.xtreemfs.interfaces.utils.
     public xtreemfs_lock_releaseRequest( FileCredentials file_credentials, String file_id, Lock lock ) { this.file_credentials = file_credentials; this.file_id = file_id; this.lock = lock; }
 
     public FileCredentials getFile_credentials() { return file_credentials; }
-    public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
     public String getFile_id() { return file_id; }
-    public void setFile_id( String file_id ) { this.file_id = file_id; }
     public Lock getLock() { return lock; }
+    public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
+    public void setFile_id( String file_id ) { this.file_id = file_id; }
     public void setLock( Lock lock ) { this.lock = lock; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -40,7 +40,6 @@ public class xtreemfs_lock_releaseRequest extends org.xtreemfs.interfaces.utils.
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_lock_releaseResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031268;
@@ -72,11 +71,7 @@ public class xtreemfs_lock_releaseRequest extends org.xtreemfs.interfaces.utils.
         lock = new Lock(); unmarshaller.readStruct( "lock", lock );
     }
 
-    
-
     private FileCredentials file_credentials;
     private String file_id;
     private Lock lock;
-
 }
-

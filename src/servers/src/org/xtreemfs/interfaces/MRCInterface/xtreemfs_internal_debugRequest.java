@@ -24,8 +24,8 @@ public class xtreemfs_internal_debugRequest extends org.xtreemfs.interfaces.util
     public void setOperation( String operation ) { this.operation = operation; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class xtreemfs_internal_debugRequest extends org.xtreemfs.interfaces.util
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_internal_debugResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031150;
@@ -62,9 +61,5 @@ public class xtreemfs_internal_debugRequest extends org.xtreemfs.interfaces.util
         operation = unmarshaller.readString( "operation" );
     }
 
-    
-
     private String operation;
-
 }
-

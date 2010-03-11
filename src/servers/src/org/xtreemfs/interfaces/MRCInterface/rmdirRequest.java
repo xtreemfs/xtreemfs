@@ -21,13 +21,13 @@ public class rmdirRequest extends org.xtreemfs.interfaces.utils.Request
     public rmdirRequest( String volume_name, String path ) { this.volume_name = volume_name; this.path = path; }
 
     public String getVolume_name() { return volume_name; }
-    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
     public String getPath() { return path; }
+    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
     public void setPath( String path ) { this.path = path; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -38,7 +38,6 @@ public class rmdirRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new rmdirResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031130;
@@ -67,10 +66,6 @@ public class rmdirRequest extends org.xtreemfs.interfaces.utils.Request
         path = unmarshaller.readString( "path" );
     }
 
-    
-
     private String volume_name;
     private String path;
-
 }
-

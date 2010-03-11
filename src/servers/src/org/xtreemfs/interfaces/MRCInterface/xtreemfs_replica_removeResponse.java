@@ -24,8 +24,8 @@ public class xtreemfs_replica_removeResponse extends org.xtreemfs.interfaces.uti
     public void setDelete_xcap( XCap delete_xcap ) { this.delete_xcap = delete_xcap; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_replica_removeResponse extends org.xtreemfs.interfaces.uti
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031157;
@@ -59,9 +58,5 @@ public class xtreemfs_replica_removeResponse extends org.xtreemfs.interfaces.uti
         delete_xcap = new XCap(); unmarshaller.readStruct( "delete_xcap", delete_xcap );
     }
 
-    
-
     private XCap delete_xcap;
-
 }
-

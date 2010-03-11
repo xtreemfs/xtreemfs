@@ -20,25 +20,25 @@ public class AddressMapping implements Struct
     public AddressMapping( String uuid, long version, String protocol, String address, int port, String match_network, int ttl_s, String uri ) { this.uuid = uuid; this.version = version; this.protocol = protocol; this.address = address; this.port = port; this.match_network = match_network; this.ttl_s = ttl_s; this.uri = uri; }
 
     public String getUuid() { return uuid; }
-    public void setUuid( String uuid ) { this.uuid = uuid; }
     public long getVersion() { return version; }
-    public void setVersion( long version ) { this.version = version; }
     public String getProtocol() { return protocol; }
-    public void setProtocol( String protocol ) { this.protocol = protocol; }
     public String getAddress() { return address; }
-    public void setAddress( String address ) { this.address = address; }
     public int getPort() { return port; }
-    public void setPort( int port ) { this.port = port; }
     public String getMatch_network() { return match_network; }
-    public void setMatch_network( String match_network ) { this.match_network = match_network; }
     public int getTtl_s() { return ttl_s; }
-    public void setTtl_s( int ttl_s ) { this.ttl_s = ttl_s; }
     public String getUri() { return uri; }
+    public void setUuid( String uuid ) { this.uuid = uuid; }
+    public void setVersion( long version ) { this.version = version; }
+    public void setProtocol( String protocol ) { this.protocol = protocol; }
+    public void setAddress( String address ) { this.address = address; }
+    public void setPort( int port ) { this.port = port; }
+    public void setMatch_network( String match_network ) { this.match_network = match_network; }
+    public void setTtl_s( int ttl_s ) { this.ttl_s = ttl_s; }
     public void setUri( String uri ) { this.uri = uri; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -46,7 +46,6 @@ public class AddressMapping implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030946;
@@ -93,8 +92,6 @@ public class AddressMapping implements Struct
         uri = unmarshaller.readString( "uri" );
     }
 
-    
-
     private String uuid;
     private long version;
     private String protocol;
@@ -103,6 +100,4 @@ public class AddressMapping implements Struct
     private String match_network;
     private int ttl_s;
     private String uri;
-
 }
-

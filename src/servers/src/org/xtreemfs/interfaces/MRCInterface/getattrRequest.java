@@ -21,15 +21,15 @@ public class getattrRequest extends org.xtreemfs.interfaces.utils.Request
     public getattrRequest( String volume_name, String path, long known_etag ) { this.volume_name = volume_name; this.path = path; this.known_etag = known_etag; }
 
     public String getVolume_name() { return volume_name; }
-    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
     public String getPath() { return path; }
-    public void setPath( String path ) { this.path = path; }
     public long getKnown_etag() { return known_etag; }
+    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
+    public void setPath( String path ) { this.path = path; }
     public void setKnown_etag( long known_etag ) { this.known_etag = known_etag; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -40,7 +40,6 @@ public class getattrRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new getattrResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031120;
@@ -72,11 +71,7 @@ public class getattrRequest extends org.xtreemfs.interfaces.utils.Request
         known_etag = unmarshaller.readUint64( "known_etag" );
     }
 
-    
-
     private String volume_name;
     private String path;
     private long known_etag;
-
 }
-

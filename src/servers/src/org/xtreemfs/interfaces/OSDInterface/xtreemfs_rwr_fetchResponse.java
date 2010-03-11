@@ -24,8 +24,8 @@ public class xtreemfs_rwr_fetchResponse extends org.xtreemfs.interfaces.utils.Re
     public void setObject_data( ObjectData object_data ) { this.object_data = object_data; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_rwr_fetchResponse extends org.xtreemfs.interfaces.utils.Re
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031289;
@@ -59,9 +58,5 @@ public class xtreemfs_rwr_fetchResponse extends org.xtreemfs.interfaces.utils.Re
         object_data = new ObjectData(); unmarshaller.readStruct( "object_data", object_data );
     }
 
-    
-
     private ObjectData object_data;
-
 }
-

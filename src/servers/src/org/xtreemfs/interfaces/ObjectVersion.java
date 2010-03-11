@@ -20,13 +20,13 @@ public class ObjectVersion implements Struct
     public ObjectVersion( long object_number, long object_version ) { this.object_number = object_number; this.object_version = object_version; }
 
     public long getObject_number() { return object_number; }
-    public void setObject_number( long object_number ) { this.object_number = object_number; }
     public long getObject_version() { return object_version; }
+    public void setObject_number( long object_number ) { this.object_number = object_number; }
     public void setObject_version( long object_version ) { this.object_version = object_version; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -34,7 +34,6 @@ public class ObjectVersion implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030973;
@@ -63,10 +62,6 @@ public class ObjectVersion implements Struct
         object_version = unmarshaller.readUint64( "object_version" );
     }
 
-    
-
     private long object_number;
     private long object_version;
-
 }
-

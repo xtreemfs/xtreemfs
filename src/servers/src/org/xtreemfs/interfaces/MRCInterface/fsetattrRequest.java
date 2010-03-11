@@ -21,15 +21,15 @@ public class fsetattrRequest extends org.xtreemfs.interfaces.utils.Request
     public fsetattrRequest( Stat stbuf, int to_set, XCap xcap ) { this.stbuf = stbuf; this.to_set = to_set; this.xcap = xcap; }
 
     public Stat getStbuf() { return stbuf; }
-    public void setStbuf( Stat stbuf ) { this.stbuf = stbuf; }
     public int getTo_set() { return to_set; }
-    public void setTo_set( int to_set ) { this.to_set = to_set; }
     public XCap getXcap() { return xcap; }
+    public void setStbuf( Stat stbuf ) { this.stbuf = stbuf; }
+    public void setTo_set( int to_set ) { this.to_set = to_set; }
     public void setXcap( XCap xcap ) { this.xcap = xcap; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -40,7 +40,6 @@ public class fsetattrRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new fsetattrResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031118;
@@ -72,11 +71,7 @@ public class fsetattrRequest extends org.xtreemfs.interfaces.utils.Request
         xcap = new XCap(); unmarshaller.readStruct( "xcap", xcap );
     }
 
-    
-
     private Stat stbuf;
     private int to_set;
     private XCap xcap;
-
 }
-

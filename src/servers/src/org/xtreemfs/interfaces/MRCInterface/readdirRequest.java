@@ -21,21 +21,21 @@ public class readdirRequest extends org.xtreemfs.interfaces.utils.Request
     public readdirRequest( String volume_name, String path, long known_etag, int limit_directory_entries_count, boolean names_only, long seen_directory_entries_count ) { this.volume_name = volume_name; this.path = path; this.known_etag = known_etag; this.limit_directory_entries_count = limit_directory_entries_count; this.names_only = names_only; this.seen_directory_entries_count = seen_directory_entries_count; }
 
     public String getVolume_name() { return volume_name; }
-    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
     public String getPath() { return path; }
-    public void setPath( String path ) { this.path = path; }
     public long getKnown_etag() { return known_etag; }
-    public void setKnown_etag( long known_etag ) { this.known_etag = known_etag; }
     public int getLimit_directory_entries_count() { return limit_directory_entries_count; }
-    public void setLimit_directory_entries_count( int limit_directory_entries_count ) { this.limit_directory_entries_count = limit_directory_entries_count; }
     public boolean getNames_only() { return names_only; }
-    public void setNames_only( boolean names_only ) { this.names_only = names_only; }
     public long getSeen_directory_entries_count() { return seen_directory_entries_count; }
+    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
+    public void setPath( String path ) { this.path = path; }
+    public void setKnown_etag( long known_etag ) { this.known_etag = known_etag; }
+    public void setLimit_directory_entries_count( int limit_directory_entries_count ) { this.limit_directory_entries_count = limit_directory_entries_count; }
+    public void setNames_only( boolean names_only ) { this.names_only = names_only; }
     public void setSeen_directory_entries_count( long seen_directory_entries_count ) { this.seen_directory_entries_count = seen_directory_entries_count; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -46,7 +46,6 @@ public class readdirRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new readdirResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031126;
@@ -87,14 +86,10 @@ public class readdirRequest extends org.xtreemfs.interfaces.utils.Request
         seen_directory_entries_count = unmarshaller.readUint64( "seen_directory_entries_count" );
     }
 
-    
-
     private String volume_name;
     private String path;
     private long known_etag;
     private int limit_directory_entries_count;
     private boolean names_only;
     private long seen_directory_entries_count;
-
 }
-

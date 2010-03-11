@@ -21,13 +21,13 @@ public class xtreemfs_get_suitable_osdsRequest extends org.xtreemfs.interfaces.u
     public xtreemfs_get_suitable_osdsRequest( String file_id, int num_osds ) { this.file_id = file_id; this.num_osds = num_osds; }
 
     public String getFile_id() { return file_id; }
-    public void setFile_id( String file_id ) { this.file_id = file_id; }
     public int getNum_osds() { return num_osds; }
+    public void setFile_id( String file_id ) { this.file_id = file_id; }
     public void setNum_osds( int num_osds ) { this.num_osds = num_osds; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -38,7 +38,6 @@ public class xtreemfs_get_suitable_osdsRequest extends org.xtreemfs.interfaces.u
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_get_suitable_osdsResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031149;
@@ -67,10 +66,6 @@ public class xtreemfs_get_suitable_osdsRequest extends org.xtreemfs.interfaces.u
         num_osds = unmarshaller.readUint32( "num_osds" );
     }
 
-    
-
     private String file_id;
     private int num_osds;
-
 }
-

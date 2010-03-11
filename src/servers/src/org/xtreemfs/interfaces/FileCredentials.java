@@ -20,13 +20,13 @@ public class FileCredentials implements Struct
     public FileCredentials( XCap xcap, XLocSet xlocs ) { this.xcap = xcap; this.xlocs = xlocs; }
 
     public XCap getXcap() { return xcap; }
-    public void setXcap( XCap xcap ) { this.xcap = xcap; }
     public XLocSet getXlocs() { return xlocs; }
+    public void setXcap( XCap xcap ) { this.xcap = xcap; }
     public void setXlocs( XLocSet xlocs ) { this.xlocs = xlocs; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -34,7 +34,6 @@ public class FileCredentials implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030941;
@@ -63,10 +62,6 @@ public class FileCredentials implements Struct
         xlocs = new XLocSet(); unmarshaller.readStruct( "xlocs", xlocs );
     }
 
-    
-
     private XCap xcap;
     private XLocSet xlocs;
-
 }
-

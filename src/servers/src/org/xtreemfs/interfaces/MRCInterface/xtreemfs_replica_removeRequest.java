@@ -21,13 +21,13 @@ public class xtreemfs_replica_removeRequest extends org.xtreemfs.interfaces.util
     public xtreemfs_replica_removeRequest( String file_id, String osd_uuid ) { this.file_id = file_id; this.osd_uuid = osd_uuid; }
 
     public String getFile_id() { return file_id; }
-    public void setFile_id( String file_id ) { this.file_id = file_id; }
     public String getOsd_uuid() { return osd_uuid; }
+    public void setFile_id( String file_id ) { this.file_id = file_id; }
     public void setOsd_uuid( String osd_uuid ) { this.osd_uuid = osd_uuid; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -38,7 +38,6 @@ public class xtreemfs_replica_removeRequest extends org.xtreemfs.interfaces.util
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_replica_removeResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031157;
@@ -67,10 +66,6 @@ public class xtreemfs_replica_removeRequest extends org.xtreemfs.interfaces.util
         osd_uuid = unmarshaller.readString( "osd_uuid" );
     }
 
-    
-
     private String file_id;
     private String osd_uuid;
-
 }
-

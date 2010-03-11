@@ -20,13 +20,13 @@ public class DirectoryEntry implements Struct
     public DirectoryEntry( String name, StatSet stbuf ) { this.name = name; this.stbuf = stbuf; }
 
     public String getName() { return name; }
-    public void setName( String name ) { this.name = name; }
     public StatSet getStbuf() { return stbuf; }
+    public void setName( String name ) { this.name = name; }
     public void setStbuf( StatSet stbuf ) { this.stbuf = stbuf; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -34,7 +34,6 @@ public class DirectoryEntry implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030958;
@@ -63,10 +62,6 @@ public class DirectoryEntry implements Struct
         stbuf = new StatSet(); unmarshaller.readSequence( "stbuf", stbuf );
     }
 
-    
-
     private String name;
     private StatSet stbuf;
-
 }
-

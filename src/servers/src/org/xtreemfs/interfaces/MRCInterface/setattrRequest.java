@@ -21,17 +21,17 @@ public class setattrRequest extends org.xtreemfs.interfaces.utils.Request
     public setattrRequest( String volume_name, String path, Stat stbuf, int to_set ) { this.volume_name = volume_name; this.path = path; this.stbuf = stbuf; this.to_set = to_set; }
 
     public String getVolume_name() { return volume_name; }
-    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
     public String getPath() { return path; }
-    public void setPath( String path ) { this.path = path; }
     public Stat getStbuf() { return stbuf; }
-    public void setStbuf( Stat stbuf ) { this.stbuf = stbuf; }
     public int getTo_set() { return to_set; }
+    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
+    public void setPath( String path ) { this.path = path; }
+    public void setStbuf( Stat stbuf ) { this.stbuf = stbuf; }
     public void setTo_set( int to_set ) { this.to_set = to_set; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -42,7 +42,6 @@ public class setattrRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new setattrResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031131;
@@ -77,12 +76,8 @@ public class setattrRequest extends org.xtreemfs.interfaces.utils.Request
         to_set = unmarshaller.readUint32( "to_set" );
     }
 
-    
-
     private String volume_name;
     private String path;
     private Stat stbuf;
     private int to_set;
-
 }
-

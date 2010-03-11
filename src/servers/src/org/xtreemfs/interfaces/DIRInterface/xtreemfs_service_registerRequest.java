@@ -24,8 +24,8 @@ public class xtreemfs_service_registerRequest extends org.xtreemfs.interfaces.ut
     public void setService( Service service ) { this.service = service; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class xtreemfs_service_registerRequest extends org.xtreemfs.interfaces.ut
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_service_registerResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031027;
@@ -62,9 +61,5 @@ public class xtreemfs_service_registerRequest extends org.xtreemfs.interfaces.ut
         service = new Service(); unmarshaller.readStruct( "service", service );
     }
 
-    
-
     private Service service;
-
 }
-

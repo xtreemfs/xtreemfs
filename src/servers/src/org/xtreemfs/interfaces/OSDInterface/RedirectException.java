@@ -24,8 +24,8 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     public void setTo_uuid( String to_uuid ) { this.to_uuid = to_uuid; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031222;
@@ -59,9 +58,5 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
         to_uuid = unmarshaller.readString( "to_uuid" );
     }
 
-    
-
     private String to_uuid;
-
 }
-

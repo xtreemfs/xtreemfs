@@ -21,21 +21,21 @@ public class xtreemfs_rwr_updateRequest extends org.xtreemfs.interfaces.utils.Re
     public xtreemfs_rwr_updateRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version, int offset, ObjectData object_data ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.object_data = object_data; }
 
     public FileCredentials getFile_credentials() { return file_credentials; }
-    public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
     public String getFile_id() { return file_id; }
-    public void setFile_id( String file_id ) { this.file_id = file_id; }
     public long getObject_number() { return object_number; }
-    public void setObject_number( long object_number ) { this.object_number = object_number; }
     public long getObject_version() { return object_version; }
-    public void setObject_version( long object_version ) { this.object_version = object_version; }
     public int getOffset() { return offset; }
-    public void setOffset( int offset ) { this.offset = offset; }
     public ObjectData getObject_data() { return object_data; }
+    public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
+    public void setFile_id( String file_id ) { this.file_id = file_id; }
+    public void setObject_number( long object_number ) { this.object_number = object_number; }
+    public void setObject_version( long object_version ) { this.object_version = object_version; }
+    public void setOffset( int offset ) { this.offset = offset; }
     public void setObject_data( ObjectData object_data ) { this.object_data = object_data; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -46,7 +46,6 @@ public class xtreemfs_rwr_updateRequest extends org.xtreemfs.interfaces.utils.Re
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_rwr_updateResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031288;
@@ -87,14 +86,10 @@ public class xtreemfs_rwr_updateRequest extends org.xtreemfs.interfaces.utils.Re
         object_data = new ObjectData(); unmarshaller.readStruct( "object_data", object_data );
     }
 
-    
-
     private FileCredentials file_credentials;
     private String file_id;
     private long object_number;
     private long object_version;
     private int offset;
     private ObjectData object_data;
-
 }
-

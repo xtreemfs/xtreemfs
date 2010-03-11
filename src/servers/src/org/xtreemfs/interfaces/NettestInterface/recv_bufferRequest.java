@@ -24,8 +24,8 @@ public class recv_bufferRequest extends org.xtreemfs.interfaces.utils.Request
     public void setSize( int size ) { this.size = size; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class recv_bufferRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new recv_bufferResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031319;
@@ -62,9 +61,5 @@ public class recv_bufferRequest extends org.xtreemfs.interfaces.utils.Request
         size = unmarshaller.readUint32( "size" );
     }
 
-    
-
     private int size;
-
 }
-

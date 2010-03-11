@@ -24,8 +24,8 @@ public class xtreemfs_mkvolRequest extends org.xtreemfs.interfaces.utils.Request
     public void setVolume( StatVFS volume ) { this.volume = volume; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class xtreemfs_mkvolRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_mkvolResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031152;
@@ -62,9 +61,5 @@ public class xtreemfs_mkvolRequest extends org.xtreemfs.interfaces.utils.Request
         volume = new StatVFS(); unmarshaller.readStruct( "volume", volume );
     }
 
-    
-
     private StatVFS volume;
-
 }
-

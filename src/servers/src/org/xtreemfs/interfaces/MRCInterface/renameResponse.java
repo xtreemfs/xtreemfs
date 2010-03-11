@@ -24,8 +24,8 @@ public class renameResponse extends org.xtreemfs.interfaces.utils.Response
     public void setFile_credentials( FileCredentialsSet file_credentials ) { this.file_credentials = file_credentials; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class renameResponse extends org.xtreemfs.interfaces.utils.Response
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031129;
@@ -59,9 +58,5 @@ public class renameResponse extends org.xtreemfs.interfaces.utils.Response
         file_credentials = new FileCredentialsSet(); unmarshaller.readSequence( "file_credentials", file_credentials );
     }
 
-    
-
     private FileCredentialsSet file_credentials;
-
 }
-

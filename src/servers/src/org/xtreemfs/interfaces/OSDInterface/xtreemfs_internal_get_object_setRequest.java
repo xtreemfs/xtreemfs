@@ -21,13 +21,13 @@ public class xtreemfs_internal_get_object_setRequest extends org.xtreemfs.interf
     public xtreemfs_internal_get_object_setRequest( FileCredentials file_credentials, String file_id ) { this.file_credentials = file_credentials; this.file_id = file_id; }
 
     public FileCredentials getFile_credentials() { return file_credentials; }
-    public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
     public String getFile_id() { return file_id; }
+    public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -38,7 +38,6 @@ public class xtreemfs_internal_get_object_setRequest extends org.xtreemfs.interf
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_internal_get_object_setResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031260;
@@ -67,10 +66,6 @@ public class xtreemfs_internal_get_object_setRequest extends org.xtreemfs.interf
         file_id = unmarshaller.readString( "file_id" );
     }
 
-    
-
     private FileCredentials file_credentials;
     private String file_id;
-
 }
-

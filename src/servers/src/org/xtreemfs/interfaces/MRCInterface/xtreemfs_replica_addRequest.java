@@ -21,13 +21,13 @@ public class xtreemfs_replica_addRequest extends org.xtreemfs.interfaces.utils.R
     public xtreemfs_replica_addRequest( String file_id, Replica new_replica ) { this.file_id = file_id; this.new_replica = new_replica; }
 
     public String getFile_id() { return file_id; }
-    public void setFile_id( String file_id ) { this.file_id = file_id; }
     public Replica getNew_replica() { return new_replica; }
+    public void setFile_id( String file_id ) { this.file_id = file_id; }
     public void setNew_replica( Replica new_replica ) { this.new_replica = new_replica; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -38,7 +38,6 @@ public class xtreemfs_replica_addRequest extends org.xtreemfs.interfaces.utils.R
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_replica_addResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031155;
@@ -67,10 +66,6 @@ public class xtreemfs_replica_addRequest extends org.xtreemfs.interfaces.utils.R
         new_replica = new Replica(); unmarshaller.readStruct( "new_replica", new_replica );
     }
 
-    
-
     private String file_id;
     private Replica new_replica;
-
 }
-

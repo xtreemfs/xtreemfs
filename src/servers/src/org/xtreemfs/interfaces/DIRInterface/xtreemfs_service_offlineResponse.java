@@ -20,8 +20,8 @@ public class xtreemfs_service_offlineResponse extends org.xtreemfs.interfaces.ut
     public xtreemfs_service_offlineResponse() {  }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -29,7 +29,6 @@ public class xtreemfs_service_offlineResponse extends org.xtreemfs.interfaces.ut
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031029;
@@ -54,8 +53,4 @@ public class xtreemfs_service_offlineResponse extends org.xtreemfs.interfaces.ut
     {
 
     }
-
-    
-
 }
-

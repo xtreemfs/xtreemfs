@@ -24,8 +24,8 @@ public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCR
     public void setError_message( String error_message ) { this.error_message = error_message; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCR
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031037;
@@ -59,9 +58,5 @@ public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCR
         error_message = unmarshaller.readString( "error_message" );
     }
 
-    
-
     private String error_message;
-
 }
-

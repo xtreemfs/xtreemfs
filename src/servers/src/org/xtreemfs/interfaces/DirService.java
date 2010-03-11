@@ -20,17 +20,17 @@ public class DirService implements Struct
     public DirService( String address, int port, String protocol, int interface_version ) { this.address = address; this.port = port; this.protocol = protocol; this.interface_version = interface_version; }
 
     public String getAddress() { return address; }
-    public void setAddress( String address ) { this.address = address; }
     public int getPort() { return port; }
-    public void setPort( int port ) { this.port = port; }
     public String getProtocol() { return protocol; }
-    public void setProtocol( String protocol ) { this.protocol = protocol; }
     public int getInterface_version() { return interface_version; }
+    public void setAddress( String address ) { this.address = address; }
+    public void setPort( int port ) { this.port = port; }
+    public void setProtocol( String protocol ) { this.protocol = protocol; }
     public void setInterface_version( int interface_version ) { this.interface_version = interface_version; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -38,7 +38,6 @@ public class DirService implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030951;
@@ -73,12 +72,8 @@ public class DirService implements Struct
         interface_version = unmarshaller.readUint32( "interface_version" );
     }
 
-    
-
     private String address;
     private int port;
     private String protocol;
     private int interface_version;
-
 }
-

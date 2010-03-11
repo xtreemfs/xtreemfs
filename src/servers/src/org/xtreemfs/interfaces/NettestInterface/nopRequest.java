@@ -20,8 +20,8 @@ public class nopRequest extends org.xtreemfs.interfaces.utils.Request
     public nopRequest() {  }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -32,7 +32,6 @@ public class nopRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new nopResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031317;
@@ -57,8 +56,4 @@ public class nopRequest extends org.xtreemfs.interfaces.utils.Request
     {
 
     }
-
-    
-
 }
-

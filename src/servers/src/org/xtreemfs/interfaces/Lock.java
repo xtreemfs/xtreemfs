@@ -20,17 +20,17 @@ public class Lock implements Struct
     public Lock( int client_pid, String client_uuid, long length, long offset ) { this.client_pid = client_pid; this.client_uuid = client_uuid; this.length = length; this.offset = offset; }
 
     public int getClient_pid() { return client_pid; }
-    public void setClient_pid( int client_pid ) { this.client_pid = client_pid; }
     public String getClient_uuid() { return client_uuid; }
-    public void setClient_uuid( String client_uuid ) { this.client_uuid = client_uuid; }
     public long getLength() { return length; }
-    public void setLength( long length ) { this.length = length; }
     public long getOffset() { return offset; }
+    public void setClient_pid( int client_pid ) { this.client_pid = client_pid; }
+    public void setClient_uuid( String client_uuid ) { this.client_uuid = client_uuid; }
+    public void setLength( long length ) { this.length = length; }
     public void setOffset( long offset ) { this.offset = offset; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -38,7 +38,6 @@ public class Lock implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030970;
@@ -73,12 +72,8 @@ public class Lock implements Struct
         offset = unmarshaller.readUint64( "offset" );
     }
 
-    
-
     private int client_pid;
     private String client_uuid;
     private long length;
     private long offset;
-
 }
-

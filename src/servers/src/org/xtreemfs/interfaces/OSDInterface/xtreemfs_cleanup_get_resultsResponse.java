@@ -24,8 +24,8 @@ public class xtreemfs_cleanup_get_resultsResponse extends org.xtreemfs.interface
     public void setResults( StringSet results ) { this.results = results; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_cleanup_get_resultsResponse extends org.xtreemfs.interface
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031246;
@@ -59,9 +58,5 @@ public class xtreemfs_cleanup_get_resultsResponse extends org.xtreemfs.interface
         results = new StringSet(); unmarshaller.readSequence( "results", results );
     }
 
-    
-
     private StringSet results;
-
 }
-

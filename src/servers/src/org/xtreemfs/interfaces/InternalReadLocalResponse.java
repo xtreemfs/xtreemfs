@@ -20,13 +20,13 @@ public class InternalReadLocalResponse implements Struct
     public InternalReadLocalResponse( ObjectData data, ObjectListSet object_set ) { this.data = data; this.object_set = object_set; }
 
     public ObjectData getData() { return data; }
-    public void setData( ObjectData data ) { this.data = data; }
     public ObjectListSet getObject_set() { return object_set; }
+    public void setData( ObjectData data ) { this.data = data; }
     public void setObject_set( ObjectListSet object_set ) { this.object_set = object_set; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -34,7 +34,6 @@ public class InternalReadLocalResponse implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030968;
@@ -63,10 +62,6 @@ public class InternalReadLocalResponse implements Struct
         object_set = new ObjectListSet(); unmarshaller.readSequence( "object_set", object_set );
     }
 
-    
-
     private ObjectData data;
     private ObjectListSet object_set;
-
 }
-

@@ -21,15 +21,15 @@ public class xtreemfs_check_file_existsRequest extends org.xtreemfs.interfaces.u
     public xtreemfs_check_file_existsRequest( String volume_id, StringSet file_ids, String osd_uuid ) { this.volume_id = volume_id; this.file_ids = file_ids; this.osd_uuid = osd_uuid; }
 
     public String getVolume_id() { return volume_id; }
-    public void setVolume_id( String volume_id ) { this.volume_id = volume_id; }
     public StringSet getFile_ids() { return file_ids; }
-    public void setFile_ids( StringSet file_ids ) { this.file_ids = file_ids; }
     public String getOsd_uuid() { return osd_uuid; }
+    public void setVolume_id( String volume_id ) { this.volume_id = volume_id; }
+    public void setFile_ids( StringSet file_ids ) { this.file_ids = file_ids; }
     public void setOsd_uuid( String osd_uuid ) { this.osd_uuid = osd_uuid; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -40,7 +40,6 @@ public class xtreemfs_check_file_existsRequest extends org.xtreemfs.interfaces.u
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_check_file_existsResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031147;
@@ -72,11 +71,7 @@ public class xtreemfs_check_file_existsRequest extends org.xtreemfs.interfaces.u
         osd_uuid = unmarshaller.readString( "osd_uuid" );
     }
 
-    
-
     private String volume_id;
     private StringSet file_ids;
     private String osd_uuid;
-
 }
-

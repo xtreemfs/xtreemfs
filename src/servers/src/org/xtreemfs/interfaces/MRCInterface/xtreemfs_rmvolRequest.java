@@ -24,8 +24,8 @@ public class xtreemfs_rmvolRequest extends org.xtreemfs.interfaces.utils.Request
     public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class xtreemfs_rmvolRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_rmvolResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031160;
@@ -62,9 +61,5 @@ public class xtreemfs_rmvolRequest extends org.xtreemfs.interfaces.utils.Request
         volume_name = unmarshaller.readString( "volume_name" );
     }
 
-    
-
     private String volume_name;
-
 }
-

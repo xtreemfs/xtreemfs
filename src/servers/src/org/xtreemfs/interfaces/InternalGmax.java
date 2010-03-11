@@ -20,15 +20,15 @@ public class InternalGmax implements Struct
     public InternalGmax( long epoch, long file_size, long last_object_id ) { this.epoch = epoch; this.file_size = file_size; this.last_object_id = last_object_id; }
 
     public long getEpoch() { return epoch; }
-    public void setEpoch( long epoch ) { this.epoch = epoch; }
     public long getFile_size() { return file_size; }
-    public void setFile_size( long file_size ) { this.file_size = file_size; }
     public long getLast_object_id() { return last_object_id; }
+    public void setEpoch( long epoch ) { this.epoch = epoch; }
+    public void setFile_size( long file_size ) { this.file_size = file_size; }
     public void setLast_object_id( long last_object_id ) { this.last_object_id = last_object_id; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class InternalGmax implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030966;
@@ -68,11 +67,7 @@ public class InternalGmax implements Struct
         last_object_id = unmarshaller.readUint64( "last_object_id" );
     }
 
-    
-
     private long epoch;
     private long file_size;
     private long last_object_id;
-
 }
-

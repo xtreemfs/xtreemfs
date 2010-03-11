@@ -21,21 +21,21 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
     public openRequest( String volume_name, String path, int flags, int mode, int attributes, VivaldiCoordinates client_vivaldi_coordinates ) { this.volume_name = volume_name; this.path = path; this.flags = flags; this.mode = mode; this.attributes = attributes; this.client_vivaldi_coordinates = client_vivaldi_coordinates; }
 
     public String getVolume_name() { return volume_name; }
-    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
     public String getPath() { return path; }
-    public void setPath( String path ) { this.path = path; }
     public int getFlags() { return flags; }
-    public void setFlags( int flags ) { this.flags = flags; }
     public int getMode() { return mode; }
-    public void setMode( int mode ) { this.mode = mode; }
     public int getAttributes() { return attributes; }
-    public void setAttributes( int attributes ) { this.attributes = attributes; }
     public VivaldiCoordinates getClient_vivaldi_coordinates() { return client_vivaldi_coordinates; }
+    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
+    public void setPath( String path ) { this.path = path; }
+    public void setFlags( int flags ) { this.flags = flags; }
+    public void setMode( int mode ) { this.mode = mode; }
+    public void setAttributes( int attributes ) { this.attributes = attributes; }
     public void setClient_vivaldi_coordinates( VivaldiCoordinates client_vivaldi_coordinates ) { this.client_vivaldi_coordinates = client_vivaldi_coordinates; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -46,7 +46,6 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new openResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031125;
@@ -87,14 +86,10 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
         client_vivaldi_coordinates = new VivaldiCoordinates(); unmarshaller.readStruct( "client_vivaldi_coordinates", client_vivaldi_coordinates );
     }
 
-    
-
     private String volume_name;
     private String path;
     private int flags;
     private int mode;
     private int attributes;
     private VivaldiCoordinates client_vivaldi_coordinates;
-
 }
-

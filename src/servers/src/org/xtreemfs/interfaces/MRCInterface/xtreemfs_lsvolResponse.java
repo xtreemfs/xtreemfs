@@ -24,8 +24,8 @@ public class xtreemfs_lsvolResponse extends org.xtreemfs.interfaces.utils.Respon
     public void setVolumes( StatVFSSet volumes ) { this.volumes = volumes; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_lsvolResponse extends org.xtreemfs.interfaces.utils.Respon
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031151;
@@ -59,9 +58,5 @@ public class xtreemfs_lsvolResponse extends org.xtreemfs.interfaces.utils.Respon
         volumes = new StatVFSSet(); unmarshaller.readSequence( "volumes", volumes );
     }
 
-    
-
     private StatVFSSet volumes;
-
 }
-

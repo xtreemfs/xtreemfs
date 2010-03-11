@@ -24,8 +24,8 @@ public class xtreemfs_service_get_by_nameRequest extends org.xtreemfs.interfaces
     public void setName( String name ) { this.name = name; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class xtreemfs_service_get_by_nameRequest extends org.xtreemfs.interfaces
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_service_get_by_nameResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031026;
@@ -62,9 +61,5 @@ public class xtreemfs_service_get_by_nameRequest extends org.xtreemfs.interfaces
         name = unmarshaller.readString( "name" );
     }
 
-    
-
     private String name;
-
 }
-

@@ -21,15 +21,15 @@ public class ProtocolException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     public ProtocolException( int accept_stat, int error_code, String stack_trace ) { this.accept_stat = accept_stat; this.error_code = error_code; this.stack_trace = stack_trace; }
 
     public int getAccept_stat() { return accept_stat; }
-    public void setAccept_stat( int accept_stat ) { this.accept_stat = accept_stat; }
     public int getError_code() { return error_code; }
-    public void setError_code( int error_code ) { this.error_code = error_code; }
     public String getStack_trace() { return stack_trace; }
+    public void setAccept_stat( int accept_stat ) { this.accept_stat = accept_stat; }
+    public void setError_code( int error_code ) { this.error_code = error_code; }
     public void setStack_trace( String stack_trace ) { this.stack_trace = stack_trace; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -37,7 +37,6 @@ public class ProtocolException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031221;
@@ -69,11 +68,7 @@ public class ProtocolException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
         stack_trace = unmarshaller.readString( "stack_trace" );
     }
 
-    
-
     private int accept_stat;
     private int error_code;
     private String stack_trace;
-
 }
-

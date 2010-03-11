@@ -20,17 +20,17 @@ public class ObjectData implements Struct
     public ObjectData( int checksum, boolean invalid_checksum_on_osd, int zero_padding, ReusableBuffer data ) { this.checksum = checksum; this.invalid_checksum_on_osd = invalid_checksum_on_osd; this.zero_padding = zero_padding; this.data = data; }
 
     public int getChecksum() { return checksum; }
-    public void setChecksum( int checksum ) { this.checksum = checksum; }
     public boolean getInvalid_checksum_on_osd() { return invalid_checksum_on_osd; }
-    public void setInvalid_checksum_on_osd( boolean invalid_checksum_on_osd ) { this.invalid_checksum_on_osd = invalid_checksum_on_osd; }
     public int getZero_padding() { return zero_padding; }
-    public void setZero_padding( int zero_padding ) { this.zero_padding = zero_padding; }
     public ReusableBuffer getData() { return data; }
+    public void setChecksum( int checksum ) { this.checksum = checksum; }
+    public void setInvalid_checksum_on_osd( boolean invalid_checksum_on_osd ) { this.invalid_checksum_on_osd = invalid_checksum_on_osd; }
+    public void setZero_padding( int zero_padding ) { this.zero_padding = zero_padding; }
     public void setData( ReusableBuffer data ) { this.data = data; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -38,7 +38,6 @@ public class ObjectData implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030967;
@@ -73,12 +72,8 @@ public class ObjectData implements Struct
         data = ( ReusableBuffer )unmarshaller.readBuffer( "data" );
     }
 
-    
-
     private int checksum;
     private boolean invalid_checksum_on_osd;
     private int zero_padding;
     private ReusableBuffer data;
-
 }
-

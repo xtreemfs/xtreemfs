@@ -20,37 +20,37 @@ public class Stat implements Struct
     public Stat( long dev, long ino, int mode, int nlink, String user_id, String group_id, long size, long atime_ns, long mtime_ns, long ctime_ns, int blksize, long etag, int truncate_epoch, int attributes ) { this.dev = dev; this.ino = ino; this.mode = mode; this.nlink = nlink; this.user_id = user_id; this.group_id = group_id; this.size = size; this.atime_ns = atime_ns; this.mtime_ns = mtime_ns; this.ctime_ns = ctime_ns; this.blksize = blksize; this.etag = etag; this.truncate_epoch = truncate_epoch; this.attributes = attributes; }
 
     public long getDev() { return dev; }
-    public void setDev( long dev ) { this.dev = dev; }
     public long getIno() { return ino; }
-    public void setIno( long ino ) { this.ino = ino; }
     public int getMode() { return mode; }
-    public void setMode( int mode ) { this.mode = mode; }
     public int getNlink() { return nlink; }
-    public void setNlink( int nlink ) { this.nlink = nlink; }
     public String getUser_id() { return user_id; }
-    public void setUser_id( String user_id ) { this.user_id = user_id; }
     public String getGroup_id() { return group_id; }
-    public void setGroup_id( String group_id ) { this.group_id = group_id; }
     public long getSize() { return size; }
-    public void setSize( long size ) { this.size = size; }
     public long getAtime_ns() { return atime_ns; }
-    public void setAtime_ns( long atime_ns ) { this.atime_ns = atime_ns; }
     public long getMtime_ns() { return mtime_ns; }
-    public void setMtime_ns( long mtime_ns ) { this.mtime_ns = mtime_ns; }
     public long getCtime_ns() { return ctime_ns; }
-    public void setCtime_ns( long ctime_ns ) { this.ctime_ns = ctime_ns; }
     public int getBlksize() { return blksize; }
-    public void setBlksize( int blksize ) { this.blksize = blksize; }
     public long getEtag() { return etag; }
-    public void setEtag( long etag ) { this.etag = etag; }
     public int getTruncate_epoch() { return truncate_epoch; }
-    public void setTruncate_epoch( int truncate_epoch ) { this.truncate_epoch = truncate_epoch; }
     public int getAttributes() { return attributes; }
+    public void setDev( long dev ) { this.dev = dev; }
+    public void setIno( long ino ) { this.ino = ino; }
+    public void setMode( int mode ) { this.mode = mode; }
+    public void setNlink( int nlink ) { this.nlink = nlink; }
+    public void setUser_id( String user_id ) { this.user_id = user_id; }
+    public void setGroup_id( String group_id ) { this.group_id = group_id; }
+    public void setSize( long size ) { this.size = size; }
+    public void setAtime_ns( long atime_ns ) { this.atime_ns = atime_ns; }
+    public void setMtime_ns( long mtime_ns ) { this.mtime_ns = mtime_ns; }
+    public void setCtime_ns( long ctime_ns ) { this.ctime_ns = ctime_ns; }
+    public void setBlksize( int blksize ) { this.blksize = blksize; }
+    public void setEtag( long etag ) { this.etag = etag; }
+    public void setTruncate_epoch( int truncate_epoch ) { this.truncate_epoch = truncate_epoch; }
     public void setAttributes( int attributes ) { this.attributes = attributes; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -58,7 +58,6 @@ public class Stat implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030956;
@@ -123,8 +122,6 @@ public class Stat implements Struct
         attributes = unmarshaller.readUint32( "attributes" );
     }
 
-    
-
     private long dev;
     private long ino;
     private int mode;
@@ -139,6 +136,4 @@ public class Stat implements Struct
     private long etag;
     private int truncate_epoch;
     private int attributes;
-
 }
-

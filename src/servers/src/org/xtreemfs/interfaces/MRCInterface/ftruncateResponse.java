@@ -24,8 +24,8 @@ public class ftruncateResponse extends org.xtreemfs.interfaces.utils.Response
     public void setTruncate_xcap( XCap truncate_xcap ) { this.truncate_xcap = truncate_xcap; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class ftruncateResponse extends org.xtreemfs.interfaces.utils.Response
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031119;
@@ -59,9 +58,5 @@ public class ftruncateResponse extends org.xtreemfs.interfaces.utils.Response
         truncate_xcap = new XCap(); unmarshaller.readStruct( "truncate_xcap", truncate_xcap );
     }
 
-    
-
     private XCap truncate_xcap;
-
 }
-

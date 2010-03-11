@@ -20,8 +20,8 @@ public class xtreemfs_lock_releaseResponse extends org.xtreemfs.interfaces.utils
     public xtreemfs_lock_releaseResponse() {  }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -29,7 +29,6 @@ public class xtreemfs_lock_releaseResponse extends org.xtreemfs.interfaces.utils
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031268;
@@ -54,8 +53,4 @@ public class xtreemfs_lock_releaseResponse extends org.xtreemfs.interfaces.utils
     {
 
     }
-
-    
-
 }
-

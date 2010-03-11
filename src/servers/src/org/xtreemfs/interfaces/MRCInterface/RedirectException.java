@@ -21,13 +21,13 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     public RedirectException( String address, int port ) { this.address = address; this.port = port; }
 
     public String getAddress() { return address; }
-    public void setAddress( String address ) { this.address = address; }
     public int getPort() { return port; }
+    public void setAddress( String address ) { this.address = address; }
     public void setPort( int port ) { this.port = port; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -35,7 +35,6 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031171;
@@ -64,10 +63,6 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
         port = unmarshaller.readUint16( "port" );
     }
 
-    
-
     private String address;
     private int port;
-
 }
-

@@ -21,15 +21,15 @@ public class xtreemfs_rwr_flease_msgRequest extends org.xtreemfs.interfaces.util
     public xtreemfs_rwr_flease_msgRequest( ReusableBuffer fleaseMessage, String senderHostname, int senderPort ) { this.fleaseMessage = fleaseMessage; this.senderHostname = senderHostname; this.senderPort = senderPort; }
 
     public ReusableBuffer getFleaseMessage() { return fleaseMessage; }
-    public void setFleaseMessage( ReusableBuffer fleaseMessage ) { this.fleaseMessage = fleaseMessage; }
     public String getSenderHostname() { return senderHostname; }
-    public void setSenderHostname( String senderHostname ) { this.senderHostname = senderHostname; }
     public int getSenderPort() { return senderPort; }
+    public void setFleaseMessage( ReusableBuffer fleaseMessage ) { this.fleaseMessage = fleaseMessage; }
+    public void setSenderHostname( String senderHostname ) { this.senderHostname = senderHostname; }
     public void setSenderPort( int senderPort ) { this.senderPort = senderPort; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -40,7 +40,6 @@ public class xtreemfs_rwr_flease_msgRequest extends org.xtreemfs.interfaces.util
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_rwr_flease_msgResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031287;
@@ -72,11 +71,7 @@ public class xtreemfs_rwr_flease_msgRequest extends org.xtreemfs.interfaces.util
         senderPort = unmarshaller.readUint32( "senderPort" );
     }
 
-    
-
     private ReusableBuffer fleaseMessage;
     private String senderHostname;
     private int senderPort;
-
 }
-

@@ -17,25 +17,27 @@ public class readRequest extends org.xtreemfs.interfaces.utils.Request
 {
     public static final int TAG = 2010031226;
 
-    public readRequest() { file_credentials = new FileCredentials();  }
-    public readRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version, int offset, int length ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.length = length; }
+    public readRequest() { file_credentials = new FileCredentials(); object_data = new ObjectData();  }
+    public readRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version, int offset, int length, ObjectData object_data ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.length = length; this.object_data = object_data; }
 
     public FileCredentials getFile_credentials() { return file_credentials; }
-    public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
     public String getFile_id() { return file_id; }
-    public void setFile_id( String file_id ) { this.file_id = file_id; }
     public long getObject_number() { return object_number; }
-    public void setObject_number( long object_number ) { this.object_number = object_number; }
     public long getObject_version() { return object_version; }
-    public void setObject_version( long object_version ) { this.object_version = object_version; }
     public int getOffset() { return offset; }
-    public void setOffset( int offset ) { this.offset = offset; }
     public int getLength() { return length; }
+    public ObjectData getObject_data() { return object_data; }
+    public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
+    public void setFile_id( String file_id ) { this.file_id = file_id; }
+    public void setObject_number( long object_number ) { this.object_number = object_number; }
+    public void setObject_version( long object_version ) { this.object_version = object_version; }
+    public void setOffset( int offset ) { this.offset = offset; }
     public void setLength( int length ) { this.length = length; }
+    public void setObject_data( ObjectData object_data ) { this.object_data = object_data; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -46,7 +48,6 @@ public class readRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new readResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031226;
@@ -64,6 +65,7 @@ public class readRequest extends org.xtreemfs.interfaces.utils.Request
         my_size += Long.SIZE / 8; // object_version
         my_size += Integer.SIZE / 8; // offset
         my_size += Integer.SIZE / 8; // length
+        my_size += object_data.getXDRSize(); // object_data
         return my_size;
     }
 
@@ -75,6 +77,7 @@ public class readRequest extends org.xtreemfs.interfaces.utils.Request
         marshaller.writeUint64( "object_version", object_version );
         marshaller.writeUint32( "offset", offset );
         marshaller.writeUint32( "length", length );
+        marshaller.writeStruct( "object_data", object_data );
     }
 
     public void unmarshal( Unmarshaller unmarshaller )
@@ -85,9 +88,8 @@ public class readRequest extends org.xtreemfs.interfaces.utils.Request
         object_version = unmarshaller.readUint64( "object_version" );
         offset = unmarshaller.readUint32( "offset" );
         length = unmarshaller.readUint32( "length" );
+        object_data = new ObjectData(); unmarshaller.readStruct( "object_data", object_data );
     }
-
-    
 
     private FileCredentials file_credentials;
     private String file_id;
@@ -95,6 +97,5 @@ public class readRequest extends org.xtreemfs.interfaces.utils.Request
     private long object_version;
     private int offset;
     private int length;
-
+    private ObjectData object_data;
 }
-

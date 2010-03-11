@@ -21,13 +21,13 @@ public class statvfsRequest extends org.xtreemfs.interfaces.utils.Request
     public statvfsRequest( String volume_name, long known_etag ) { this.volume_name = volume_name; this.known_etag = known_etag; }
 
     public String getVolume_name() { return volume_name; }
-    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
     public long getKnown_etag() { return known_etag; }
+    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
     public void setKnown_etag( long known_etag ) { this.known_etag = known_etag; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -38,7 +38,6 @@ public class statvfsRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new statvfsResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031133;
@@ -67,10 +66,6 @@ public class statvfsRequest extends org.xtreemfs.interfaces.utils.Request
         known_etag = unmarshaller.readUint64( "known_etag" );
     }
 
-    
-
     private String volume_name;
     private long known_etag;
-
 }
-

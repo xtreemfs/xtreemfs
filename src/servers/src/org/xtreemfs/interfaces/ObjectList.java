@@ -20,15 +20,15 @@ public class ObjectList implements Struct
     public ObjectList( ReusableBuffer set, int stripe_width, int first_ ) { this.set = set; this.stripe_width = stripe_width; this.first_ = first_; }
 
     public ReusableBuffer getSet() { return set; }
-    public void setSet( ReusableBuffer set ) { this.set = set; }
     public int getStripe_width() { return stripe_width; }
-    public void setStripe_width( int stripe_width ) { this.stripe_width = stripe_width; }
     public int getFirst_() { return first_; }
+    public void setSet( ReusableBuffer set ) { this.set = set; }
+    public void setStripe_width( int stripe_width ) { this.stripe_width = stripe_width; }
     public void setFirst_( int first_ ) { this.first_ = first_; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class ObjectList implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030971;
@@ -68,11 +67,7 @@ public class ObjectList implements Struct
         first_ = unmarshaller.readUint32( "first_" );
     }
 
-    
-
     private ReusableBuffer set;
     private int stripe_width;
     private int first_;
-
 }
-

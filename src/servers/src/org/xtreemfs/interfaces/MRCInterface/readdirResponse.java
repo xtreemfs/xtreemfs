@@ -24,8 +24,8 @@ public class readdirResponse extends org.xtreemfs.interfaces.utils.Response
     public void setDirectory_entries( DirectoryEntrySet directory_entries ) { this.directory_entries = directory_entries; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class readdirResponse extends org.xtreemfs.interfaces.utils.Response
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031126;
@@ -59,9 +58,5 @@ public class readdirResponse extends org.xtreemfs.interfaces.utils.Response
         directory_entries = new DirectoryEntrySet(); unmarshaller.readSequence( "directory_entries", directory_entries );
     }
 
-    
-
     private DirectoryEntrySet directory_entries;
-
 }
-

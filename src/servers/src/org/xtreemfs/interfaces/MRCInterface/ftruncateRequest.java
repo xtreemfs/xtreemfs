@@ -24,8 +24,8 @@ public class ftruncateRequest extends org.xtreemfs.interfaces.utils.Request
     public void setWrite_xcap( XCap write_xcap ) { this.write_xcap = write_xcap; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class ftruncateRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new ftruncateResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031119;
@@ -62,9 +61,5 @@ public class ftruncateRequest extends org.xtreemfs.interfaces.utils.Request
         write_xcap = new XCap(); unmarshaller.readStruct( "write_xcap", write_xcap );
     }
 
-    
-
     private XCap write_xcap;
-
 }
-

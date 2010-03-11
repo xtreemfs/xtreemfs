@@ -20,29 +20,29 @@ public class XCap implements Struct
     public XCap( int access_mode, String client_identity, long expire_time_s, int expire_timeout_s, String file_id, boolean replicate_on_close, String server_signature, int truncate_epoch, SnapConfig snap_config, long snap_timestamp ) { this.access_mode = access_mode; this.client_identity = client_identity; this.expire_time_s = expire_time_s; this.expire_timeout_s = expire_timeout_s; this.file_id = file_id; this.replicate_on_close = replicate_on_close; this.server_signature = server_signature; this.truncate_epoch = truncate_epoch; this.snap_config = snap_config; this.snap_timestamp = snap_timestamp; }
 
     public int getAccess_mode() { return access_mode; }
-    public void setAccess_mode( int access_mode ) { this.access_mode = access_mode; }
     public String getClient_identity() { return client_identity; }
-    public void setClient_identity( String client_identity ) { this.client_identity = client_identity; }
     public long getExpire_time_s() { return expire_time_s; }
-    public void setExpire_time_s( long expire_time_s ) { this.expire_time_s = expire_time_s; }
     public int getExpire_timeout_s() { return expire_timeout_s; }
-    public void setExpire_timeout_s( int expire_timeout_s ) { this.expire_timeout_s = expire_timeout_s; }
     public String getFile_id() { return file_id; }
-    public void setFile_id( String file_id ) { this.file_id = file_id; }
     public boolean getReplicate_on_close() { return replicate_on_close; }
-    public void setReplicate_on_close( boolean replicate_on_close ) { this.replicate_on_close = replicate_on_close; }
     public String getServer_signature() { return server_signature; }
-    public void setServer_signature( String server_signature ) { this.server_signature = server_signature; }
     public int getTruncate_epoch() { return truncate_epoch; }
-    public void setTruncate_epoch( int truncate_epoch ) { this.truncate_epoch = truncate_epoch; }
     public SnapConfig getSnap_config() { return snap_config; }
-    public void setSnap_config( SnapConfig snap_config ) { this.snap_config = snap_config; }
     public long getSnap_timestamp() { return snap_timestamp; }
+    public void setAccess_mode( int access_mode ) { this.access_mode = access_mode; }
+    public void setClient_identity( String client_identity ) { this.client_identity = client_identity; }
+    public void setExpire_time_s( long expire_time_s ) { this.expire_time_s = expire_time_s; }
+    public void setExpire_timeout_s( int expire_timeout_s ) { this.expire_timeout_s = expire_timeout_s; }
+    public void setFile_id( String file_id ) { this.file_id = file_id; }
+    public void setReplicate_on_close( boolean replicate_on_close ) { this.replicate_on_close = replicate_on_close; }
+    public void setServer_signature( String server_signature ) { this.server_signature = server_signature; }
+    public void setTruncate_epoch( int truncate_epoch ) { this.truncate_epoch = truncate_epoch; }
+    public void setSnap_config( SnapConfig snap_config ) { this.snap_config = snap_config; }
     public void setSnap_timestamp( long snap_timestamp ) { this.snap_timestamp = snap_timestamp; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -50,7 +50,6 @@ public class XCap implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030939;
@@ -103,8 +102,6 @@ public class XCap implements Struct
         snap_timestamp = unmarshaller.readUint64( "snap_timestamp" );
     }
 
-    
-
     private int access_mode;
     private String client_identity;
     private long expire_time_s;
@@ -115,6 +112,4 @@ public class XCap implements Struct
     private int truncate_epoch;
     private SnapConfig snap_config;
     private long snap_timestamp;
-
 }
-

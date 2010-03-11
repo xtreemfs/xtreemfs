@@ -24,8 +24,8 @@ public class recv_bufferResponse extends org.xtreemfs.interfaces.utils.Response
     public void setData( ReusableBuffer data ) { this.data = data; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class recv_bufferResponse extends org.xtreemfs.interfaces.utils.Response
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031319;
@@ -59,9 +58,5 @@ public class recv_bufferResponse extends org.xtreemfs.interfaces.utils.Response
         data = ( ReusableBuffer )unmarshaller.readBuffer( "data" );
     }
 
-    
-
     private ReusableBuffer data;
-
 }
-

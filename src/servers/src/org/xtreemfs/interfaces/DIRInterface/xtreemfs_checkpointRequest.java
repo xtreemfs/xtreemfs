@@ -20,8 +20,8 @@ public class xtreemfs_checkpointRequest extends org.xtreemfs.interfaces.utils.Re
     public xtreemfs_checkpointRequest() {  }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -32,7 +32,6 @@ public class xtreemfs_checkpointRequest extends org.xtreemfs.interfaces.utils.Re
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_checkpointResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031020;
@@ -57,8 +56,4 @@ public class xtreemfs_checkpointRequest extends org.xtreemfs.interfaces.utils.Re
     {
 
     }
-
-    
-
 }
-

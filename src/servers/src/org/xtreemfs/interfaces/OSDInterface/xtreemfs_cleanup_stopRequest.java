@@ -20,8 +20,8 @@ public class xtreemfs_cleanup_stopRequest extends org.xtreemfs.interfaces.utils.
     public xtreemfs_cleanup_stopRequest() {  }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -32,7 +32,6 @@ public class xtreemfs_cleanup_stopRequest extends org.xtreemfs.interfaces.utils.
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_cleanup_stopResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031250;
@@ -57,8 +56,4 @@ public class xtreemfs_cleanup_stopRequest extends org.xtreemfs.interfaces.utils.
     {
 
     }
-
-    
-
 }
-

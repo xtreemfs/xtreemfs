@@ -20,8 +20,8 @@ public class xtreemfs_replication_to_masterRequest extends org.xtreemfs.interfac
     public xtreemfs_replication_to_masterRequest() {  }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -32,7 +32,6 @@ public class xtreemfs_replication_to_masterRequest extends org.xtreemfs.interfac
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_replication_to_masterResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031154;
@@ -57,8 +56,4 @@ public class xtreemfs_replication_to_masterRequest extends org.xtreemfs.interfac
     {
 
     }
-
-    
-
 }
-

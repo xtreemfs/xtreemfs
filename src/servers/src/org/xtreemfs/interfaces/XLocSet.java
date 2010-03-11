@@ -20,17 +20,17 @@ public class XLocSet implements Struct
     public XLocSet( long read_only_file_size, ReplicaSet replicas, String replica_update_policy, int version ) { this.read_only_file_size = read_only_file_size; this.replicas = replicas; this.replica_update_policy = replica_update_policy; this.version = version; }
 
     public long getRead_only_file_size() { return read_only_file_size; }
-    public void setRead_only_file_size( long read_only_file_size ) { this.read_only_file_size = read_only_file_size; }
     public ReplicaSet getReplicas() { return replicas; }
-    public void setReplicas( ReplicaSet replicas ) { this.replicas = replicas; }
     public String getReplica_update_policy() { return replica_update_policy; }
-    public void setReplica_update_policy( String replica_update_policy ) { this.replica_update_policy = replica_update_policy; }
     public int getVersion() { return version; }
+    public void setRead_only_file_size( long read_only_file_size ) { this.read_only_file_size = read_only_file_size; }
+    public void setReplicas( ReplicaSet replicas ) { this.replicas = replicas; }
+    public void setReplica_update_policy( String replica_update_policy ) { this.replica_update_policy = replica_update_policy; }
     public void setVersion( int version ) { this.version = version; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -38,7 +38,6 @@ public class XLocSet implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030940;
@@ -73,12 +72,8 @@ public class XLocSet implements Struct
         version = unmarshaller.readUint32( "version" );
     }
 
-    
-
     private long read_only_file_size;
     private ReplicaSet replicas;
     private String replica_update_policy;
     private int version;
-
 }
-

@@ -24,8 +24,8 @@ public class xtreemfs_renew_capabilityResponse extends org.xtreemfs.interfaces.u
     public void setRenewed_xcap( XCap renewed_xcap ) { this.renewed_xcap = renewed_xcap; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_renew_capabilityResponse extends org.xtreemfs.interfaces.u
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031153;
@@ -59,9 +58,5 @@ public class xtreemfs_renew_capabilityResponse extends org.xtreemfs.interfaces.u
         renewed_xcap = new XCap(); unmarshaller.readStruct( "renewed_xcap", renewed_xcap );
     }
 
-    
-
     private XCap renewed_xcap;
-
 }
-

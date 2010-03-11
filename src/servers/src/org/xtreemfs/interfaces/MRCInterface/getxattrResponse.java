@@ -24,8 +24,8 @@ public class getxattrResponse extends org.xtreemfs.interfaces.utils.Response
     public void setValue( String value ) { this.value = value; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class getxattrResponse extends org.xtreemfs.interfaces.utils.Response
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031121;
@@ -59,9 +58,5 @@ public class getxattrResponse extends org.xtreemfs.interfaces.utils.Response
         value = unmarshaller.readString( "value" );
     }
 
-    
-
     private String value;
-
 }
-

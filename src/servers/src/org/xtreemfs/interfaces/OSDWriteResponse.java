@@ -23,8 +23,8 @@ public class OSDWriteResponse implements Struct
     public void setNew_file_size( NewFileSizeSet new_file_size ) { this.new_file_size = new_file_size; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -32,7 +32,6 @@ public class OSDWriteResponse implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030933;
@@ -58,9 +57,5 @@ public class OSDWriteResponse implements Struct
         new_file_size = new NewFileSizeSet(); unmarshaller.readSequence( "new_file_size", new_file_size );
     }
 
-    
-
     private NewFileSizeSet new_file_size;
-
 }
-

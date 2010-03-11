@@ -20,15 +20,15 @@ public class UserCredentials implements Struct
     public UserCredentials( String user_id, StringSet group_ids, String password ) { this.user_id = user_id; this.group_ids = group_ids; this.password = password; }
 
     public String getUser_id() { return user_id; }
-    public void setUser_id( String user_id ) { this.user_id = user_id; }
     public StringSet getGroup_ids() { return group_ids; }
-    public void setGroup_ids( StringSet group_ids ) { this.group_ids = group_ids; }
     public String getPassword() { return password; }
+    public void setUser_id( String user_id ) { this.user_id = user_id; }
+    public void setGroup_ids( StringSet group_ids ) { this.group_ids = group_ids; }
     public void setPassword( String password ) { this.password = password; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class UserCredentials implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030918;
@@ -68,11 +67,7 @@ public class UserCredentials implements Struct
         password = unmarshaller.readString( "password" );
     }
 
-    
-
     private String user_id;
     private StringSet group_ids;
     private String password;
-
 }
-

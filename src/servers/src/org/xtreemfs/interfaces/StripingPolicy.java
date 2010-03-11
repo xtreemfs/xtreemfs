@@ -20,15 +20,15 @@ public class StripingPolicy implements Struct
     public StripingPolicy( StripingPolicyType type, int stripe_size, int width ) { this.type = type; this.stripe_size = stripe_size; this.width = width; }
 
     public StripingPolicyType getType() { return type; }
-    public void setType( StripingPolicyType type ) { this.type = type; }
     public int getStripe_size() { return stripe_size; }
-    public void setStripe_size( int stripe_size ) { this.stripe_size = stripe_size; }
     public int getWidth() { return width; }
+    public void setType( StripingPolicyType type ) { this.type = type; }
+    public void setStripe_size( int stripe_size ) { this.stripe_size = stripe_size; }
     public void setWidth( int width ) { this.width = width; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class StripingPolicy implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030935;
@@ -68,11 +67,7 @@ public class StripingPolicy implements Struct
         width = unmarshaller.readUint32( "width" );
     }
 
-    
-
     private StripingPolicyType type;
     private int stripe_size;
     private int width;
-
 }
-

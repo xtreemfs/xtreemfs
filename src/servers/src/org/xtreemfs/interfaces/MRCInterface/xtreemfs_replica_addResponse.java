@@ -20,8 +20,8 @@ public class xtreemfs_replica_addResponse extends org.xtreemfs.interfaces.utils.
     public xtreemfs_replica_addResponse() {  }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -29,7 +29,6 @@ public class xtreemfs_replica_addResponse extends org.xtreemfs.interfaces.utils.
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031155;
@@ -54,8 +53,4 @@ public class xtreemfs_replica_addResponse extends org.xtreemfs.interfaces.utils.
     {
 
     }
-
-    
-
 }
-

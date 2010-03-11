@@ -24,8 +24,8 @@ public class xtreemfs_cleanup_is_runningResponse extends org.xtreemfs.interfaces
     public void setIs_running( boolean is_running ) { this.is_running = is_running; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_cleanup_is_runningResponse extends org.xtreemfs.interfaces
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031247;
@@ -59,9 +58,5 @@ public class xtreemfs_cleanup_is_runningResponse extends org.xtreemfs.interfaces
         is_running = unmarshaller.readBoolean( "is_running" );
     }
 
-    
-
     private boolean is_running;
-
 }
-

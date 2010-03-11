@@ -20,8 +20,8 @@ public class xtreemfs_global_time_s_getRequest extends org.xtreemfs.interfaces.u
     public xtreemfs_global_time_s_getRequest() {  }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -32,7 +32,6 @@ public class xtreemfs_global_time_s_getRequest extends org.xtreemfs.interfaces.u
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_global_time_s_getResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031022;
@@ -57,8 +56,4 @@ public class xtreemfs_global_time_s_getRequest extends org.xtreemfs.interfaces.u
     {
 
     }
-
-    
-
 }
-

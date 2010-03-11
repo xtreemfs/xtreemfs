@@ -20,8 +20,8 @@ public class xtreemfs_shutdownResponse extends org.xtreemfs.interfaces.utils.Res
     public xtreemfs_shutdownResponse() {  }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -29,7 +29,6 @@ public class xtreemfs_shutdownResponse extends org.xtreemfs.interfaces.utils.Res
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031030;
@@ -54,8 +53,4 @@ public class xtreemfs_shutdownResponse extends org.xtreemfs.interfaces.utils.Res
     {
 
     }
-
-    
-
 }
-

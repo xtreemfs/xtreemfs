@@ -21,15 +21,15 @@ public class removexattrRequest extends org.xtreemfs.interfaces.utils.Request
     public removexattrRequest( String volume_name, String path, String name ) { this.volume_name = volume_name; this.path = path; this.name = name; }
 
     public String getVolume_name() { return volume_name; }
-    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
     public String getPath() { return path; }
-    public void setPath( String path ) { this.path = path; }
     public String getName() { return name; }
+    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
+    public void setPath( String path ) { this.path = path; }
     public void setName( String name ) { this.name = name; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -40,7 +40,6 @@ public class removexattrRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new removexattrResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031128;
@@ -72,11 +71,7 @@ public class removexattrRequest extends org.xtreemfs.interfaces.utils.Request
         name = unmarshaller.readString( "name" );
     }
 
-    
-
     private String volume_name;
     private String path;
     private String name;
-
 }
-

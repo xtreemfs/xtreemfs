@@ -24,8 +24,8 @@ public class readlinkResponse extends org.xtreemfs.interfaces.utils.Response
     public void setLink_target_path( String link_target_path ) { this.link_target_path = link_target_path; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class readlinkResponse extends org.xtreemfs.interfaces.utils.Response
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031127;
@@ -59,9 +58,5 @@ public class readlinkResponse extends org.xtreemfs.interfaces.utils.Response
         link_target_path = unmarshaller.readString( "link_target_path" );
     }
 
-    
-
     private String link_target_path;
-
 }
-

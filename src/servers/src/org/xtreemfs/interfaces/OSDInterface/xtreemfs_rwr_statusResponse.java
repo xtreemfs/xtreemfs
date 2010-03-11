@@ -24,8 +24,8 @@ public class xtreemfs_rwr_statusResponse extends org.xtreemfs.interfaces.utils.R
     public void setLocal_state( ReplicaStatus local_state ) { this.local_state = local_state; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_rwr_statusResponse extends org.xtreemfs.interfaces.utils.R
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031292;
@@ -59,9 +58,5 @@ public class xtreemfs_rwr_statusResponse extends org.xtreemfs.interfaces.utils.R
         local_state = new ReplicaStatus(); unmarshaller.readStruct( "local_state", local_state );
     }
 
-    
-
     private ReplicaStatus local_state;
-
 }
-

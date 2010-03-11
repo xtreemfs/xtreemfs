@@ -21,15 +21,15 @@ public class linkRequest extends org.xtreemfs.interfaces.utils.Request
     public linkRequest( String volume_name, String target_path, String link_path ) { this.volume_name = volume_name; this.target_path = target_path; this.link_path = link_path; }
 
     public String getVolume_name() { return volume_name; }
-    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
     public String getTarget_path() { return target_path; }
-    public void setTarget_path( String target_path ) { this.target_path = target_path; }
     public String getLink_path() { return link_path; }
+    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
+    public void setTarget_path( String target_path ) { this.target_path = target_path; }
     public void setLink_path( String link_path ) { this.link_path = link_path; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -40,7 +40,6 @@ public class linkRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new linkResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031122;
@@ -72,11 +71,7 @@ public class linkRequest extends org.xtreemfs.interfaces.utils.Request
         link_path = unmarshaller.readString( "link_path" );
     }
 
-    
-
     private String volume_name;
     private String target_path;
     private String link_path;
-
 }
-

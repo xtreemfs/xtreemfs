@@ -20,15 +20,15 @@ public class Replica implements Struct
     public Replica( StringSet osd_uuids, int replication_flags, StripingPolicy striping_policy ) { this.osd_uuids = osd_uuids; this.replication_flags = replication_flags; this.striping_policy = striping_policy; }
 
     public StringSet getOsd_uuids() { return osd_uuids; }
-    public void setOsd_uuids( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
     public int getReplication_flags() { return replication_flags; }
-    public void setReplication_flags( int replication_flags ) { this.replication_flags = replication_flags; }
     public StripingPolicy getStriping_policy() { return striping_policy; }
+    public void setOsd_uuids( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
+    public void setReplication_flags( int replication_flags ) { this.replication_flags = replication_flags; }
     public void setStriping_policy( StripingPolicy striping_policy ) { this.striping_policy = striping_policy; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class Replica implements Struct
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010030936;
@@ -68,11 +67,7 @@ public class Replica implements Struct
         striping_policy = new StripingPolicy(); unmarshaller.readStruct( "striping_policy", striping_policy );
     }
 
-    
-
     private StringSet osd_uuids;
     private int replication_flags;
     private StripingPolicy striping_policy;
-
 }
-

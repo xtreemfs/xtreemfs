@@ -21,25 +21,25 @@ public class xtreemfs_internal_read_localRequest extends org.xtreemfs.interfaces
     public xtreemfs_internal_read_localRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version, long offset, long length, boolean attach_object_list, ObjectListSet required_objects ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.length = length; this.attach_object_list = attach_object_list; this.required_objects = required_objects; }
 
     public FileCredentials getFile_credentials() { return file_credentials; }
-    public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
     public String getFile_id() { return file_id; }
-    public void setFile_id( String file_id ) { this.file_id = file_id; }
     public long getObject_number() { return object_number; }
-    public void setObject_number( long object_number ) { this.object_number = object_number; }
     public long getObject_version() { return object_version; }
-    public void setObject_version( long object_version ) { this.object_version = object_version; }
     public long getOffset() { return offset; }
-    public void setOffset( long offset ) { this.offset = offset; }
     public long getLength() { return length; }
-    public void setLength( long length ) { this.length = length; }
     public boolean getAttach_object_list() { return attach_object_list; }
-    public void setAttach_object_list( boolean attach_object_list ) { this.attach_object_list = attach_object_list; }
     public ObjectListSet getRequired_objects() { return required_objects; }
+    public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
+    public void setFile_id( String file_id ) { this.file_id = file_id; }
+    public void setObject_number( long object_number ) { this.object_number = object_number; }
+    public void setObject_version( long object_version ) { this.object_version = object_version; }
+    public void setOffset( long offset ) { this.offset = offset; }
+    public void setLength( long length ) { this.length = length; }
+    public void setAttach_object_list( boolean attach_object_list ) { this.attach_object_list = attach_object_list; }
     public void setRequired_objects( ObjectListSet required_objects ) { this.required_objects = required_objects; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -50,7 +50,6 @@ public class xtreemfs_internal_read_localRequest extends org.xtreemfs.interfaces
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_internal_read_localResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031259;
@@ -97,8 +96,6 @@ public class xtreemfs_internal_read_localRequest extends org.xtreemfs.interfaces
         required_objects = new ObjectListSet(); unmarshaller.readSequence( "required_objects", required_objects );
     }
 
-    
-
     private FileCredentials file_credentials;
     private String file_id;
     private long object_number;
@@ -107,6 +104,4 @@ public class xtreemfs_internal_read_localRequest extends org.xtreemfs.interfaces
     private long length;
     private boolean attach_object_list;
     private ObjectListSet required_objects;
-
 }
-

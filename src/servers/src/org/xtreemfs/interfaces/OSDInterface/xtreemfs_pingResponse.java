@@ -24,8 +24,8 @@ public class xtreemfs_pingResponse extends org.xtreemfs.interfaces.utils.Respons
     public void setRemote_coordinates( VivaldiCoordinates remote_coordinates ) { this.remote_coordinates = remote_coordinates; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_pingResponse extends org.xtreemfs.interfaces.utils.Respons
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031276;
@@ -59,9 +58,5 @@ public class xtreemfs_pingResponse extends org.xtreemfs.interfaces.utils.Respons
         remote_coordinates = new VivaldiCoordinates(); unmarshaller.readStruct( "remote_coordinates", remote_coordinates );
     }
 
-    
-
     private VivaldiCoordinates remote_coordinates;
-
 }
-

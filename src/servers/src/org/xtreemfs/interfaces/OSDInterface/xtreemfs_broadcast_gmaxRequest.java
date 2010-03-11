@@ -21,17 +21,17 @@ public class xtreemfs_broadcast_gmaxRequest extends org.xtreemfs.interfaces.util
     public xtreemfs_broadcast_gmaxRequest( String file_id, long truncate_epoch, long last_object, long file_size ) { this.file_id = file_id; this.truncate_epoch = truncate_epoch; this.last_object = last_object; this.file_size = file_size; }
 
     public String getFile_id() { return file_id; }
-    public void setFile_id( String file_id ) { this.file_id = file_id; }
     public long getTruncate_epoch() { return truncate_epoch; }
-    public void setTruncate_epoch( long truncate_epoch ) { this.truncate_epoch = truncate_epoch; }
     public long getLast_object() { return last_object; }
-    public void setLast_object( long last_object ) { this.last_object = last_object; }
     public long getFile_size() { return file_size; }
+    public void setFile_id( String file_id ) { this.file_id = file_id; }
+    public void setTruncate_epoch( long truncate_epoch ) { this.truncate_epoch = truncate_epoch; }
+    public void setLast_object( long last_object ) { this.last_object = last_object; }
     public void setFile_size( long file_size ) { this.file_size = file_size; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -42,7 +42,6 @@ public class xtreemfs_broadcast_gmaxRequest extends org.xtreemfs.interfaces.util
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_broadcast_gmaxResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031236;
@@ -77,12 +76,8 @@ public class xtreemfs_broadcast_gmaxRequest extends org.xtreemfs.interfaces.util
         file_size = unmarshaller.readUint64( "file_size" );
     }
 
-    
-
     private String file_id;
     private long truncate_epoch;
     private long last_object;
     private long file_size;
-
 }
-

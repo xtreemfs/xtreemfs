@@ -24,8 +24,8 @@ public class getattrResponse extends org.xtreemfs.interfaces.utils.Response
     public void setStbuf( StatSet stbuf ) { this.stbuf = stbuf; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class getattrResponse extends org.xtreemfs.interfaces.utils.Response
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031120;
@@ -59,9 +58,5 @@ public class getattrResponse extends org.xtreemfs.interfaces.utils.Response
         stbuf = new StatSet(); unmarshaller.readSequence( "stbuf", stbuf );
     }
 
-    
-
     private StatSet stbuf;
-
 }
-

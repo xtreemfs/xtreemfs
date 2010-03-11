@@ -24,8 +24,8 @@ public class xtreemfs_service_get_by_typeRequest extends org.xtreemfs.interfaces
     public void setType( ServiceType type ) { this.type = type; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class xtreemfs_service_get_by_typeRequest extends org.xtreemfs.interfaces
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_service_get_by_typeResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031024;
@@ -62,9 +61,5 @@ public class xtreemfs_service_get_by_typeRequest extends org.xtreemfs.interfaces
         type = ServiceType.parseInt( unmarshaller.readInt32( "type" ) );
     }
 
-    
-
     private ServiceType type;
-
 }
-

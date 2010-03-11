@@ -24,8 +24,8 @@ public class xtreemfs_internal_truncateResponse extends org.xtreemfs.interfaces.
     public void setOsd_write_response( OSDWriteResponse osd_write_response ) { this.osd_write_response = osd_write_response; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_internal_truncateResponse extends org.xtreemfs.interfaces.
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031257;
@@ -59,9 +58,5 @@ public class xtreemfs_internal_truncateResponse extends org.xtreemfs.interfaces.
         osd_write_response = new OSDWriteResponse(); unmarshaller.readStruct( "osd_write_response", osd_write_response );
     }
 
-    
-
     private OSDWriteResponse osd_write_response;
-
 }
-

@@ -24,8 +24,8 @@ public class send_bufferRequest extends org.xtreemfs.interfaces.utils.Request
     public void setData( ReusableBuffer data ) { this.data = data; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -36,7 +36,6 @@ public class send_bufferRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new send_bufferResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031318;
@@ -62,9 +61,5 @@ public class send_bufferRequest extends org.xtreemfs.interfaces.utils.Request
         data = ( ReusableBuffer )unmarshaller.readBuffer( "data" );
     }
 
-    
-
     private ReusableBuffer data;
-
 }
-

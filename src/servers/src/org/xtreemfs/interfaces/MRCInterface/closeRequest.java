@@ -21,13 +21,13 @@ public class closeRequest extends org.xtreemfs.interfaces.utils.Request
     public closeRequest( VivaldiCoordinates client_vivaldi_coordinates, XCap write_xcap ) { this.client_vivaldi_coordinates = client_vivaldi_coordinates; this.write_xcap = write_xcap; }
 
     public VivaldiCoordinates getClient_vivaldi_coordinates() { return client_vivaldi_coordinates; }
-    public void setClient_vivaldi_coordinates( VivaldiCoordinates client_vivaldi_coordinates ) { this.client_vivaldi_coordinates = client_vivaldi_coordinates; }
     public XCap getWrite_xcap() { return write_xcap; }
+    public void setClient_vivaldi_coordinates( VivaldiCoordinates client_vivaldi_coordinates ) { this.client_vivaldi_coordinates = client_vivaldi_coordinates; }
     public void setWrite_xcap( XCap write_xcap ) { this.write_xcap = write_xcap; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -38,7 +38,6 @@ public class closeRequest extends org.xtreemfs.interfaces.utils.Request
 
     // Request
     public Response createDefaultResponse() { return new closeResponse(); }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031117;
@@ -67,10 +66,6 @@ public class closeRequest extends org.xtreemfs.interfaces.utils.Request
         write_xcap = new XCap(); unmarshaller.readStruct( "write_xcap", write_xcap );
     }
 
-    
-
     private VivaldiCoordinates client_vivaldi_coordinates;
     private XCap write_xcap;
-
 }
-

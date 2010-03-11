@@ -24,8 +24,8 @@ public class xtreemfs_discover_dirResponse extends org.xtreemfs.interfaces.utils
     public void setDir_service( DirService dir_service ) { this.dir_service = dir_service; }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -33,7 +33,6 @@ public class xtreemfs_discover_dirResponse extends org.xtreemfs.interfaces.utils
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
     }
-
 
     // java.io.Serializable
     public static final long serialVersionUID = 2010031021;
@@ -59,9 +58,5 @@ public class xtreemfs_discover_dirResponse extends org.xtreemfs.interfaces.utils
         dir_service = new DirService(); unmarshaller.readStruct( "dir_service", dir_service );
     }
 
-    
-
     private DirService dir_service;
-
 }
-
