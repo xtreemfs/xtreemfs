@@ -18,10 +18,10 @@ public class xtreemfs_internal_get_file_sizeResponse extends org.xtreemfs.interf
     public static final int TAG = 2010031258;
 
     public xtreemfs_internal_get_file_sizeResponse() {  }
-    public xtreemfs_internal_get_file_sizeResponse( long _return_value ) { this._return_value = _return_value; }
+    public xtreemfs_internal_get_file_sizeResponse( long returnValue ) { this.returnValue = returnValue; }
 
-    public long get_return_value() { return _return_value; }
-    public void set_return_value( long _return_value ) { this._return_value = _return_value; }
+    public long getReturnValue() { return returnValue; }
+    public void setReturnValue( long returnValue ) { this.returnValue = returnValue; }
 
     // java.lang.Object
     public String toString()
@@ -44,19 +44,19 @@ public class xtreemfs_internal_get_file_sizeResponse extends org.xtreemfs.interf
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Long.SIZE / 8; // _return_value
+        my_size += Long.SIZE / 8; // returnValue
         return my_size;
     }
 
     public void marshal( Marshaller marshaller )
     {
-        marshaller.writeUint64( "_return_value", _return_value );
+        marshaller.writeUint64( "returnValue", returnValue );
     }
 
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        _return_value = unmarshaller.readUint64( "_return_value" );
+        returnValue = unmarshaller.readUint64( "returnValue" );
     }
 
-    private long _return_value;
+    private long returnValue;
 }

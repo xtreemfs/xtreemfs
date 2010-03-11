@@ -17,11 +17,11 @@ public class xtreemfs_internal_read_localResponse extends org.xtreemfs.interface
 {
     public static final int TAG = 2010031259;
 
-    public xtreemfs_internal_read_localResponse() { _return_value = new InternalReadLocalResponse();  }
-    public xtreemfs_internal_read_localResponse( InternalReadLocalResponse _return_value ) { this._return_value = _return_value; }
+    public xtreemfs_internal_read_localResponse() { returnValue = new InternalReadLocalResponse();  }
+    public xtreemfs_internal_read_localResponse( InternalReadLocalResponse returnValue ) { this.returnValue = returnValue; }
 
-    public InternalReadLocalResponse get_return_value() { return _return_value; }
-    public void set_return_value( InternalReadLocalResponse _return_value ) { this._return_value = _return_value; }
+    public InternalReadLocalResponse getReturnValue() { return returnValue; }
+    public void setReturnValue( InternalReadLocalResponse returnValue ) { this.returnValue = returnValue; }
 
     // java.lang.Object
     public String toString()
@@ -44,19 +44,19 @@ public class xtreemfs_internal_read_localResponse extends org.xtreemfs.interface
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += _return_value.getXDRSize(); // _return_value
+        my_size += returnValue.getXDRSize(); // returnValue
         return my_size;
     }
 
     public void marshal( Marshaller marshaller )
     {
-        marshaller.writeStruct( "_return_value", _return_value );
+        marshaller.writeStruct( "returnValue", returnValue );
     }
 
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        _return_value = new InternalReadLocalResponse(); unmarshaller.readStruct( "_return_value", _return_value );
+        returnValue = new InternalReadLocalResponse(); unmarshaller.readStruct( "returnValue", returnValue );
     }
 
-    private InternalReadLocalResponse _return_value;
+    private InternalReadLocalResponse returnValue;
 }
