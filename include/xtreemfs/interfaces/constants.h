@@ -1,5 +1,5 @@
-#ifndef _10122450_H_
-#define _10122450_H_
+#ifndef _281384_H_
+#define _281384_H_
 
 
 #include "yidl.h"
@@ -40,7 +40,7 @@ namespace org
       const static uint32_t SERVICE_STATUS_AVAIL = 0;
       const static uint32_t SERVICE_STATUS_TO_BE_REMOVED = 1;
       const static uint32_t SERVICE_STATUS_REMOVED = 2;
-      };
     };
   };
+};
 #endif

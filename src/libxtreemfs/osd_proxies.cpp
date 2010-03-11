@@ -184,8 +184,8 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
               user_credentials_cache
             );
 
-        if ( stage_group != NULL )         
-          stage_group->createStage( osd_proxy->inc_ref() );        
+        if ( stage_group != NULL )
+          stage_group->createStage( osd_proxy->inc_ref() );
       }
       else
 #endif

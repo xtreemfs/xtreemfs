@@ -174,10 +174,6 @@
     >
 </File>
 <File
-    RelativePath="..\..\include\xtreemfs\main.h"
-    >
-</File>
-<File
     RelativePath="..\..\include\xtreemfs\mrc_proxy.h"
     >
 </File>
@@ -393,10 +389,6 @@
 </File>
 <File
     RelativePath="..\..\src\libxtreemfs\grid_ssl_socket.cpp"
-    >
-</File>
-<File
-    RelativePath="..\..\src\libxtreemfs\main.cpp"
     >
 </File>
 <File

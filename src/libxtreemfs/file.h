@@ -30,13 +30,14 @@
 #ifndef _LIBXTREEMFS_FILE_H_
 #define _LIBXTREEMFS_FILE_H_
 
-#include "xtreemfs/interfaces/mrc_osd_types.h"
+#include "xtreemfs/interfaces/osd_interface.h"
 #include "yield.h"
 
 
 namespace xtreemfs
 {
   class Volume;
+  using org::xtreemfs::interfaces::Lock;
   using org::xtreemfs::interfaces::XCap;
   using org::xtreemfs::interfaces::XLocSet;
   using yield::platform::Path;
@@ -46,11 +47,11 @@ namespace xtreemfs
   {
   public:
     File
-    ( 
-      Volume& parent_volume, 
-      const Path& path, 
-      const XCap& xcap, 
-      const XLocSet& xlocs 
+    (
+      Volume& parent_volume,
+      const Path& path,
+      const XCap& xcap,
+      const XLocSet& xlocs
     );
 
     ~File();
@@ -63,11 +64,12 @@ namespace xtreemfs
     size_t getpagesize();
 
   private:
-    class WriteBuffer;
+    class Buffer;
     class XCapTimer;
 
   private:
     bool closed;
+    vector<Lock> locks;
     Path path;
     Volume& parent_volume;
     size_t selected_file_replica_i;

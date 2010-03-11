@@ -80,14 +80,14 @@ yield::platform::Directory::Entry* Directory::readdir()
           directory_entries
         );
       }
-      catch ( ExceptionResponse& exception_response )
+      catch ( Exception& exception )
       {
-        parent_volume.set_errno( "readdir", exception_response );
+        parent_volume.set_errno( "readdir", exception );
         return NULL;
       }
-      catch ( std::exception& exc ) \
+      catch ( std::exception& exception ) \
       {
-        parent_volume.set_errno( "readdir", exc );
+        parent_volume.set_errno( "readdir", exception );
         return NULL;
       }
 

@@ -58,14 +58,21 @@ using yield::concurrency::StageGroup;
   try
 
 #define VOLUME_OPERATION_END( OperationName ) \
-  catch ( ExceptionResponse& exception_response ) \
+  catch ( Exception& exception ) \
   { \
-    set_errno( #OperationName, exception_response ); \
+    set_errno( #OperationName, exception ); \
   } \
-  catch ( std::exception& exc ) \
+  catch ( std::exception& exception ) \
   { \
-    set_errno( #OperationName, exc ); \
+    set_errno( #OperationName, exception ); \
   }
+
+
+#ifdef _WIN32
+uint32_t Volume::ERROR_CODE_DEFAULT = ERROR_ACCESS_DENIED;
+#else
+uint32_t Volume::ERROR_CODE_DEFAULT = EIO;
+#endif
 
 
 Volume::Volume
@@ -201,10 +208,10 @@ Volume::create
   StageGroup* stage_group = new yield::concurrency::SEDAStageGroup;
   stage_group->createStage( dir_proxy );
   stage_group->createStage( mrc_proxy );
-  
-  OSDProxies* osd_proxies 
+
+  OSDProxies* osd_proxies
     = new OSDProxies
-          ( 
+          (
             dir_proxy,
             OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
             proxy_flags,
@@ -683,14 +690,9 @@ Volume::setattr
   return false;
 }
 
-void
-Volume::set_errno
-(
-  const char* operation_name,
-  ExceptionResponse& exception_response
-)
+void Volume::set_errno( const char* operation_name, Exception& exception )
 {
-  uint32_t error_code = exception_response.get_error_code();
+  uint32_t error_code = exception.get_error_code();
 
   switch( error_code )
   {
@@ -726,7 +728,7 @@ Volume::set_errno
       {
         log->get_stream( Log::LOG_ERR ) <<
           "xtreemfs: caught exception on " <<
-          operation_name << ": " << exception_response;
+          operation_name << ": " << exception;
       }
       break;
     }
@@ -739,18 +741,17 @@ Volume::set_errno
 #endif
 }
 
-void Volume::set_errno( const char* operation_name, std::exception& exc )
+void Volume::set_errno( const char* operation_name, std::exception& exception )
 {
   if ( log != NULL )
     log->get_stream( Log::LOG_ERR ) <<
       "xtreemfs::Volume: caught exception on " <<
-      operation_name << ": " << exc.what();
-
+      operation_name << ": " << exception.what();
 
 #ifdef _WIN32
-  ::SetLastError( ERROR_ACCESS_DENIED );
+  ::SetLastError( ERROR_CODE_DEFAULT );
 #else
-  errno = EIO;
+  errno = ERROR_CODE_DEFAULT;
 #endif
 }
 

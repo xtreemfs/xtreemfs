@@ -41,11 +41,15 @@ using namespace yield::ipc;
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 /**
  * @file UriDefsConfig.h
  * Adjusts the internal configuration after processing external definitions.
  */
+
+#ifndef URIPARSER_H
 #define URIPARSER_H
+
 # include <stdio.h> /* For NULL, snprintf */
 # include <ctype.h> /* For wchar_t */
 # include <string.h> /* For strlen, memset, memcpy */
@@ -913,6 +917,8 @@ void URI_FUNC(FreeQueryList)(URI_TYPE(QueryList) * queryList);
 int URI_FUNC(ParseIpFourAddress)(unsigned char * octetOutput,
 		const URI_CHAR * first, const URI_CHAR * afterLast);
 
+#endif
+
 
 // yajl.h
 /*
@@ -946,7 +952,11 @@ int URI_FUNC(ParseIpFourAddress)(unsigned char * octetOutput,
  * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
+#ifndef YAJL_H
 #define YAJL_H
+
+
 /* Header: yajl_common.h */
 #define YAJL_MAX_DEPTH 128
 
@@ -1326,6 +1336,9 @@ yajl_state yajl_state_pop(yajl_handle handle);
 unsigned int yajl_parse_depth(yajl_handle handle);
 
 void yajl_state_set(yajl_handle handle, yajl_state state);
+
+
+#endif
 
 
 // uriparser.c
@@ -13474,6 +13487,23 @@ URI& URI::operator=( const URI& other )
   port = other.port;
   resource = other.resource;
   return *this;
+}
+
+URI::operator std::string() const
+{
+  ostringstream uri_oss;
+  uri_oss << scheme << "://";
+  if ( !user.empty() )
+    uri_oss << user;
+  if ( !password.empty() )
+    uri_oss << ":" << password;
+  uri_oss << host;
+  if ( port != 0 )
+    uri_oss << ":" << port;
+  uri_oss << resource;
+  if ( !query.empty() )
+    DebugBreak();
+  return uri_oss.str();
 }
 
 URI* URI::parse( const char* uri )

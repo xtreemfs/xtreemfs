@@ -1,3 +1,32 @@
+// Copyright (c) 2010 Minor Gordon
+// All rights reserved
+// 
+// This source file is part of the XtreemFS project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the XtreemFS project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
 #include "xtreemfs/crash_reporter.h"
 using namespace xtreemfs;
 
@@ -19,7 +48,7 @@ MinidumpCallback
 (
   const wchar_t* dump_path,
   const wchar_t* minidump_id,
-  void* context, 
+  void* context,
   EXCEPTION_POINTERS*,
   MDRawAssertionInfo*,
   bool succeeded
@@ -46,9 +75,9 @@ static bool MinidumpCallback
 
 
 CrashReporter::CrashReporter( Log* log, const URI& put_crash_dump_uri )
-  : log( yidl::runtime::Object::inc_ref( log ) ), 
+  : log( yidl::runtime::Object::inc_ref( log ) ),
     put_crash_dump_uri( put_crash_dump_uri )
-{ 
+{
   exception_handler =
     new google_breakpad::ExceptionHandler
     (
@@ -64,7 +93,7 @@ CrashReporter::CrashReporter( Log* log, const URI& put_crash_dump_uri )
     );
 }
 
-bool 
+bool
 CrashReporter::MinidumpCallback
 (
   const Path& dump_path,
@@ -81,8 +110,7 @@ CrashReporter::MinidumpCallback
     Path dump_file_path( dump_path );
     dump_file_path = dump_file_path + dump_file_name;
 
-    // TODO: URI needs a std::string operator
-    string put_crash_dump_uri; //( put_crash_dump_uri );
+    string put_crash_dump_uri( put_crash_dump_uri );
     put_crash_dump_uri += dump_file_name;
 
     if ( log != NULL )
@@ -100,7 +128,7 @@ CrashReporter::MinidumpCallback
     {
       if ( log != NULL )
       {
-        log->get_stream( Log::LOG_EMERG ) <<          
+        log->get_stream( Log::LOG_EMERG ) <<
           "CrashReporter: exception trying to send dump to the server: "
           << exc.what();
       }

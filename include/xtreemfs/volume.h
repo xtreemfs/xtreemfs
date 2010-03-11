@@ -43,13 +43,15 @@ namespace xtreemfs
   class StatCache;
   using org::xtreemfs::interfaces::VivaldiCoordinates;
   using org::xtreemfs::interfaces::XCap;
-  using yield::concurrency::ExceptionResponse;
   using yield::concurrency::StageGroup;
+  using yield::platform::Exception;
 
 
   class Volume : public yield::platform::Volume
   {
   public:
+    static uint32_t ERROR_CODE_DEFAULT; // The error code for internal exceptions
+
     const static uint32_t FLAG_WRITE_BACK_DATA_CACHE = 1;
     const static uint32_t FLAG_WRITE_BACK_FILE_SIZE_CACHE = 2;
     const static uint32_t FLAG_WRITE_BACK_STAT_CACHE = 4;
@@ -101,8 +103,8 @@ namespace xtreemfs
     bool has_flag( uint32_t flag ) { return ( flags & flag ) == flag; }
     void metadatasync( const Path& path, const XCap& write_xcap );
     void release( File& file );
-    void set_errno( const char* operation_name, ExceptionResponse& );
-    void set_errno( const char* operation_name, std::exception& );
+    void set_errno( const char* operation_name, Exception& exception );
+    void set_errno( const char* operation_name, std::exception& exception );
 
     // yidl::runtime::Object
     Volume& inc_ref() { return Object::inc_ref( *this ); }

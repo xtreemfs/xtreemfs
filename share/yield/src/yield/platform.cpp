@@ -4016,27 +4016,27 @@ typedef CSimpleOptTempl<wchar_t> CSimpleOptW;
 /* end SimpleOpt.h */
 
 
-void OptionParser::add_option( const string& arg )
+void OptionParser::add_option( const string& option )
 {
-  add_option( arg, string(), false );
+  add_option( option, string(), false );
 }
 
-void OptionParser::add_option( const string& arg, bool require_value )
+void OptionParser::add_option( const string& option, bool require_argument )
 {
-  add_option( arg, string(), require_value );
+  add_option( option, string(), require_argument );
 }
 
-void OptionParser::add_option( const string& arg, const string& help )
+void OptionParser::add_option( const string& option, const string& help )
 {
-  add_option( arg, help, false );
+  add_option( option, help, false );
 }
 
 void
 OptionParser::add_option
 (
-  const string& arg,
+  const string& option,
   const string& help,
-  bool require_value
+  bool require_argument
 )
 {
   for
@@ -4046,19 +4046,20 @@ OptionParser::add_option
     ++option_i
   )
   {
-    if ( ( *option_i ).get_arg() == arg )
+    if ( *option_i == option )
       return;
   }
 
-  options.push_back( Option( arg, help, require_value ) );
+  options.push_back( Option( option, help, require_argument ) );
 }
 
-int
+void
 OptionParser::parse_args
 (
   int argc,
   char** argv,
-  vector<ParsedOption>& parsed_options
+  vector<ParsedOption>& out_parsed_options,
+  vector<string>& out_positional_arguments
 )
 {
   vector<CSimpleOpt::SOption> simpleopt_options;
@@ -4074,8 +4075,8 @@ OptionParser::parse_args
       =
       {
         option_i,
-        options[option_i].get_arg().c_str(),
-        options[option_i].get_require_value() ? SO_REQ_SEP : SO_NONE
+        options[option_i],
+        options[option_i].get_require_argument() ? SO_REQ_SEP : SO_NONE
       };
 
     simpleopt_options.push_back( simpleopt_option );
@@ -4111,12 +4112,17 @@ OptionParser::parse_args
         {
           Option& option = *option_i;
 
-          if ( option.get_arg() == args.OptionText() )
+          if ( option == args.OptionText() )
           {
-            if ( option.get_require_value() )
-              parsed_options.push_back( ParsedOption( option, args.OptionArg() ) );
+            if ( option.get_require_argument() )
+            {
+              out_parsed_options.push_back
+              (
+                ParsedOption( option, args.OptionArg() )
+              );
+            }
             else
-              parsed_options.push_back( ParsedOption( option ) );
+              out_parsed_options.push_back( ParsedOption( option ) );
           }
         }
       }
@@ -4163,6 +4169,9 @@ OptionParser::parse_args
     }
   }
 
+  for ( int arg_i = argc - args.FileCount(); arg_i < argc; arg_i++ )
+    out_positional_arguments.push_back( argv[arg_i] );
+
   for
   (
     vector<char*>::iterator arg_i = argvv.begin();
@@ -4171,8 +4180,6 @@ OptionParser::parse_args
   )
     delete [] *arg_i;
   argvv.clear();
-
-  return argc - args.FileCount();
 }
 
 string OptionParser::usage()
@@ -4190,8 +4197,9 @@ string OptionParser::usage()
   )
   {
     const Option& option = *option_i;
-    usage << "  " << option.get_arg();
-    usage << "\t" << option.get_help();
+    usage << "  " << option;
+    if ( !option.get_help().empty() )
+      usage << "\t" << option.get_help();
     usage << endl;
   }
 
@@ -4199,20 +4207,6 @@ string OptionParser::usage()
 
   return usage.str();
 }
-
-
-OptionParser::Option::Option( const string& arg, const string& help, bool require_value )
-  : arg( arg ), help( help ), require_value( require_value )
-{ }
-
-
-OptionParser::ParsedOption::ParsedOption( Option& option )
-  : Option( option )
-{ }
-
-OptionParser::ParsedOption::ParsedOption( Option& option, const string& value )
-  : Option( option ), value( value )
-{ }
 
 
 // ostream.cpp

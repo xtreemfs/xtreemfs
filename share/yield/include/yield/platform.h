@@ -1318,33 +1318,52 @@ namespace yield
       class Option
       {
       public:
-        Option( const string& arg, const string& help, bool require_value );
+        Option( const string& option, const string& help, bool require_arg )
+          : option( option ), help( help ), require_argument( require_arg )
+        { }
 
-        const string& get_arg() const { return arg; }
         const string& get_help() const { return help; }
-        bool get_require_value() const { return require_value; }
+        bool get_require_argument() const { return require_argument; }
 
-        bool operator<( const Option& other ) const
+        operator const char*() const { return option.c_str(); }
+        operator const string&() const { return option; }
+
+        bool operator==( const string& option ) const
+        { 
+          return this->option == option; 
+        }
+
+        bool operator==( const char* option ) const
         {
-          return arg.compare( other.arg ) < 0;
+          return this->option == option;
+        }
+      
+        bool operator<( const Option& other ) const // For sorting
+        {
+          return option.compare( other.option ) < 0;
         }
 
       private:
-        string arg, help;
-        bool require_value;
+        string help, option;
+        bool require_argument;
       };
 
 
       class ParsedOption : public Option
       {
       public:
-        ParsedOption( Option& option );
-        ParsedOption( Option& option, const string& value );
+        ParsedOption( Option& option )
+          : Option( option )
+        { }
 
-        const string& get_value() const { return value; }
+        ParsedOption( Option& option, const string& argument )
+          : Option( option ), argument( argument )
+        { }
+
+        const string& get_argument() const { return argument; }
 
       private:
-        string value;
+        string argument;
       };
 
 
@@ -1354,14 +1373,26 @@ namespace yield
       YIELD_PLATFORM_EXCEPTION_SUBCLASS( UnregisteredOptionException );
 
 
-      void add_option( const string& arg );
-      void add_option( const string& arg, bool require_value );
-      void add_option( const string& arg, const string& help );
-      void add_option( const string& arg, const string& help, bool require_value );
+      void add_option( const string& option );
+      void add_option( const string& option, bool require_argument );
+      void add_option( const string& option, const string& help );
 
-      // Returns the number of argv strings parsed
-      // Throws exceptions on errors
-      int parse_args( int argc, char** argv, vector<ParsedOption>& );
+      void 
+      add_option
+      ( 
+        const string& option, 
+        const string& help, 
+        bool require_argument
+      );
+
+      void 
+      parse_args
+      ( 
+        int argc, 
+        char** argv, 
+        vector<ParsedOption>& out_parsed_options,
+        vector<string>& out_positional_arguments
+      );
 
       std::string usage();
 
