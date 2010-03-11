@@ -38,20 +38,20 @@ public class DIRInterface
     {
         switch( header.getProcedure() )
         {
-            case 2010031017: return new xtreemfs_address_mappings_getRequestRequest();
-            case 2010031018: return new xtreemfs_address_mappings_removeRequestRequest();
-            case 2010031019: return new xtreemfs_address_mappings_setRequestRequest();
-            case 2010031020: return new xtreemfs_checkpointRequestRequest();
-            case 2010031021: return new xtreemfs_discover_dirRequestRequest();
-            case 2010031022: return new xtreemfs_global_time_s_getRequestRequest();
-            case 2010031023: return new xtreemfs_replication_to_masterRequestRequest();
-            case 2010031028: return new xtreemfs_service_deregisterRequestRequest();
-            case 2010031026: return new xtreemfs_service_get_by_nameRequestRequest();
-            case 2010031024: return new xtreemfs_service_get_by_typeRequestRequest();
-            case 2010031025: return new xtreemfs_service_get_by_uuidRequestRequest();
-            case 2010031029: return new xtreemfs_service_offlineRequestRequest();
-            case 2010031027: return new xtreemfs_service_registerRequestRequest();
-            case 2010031030: return new xtreemfs_shutdownRequestRequest();
+            case 2010031017: return new xtreemfs_address_mappings_getRequest();
+            case 2010031018: return new xtreemfs_address_mappings_removeRequest();
+            case 2010031019: return new xtreemfs_address_mappings_setRequest();
+            case 2010031020: return new xtreemfs_checkpointRequest();
+            case 2010031021: return new xtreemfs_discover_dirRequest();
+            case 2010031022: return new xtreemfs_global_time_s_getRequest();
+            case 2010031023: return new xtreemfs_replication_to_masterRequest();
+            case 2010031028: return new xtreemfs_service_deregisterRequest();
+            case 2010031026: return new xtreemfs_service_get_by_nameRequest();
+            case 2010031024: return new xtreemfs_service_get_by_typeRequest();
+            case 2010031025: return new xtreemfs_service_get_by_uuidRequest();
+            case 2010031029: return new xtreemfs_service_offlineRequest();
+            case 2010031027: return new xtreemfs_service_registerRequest();
+            case 2010031030: return new xtreemfs_shutdownRequest();
             default: throw new Exception( "unknown request tag " + Integer.toString( header.getProcedure() ) );
         }
     }
@@ -60,9 +60,21 @@ public class DIRInterface
     {
         switch( header.getXID() )
         {
-            case 2010031017: return new xtreemfs_address_mappings_getResponseResponse();case 2010031018: return new xtreemfs_address_mappings_removeResponseResponse();case 2010031019: return new xtreemfs_address_mappings_setResponseResponse();case 2010031020: return new xtreemfs_checkpointResponseResponse();case 2010031021: return new xtreemfs_discover_dirResponseResponse();case 2010031022: return new xtreemfs_global_time_s_getResponseResponse();case 2010031023: return new xtreemfs_replication_to_masterResponseResponse();case 2010031028: return new xtreemfs_service_deregisterResponseResponse();case 2010031026: return new xtreemfs_service_get_by_nameResponseResponse();case 2010031024: return new xtreemfs_service_get_by_typeResponseResponse();case 2010031025: return new xtreemfs_service_get_by_uuidResponseResponse();case 2010031029: return new xtreemfs_service_offlineResponseResponse();case 2010031027: return new xtreemfs_service_registerResponseResponse();case 2010031030: return new xtreemfs_shutdownResponseResponse();
+            case 2010031017: return new xtreemfs_address_mappings_getResponse();
+            case 2010031018: return new xtreemfs_address_mappings_removeResponse();
+            case 2010031019: return new xtreemfs_address_mappings_setResponse();
+            case 2010031020: return new xtreemfs_checkpointResponse();
+            case 2010031021: return new xtreemfs_discover_dirResponse();
+            case 2010031022: return new xtreemfs_global_time_s_getResponse();
+            case 2010031023: return new xtreemfs_replication_to_masterResponse();
+            case 2010031028: return new xtreemfs_service_deregisterResponse();
+            case 2010031026: return new xtreemfs_service_get_by_nameResponse();
+            case 2010031024: return new xtreemfs_service_get_by_typeResponse();
+            case 2010031025: return new xtreemfs_service_get_by_uuidResponse();
+            case 2010031029: return new xtreemfs_service_offlineResponse();
+            case 2010031027: return new xtreemfs_service_registerResponse();
+            case 2010031030: return new xtreemfs_shutdownResponse();
             default: throw new Exception( "unknown response XID " + Integer.toString( header.getXID() ) );
         }
     }
-
 }

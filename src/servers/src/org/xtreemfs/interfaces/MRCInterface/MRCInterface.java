@@ -48,41 +48,41 @@ public class MRCInterface
     {
         switch( header.getProcedure() )
         {
-            case 2010031117: return new closeRequestRequest();
-            case 2010031118: return new fsetattrRequestRequest();
-            case 2010031119: return new ftruncateRequestRequest();
-            case 2010031120: return new getattrRequestRequest();
-            case 2010031121: return new getxattrRequestRequest();
-            case 2010031122: return new linkRequestRequest();
-            case 2010031123: return new listxattrRequestRequest();
-            case 2010031124: return new mkdirRequestRequest();
-            case 2010031125: return new openRequestRequest();
-            case 2010031126: return new readdirRequestRequest();
-            case 2010031127: return new readlinkRequestRequest();
-            case 2010031128: return new removexattrRequestRequest();
-            case 2010031129: return new renameRequestRequest();
-            case 2010031130: return new rmdirRequestRequest();
-            case 2010031131: return new setattrRequestRequest();
-            case 2010031132: return new setxattrRequestRequest();
-            case 2010031133: return new statvfsRequestRequest();
-            case 2010031134: return new symlinkRequestRequest();
-            case 2010031135: return new unlinkRequestRequest();
-            case 2010031146: return new xtreemfs_checkpointRequestRequest();
-            case 2010031147: return new xtreemfs_check_file_existsRequestRequest();
-            case 2010031148: return new xtreemfs_dump_databaseRequestRequest();
-            case 2010031149: return new xtreemfs_get_suitable_osdsRequestRequest();
-            case 2010031150: return new xtreemfs_internal_debugRequestRequest();
-            case 2010031151: return new xtreemfs_lsvolRequestRequest();
-            case 2010031152: return new xtreemfs_mkvolRequestRequest();
-            case 2010031153: return new xtreemfs_renew_capabilityRequestRequest();
-            case 2010031154: return new xtreemfs_replication_to_masterRequestRequest();
-            case 2010031155: return new xtreemfs_replica_addRequestRequest();
-            case 2010031156: return new xtreemfs_replica_listRequestRequest();
-            case 2010031157: return new xtreemfs_replica_removeRequestRequest();
-            case 2010031158: return new xtreemfs_restore_databaseRequestRequest();
-            case 2010031159: return new xtreemfs_restore_fileRequestRequest();
-            case 2010031160: return new xtreemfs_rmvolRequestRequest();
-            case 2010031161: return new xtreemfs_shutdownRequestRequest();
+            case 2010031117: return new closeRequest();
+            case 2010031118: return new fsetattrRequest();
+            case 2010031119: return new ftruncateRequest();
+            case 2010031120: return new getattrRequest();
+            case 2010031121: return new getxattrRequest();
+            case 2010031122: return new linkRequest();
+            case 2010031123: return new listxattrRequest();
+            case 2010031124: return new mkdirRequest();
+            case 2010031125: return new openRequest();
+            case 2010031126: return new readdirRequest();
+            case 2010031127: return new readlinkRequest();
+            case 2010031128: return new removexattrRequest();
+            case 2010031129: return new renameRequest();
+            case 2010031130: return new rmdirRequest();
+            case 2010031131: return new setattrRequest();
+            case 2010031132: return new setxattrRequest();
+            case 2010031133: return new statvfsRequest();
+            case 2010031134: return new symlinkRequest();
+            case 2010031135: return new unlinkRequest();
+            case 2010031146: return new xtreemfs_checkpointRequest();
+            case 2010031147: return new xtreemfs_check_file_existsRequest();
+            case 2010031148: return new xtreemfs_dump_databaseRequest();
+            case 2010031149: return new xtreemfs_get_suitable_osdsRequest();
+            case 2010031150: return new xtreemfs_internal_debugRequest();
+            case 2010031151: return new xtreemfs_lsvolRequest();
+            case 2010031152: return new xtreemfs_mkvolRequest();
+            case 2010031153: return new xtreemfs_renew_capabilityRequest();
+            case 2010031154: return new xtreemfs_replication_to_masterRequest();
+            case 2010031155: return new xtreemfs_replica_addRequest();
+            case 2010031156: return new xtreemfs_replica_listRequest();
+            case 2010031157: return new xtreemfs_replica_removeRequest();
+            case 2010031158: return new xtreemfs_restore_databaseRequest();
+            case 2010031159: return new xtreemfs_restore_fileRequest();
+            case 2010031160: return new xtreemfs_rmvolRequest();
+            case 2010031161: return new xtreemfs_shutdownRequest();
             default: throw new Exception( "unknown request tag " + Integer.toString( header.getProcedure() ) );
         }
     }
@@ -91,9 +91,42 @@ public class MRCInterface
     {
         switch( header.getXID() )
         {
-            case 2010031117: return new closeResponseResponse();case 2010031118: return new fsetattrResponseResponse();case 2010031119: return new ftruncateResponseResponse();case 2010031120: return new getattrResponseResponse();case 2010031121: return new getxattrResponseResponse();case 2010031122: return new linkResponseResponse();case 2010031123: return new listxattrResponseResponse();case 2010031124: return new mkdirResponseResponse();case 2010031125: return new openResponseResponse();case 2010031126: return new readdirResponseResponse();case 2010031127: return new readlinkResponseResponse();case 2010031128: return new removexattrResponseResponse();case 2010031129: return new renameResponseResponse();case 2010031130: return new rmdirResponseResponse();case 2010031131: return new setattrResponseResponse();case 2010031132: return new setxattrResponseResponse();case 2010031133: return new statvfsResponseResponse();case 2010031134: return new symlinkResponseResponse();case 2010031135: return new unlinkResponseResponse();case 2010031146: return new xtreemfs_checkpointResponseResponse();case 2010031147: return new xtreemfs_check_file_existsResponseResponse();case 2010031148: return new xtreemfs_dump_databaseResponseResponse();case 2010031149: return new xtreemfs_get_suitable_osdsResponseResponse();case 2010031150: return new xtreemfs_internal_debugResponseResponse();case 2010031151: return new xtreemfs_lsvolResponseResponse();case 2010031152: return new xtreemfs_mkvolResponseResponse();case 2010031153: return new xtreemfs_renew_capabilityResponseResponse();case 2010031154: return new xtreemfs_replication_to_masterResponseResponse();case 2010031155: return new xtreemfs_replica_addResponseResponse();case 2010031156: return new xtreemfs_replica_listResponseResponse();case 2010031157: return new xtreemfs_replica_removeResponseResponse();case 2010031158: return new xtreemfs_restore_databaseResponseResponse();case 2010031159: return new xtreemfs_restore_fileResponseResponse();case 2010031160: return new xtreemfs_rmvolResponseResponse();case 2010031161: return new xtreemfs_shutdownResponseResponse();
+            case 2010031117: return new closeResponse();
+            case 2010031118: return new fsetattrResponse();
+            case 2010031119: return new ftruncateResponse();
+            case 2010031120: return new getattrResponse();
+            case 2010031121: return new getxattrResponse();
+            case 2010031122: return new linkResponse();
+            case 2010031123: return new listxattrResponse();
+            case 2010031124: return new mkdirResponse();
+            case 2010031125: return new openResponse();
+            case 2010031126: return new readdirResponse();
+            case 2010031127: return new readlinkResponse();
+            case 2010031128: return new removexattrResponse();
+            case 2010031129: return new renameResponse();
+            case 2010031130: return new rmdirResponse();
+            case 2010031131: return new setattrResponse();
+            case 2010031132: return new setxattrResponse();
+            case 2010031133: return new statvfsResponse();
+            case 2010031134: return new symlinkResponse();
+            case 2010031135: return new unlinkResponse();
+            case 2010031146: return new xtreemfs_checkpointResponse();
+            case 2010031147: return new xtreemfs_check_file_existsResponse();
+            case 2010031148: return new xtreemfs_dump_databaseResponse();
+            case 2010031149: return new xtreemfs_get_suitable_osdsResponse();
+            case 2010031150: return new xtreemfs_internal_debugResponse();
+            case 2010031151: return new xtreemfs_lsvolResponse();
+            case 2010031152: return new xtreemfs_mkvolResponse();
+            case 2010031153: return new xtreemfs_renew_capabilityResponse();
+            case 2010031154: return new xtreemfs_replication_to_masterResponse();
+            case 2010031155: return new xtreemfs_replica_addResponse();
+            case 2010031156: return new xtreemfs_replica_listResponse();
+            case 2010031157: return new xtreemfs_replica_removeResponse();
+            case 2010031158: return new xtreemfs_restore_databaseResponse();
+            case 2010031159: return new xtreemfs_restore_fileResponse();
+            case 2010031160: return new xtreemfs_rmvolResponse();
+            case 2010031161: return new xtreemfs_shutdownResponse();
             default: throw new Exception( "unknown response XID " + Integer.toString( header.getXID() ) );
         }
     }
-
 }
