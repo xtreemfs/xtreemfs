@@ -49,7 +49,6 @@ import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
-import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy.PrepareOperationCallback;
 import org.xtreemfs.osd.stages.ReplicationStage.FetchObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
@@ -103,6 +102,7 @@ public final class ReadOperation extends OSDOperation {
         }
 
         if ( (rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
+            || (rq.getLocationList().getNumReplicas() == 1)
             || (rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY))){
 
             final long snapVerTS = rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP? rq.getCapability().getSnapTimestamp(): 0;
@@ -142,16 +142,21 @@ public final class ReadOperation extends OSDOperation {
                     } else {
                         //open file in repl stage
                         master.getRWReplicationStage().openFile(args.getFile_credentials(),
-                                rq.getLocationList(), maxObjNo, new RWReplicationStage.OpenFileCallback() {
+                                rq.getLocationList(), maxObjNo, new RWReplicationStage.RWReplicationCallback() {
 
                             @Override
-                            public void fileOpenComplete(Exception error) {
-                                if (Logging.isDebug())
-                                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"open complete for file: "+rq.getFileId()+" error: "+error);
-                                if (error != null)
-                                    sendError(rq, error);
-                                else
-                                    rwReplicatedRead(rq,args);
+                            public void success(long newObjectVersion) {
+                                rwReplicatedRead(rq,args);
+                            }
+
+                            @Override
+                            public void redirect(RedirectException redirectTo) {
+                                throw new UnsupportedOperationException("Not supported yet.");
+                            }
+
+                            @Override
+                            public void failed(Exception ex) {
+                                sendError(rq, ex);
                             }
                         }, rq);
                     }
@@ -162,19 +167,11 @@ public final class ReadOperation extends OSDOperation {
     }
 
     public void rwReplicatedRead(final OSDRequest rq, final readRequest args) {
-        master.getRWReplicationStage().prepareOperation(args.getFile_credentials(), args.getObject_number(), args.getObject_version(), RWReplicationStage.Operation.READ, new PrepareOperationCallback() {
+        master.getRWReplicationStage().prepareOperation(args.getFile_credentials(), args.getObject_number(), args.getObject_version(),
+                RWReplicationStage.Operation.READ, new RWReplicationStage.RWReplicationCallback() {
 
             @Override
-            public void prepareOperationComplete(boolean canExecOperation, String redirectToUUID, final long newObjVersion, Exception error) {
-                if (redirectToUUID != null) {
-                    sendError(rq, new RedirectException(redirectToUUID));
-                    return;
-                }
-                if (error != null) {
-                    sendError(rq, error);
-                    return;
-                }
-
+            public void success(long newObjectVersion) {
                 System.out.println("preparOpComplete called");
                 final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
@@ -189,6 +186,16 @@ public final class ReadOperation extends OSDOperation {
                         postRead(rq, args, result, error);
                     }
                 });
+            }
+
+            @Override
+            public void redirect(RedirectException redirectTo) {
+                sendError(rq, redirectTo);
+            }
+
+            @Override
+            public void failed(Exception ex) {
+                sendError(rq, ex);
             }
         }, rq);
     }

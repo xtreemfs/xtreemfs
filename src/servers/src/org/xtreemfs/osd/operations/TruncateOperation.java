@@ -24,12 +24,10 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
 package org.xtreemfs.osd.operations;
 
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -47,11 +45,8 @@ import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
-import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy.PrepareOperationCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
-import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.TruncateCallback;
-import org.xtreemfs.osd.storage.ObjectInformation;
 
 public final class TruncateOperation extends OSDOperation {
 
@@ -87,8 +82,14 @@ public final class TruncateOperation extends OSDOperation {
             return;
         }
 
-        if ((rq.getLocationList().getReplicaUpdatePolicy().length() == 0) ||
-                (rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY))) {
+        if (rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY)) {
+            // file is read only
+            rq.sendException(new OSDException(ErrorCodes.FILE_IS_READ_ONLY,
+                    "Cannot write on read-only files.", ""));
+        }
+
+        if ((rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
+            || (rq.getLocationList().getNumReplicas() == 1)) {
 
             master.getStorageStage().truncate(args.getFile_id(), args.getNew_file_size(),
                 rq.getLocationList().getLocalReplica().getStripingPolicy(),
@@ -131,20 +132,30 @@ public final class TruncateOperation extends OSDOperation {
                             } else {
                                 //open file in repl stage
                                 master.getRWReplicationStage().openFile(args.getFile_credentials(),
-                                        rq.getLocationList(), maxObjNo, new RWReplicationStage.OpenFileCallback() {
+                                        rq.getLocationList(), maxObjNo, new RWReplicationStage.RWReplicationCallback() {
 
-                                    @Override
-                                    public void fileOpenComplete(Exception error) {
-                                        if (Logging.isDebug()) {
-                                            Logging.logMessage(Logging.LEVEL_DEBUG, this, "open complete for file: " + rq.getFileId() + " error: " + error);
-                                        }
-                                        if (error != null) {
-                                            sendError(rq, error);
-                                        } else {
+                                        @Override
+                                        public void success(long newObjectVersion) {
+                                            if (Logging.isDebug()) {
+                                                Logging.logMessage(Logging.LEVEL_DEBUG, this, "open success for file: " + rq.getFileId());
+                                            }
                                             rwReplicatedTruncate(rq, args);
                                         }
-                                    }
-                                }, rq);
+
+                                        @Override
+                                        public void redirect(RedirectException redirectTo) {
+                                            throw new UnsupportedOperationException("Not supported yet.");
+                                        }
+
+                                        @Override
+                                        public void failed(Exception ex) {
+                                            if (Logging.isDebug()) {
+                                                Logging.logMessage(Logging.LEVEL_DEBUG, this, "open failed for file: " + rq.getFileId() + " error: " + ex);
+                                            }
+                                            sendError(rq, ex);
+                                        }
+                                    }, rq);
+
                             }
 
                         }
@@ -156,21 +167,10 @@ public final class TruncateOperation extends OSDOperation {
 
     public void rwReplicatedTruncate(final OSDRequest rq,
             final truncateRequest args) {
-        master.getRWReplicationStage().prepareOperation(args.getFile_credentials(), 0, 0, RWReplicationStage.Operation.TRUNCATE, new PrepareOperationCallback() {
+        master.getRWReplicationStage().prepareOperation(args.getFile_credentials(), 0, 0, RWReplicationStage.Operation.TRUNCATE, new RWReplicationStage.RWReplicationCallback() {
 
             @Override
-            public void prepareOperationComplete(boolean canExecOperation, String redirectToUUID, final long newObjVersion, Exception error) {
-                if (redirectToUUID != null) {
-                    sendError(rq, new RedirectException(redirectToUUID));
-                    return;
-
-                }
-                if (error != null) {
-                    sendError(rq, error);
-                    return;
-
-                }
-
+            public void success(final long newObjectVersion) {
                 System.out.println("preparOpComplete called");
                 final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
@@ -178,13 +178,23 @@ public final class TruncateOperation extends OSDOperation {
                master.getStorageStage().truncate(args.getFile_id(), args.getNew_file_size(),
                     rq.getLocationList().getLocalReplica().getStripingPolicy(),
                     rq.getLocationList().getLocalReplica(), rq.getCapability().getEpochNo(), rq.getCowPolicy(),
-                    newObjVersion, rq, new TruncateCallback() {
+                    newObjectVersion, rq, new TruncateCallback() {
 
-                @Override
-                public void truncateComplete(OSDWriteResponse result, Exception error) {
-                    replicateTruncate(rq, newObjVersion, args, result, error);
-                }
-            });
+                    @Override
+                    public void truncateComplete(OSDWriteResponse result, Exception error) {
+                        replicateTruncate(rq, newObjectVersion, args, result, error);
+                    }
+                });
+            }
+
+            @Override
+            public void redirect(RedirectException redirectTo) {
+                sendError(rq, redirectTo);
+            }
+
+            @Override
+            public void failed(Exception ex) {
+                sendError(rq, ex);
             }
         }, rq);
     }
@@ -198,13 +208,24 @@ public final class TruncateOperation extends OSDOperation {
             else {
                 master.getRWReplicationStage().replicateTruncate(args.getFile_credentials(),
                     args.getNew_file_size(), newObjVersion,
-                    rq.getLocationList(), new RWReplicationStage.ReplicatedOperationCallback() {
+                    rq.getLocationList(), new RWReplicationStage.RWReplicationCallback() {
 
-                @Override
-                public void writeCompleted(Exception error) {
-                    step2(rq, args, result, error);
-                }
-            }, rq);
+                    @Override
+                    public void success(long newObjectVersion) {
+                        step2(rq, args, result, null);
+                    }
+
+                    @Override
+                    public void redirect(RedirectException redirectTo) {
+                        throw new UnsupportedOperationException("Not supported yet.");
+                    }
+
+                    @Override
+                    public void failed(Exception ex) {
+                        step2(rq, args, result, ex);
+                    }
+                }, rq);
+
             }
     }
 

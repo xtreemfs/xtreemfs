@@ -44,6 +44,9 @@ import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_broadcast_gmaxRequest;
+import org.xtreemfs.interfaces.ObjectVersion;
+import org.xtreemfs.interfaces.ObjectVersionList;
+import org.xtreemfs.interfaces.ReplicaStatus;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.ObjectSet;
@@ -54,6 +57,7 @@ import org.xtreemfs.osd.stages.StorageStage.GetFileSizeCallback;
 import org.xtreemfs.osd.stages.StorageStage.GetObjectListCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetGmaxCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
+import org.xtreemfs.osd.stages.StorageStage.InternalGetReplicaStateCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.TruncateCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
@@ -80,9 +84,11 @@ public class StorageThread extends Stage {
     
     public static final int      STAGEOP_INSERT_PADDING_OBJECT = 9;
 
-    public static final int      STAGEOP_GET_MAX_OBJNO        = 10;
+    public static final int      STAGEOP_GET_MAX_OBJNO         = 10;
     
     public static final int      STAGEOP_CREATE_FILE_VERSION   = 11;
+
+    public static final int      STAGEOP_GET_REPLICA_STATE     = 12;
     
     private MetadataCache        cache;
     
@@ -140,6 +146,9 @@ public class StorageThread extends Stage {
                 break;
             case STAGEOP_CREATE_FILE_VERSION:
                 processCreateFileVersion(method);
+                break;
+            case STAGEOP_GET_REPLICA_STATE:
+                processGetReplicaState(method);
                 break;
             }
             
@@ -277,6 +286,41 @@ public class StorageThread extends Stage {
             cback.gmaxComplete(null, ex);
         }
         
+    }
+
+
+    private void processGetReplicaState(StageRequest rq) {
+        final InternalGetReplicaStateCallback cback = (InternalGetReplicaStateCallback) rq.getCallback();
+        try {
+            final String fileId = (String) rq.getArgs()[0];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
+            final long remoteMaxObjVer = (Long) rq.getArgs()[2];
+
+            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
+            // final boolean rangeRequested = (offset > 0) || (length <
+            // stripeSize);
+
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "GET replica state: %s, remote max: %d", fileId, remoteMaxObjVer);
+            }
+
+            ReplicaStatus result = new ReplicaStatus();
+            result.setMax_obj_version(fi.getLastObjectNumber());
+            result.setTruncate_epoch(fi.getTruncateEpoch());
+
+            ObjectVersionList ovl = new ObjectVersionList();
+
+            for (Entry<Long,Long> e : fi.getLatestObjectVersions()) {
+                if (e.getValue() > remoteMaxObjVer)
+                    ovl.add(new ObjectVersion(e.getKey(), e.getValue()));
+            }
+            result.setObjectVersions(ovl);
+
+            cback.getReplicaStateComplete(result, null);
+        } catch (IOException ex) {
+            cback.getReplicaStateComplete(null, ex);
+        }
+
     }
     
     /**

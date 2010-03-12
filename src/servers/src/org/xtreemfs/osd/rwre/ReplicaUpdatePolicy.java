@@ -8,10 +8,14 @@ package org.xtreemfs.osd.rwre;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Queue;
 import org.xtreemfs.common.buffer.ASCIIString;
-import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.FileCredentials;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.RedirectException;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.osd.rwre.RWReplicationStage.Operation;
+import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
 
 /**
  *
@@ -19,78 +23,94 @@ import org.xtreemfs.interfaces.ObjectData;
  */
 public abstract class ReplicaUpdatePolicy {
 
-    protected List<InetSocketAddress> remoteOSDs;
+    public static final long UNBOUND_RESET = -1;
+
+    protected List<InetSocketAddress>       remoteOSDs;
 
     protected final ASCIIString             cellId;
+
+    protected long localObjVersion;
     
-    public ReplicaUpdatePolicy(List<InetSocketAddress> remoteOSDs, ASCIIString cellId) {
+    public ReplicaUpdatePolicy(List<InetSocketAddress> remoteOSDs, ASCIIString cellId, long maxObjVerOnDisk) {
         this.remoteOSDs = remoteOSDs;
         this.cellId = cellId;
+        this.localObjVersion = maxObjVerOnDisk;
     }
 
     public List<InetSocketAddress> getRemoteOSDs() {
         return remoteOSDs;
     }
 
-    public abstract void closeFile();
-
-    /*public abstract void canExecuteWrite(FileCredentials credentials, long objNo, long objVersion, CanExecuteWriteCallback callback);
-
-    public static interface CanExecuteWriteCallback {
-        public void canExecuteWriteCompleted(String redirectTo, Exception error);
-    }*/
-
-    public abstract void openFile(long maxObjNoOnDisk, OpenFileCallback callback);
-
-    /**
-     * @return the cellId
-     */
     public ASCIIString getCellId() {
         return cellId;
     }
 
-    public static interface OpenFileCallback {
-        public void fileOpened(boolean locallyReadable, boolean locallyWritable, Exception error);
-    }
-
-    public abstract void prepareOperation(long objNo, long objVersion, RWReplicationStage.Operation operation, PrepareOperationCallback callback);
-
-    public static interface PrepareOperationCallback {
-        public void prepareOperationComplete(boolean canExecOperation, String redirectToUUID, long newObjVersion, Exception error);
+    public void objectFetched(long objVersion) {
+        if (objVersion > localObjVersion)
+            localObjVersion = objVersion;
     }
 
     /**
-     * create and execute the update RPCs to be sent to the other OSDs
-     * @param credentials file credentials to contact OSDs, not used for XLoc!
-     * @param objNo object number
-     * @param objVersion new object version to write
-     * @param data the object data
-     * @return a list of RPCResponses, can be null if no update was create (e.g. cached locally)
+     *
+     * @return true, if this is primary/backup, false if all replicas are primary
      */
-    public abstract void writeUpdate(FileCredentials credentials, long objNo, long objVersion, ObjectData data,
-            ReplicatedOperationCallback callback);
+    public abstract boolean requiresLease();
 
-    public static interface ReplicatedOperationCallback {
-        public void operationCompleted(RPCResponse[] responses, String redirectToUUID, Exception error);
+    /**
+     * called to execute a reset
+     * @param credentials
+     * @param maxLocalOV
+     */
+    public abstract void    executeReset(FileCredentials credentials, long updateObjVer, ExecuteResetCallback callback);
+
+    public static interface ExecuteResetCallback {
+        public void finished(Queue<ObjectFetchRecord> objectsToFetch);
+        public void failed(Exception error);
     }
 
     /**
-     * create and execute the update RPCs to be sent to the other OSDs
-     * @param credentials file credentials to contact OSDs, not used for XLoc!
-     * @param objNo object number
-     * @param objVersion new object version to write
-     * @param data the object data
-     * @return a list of RPCResponses, can be null if no update was create (e.g. cached locally)
+     * called to execute a client write operation
      */
-    public abstract void truncateFile(FileCredentials credentials, long newFileSize, long newObjectVersion,
-            ReplicatedOperationCallback callback);
+    public abstract void    executeWrite(FileCredentials credentials, long objNo,
+            long objVersion, ObjectData data,
+            ClientOperationCallback callback);
+
+    public abstract void    executeTruncate(FileCredentials credentials,
+            long newFileSize, long newObjectVersion,
+            ClientOperationCallback callback);
+
+    public static interface ClientOperationCallback {
+        public void finsihed();
+        public void failed(Exception error);
+    }
+
+    public abstract long       onClientOperation(Operation operation, long objVersion, ReplicaState currentState, ASCIIString leaseOwner)
+            throws RedirectException, OSDException, IOException;
+
+    public abstract boolean    onRemoteUpdate(long objVersion, ReplicaState currentState) throws IOException;
 
     /**
-     * returns true if enough write update RPCs have been successful
-     * @param responses the RPC responses returned by writeUpdate
-     * @throws IOException if one or more requests failed and the update in total failed
-     * @return true, if the write was successully disseminated to the other OSDs
+     *
+     * @return true, if the policy needs to reset the replica
+     * @throws IOException
      */
-    public abstract boolean       hasFinished(int numResponses) throws IOException;
+    public abstract boolean    onPrimary() throws IOException;
+
+    /**
+     *
+     * @return true, if the policy needs to reset the replica
+     * @throws IOException
+     */
+    public abstract boolean    onBackup() throws IOException;
+
+    public abstract void       onFailed() throws IOException;
+
+    /*public static interface PrepareOperationCallback {
+        public void canExecute(long newObjectVersion);
+        public void changeState(ReplicatedFileState.ReplicaState newState);
+        public void failed(Exception error);
+    }*/
+
+    public abstract void    closeFile();
 
 }

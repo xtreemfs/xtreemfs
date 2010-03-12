@@ -5,7 +5,6 @@
 
 package org.xtreemfs.test.osd.rwre;
 
-import java.io.File;
 import java.net.InetSocketAddress;
 import junit.framework.TestCase;
 import org.junit.After;
@@ -14,12 +13,18 @@ import org.junit.Test;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.clients.Client;
+import org.xtreemfs.common.clients.File;
+import org.xtreemfs.common.clients.RandomAccessFile;
+import org.xtreemfs.common.clients.Volume;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
+import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.OSDInterface.RedirectException;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
@@ -29,6 +34,7 @@ import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
@@ -58,7 +64,7 @@ public class RWReplicationTest extends TestCase {
     @Before
     public void setUp() throws Exception {
 
-        File testDir = new File(SetupUtils.TEST_DIR);
+        java.io.File testDir = new java.io.File(SetupUtils.TEST_DIR);
 
         FSUtils.delTree(testDir);
         testDir.mkdirs();
@@ -66,7 +72,8 @@ public class RWReplicationTest extends TestCase {
         // startup: DIR
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
                 TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
-                TestEnvironment.Services.OSD_CLIENT });
+                TestEnvironment.Services.OSD_CLIENT, TestEnvironment.Services.MRC,
+                TestEnvironment.Services.MRC_CLIENT});
         testEnv.start();
 
         osds = new OSD[NUM_OSDS];
@@ -94,6 +101,44 @@ public class RWReplicationTest extends TestCase {
     //
     // @Test
     // public void hello() {}
+
+    @Test
+    public void testReplicationWithClient() throws Exception {
+
+        StringSet grps = new StringSet();
+        grps.add("test");
+        UserCredentials uc = new UserCredentials("test", grps, null);
+
+        Client c = new Client(new InetSocketAddress[]{testEnv.getDIRAddress()}, 15000, 60000, null);
+        c.start();
+        RPCResponse r = testEnv.getMrcClient().mkvol(testEnv.getMRCAddress(), uc, "testVol",
+                new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1),
+                AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX.intValue(),
+                0777);
+        r.get();
+        r.freeBuffers();
+        Volume v = c.getVolume("testVol", uc);
+        File f = v.getFile("test.file");
+        f.createFile();
+        f.setReplicaUpdatePolicy(Constants.REPL_UPDATE_PC_WARONE);
+        String[] suitableOSDs = f.getSuitableOSDs(1);
+        f.addReplica(1, suitableOSDs, 0);
+
+        byte[] data = new byte[2048];
+
+        RandomAccessFile raf = f.open("rw", 0444);
+        raf.write(data, 0, data.length);
+
+        raf.seek(1024);
+        raf.forceReplica(1);
+
+        raf.read(data, 0, data.length);
+
+        raf.close();
+
+        c.stop();
+
+    }
 
     @Test
     public void testReplicatedWrite() throws Exception {
@@ -177,5 +222,77 @@ public class RWReplicationTest extends TestCase {
         r3.freeBuffers();
 
     }
+
+
+    @Test
+    public void testReset() throws Exception {
+        Capability cap = new Capability(fileId, 0, 60, System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
+        ReplicaSet rset = new ReplicaSet();
+        for (OSDConfig osd : this.configs) {
+            StringSet sset = new StringSet();
+            sset.add(osd.getUUID().toString());
+            rset.add(new Replica(sset, 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1)));
+        }
+        XLocSet locSet = new XLocSet(0, rset, Constants.REPL_UPDATE_PC_WARONE, 1);
+        // set the first replica as current replica
+        FileCredentials fc = new FileCredentials(cap.getXCap(), locSet);
+
+
+        ReplicaSet oneRset = new ReplicaSet();
+        StringSet sset = new StringSet();
+        sset.add(configs[0].getUUID().toString());
+        oneRset.add(new Replica(sset, 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1)));
+
+        XLocSet oneLocSet = new XLocSet(0, oneRset, Constants.REPL_UPDATE_PC_NONE, 1);
+        // set the first replica as current replica
+        FileCredentials oneFC = new FileCredentials(cap.getXCap(), oneLocSet);
+
+
+        final OSDClient client = testEnv.getOSDClient();
+
+        final InetSocketAddress osd1 = new InetSocketAddress("localhost",configs[0].getPort());
+
+        final InetSocketAddress osd2 = new InetSocketAddress("localhost",configs[1].getPort());
+
+        ObjectData data = new ObjectData();
+        ReusableBuffer rb = BufferPool.allocate(1024);
+        rb.put("YaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYagga".getBytes());
+        data.setData(rb);
+        rb.limit(rb.capacity());
+        rb.position(0);
+
+        RPCResponse<OSDWriteResponse> r = client.write(osd1, fileId, oneFC, 0, 0, 0, 0, data);
+        r.get();
+        System.out.println("got response");
+        r.freeBuffers();
+        
+        data = new ObjectData();
+        rb = BufferPool.allocate(1024);
+        rb.put("YaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYagga".getBytes());
+        data.setData(rb);
+        rb.limit(rb.capacity());
+        rb.position(0);
+
+        r = client.write(osd1, fileId, oneFC, 1, 0, 0, 0, data);
+        r.get();
+        System.out.println("got response");
+        r.freeBuffers();
+
+        System.out.println("waiting...");
+        Thread.sleep(90*1000);
+        System.out.println("continue...\n\n");
+
+        data = new ObjectData();
+        data.setData(BufferPool.allocate(1024*8));
+        r = client.write(osd2, fileId, fc, 0, 0, 0, 0, data);
+        r.get();
+        System.out.println("got response");
+        r.freeBuffers();
+
+        
+
+    }
+
+
 
 }

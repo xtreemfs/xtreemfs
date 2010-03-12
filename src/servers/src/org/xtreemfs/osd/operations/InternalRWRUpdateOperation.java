@@ -30,6 +30,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
+import org.xtreemfs.interfaces.OSDInterface.RedirectException;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_updateRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_updateResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;
@@ -83,6 +84,26 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
         });
     }
 
+    public void prepareLocalWrite(final OSDRequest rq, final xtreemfs_rwr_updateRequest args) {
+        master.getRWReplicationStage().prepareOperation(args.getFile_credentials(), args.getObject_number(), args.getObject_version(), RWReplicationStage.Operation.INTERNAL_UPDATE, new RWReplicationStage.RWReplicationCallback() {
+
+            @Override
+            public void success(long newObjectVersion) {
+                localWrite(rq, args);
+            }
+
+            @Override
+            public void redirect(RedirectException redirectTo) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            @Override
+            public void failed(Exception ex) {
+                sendResult(rq,ex);
+            }
+        }, rq);
+    }
+
     public void replicatedFileOpen(final OSDRequest rq, final xtreemfs_rwr_updateRequest args) {
 
         if (rq.isFileOpen()) {
@@ -105,23 +126,34 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
                     } else {
                         //open file in repl stage
                         master.getRWReplicationStage().openFile(args.getFile_credentials(),
-                                rq.getLocationList(), maxObjNo, new RWReplicationStage.OpenFileCallback() {
+                                rq.getLocationList(), maxObjNo, new RWReplicationStage.RWReplicationCallback() {
 
-                            @Override
-                            public void fileOpenComplete(Exception error) {
-                                if (Logging.isDebug())
-                                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"open complete for file: "+rq.getFileId()+" error: "+error);
-                                if (error != null)
-                                    sendResult(rq, error);
-                                else
-                                    localWrite(rq,args);
-                            }
-                        }, rq);
+                                @Override
+                                public void success(long newObjectVersion) {
+                                    if (Logging.isDebug()) {
+                                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "open success for file: " + rq.getFileId());
+                                    }
+                                    prepareLocalWrite(rq,args);
+                                }
+
+                                @Override
+                                public void redirect(RedirectException redirectTo) {
+                                    throw new UnsupportedOperationException("Not supported yet.");
+                                }
+
+                                @Override
+                                public void failed(Exception ex) {
+                                    if (Logging.isDebug()) {
+                                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "open failed for file: " + rq.getFileId() + " error: " + ex);
+                                    }
+                                    sendResult(rq, ex);
+                                }
+                            }, rq);
                     }
                 }
             });
         } else
-            localWrite(rq, args);
+            prepareLocalWrite(rq, args);
     }
 
 

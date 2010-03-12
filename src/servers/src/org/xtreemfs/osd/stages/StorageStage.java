@@ -33,6 +33,7 @@ import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.OSDWriteResponse;
+import org.xtreemfs.interfaces.ReplicaStatus;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.ObjectSet;
@@ -156,6 +157,17 @@ public class StorageStage extends Stage {
     public static interface InternalGetMaxObjectNoCallback {
 
         public void maxObjectNoCompleted(long maxObjNo, Exception error);
+    }
+
+    public void internalGetReplicaState(String fileId, StripingPolicyImpl sp, long remoteMaxObjVersion,
+            InternalGetReplicaStateCallback callback) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_REPLICA_STATE, new Object[]{fileId,sp,remoteMaxObjVersion}, null, callback);
+    }
+
+    public static interface InternalGetReplicaStateCallback {
+
+        public void getReplicaStateComplete(ReplicaStatus localState, Exception error);
+
     }
 
     public void getObjectSet(String fileId, OSDRequest request,
