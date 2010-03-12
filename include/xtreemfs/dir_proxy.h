@@ -30,20 +30,13 @@
 #ifndef _XTREEMFS_DIR_PROXY_H_
 #define _XTREEMFS_DIR_PROXY_H_
 
-#include "xtreemfs/proxy.h"
-
-#ifdef _WIN32
-#pragma warning( push )
-#pragma warning( disable: 4100 )
-#endif
 #include "xtreemfs/interfaces/dir_interface.h"
-#ifdef _WIN32
-#pragma warning( pop )
-#endif
+#include "xtreemfs/proxy.h"
 
 
 namespace xtreemfs
 {
+  class Options;
   using org::xtreemfs::interfaces::AddressMappingSet;
 
 
@@ -56,6 +49,13 @@ namespace xtreemfs
              >
   {
   public:
+    static DIRProxy& 
+    create
+    ( 
+      const Options& options,
+      UserCredentialsCache* user_credentials_cache = NULL
+    );
+
     static DIRProxy&
     create
     (

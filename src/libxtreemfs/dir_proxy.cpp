@@ -28,9 +28,13 @@
 
 
 #include "xtreemfs/dir_proxy.h"
+#include "xtreemfs/options.h"
 using org::xtreemfs::interfaces::ServiceSet;
 using org::xtreemfs::interfaces::ServiceDataMap;
 using namespace xtreemfs;
+
+#include "yield.h"
+using yield::platform::Exception;
 
 
 class DIRProxy::CachedAddressMappings : public AddressMappingSet
@@ -100,6 +104,31 @@ DIRProxy::~DIRProxy()
     CachedAddressMappings::dec_ref( *uuid_to_address_mappings_i->second );
 }
 
+DIRProxy& 
+DIRProxy::create
+( 
+  const Options& options,
+  UserCredentialsCache* user_credentials_cache
+)
+{
+  if ( options.get_uri() != NULL )    
+  {
+    return create
+           (
+             *options.get_uri(),
+             DIRProxy::CONCURRENCY_LEVEL_DEFAULT,
+             options.get_proxy_flags(),
+             options.get_log(),
+             options.get_timeout(),
+             DIRProxy::RECONNECT_TRIES_MAX_DEFAULT,
+             options.get_ssl_context(),
+             user_credentials_cache
+           );
+  }
+  else
+    throw Exception( "must specify a DIR[/volume] URI" );
+}
+
 DIRProxy&
 DIRProxy::create
 (
@@ -143,11 +172,14 @@ DIRProxy::getAddressMappingsFromUUID
       CachedAddressMappings* cached_address_mappings =
         uuid_to_address_mappings_i->second;
 
-      uint32_t cached_address_mappings_age_s =
-        (
-          Time() -
-          cached_address_mappings->get_creation_time()
-        ).as_unix_time_s();
+      uint32_t cached_address_mappings_age_s 
+        = static_cast<uint32_t> 
+          (
+            ( 
+              Time() -
+              cached_address_mappings->get_creation_time()
+            ).as_unix_time_s()
+          );
 
       if
       (
@@ -187,7 +219,7 @@ DIRProxy::getAddressMappingsFromUUID
     return *cached_address_mappings;
   }
   else
-    throw yield::platform::Exception( "could not find address mappings for UUID" );
+    throw Exception( "could not find address mappings for UUID" );
 }
 
 URI DIRProxy::getVolumeURIFromVolumeName( const string& volume_name_utf8 )
@@ -271,5 +303,5 @@ URI DIRProxy::getVolumeURIFromVolumeName( const string& volume_name_utf8 )
     }
   }
 
-  throw yield::platform::Exception( "unknown volume" );
+  throw Exception( "unknown volume" );
 }

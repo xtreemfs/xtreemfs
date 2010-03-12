@@ -1,5 +1,5 @@
-#ifndef _972701562_H_
-#define _972701562_H_
+#ifndef _1761840789_H_
+#define _1761840789_H_
 
 
 #include "yield/concurrency.h"
@@ -15,7 +15,10 @@ namespace org
       class NettestInterface
       {
       public:
-        const static uint32_t TAG = 2010031316;
+          const static uint32_t ONCRPC_PORT_DEFAULT = 32638;
+        const static uint32_t ONCRPCG_PORT_DEFAULT = 32638;
+        const static uint32_t ONCRPCS_PORT_DEFAULT = 32638;
+        const static uint32_t ONCRPCU_PORT_DEFAULT = 32638;const static uint32_t TAG = 2010031316;
 
         virtual ~NettestInterface() { }
 
@@ -27,7 +30,7 @@ namespace org
 
         virtual void send_buffer( ::yidl::runtime::Buffer* data ) { }
 
-        virtual void recv_buffer( uint32_t size, ::yidl::runtime::Buffer*& data ) { }
+        virtual void recv_buffer( uint32_t size, ::yidl::runtime::Buffer* data ) { }
       };
 
 
@@ -35,7 +38,7 @@ namespace org
       #define ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_PROTOTYPES\
       virtual void nop();\
       virtual void send_buffer( ::yidl::runtime::Buffer* data );\
-      virtual void recv_buffer( uint32_t size, ::yidl::runtime::Buffer*& data );\
+      virtual void recv_buffer( uint32_t size, ::yidl::runtime::Buffer* data );\
 
 
       #ifndef ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
@@ -194,17 +197,19 @@ namespace org
         {
         public:
           recv_bufferRequest()
-            : size( 0 )
+            : size( 0 ), data( NULL )
           { }
 
-          recv_bufferRequest( uint32_t size )
-            : size( size )
+          recv_bufferRequest( uint32_t size, ::yidl::runtime::Buffer* data )
+            : size( size ), data( ::yidl::runtime::Object::inc_ref( data ) )
           { }
 
-          virtual ~recv_bufferRequest() {  }
+          virtual ~recv_bufferRequest() { ::yidl::runtime::Buffer::dec_ref( data ); }
 
           uint32_t get_size() const { return size; }
+          ::yidl::runtime::Buffer* get_data() const { return data; }
           void set_size( uint32_t size ) { this->size = size; }
+          void set_data( ::yidl::runtime::Buffer* data ) { ::yidl::runtime::Buffer::dec_ref( this->data ); this->data = ::yidl::runtime::Object::inc_ref( data ); }
 
 
           virtual void respond( ::yidl::runtime::Buffer* data )
@@ -219,7 +224,9 @@ namespace org
 
           bool operator==( const recv_bufferRequest& other ) const
           {
-            return size == other.size;
+            return size == other.size
+                   &&
+                   data == other.data;
           }
 
           // yidl::runtime::RTTIObject
@@ -229,15 +236,18 @@ namespace org
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( "size", 0, size );
+            if ( data != NULL ) marshaller.write( "data", 0, *data );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
             size = unmarshaller.read_uint32( "size", 0 );
+            if ( data != NULL ) unmarshaller.read( "data", 0, *data );
           }
 
         protected:
           uint32_t size;
+          ::yidl::runtime::Buffer* data;
         };
 
 
@@ -453,7 +463,7 @@ namespace org
           {
             try
             {
-              ::yidl::runtime::Buffer* data;
+              ::yidl::runtime::Buffer* data( __request.get_data() );
 
               _interface->recv_buffer( __request.get_size(), data );
 
@@ -516,9 +526,9 @@ namespace org
           ::yidl::runtime::auto_Object<send_bufferResponse> __response = __response_queue.dequeue();
         }
 
-        virtual void recv_buffer( uint32_t size, ::yidl::runtime::Buffer*& data )
+        virtual void recv_buffer( uint32_t size, ::yidl::runtime::Buffer* data )
         {
-          recv_bufferRequest __request( size );
+          recv_bufferRequest __request( size, data );
           ::yield::concurrency::ResponseQueue<recv_bufferResponse> __response_queue;
           __request.set_response_target( &__response_queue );
           event_target.send( __request.inc_ref() );

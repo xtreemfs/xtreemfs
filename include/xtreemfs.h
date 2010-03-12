@@ -34,6 +34,7 @@
 #include "xtreemfs/dir_proxy.h"
 #include "xtreemfs/grid_ssl_socket.h"
 #include "xtreemfs/mrc_proxy.h"
+#include "xtreemfs/options.h"
 #include "xtreemfs/osd_proxy.h"
 #include "xtreemfs/osd_proxies.h"
 #include "xtreemfs/user_credentials_cache.h"

@@ -37,31 +37,51 @@ namespace xtreemfs
 {
   using yield::ipc::SSLContext;
   using yield::ipc::URI;
+  using yield::platform::Log;
   using yield::platform::OptionParser;
+  using yield::platform::Path;
   using yield::platform::Time;
 
 
-  class Options : public vector<OptionParser::ParsedOption>
+  class Options : public OptionParser::ParsedOptions
   {
   public:
+    Options( const Options& other );
     virtual ~Options();
-
-    const std::string& get_log_file_path() const { return log_file_path; }
-    const std::string& get_log_level() const { return log_level; }
+    
+    Log* get_log() const { return log; }
+    const Path& get_log_file_path() const { return log_file_path; }
+    const Log::Level& get_log_level() const { return log_level; }
     const vector<string>& get_positional_arguments() const;
     uint32_t get_proxy_flags() const { return proxy_flags; }
     SSLContext* get_ssl_context() const { return ssl_context; }
     const Time& get_timeout() const { return timeout; }
     URI* get_uri() const { return uri; }
 
+    // Parse global options only
     static Options parse( int argc, char** argv );
-    static Options parse( int argc, char** argv, OptionParser& );
+
+    // Parse global options + other_options
+    static Options 
+    parse
+    ( 
+      int argc, 
+      char** argv, 
+      const OptionParser::Options& other_options 
+    );
+
+    // Return usage for global options only
+    static string usage();
+
+    // Return usage for global options + other options
+    static string usage( const OptionParser::Options& other_options );
 
   private:
     Options
     (
-      const string& log_file_path,
-      const string& log_level,
+      Log* log,
+      const Path& log_file_path,
+      const Log::Level& log_level,
       const vector<OptionParser::ParsedOption>& parsed_options,
       const vector<string>& positional_arguments,
       uint32_t proxy_flags,
@@ -70,8 +90,12 @@ namespace xtreemfs
       URI* uri
     );
 
+    static void add_global_options( OptionParser& option_parser );
+
   private:
-    string log_file_path, log_level;
+    Log* log;
+    Path log_file_path;
+    Log::Level log_level;
     uint32_t proxy_flags;
     Time timeout;
     SSLContext* ssl_context;

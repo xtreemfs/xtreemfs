@@ -27,89 +27,59 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#include "xtreemfs/main.h"
+#include "xtreemfs.h"
 using namespace xtreemfs;
 
+#include "yidl.h"
+using yidl::runtime::auto_Object;
 
-namespace rmfs_xtreemfs
-{
-  class Main : public xtreemfs::Main
-  {
-  public:
-    Main()
-      : xtreemfs::Main
-        (
-          "rmfs.xtreemfs",
-          "remove a volume",
-          "[oncrpc://]<dir host>[:port]/<volume name>"
-        )
-    {
-      addOption
-      (
-        RMFS_XTREEMFS_OPTION_PASSWORD,
-        "--password",
-        NULL,
-        "password for volume"
-      );
-    }
-
-  private:
-    enum
-    {
-      RMFS_XTREEMFS_OPTION_PASSWORD = 20
-    };
-
-    yield::ipc::auto_URI dir_uri;
-    std::string password;
-    std::string volume_name;
-
-
-    // yield::Main
-    int _main( int, char** )
-    {
-      auto_DIRProxy dir_proxy = createDIRProxy( *dir_uri );
-
-      yield::ipc::auto_URI mrc_uri
-        = dir_proxy->getVolumeURIFromVolumeName( volume_name );
-
-      auto_MRCProxy mrc_proxy = createMRCProxy( *mrc_uri, password.c_str() );
-
-      mrc_proxy->xtreemfs_rmvol( volume_name );
-
-      return 0;
-    }
-
-    void parseFiles( int files_count, char** files )
-    {
-      if ( files_count == 1 )
-        dir_uri = parseVolumeURI( files[0], volume_name );
-      else if ( files_count == 0 )
-      {
-        throw yield::platform::Exception
-        (
-          "must specify the DIR/volume URI"
-        );
-      }
-      else
-      {
-        throw yield::platform::Exception
-        (
-          "extra parameters after the DIR/volume URI"
-        );
-      }
-    }
-
-    void parseOption( int id, char* arg )
-    {
-      if ( arg && id == RMFS_XTREEMFS_OPTION_PASSWORD )
-        password = arg;
-      else
-        xtreemfs::Main::parseOption( id, arg );
-    }
-  };
-};
 
 int main( int argc, char** argv )
 {
-  return rmfs_xtreemfs::Main().main( argc, argv );
+  OptionParser::Options rmfs_options;
+  rmfs_options.add( "--password", "MRC administrator password" );
+
+  if ( argc == 1 )
+  {
+    cout << "rmfs.xtreemfs: remove a volume" << endl;
+    cout << "Usage: rmfs.xtreemfs <options>" <<
+            " oncrpc://]<dir host>[:port][/volume_name]" << endl;
+    cout << Options::usage( rmfs_options );
+    return 0;
+  }
+
+  try
+  {
+    string mrc_password;
+
+    Options options = Options::parse( argc, argv, rmfs_options );
+
+    for 
+    (
+      Options::const_iterator parsed_option_i = options.begin();
+      parsed_option_i != options.end();
+      ++parsed_option_i
+    )
+    {
+      if ( *parsed_option_i == "--password" )
+        mrc_password = ( parsed_option_i )->get_argument();
+    }
+
+    if ( options.get_uri() == NULL || options.get_uri()->get_resource() == "/" )
+      throw Exception( "must specify the <DIR>/<volume name> URI" );
+    const std::string& volume_name = options.get_uri()->get_resource();
+
+    auto_Object<DIRProxy> dir_proxy = DIRProxy::create( options );
+    URI mrc_uri = dir_proxy->getVolumeURIFromVolumeName( volume_name );
+    auto_Object<MRCProxy> mrc_proxy 
+      = MRCProxy::create( mrc_uri, options, mrc_password );
+    mrc_proxy->xtreemfs_rmvol( volume_name );
+
+    return 0;
+  }
+  catch ( Exception& exception )
+  {
+    cerr << "rmfs.xtreemfs: error: " << exception.what() << endl;
+    return exception.get_error_code();      
+  }
 }

@@ -34,6 +34,7 @@
 #include "stat.h"
 #include "stat_cache.h"
 #include "xtreemfs/mrc_proxy.h"
+#include "xtreemfs/options.h"
 #include "xtreemfs/osd_proxy.h"
 using namespace xtreemfs;
 using org::xtreemfs::interfaces::DirectoryEntrySet;
@@ -45,6 +46,7 @@ using org::xtreemfs::interfaces::StringSet;
 
 #include "yield.h"
 using yield::concurrency::StageGroup;
+using yield::platform::Exception;
 
 #include <errno.h>
 #ifdef _WIN32
@@ -150,6 +152,33 @@ Volume::~Volume()
 bool Volume::access( const Path&, int )
 {
   return true;
+}
+
+Volume&
+Volume::create
+(
+  const Options& options,
+  uint32_t flags,
+  const Path& vivaldi_coordinates_file_path
+)
+{
+  URI* dir_uri = options.get_uri();
+  if ( dir_uri == NULL || dir_uri->get_resource() == "/" )
+    throw Exception( "must specify the <DIR>/<volume name> URI" );
+  const string& name_utf8 = dir_uri->get_resource();
+
+  return create
+         (
+           *dir_uri,
+           name_utf8,
+           flags,
+           options.get_log(),
+           options.get_proxy_flags(),
+           options.get_timeout(),
+           DIRProxy::RECONNECT_TRIES_MAX_DEFAULT,
+           options.get_ssl_context(),
+           vivaldi_coordinates_file_path           
+         );
 }
 
 Volume&
@@ -642,7 +671,7 @@ Volume::setattr
         UserCredentials::dec_ref( *user_credentials );
       }
       else
-        throw yield::platform::Exception( "could not look up uid and gid" );
+        throw Exception( "could not look up uid and gid" );
     }
     else if ( ( to_set & SETATTR_UID ) == SETATTR_UID )
     {
@@ -660,7 +689,7 @@ Volume::setattr
         UserCredentials::dec_ref( *user_credentials );
       }
       else
-        throw yield::platform::Exception( "could not look up uid" );
+        throw Exception( "could not look up uid" );
     }
     else if ( ( to_set & SETATTR_GID ) == SETATTR_GID )
     {
@@ -678,7 +707,7 @@ Volume::setattr
         UserCredentials::dec_ref( *user_credentials );
       }
       else
-        throw yield::platform::Exception( "could not look up gid" );
+        throw Exception( "could not look up gid" );
     }
 #endif
 

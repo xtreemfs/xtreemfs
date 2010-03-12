@@ -28,7 +28,11 @@
 
 
 #include "xtreemfs/mrc_proxy.h"
+#include "xtreemfs/options.h"
 using namespace xtreemfs;
+
+#include "yield.h"
+using yield::platform::Exception;
 
 
 MRCProxy::MRCProxy
@@ -63,6 +67,28 @@ MRCProxy::MRCProxy
   ),
   password( password )
 { }
+
+MRCProxy& 
+MRCProxy::create
+( 
+  const URI& absolute_uri,
+  const Options& options,
+  const string& password
+)
+{
+  return create
+         (
+           absolute_uri,
+           CONCURRENCY_LEVEL_DEFAULT,
+           options.get_proxy_flags(),
+           options.get_log(),
+           options.get_timeout(),
+           password,
+           RECONNECT_TRIES_MAX_DEFAULT,
+           options.get_ssl_context(),
+           NULL
+         );
+}
 
 MRCProxy&
 MRCProxy::create

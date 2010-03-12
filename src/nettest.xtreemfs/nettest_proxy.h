@@ -30,89 +30,42 @@
 #ifndef _NETTEST_XTREEMFS_NETTEST_PROXY_H_
 #define _NETTEST_XTREEMFS_NETTEST_PROXY_H_
 
+#include "xtreemfs/options.h"
 #include "xtreemfs/proxy.h"
-
-#ifdef _WIN32
-#pragma warning( push )
-#pragma warning( disable: 4100 )
-#endif
 #include "nettest_interface.h"
-#ifdef _WIN32
-#pragma warning( pop )
-#endif
 
 
-namespace nettest_xtreemfs
+namespace xtreemfs
 {
   class NettestProxy
-    : public xtreemfs::Proxy<org::xtreemfs::interfaces::NettestInterface>
+    : public Proxy
+             <
+               org::xtreemfs::interfaces::NettestInterface,
+               org::xtreemfs::interfaces::NettestInterfaceEventFactory,
+               org::xtreemfs::interfaces::NettestInterfaceEventSender
+             >
   {
   public:
-    static yidl::runtime::auto_Object<NettestProxy>
-    create
-    (
-      const yield::ipc::URI& absolute_uri,
-      uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
-      uint32_t flags = 0,
-      yield::platform::auto_Log log = NULL,
-      const yield::platform::Time& operation_timeout =
-        OPERATION_TIMEOUT_DEFAULT,
-      uint8_t reconnect_tries_max =
-        RECONNECT_TRIES_MAX_DEFAULT,
-      yield::ipc::auto_SSLContext ssl_context = NULL
-    )
-    {
-      if ( absolute_uri.get_port() != 0 )
-      {
-        return new NettestProxy
-        (
-          concurrency_level,
-          flags,
-          log,
-          operation_timeout,
-          yield::ipc::SocketAddress::create( absolute_uri ),
-          reconnect_tries_max,
-          createSocketFactory( absolute_uri, ssl_context )
-        );
-      }
-      else
-        throw yield::platform::Exception( "must specify port in URI" );
+    virtual ~NettestProxy() { }
 
-    }
-
-    // xtreemfs::Proxy
-    void
-    getCurrentUserCredentials
-    (
-      org::xtreemfs::interfaces::UserCredentials&
-    )
-    { }
+    static NettestProxy& create( const Options& options );
 
   private:
     NettestProxy
     (
       uint16_t concurrency_level,
       uint32_t flags,
-      yield::platform::auto_Log log,
-      const yield::platform::Time& operation_timeout,
-      yield::ipc::auto_SocketAddress peername,
-      uint8_t reconnect_tries_max,
-      yield::ipc::auto_SocketFactory socket_factory
-    )
-      : xtreemfs::Proxy<org::xtreemfs::interfaces::NettestInterface>
-        (
-          concurrency_level,
-          flags,
-          log,
-          operation_timeout,
-          peername,
-          reconnect_tries_max,
-          socket_factory,
-          NULL // user_credentials_cache
-        )
-    { }
+      IOQueue& io_queue,
+      Log* log,
+      const Time& operation_timeout,
+      SocketAddress& peername,
+      uint16_t reconnect_tries_max,
+      SocketFactory& socket_factory,
+      UserCredentialsCache* user_credentials_cache
+    );
 
-    ~NettestProxy() { }
+    // yield::ipc::ONCRPCClient
+    ONCRPCRequest& createONCRPCRequest( MarshallableObject& body );
   };
 
   typedef yidl::runtime::auto_Object<NettestProxy> auto_NettestProxy;

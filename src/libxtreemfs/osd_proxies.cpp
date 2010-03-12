@@ -36,6 +36,9 @@ using org::xtreemfs::interfaces::StripingPolicy;
 using org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
 using namespace xtreemfs;
 
+#include "yield.h"
+using yield::platform::Exception;
+
 
 OSDProxies::OSDProxies
 (
@@ -138,8 +141,14 @@ OSDProxies::get_osd_proxy
       const string& osd_uuid = selected_file_replica->get_osd_uuids()[osd_i];
       return get_osd_proxy( osd_uuid );
     }
+    break;
 
-    default: DebugBreak(); throw yield::platform::Exception(); break;
+    default:
+    {
+      DebugBreak(); 
+      throw Exception();
+    }
+    break;
   }
 }
 
@@ -211,7 +220,7 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
     if ( osd_proxy != NULL )
       insert( make_pair( osd_uuid, &osd_proxy->inc_ref() ) );
     else
-      throw yield::platform::Exception( "no acceptable ONC-RPC URI for UUID" );
+      throw Exception( "no acceptable ONC-RPC URI for UUID" );
   }
 
   return *osd_proxy;

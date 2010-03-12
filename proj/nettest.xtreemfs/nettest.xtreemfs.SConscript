@@ -83,4 +83,5 @@ for lib in ["xtreemfs"]:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 build_env.Program( "../../bin/nettest.xtreemfs", (
-    r"../../src/nettest.xtreemfs/nettest.xtreemfs.cpp" ) )
+    r"../../src/nettest.xtreemfs/nettest.xtreemfs.cpp",
+    r"../../src/nettest.xtreemfs/nettest_proxy.cpp" ) )

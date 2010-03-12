@@ -26,116 +26,82 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-#include "xtreemfs/main.h"
+#include "xtreemfs.h"
 using namespace org::xtreemfs::interfaces;
+using namespace xtreemfs;
 
-#include <iostream>
-
-
-namespace lsfs_xtreemfs
-{
-  class Main : public xtreemfs::Main
-  {
-  public:
-    Main()
-      : xtreemfs::Main
-        (
-          "lsfs.xtreemfs",
-          "list volumes or detailed information on one volume",
-          "[oncrpc://]<dir host>[:port][/volume_name]"
-        )
-    { }
-
-  private:
-    yield::ipc::auto_URI dir_uri;
-    std::string volume_name;
-
-
-    // yield::Main
-    int _main( int, char** )
-    {
-      ServiceSet services;
-      createDIRProxy( *dir_uri )->xtreemfs_service_get_by_type
-      (
-        SERVICE_TYPE_VOLUME,
-        services
-      );
-
-      if ( !volume_name.empty() ) // Print detailed info on one volume
-      {
-        for
-        (
-          ServiceSet::const_iterator service_i= services.begin();
-          service_i != services.end();
-          ++service_i
-        )
-        {
-           if ( ( *service_i ).get_name() == volume_name )
-           {
-             std::cout << "Volume '" << volume_name << "'" << std::endl;
-             size_t volume_name_len = volume_name.size() + 9;
-             for ( size_t dash_i = 0; dash_i < volume_name_len; dash_i++ )
-               std::cout << '-';
-             std::cout << std::endl;
-
-             std::cout << "name: " << ( *service_i ).get_name() << std::endl;
-             std::cout << "uuid: " << ( *service_i ).get_uuid() << std::endl;
-
-             for
-             (
-               ServiceDataMap::const_iterator data_i
-                 = ( *service_i ).get_data().begin();
-               data_i != ( *service_i ).get_data().end();
-               ++data_i
-             )
-             {
-               std::cout << ( *data_i ).first << ": " <<
-                            ( *data_i ).second << std::endl;
-             }
-           }
-        }
-      }
-      else // List all volumes
-      {
-        for
-        (
-          ServiceSet::const_iterator service_i = services.begin();
-          service_i != services.end();
-          ++service_i
-        )
-        {
-          std::cout << ( *service_i ).get_name() << " -> " <<
-                       ( *service_i ).get_uuid() <<
-                       std::endl;
-        }
-      }
-
-      return 0;
-    }
-
-    void parseFiles( int files_count, char** files )
-    {
-      if ( files_count == 1 )
-      {
-        dir_uri = parseURI( files[0] );
-        if ( dir_uri->get_resource().size() > 1 )
-          volume_name = dir_uri->get_resource().c_str() + 1;
-      }
-      else if ( files_count == 0 )
-        throw yield::platform::Exception( "must specify a DIR[/volume] URI" );
-      else
-      {
-        throw yield::platform::Exception
-        (
-          "extra parameters after the DIR[/volume] URI"
-        );
-      }
-    }
-  };
-};
 
 int main( int argc, char** argv )
 {
-  return lsfs_xtreemfs::Main().main( argc, argv );
+  if ( argc == 1 )
+  {
+    cout << "lsfs.xtreemfs: list volumes or examine one volume" << endl;
+    cout << "Usage: lsfs.xtreemfs <options>" <<
+            " [oncrpc://]<dir host>[:port][/volume_name]" << endl;
+    cout << Options::usage();
+    return 0;
+  }
+
+  try
+  {
+    Options options = Options::parse( argc, argv );
+
+    DIRProxy& dir_proxy = DIRProxy::create( options );
+
+    ServiceSet services;
+    dir_proxy.xtreemfs_service_get_by_type( SERVICE_TYPE_VOLUME, services );
+
+    const string& volume_name = options.get_uri()->get_resource();
+    if ( !volume_name.empty() ) // Print detailed info on one volume
+    {
+      for
+      (
+        ServiceSet::const_iterator service_i= services.begin();
+        service_i != services.end();
+        ++service_i
+      )
+      {
+         if ( ( *service_i ).get_name() == volume_name )
+         {
+           cout << "Volume '" << volume_name << "'" << endl;
+           size_t volume_name_len = volume_name.size() + 9;
+           for ( size_t dash_i = 0; dash_i < volume_name_len; dash_i++ )
+             cout << '-';
+           cout << endl;
+
+           cout << "name: " << ( *service_i ).get_name() << endl;
+           cout << "uuid: " << ( *service_i ).get_uuid() << endl;
+
+           for
+           (
+             ServiceDataMap::const_iterator data_i
+               = ( *service_i ).get_data().begin();
+             data_i != ( *service_i ).get_data().end();
+             ++data_i
+           )
+             cout << ( *data_i ).first << ": " << ( *data_i ).second << endl;
+         }
+      }
+    }
+    else // List all volumes
+    {
+      for
+      (
+        ServiceSet::const_iterator service_i = services.begin();
+        service_i != services.end();
+        ++service_i
+      )
+      {
+        cout << ( *service_i ).get_name() << " -> " <<
+                ( *service_i ).get_uuid() << endl;
+      }
+    }
+
+    return 0;
+  }
+  catch ( Exception& exception )
+  {
+    cerr << "lsfs.xtreemfs: error: " << exception.what() << endl;
+    return exception.get_error_code();      
+  }    
 }

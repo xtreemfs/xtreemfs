@@ -30,20 +30,15 @@
 #ifndef _XTREEMFS_MRC_PROXY_H_
 #define _XTREEMFS_MRC_PROXY_H_
 
-#include "xtreemfs/proxy.h"
-
-#ifdef _WIN32
-#pragma warning( push )
-#pragma warning( disable: 4100 )
-#endif
 #include "xtreemfs/interfaces/mrc_interface.h"
-#ifdef _WIN32
-#pragma warning( pop )
-#endif
+#include "xtreemfs/proxy.h"
 
 
 namespace xtreemfs
 {
+  class Options;
+
+
   class MRCProxy
     : public Proxy
              <
@@ -55,13 +50,21 @@ namespace xtreemfs
   public:
     static MRCProxy&
     create
+    ( 
+      const URI& absolute_uri,
+      const Options& options,
+      const string& password
+    );
+
+    static MRCProxy&
+    create
     (
       const URI& absolute_uri,
       uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
       uint32_t flags = FLAGS_DEFAULT,
       Log* log = NULL,
       const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT,
-      const string& password = "",
+      const string& password = string(),
       uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
       SSLContext* ssl_context = NULL, // Steals this reference
       UserCredentialsCache* user_credentials_cache = NULL

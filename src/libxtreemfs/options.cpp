@@ -40,8 +40,9 @@ using yield::platform::Path;
 
 Options::Options
 (
-  const string& log_file_path,
-  const string& log_level,
+  Log* log,
+  const Path& log_file_path,
+  const Log::Level& log_level,
   const vector<OptionParser::ParsedOption>& parsed_options,
   const vector<string>& positional_arguments,
   uint32_t proxy_flags,
@@ -49,7 +50,8 @@ Options::Options
   const Time& timeout,
   URI* uri
 )
-  : log_file_path( log_file_path ),
+  : log( log ),
+    log_file_path( log_file_path ),
     log_level( log_level ),
     positional_arguments( positional_arguments ),
     proxy_flags( proxy_flags ),
@@ -60,30 +62,28 @@ Options::Options
   assign( parsed_options.begin(), parsed_options.end() );
 }
 
+Options::Options( const Options& other )
+  : log( yidl::runtime::Object::inc_ref( other.log ) ),
+    log_file_path( other.log_file_path ),
+    log_level( other.log_level ),
+    positional_arguments( other.positional_arguments ),
+    proxy_flags( other.proxy_flags ),
+    ssl_context( yidl::runtime::Object::inc_ref( other.ssl_context ) ),
+    timeout( other.timeout ),
+    uri( yidl::runtime::Object::inc_ref( other.uri ) )
+{ }
+
 Options::~Options()
 {
+  Log::dec_ref( log );
   SSLContext::dec_ref( ssl_context );
   URI::dec_ref( uri );
 }
 
-const vector<string>& Options::get_positional_arguments() const
+void Options::add_global_options( OptionParser& option_parser )
 {
-  return positional_arguments;
-}
-
-Options Options::parse( int argc, char** argv )
-{
-  OptionParser option_parser;
-  return parse( argc, argv, option_parser );
-}
-
-Options Options::parse( int argc, char** argv, OptionParser& option_parser )
-{
-  string log_file_path;
   option_parser.add_option( "-l", "log file path", true );
   option_parser.add_option( "--log-file-path", "log file path", true );
-
-  string log_level;
   const char* log_level_args[3] = { "-d", "--debug", "--log-level" };
   for ( uint8_t log_level_arg_i = 0; log_level_arg_i < 3; log_level_arg_i++ )
   {
@@ -95,30 +95,59 @@ Options Options::parse( int argc, char** argv, OptionParser& option_parser )
     );
   }
 
-  double timeout_ns;
   option_parser.add_option( "-t", "timeout (ms)", true );
-  timeout_ns = ONCRPCClient::OPERATION_TIMEOUT_DEFAULT;
+
+#ifdef YIELD_IPC_HAVE_OPENSSL  
+  option_parser.add_option( "--cert", "PEM certificate file path", true );
+  option_parser.add_option( "--pem-certificate-file-path", string(), true );
+  option_parser.add_option( "--pkey", "PEM private key file path", true );
+  option_parser.add_option( "--pem-private-key-file-path", string(), true );
+  option_parser.add_option( "--pass", "PEM private key passphrase", true );
+  option_parser.add_option( "--pem-private-key-passphrase", string(), true );
+  option_parser.add_option( "--pkcs12-file-path", string(), true );
+  option_parser.add_option( "--pkcs12-passphrase", string(), true );
+#endif
+
+  option_parser.add_option( "--trace-auth" );
+  option_parser.add_option( "--trace-network-io" );
+  option_parser.add_option( "--trace-network-operations" );
+}
+
+const vector<string>& Options::get_positional_arguments() const
+{
+  return positional_arguments;
+}
+
+Options Options::parse( int argc, char** argv )
+{
+  return parse( argc, argv, OptionParser::Options() );
+}
+
+Options 
+Options::parse
+( 
+   int argc, 
+   char** argv, 
+   const OptionParser::Options& other_options 
+)
+{
+  string log_file_path;
+  Log::Level log_level( Log::LOG_ERR );
+
+  uint64_t timeout_ns = ONCRPCClient::OPERATION_TIMEOUT_DEFAULT;
 
 #ifdef YIELD_IPC_HAVE_OPENSSL
   string pem_certificate_file_path,
          pem_private_key_file_path,
          pem_private_key_passphrase;
-  option_parser.add_option( "--cert", "PEM certificate file path", true );
-  option_parser.add_option( "--pem-certificate-file-path", true );
-  option_parser.add_option( "--pkey", "PEM private key file path", true );
-  option_parser.add_option( "--pem-private-key-file-path", true );
-  option_parser.add_option( "--pass", "PEM private key passphrase", true );
-  option_parser.add_option( "--pem-private-key-passphrase", true );
-
   string pkcs12_file_path, pkcs12_passphrase;
-  option_parser.add_option( "--pkcs12-file-path", true );
-  option_parser.add_option( "--pkcs12-passphrase", true );
 #endif
 
   uint32_t proxy_flags = 0;
-  option_parser.add_option( "--trace-auth" );
-  option_parser.add_option( "--trace-network-io" );
-  option_parser.add_option( "--trace-network-operations" );
+
+  OptionParser option_parser;
+  add_global_options( option_parser );
+  option_parser.add_options( other_options );
 
   vector<OptionParser::ParsedOption> parsed_options;
   vector<string> positional_arguments;
@@ -126,7 +155,7 @@ Options Options::parse( int argc, char** argv, OptionParser& option_parser )
 
   for
   (
-    const_iterator parsed_option_i = parsed_options.begin();
+    iterator parsed_option_i = parsed_options.begin();
     parsed_option_i != parsed_options.end();
     ++parsed_option_i
   )
@@ -143,12 +172,12 @@ Options Options::parse( int argc, char** argv, OptionParser& option_parser )
       || 
       option == "--log-level" 
     )
-      log_level = option.get_argument();
+      log_level = Log::Level( option.get_argument().c_str() );
     else if ( option == "-t" )
     {
       double timeout_ms = atof( option.get_argument().c_str() );
       if ( timeout_ms != 0 )
-        timeout_ns = timeout_ms * Time::NS_IN_MS;
+        timeout_ns = static_cast<uint64_t>( timeout_ms * Time::NS_IN_MS );
     }
     else if ( option == "--cert" || option == "--pem_certificate_file_path" )
       pem_certificate_file_path = option.get_argument();
@@ -166,7 +195,16 @@ Options Options::parse( int argc, char** argv, OptionParser& option_parser )
       proxy_flags |= ONCRPCClient::FLAG_TRACE_NETWORK_IO;
     else if ( option == "--trace-network-operations" )
       proxy_flags |= ONCRPCClient::FLAG_TRACE_OPERATIONS;
+    else
+      continue;
+
+    parsed_options.erase( parsed_option_i );
   }
+
+
+  // TODO: have a silent mode where no logging is done?
+  Log* log = &Log::open( log_file_path, log_level );
+  
 
   SSLContext* ssl_context;
 #ifdef YIELD_IPC_HAVE_OPENSSL
@@ -200,6 +238,7 @@ Options Options::parse( int argc, char** argv, OptionParser& option_parser )
 #endif
     ssl_context = NULL;
 
+
   URI* uri;
   if ( !positional_arguments.empty() )
   {
@@ -217,9 +256,13 @@ Options Options::parse( int argc, char** argv, OptionParser& option_parser )
     if ( uri != NULL )
       positional_arguments.erase( positional_arguments.begin() );
   }
+  else
+    uri = NULL;
+
 
   return *new Options
               (
+                log,
                 log_file_path,
                 log_level,
                 parsed_options,
@@ -229,4 +272,17 @@ Options Options::parse( int argc, char** argv, OptionParser& option_parser )
                 timeout_ns,
                 uri
               );
+}
+
+string Options::usage()
+{
+  return usage( OptionParser::Options() );
+}
+
+string Options::usage( const OptionParser::Options& other_options )
+{
+  OptionParser option_parser;
+  add_global_options( option_parser );
+  option_parser.add_options( other_options );
+  return option_parser.usage();
 }

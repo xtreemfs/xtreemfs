@@ -13274,6 +13274,9 @@ extern "C"
 };
 
 
+URI::URI()
+{ }
+
 URI::URI( const char* uri )
 {
   init( uri, strnlen( uri, UINT16_MAX ) );

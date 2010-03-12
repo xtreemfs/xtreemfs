@@ -27,186 +27,215 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#include "xtreemfs/main.h"
+#include <cstdlib>
+using std::srand;
+#include <ctime>
+using std::time;
+
+#include "xtreemfs.h"
 using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
-#include <cstdlib>
-#include <ctime>
+#include "yidl.h"
+using yidl::runtime::auto_Object;
 
 
-namespace mkfs_xtreemfs
+int main( int argc, char** argv )
 {
-  class Main : public xtreemfs::Main
+  OptionParser::Options mkfs_options;
+  mkfs_options.add( "-a", "access control policy: NULL|POSIX|VOLUME" );
+  mkfs_options.add( "--access-control-policy", "NULL|POSIX|VOLUME" );
+  mkfs_options.add( "-m", "mode for root directory of the volume" );
+  mkfs_options.add( "--mode", "mode for root directory of the volume" );
+  mkfs_options.add( "-g", "group id of volume owner" );
+  mkfs_options.add( "--owner-group-id" );
+  mkfs_options.add( "-u", "user id of owner" );
+  mkfs_options.add( "--owner-user-id" );
+  mkfs_options.add( "--password", "MRC administrator password" );
+  mkfs_options.add( "-p", "striping policy: NONE|RAID0" );
+  mkfs_options.add( "--striping-policy", "NONE|RAID0" );
+  mkfs_options.add( "-s", "striping policy stripe size" );
+  mkfs_options.add( "--striping-policy-stripe-size" );
+  mkfs_options.add( "-w", "striping policy width" );
+  mkfs_options.add( "--striping-policy-width" );
+
+  if ( argc == 1 )
   {
-  public:
-    Main()
-      : xtreemfs::Main
-        (
-          "mkfs.xtreemfs",
-          "create a new volume",
-          "[oncrpc://]<dir or mrc host>[:port]/<volume name>"
-        )
+    cout << "mkfs.xtreemfs: create a new volume" << endl;
+    cout << "Usage: mkfs.xtreemfs <options>" << 
+            " [oncrpc://]<dir or mrc host>[:port]/<volume name>" << endl;
+    cout << Options::usage( mkfs_options );    
+    return 0;
+  }
+
+  try
+  {
+    StatVFS fs;
+    fs.set_access_control_policy( ACCESS_CONTROL_POLICY_POSIX );
+    fs.set_mode( yield::platform::Volume::DIRECTORY_MODE_DEFAULT );
+
+    StripingPolicy fs_striping_policy( STRIPING_POLICY_RAID0, 128, 1 );
+
+    string mrc_password;
+
+    Options options = Options::parse( argc, argv, mkfs_options );
+
+    for 
+    (
+      Options::const_iterator parsed_option_i = options.begin();
+      parsed_option_i != options.end();
+      ++parsed_option_i
+    )
     {
-      addOption
-      (
-        MKFS_XTREEMFS_OPTION_ACCESS_CONTROL_POLICY,
-        "-a",
-        "--access-control-policy",
-        "NULL|POSIX|VOLUME"
-      );
-      fs.set_access_control_policy( ACCESS_CONTROL_POLICY_POSIX );
+      const OptionParser::ParsedOption& popt = *parsed_option_i;
+      const string& arg = popt.get_argument();
 
-      addOption
-      (
-        MKFS_XTREEMFS_OPTION_MODE,
-        "-m",
-        "--mode",
-        "n"
-      );
-      fs.set_mode( yield::platform::Volume::DIRECTORY_MODE_DEFAULT );
-
-      addOption
-      (
-        MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID,
-        "-g",
-        "--owner-group-id",
-        "group id of owner"
-      );
-
-      addOption
-      (
-        MKFS_XTREEMFS_OPTION_OWNER_USER_ID,
-        "-u",
-        "--owner-user-id",
-        "user id of owner"
-      );
-
-      addOption
-      (
-        MKFS_XTREEMFS_OPTION_PASSWORD,
-        "--password", NULL,
-        "MRC's administrator password"
-      );
-
-      addOption
-      (
-        MKFS_XTREEMFS_OPTION_STRIPING_POLICY,
-        "-p",
-        "--striping-policy",
-        "NONE|RAID0"
-      );
-      fs_default_striping_policy.set_type( STRIPING_POLICY_RAID0 );
-
-      addOption
-      (
-        MKFS_XTREEMFS_OPTION_STRIPING_POLICY_STRIPE_SIZE,
-        "-s",
-        "--striping-policy-stripe-size",
-        "n"
-      );
-      fs_default_striping_policy.set_stripe_size( 128 );
-
-      addOption
-      (
-        MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH,
-        "-w",
-        "--striping-policy-width",
-        "n"
-      );
-      fs_default_striping_policy.set_width( 1 );
+      if ( popt == "-a" || popt == "--access-control-policy" )
+      {
+        if ( arg == "NULL" )
+          fs.set_access_control_policy( ACCESS_CONTROL_POLICY_NULL );
+        else if ( arg == "POSIX" )
+          fs.set_access_control_policy( ACCESS_CONTROL_POLICY_POSIX );
+        else if ( arg == "VOLUME" )
+          fs.set_access_control_policy( ACCESS_CONTROL_POLICY_VOLUME );
+      }
+      else if ( popt == "-m" || popt == "--mode" )
+      {
+        uint32_t mode = strtol( arg.c_str(), NULL, 0 );
+        if ( mode != 0 )
+          fs.set_mode( mode );
+      }
+      else if ( popt == "-g" || popt == "--owner-group-id" )
+        fs.set_owner_group_id( arg );
+      else if ( popt == "-u" || popt == "--owner-user-id" )
+        fs.set_owner_user_id( arg );
+      else if ( popt == "--password" )
+        mrc_password = arg;
+      else if ( popt == "--striping-policy" )
+      {
+        if ( arg == "RAID0" )
+          fs_striping_policy.set_type( STRIPING_POLICY_RAID0 );
+      }
+      else if ( popt == "-s" || popt == "--striping-policy-stripe-size" )
+      {
+        uint32_t stripe_size = atoi( arg.c_str() );
+        if ( stripe_size != 0 )
+          fs_striping_policy.set_stripe_size( stripe_size );
+      }
+      else if ( popt == "-w" || popt == "--striping-policy-width" )
+      {
+        uint32_t width = static_cast<uint16_t>( atoi( arg.c_str() ) );
+        if ( width != 0 )
+          fs_striping_policy.set_width( width );
+      }
     }
 
-  private:
-    enum
-    {
-      MKFS_XTREEMFS_OPTION_ACCESS_CONTROL_POLICY = 20,
-      MKFS_XTREEMFS_OPTION_MODE = 21,
-      MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID = 22,
-      MKFS_XTREEMFS_OPTION_OWNER_USER_ID = 23,
-      MKFS_XTREEMFS_OPTION_PASSWORD = 24,
-      MKFS_XTREEMFS_OPTION_STRIPING_POLICY = 25,
-      MKFS_XTREEMFS_OPTION_STRIPING_POLICY_STRIPE_SIZE = 26,
-      MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH = 27
-    };
+    fs.set_default_striping_policy( fs_striping_policy );
 
 
-    yield::ipc::auto_URI dir_or_mrc_uri;
-    StatVFS fs;
-    StripingPolicy fs_default_striping_policy;
-    std::string mrc_password;
+    URI* dir_or_mrc_uri = options.get_uri();
+    if ( dir_or_mrc_uri == NULL || dir_or_mrc_uri->get_resource() == "/" )
+      throw Exception( "must specify the <DIR|MRC>/<volume name> URI" );
+    dir_or_mrc_uri->inc_ref();
+    fs.set_name( dir_or_mrc_uri->get_resource() ); 
 
 
-    // yield::Main
-    int _main( int, char** )
-    {
-      yield::ipc::auto_URI mrc_uri; // What we ultimately need to contact
+    URI* mrc_uri = NULL; // What we ultimately need to contact
 
-      // Check if the URI passed on the command line has a port that's
-      // the same as an MRC default port
-      if
+    // Check if the URI passed on the command line has a port that's
+    // the same as an MRC default port
+    if
+    (
+      dir_or_mrc_uri->get_port() != 0
+      &&
       (
-        dir_or_mrc_uri->get_port() != 0
-        &&
         (
-          (
-            dir_or_mrc_uri->get_scheme() == ONCRPC_SCHEME &&
-            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPC_PORT_DEFAULT
-          )
-          ||
-          (
-            dir_or_mrc_uri->get_scheme() == ONCRPCS_SCHEME &&
-            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCS_PORT_DEFAULT
-          )
-          ||
-          (
-            dir_or_mrc_uri->get_scheme() == ONCRPCG_SCHEME &&
-            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCG_PORT_DEFAULT
-          )
-          ||
-          (
-            dir_or_mrc_uri->get_scheme() == ONCRPCU_SCHEME &&
-            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCU_PORT_DEFAULT
-          )
+          dir_or_mrc_uri->get_scheme() == ONCRPC_SCHEME &&
+          dir_or_mrc_uri->get_port() == MRCInterface::ONCRPC_PORT_DEFAULT
+        )
+        ||
+        (
+          dir_or_mrc_uri->get_scheme() == ONCRPCS_SCHEME &&
+          dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCS_PORT_DEFAULT
+        )
+        ||
+        (
+          dir_or_mrc_uri->get_scheme() == ONCRPCG_SCHEME &&
+          dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCG_PORT_DEFAULT
+        )
+        ||
+        (
+          dir_or_mrc_uri->get_scheme() == ONCRPCU_SCHEME &&
+          dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCU_PORT_DEFAULT
         )
       )
+    )
+    {
+      mrc_uri = dir_or_mrc_uri;
+    }
+    else
+    {
+      // Assume dir_or_mrc_uri is a DIR URI
+      DIRProxy& dir_proxy = DIRProxy::create( options );
+
+      // Get a list of all MRC services
+      ServiceSet mrc_services;
+      try
       {
+        dir_proxy.xtreemfs_service_get_by_type
+        (
+          SERVICE_TYPE_MRC,
+          mrc_services
+        );
+      }
+      catch ( Exception& )
+      {
+        // dir_or_mrc_uri is an MRC URI after all
         mrc_uri = dir_or_mrc_uri;
       }
-      else
-      {
-        // Assume dir_or_mrc_uri is a DIR URI
-        auto_DIRProxy dir_proxy( createDIRProxy( *dir_or_mrc_uri ) );
 
-        // Get a list of all MRC services
-        ServiceSet mrc_services;
-        try
+      if ( mrc_uri == NULL )
+      {
+        if ( mrc_services.empty() )
+          throw Exception( "could not find an MRC" );
+
+        // Select a random MRC
+        srand( static_cast<unsigned int>( time( NULL ) ) );
+        Service& mrc_service
+          = mrc_services[rand() % mrc_services.size()];
+
+        // Find an apppropriate address mapping
+        auto_Object<AddressMappingSet> mrc_address_mappings
+          = dir_proxy.getAddressMappingsFromUUID( mrc_service.get_uuid() );
+
+        for
+        (
+          AddressMappingSet::const_iterator mrc_address_mapping_i =
+            mrc_address_mappings->begin();
+          mrc_address_mapping_i != mrc_address_mappings->end();
+          ++mrc_address_mapping_i
+        )
         {
-          dir_proxy->xtreemfs_service_get_by_type
+          if
           (
-            SERVICE_TYPE_MRC,
-            mrc_services
-          );
-        }
-        catch ( yield::platform::Exception& )
-        {
-          // dir_or_mrc_uri is an MRC URI after all
-          mrc_uri = dir_or_mrc_uri;
+            ( *mrc_address_mapping_i ).get_protocol() ==
+            dir_or_mrc_uri->get_scheme()
+          )
+          {
+            mrc_uri = new URI( ( *mrc_address_mapping_i ).get_uri() );
+            break;
+          }
         }
 
         if ( mrc_uri == NULL )
         {
-          if ( mrc_services.empty() )
-            throw yield::platform::Exception( "could not find an MRC" );
-
-          // Select a random MRC
-          std::srand( static_cast<unsigned int>( std::time( NULL ) ) );
-          Service& mrc_service
-            = mrc_services[std::rand() % mrc_services.size()];
-
-          // Find an apppropriate address mapping
-          yidl::runtime::auto_Object<AddressMappingSet> mrc_address_mappings
-            = dir_proxy->getAddressMappingsFromUUID( mrc_service.get_uuid() );
+          // No address mapping with the same scheme as the dir_uri
+          // Default to SSL if we have an SSL context, otherwise TCP
+          string match_protocol;
+          if ( options.get_ssl_context() != NULL )
+            match_protocol = ONCRPCS_SCHEME;
+          else
+            match_protocol = ONCRPC_SCHEME;
 
           for
           (
@@ -216,154 +245,30 @@ namespace mkfs_xtreemfs
             ++mrc_address_mapping_i
           )
           {
-            if
-            (
-              ( *mrc_address_mapping_i ).get_protocol() ==
-              dir_or_mrc_uri->get_scheme()
-            )
+            if ( ( *mrc_address_mapping_i ).get_protocol() == match_protocol )
             {
-              mrc_uri
-                = new yield::ipc::URI( ( *mrc_address_mapping_i ).get_uri() );
+              mrc_uri = new URI( ( *mrc_address_mapping_i ).get_uri() );
               break;
             }
           }
 
           if ( mrc_uri == NULL )
-          {
-            // No address mapping with the same scheme as the dir_uri
-            // Default to SSL if we have an SSL context, otherwise TCP
-            std::string match_protocol;
-            if ( get_proxy_ssl_context() != NULL )
-              match_protocol = ONCRPCS_SCHEME;
-            else
-              match_protocol = ONCRPC_SCHEME;
-
-            for
-            (
-              AddressMappingSet::const_iterator mrc_address_mapping_i =
-                mrc_address_mappings->begin();
-              mrc_address_mapping_i != mrc_address_mappings->end();
-              ++mrc_address_mapping_i
-            )
-            {
-              if ( ( *mrc_address_mapping_i ).get_protocol() == match_protocol )
-              {
-                mrc_uri
-                 = new yield::ipc::URI( ( *mrc_address_mapping_i ).get_uri() );
-                break;
-              }
-            }
-
-            if ( mrc_uri == NULL )
-             throw yield::platform::Exception( "could not an MRC" );
-          }
-        }
-      }
-
-      fs.set_default_striping_policy( fs_default_striping_policy );
-      createMRCProxy( *mrc_uri, mrc_password.c_str() )->xtreemfs_mkvol( fs );
-
-      return 0;
-    }
-
-    void parseOption( int id, char* arg )
-    {
-      if ( arg )
-      {
-        switch ( id )
-        {
-          case MKFS_XTREEMFS_OPTION_ACCESS_CONTROL_POLICY:
-          {
-            if ( strcmp( arg, "NULL" ) == 0 )
-              fs.set_access_control_policy( ACCESS_CONTROL_POLICY_NULL );
-            else if ( strcmp( arg, "POSIX" ) == 0 )
-              fs.set_access_control_policy( ACCESS_CONTROL_POLICY_POSIX );
-            else if ( strcmp( arg, "VOLUME" ) == 0 )
-              fs.set_access_control_policy( ACCESS_CONTROL_POLICY_VOLUME );
-          }
-          break;
-
-          case MKFS_XTREEMFS_OPTION_MODE:
-          {
-            uint32_t mode = strtol( arg, NULL, 0 );
-            if ( mode != 0 )
-              fs.set_mode( mode );
-          }
-          break;
-
-          case MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID:
-          {
-            fs.set_owner_group_id( arg );
-          }
-          break;
-
-          case MKFS_XTREEMFS_OPTION_OWNER_USER_ID:
-          {
-            fs.set_owner_user_id( arg );
-          }
-          break;
-
-          case MKFS_XTREEMFS_OPTION_PASSWORD:
-          {
-            mrc_password = arg;
-          }
-          break;
-
-          case MKFS_XTREEMFS_OPTION_STRIPING_POLICY:
-          {
-            if ( strcmp( arg, "RAID0" ) == 0 )
-              fs_default_striping_policy.set_type( STRIPING_POLICY_RAID0 );
-          }
-          break;
-
-          case MKFS_XTREEMFS_OPTION_STRIPING_POLICY_STRIPE_SIZE:
-          {
-            uint32_t stripe_size = atoi( arg );
-            if ( stripe_size != 0 )
-              fs_default_striping_policy.set_stripe_size( stripe_size );
-          }
-          break;
-
-          case MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH:
-          {
-            uint32_t width = static_cast<uint16_t>( atoi( arg ) );
-            if ( width != 0 )
-              fs_default_striping_policy.set_width( width );
-          }
-          break;
-
-          default: xtreemfs::Main::parseOption( id, arg ); break;
+            throw Exception( "could not find an appropriate MRC" );
         }
       }
     }
 
-    void parseFiles( int files_count, char** files )
-    {
-      if ( files_count == 1 )
-      {
-        std::string fs_name;
-        dir_or_mrc_uri = parseVolumeURI( files[0], fs_name );
-        fs.set_name( fs_name );
-      }
-      else if ( files_count == 0 )
-      {
-        throw yield::platform::Exception
-        (
-          "must specify the <DIR|MRC>/volume URI"
-        );
-      }
-      else
-      {
-        throw yield::platform::Exception
-        (
-          "extra parameters after the <DIR|MRC>/volume URI"
-        );
-      }
-    }
-  };
-};
+    MRCProxy& mrc_proxy = MRCProxy::create( *mrc_uri, options, mrc_password );
 
-int main( int argc, char** argv )
-{
-  return mkfs_xtreemfs::Main().main( argc, argv );
+    mrc_proxy.xtreemfs_mkvol( fs );
+
+    MRCProxy::dec_ref( mrc_proxy );
+
+    return 0;
+  }
+  catch ( Exception& exception )
+  {
+    cerr << "mkfs.xtreemfs: error: " << exception.what() << endl;
+    return exception.get_error_code();      
+  }
 }

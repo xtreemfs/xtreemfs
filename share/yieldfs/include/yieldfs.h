@@ -57,7 +57,7 @@ namespace yieldfs
     const static uint32_t FLAG_DIRECT_IO = 2;
     const static uint32_t FLAGS_DEFAULT = 0;
 
-    FUSE& create( Volume& volume, uint32_t flags = FLAGS_DEFAULT );
+    static FUSE& create( Volume& volume, uint32_t flags = FLAGS_DEFAULT );
 
     uint32_t get_flags() const { return flags; }
     Volume& get_volume() const { return volume; }

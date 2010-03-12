@@ -2152,6 +2152,15 @@ ssize_t IStream::read( Buffer& buffer )
 
 
 // log.cpp
+Log::Level Log::LOG_EMERG( "EMERG", 0 );
+Log::Level Log::LOG_ALERT( "ALERT", 1 );
+Log::Level Log::LOG_CRIT( "CRIT", 2 );
+Log::Level Log::LOG_ERR( "ERR", 3 );
+Log::Level Log::LOG_WARNING( "WARNING", 4 );
+Log::Level Log::LOG_INFO( "INFO", 5 );
+Log::Level Log::LOG_DEBUG( "DEBUG", 6 );
+
+
 namespace yield
 {
   namespace platform
@@ -2159,19 +2168,11 @@ namespace yield
     class FileLog : public Log
     {
     public:
-      FileLog( File& file, Level level )
+      FileLog( File& file, const Level& level )
         : Log( level ), file( &file )
       { }
 
-      FileLog( const Path& file_path, Level level ) // Lazy open
-        : Log( level ), file_path( file_path )
-      { }
-
-      FileLog( File& file, const string& level )
-        : Log( level ), file( &file )
-      { }
-
-      FileLog( const Path& file_path, const string& level ) // Lazy open
+      FileLog( const Path& file_path, const Level& level ) // Lazy open
         : Log( level ), file_path( file_path )
       { }
 
@@ -2190,7 +2191,7 @@ namespace yield
             return;
         }
 
-       file->write( str, str_len );
+        file->write( str, str_len );
       }
 
     private:
@@ -2202,11 +2203,7 @@ namespace yield
     class ostreamLog : public Log
     {
     public:
-      ostreamLog( ostream& underlying_ostream, Level level )
-        : Log( level ), underlying_ostream( underlying_ostream )
-      { }
-
-      ostreamLog( ostream& underlying_ostream, const string& level )
+      ostreamLog( ostream& underlying_ostream, const Level& level )
         : Log( level ), underlying_ostream( underlying_ostream )
       { }
 
@@ -2223,6 +2220,104 @@ namespace yield
 };
 
 
+Log::Level::Level( const char* level )
+  : level_string( level )
+{
+  level_uint8 = static_cast<uint8_t>( atoi( level ) );
+  if ( level_uint8 == 0 )
+  {
+    if
+    (
+      strcmp( level, "LOG_EMERG" ) == 0 ||
+      strcmp( level, "EMERG" ) == 0 ||
+      strcmp( level, "EMERGENCY" ) == 0 ||
+      strcmp( level, "FATAL" ) == 0 ||
+      strcmp( level, "FAIL" ) == 0
+    )
+      level_uint8 = 0;
+
+    else if
+    (
+      strcmp( level, "LOG_ALERT" ) == 0 ||
+      strcmp( level, "ALERT" ) == 0
+    )
+      level_uint8 = 1;
+
+    else if
+    (
+      strcmp( level, "LOG_CRIT" ) == 0 ||
+      strcmp( level, "CRIT" ) == 0 ||
+      strcmp( level, "CRITICAL" ) == 0
+    )
+      level_uint8 = 1;
+
+    else if
+    (
+      strcmp( level, "LOG_ERR" ) == 0 ||
+      strcmp( level, "ERR" ) == 0 ||
+      strcmp( level, "ERROR" ) == 0
+    )
+      level_uint8 = 2;
+
+    else if
+    (
+      strcmp( level, "LOG_WARNING" ) == 0 ||
+      strcmp( level, "WARNING" ) == 0 ||
+      strcmp( level, "WARN" ) == 0
+    )
+      level_uint8 = 3;
+
+    else if
+    (
+      strcmp( level, "LOG_NOTICE" ) == 0 ||
+      strcmp( level, "NOTICE" ) == 0
+    )
+      level_uint8 = 4;
+
+    else if
+    (
+      strcmp( level, "LOG_INFO" ) == 0 ||
+      strcmp( level, "INFO" ) == 0
+    )
+      level_uint8 = 5;
+
+    else if
+    (
+      strcmp( level, "LOG_DEBUG" ) == 0 ||
+      strcmp( level, "DEBUG" ) == 0 ||
+      strcmp( level, "TRACE" ) == 0
+    )
+      level_uint8 = 6;
+
+    else
+      level_uint8 = 7;
+  }
+}
+
+Log::Level::Level( uint8_t level )
+  : level_uint8( level )
+{
+  switch ( level )
+  {
+    case 0: level_string = "EMERG"; break;
+    case 1: level_string = "ALERT"; break;
+    case 2: level_string = "CRIT"; break;
+    case 3: level_string = "ERR"; break;
+    case 4: level_string = "WARNING"; break;
+    case 5: level_string = "NOTICE"; break;
+    case 6: level_string = "INFO"; break;
+    default: level_string = "DEBUG"; break;
+  }
+}
+
+Log::Level::Level( const char* level_string, uint8_t level_uint8 )
+: level_string( level_string ), level_uint8( level_uint8 )
+{ }
+
+Log::Level::Level( const Level& other )
+: level_string( other.level_string ), level_uint8( other.level_uint8 )
+{ }
+
 Log::Stream::Stream( Log& log, Log::Level level )
   : log( log ), level( level )
 { }
@@ -2238,17 +2333,7 @@ Log::Stream::~Stream()
     ostringstream stamped_oss;
     stamped_oss << static_cast<string>( Time() );
     stamped_oss << " ";
-    switch ( level )
-    {
-      case LOG_EMERG: stamped_oss << "EMERG"; break;
-      case LOG_ALERT: stamped_oss << "ALERT"; break;
-      case LOG_CRIT: stamped_oss << "CRIT"; break;
-      case LOG_ERR: stamped_oss << "ERR"; break;
-      case LOG_WARNING: stamped_oss << "WARNING"; break;
-      case LOG_NOTICE: stamped_oss << "NOTICE"; break;
-      case LOG_INFO: stamped_oss << "INFO"; break;
-      default: stamped_oss << "DEBUG"; break;
-    }
+    stamped_oss << static_cast<const char*>( log.get_level() );
     stamped_oss << ": ";
     stamped_oss << oss.str();
     stamped_oss << endl;
@@ -2260,94 +2345,20 @@ Log::Stream::~Stream()
 }
 
 
-Log::Log( Level level )
+Log::Log( const Level& level )
   : level( level )
 { }
 
-Log::Log( const string& level )
-  : level( LEVEL_DEFAULT )
-{
-  uint8_t level_uint8 = static_cast<uint8_t>( atoi( level.c_str() ) );
-  if ( level_uint8 == 0 )
-  {
-    if
-    (
-      level == "LOG_EMERG" ||
-      level == "EMERG" ||
-      level == "EMERGENCY" ||
-      level == "FATAL" ||
-      level == "FAIL"
-    )
-      this->level = Log::LOG_EMERG;
-
-    else if
-    (
-      level == "LOG_ALERT" ||
-      level == "ALERT"
-    )
-      this->level = Log::LOG_ALERT;
-
-    else if
-    (
-      level == "LOG_CRIT" ||
-      level == "CRIT" ||
-      level == "CRITICAL"
-    )
-      this->level = Log::LOG_CRIT;
-
-    else if
-    (
-      level == "LOG_ERR" ||
-      level == "ERR" ||
-      level == "ERROR"
-    )
-      this->level = Log::LOG_ERR;
-
-    else if
-    (
-      level == "LOG_WARNING" ||
-      level == "WARNING" ||
-      level == "WARN"
-    )
-      this->level = Log::LOG_WARNING;
-
-    else if
-    (
-      level == "LOG_NOTICE" ||
-      level == "NOTICE"
-    )
-      this->level = Log::LOG_NOTICE;
-
-    else if
-    (
-      level == "LOG_INFO" ||
-      level == "INFO"
-    )
-      this->level = Log::LOG_INFO;
-
-    else if
-    (
-      level == "LOG_DEBUG" ||
-      level == "DEBUG" ||
-      level == "TRACE"
-    )
-      this->level = Log::LOG_DEBUG;
-
-    else
-      this->level = Log::LOG_EMERG;
-  }
-  else if ( level_uint8 <= Log::LOG_DEBUG )
-    this->level = static_cast<Log::Level>( level_uint8 );
-}
-
-Log& Log::open( ostream& underlying_ostream, Level level )
+Log& Log::open( ostream& underlying_ostream, const Level& level )
 {
   return *new ostreamLog( underlying_ostream, level );
 }
 
-Log& Log::open( const Path& file_path, const string& level, bool lazy_open )
+Log& Log::open( const Path& file_path, const Level& level, bool lazy_open )
 {
-  if ( lazy_open )
+  if ( file_path == "-" )
+    return *new ostreamLog( cout, level );
+  else if ( lazy_open )
     return *new FileLog( file_path, level );
   else
   {
@@ -2359,37 +2370,23 @@ Log& Log::open( const Path& file_path, const string& level, bool lazy_open )
   }
 }
 
-Log& Log::open( const Path& file_path, Level level, bool lazy_open )
-{
-  if ( lazy_open )
-    return *new FileLog( file_path, level );
-  else
-  {
-    File* file = Volume().open( file_path, O_CREAT|O_WRONLY|O_APPEND );
-    if ( file != NULL )
-      return *new FileLog( *file, level );
-    else
-      throw Exception();
-  }
-}
-
-void Log::write( const char* str, Level level )
+void Log::write( const char* str, const Level& level )
 {
   write( str, strnlen( str, UINT16_MAX ), level );
 }
 
-void Log::write( const string& str, Level level )
+void Log::write( const string& str, const Level& level )
 {
   write( str.c_str(), str.size(), level );
 }
 
-void Log::write( const char* str, size_t str_len, Level level )
+void Log::write( const char* str, size_t str_len, const Level& level )
 {
   if ( level <= this->level )
     write( str, str_len );
 }
 
-void Log::write( const void* str, size_t str_len, Level level )
+void Log::write( const void* str, size_t str_len, const Level& level )
 {
   return write
   (
@@ -2399,7 +2396,7 @@ void Log::write( const void* str, size_t str_len, Level level )
   );
 }
 
-void Log::write( const unsigned char* str, size_t str_len, Level level )
+void Log::write( const unsigned char* str, size_t str_len, const Level& level )
 {
   if ( level <= this->level )
   {
@@ -4016,21 +4013,6 @@ typedef CSimpleOptTempl<wchar_t> CSimpleOptW;
 /* end SimpleOpt.h */
 
 
-void OptionParser::add_option( const string& option )
-{
-  add_option( option, string(), false );
-}
-
-void OptionParser::add_option( const string& option, bool require_argument )
-{
-  add_option( option, string(), require_argument );
-}
-
-void OptionParser::add_option( const string& option, const string& help )
-{
-  add_option( option, help, false );
-}
-
 void
 OptionParser::add_option
 (
@@ -4039,18 +4021,17 @@ OptionParser::add_option
   bool require_argument
 )
 {
-  for
-  (
-    vector<Option>::const_iterator option_i = options.begin();
-    option_i != options.end();
-    ++option_i
-  )
-  {
-    if ( *option_i == option )
-      return;
-  }
+  options.add( option, help, require_argument );
+}
 
-  options.push_back( Option( option, help, require_argument ) );
+void OptionParser::add_option( const Option& option )
+{
+  options.add( option );
+}
+
+void OptionParser::add_options( const Options& options )
+{
+  this->options.add( options );
 }
 
 void
@@ -4207,6 +4188,74 @@ string OptionParser::usage()
 
   return usage.str();
 }
+
+
+OptionParser::Option::Option
+(
+  const string& option,
+  const string& help,
+  bool require_argument
+)
+  : option( option ), help( help ), require_argument( require_argument )
+{ }
+
+bool OptionParser::Option::operator==( const string& option ) const
+{
+  return this->option == option;
+}
+
+bool OptionParser::Option::operator==( const char* option ) const
+{
+  return this->option == option;
+}
+
+bool OptionParser::Option::operator==( const Option& other ) const
+{
+  return this->option == other.option;
+}
+
+bool OptionParser::Option::operator<( const Option& other ) const
+{
+  return option.compare( other.option ) < 0;
+}
+
+
+void
+OptionParser::Options::add
+(
+  const string& option,
+  const string& help,
+  bool require_argument
+)
+{
+  add( Option( option, help, require_argument ) );
+}
+
+void OptionParser::Options::add( const Option& option )
+{
+  for ( const_iterator i = begin(); i != end(); ++i )
+  {
+    if ( *i == option )
+      return;
+  }
+
+  push_back( option );
+}
+
+void OptionParser::Options::add( const Options& options )
+{
+  for ( const_iterator i = options.begin(); i != options.end(); ++i )
+    add( *i );
+}
+
+
+OptionParser::ParsedOption::ParsedOption( Option& option )
+  : Option( option )
+{ }
+
+OptionParser::ParsedOption::ParsedOption( Option& option, const string& arg )
+  : Option( option ), argument( arg )
+{ }
 
 
 // ostream.cpp
@@ -4942,11 +4991,18 @@ Process& Process::create( const Path& command_line )
 
 Process& Process::create( int argc, char** argv )
 {
-  vector<char*> argvv;
+  vector<char*> argv_copy;
   for ( int arg_i = 1; arg_i < argc; arg_i++ )
-    argvv.push_back( argv[arg_i] );
-  argvv.push_back( NULL );
-  return create( argv[0], const_cast<const char**>( &argvv[0] ) );
+    argv_copy.push_back( argv[arg_i] );
+  argv_copy.push_back( NULL );
+  return create( argv[0], const_cast<const char**>( &argv_copy[0] ) );
+}
+
+Process& Process::create( const vector<char*>& argv )
+{
+  vector<char*> argv_copy( argv );
+  argv_copy.push_back( NULL );
+  return create( argv[0], const_cast<const char**>( &argv_copy[0] ) );
 }
 
 Process&

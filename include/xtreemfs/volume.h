@@ -39,6 +39,7 @@ namespace xtreemfs
 {
   class File;
   class OpenFileTable;
+  class Options;
   class Stat;
   class StatCache;
   using org::xtreemfs::interfaces::VivaldiCoordinates;
@@ -66,7 +67,15 @@ namespace xtreemfs
 
     virtual ~Volume();
 
-    Volume&
+    static Volume&
+    create
+    (
+      const Options& options,
+      uint32_t flags = FLAGS_DEFAULT,
+      const Path& vivaldi_coordinates_file_path = Path()
+    );
+
+    static Volume&
     create
     (
       const URI& dir_uri,

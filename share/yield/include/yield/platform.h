@@ -1059,20 +1059,64 @@ namespace yield
     class Log : public yidl::runtime::Object
     {
     public:
-      // Adapted from syslog levels
-      enum Level
+      class Level
       {
-        LOG_EMERG = 0,
-        LOG_ALERT = 1,
-        LOG_CRIT = 2,
-        LOG_ERR = 3,
-        LOG_WARNING = 4,
-        LOG_NOTICE = 5,
-        LOG_INFO = 6,
-        LOG_DEBUG = 7
+      public:
+        Level( const char* level );
+        Level( uint8_t level );
+        Level( const char* level_string, uint8_t level_uint8 );
+        Level( const Level& other );
+
+        inline operator const char*() const
+        {
+          return level_string;
+        }
+
+        inline operator uint8_t() const
+        {
+          return level_uint8;
+        }
+
+        inline bool operator<( const Level& other ) const
+        {
+          return level_uint8 < other.level_uint8;
+        }
+
+        inline bool operator<=( const Level& other ) const
+        {
+          return level_uint8 < other.level_uint8;
+        }
+
+        inline bool operator==( const Level& other ) const
+        {
+          return level_uint8 == other.level_uint8;
+        }
+
+        inline bool operator>( const Level& other ) const
+        {
+          return level_uint8 > other.level_uint8;
+        }
+
+        inline bool operator>=( const Level& other ) const
+        {
+          return level_uint8 >= other.level_uint8;
+        }
+
+      private:
+        const char* level_string;
+        uint8_t level_uint8;
       };
 
-      const static Level LEVEL_DEFAULT = LOG_ERR;
+      // Adapted from syslog levels
+      static Level LOG_EMERG;
+      static Level LOG_ALERT;
+      static Level LOG_CRIT;
+      static Level LOG_ERR;
+      static Level LOG_WARNING;
+      static Level LOG_INFO;
+      static Level LOG_DEBUG;
+
+      const static Level LEVEL_DEFAULT;
 
 
       class Stream
@@ -1101,42 +1145,32 @@ namespace yield
       };
 
 
-      static Log& open( ostream&, Level level = LEVEL_DEFAULT );
-      static Log& open( ostream&, const std::string& level );
+      static Log& open( ostream&, const Level& level = LOG_ERR );
 
       static Log& 
       open
       ( 
         const Path& file_path, 
-        Level level = LEVEL_DEFAULT, 
+        const Level& level = LOG_ERR, 
         bool lazy_open = false 
       );
 
-      static Log& 
-      open
-      ( 
-        const Path& file_path, 
-        const std::string& level,
-        bool lazy_open = false 
-      );
-
-      Level get_level() const { return level; }
+      const Level& get_level() const { return level; }
       Stream get_stream() { return Stream( inc_ref(), level ); }
       Stream get_stream( Level level ) { return Stream( inc_ref(), level ); }
-      void set_level( Level level ) { this->level = level; }
+      void set_level( const Level& level ) { this->level = level; }
 
-      void write( const char* str, Level level );
-      void write( const string& str, Level level );
-      void write( const void* str, size_t str_len, Level level );
-      void write( const unsigned char* str, size_t str_len, Level level );
-      void write( const char* str, size_t str_len, Level level );
+      void write( const char* str, const Level& level );
+      void write( const string& str, const Level& level );
+      void write( const void* str, size_t str_len, const Level& level );
+      void write( const unsigned char* str, size_t str_len, const Level& level );
+      void write( const char* str, size_t str_len, const Level& level );
 
       // yidl::runtime::Object
       Log& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
-      Log( Level level );
-      Log( const std::string& level );
+      Log( const Level& level );
       virtual ~Log() { }
 
       virtual void write( const char* str, size_t str_len ) = 0;
@@ -1318,53 +1352,56 @@ namespace yield
       class Option
       {
       public:
-        Option( const string& option, const string& help, bool require_arg )
-          : option( option ), help( help ), require_argument( require_arg )
-        { }
+        Option
+        ( 
+          const string& option, 
+          const string& help = string(), 
+          bool require_argument = true
+        );
 
         const string& get_help() const { return help; }
         bool get_require_argument() const { return require_argument; }
 
         operator const char*() const { return option.c_str(); }
         operator const string&() const { return option; }
-
-        bool operator==( const string& option ) const
-        { 
-          return this->option == option; 
-        }
-
-        bool operator==( const char* option ) const
-        {
-          return this->option == option;
-        }
-      
-        bool operator<( const Option& other ) const // For sorting
-        {
-          return option.compare( other.option ) < 0;
-        }
+        bool operator==( const string& option ) const;
+        bool operator==( const char* option ) const;
+        bool operator==( const Option& other ) const;      
+        bool operator<( const Option& other ) const; // For sorting
 
       private:
         string help, option;
         bool require_argument;
       };
 
+      class Options : public vector<Option>
+      {
+      public:
+        void add
+        ( 
+          const string& option, 
+          const string& help = string(), 
+          bool require_argument = true
+        );
+
+        void add( const Option& option );
+        void add( const Options& options );
+      };
+
 
       class ParsedOption : public Option
       {
       public:
-        ParsedOption( Option& option )
-          : Option( option )
-        { }
-
-        ParsedOption( Option& option, const string& argument )
-          : Option( option ), argument( argument )
-        { }
+        ParsedOption( Option& option );
+        ParsedOption( Option& option, const string& argument );
 
         const string& get_argument() const { return argument; }
 
       private:
         string argument;
       };
+
+      typedef vector<ParsedOption> ParsedOptions;
 
 
       YIELD_PLATFORM_EXCEPTION_SUBCLASS( InvalidValueException );
@@ -1373,31 +1410,30 @@ namespace yield
       YIELD_PLATFORM_EXCEPTION_SUBCLASS( UnregisteredOptionException );
 
 
-      void add_option( const string& option );
-      void add_option( const string& option, bool require_argument );
-      void add_option( const string& option, const string& help );
-
       void 
       add_option
       ( 
         const string& option, 
-        const string& help, 
-        bool require_argument
+        const string& help = string(), 
+        bool require_argument = true
       );
+
+      void add_option( const Option& option );
+      void add_options( const Options& options );
 
       void 
       parse_args
       ( 
         int argc, 
         char** argv, 
-        vector<ParsedOption>& out_parsed_options,
+        ParsedOptions& out_parsed_options,
         vector<string>& out_positional_arguments
       );
 
-      std::string usage();
+      string usage();
 
     private:
-      vector<Option> options;
+      Options options;
     };
 
 
@@ -1470,6 +1506,7 @@ namespace yield
     public:
       static Process& create( const Path& executable_file_path );
       static Process& create( int argc, char** argv );
+      static Process& create( const vector<char*>& argv );
 
       static Process&
       create
