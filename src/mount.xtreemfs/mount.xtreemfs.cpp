@@ -196,6 +196,10 @@ int main( int argc, char** argv )
       struct fuse_args fuse_args_ =
         FUSE_ARGS_INIT( fuse_argvv.size() - 1 , &fuse_argvv[0] );
 
+      ::close( STDIN_FILENO );
+      ::close( STDOUT_FILENO );
+      ::close( STDERR_FILENO );
+
       return fuse->main( fuse_args_, mount_point.c_str() );
 #endif
     }
@@ -219,6 +223,12 @@ int main( int argc, char** argv )
         log_file_path = log_file_path_oss.str();
       }
       child_argv.push_back( const_cast<char*>( log_file_path.c_str() ) );
+
+#ifndef _WIN32
+      ::close( STDIN_FILENO );
+      ::close( STDOUT_FILENO );
+      ::close( STDERR_FILENO );
+#endif
 
       Process& child_process = Process::create( child_argv );
 
