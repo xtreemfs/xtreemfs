@@ -165,7 +165,7 @@ Volume::create
   URI* dir_uri = options.get_uri();
   if ( dir_uri == NULL || dir_uri->get_resource() == "/" )
     throw Exception( "must specify the <DIR>/<volume name> URI" );
-  const string& name_utf8 = dir_uri->get_resource();
+  string name_utf8 = dir_uri->get_resource().substr( 1 );
 
   return create
          (
@@ -225,7 +225,6 @@ Volume::create
         proxy_flags,
         log,
         proxy_operation_timeout,
-        "",
         proxy_reconnect_tries_max,
         proxy_ssl_context,
         user_credentials_cache

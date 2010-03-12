@@ -84,8 +84,7 @@ namespace xtreemfs
       SocketFactory& socket_factory,
       UserCredentialsCache* user_credentials_cache
     )
-    : InterfaceEventSenderType( *this ),
-      ONCRPCClient
+    : ONCRPCClient
       (
         concurrency_level,
         flags,
@@ -100,6 +99,8 @@ namespace xtreemfs
         InterfaceType::TAG
       )
     {
+      InterfaceEventSenderType::set_event_target( *this );
+
       if ( user_credentials_cache != NULL )
         this->user_credentials_cache = Object::inc_ref( user_credentials_cache );
       else

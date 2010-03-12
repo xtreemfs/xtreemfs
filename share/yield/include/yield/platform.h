@@ -114,9 +114,6 @@ using std::pair;
 #define O_ASYNC 020000
 #define O_DIRECT 040000
 #define O_HIDDEN 0100000
-#ifndef PATH_MAX
-#define PATH_MAX 260
-#endif
 #ifndef UNICODE
 #define UNICODE 1
 #endif
@@ -365,6 +362,8 @@ namespace yield
     class Stream
     {
     public:
+      virtual ~Stream() { }
+
       virtual bool close() = 0;
 
     protected:
@@ -560,8 +559,7 @@ namespace yield
       Path( const wchar_t* wide_path, size_t wide_path_len );
       Path( const wstring& wide_path );
 #endif
-
-      Path( const Path& path );
+      Path( const Path& path );      
 
       Path abspath() const;
       bool empty() const { return path.empty(); }
@@ -655,15 +653,10 @@ namespace yield
       const static uint64_t NS_IN_MS = 1000000ULL;
       const static uint64_t NS_IN_S = 1000000000ULL;
 
-
+    public:
       Time(); // Current time
-
-      Time( uint64_t unix_time_ns )
-        : unix_time_ns( unix_time_ns )
-      { }
-
+      Time( uint64_t unix_time_ns ) : unix_time_ns( unix_time_ns ) { }
       Time( double unix_time_s );
-
       Time( const struct timeval& );
 #ifdef _WIN32
       Time( const FILETIME& );
@@ -671,10 +664,7 @@ namespace yield
 #else
       Time( const struct timespec& );
 #endif
-
-      Time( const Time& other )
-        : unix_time_ns( other.unix_time_ns )
-       { }
+      Time( const Time& other ) : unix_time_ns( other.unix_time_ns ) { }
 
       void as_common_log_date_time( char* out_str, uint8_t out_str_len ) const;
       void as_http_date_time( char* out_str, uint8_t out_str_len ) const;
@@ -837,14 +827,16 @@ namespace yield
         // it's been removed here.
       };
 
+    public:
+      virtual ~Directory();
+
       YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
 
       // yidl::runtime::Object
       Directory& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
-      Directory();
-      virtual ~Directory();
+      Directory();      
 
     private:
       friend class Volume;
@@ -854,6 +846,7 @@ namespace yield
       Directory( void* dirp );
 #endif
 
+    private:
 #ifdef _WIN32
       void* hDirectory;
       WIN32_FIND_DATA* first_find_data;
@@ -870,8 +863,9 @@ namespace yield
       const static uint32_t FLAGS_DEFAULT = O_RDONLY;
       const static mode_t MODE_DEFAULT = S_IREAD|S_IWRITE;
 
-
+    public:
       File( fd_t fd ); // Takes ownership of the fd
+      virtual ~File() { close(); }
 
       YIELD_PLATFORM_FILE_PROTOTYPES;
       virtual size_t getpagesize();
@@ -898,8 +892,7 @@ namespace yield
       File& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
-      File();
-      virtual ~File() { close(); }
+      File();      
 
     private:
       File( const File& ); // Prevent copying
@@ -920,12 +913,13 @@ namespace yield
     class IOQueue : public yidl::runtime::RTTIObject
     {
     public:
+      virtual ~IOQueue() { }
+
       // yidl::runtime::Object
       IOQueue& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
-      IOQueue() { }
-      virtual ~IOQueue() { }
+      IOQueue() { }      
     };
 
 
@@ -960,7 +954,7 @@ namespace yield
       typedef socket_t fd_t;
 #endif
 
-
+    public:
       class FDEvent
       {
       public:
@@ -984,6 +978,8 @@ namespace yield
         bool want_read_, want_write_;
       };
 
+    public:
+      virtual ~FDEventPoller() { }
 
       static FDEventPoller& create();
 
@@ -1107,17 +1103,6 @@ namespace yield
         uint8_t level_uint8;
       };
 
-      // Adapted from syslog levels
-      static Level LOG_EMERG;
-      static Level LOG_ALERT;
-      static Level LOG_CRIT;
-      static Level LOG_ERR;
-      static Level LOG_WARNING;
-      static Level LOG_INFO;
-      static Level LOG_DEBUG;
-
-      const static Level LEVEL_DEFAULT;
-
 
       class Stream
       {
@@ -1144,7 +1129,18 @@ namespace yield
         ostringstream oss;
       };
 
+    public:
+      // Adapted from syslog levels
+      static Level LOG_EMERG;
+      static Level LOG_ALERT;
+      static Level LOG_CRIT;
+      static Level LOG_ERR;
+      static Level LOG_WARNING;
+      static Level LOG_INFO;
+      static Level LOG_DEBUG;
 
+    public:
+      virtual ~Log() { }
       static Log& open( ostream&, const Level& level = LOG_ERR );
 
       static Log& 
@@ -1171,7 +1167,6 @@ namespace yield
 
     protected:
       Log( const Level& level );
-      virtual ~Log() { }
 
       virtual void write( const char* str, size_t str_len ) = 0;
 
@@ -1183,6 +1178,8 @@ namespace yield
     class MemoryMappedFile : public yidl::runtime::Object
     {
     public:
+      virtual ~MemoryMappedFile();
+
       static MemoryMappedFile* open( const Path& path );
       static MemoryMappedFile* open( const Path& path, uint32_t flags );
 
@@ -1206,8 +1203,7 @@ namespace yield
       virtual bool sync( void* ptr, size_t length );
 
     protected:
-      MemoryMappedFile( File& underlying_file, uint32_t open_flags );
-      virtual ~MemoryMappedFile();
+      MemoryMappedFile( File& underlying_file, uint32_t open_flags );      
 
     private:
       File& underlying_file;
@@ -1247,6 +1243,8 @@ namespace yield
     class NamedPipe : public File
     {
     public:
+      ~NamedPipe() { }
+
       static NamedPipe*
       open
       (
@@ -1268,8 +1266,7 @@ namespace yield
       NamedPipe( fd_t fd, bool connected );
 #else
       NamedPipe( fd_t fd );
-#endif
-      ~NamedPipe() { }
+#endif      
 
 #ifdef _WIN32
       bool connected;
@@ -1317,6 +1314,8 @@ namespace yield
     class NBIOQueue : public IOQueue
     {
     public:
+      ~NBIOQueue();
+
       static NBIOQueue& create();
 
       void submit( NBIOCB& nbiocb ); // Takes ownership of nbiocb
@@ -1326,9 +1325,7 @@ namespace yield
 
     private:
       class WorkerThread;
-
-      NBIOQueue( const vector<WorkerThread*>& worker_threads );
-      ~NBIOQueue();
+      NBIOQueue( const vector<WorkerThread*>& worker_threads );      
 
     private:
       vector<WorkerThread*> worker_threads;
@@ -1355,9 +1352,11 @@ namespace yield
         Option
         ( 
           const string& option, 
-          const string& help = string(), 
+          const string& help, 
           bool require_argument = true
         );
+
+        Option( const string& option, bool require_argument = true );
 
         const string& get_help() const { return help; }
         bool get_require_argument() const { return require_argument; }
@@ -1374,16 +1373,18 @@ namespace yield
         bool require_argument;
       };
 
+
       class Options : public vector<Option>
       {
       public:
         void add
         ( 
           const string& option, 
-          const string& help = string(), 
+          const string& help, 
           bool require_argument = true
         );
 
+        void add( const string& option, bool require_argument = true );
         void add( const Option& option );
         void add( const Options& options );
       };
@@ -1409,15 +1410,16 @@ namespace yield
       YIELD_PLATFORM_EXCEPTION_SUBCLASS( UnexpectedValueException );
       YIELD_PLATFORM_EXCEPTION_SUBCLASS( UnregisteredOptionException );
 
-
+    public:
       void 
       add_option
       ( 
         const string& option, 
-        const string& help = string(), 
+        const string& help, 
         bool require_argument = true
       );
 
+      void add_option( const string& option, bool require_argument = true );
       void add_option( const Option& option );
       void add_options( const Options& options );
 
@@ -1448,6 +1450,9 @@ namespace yield
         EVENT_L2_ICM // L2 instruction cache miss
       };
 
+    public:
+      ~PerformanceCounterSet();
+
       static PerformanceCounterSet* create();
 
       bool addEvent( Event event );
@@ -1458,16 +1463,18 @@ namespace yield
     private:
 #if defined(__sun)
       PerformanceCounterSet( cpc_t* cpc, cpc_set_t* cpc_set );
-      cpc_t* cpc; cpc_set_t* cpc_set;
+#elif defined(YIELD_PLATFORM_HAVE_PAPI)
+      PerformanceCounterSet( int papi_eventset );
+#endif
 
+    private:
+#if defined(__sun)
+      cpc_t* cpc; cpc_set_t* cpc_set;
       vector<int> event_indices;
       cpc_buf_t* start_cpc_buf;
 #elif defined(YIELD_PLATFORM_HAVE_PAPI)
-      PerformanceCounterSet( int papi_eventset );
       int papi_eventset;
 #endif
-
-      ~PerformanceCounterSet();
     };
 #endif
 
@@ -1475,6 +1482,8 @@ namespace yield
     class Pipe : public IOStream
     {
     public:
+      ~Pipe();
+
       static Pipe& create(); 
 
       // Stream
@@ -1493,8 +1502,7 @@ namespace yield
       ssize_t write( const void* buf, size_t buflen );
 
     private:
-      Pipe( fd_t ends[2] );
-      ~Pipe();
+      Pipe( fd_t ends[2] );      
 
     private:
       fd_t ends[2];
@@ -1504,6 +1512,8 @@ namespace yield
     class Process : public yidl::runtime::Object
     {
     public:
+      ~Process();
+
       static Process& create( const Path& executable_file_path );
       static Process& create( int argc, char** argv );
       static Process& create( const vector<char*>& argv );
@@ -1539,8 +1549,7 @@ namespace yield
         Pipe* child_stderr
       );
 
-      ~Process();
-
+    private:
 #ifdef _WIN32
       void *hChildProcess, *hChildThread;
 #else
@@ -1555,6 +1564,7 @@ namespace yield
     public:
       ProcessorSet();
       ProcessorSet( uint32_t from_mask );
+      ~ProcessorSet();
 
       void clear();
       void clear( uint16_t processor_i );
@@ -1567,9 +1577,9 @@ namespace yield
       bool set( uint16_t processor_i );
 
     private:
-      ProcessorSet( const ProcessorSet& ) { DebugBreak(); } // Prevent copying
-      ~ProcessorSet();
+      ProcessorSet( const ProcessorSet& ) { DebugBreak(); } // Prevent copying      
 
+    private:
       friend class Process;
       friend class Thread;
 
@@ -1614,6 +1624,9 @@ namespace yield
       const static char* SHLIBSUFFIX;
 #endif
 
+    public:
+      ~SharedLibrary();
+
       static SharedLibrary*
       open
       ( 
@@ -1644,8 +1657,8 @@ namespace yield
 
     private:
       SharedLibrary( void* handle );
-      ~SharedLibrary();
-
+      
+    private:
       void* handle;
     };
 
@@ -1669,7 +1682,7 @@ namespace yield
       const static int SEND_FLAG_MSG_DONTROUTE = 1;
       const static int SEND_FLAG_MSG_OOB = 2;
 
-
+    public:
       Socket( int domain, int type, int protocol, socket_t socket_ );
       virtual ~Socket();      
 
@@ -2017,6 +2030,7 @@ namespace yield
     public:
       SocketAddress( struct addrinfo& ); // Takes ownership
       SocketAddress( const struct sockaddr_storage& ); // Copies
+      ~SocketAddress();
 
       static SocketAddress* create(); // INADDR_ANY
       static SocketAddress* create( const char* hostname );
@@ -2067,10 +2081,9 @@ namespace yield
       SocketAddress( const SocketAddress& ) 
       { 
         DebugBreak(); // Prevent copying
-      }
+      }      
 
-      ~SocketAddress();
-
+    private:
       // Linked sockaddr's obtained from getaddrinfo(3)
       // Will be NULL if _sockaddr_storage is used
       struct addrinfo* addrinfo_list;
@@ -2086,14 +2099,15 @@ namespace yield
     class SocketPair : public yidl::runtime::Object
     {
     public:
+      ~SocketPair();
+
       static SocketPair& create();
 
       Socket& first() const { return first_socket; }
       Socket& second() const { return second_socket; }
 
     private:
-      SocketPair( Socket& first_socket, Socket& second_socket );
-      ~SocketPair();
+      SocketPair( Socket& first_socket, Socket& second_socket );      
 
     private:
       Socket &first_socket, &second_socket;
@@ -2152,7 +2166,6 @@ namespace yield
       );
 #endif
       Stat( const struct stat& stbuf );
-
       virtual ~Stat() { }
 
 #ifndef _WIN32
@@ -2251,6 +2264,7 @@ namespace yield
       static int PROTOCOL; // IPPROTO_TCP
       static int TYPE; // SOCK_STREAM
 
+    public:
       virtual ~TCPSocket() { }
 
       virtual TCPSocket* accept();
@@ -2447,7 +2461,7 @@ namespace yield
         Time last_fire_time;
       };
 
-
+    public:
       TimerQueue();
       ~TimerQueue();
 
@@ -2476,7 +2490,7 @@ namespace yield
       static int PROTOCOL; // IPPROTO_UDP
       static int TYPE; // SOCK_DGRAM
 
-
+    public:
       virtual ~UDPSocket() { }
 
       class AIORecvFromCallback
@@ -2657,6 +2671,7 @@ namespace yield
       const static uint32_t SETATTR_ATTRIBUTES = 128;
 #endif
 
+    public:
       virtual ~Volume() { }
 
       YIELD_PLATFORM_VOLUME_PROTOTYPES;
@@ -2787,6 +2802,8 @@ namespace yield
     class Win32AIOQueue : public IOQueue
     {
     public:
+      ~Win32AIOQueue();
+
       static Win32AIOQueue& create();
 
       bool associate( socket_t socket_ );
@@ -2804,9 +2821,9 @@ namespace yield
       YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( Win32AIOQueue, 3 );
 
     private:      
-      Win32AIOQueue( void* hIoCompletionPort );
-      ~Win32AIOQueue();
+      Win32AIOQueue( void* hIoCompletionPort );      
 
+    private:
       void* hIoCompletionPort;
 
       class WorkerThread;

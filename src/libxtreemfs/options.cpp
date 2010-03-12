@@ -82,35 +82,34 @@ Options::~Options()
 
 void Options::add_global_options( OptionParser& option_parser )
 {
-  option_parser.add_option( "-l", "log file path", true );
-  option_parser.add_option( "--log-file-path", "log file path", true );
+  option_parser.add_option( "-l", "log file path" );
+  option_parser.add_option( "--log-file-path", "log file path" );
   const char* log_level_args[3] = { "-d", "--debug", "--log-level" };
   for ( uint8_t log_level_arg_i = 0; log_level_arg_i < 3; log_level_arg_i++ )
   {
     option_parser.add_option
     (
       log_level_args[log_level_arg_i],
-      "log level: EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG",
-      true
+      "log level: EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG"
     );
   }
 
-  option_parser.add_option( "-t", "timeout (ms)", true );
+  option_parser.add_option( "-t", "timeout (ms)" );
 
 #ifdef YIELD_IPC_HAVE_OPENSSL  
-  option_parser.add_option( "--cert", "PEM certificate file path", true );
-  option_parser.add_option( "--pem-certificate-file-path", string(), true );
-  option_parser.add_option( "--pkey", "PEM private key file path", true );
-  option_parser.add_option( "--pem-private-key-file-path", string(), true );
-  option_parser.add_option( "--pass", "PEM private key passphrase", true );
-  option_parser.add_option( "--pem-private-key-passphrase", string(), true );
-  option_parser.add_option( "--pkcs12-file-path", string(), true );
-  option_parser.add_option( "--pkcs12-passphrase", string(), true );
+  option_parser.add_option( "--cert", "PEM certificate file path" );
+  option_parser.add_option( "--pem-certificate-file-path" );
+  option_parser.add_option( "--pkey", "PEM private key file path" );
+  option_parser.add_option( "--pem-private-key-file-path" );
+  option_parser.add_option( "--pass", "PEM private key passphrase" );
+  option_parser.add_option( "--pem-private-key-passphrase" );
+  option_parser.add_option( "--pkcs12-file-path" );
+  option_parser.add_option( "--pkcs12-passphrase" );
 #endif
 
-  option_parser.add_option( "--trace-auth" );
-  option_parser.add_option( "--trace-network-io" );
-  option_parser.add_option( "--trace-network-operations" );
+  option_parser.add_option( "--trace-auth", false );
+  option_parser.add_option( "--trace-network-io", false );
+  option_parser.add_option( "--trace-network-operations", false );
 }
 
 const vector<string>& Options::get_positional_arguments() const

@@ -76,18 +76,19 @@ MRCProxy::create
   const string& password
 )
 {
-  return create
-         (
-           absolute_uri,
-           CONCURRENCY_LEVEL_DEFAULT,
-           options.get_proxy_flags(),
-           options.get_log(),
-           options.get_timeout(),
-           password,
-           RECONNECT_TRIES_MAX_DEFAULT,
-           options.get_ssl_context(),
-           NULL
-         );
+  return *new MRCProxy
+              (
+                CONCURRENCY_LEVEL_DEFAULT,
+                options.get_proxy_flags(),
+                yield::platform::NBIOQueue::create(),
+                options.get_log(),
+                options.get_timeout(),
+                password,
+                createSocketAddress( absolute_uri ),
+                RECONNECT_TRIES_MAX_DEFAULT,
+                createSocketFactory( absolute_uri, options.get_ssl_context() ),
+                NULL
+              );
 }
 
 MRCProxy&
@@ -98,7 +99,6 @@ MRCProxy::create
   uint32_t flags,
   Log* log,
   const Time& operation_timeout,
-  const string& password,
   uint16_t reconnect_tries_max,
   SSLContext* ssl_context,
   UserCredentialsCache* user_credentials_cache
@@ -111,7 +111,7 @@ MRCProxy::create
                 yield::platform::NBIOQueue::create(),
                 log,
                 operation_timeout,
-                password,
+                "",
                 createSocketAddress( absolute_uri ),
                 reconnect_tries_max,
                 createSocketFactory( absolute_uri, ssl_context ),

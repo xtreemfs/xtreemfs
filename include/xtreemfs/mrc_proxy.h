@@ -48,6 +48,8 @@ namespace xtreemfs
              >
   {
   public:
+    virtual ~MRCProxy() { }
+
     static MRCProxy&
     create
     ( 
@@ -64,7 +66,6 @@ namespace xtreemfs
       uint32_t flags = FLAGS_DEFAULT,
       Log* log = NULL,
       const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT,
-      const string& password = string(),
       uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
       SSLContext* ssl_context = NULL, // Steals this reference
       UserCredentialsCache* user_credentials_cache = NULL
@@ -87,8 +88,6 @@ namespace xtreemfs
       SocketFactory& socket_factory,
       UserCredentialsCache* user_credentials_cache
     );
-
-    ~MRCProxy() { }
 
     // yield::ipc::ONCRPCClient
     ONCRPCRequest& createONCRPCRequest( MarshallableObject& body );

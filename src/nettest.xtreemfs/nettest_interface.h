@@ -1,5 +1,5 @@
-#ifndef _1761840789_H_
-#define _1761840789_H_
+#ifndef _2003416901_H_
+#define _2003416901_H_
 
 
 #include "yield/concurrency.h"
@@ -499,44 +499,64 @@ namespace org
       class NettestInterfaceEventSender : public NettestInterface, private NettestInterfaceEvents
       {
       public:
-        NettestInterfaceEventSender( ::yield::concurrency::EventTarget& event_target )
-          : event_target( event_target.inc_ref() )
+        NettestInterfaceEventSender() // Used when the event_target is a subclass
+          : __event_target( NULL )
         { }
 
-        virtual ~NettestInterfaceEventSender()
-        {
-          ::yield::concurrency::EventTarget::dec_ref( event_target );
-        }
+        NettestInterfaceEventSender( ::yield::concurrency::EventTarget& event_target )
+          : __event_target( &event_target )
+        { }
+
 
         virtual void nop()
         {
-          nopRequest __request;
-          ::yield::concurrency::ResponseQueue<nopResponse> __response_queue;
-          __request.set_response_target( &__response_queue );
-          event_target.send( __request.inc_ref() );
-          ::yidl::runtime::auto_Object<nopResponse> __response = __response_queue.dequeue();
+          nopRequest* __request = new nopRequest;
+
+          ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<nopResponse> >
+            __response_queue( new ::yield::concurrency::ResponseQueue<nopResponse> );
+          __request->set_response_target( &__response_queue.get() );
+
+          __event_target->send( *__request );
+
+          ::yidl::runtime::auto_Object<nopResponse> __response = __response_queue->dequeue();
         }
 
         virtual void send_buffer( ::yidl::runtime::Buffer* data )
         {
-          send_bufferRequest __request( data );
-          ::yield::concurrency::ResponseQueue<send_bufferResponse> __response_queue;
-          __request.set_response_target( &__response_queue );
-          event_target.send( __request.inc_ref() );
-          ::yidl::runtime::auto_Object<send_bufferResponse> __response = __response_queue.dequeue();
+          send_bufferRequest* __request = new send_bufferRequest( data );
+
+          ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<send_bufferResponse> >
+            __response_queue( new ::yield::concurrency::ResponseQueue<send_bufferResponse> );
+          __request->set_response_target( &__response_queue.get() );
+
+          __event_target->send( *__request );
+
+          ::yidl::runtime::auto_Object<send_bufferResponse> __response = __response_queue->dequeue();
         }
 
         virtual void recv_buffer( uint32_t size, ::yidl::runtime::Buffer* data )
         {
-          recv_bufferRequest __request( size, data );
-          ::yield::concurrency::ResponseQueue<recv_bufferResponse> __response_queue;
-          __request.set_response_target( &__response_queue );
-          event_target.send( __request.inc_ref() );
-          ::yidl::runtime::auto_Object<recv_bufferResponse> __response = __response_queue.dequeue();data = __response->get_data();
+          recv_bufferRequest* __request = new recv_bufferRequest( size, data );
+
+          ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<recv_bufferResponse> >
+            __response_queue( new ::yield::concurrency::ResponseQueue<recv_bufferResponse> );
+          __request->set_response_target( &__response_queue.get() );
+
+          __event_target->send( *__request );
+
+          ::yidl::runtime::auto_Object<recv_bufferResponse> __response = __response_queue->dequeue();
+          data = __response->get_data();
+        }
+
+        void set_event_target( ::yield::concurrency::EventTarget& event_target )
+        {
+          this->__event_target = &event_target;
         }
 
       private:
-        ::yield::concurrency::EventTarget& event_target;
+        // __event_target is not a counted reference, since that would create
+        // a reference cycle when __event_target is a subclass of EventSender
+        ::yield::concurrency::EventTarget* __event_target;
       };
     };
   };

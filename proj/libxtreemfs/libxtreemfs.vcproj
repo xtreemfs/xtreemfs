@@ -229,6 +229,30 @@
     RelativePath="..\..\include\xtreemfs\interfaces\types.h"
     >
 </File>
+
+        </Filter>
+
+                <Filter
+            Name="Source Files"
+            Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
+            UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
+            >
+            <File
+    RelativePath="..\..\share\yield\src\yield\concurrency.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\share\yield\src\yield\ipc.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\share\yield\src\yield\platform.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\share\yieldfs\src\yieldfs.cpp"
+    >
+</File>
 <File
     RelativePath="..\..\src\interfaces\org\xtreemfs\interfaces\constants.idl"
     >
@@ -326,30 +350,6 @@
         ExcludedFromBuild="true"
         >
     </FileConfiguration>
-</File>
-
-        </Filter>
-
-                <Filter
-            Name="Source Files"
-            Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
-            UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
-            >
-            <File
-    RelativePath="..\..\share\yield\src\yield\concurrency.cpp"
-    >
-</File>
-<File
-    RelativePath="..\..\share\yield\src\yield\ipc.cpp"
-    >
-</File>
-<File
-    RelativePath="..\..\share\yield\src\yield\platform.cpp"
-    >
-</File>
-<File
-    RelativePath="..\..\share\yieldfs\src\yieldfs.cpp"
-    >
 </File>
 <File
     RelativePath="..\..\src\libxtreemfs\directory.h"

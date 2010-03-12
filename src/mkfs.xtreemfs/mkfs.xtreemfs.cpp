@@ -137,7 +137,7 @@ int main( int argc, char** argv )
     if ( dir_or_mrc_uri == NULL || dir_or_mrc_uri->get_resource() == "/" )
       throw Exception( "must specify the <DIR|MRC>/<volume name> URI" );
     dir_or_mrc_uri->inc_ref();
-    fs.set_name( dir_or_mrc_uri->get_resource() ); 
+    fs.set_name( dir_or_mrc_uri->get_resource().substr( 1 ) ); 
 
 
     URI* mrc_uri = NULL; // What we ultimately need to contact
@@ -176,13 +176,13 @@ int main( int argc, char** argv )
     else
     {
       // Assume dir_or_mrc_uri is a DIR URI
-      DIRProxy& dir_proxy = DIRProxy::create( options );
+      auto_Object<DIRProxy> dir_proxy = DIRProxy::create( options );
 
       // Get a list of all MRC services
       ServiceSet mrc_services;
       try
       {
-        dir_proxy.xtreemfs_service_get_by_type
+        dir_proxy->xtreemfs_service_get_by_type
         (
           SERVICE_TYPE_MRC,
           mrc_services
@@ -206,7 +206,7 @@ int main( int argc, char** argv )
 
         // Find an apppropriate address mapping
         auto_Object<AddressMappingSet> mrc_address_mappings
-          = dir_proxy.getAddressMappingsFromUUID( mrc_service.get_uuid() );
+          = dir_proxy->getAddressMappingsFromUUID( mrc_service.get_uuid() );
 
         for
         (
@@ -258,11 +258,10 @@ int main( int argc, char** argv )
       }
     }
 
-    MRCProxy& mrc_proxy = MRCProxy::create( *mrc_uri, options, mrc_password );
+    auto_Object<MRCProxy> mrc_proxy 
+      = MRCProxy::create( *mrc_uri, options, mrc_password );
 
-    mrc_proxy.xtreemfs_mkvol( fs );
-
-    MRCProxy::dec_ref( mrc_proxy );
+    mrc_proxy->xtreemfs_mkvol( fs );
 
     return 0;
   }

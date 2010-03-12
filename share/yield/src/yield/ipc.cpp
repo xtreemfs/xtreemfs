@@ -1,3 +1,5 @@
+// Revision: 2099
+
 #include "yield/ipc.h"
 using namespace yield::ipc;
 
@@ -8961,8 +8963,6 @@ HTTPClient::sendHTTPRequest
   else
     http_request = new HTTPRequest( method, absolute_uri );
 
-  http_request->set_header( "User-Agent", "Flog 0.99" );
-
   yield::concurrency::ResponseQueue<HTTPResponse> http_response_queue;
   http_request->set_response_target( &http_response_queue );
 
@@ -8983,117 +8983,60 @@ HTTPClient::sendHTTPRequest
 
 
 // http_message.cpp
+#line 1 "c:\\projects\\yield\\src\\yield\\ipc\\http_message.rl"
+// Copyright (c) 2010 Minor Gordon
+// With original implementations and ideas contributed by Felix Hupfeld
+// All rights reserved
+//
+// This source file is part of the Yield project.
+// It is licensed under the New BSD license:
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the Yield project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+
+HTTPMessage::HTTPMessage( Buffer* body )
+ : body( body )
+{ }
+
+/*
 HTTPMessage::HTTPMessage( uint8_t reserve_iovecs_count, Buffer* body )
   : RFC822Headers( reserve_iovecs_count ),
     body( body )
 {
   http_version = 1;
 }
+*/
 
-ssize_t HTTPMessage::deserialize( Buffer& buffer)
+ssize_t HTTPMessage::deserialize( Buffer& buffer )
 {
-  switch ( deserialize_state )
-  {
-    case DESERIALIZING_HEADERS:
-    {
-      ssize_t RFC822Headers_deserialize_ret
-        = RFC822Headers::deserialize( buffer );
-
-      if ( RFC822Headers_deserialize_ret == 0 )
-      {
-        if ( strcmp( get_header( "Transfer-Encoding" ), "chunked" ) == 0 )
-        {
-          // DebugBreak();
-          return -1;
-        }
-        else
-        {
-          const char* content_length_str
-            = get_header( "Content-Length", NULL ); // Most browsers
-          if ( content_length_str == NULL )
-            content_length_str = get_header( "Content-length" ); // httperf
-          size_t content_length = atoi( content_length_str );
-
-          if ( content_length == 0 )
-          {
-            deserialize_state = DESERIALIZE_DONE;
-            return 0;
-          }
-          else
-          {
-            deserialize_state = DESERIALIZING_BODY;
-
-            if ( strcmp( get_header( "Expect" ), "100-continue" ) == 0 )
-            {
-              // DebugBreak();
-              return -1;
-            }
-            // else fall through
-          }
-        }
-      }
-      else
-        return RFC822Headers_deserialize_ret;
-    }
-
-    case DESERIALIZING_BODY:
-    {
-      if ( buffer.size() - buffer.position() > 0 )
-      {
-        if ( body == NULL )
-        {
-          if ( buffer.position() == 0 )
-            body = &buffer.inc_ref();
-          else
-          {
-            body
-              = new yidl::runtime::StringBuffer
-                (
-                  static_cast<char*>( buffer ) + buffer.position(),
-                  buffer.size() - buffer.position()
-                );
-          }
-        }
-        else if ( !body->is_fixed() )
-        {
-          static_cast<yidl::runtime::StringBuffer*>( body )->
-            put
-            (
-              static_cast<char*>( buffer ) + buffer.position(),
-              buffer.size() - buffer.position()
-            );
-        }
-        else
-        {
-          Buffer* concatenated_body = new yidl::runtime::StringBuffer;
-          concatenated_body->put( *body, body->size() );
-          concatenated_body->put
-          (
-            static_cast<char*>( buffer ) + buffer.position(),
-            buffer.size() - buffer.position()
-          );
-          Buffer::dec_ref( *body );
-          body = concatenated_body;
-        }
-
-        const char* content_length_str
-          = get_header( "Content-Length", NULL ); // Most browsers
-        if ( content_length_str == NULL )
-          content_length_str = get_header( "Content-length" ); // httperf
-        size_t content_length = atoi( content_length_str );
-        if ( body->size() >= content_length )
-          deserialize_state = DESERIALIZE_DONE;
-      }
-    }
-
-    case DESERIALIZE_DONE: return 0;
-
-    default: DebugBreak(); return -1;
-  }
+  return 0;
 }
 
 Buffers& HTTPMessage::serialize()
 {
+/*
   if ( body != NULL )
   {
     if ( get_header( "Content-Length", NULL ) == NULL )
@@ -9120,6 +9063,8 @@ Buffers& HTTPMessage::serialize()
     set_next_iovec( "\r\n", 2 );
 
   return RFC822Headers::serialize();
+*/
+  return *new Buffers( NULL, 0 );
 }
 
 void HTTPMessage::set_http_version( uint8_t http_version )
@@ -9129,14 +9074,41 @@ void HTTPMessage::set_http_version( uint8_t http_version )
 
 
 // http_request.cpp
+#line 1 "c:\\projects\\yield\\src\\yield\\ipc\\http_request.rl"
+// Copyright (c) 2010 Minor Gordon
+// With original implementations and ideas contributed by Felix Hupfeld
+// All rights reserved
+//
+// This source file is part of the Yield project.
+// It is licensed under the New BSD license:
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the Yield project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+
 HTTPRequest::HTTPRequest()
-{
-  method[0] = 0;
-  uri = new char[2];
-  uri[0] = 0;
-  uri_len = 2;
-  deserialize_state = DESERIALIZING_METHOD;
-}
+{ }
 
 HTTPRequest::HTTPRequest
 (
@@ -9144,7 +9116,7 @@ HTTPRequest::HTTPRequest
   const char* relative_uri,
   const char* host
 )
-  : HTTPMessage( 4, NULL )
+//  : HTTPMessage( 4, NULL )
 {
   init( method, relative_uri, host );
 }
@@ -9156,7 +9128,7 @@ HTTPRequest::HTTPRequest
   const char* host,
   Buffer& body
 )
-  : HTTPMessage( 4, &body )
+//  : HTTPMessage( 4, &body )
 {
   init( method, relative_uri, host );
 }
@@ -9166,7 +9138,7 @@ HTTPRequest::HTTPRequest
   const char* method,
   const URI& absolute_uri
 )
-  : HTTPMessage( 4, NULL )
+//  : HTTPMessage( 4, NULL )
 {
   init
   (
@@ -9182,7 +9154,7 @@ HTTPRequest::HTTPRequest
   const URI& absolute_uri,
   Buffer& body
 )
-  : HTTPMessage( 4, &body )
+//  : HTTPMessage( 4, &body )
 {
   init
   (
@@ -9200,117 +9172,16 @@ HTTPRequest::init
   const char* host
 )
 {
-#ifdef _WIN32
-  strncpy_s( this->method, 16, method, 16 );
-#else
-  strncpy( this->method, method, 16 );
-#endif
-  uri_len = strnlen( relative_uri, UINT16_MAX );
-  this->uri = new char[uri_len + 1];
-  memcpy_s( this->uri, uri_len + 1, relative_uri, uri_len + 1 );
-  set_header( "Host", const_cast<char*>( host ) );
-  deserialize_state = DESERIALIZE_DONE;
+
 }
 
 HTTPRequest::~HTTPRequest()
 {
-  delete [] uri;
 }
 
 ssize_t HTTPRequest::deserialize( Buffer& buffer )
 {
-  switch ( deserialize_state )
-  {
-    case DESERIALIZING_METHOD:
-    {
-      char* method_p = method + strnlen( method, 16 );
-      for ( ;; )
-      {
-        if ( buffer.get( method_p, 1 ) == 1 )
-        {
-          if ( *method_p != ' ' )
-            method_p++;
-          else
-          {
-            *method_p = 0;
-            deserialize_state = DESERIALIZING_URI;
-            break;
-          }
-        }
-        else
-        {
-          *method_p = 0;
-          return 1;
-        }
-      }
-      // Fall through
-    }
-
-    case DESERIALIZING_URI:
-    {
-      char* uri_p = uri + strnlen( uri, UINT16_MAX );
-      for ( ;; )
-      {
-        if ( buffer.get( uri_p, 1 ) == 1 )
-        {
-          if ( *uri_p == ' ' )
-          {
-            *uri_p = 0;
-            uri_len = uri_p - uri;
-            deserialize_state = DESERIALIZING_HTTP_VERSION;
-            break;
-          }
-          else
-          {
-            uri_p++;
-            if ( static_cast<size_t>( uri_p - uri ) == uri_len )
-            {
-              size_t new_uri_len = uri_len * 2;
-              char* new_uri = new char[new_uri_len];
-              memcpy_s( new_uri, new_uri_len, uri, uri_len );
-              delete [] uri;
-              uri = new_uri;
-              uri_p = uri + uri_len;
-              uri_len = new_uri_len;
-            }
-          }
-        }
-        else
-        {
-          *uri_p = 0;
-          return 1;
-        }
-      }
-      // Fall through
-    }
-
-    case DESERIALIZING_HTTP_VERSION:
-    {
-      for ( ;; )
-      {
-        uint8_t test_http_version;
-        if ( buffer.get( &test_http_version, 1 ) == 1 )
-        {
-          if ( test_http_version != '\r' )
-          {
-            set_http_version( test_http_version );
-            continue;
-          }
-          else
-          {
-            set_http_version( get_http_version() == '1' ? 1 : 0 );
-            deserialize_state = DESERIALIZING_HEADERS;
-            break;
-          }
-        }
-        else
-          return 1;
-      }
-    }
-    // Fall through
-
-    default: return HTTPMessage::deserialize( buffer );
-  }
+  return 0;
 }
 
 void HTTPRequest::respond( HTTPResponse& http_response )
@@ -9335,119 +9206,60 @@ void HTTPRequest::respond( ExceptionResponse& exception_response )
 
 Buffers& HTTPRequest::serialize()
 {
-  RFC822Headers::set_iovec( 0, method, strnlen( method, 16 ) );
-  RFC822Headers::set_iovec( 1, " ", 1 );
-  RFC822Headers::set_iovec( 2, uri, uri_len );
-  RFC822Headers::set_iovec( 3, " HTTP/1.1\r\n", 11 );
   return HTTPMessage::serialize();
 }
 
 
 // http_response.cpp
+#line 1 "c:\\projects\\yield\\src\\yield\\ipc\\http_response.rl"
+// Copyright (c) 2010 Minor Gordon
+// With original implementations and ideas contributed by Felix Hupfeld
+// All rights reserved
+//
+// This source file is part of the Yield project.
+// It is licensed under the New BSD license:
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the Yield project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+
 HTTPResponse::HTTPResponse()
 {
   memset( status_code_str, 0, sizeof( status_code_str ) );
-  deserialize_state = DESERIALIZING_HTTP_VERSION;
 }
 
 HTTPResponse::HTTPResponse( uint16_t status_code )
-  : HTTPMessage( 1, NULL), status_code( status_code )
-{
-  deserialize_state = DESERIALIZE_DONE;
-}
+  // : HTTPMessage( 1, NULL), status_code( status_code )
+{ }
 
 HTTPResponse::HTTPResponse( uint16_t status_code, Buffer& body )
-  : HTTPMessage( 1, &body ), status_code( status_code )
-{
-  deserialize_state = DESERIALIZE_DONE;
-}
+  // : HTTPMessage( 1, &body ), status_code( status_code )
+{ }
 
 ssize_t HTTPResponse::deserialize( Buffer& buffer )
 {
-  switch ( deserialize_state )
-  {
-    case DESERIALIZING_HTTP_VERSION:
-    {
-      for ( ;; )
-      {
-        uint8_t test_http_version;
-        if ( buffer.get( &test_http_version, 1 ) == 1 )
-        {
-          if ( test_http_version != ' ' )
-          {
-            set_http_version( test_http_version );
-            continue;
-          }
-          else
-          {
-            set_http_version( get_http_version() == '1' ? 1 : 0 );
-            deserialize_state = DESERIALIZING_STATUS_CODE;
-            break;
-          }
-        }
-        else
-          return 1;
-      }
-    }
-    // Fall through
-
-    case DESERIALIZING_STATUS_CODE:
-    {
-      char* status_code_str_p
-        = status_code_str + strnlen( status_code_str, 3 );
-      for ( ;; )
-      {
-        if ( buffer.get( status_code_str_p, 1 ) == 1 )
-        {
-          if ( *status_code_str_p != ' ' )
-          {
-            status_code_str_p++;
-            if
-            (
-              static_cast<uint8_t>( status_code_str_p - status_code_str ) == 4
-            )
-            {
-              deserialize_state = DESERIALIZE_DONE;
-              return -1;
-            }
-          }
-          else
-          {
-            *status_code_str_p = 0;
-            status_code = static_cast<uint16_t>( atoi( status_code_str ) );
-            if ( status_code == 0 )
-              status_code = 500;
-            deserialize_state = DESERIALIZING_REASON;
-            break;
-          }
-        }
-        else
-          return 1;
-      }
-    }
-    // Fall through
-
-    case DESERIALIZING_REASON:
-    {
-      char c;
-      for ( ;; )
-      {
-        if ( buffer.get( &c, 1 ) == 1 )
-        {
-          if ( c == '\r' )
-          {
-            deserialize_state = DESERIALIZING_HEADERS;
-            break;
-          }
-        }
-        else
-          return 1;
-      }
-    }
-    // Fall through
-
-    default: return HTTPMessage::deserialize( buffer );
-  }
+  return 0;
 }
 
 Buffers& HTTPResponse::serialize()
@@ -9503,11 +9315,11 @@ Buffers& HTTPResponse::serialize()
     default: status_line = "HTTP/1.1 500 Internal Server Error\r\n"; status_line_len = 36; break;
   }
 
-  RFC822Headers::set_iovec( 0, status_line, status_line_len );
+  // RFC822Headers::set_iovec( 0, status_line, status_line_len );
 
-  char date[32];
-  Time().as_http_date_time( date, 32 );
-  set_header( "Date", date );
+  // char date[32];
+  // Time().as_http_date_time( date, 32 );
+  // set_header( "Date", date );
 
   return HTTPMessage::serialize();
 }
@@ -11229,478 +11041,6 @@ void ONCRPCServer::sendRequest( ONCRPCRequest& oncrpc_request )
 }
 
 
-// rfc822_headers.cpp
-RFC822Headers::RFC822Headers( uint8_t reserve_iovecs_count )
-{
-  deserialize_state = DESERIALIZING_LEADING_WHITESPACE;
-  buf_p = stack_buf;
-  heap_buf = NULL;
-  heap_buflen = 0;
-  heap_iovecs = NULL;
-  for ( uint8_t iovec_i = 0; iovec_i < reserve_iovecs_count; iovec_i++ )
-    memset( &stack_iovecs[iovec_i], 0, sizeof( stack_iovecs[iovec_i] ) );
-  iovecs_filled = reserve_iovecs_count;
-}
-
-RFC822Headers::~RFC822Headers()
-{
-  delete [] heap_buf;
-}
-
-void RFC822Headers::allocateHeapBuffer()
-{
-  if ( heap_buflen == 0 )
-  {
-    heap_buf = new char[512];
-    heap_buflen = 512;
-    memcpy_s
-    (
-      heap_buf,
-      heap_buflen,
-      stack_buf,
-      buf_p - stack_buf
-    );
-    buf_p = heap_buf + ( buf_p - stack_buf );
-  }
-  else
-  {
-    heap_buflen += 512;
-    char* new_heap_buf = new char[heap_buflen];
-    memcpy_s
-    (
-      new_heap_buf,
-      heap_buflen,
-      heap_buf,
-      buf_p - heap_buf
-    );
-    buf_p = new_heap_buf + ( buf_p - heap_buf );
-    delete [] heap_buf;
-    heap_buf = new_heap_buf;
-  }
-}
-
-ssize_t RFC822Headers::deserialize( Buffer& buffer )
-{
-  for ( ;; )
-  {
-    switch ( deserialize_state )
-    {
-      case DESERIALIZING_LEADING_WHITESPACE:
-      {
-        char c;
-        for ( ;; )
-        {
-          if ( buffer.get( &c, 1 ) == 1 )
-          {
-            if ( isspace( c ) )
-              continue;
-            else
-            {
-              *buf_p = c;
-              buf_p++; // Don't need to check the end of the buffer here
-              deserialize_state = DESERIALIZING_HEADER_NAME;
-              break;
-            }
-          }
-          else
-            return 1;
-        }
-      }
-      // Fall through
-
-      case DESERIALIZING_HEADER_NAME:
-      {
-        char c;
-        if ( buffer.get( &c, 1 ) == 1 )
-        {
-          switch ( c )
-          {
-            case '\r':
-            case '\n':
-            {
-              deserialize_state = DESERIALIZING_TRAILING_CRLF;
-            }
-            continue;
-
-            // TODO: support folded lines here (look for isspace( c ),
-            // if so it's an extension of the previous line
-
-            default:
-            {
-              *buf_p = c;
-              advanceBufferPointer();
-
-              for ( ;; )
-              {
-                if ( buffer.get( buf_p, 1 ) )
-                {
-                  if ( *buf_p == ':' )
-                  {
-                    *buf_p = 0;
-                    advanceBufferPointer();
-                    deserialize_state
-                      = DESERIALIZING_HEADER_NAME_VALUE_SEPARATOR;
-                    break;
-                  }
-                  else
-                    advanceBufferPointer();
-                }
-                else
-                  return 1;
-              }
-            }
-            break;
-          }
-        }
-        else
-          return 1;
-      }
-      // Fall through
-
-      case DESERIALIZING_HEADER_NAME_VALUE_SEPARATOR:
-      {
-        char c;
-        for ( ;; )
-        {
-          if ( buffer.get( &c, 1 ) == 1 )
-          {
-            if ( isspace( c ) )
-              continue;
-            else
-            {
-              *buf_p = c;
-              advanceBufferPointer();
-              deserialize_state = DESERIALIZING_HEADER_VALUE;
-              break;
-            }
-          }
-          else
-            return 1;
-        }
-      }
-      // Fall through
-
-      case DESERIALIZING_HEADER_VALUE:
-      {
-        for ( ;; )
-        {
-          if ( buffer.get( buf_p, 1 ) == 1 )
-          {
-            if ( *buf_p == '\r' )
-            {
-              *buf_p = 0;
-              advanceBufferPointer();
-              deserialize_state = DESERIALIZING_HEADER_VALUE_TERMINATOR;
-              break;
-            }
-            else
-              advanceBufferPointer();
-          }
-          else
-            return 1;
-        }
-      }
-      // Fall through
-
-      case DESERIALIZING_HEADER_VALUE_TERMINATOR:
-      {
-        char c;
-        for ( ;; )
-        {
-          if ( buffer.get( &c, 1 ) == 1 )
-          {
-            if ( c == '\n' )
-            {
-              deserialize_state = DESERIALIZING_HEADER_NAME;
-              break;
-            }
-          }
-          else
-            return 1;
-        }
-      }
-      continue; // To the next header name
-
-      case DESERIALIZING_TRAILING_CRLF:
-      {
-        char c;
-        for ( ;; )
-        {
-          if ( buffer.get( &c, 1 ) == 1 )
-          {
-            if ( c == '\n' )
-            {
-              *buf_p = 0;
-
-              // Fill the iovecs so get_header will work
-              // TODO: do this as we're parsing
-              const char* temp_buf_p;
-              if ( heap_buf != NULL )
-                temp_buf_p = heap_buf;
-              else
-                temp_buf_p = stack_buf;
-
-              while ( temp_buf_p < buf_p )
-              {
-                const char* header_name = temp_buf_p;
-                size_t header_name_len = strnlen( header_name, UINT16_MAX );
-                temp_buf_p += header_name_len + 1;
-                const char* header_value = temp_buf_p;
-                size_t header_value_len = strnlen( header_value, UINT16_MAX );
-                temp_buf_p += header_value_len + 1;
-                set_next_iovec( header_name, header_name_len );
-                set_next_iovec( ": ", 2 );
-                set_next_iovec( header_value, header_value_len );
-                set_next_iovec( "\r\n", 2 );
-              }
-
-              deserialize_state = DESERIALIZE_DONE;
-              return 0;
-            }
-          }
-          else
-            return 1;
-        }
-
-        case DESERIALIZE_DONE: return 0;
-      }
-    } // switch
-  } // for ( ;; )
-}
-
-char* RFC822Headers::get_header
-(
-  const char* header_name,
-  const char* default_value
-)
-{
-  size_t header_name_len = strnlen( header_name, UINT16_MAX );
-  struct iovec* iovecs = heap_iovecs != NULL ? heap_iovecs : stack_iovecs;
-  for ( uint16_t iovec_i = 0; iovec_i < iovecs_filled; iovec_i += 4 )
-  {
-    if ( iovecs[iovec_i].iov_len == header_name_len )
-    {
-      if
-      (
-        strncmp
-        (
-          static_cast<const char*>( iovecs[iovec_i].iov_base ),
-          header_name,
-          header_name_len
-        ) == 0
-      )
-        return static_cast<char*>( iovecs[iovec_i+2].iov_base );
-    }
-  }
-  return const_cast<char*>( default_value );
-}
-
-Buffers& yield::ipc::RFC822Headers::serialize()
-{
-  return *new Buffers
-              (
-                heap_iovecs != NULL ? heap_iovecs : stack_iovecs,
-                iovecs_filled
-              );
-}
-
-//void RFC822Headers::set_header( const char* header, size_t header_len )
-//{
-//  DebugBreak(); // TODO: Separate header name and value
-//  /*
-//  if ( header[header_len-1] != '\n' )
-//  {
-//    copy_iovec( header, header_len );
-//    set_next_iovec( "\r\n", 2 );
-//  }
-//  else
-//    copy_iovec( header, header_len );
-//    */
-//}
-
-void RFC822Headers::set_header
-(
-  const char* header_name,
-  const char* header_value
-)
-{
-  set_next_iovec( header_name, strnlen( header_name, UINT16_MAX ) );
-  set_next_iovec( ": ", 2 );
-  set_next_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
-  set_next_iovec( "\r\n", 2 );
-}
-
-void RFC822Headers::set_header
-(
-  const char* header_name,
-  char* header_value
-)
-{
-  set_next_iovec( header_name, strnlen( header_name, UINT16_MAX ) );
-  set_next_iovec( ": ", 2 );
-  set_next_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
-  set_next_iovec( "\r\n", 2 );
-}
-
-void RFC822Headers::set_header
-(
-  char* header_name,
-  char* header_value
-)
-{
-  set_next_iovec( header_name, strnlen( header_name, UINT16_MAX ) );
-  set_next_iovec( ": ", 2 );
-  set_next_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
-  set_next_iovec( "\r\n", 2 );
-}
-
-void RFC822Headers::set_header
-(
-  const string& header_name,
-  const string& header_value
-)
-{
-  set_next_iovec
-  (
-    const_cast<char*>( header_name.c_str() ),
-    header_name.size()
-  ); // Copy
-
-  set_next_iovec( ": ", 2 );
-
-  set_next_iovec
-  (
-    const_cast<char*>( header_value.c_str() ),
-    header_value.size()
-  ); // Copy
-
-  set_next_iovec( "\r\n", 2 );
-}
-
-void RFC822Headers::set_iovec
-(
-  uint8_t iovec_i,
-  const char* data,
-  size_t len
-)
-{
-  struct iovec _iovec;
-  _iovec.iov_base = const_cast<char*>( data );
-  _iovec.iov_len = len;
-  if ( heap_iovecs == NULL )
-  {
-    stack_iovecs[iovec_i].iov_base = const_cast<char*>( data );
-    stack_iovecs[iovec_i].iov_len = len;
-  }
-  else
-  {
-    heap_iovecs[iovec_i].iov_base = const_cast<char*>( data );
-    heap_iovecs[iovec_i].iov_len = len;
-  }
-}
-
-void RFC822Headers::set_next_iovec( char* data, size_t len )
-{
-  if ( heap_buf == NULL )
-  {
-    if
-    (
-      ( buf_p + len - stack_buf )
-        > YIELD_RFC822_HEADERS_STACK_BUFFER_LENGTH
-    )
-    {
-      heap_buf = new char[len];
-      heap_buflen = len;
-      // Don't need to copy anything from the stack buffer or change pointers,
-      // since we're not deleting that memory or parsing over it again
-      buf_p = heap_buf;
-    }
-  }
-  else if
-  (
-    static_cast<size_t>( buf_p + len - heap_buf )
-      > heap_buflen
-  )
-  {
-    heap_buflen += len;
-    char* new_heap_buf = new char[heap_buflen];
-    memcpy_s
-    (
-      new_heap_buf,
-      heap_buflen,
-      heap_buf,
-      buf_p - heap_buf
-    );
-    // Since we're copying the old heap_buf and deleting its contents
-    // we need to adjust the pointers in all iovecs
-    struct iovec* iovecs;
-    if ( heap_iovecs != NULL )
-      iovecs = heap_iovecs;
-    else
-      iovecs = stack_iovecs;
-
-    for ( uint8_t iovec_i = 0; iovec_i < iovecs_filled; iovec_i++ )
-    {
-      if
-      (
-        iovecs[iovec_i].iov_base >= heap_buf
-        &&
-        iovecs[iovec_i].iov_base <= buf_p
-      )
-      {
-        iovecs[iovec_i].iov_base
-          = new_heap_buf +
-            ( static_cast<char*>( iovecs[iovec_i].iov_base ) - heap_buf );
-      }
-    }
-    buf_p = new_heap_buf + ( buf_p - heap_buf );
-    delete [] heap_buf;
-    heap_buf = new_heap_buf;
-  }
-
-  const char* buf_p_before = buf_p;
-  memcpy_s( buf_p, len, data, len );
-  buf_p += len;
-  if ( data[len-1] == 0 ) len--;
-  set_next_iovec( buf_p_before, len );
-}
-
-void RFC822Headers::set_next_iovec( const char* data, size_t len )
-{
-  struct iovec _iovec;
-  _iovec.iov_base = const_cast<char*>( data );
-  _iovec.iov_len = len;
-  set_next_iovec( _iovec );
-}
-
-void RFC822Headers::set_next_iovec( const struct iovec& iovec )
-{
-  if ( heap_iovecs == NULL )
-  {
-    if ( iovecs_filled < YIELD_RFC822_HEADERS_STACK_IOVECS_LENGTH )
-      stack_iovecs[iovecs_filled] = iovec;
-    else
-    {
-      heap_iovecs = new struct iovec[UINT8_MAX];
-      memcpy_s
-      (
-        heap_iovecs,
-        sizeof( struct iovec ) * UINT8_MAX,
-        stack_iovecs,
-        sizeof( stack_iovecs )
-      );
-      heap_iovecs[iovecs_filled] = iovec;
-    }
-  }
-  else if ( iovecs_filled < UINT8_MAX )
-    heap_iovecs[iovecs_filled] = iovec;
-  else
-    return;
-
-  iovecs_filled++;
-}
-
-
 // rpc_message.cpp
 using yield::concurrency::EventFactory;
 
@@ -12143,23 +11483,9 @@ private:
         buffer.capacity() - buffer.size() <
         static_cast<size_t>( deserialize_ret )
       )
-      {
-        Buffer* new_buffer = new yidl::runtime::HeapBuffer( deserialize_ret );
-        socket_.aio_read( *new_buffer, *this );
-        Buffer::dec_ref( *new_buffer );
-      }
+        socket_.aio_read( *new yidl::runtime::HeapBuffer( deserialize_ret ), *this );
       else // re-use the same buffer
-        socket_.aio_read( buffer, *this );
-
-      if ( client.has_flag( FLAG_TRACE_OPERATIONS ) )
-      {
-        log->get_stream( Log::LOG_INFO ) <<
-        "yield::ipc::SocketClient: partially deserialized " <<
-        response->get_type_name() << "/" <<
-        reinterpret_cast<uint64_t>( response ) <<
-        ", reading again with " << ( buffer.capacity() - buffer.size() ) <<
-        " byte buffer.";
-      }
+        socket_.aio_read( buffer.inc_ref(), *this );
     }
     else
       onError( ECONNABORTED );

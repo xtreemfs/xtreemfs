@@ -67,7 +67,7 @@ int main( int argc, char** argv )
 
     if ( options.get_uri() == NULL || options.get_uri()->get_resource() == "/" )
       throw Exception( "must specify the <DIR>/<volume name> URI" );
-    const std::string& volume_name = options.get_uri()->get_resource();
+    string volume_name = options.get_uri()->get_resource().substr( 1 );
 
     auto_Object<DIRProxy> dir_proxy = DIRProxy::create( options );
     URI mrc_uri = dir_proxy->getVolumeURIFromVolumeName( volume_name );

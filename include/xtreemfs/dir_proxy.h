@@ -49,6 +49,8 @@ namespace xtreemfs
              >
   {
   public:
+    virtual ~DIRProxy();
+
     static DIRProxy& 
     create
     ( 
@@ -88,8 +90,6 @@ namespace xtreemfs
       SocketFactory& socket_factory,
       UserCredentialsCache* user_credentials_cache
     );
-
-    ~DIRProxy();
 
   private:
     class CachedAddressMappings;

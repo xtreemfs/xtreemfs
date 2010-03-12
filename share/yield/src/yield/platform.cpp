@@ -343,8 +343,8 @@ namespace yield
     class FDEventPollerImpl : public FDEventPoller
     {
     protected:
-      FDEventPollerImpl()
-      { }
+      FDEventPollerImpl() { }
+      virtual ~FDEventPollerImpl() { }
 
       bool associate( fd_t fd, void* context )
       {
@@ -1288,8 +1288,6 @@ int FDEventPoller::try_poll( FDEvent* fd_events, int fd_events_len )
 // file.cpp
 #ifdef _WIN32
 #include <windows.h>
-#pragma warning( push )
-#pragma warning( disable: 4100 )
 #else
 #include <stdlib.h>
 #include <fcntl.h>
@@ -1699,10 +1697,6 @@ ssize_t File::writev( const struct iovec* iov, uint32_t iovlen )
 {
   return ::writev( *this, iov, iovlen );
 }
-#endif
-
-#ifdef _WIN32
-#pragma warning( pop )
 #endif
 
 
@@ -2356,7 +2350,7 @@ Log& Log::open( ostream& underlying_ostream, const Level& level )
 
 Log& Log::open( const Path& file_path, const Level& level, bool lazy_open )
 {
-  if ( file_path == "-" )
+  if ( file_path.empty() || file_path == "-" )
     return *new ostreamLog( cout, level );
   else if ( lazy_open )
     return *new FileLog( file_path, level );
@@ -2781,8 +2775,6 @@ bool Mutex::try_acquire()
 // named_pipe.cpp
 #ifdef _WIN32
 #include <windows.h>
-#pragma warning( push )
-#pragma warning( disable: 4100 )
 #endif
 
 
@@ -2908,10 +2900,6 @@ ssize_t NamedPipe::write( const void* buf, size_t buflen )
   else
     return -1;
 }
-#endif
-
-#ifdef _WIN32
-#pragma warning( pop )
 #endif
 
 
@@ -4024,6 +4012,11 @@ OptionParser::add_option
   options.add( option, help, require_argument );
 }
 
+void OptionParser::add_option( const string& option, bool require_argument )
+{
+  options.add( option, string(), require_argument );
+}
+
 void OptionParser::add_option( const Option& option )
 {
   options.add( option );
@@ -4190,6 +4183,10 @@ string OptionParser::usage()
 }
 
 
+OptionParser::Option::Option( const string& option, bool require_argument )
+  : option( option ), require_argument( require_argument )
+{ }
+
 OptionParser::Option::Option
 (
   const string& option,
@@ -4229,6 +4226,11 @@ OptionParser::Options::add
 )
 {
   add( Option( option, help, require_argument ) );
+}
+
+void OptionParser::Options::add( const string& option, bool require_argument )
+{
+  add( Option( option, string(), require_argument ) );
 }
 
 void OptionParser::Options::add( const Option& option )
@@ -4340,6 +4342,7 @@ ssize_t OStream::writev( const struct iovec* iov, uint32_t iovlen )
 // path.cpp
 #ifdef _WIN32
 #include <windows.h>
+#define PATH_MAX MAX_PATH
 #else
 #include <stdlib.h> // For realpath
 #endif
@@ -7773,8 +7776,6 @@ SocketPair& SocketPair::create()
 // stat.cpp
 #ifdef _WIN32
 #include <windows.h>
-#pragma warning( push )
-#pragma warning( disable: 4100 )
 #endif
 
 
@@ -8200,10 +8201,6 @@ void Stat::set_blocks( blkcnt_t blocks )
 {
   this->blocks = blocks;
 }
-#endif
-
-#ifdef _WIN32
-#pragma warning( pop )
 #endif
 
 
@@ -10651,8 +10648,7 @@ UDPSocket::sendto
 // volume.cpp
 #ifdef _WIN32
 #include <windows.h>
-#pragma warning( push )
-#pragma warning( disable: 4100 )
+#define PATH_MAX MAX_PATH
 #else
 #include <dirent.h> // for DIR
 #include <stdio.h>
@@ -11233,6 +11229,7 @@ bool Volume::statvfs( const Path& path, struct statvfs& buffer )
       = static_cast<fsblkcnt_t>( uFreeBytesAvailableToCaller.QuadPart / 4096 );
 
     buffer.f_namemax = PATH_MAX;
+
     return true;
   }
   else
@@ -11346,10 +11343,6 @@ Path Volume::volname( const Path& path )
 #endif
     return path.root_path();
 }
-
-#ifdef _WIN32
-#pragma warning( pop )
-#endif
 
 
 // win32_aio_queue.cpp

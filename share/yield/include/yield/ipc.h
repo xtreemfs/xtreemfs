@@ -95,6 +95,8 @@ namespace yield
       const static uint32_t FLAG_TRACE_OPERATIONS = 2;
       const static uint32_t FLAGS_DEFAULT = 0;
 
+      virtual ~SocketPeer();
+
       uint32_t get_flags() const { return flags; }
 
     protected:
@@ -104,8 +106,6 @@ namespace yield
         IOQueue& io_queue, // Steals this reference
         Log* log
       );
-
-      virtual ~SocketPeer();
 
       // Two helpers for subclass factory methods
       static IOQueue& createIOQueue();
@@ -129,6 +129,8 @@ namespace yield
       const static uint16_t CONCURRENCY_LEVEL_DEFAULT = 4;
       const static uint64_t OPERATION_TIMEOUT_DEFAULT = 5 * Time::NS_IN_S;
       const static uint16_t RECONNECT_TRIES_MAX_DEFAULT = 2;
+
+      virtual ~SocketClient();
 
       SocketAddress& get_peername() const { return peername; }
       const Time& get_operation_timeout() const { return operation_timeout; }
@@ -156,8 +158,6 @@ namespace yield
         SocketFactory& socket_factory // Steals this reference
       );
 
-      virtual ~SocketClient();
-
       virtual ResponseType& createResponse( RequestType& request ) = 0;
 
     private:
@@ -181,6 +181,8 @@ namespace yield
         public UDPSocket::AIORecvFromCallback
     {
     public:
+      virtual ~SocketServer();
+
       // yidl::runtime::Object
       SocketServer<RequestType, ResponseType>& inc_ref()
       {
@@ -205,8 +207,6 @@ namespace yield
         EventTarget& request_target, 
         UDPSocket& udp_socket 
       );
-
-      virtual ~SocketServer();
 
       // Subclasses must implement this
       virtual RequestType* createRequest() const = 0;
@@ -240,6 +240,8 @@ namespace yield
     class RPCMessage
     {
     public:
+      virtual ~RPCMessage();
+
       MarshallableObject& get_body() const;
 
     protected:
@@ -248,8 +250,6 @@ namespace yield
 
       // Outgoing
       RPCMessage( MarshallableObject& body ); // Steals this reference
-
-      virtual ~RPCMessage();
 
       MarshallableObjectFactory& get_marshallable_object_factory() const;
 
@@ -296,6 +296,8 @@ namespace yield
     class HTTPClient : public SocketClient<HTTPRequest, HTTPResponse>
     {
     public:
+      virtual ~HTTPClient() { }
+
       static HTTPClient&
       create
       (
@@ -344,8 +346,6 @@ namespace yield
         SocketFactory& socket_factory
       );
 
-      virtual ~HTTPClient() { }
-
       // SocketClient
       HTTPResponse& createResponse( HTTPRequest& http_request );
 
@@ -361,115 +361,17 @@ namespace yield
     };
 
 
-    class RFC822Headers
+    class HTTPMessage
     {
     public:
-      RFC822Headers( uint8_t reserve_iovecs_count = 0 );
-      virtual ~RFC822Headers();
+      virtual ~HTTPMessage() { }
 
-      ssize_t deserialize( Buffer& );
-
-      char* get_header
-      (
-        const char* header_name,
-        const char* default_value=""
-      );
-
-      char* operator[]( const char* header_name )
-      {
-        return get_header( header_name );
-      }
-
-      // set_header( ... ): char* copies into a buffer, const char* does not
-      void set_header( const char* header_name, const char* header_value );
-      void set_header( const char* header_name, char* header_value );
-      void set_header( char* header_name, char* header_value );
-
-      void set_header
-      (
-        const string& header_name,
-        const string& header_value
-      );
-
-      Buffers& serialize();
-
-    protected:
-      const struct iovec* get_iovecs() const
-      {
-        return heap_iovecs != NULL ? heap_iovecs : stack_iovecs;
-      }
-
-      uint8_t get_iovecs_filled() const { return iovecs_filled; }
-
-      void set_iovec( uint8_t iovec_i, const char* data, size_t len );
-      void set_next_iovec( char* data, size_t len ); // Copies data
-      void set_next_iovec( const char* data, size_t len ); // No copy
-      void set_next_iovec( const struct iovec& out_iovec );
-
-    private:
-      enum
-      {
-        DESERIALIZING_LEADING_WHITESPACE,
-        DESERIALIZING_HEADER_NAME,
-        DESERIALIZING_HEADER_NAME_VALUE_SEPARATOR,
-        DESERIALIZING_HEADER_VALUE,
-        DESERIALIZING_HEADER_VALUE_TERMINATOR,
-        DESERIALIZING_TRAILING_CRLF,
-        DESERIALIZE_DONE
-      } deserialize_state;
-
-      char stack_buf[YIELD_RFC822_HEADERS_STACK_BUFFER_LENGTH],
-           *heap_buf,
-           *buf_p;
-      size_t heap_buflen;
-
-      struct iovec stack_iovecs[YIELD_RFC822_HEADERS_STACK_IOVECS_LENGTH],
-                   *heap_iovecs;
-      uint8_t iovecs_filled;
-
-      inline void advanceBufferPointer()
-      {
-        buf_p++;
-
-        if ( heap_buf == NULL )
-        {
-          if ( buf_p - stack_buf < YIELD_RFC822_HEADERS_STACK_BUFFER_LENGTH )
-            return;
-          else
-            allocateHeapBuffer();
-        }
-        else if ( static_cast<size_t>( buf_p - heap_buf ) < heap_buflen )
-          return;
-        else
-          allocateHeapBuffer();
-      }
-
-      void allocateHeapBuffer();
-    };
-
-
-    class HTTPMessage : public RFC822Headers
-    {
-    public:
       Buffer* get_body() const { return body; }
       uint8_t get_http_version() const { return http_version; }
 
     protected:
-      HTTPMessage( uint8_t reserve_iovecs_count = 0, Buffer* body = NULL );
-      HTTPMessage( const HTTPMessage& ) { DebugBreak(); } // Prevent copying
-      virtual ~HTTPMessage() { }
-
-      enum
-      {
-        DESERIALIZE_DONE,
-        DESERIALIZING_BODY,
-        DESERIALIZING_METHOD,
-        DESERIALIZING_HEADERS,
-        DESERIALIZING_HTTP_VERSION,
-        DESERIALIZING_REASON,
-        DESERIALIZING_STATUS_CODE,
-        DESERIALIZING_URI
-      } deserialize_state;
+      HTTPMessage( Buffer* body = NULL );
+      HTTPMessage( const HTTPMessage& ) { DebugBreak(); } // Prevent copying      
 
       virtual ssize_t deserialize( Buffer& );
       virtual Buffers& serialize();
@@ -516,13 +418,15 @@ namespace yield
         Buffer& body // Steals this reference
       );
 
+      virtual ~HTTPRequest();
+
       ssize_t deserialize( Buffer& );
-      const char* get_method() const { return method; }
-      const char* get_uri() const { return uri; }
+      //const char* get_method() const { return method; }
+      //const char* get_uri() const { return uri; }
       void respond( HTTPResponse& http_response ); // Steals this reference
       void respond( uint16_t status_code );
       void respond( uint16_t status_code, Buffer& body ); // Steals this ref
-      void respond( ExceptionResponse& exception_response ); // Steals tihs ref
+      void respond( ExceptionResponse& exception_response ); // Steals this ref
       Buffers& serialize();
 
       // yidl::runtime::RTTIObject
@@ -532,19 +436,12 @@ namespace yield
       void marshal( Marshaller& ) const { }
       void unmarshal( Unmarshaller& ) { }
 
-    protected:
-      virtual ~HTTPRequest();
-
     private:
       HTTPRequest( const HTTPRequest& other ) // Prevent copying
         : HTTPMessage( other )
       { }
 
       void init( const char*, const char*, const char* );
-
-    private:
-      char method[16];
-      char* uri; size_t uri_len;
     };
 
 
@@ -558,6 +455,8 @@ namespace yield
       HTTPResponse( uint16_t status_code );
       HTTPResponse( uint16_t status_code, Buffer& body ); // Steals this ref
 
+      virtual ~HTTPResponse() { }
+
       ssize_t deserialize( Buffer& );
       uint16_t get_status_code() const { return status_code; }
       Buffers& serialize();
@@ -568,9 +467,6 @@ namespace yield
       // yidl::runtime::MarshallableObject
       void marshal( Marshaller& ) const { }
       void unmarshal( Unmarshaller& ) { }
-
-    protected:
-      virtual ~HTTPResponse() { }
 
     private:
       HTTPResponse( const HTTPResponse& other ) // Prevent copying
@@ -587,6 +483,8 @@ namespace yield
     class HTTPServer : public SocketServer<HTTPRequest, HTTPResponse>
     {
     public:
+      virtual ~HTTPServer() { }
+
       static HTTPServer&
       create
       (
@@ -682,6 +580,8 @@ namespace yield
     class ONCRPCClient : public SocketClient<ONCRPCRequest, ONCRPCResponse>
     {
     public:
+      virtual ~ONCRPCClient() { }
+
       static ONCRPCClient&
       create
       (
@@ -719,8 +619,6 @@ namespace yield
         uint32_t vers
       );
 
-      virtual ~ONCRPCClient() { }
-
       virtual ONCRPCRequest& createONCRPCRequest( MarshallableObject& body );
 
       EventFactory* get_event_factory() const;
@@ -755,6 +653,8 @@ namespace yield
     public:
       const static uint32_t AUTH_NONE = 0;
 
+      virtual ~ONCRPCMessage();
+
       virtual ssize_t deserialize( Buffer& );
       MarshallableObject* get_verf() const { return verf; }
       uint32_t get_xid() const { return xid; }
@@ -774,9 +674,7 @@ namespace yield
         MarshallableObject& body, // Steals this reference
         MarshallableObject* verf, // Steals this reference
         uint32_t xid 
-      );
-
-      virtual ~ONCRPCMessage();
+      );      
 
       enum
       {
@@ -922,6 +820,8 @@ namespace yield
     class ONCRPCServer : public SocketServer<ONCRPCRequest, ONCRPCResponse>
     {
     public:
+      virtual ~ONCRPCServer() { }
+
       static ONCRPCServer&
       create
       (
@@ -971,7 +871,6 @@ namespace yield
 
       virtual void sendRequest( ONCRPCRequest& oncrpc_request );
 
-
     private:
       class ONCRPCResponseTarget;
 
@@ -1003,6 +902,8 @@ namespace yield
     class SSLContext : public yidl::runtime::Object
     {
     public:
+      ~SSLContext();
+
 #ifdef YIELD_IPC_HAVE_OPENSSL
       static SSLContext&
       create
@@ -1063,8 +964,7 @@ namespace yield
       SSLContext( SSL_CTX* ctx );
 #else
       SSLContext();
-#endif
-      ~SSLContext();
+#endif      
 
 #ifdef YIELD_IPC_HAVE_OPENSSL
       static SSL_CTX* createSSL_CTX
@@ -1084,6 +984,8 @@ namespace yield
     class SSLSocket : public TCPSocket
     {
     public:
+      virtual ~SSLSocket();
+
       static SSLSocket* create( SSLContext& ssl_context );
       static SSLSocket* create( int domain, SSLContext& ssl_context );
 
@@ -1111,7 +1013,6 @@ namespace yield
 
     protected:
       SSLSocket( int, yield::platform::socket_t, SSL*, SSLContext& );
-      ~SSLSocket();
 
     private:
       SSL* ssl;

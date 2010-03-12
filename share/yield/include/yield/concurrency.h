@@ -140,6 +140,8 @@ namespace yield
     class EventTarget : public yidl::runtime::Object
     {
     public:
+      virtual ~EventTarget() { }
+
       // send( Event& ) always steals a reference to the Event
       virtual void send( Event& ) = 0;
 
@@ -148,7 +150,6 @@ namespace yield
 
     protected:
       EventTarget() { }
-      virtual ~EventTarget() { }
     };
 
 
@@ -156,6 +157,7 @@ namespace yield
     {
     public:
       EventTargetMux();
+      ~EventTargetMux();
 
       void addEventTarget( EventTarget& event_target );
 
@@ -163,8 +165,6 @@ namespace yield
       void send( Event& );
 
     private:
-      ~EventTargetMux();
-
       EventTarget** event_targets;
       size_t event_targets_len;
       size_t next_event_target_i;
@@ -174,6 +174,8 @@ namespace yield
     class EventHandler : public EventTarget
     {
     public:
+      virtual ~EventHandler() { }
+
       virtual const char* get_event_handler_name() { return ""; }
 
       virtual void handleEvent( Event& ) = 0;
@@ -190,14 +192,15 @@ namespace yield
       }
 
     protected:
-      EventHandler() { }
-      virtual ~EventHandler() { }
+      EventHandler() { }      
     };
 
 
     class EventQueue : public EventTarget
     {
     public:
+      virtual ~EventQueue() { }
+
       virtual Event* dequeue() = 0;
       virtual Event* dequeue( const Time& timeout ) = 0;
       virtual bool enqueue( Event& ) = 0;      
@@ -861,19 +864,6 @@ namespace yield
       }
     };
 
-    template <class ResponseType>
-    class auto_ResponseQueue
-      : public yidl::runtime::auto_Object< ResponseQueue<ResponseType> >
-    {
-    public:
-      auto_ResponseQueue( ResponseQueue<ResponseType>* response_queue )
-        : yidl::runtime::auto_Object< ResponseQueue<ResponseType> >
-         (
-           response_queue
-         )
-      { }
-    };
-
 
     template 
     <
@@ -1051,6 +1041,8 @@ namespace yield
       };
 
 
+      virtual ~Stage();
+
       double get_arrival_rate_s() const { return arrival_rate_s; }
       double get_rho() const { return rho; }
       double get_service_rate_s() const { return service_rate_s; }
@@ -1065,8 +1057,7 @@ namespace yield
       Stage& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
-      Stage( const char* name );
-      virtual ~Stage();
+      Stage( const char* name );      
 
       Sampler<uint64_t, 1024, yield::platform::Mutex>
         event_processing_time_sampler;
@@ -1264,6 +1255,8 @@ namespace yield
     class StageGroup : public yidl::runtime::Object
     {
     public:
+      virtual ~StageGroup();
+
       // createStage steals the event_handler reference passed to it,
       // to allow createStage( *new EventHandlerType )
       template <class EventHandlerType>
@@ -1297,8 +1290,7 @@ namespace yield
       Stage** get_stages() { return &stages[0]; }
 
     protected:
-      StageGroup();
-      virtual ~StageGroup();
+      StageGroup();      
 
       void addStage( Stage* stage );
 
@@ -1311,6 +1303,8 @@ namespace yield
     class StageGroupImpl : public StageGroup
     {
     public:
+      virtual ~StageGroupImpl() { }
+
       template <class EventHandlerType>
       Stage* createStage
       (
@@ -1343,8 +1337,7 @@ namespace yield
       }
 
     protected:
-      StageGroupImpl() { }
-      virtual ~StageGroupImpl() { }
+      StageGroupImpl() { }      
     };
 
 
@@ -1430,6 +1423,8 @@ namespace yield
         bool use_thread_local_event_queues = false
       );
 
+      ~PollingStageGroup();
+
       template <class EventHandlerType>
       Stage* createStage
       (
@@ -1495,8 +1490,6 @@ namespace yield
       }
 
     private:
-      ~PollingStageGroup();
-
       bool use_thread_local_event_queues;
 
       class Thread;

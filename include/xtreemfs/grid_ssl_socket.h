@@ -42,6 +42,8 @@ namespace xtreemfs
   class GridSSLSocket : public SSLSocket
   {
   public:
+    virtual ~GridSSLSocket() { }
+
     static GridSSLSocket* create( SSLContext& ssl_context );
     static GridSSLSocket* create( int domain, SSLContext& ssl_context );
 

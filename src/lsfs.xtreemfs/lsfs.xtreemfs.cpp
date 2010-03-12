@@ -30,6 +30,9 @@
 using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
+#include "yidl.h"
+using yidl::runtime::auto_Object;
+
 
 int main( int argc, char** argv )
 {
@@ -46,12 +49,12 @@ int main( int argc, char** argv )
   {
     Options options = Options::parse( argc, argv );
 
-    DIRProxy& dir_proxy = DIRProxy::create( options );
+    auto_Object<DIRProxy> dir_proxy = DIRProxy::create( options );
 
     ServiceSet services;
-    dir_proxy.xtreemfs_service_get_by_type( SERVICE_TYPE_VOLUME, services );
+    dir_proxy->xtreemfs_service_get_by_type( SERVICE_TYPE_VOLUME, services );
 
-    const string& volume_name = options.get_uri()->get_resource();
+    string volume_name = options.get_uri()->get_resource().substr( 1 );
     if ( !volume_name.empty() ) // Print detailed info on one volume
     {
       for
