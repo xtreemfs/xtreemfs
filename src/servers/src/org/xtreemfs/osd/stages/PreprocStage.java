@@ -74,6 +74,8 @@ public class PreprocStage extends Stage {
     public final static int                                 STAGEOP_CHECK_LOCK         = 11;
     
     public final static int                                 STAGEOP_UNLOCK             = 12;
+
+    public final static int                                 STAGEOP_PING_FILE          = 14;
     
     private final static long                               OFT_CLEAN_INTERVAL         = 1000 * 60;
     
@@ -174,6 +176,18 @@ public class PreprocStage extends Stage {
             request.setCowPolicy(cowPolicy);
         }
         callback.parseComplete(request, null);
+    }
+
+    public void pingFile(String fileId) {
+        this.enqueueOperation(STAGEOP_PING_FILE, new Object[] { fileId }, null, null);
+    }
+
+    private void doPingFile(StageRequest m) {
+
+        final String fileId = (String) m.getArgs()[0];
+
+        oft.refresh(fileId,TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION);
+
     }
     
     public void checkDeleteOnClose(String fileId, DeleteOnCloseCallback listener) {
@@ -364,17 +378,15 @@ public class PreprocStage extends Stage {
     protected void processMethod(StageRequest m) {
         
         final int requestedMethod = m.getStageMethod();
-        
-        if (requestedMethod == STAGEOP_PARSE_AUTH_OFTOPEN) {
-            doPrepareRequest(m);
-        } else if (requestedMethod == STAGEOP_OFT_DELETE) {
-            doCheckDeleteOnClose(m);
-        } else if (requestedMethod == STAGEOP_ACQUIRE_LOCK) {
-            doAcquireLock(m);
-        } else if (requestedMethod == STAGEOP_CHECK_LOCK) {
-            doCheckLock(m);
-        } else if (requestedMethod == STAGEOP_UNLOCK) {
-            doUnlock(m);
+
+        switch (requestedMethod) {
+            case STAGEOP_PARSE_AUTH_OFTOPEN : doPrepareRequest(m); break;
+            case STAGEOP_OFT_DELETE : doCheckDeleteOnClose(m); break;
+            case STAGEOP_ACQUIRE_LOCK : doAcquireLock(m); break;
+            case STAGEOP_CHECK_LOCK : doCheckLock(m); break;
+            case STAGEOP_UNLOCK : doUnlock(m); break;
+            case STAGEOP_PING_FILE : doPingFile(m); break;
+            default : Logging.logMessage(Logging.LEVEL_ERROR, this,"unknown stageop called: %d",requestedMethod); break;
         }
         
     }

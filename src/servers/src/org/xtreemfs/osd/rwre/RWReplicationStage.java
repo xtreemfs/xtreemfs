@@ -387,6 +387,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                             }
                         }
                     });
+                    master.getPreprocStage().pingFile(fileId);
 
                     numObjsInFlight--;
                     final int numPendingFile = state.getNumObjectsPending()-1;
