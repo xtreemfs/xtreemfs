@@ -208,7 +208,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             final Flease lease = (Flease) method.getArgs()[1];
             final FleaseException error = (FleaseException) method.getArgs()[2];
 
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"lease change event: %s, %s, %s",cellId,lease.getLeaseHolder(),error);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,"lease change event: %s, %s, %s",cellId,lease,error);
 
             final String fileId = cellToFileId.get(cellId);
             if (fileId != null) {
