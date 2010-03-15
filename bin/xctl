@@ -330,6 +330,7 @@ ssl.enabled = false
                               XtreemFS_jar_file_path,
                               os.path.abspath( os.path.join( MY_DIR_PATH, "..", "src", "servers", "lib", "BabuDB.jar" ) ),
                               os.path.abspath( os.path.join( MY_DIR_PATH, "..", "src", "servers", "lib", "yidl.jar" ) ),
+			      os.path.abspath( os.path.join( MY_DIR_PATH, "..", "src", "servers", "lib", "Flease.jar" ) ),
                             )
                 if sys.platform.startswith( "win" ):
                     classpath = ";".join( classpath )
