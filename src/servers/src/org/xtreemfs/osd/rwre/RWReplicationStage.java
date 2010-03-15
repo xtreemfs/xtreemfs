@@ -645,6 +645,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     Logging.logMessage(Logging.LEVEL_DEBUG, this,"closing file %s",fileId);
                 }
                 state.getPolicy().closeFile();
+                if (state.getPolicy().requiresLease())
+                    fstage.closeCell(state.getPolicy().getCellId());
                 cellToFileId.remove(state.getPolicy().getCellId());
             }
         } catch (Exception ex) {
