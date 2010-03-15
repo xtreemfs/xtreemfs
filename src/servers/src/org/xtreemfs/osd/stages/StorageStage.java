@@ -156,7 +156,7 @@ public class StorageStage extends Stage {
 
     public static interface InternalGetMaxObjectNoCallback {
 
-        public void maxObjectNoCompleted(long maxObjNo, Exception error);
+        public void maxObjectNoCompleted(long maxObjNo, long fileSize, long truncateEpoch, Exception error);
     }
 
     public void internalGetReplicaState(String fileId, StripingPolicyImpl sp, long remoteMaxObjVersion,

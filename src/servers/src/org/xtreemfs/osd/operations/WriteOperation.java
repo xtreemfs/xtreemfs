@@ -1,4 +1,4 @@
-/*  Copyright (c) 2009 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+/*  Copyright (c) 2009-2010 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
  This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
  Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -131,7 +131,7 @@ public final class WriteOperation extends OSDOperation {
                     new InternalGetMaxObjectNoCallback() {
 
                 @Override
-                public void maxObjectNoCompleted(long maxObjNo, Exception error) {
+                public void maxObjectNoCompleted(long maxObjNo, long filesize, long tepoch, Exception error) {
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, this,"received max objNo for: "+rq.getFileId()+" maxObj: "+maxObjNo+
                                 " error: "+error);

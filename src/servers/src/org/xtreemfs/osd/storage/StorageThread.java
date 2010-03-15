@@ -178,9 +178,9 @@ public class StorageThread extends Stage {
                     "getmaxobjno for fileId %s: %d", fileId, currentMax);
             }
 
-            cback.maxObjectNoCompleted(currentMax, null);
+            cback.maxObjectNoCompleted(currentMax, fi.getFilesize(), fi.getTruncateEpoch(), null);
         } catch (Exception ex) {
-            cback.maxObjectNoCompleted(0l, ex);
+            cback.maxObjectNoCompleted(0l, 0l, 0l, ex);
         }
     }
     

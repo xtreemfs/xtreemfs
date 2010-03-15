@@ -1,6 +1,25 @@
+/*  Copyright (c) 2010 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+
+This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
+Grid Operating System, see <http://www.xtreemos.eu> for more details.
+The XtreemOS project has been developed with the financial support of the
+European Commission's IST program under contract #FP6-033576.
+
+XtreemFS is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 2 of the License, or (at your option)
+any later version.
+
+XtreemFS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * AUTHORS: Björn Kolbeck (ZIB)
  */
 
 package org.xtreemfs.osd.rwre;
@@ -14,15 +33,11 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import org.xtreemfs.common.buffer.ASCIIString;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.flease.FleaseFuture;
-import org.xtreemfs.foundation.flease.FleaseStage;
-import org.xtreemfs.foundation.flease.proposer.FleaseListener;
+import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.FileCredentials;
@@ -66,7 +81,8 @@ public class WaR1UpdatePolicy extends ReplicaUpdatePolicy {
     }
 
     @Override
-    public void executeReset(FileCredentials credentials, final long updateObjVer, final ExecuteResetCallback callback) {
+    public void executeReset(FileCredentials credentials, final long updateObjVer, final long localFileSize,
+            final long localTruncateEpoch, final ExecuteResetCallback callback) {
         final String fileId = credentials.getXcap().getFile_id();
         final int numResponsesRequired = this.getRemoteOSDs().size();
 
@@ -114,17 +130,33 @@ public class WaR1UpdatePolicy extends ReplicaUpdatePolicy {
                     //analyze the state
                     boolean needsReset = false;
                     long maxObjVer = 0;
+                    long maxFileSize = 0;
+                    long maxTrEpoch = 0;
                     for (ReplicaStatus state : states) {
                         if (state.getMax_obj_version() > localObjVersion) {
                             needsReset = true;
                             maxObjVer = state.getMax_obj_version();
+                            maxFileSize = state.getFile_size();
+                            maxTrEpoch = state.getTruncate_epoch();
                             break;
                         }
                     }
                     if (needsReset) {
 
+                        
+
                         Map<Long,ObjectFetchRecord> recs = new HashMap();
                         LinkedList<ObjectFetchRecord> order = new LinkedList<ObjectFetchRecord>();
+
+                        //make sure to truncate if necessary
+                        if ((localTruncateEpoch < maxTrEpoch) && (localFileSize > maxFileSize)) {
+                            //we need to execute a local truncate first!
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, this,"file needs truncate: %s (te local=%d, remote=%d)",fileId,localTruncateEpoch,maxTrEpoch);
+                            }
+                            order.add(new ObjectFetchRecord(maxFileSize, maxTrEpoch));
+                        }
+
                         for (int i = 0; i < numResponsesRequired; i++) {
                             final ReplicaStatus state = states[i];
 
@@ -155,6 +187,8 @@ public class WaR1UpdatePolicy extends ReplicaUpdatePolicy {
 
                             @Override
                             public int compare(ObjectFetchRecord o1, ObjectFetchRecord o2) {
+                                if (o1.isTruncate())
+                                    return -1;
                                 int verCmp = (int)(o1.getObjVersion()-o2.getObjVersion());
                                 if (verCmp == 0) {
                                     return (int)(o2.getObjNumber()-o2.getObjNumber());
@@ -279,7 +313,7 @@ public class WaR1UpdatePolicy extends ReplicaUpdatePolicy {
     }
 
     @Override
-    public long onClientOperation(Operation operation, long objVersion, ReplicaState currentState, ASCIIString leaseOwner) throws RedirectException, OSDException, IOException {
+    public long onClientOperation(Operation operation, long objVersion, ReplicaState currentState, Flease lease) throws RedirectException, OSDException, IOException {
         if (currentState == ReplicaState.PRIMARY) {
             long tmpObjVer;
             if (operation != Operation.READ) {
@@ -299,10 +333,10 @@ public class WaR1UpdatePolicy extends ReplicaUpdatePolicy {
 
             return nextObjVer;
         } else if (currentState == ReplicaState.BACKUP) {
-            if (leaseOwner == null)
+            if ((lease == null) || (lease.isEmptyLease()) || (!lease.isValid()))
                 throw new OSDException(ErrorCodes.LEASE_TIMED_OUT, "unknown lease state, can't redirect to master", "");
             else
-                throw new RedirectException(leaseOwner.toString());
+                throw new RedirectException(lease.getLeaseHolder().toString());
         } else {
             throw new IOException("invalid state: "+currentState);
         }

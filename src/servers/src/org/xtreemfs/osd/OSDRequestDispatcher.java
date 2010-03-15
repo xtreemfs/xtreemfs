@@ -125,6 +125,8 @@ import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.osd.operations.EventGetFileSize;
+import org.xtreemfs.osd.operations.EventTruncate;
 import org.xtreemfs.osd.operations.FleaseMessageOperation;
 import org.xtreemfs.osd.operations.InternalRWRFetchOperation;
 import org.xtreemfs.osd.operations.InternalRWRStatusOperation;
@@ -795,6 +797,12 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         op = new EventInsertPaddingObject(this);
         internalEvents.put(EventInsertPaddingObject.class, op);
+        
+        op = new EventGetFileSize(this);
+        internalEvents.put(EventGetFileSize.class, op);
+
+        op = new EventTruncate(this);
+        internalEvents.put(EventTruncate.class, op);
     }
     
     public StorageStage getStorageStage() {

@@ -1,6 +1,25 @@
+/*  Copyright (c) 2010 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+
+This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
+Grid Operating System, see <http://www.xtreemos.eu> for more details.
+The XtreemOS project has been developed with the financial support of the
+European Commission's IST program under contract #FP6-033576.
+
+XtreemFS is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 2 of the License, or (at your option)
+any later version.
+
+XtreemFS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
+ */
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * AUTHORS: Björn Kolbeck (ZIB)
  */
 
 package org.xtreemfs.osd.rwre;
@@ -9,16 +28,15 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import org.xtreemfs.common.buffer.ASCIIString;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.flease.FleaseConfig;
 import org.xtreemfs.foundation.flease.FleaseMessageSenderInterface;
 import org.xtreemfs.foundation.flease.FleaseStage;
@@ -36,7 +54,9 @@ import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.client.OSDClient;
-import org.xtreemfs.osd.operations.EventWriteObject;
+import org.xtreemfs.osd.operations.EventGetFileSize;
+import org.xtreemfs.osd.operations.EventTruncate;
+import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
@@ -60,6 +80,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     public static final int STAGEOP_INTERNAL_OBJFETCHED = 11;
 
     public static final int STAGEOP_LEASE_STATE_CHANGED = 13;
+    public static final int STAGEOP_INTERNAL_FSAVAIL = 14;
+    public static final int STAGEOP_INTERNAL_TRUNCED = 15;
 
     
     public  static enum Operation {
@@ -119,16 +141,16 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }, new FleaseStatusListener() {
 
             @Override
-            public void statusChanged(ASCIIString arg0, ASCIIString arg1, long arg2) {
+            public void statusChanged(ASCIIString cellId, Flease lease) {
                 //FIXME: change state
-                eventLeaseStateChanged(arg0, arg1, null);
+                eventLeaseStateChanged(cellId, lease, null);
             }
 
             @Override
-            public void leaseFailed(ASCIIString arg0, FleaseException arg1) {
+            public void leaseFailed(ASCIIString cellID, FleaseException error) {
                 //change state
                 //flush pending requests
-                eventLeaseStateChanged(arg0, null, arg1);
+                eventLeaseStateChanged(cellID, null, error);
             }
         });
     }
@@ -160,6 +182,14 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         super.waitForShutdown();
     }
 
+    public void eventFileSizeAvailable(String fileId, long filesize, long truncateEpoch, long updateObjVer, Exception error) {
+         this.enqueueOperation(STAGEOP_INTERNAL_FSAVAIL, new Object[]{fileId,filesize,truncateEpoch,updateObjVer,error}, null, null);
+    }
+
+    public void eventTruncateComplete(String fileId, Exception error) {
+         this.enqueueOperation(STAGEOP_INTERNAL_TRUNCED, new Object[]{fileId,error}, null, null);
+    }
+
     void eventObjectFetched(String fileId, ObjectFetchRecord object, ObjectData data,Exception error) {
          this.enqueueOperation(STAGEOP_INTERNAL_OBJFETCHED, new Object[]{fileId,object,data,error}, null, null);
     }
@@ -168,17 +198,17 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         this.enqueueOperation(STAGEOP_INTERNAL_GETOBJECTS, new Object[]{fileId,objectsToFetch,error}, null, null);
     }
 
-    void eventLeaseStateChanged(ASCIIString cellId, ASCIIString leaseHolder, FleaseException error) {
-        this.enqueueOperation(STAGEOP_LEASE_STATE_CHANGED, new Object[]{cellId,leaseHolder,error}, null, null);
+    void eventLeaseStateChanged(ASCIIString cellId, Flease lease, Exception error) {
+        this.enqueueOperation(STAGEOP_LEASE_STATE_CHANGED, new Object[]{cellId,lease,error}, null, null);
     }
 
     private void processLeaseStateChanged(StageRequest method) {
         try {
             final ASCIIString cellId = (ASCIIString) method.getArgs()[0];
-            final ASCIIString leaseHolder = (ASCIIString) method.getArgs()[1];
+            final Flease lease = (Flease) method.getArgs()[1];
             final FleaseException error = (FleaseException) method.getArgs()[2];
 
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"lease change event: %s, %s, %s",cellId,leaseHolder,error);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,"lease change event: %s, %s, %s",cellId,lease.getLeaseHolder(),error);
 
             final String fileId = cellToFileId.get(cellId);
             if (fileId != null) {
@@ -186,10 +216,10 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 assert(state != null);
 
                 if (error == null) {
-                    boolean localIsPrimary = (leaseHolder != null) && (leaseHolder.equals(localID));
+                    boolean localIsPrimary = (lease.getLeaseHolder() != null) && (lease.getLeaseHolder().equals(localID));
                     ReplicaState oldState = state.getState();
                     state.setLocalIsPrimary(localIsPrimary);
-                    state.setPrimary(leaseHolder);
+                    state.setLease(lease);
                     if ( (state.getState() == ReplicaState.BACKUP)
                         || (state.getState() == ReplicaState.PRIMARY)
                         || (state.getState() == ReplicaState.WAITING_FOR_LEASE) ) {
@@ -240,7 +270,46 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
                     state.setObjectsToFetch(objects);
                     filesInReset.add(state);
-                    fetchObjects();
+
+                    ObjectFetchRecord r1 = objects.peek();
+                    if (r1.isTruncate()) {
+                        executeTruncate(state);
+                    } else {
+                        fetchObjects();
+                    }
+                }
+            }
+
+        } catch (Exception ex) {
+            Logging.logError(Logging.LEVEL_ERROR, this,ex);
+        }
+    }
+
+    private void executeTruncate(ReplicatedFileState state) {
+        ObjectFetchRecord r1 = state.getObjectsToFetch().poll();
+        OSDOperation op = master.getInternalEvent(EventTruncate.class);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,"truncate requested by RESET for %s to %d/%d",state.getFileId(),
+                    r1.getNewFileSize(),r1.getNewTruncateEpoch());
+        }
+        op.startInternalEvent(new Object[]{state.getFileId(),r1.getNewFileSize(),r1.getNewTruncateEpoch(),state.getsPolicy(),state.getLocalReplica()});
+    }
+
+    private void processTruncateComplete(StageRequest method) {
+        try {
+            final String fileId = (String) method.getArgs()[0];
+            final Exception error = (Exception) method.getArgs()[1];
+
+            ReplicatedFileState state = files.get(fileId);
+            if (state != null) {
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"truncate requested by RESET for %s completed with %s",state.getFileId(),
+                            error);
+                }
+                if (error != null) {
+                    failed(state, error);
+                } else {
+                   fetchObjects();
                 }
             }
 
@@ -342,18 +411,48 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         file.setState(ReplicaState.RESET);
         Logging.logMessage(Logging.LEVEL_INFO, this,"replica RESET started: %s (update objVer=%d)",file.getFileId(),updateObjVer);
 
-        file.getPolicy().executeReset(file.getCredentials(), updateObjVer,new ReplicaUpdatePolicy.ExecuteResetCallback() {
+        OSDOperation op = master.getInternalEvent(EventGetFileSize.class);
+        op.startInternalEvent(new Object[]{file.getFileId(),updateObjVer,file.getsPolicy()});
+        
+    }
 
-            @Override
-            public void finished(Queue<ObjectFetchRecord> objectsToFetch) {
-                eventFetchObjects(file.getFileId(), objectsToFetch, null);
+    private void processFSAvailExecReset(StageRequest method) {
+        try {
+            final String fileId = (String) method.getArgs()[0];
+            final Long filesize = (Long) method.getArgs()[1];
+            final Long truncateEpoch = (Long) method.getArgs()[2];
+            final Long updateObjVer = (Long) method.getArgs()[3];
+            final Exception error = (Exception) method.getArgs()[4];
+
+            final ReplicatedFileState state = files.get(fileId);
+            if (state != null) {
+
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"local FS read for %s: %d/%s",state.getFileId(),
+                            filesize,error);
+                }
+
+                if (error != null) {
+                    failed(state, error);
+                } else {
+                    state.getPolicy().executeReset(state.getCredentials(), updateObjVer, filesize, truncateEpoch, new ReplicaUpdatePolicy.ExecuteResetCallback() {
+
+                        @Override
+                        public void finished(Queue<ObjectFetchRecord> objectsToFetch) {
+                            eventFetchObjects(state.getFileId(), objectsToFetch, null);
+                        }
+
+                        @Override
+                        public void failed(Exception error) {
+                            eventFetchObjects(state.getFileId(), null, error);
+                        }
+                    });
+                }
             }
 
-            @Override
-            public void failed(Exception error) {
-                eventFetchObjects(file.getFileId(), null, error);
-            }
-        });
+        } catch (Exception ex) {
+            Logging.logError(Logging.LEVEL_ERROR, this,ex);
+        }
     }
 
     private void doWaitingForLease(final ReplicatedFileState file) {
@@ -512,6 +611,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             case STAGEOP_INTERNAL_GETOBJECTS : processFetchObjects(method); break;
             case STAGEOP_LEASE_STATE_CHANGED : processLeaseStateChanged(method); break;
             case STAGEOP_INTERNAL_OBJFETCHED : processObjectFetched(method); break;
+            case STAGEOP_INTERNAL_FSAVAIL : processFSAvailExecReset(method); break;
+            case STAGEOP_INTERNAL_TRUNCED : processTruncateComplete(method); break;
             //case STAGEOP_GETSTATUS : processGetStatus(method); break;
             default : throw new IllegalArgumentException("no such stageop");
         }
@@ -566,7 +667,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             ReplicatedFileState state = files.get(fileId);
             if (state == null) {
                 //"open" file
-                state = new ReplicatedFileState(fileId,loc, master.getConfig().getUUID(), fstage, osdClient, maxObjVersion,loc.getLocalReplica().getStripingPolicy());
+                state = new ReplicatedFileState(fileId,loc, master.getConfig().getUUID(), fstage, osdClient, maxObjVersion);
                 files.put(fileId,state);
                 state.setCredentials(credentials);
                 cellToFileId.put(state.getPolicy().getCellId(),fileId);
@@ -708,7 +809,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         return;
                     }
                 }
-                long newVersion = state.getPolicy().onClientOperation(op,objVersion,state.getState(),state.getPrimary());
+                long newVersion = state.getPolicy().onClientOperation(op,objVersion,state.getState(),state.getLease());
                 callback.success(newVersion);
             }
         } catch (RedirectException ex) {
