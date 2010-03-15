@@ -533,8 +533,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void failed(ReplicatedFileState file, Exception ex) {
+        Logging.logMessage(Logging.LEVEL_WARN, this,"replica for file %s failed: %s",file.getFileId(),ex.toString());
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"replica for file %s failed: %s",file.getFileId(),ex.toString());
             Logging.logMessage(Logging.LEVEL_DEBUG, this,"replica state changed for %s from %s to %s",
                     file.getFileId(),file.getState(),ReplicaState.BACKUP);
         }
@@ -544,6 +544,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             RWReplicationCallback callback = (RWReplicationCallback) rq.getCallback();
             callback.failed(ex);
         }
+        file.getPendingRequests().clear();
     }
 
 
