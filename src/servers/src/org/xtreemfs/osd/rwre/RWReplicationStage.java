@@ -613,7 +613,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             case STAGEOP_INTERNAL_OBJFETCHED : processObjectFetched(method); break;
             case STAGEOP_INTERNAL_FSAVAIL : processFSAvailExecReset(method); break;
             case STAGEOP_INTERNAL_TRUNCED : processTruncateComplete(method); break;
-            //case STAGEOP_GETSTATUS : processGetStatus(method); break;
+            case STAGEOP_GETSTATUS : processGetStatus(method); break;
             default : throw new IllegalArgumentException("no such stageop");
         }
     }
@@ -820,39 +820,38 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
     }
 
-//    private void processGetStatus(StageRequest method) {
-//        final StatusCallback callback = (StatusCallback)method.getCallback();
-//        try {
-//            Map<String,Map<String,String>> status = new HashMap();
-//
-//            Map<ASCIIString,FleaseMessage> fleaseState = fstage.getLocalState();
-//
-//            for (String fileId : this.files.keySet()) {
-//                Map<String,String> fStatus = new HashMap();
-//                final ReplicatedFileState fState = files.get(fileId);
-//                final ASCIIString cellId = fState.getPolicy().getCellId();
-//                fStatus.put("policy",fState.getPolicy().getClass().getSimpleName());
-//                fStatus.put("peers (OSDs)",fState.getPolicy().getRemoteOSDs().toString());
-//                fStatus.put("pending updates", "n/a");
-//                fStatus.put("cellId", cellId.toString());
-//                String primary = "unknown";
-//                if (fleaseState.get(cellId) != null) {
-//                    primary = fleaseState.get(cellId).getLeaseHolder().toString();
-//                    if (primary.equals(master.getConfig().getUUID().toString())) {
-//                        primary = "primary";
-//                    } else {
-//                        primary = "backup ( primary is "+primary+")";
-//                    }
-//                }
-//                fStatus.put("role", primary);
-//                status.put(fileId,fStatus);
-//            }
-//            callback.statusComplete(status);
-//        } catch (Exception ex) {
-//            ex.printStackTrace();
-//            callback.statusComplete(null);
-//        }
-//    }
+    private void processGetStatus(StageRequest method) {
+        final StatusCallback callback = (StatusCallback)method.getCallback();
+        try {
+            Map<String,Map<String,String>> status = new HashMap();
+
+            Map<ASCIIString,FleaseMessage> fleaseState = fstage.getLocalState();
+
+            for (String fileId : this.files.keySet()) {
+                Map<String,String> fStatus = new HashMap();
+                final ReplicatedFileState fState = files.get(fileId);
+                final ASCIIString cellId = fState.getPolicy().getCellId();
+                fStatus.put("policy",fState.getPolicy().getClass().getSimpleName());
+                fStatus.put("peers (OSDs)",fState.getPolicy().getRemoteOSDs().toString());
+                fStatus.put("pending requests", fState.getPendingRequests() == null ? "0" : ""+fState.getPendingRequests().size());
+                fStatus.put("cellId", cellId.toString());
+                String primary = "unknown";
+                if ((fState.getLease() != null) && (!fState.getLease().isEmptyLease()) && (fState.getLease().isValid())) {
+                    if (fState.isLocalIsPrimary()) {
+                        primary = "primary";
+                    } else {
+                        primary = "backup ( primary is "+fState.getLease().getLeaseHolder()+")";
+                    }
+                }
+                fStatus.put("role", primary);
+                status.put(fileId,fStatus);
+            }
+            callback.statusComplete(status);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            callback.statusComplete(null);
+        }
+    }
 
     
 
