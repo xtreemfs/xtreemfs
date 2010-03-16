@@ -188,6 +188,17 @@ public class File {
         }
     }
 
+    public Replica getReplica(String osdUUID) throws IOException {
+        Replica[] repls = getReplicas();
+        for (Replica r : repls) {
+            for (int i = 0; i < r.getStripeWidth(); i++) {
+                if (r.getOSDUuid(i).equals(osdUUID))
+                    return r;
+            }
+        }
+        return null;
+    }
+
     public Replica[] getReplicas() throws IOException {
        try {
             Map<String,Object> xloc = getLocations();

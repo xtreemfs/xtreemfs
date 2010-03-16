@@ -180,6 +180,10 @@ public class xtfs_repl {
                                                                                           + "{3}+[0-9]{1,3}+)))|(:(:[0-9a-f]{1,4}+)*:([0-9]{1,3}+\\.){3}+[0-9]"
                                                                                           + "{1,3}+))(/[0-9]+)?",
                                                                                       Pattern.CASE_INSENSITIVE);
+
+    public void setReplicaUpdatePolicy(String policyName) throws IOException {
+        file.setxattr("xtreemfs.set_repl_update_policy", policyName);
+    }
     
     /**
      * required for METHOD_DNS <br>
@@ -272,7 +276,7 @@ public class xtfs_repl {
      * add replica
      */
     public void addReplica(List<ServiceUUID> osds, int replicationFlags, int stripeWidth) throws Exception {
-        if (file.isReadOnly()) {
+        if (file.isReplicated()) {
             if (stripeWidth == 0) // not set => policy from replica 1
                 stripeWidth = osds.size();
             
@@ -289,15 +293,16 @@ public class xtfs_repl {
             file.addReplica(osdArray.length, osdArray, replicationFlags);
             
             // start replication of full replicas
-            if (ReplicationFlags.isFullReplica(replicationFlags))
-                startReplicationOnOSDs(osds.get(0));
+            /*if (ReplicationFlags.isFullReplica(replicationFlags))
+                startReplicationOnOSDs(osds.get(0));*/
+
         } else
-            System.err.println("File is not marked as read-only.");
+            System.err.println("File is not replicated.");
     }
     
     // automatic
     public void addReplicaAutomatically(int replicationFlags, int stripeWidth) throws Exception {
-        if (file.isReadOnly()) {
+        if (file.isReplicated()) {
             if (stripeWidth == 0) // not set => policy from replica 1
                 stripeWidth = raFile.getCurrentReplicaStripeingWidth();
             
@@ -317,7 +322,7 @@ public class xtfs_repl {
             addReplica(uuidList, replicationFlags, stripeWidth);
             
         } else
-            System.err.println("File is not marked as read-only.");
+            System.err.println("File is not replicated.");
     }
     
     /**
@@ -541,10 +546,10 @@ public class xtfs_repl {
      * remove replica
      */
     public void removeReplica(ServiceUUID osd) throws Exception {
-        if (file.isReadOnly()) {
+        if (file.isReplicated()) {
             file.getReplica(raFile.getReplicaNumber(osd.toString())).removeReplica(true);
         } else
-            System.err.println("File is not marked as read-only.");
+            System.err.println("File is not replicated.");
     }
     
     /*

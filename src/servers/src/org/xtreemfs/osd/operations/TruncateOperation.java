@@ -132,7 +132,7 @@ public final class TruncateOperation extends OSDOperation {
                             } else {
                                 //open file in repl stage
                                 master.getRWReplicationStage().openFile(args.getFile_credentials(),
-                                        rq.getLocationList(), maxObjNo, new RWReplicationStage.RWReplicationCallback() {
+                                        rq.getLocationList(), maxObjNo, false, new RWReplicationStage.RWReplicationCallback() {
 
                                         @Override
                                         public void success(long newObjectVersion) {

@@ -15,6 +15,7 @@ import org.xtreemfs.common.util.CLOptionParser;
 import org.xtreemfs.common.util.InvalidUsageException;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.ReplicationFlags;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.utils.xtfs_repl;
 
 /**
@@ -62,6 +63,7 @@ public class RECommand implements TuneFSCommand {
         System.out.println("re get <filename>: displays the replica list for a file");
         System.out.println("re add <filename>: adds a new replica");
         System.out.println("re rem <filename>: removes a replica");
+        System.out.println("re policy <filename> <policy>: sets the replica update policy for a file");
         System.out.println("options for add:");
         System.out.println("\t"+optOSDList.getHelp());
         System.out.println("\t"+optFull.getHelp());
@@ -69,6 +71,10 @@ public class RECommand implements TuneFSCommand {
         System.out.println("\t"+optWidth.getHelp());
         System.out.println("options for rem:");
         System.out.println("\t"+optOSDList.getHelp());
+        System.out.println("replica update policies:");
+        System.out.println("\tnone - no replication");
+        System.out.println("\tWaR1 - write all, read one (primary)");
+        System.out.println("\tWaRa - write all, read all (allows stale reads)");
     }
 
     @Override
@@ -89,6 +95,22 @@ public class RECommand implements TuneFSCommand {
             addReplica(r);
         } else if (subCmd.equals("get")) {
             r.listReplicas();
+        } else if (subCmd.equals("policy")) {
+            if (arguments.size() != 3)
+                throw new InvalidUsageException("re policy requires a filename and a policy name");
+
+            String policy = arguments.get(2);
+            if (policy.equalsIgnoreCase("none")) {
+                policy = "";
+            } else if (policy.equalsIgnoreCase(Constants.REPL_UPDATE_PC_WARA)) {
+                policy = Constants.REPL_UPDATE_PC_WARA;
+            } else if (policy.equalsIgnoreCase(Constants.REPL_UPDATE_PC_WARONE)) {
+                policy = Constants.REPL_UPDATE_PC_WARONE;
+            } else {
+                throw new InvalidUsageException("unknown replica update policy: "+policy);
+            }
+
+            r.setReplicaUpdatePolicy(arguments.get(2));
         } else {
             throw new InvalidUsageException("usage: " + TuneFS.EXEC_NAME + " repl <subcommand> <path to directory>");
         }

@@ -564,26 +564,43 @@ public class Volume {
             FileCredentials oldCreds = response1.get();
             response1.freeBuffers();
             response1 = null;
+
+            boolean readOnlyRepl = (oldCreds.getXlocs().getReplica_update_policy().equals(Constants.REPL_UPDATE_PC_RONLY));
             
             response3 = mrcClient.xtreemfs_replica_add(mrcClient.getDefaultServerAddress(), userCreds,
                 oldCreds.getXcap().getFile_id(), newReplica);
             response3.get();
             response3.freeBuffers();
             response3 = null;
-            
-            if ((flags & Constants.REPL_FLAG_FULL_REPLICA) > 0) {
-                
-                response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixedVol,
-                    fixedPath, 0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0, new VivaldiCoordinates());
-                FileCredentials newCreds = response1.get();
-                for (int objNo = 0; objNo < width; objNo++) {
-                    ServiceUUID osd = new ServiceUUID(osdSet.get(objNo), uuidResolver);
-                    response3 = osdClient.read(osd.getAddress(), newCreds.getXcap().getFile_id(), newCreds,
-                        objNo, 0, 0, 1);
-                    response3.get();
-                    response3.freeBuffers();
-                    response3 = null;
+
+            if (readOnlyRepl) {
+                if ((flags & Constants.REPL_FLAG_FULL_REPLICA) > 0) {
+
+                    response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixedVol,
+                        fixedPath, 0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0, new VivaldiCoordinates());
+                    FileCredentials newCreds = response1.get();
+
+                    for (int objNo = 0; objNo < width; objNo++) {
+                        ServiceUUID osd = new ServiceUUID(osdSet.get(objNo), uuidResolver);
+                        response3 = osdClient.read(osd.getAddress(), newCreds.getXcap().getFile_id(), newCreds,
+                            objNo, 0, 0, 1);
+                        response3.get();
+                        response3.freeBuffers();
+                        response3 = null;
+                    }
                 }
+            } else {
+
+                response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixedVol,
+                        fixedPath, 0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0, new VivaldiCoordinates());
+                FileCredentials newCreds = response1.get();
+
+                ServiceUUID osd = new ServiceUUID(osdSet.get(0), uuidResolver);
+                response3 = osdClient.rwr_notify(osd.getAddress(), newCreds, newCreds.getXcap().getFile_id());
+                response3.get();
+                response3.freeBuffers();
+                response3 = null;
+
             }
             
         } catch (MRCException ex) {
@@ -620,9 +637,12 @@ public class Volume {
 
             ServiceUUID osd = new ServiceUUID(headOSDuuid, uuidResolver);
 
+            boolean readOnlyRepl = (oldCreds.getXlocs().getReplica_update_policy().equals(Constants.REPL_UPDATE_PC_RONLY));
+
             response3 = osdClient.unlink(osd.getAddress(), oldCreds.getXcap().getFile_id(), new FileCredentials(delCap,
                 oldCreds.getXlocs()));
             response3.get();
+
 
         } catch (MRCException ex) {
             if (ex.getError_code() == ErrNo.ENOENT)

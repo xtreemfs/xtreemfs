@@ -82,6 +82,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     public static final int STAGEOP_LEASE_STATE_CHANGED = 13;
     public static final int STAGEOP_INTERNAL_FSAVAIL = 14;
     public static final int STAGEOP_INTERNAL_TRUNCED = 15;
+    public static final int STAGEOP_FORCE_RESET = 16;
 
     
     public  static enum Operation {
@@ -377,6 +378,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             if (state != null) {
 
                 if (error != null) {
+                    numObjsInFlight--;
+                    fetchObjects();
                     failed(state, error);
                 } else {
                     master.getStorageStage().writeObjectWithoutGMax(fileId, record.getObjNumber(),
@@ -500,7 +503,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         try {
             if (file.getPolicy().onPrimary() && !file.isPrimaryReset()) {
                 file.setPrimaryReset(true);
-                doReset(file,ReplicaUpdatePolicy.UNBOUND_RESET);
+                doReset(file,ReplicaUpdatePolicy.UNLIMITED_RESET);
             } else {
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, this,"replica state changed for %s from %s to %s",
@@ -520,7 +523,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         assert(!file.isLocalIsPrimary());
         try {
             if (file.getPolicy().onBackup()) {
-                doReset(file,ReplicaUpdatePolicy.UNBOUND_RESET);
+                doReset(file,ReplicaUpdatePolicy.UNLIMITED_RESET);
             } else {
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, this,"replica state changed for %s from %s to %s",
@@ -558,9 +561,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         public void failed(Exception ex);
     }
 
-    public void openFile(FileCredentials credentials, XLocations locations, long maxObjVersion,
+    public void openFile(FileCredentials credentials, XLocations locations, long maxObjVersion, boolean forceReset,
             RWReplicationCallback callback, OSDRequest request) {
-        this.enqueueOperation(STAGEOP_OPEN, new Object[]{credentials,locations,maxObjVersion}, request, callback);
+        this.enqueueOperation(STAGEOP_OPEN, new Object[]{credentials,locations,maxObjVersion,forceReset}, request, callback);
     }
 
     public void prepareOperation(FileCredentials credentials, long objNo, long objVersion, Operation op, RWReplicationCallback callback,
@@ -665,6 +668,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
             final XLocations loc = (XLocations) method.getArgs()[1];
             final Long maxObjVersion = (Long) method.getArgs()[2];
+            final Boolean forceReset = (Boolean) method.getArgs()[3];
 
             final String fileId = credentials.getXcap().getFile_id();
 
@@ -680,8 +684,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 state.setCredentials(credentials);
                 cellToFileId.put(state.getPolicy().getCellId(),fileId);
                 assert(state.getState() == ReplicaState.OPEN);
+                if (forceReset == true) {
+                    state.setPrimaryReset(false);
+                    doReset(state, ReplicaUpdatePolicy.UNLIMITED_RESET);
+                }
                 callback.success(0);
-                
             } else {
                 callback.failed(new IOException("file was already opened!"));
             }

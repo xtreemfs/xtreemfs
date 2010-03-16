@@ -85,6 +85,8 @@ import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_fetchRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_fetchResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_flease_msgRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_notifyRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_notifyResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_statusRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_statusResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_truncateRequest;
@@ -510,6 +512,22 @@ public class OSDClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 xtreemfs_rwr_truncateResponse resp = new xtreemfs_rwr_truncateResponse();
+                resp.unmarshal(new XDRUnmarshaller(data));
+                return null;
+            }
+        });
+        return r;
+    }
+
+    public RPCResponse rwr_notify(InetSocketAddress server, FileCredentials credentials, String fileId) {
+
+        xtreemfs_rwr_notifyRequest rq = new xtreemfs_rwr_notifyRequest(credentials, fileId);
+
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
+
+            @Override
+            public Object getResult(ReusableBuffer data) {
+                xtreemfs_rwr_notifyResponse resp = new xtreemfs_rwr_notifyResponse();
                 resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }

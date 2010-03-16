@@ -92,6 +92,11 @@ public class TuneFS {
         cmd.createOptions(parser);
         cmd.addMapping(commands);
         commandList.add(cmd);
+
+        cmd = new RPCommand();
+        cmd.createOptions(parser);
+        cmd.addMapping(commands);
+        commandList.add(cmd);
         
 
         try {

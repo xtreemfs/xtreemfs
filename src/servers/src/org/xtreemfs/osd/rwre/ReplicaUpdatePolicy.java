@@ -44,7 +44,7 @@ import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
  */
 public abstract class ReplicaUpdatePolicy {
 
-    public static final long UNBOUND_RESET = -1;
+    public static final long UNLIMITED_RESET = -1;
 
     protected List<InetSocketAddress>       remoteOSDs;
 
