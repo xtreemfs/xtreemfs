@@ -28,6 +28,7 @@ package org.xtreemfs.common.clients;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import org.xtreemfs.common.LRUCache;
 import org.xtreemfs.common.clients.internal.OpenFileList;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
@@ -74,13 +75,24 @@ public class Volume {
 
     private final OpenFileList ofl;
 
+    /*private final LRUCache<String,CachedXAttr> xattrCache;
+
+    private final int mdCacheTimeout_ms;*/
+
     Volume(OSDClient osdClient, MRCClient client, String volumeName, UUIDResolver uuidResolver, UserCredentials userCreds) {
+        this(osdClient, client, volumeName, uuidResolver, userCreds, 0);
+    }
+
+    Volume(OSDClient osdClient, MRCClient client, String volumeName, UUIDResolver uuidResolver, UserCredentials userCreds,
+           int mdCacheTimeout_ms) {
         this.mrcClient = client;
         this.volumeName = volumeName.endsWith("/") ? volumeName : volumeName+"/";
         this.uuidResolver = uuidResolver;
         this.userCreds = userCreds;
         this.osdClient = osdClient;
         this.ofl = new OpenFileList(client);
+        /*this.xattrCache = new LRUCache<String, CachedXAttr>(2048);
+        this.mdCacheTimeout_ms = mdCacheTimeout_ms;*/
         ofl.start();
     }
 

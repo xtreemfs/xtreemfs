@@ -41,6 +41,8 @@ import org.xtreemfs.interfaces.UserCredentials;
  * @author bjko
  */
 public class File {
+    
+    public static final String XTREEMFSSET_REPL_UPDATE_POLICY_XATTR = "xtreemfs.set_repl_update_policy";
 
     private final Volume volume;
 
@@ -269,6 +271,14 @@ public class File {
             throw new IllegalArgumentException("number of OSDs must be equal to width!");
         
         volume.addReplica(this, width, osdSet, flags);
+    }
+
+    public void setReplicaUpdatePolicy(String policy) throws IOException {
+        volume.setxattr(this.getPath(), XTREEMFSSET_REPL_UPDATE_POLICY_XATTR, policy);
+    }
+
+    public String getReplicaUpdatePolicy() throws IOException {
+        return volume.getxattr(this.getPath(), XTREEMFSSET_REPL_UPDATE_POLICY_XATTR);
     }
 
 

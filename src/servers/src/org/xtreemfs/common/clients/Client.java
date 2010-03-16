@@ -41,6 +41,7 @@ import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.client.MRCClient;
@@ -108,6 +109,36 @@ public class Client {
         } finally {
             if (r != null)
                 r.freeBuffers();
+        }
+    }
+
+    public void createVolume(String volumeName, UserCredentials credentials, StripingPolicy sp, int accessCtrlPolicy, int permissions) throws IOException {
+        RPCResponse<ServiceSet> r = null;
+        RPCResponse r2 = null;
+        try {
+            r = dirClient._xtreemfs_service_get_by_type(null, new Object[]{ServiceType.SERVICE_TYPE_MRC});
+            ServiceSet mrcs = r.get();
+
+            if (mrcs.size() == 0) {
+                throw new IOException("no MRC available for volume creation");
+            }
+
+            String uuid = mrcs.get(0).getUuid();
+            ServiceUUID mrcUUID = new ServiceUUID(uuid, uuidRes);
+
+            MRCClient m = new MRCClient(mdClient, mrcUUID.getAddress());
+            r2 = m.mkvol(null, credentials, volumeName, sp, accessCtrlPolicy, permissions);
+            r2.get();
+
+        } catch (ONCRPCException ex) {
+            throw new IOException("communication failure", ex);
+        } catch (InterruptedException ex) {
+            throw new IOException("operation was interrupted", ex);
+        } finally {
+            if (r != null)
+                r.freeBuffers();
+            if (r2 != null)
+                r2.freeBuffers();
         }
     }
 
