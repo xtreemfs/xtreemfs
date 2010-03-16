@@ -24,17 +24,17 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-__revision__ = "src/script/scons.py 4629 2010/01/17 22:23:21 scons"
+__revision__ = "src/script/scons.py 4691 2010/03/06 16:22:36 bdbaddog"
 
-__version__ = "1.2.0.d20100117"
+__version__ = "1.2.0.d20100306"
 
-__build__ = "r4629"
+__build__ = "r4691"
 
-__buildsys__ = "scons-dev"
+__buildsys__ = "mvdog"
 
-__date__ = "2010/01/17 22:23:21"
+__date__ = "2010/03/06 16:22:36"
 
-__developer__ = "scons"
+__developer__ = "bdbaddog"
 
 import os
 import os.path
@@ -159,6 +159,19 @@ else:
         libpath, tail = os.path.split(libpath)
         # Check /usr/libfoo/scons*.
         prefs.append(libpath)
+
+    try:
+        import pkg_resources
+    except ImportError:
+        pass
+    else:
+        # when running from an egg add the egg's directory 
+        try:
+            d = pkg_resources.get_distribution('scons')
+        except pkg_resources.DistributionNotFound:
+            pass
+        else:
+            prefs.append(d.location)
 
 # Look first for 'scons-__version__' in all of our preference libs,
 # then for 'scons'.
