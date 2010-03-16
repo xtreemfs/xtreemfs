@@ -329,6 +329,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             ObjectFetchRecord o = file.getObjectsToFetch().poll();
             if (o != null) {
                 file.setNumObjectsPending(file.getNumObjectsPending()+1);
+                numObjsInFlight++;
                 fetchObject(file.getFileId(), o);
             }
 
@@ -357,6 +358,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     eventObjectFetched(fileId, record, data, null);
                 } catch (Exception ex) {
                     eventObjectFetched(fileId, record, null, ex);
+                } finally {
+                    r.freeBuffers();
                 }
             }
         });
@@ -395,6 +398,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     state.getPolicy().objectFetched(record.getObjVersion());
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, this,"fetched object for replica, file %s, remaining %d",fileId,numPendingFile);
+                    fetchObjects();
                     if (numPendingFile == 0) {
                         //reset complete!
                         doOpen(state);
