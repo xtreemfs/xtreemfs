@@ -29,6 +29,7 @@ import java.util.Iterator;
 
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
@@ -42,15 +43,15 @@ public interface StorageManager {
      * <code>getXAttrs()</code> to retrieve extended attributes assigned by the
      * system
      */
-    public static final String SYSTEM_UID = "";
+    public static final String SYSTEM_UID          = "";
     
     /**
      * userID for global attributes; can be used w/ <code>getXAttr()</code> and
      * <code>getXAttrs()</code> to retrieve extended attributes visible to any
      * user
      */
-    public static final String GLOBAL_ID  = "*";
-
+    public static final String GLOBAL_ID           = "*";
+    
     /**
      * key prefix for XtreemFS system attributes
      */
@@ -128,6 +129,9 @@ public interface StorageManager {
     public void setDefaultStripingPolicy(long fileId, org.xtreemfs.interfaces.StripingPolicy defaultSp,
         AtomicDBUpdate update) throws DatabaseException;
     
+    public void setDefaultReplicationPolicy(long fileId, ReplicationPolicy defaultRp,
+        AtomicDBUpdate update) throws DatabaseException;
+    
     public short unlink(long parentId, String fileName, AtomicDBUpdate update) throws DatabaseException;
     
     public short delete(long parentId, String fileName, AtomicDBUpdate update) throws DatabaseException;
@@ -141,6 +145,8 @@ public interface StorageManager {
     public FileMetadata getMetadata(long parentId, String fileName) throws DatabaseException;
     
     public StripingPolicy getDefaultStripingPolicy(long fileId) throws DatabaseException;
+    
+    public ReplicationPolicy getDefaultReplicationPolicy(long fileId) throws DatabaseException;
     
     public String getSoftlinkTarget(long fileId) throws DatabaseException;
     

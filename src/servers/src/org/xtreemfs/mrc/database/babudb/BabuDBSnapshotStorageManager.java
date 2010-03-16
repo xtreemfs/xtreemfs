@@ -46,6 +46,7 @@ import org.xtreemfs.mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedFileMetadata;
 import org.xtreemfs.mrc.metadata.BufferBackedXAttr;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
@@ -75,6 +76,8 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     public static final byte[]             NUM_DIRS_KEY               = { 'd' };
     
     private static final String            DEFAULT_SP_ATTR_NAME       = "sp";
+    
+    private static final String            DEFAULT_RP_ATTR_NAME       = "rp";
     
     private static final String            LINK_TARGET_ATTR_NAME      = "lt";
     
@@ -190,6 +193,23 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
                 return null;
             
             return Converter.stringToStripingPolicy(this, spString);
+            
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
+    @Override
+    public ReplicationPolicy getDefaultReplicationPolicy(long fileId) throws DatabaseException {
+        
+        try {
+            String rpString = getXAttr(fileId, SYSTEM_UID, DEFAULT_RP_ATTR_NAME);
+            if (rpString == null)
+                return null;
+            
+            return Converter.stringToReplicationPolicy(this, rpString);
             
         } catch (DatabaseException exc) {
             throw exc;
@@ -499,6 +519,12 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     
     @Override
     public void setDefaultStripingPolicy(long fileId, org.xtreemfs.interfaces.StripingPolicy defaultSp,
+        AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+    
+    @Override
+    public void setDefaultReplicationPolicy(long fileId, ReplicationPolicy defaultRp,
         AtomicDBUpdate update) throws DatabaseException {
         throwException();
     }

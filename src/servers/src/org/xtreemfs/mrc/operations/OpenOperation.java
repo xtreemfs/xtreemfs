@@ -51,6 +51,7 @@ import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
@@ -195,19 +196,37 @@ public class OpenOperation extends MRCOperation {
         // if no replicas have been assigned yet, assign a new replica
         if ((xLocList == null || xLocList.getReplicaCount() == 0) && (create || write)) {
             
-            // create a replica with the default striping policy together
-            // with a set of feasible OSDs from the OSD status manager
-            Replica replica = MRCHelper.createReplica(null, sMan, master.getOSDStatusManager(), volume, res
-                    .getParentDirId(), rqArgs.getPath(), ((InetSocketAddress) rq.getRPCRequest()
-                    .getClientIdentity()).getAddress(), rqArgs.getClient_vivaldi_coordinates(), xLocList, 0);
+            String policyName = file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY
+                : Constants.REPL_UPDATE_PC_NONE;
+            int numReplicas = 1;
+            
+            // TODO: replace quick-and-dirty replication policy implementation with a cleaner one
+            
+            ReplicationPolicy defaultReplPolicy = sMan.getDefaultReplicationPolicy(file.getId());
+            if(defaultReplPolicy == null)
+                defaultReplPolicy = sMan.getDefaultReplicationPolicy(1);
+            
+            if (defaultReplPolicy != null) {
+                policyName = defaultReplPolicy.getName();
+                numReplicas = defaultReplPolicy.getNumReplicas();
+            }
             
             ReplicaSet replicas = new ReplicaSet();
-            replicas.add(replica);
-            
-            xLocSet = new XLocSet(0, replicas, file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY
-                : Constants.REPL_UPDATE_PC_NONE, 0);
-            xLocList = Converter.xLocSetToXLocList(sMan, xLocSet);
-            
+            for (int i = 0; i < numReplicas; i++) {
+                
+                // create a replica with the default striping policy together
+                // with a set of feasible OSDs from the OSD status manager
+                Replica replica = MRCHelper.createReplica(null, sMan, master.getOSDStatusManager(), volume,
+                    res.getParentDirId(), rqArgs.getPath(), ((InetSocketAddress) rq.getRPCRequest()
+                            .getClientIdentity()).getAddress(), rqArgs.getClient_vivaldi_coordinates(),
+                    xLocList, 0);
+                
+                replicas.add(replica);
+                
+                xLocSet = new XLocSet(0, replicas, policyName, 0);
+                xLocList = Converter.xLocSetToXLocList(sMan, xLocSet);
+            }
+                        
             file.setXLocList(xLocList);
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
@@ -221,8 +240,8 @@ public class OpenOperation extends MRCOperation {
             assert (xLocList != null) : "The requested file has no xLocList!";
             
             xLocSet = Converter.xLocListToXLocSet(xLocList);
-            xLocSet.setReplica_update_policy(file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY
-                : xLocList.getReplUpdatePolicy());
+            xLocSet.setReplica_update_policy(file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY : xLocList
+                    .getReplUpdatePolicy());
             if (file.isReadOnly())
                 xLocSet.setRead_only_file_size(file.getSize());
         }

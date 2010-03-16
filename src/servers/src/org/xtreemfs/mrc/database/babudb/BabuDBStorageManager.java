@@ -62,6 +62,7 @@ import org.xtreemfs.mrc.metadata.BufferBackedXAttr;
 import org.xtreemfs.mrc.metadata.BufferBackedXLoc;
 import org.xtreemfs.mrc.metadata.BufferBackedXLocList;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
@@ -92,6 +93,8 @@ public class BabuDBStorageManager implements StorageManager {
     public static final byte[]               NUM_DIRS_KEY               = { 'd' };
     
     private static final String              DEFAULT_SP_ATTR_NAME       = "sp";
+    
+    private static final String              DEFAULT_RP_ATTR_NAME       = "rp";
     
     private static final String              LINK_TARGET_ATTR_NAME      = "lt";
     
@@ -164,13 +167,12 @@ public class BabuDBStorageManager implements StorageManager {
             // create the database
             database = dbMan.createDatabase(volumeId, 5);
             
-        } catch (BabuDBException e) {       
+        } catch (BabuDBException e) {
             if (e.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 // database already exists; should never occur!
-                Logging.logError(Logging.LEVEL_ERROR, this, e); 
+                Logging.logError(Logging.LEVEL_ERROR, this, e);
         }
         
         this.database = database;
@@ -180,8 +182,8 @@ public class BabuDBStorageManager implements StorageManager {
     
     public void init(String volumeName, short fileAccessPolicyId, short[] osdPolicy, short[] replPolicy,
         int autoReplFactor, boolean autoReplFull, String ownerId, String owningGroupId, int perms,
-        ACLEntry[] acl, org.xtreemfs.interfaces.StripingPolicy rootDirDefSp, boolean allowSnaps, AtomicDBUpdate update)
-        throws DatabaseException {
+        ACLEntry[] acl, org.xtreemfs.interfaces.StripingPolicy rootDirDefSp, boolean allowSnaps,
+        AtomicDBUpdate update) throws DatabaseException {
         
         // atime, ctime, mtime
         int time = (int) (TimeSync.getGlobalTime() / 1000);
@@ -216,8 +218,7 @@ public class BabuDBStorageManager implements StorageManager {
             notifyVolumeDelete(volume.getId());
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -237,8 +238,7 @@ public class BabuDBStorageManager implements StorageManager {
                 : new BabuDBRequestListenerWrapper<Object>(listener), context);
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -288,8 +288,7 @@ public class BabuDBStorageManager implements StorageManager {
             return id;
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -406,8 +405,7 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -462,8 +460,8 @@ public class BabuDBStorageManager implements StorageManager {
                 ByteBuffer.wrap(idBytes).putLong(file.getId());
                 
                 // remove all ACLs
-                Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(
-                    BabuDBStorageManager.ACL_INDEX, idBytes, null).get();
+                Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.ACL_INDEX,
+                    idBytes, null).get();
                 while (it.hasNext())
                     update.addUpdate(BabuDBStorageManager.ACL_INDEX, it.next().getKey(), null);
                 
@@ -485,8 +483,7 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -551,6 +548,23 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
+    public ReplicationPolicy getDefaultReplicationPolicy(long fileId) throws DatabaseException {
+        
+        try {
+            String rpString = getXAttr(fileId, SYSTEM_UID, DEFAULT_RP_ATTR_NAME);
+            if (rpString == null)
+                return null;
+            
+            return Converter.stringToReplicationPolicy(this, rpString);
+            
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
+    @Override
     public FileMetadata getMetadata(long fileId) throws DatabaseException {
         
         try {
@@ -562,8 +576,8 @@ public class BabuDBStorageManager implements StorageManager {
             byte[][] valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
             
             // retrieve the metadata from the link index
-            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(
-                BabuDBStorageManager.FILE_ID_INDEX, key, null).get();
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.FILE_ID_INDEX,
+                key, null).get();
             
             while (it.hasNext()) {
                 
@@ -596,8 +610,7 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -610,8 +623,7 @@ public class BabuDBStorageManager implements StorageManager {
             return BabuDBStorageHelper.getMetadata(database, parentId, fileName);
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -651,8 +663,7 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -671,8 +682,7 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -691,8 +701,7 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -759,8 +768,7 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -779,6 +787,14 @@ public class BabuDBStorageManager implements StorageManager {
         AtomicDBUpdate update) throws DatabaseException {
         
         setXAttr(fileId, SYSTEM_UID, DEFAULT_SP_ATTR_NAME, Converter.stripingPolicyToString(defaultSp),
+            update);
+    }
+    
+    @Override
+    public void setDefaultReplicationPolicy(long fileId, ReplicationPolicy defaultRp, AtomicDBUpdate update)
+        throws DatabaseException {
+        
+        setXAttr(fileId, SYSTEM_UID, DEFAULT_RP_ATTR_NAME, Converter.replicationPolicyToString(defaultRp),
             update);
     }
     
@@ -820,8 +836,7 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -928,8 +943,7 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -949,8 +963,7 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -1001,8 +1014,7 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -1015,8 +1027,7 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -1029,8 +1040,7 @@ public class BabuDBStorageManager implements StorageManager {
             
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }
@@ -1061,8 +1071,7 @@ public class BabuDBStorageManager implements StorageManager {
             update.addUpdate(VOLUME_INDEX, key, countBytes);
         } catch (BabuDBException exc) {
             if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
-                throw new DatabaseException(ExceptionType.REDIRECT,
-                        this.replMan.getMaster());
+                throw new DatabaseException(ExceptionType.REDIRECT, this.replMan.getMaster());
             else
                 throw new DatabaseException(exc);
         }

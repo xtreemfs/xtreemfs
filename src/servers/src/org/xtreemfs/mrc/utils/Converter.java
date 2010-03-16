@@ -48,6 +48,7 @@ import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.ACLEntry;
+import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
@@ -140,8 +141,8 @@ public class Converter {
         return sb.toString();
     }
     
-    public static String xLocListToJSON(XLocList xLocList, OSDStatusManager osdMan)
-        throws JSONException, UnknownUUIDException {
+    public static String xLocListToJSON(XLocList xLocList, OSDStatusManager osdMan) throws JSONException,
+        UnknownUUIDException {
         
         Map<String, Object> list = new HashMap();
         list.put("update-policy", xLocList.getReplUpdatePolicy());
@@ -158,7 +159,7 @@ public class Converter {
                 Map<String, String> osd = new HashMap();
                 final ServiceUUID uuid = new ServiceUUID(l.getOSD(i));
                 final Service osdData = osdMan.getOSDService(uuid.toString());
-                final String coords = osdData == null? "": osdData.getData().get("vivaldi_coordinates"); 
+                final String coords = osdData == null ? "" : osdData.getData().get("vivaldi_coordinates");
                 osd.put("uuid", uuid.toString());
                 osd.put("vivaldi_coordinates", coords);
                 osd.put("address", uuid.getAddress().getHostName() + ":" + uuid.getAddress().getPort());
@@ -411,6 +412,91 @@ public class Converter {
         }
         
         return result;
+    }
+    
+    /**
+     * Converts a replication policy object to a string.
+     * 
+     * @param rp
+     *            the replication policy object
+     * @return a string containing the replication policy information
+     */
+    public static String replicationPolicyToString(ReplicationPolicy rp) {
+        return rp.getName() + ", " + rp.getNumReplicas();
+    }
+    
+    /**
+     * Converts a string containing replication policy information to a
+     * <code>ReplicationPolicy</code> object.
+     * 
+     * @param sMan
+     *            the storage manager
+     * @param rpString
+     *            the replication policy string
+     * @return the replication policy
+     */
+    public static ReplicationPolicy stringToReplicationPolicy(StorageManager sMan, String rpString) {
+        
+        StringTokenizer st = new StringTokenizer(rpString, " ,\t");
+        
+        final String policy = st.nextToken();
+        final int numRepls = Integer.parseInt(st.nextToken());
+        
+        return new ReplicationPolicy() {
+            
+            @Override
+            public int getNumReplicas() {
+                return numRepls;
+            }
+            
+            @Override
+            public String getName() {
+                return policy;
+            }
+        };
+    }
+    
+    /**
+     * Converts a string containing replication policy information to a
+     * <code>ReplicationPolicy</code> object.
+     * 
+     * @param rpString
+     *            the replication policy string
+     * @return the replication policy
+     */
+    public static ReplicationPolicy jsonStringToReplicationPolicy(String rpString) throws JSONException {
+        
+        Map<String, Object> rpMap = (Map<String, Object>) JSONParser.parseJSON(new JSONString(rpString));
+        
+        if (rpMap == null || rpMap.isEmpty())
+            return null;
+        
+        final String name = (String) rpMap.get("name");
+        final int numRepls = ((Long) rpMap.get("numRepls")).intValue();
+        
+        return new ReplicationPolicy() {
+            
+            @Override
+            public int getNumReplicas() {
+                return numRepls;
+            }
+            
+            @Override
+            public String getName() {
+                return name;
+            }
+        };
+    }
+    
+    public static String replicationPolicyToJSONString(ReplicationPolicy rp) throws JSONException {
+        return JSONParser.writeJSON(getReplicationPolicyAsJSON(rp));
+    }
+    
+    private static Map<String, Object> getReplicationPolicyAsJSON(ReplicationPolicy rp) {
+        Map<String, Object> rpMap = new HashMap<String, Object>();
+        rpMap.put("name", rp.getName());
+        rpMap.put("numRepls", rp.getNumReplicas());
+        return rpMap;
     }
     
 }

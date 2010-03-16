@@ -64,6 +64,7 @@ import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
@@ -125,7 +126,8 @@ public class MRCHelper {
             snapshot_time,
             mark_replica_complete,
             acl,
-            set_repl_update_policy
+            set_repl_update_policy,
+            default_rp
     }
     
     public enum FileType {
@@ -445,6 +447,15 @@ public class MRCHelper {
                     return sb.toString();
                 }
                 
+            case default_rp:
+
+                if (!file.isDirectory())
+                    return "";
+                ReplicationPolicy rp = sMan.getDefaultReplicationPolicy(file.getId());
+                if (rp == null)
+                    return "";
+                
+                return Converter.replicationPolicyToJSONString(rp);
             }
         }
         
@@ -530,9 +541,9 @@ public class MRCHelper {
             break;
         
         case read_only:
-            
-            // TODO: unify w/ 'set_repl_update_policy'
 
+            // TODO: unify w/ 'set_repl_update_policy'
+            
             if (file.isDirectory())
                 throw new UserException(ErrNo.EPERM, "only files can be made read-only");
             
@@ -730,6 +741,31 @@ public class MRCHelper {
             newXLocList = sMan.createXLocList(xlocArray, value, xlocs.getVersion() + 1);
             file.setXLocList(newXLocList);
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
+            
+            break;
+        
+        case default_rp:
+
+            if (!file.isDirectory())
+                throw new UserException(ErrNo.EPERM,
+                    "default replication policies can only be set on volumes and directories");
+            
+            try {
+                
+                ReplicationPolicy rp = null;
+                rp = Converter.jsonStringToReplicationPolicy(value);
+                                
+                sMan.setDefaultReplicationPolicy(file.getId(), rp, update);
+                
+            } catch (JSONException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid default replication policy: " + value);
+            } catch (ClassCastException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid default replication policy: " + value);
+            } catch (NullPointerException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid default replication policy: " + value);
+            } catch (IllegalArgumentException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid default replication policy: " + value);
+            }
             
             break;
         

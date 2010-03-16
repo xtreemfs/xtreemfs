@@ -55,6 +55,8 @@ import org.xtreemfs.mrc.ac.POSIXFileAccessPolicy;
 import org.xtreemfs.mrc.ac.VolumeACLFileAccessPolicy;
 import org.xtreemfs.mrc.ac.YesToAnyoneFileAccessPolicy;
 import org.xtreemfs.mrc.client.MRCClient;
+import org.xtreemfs.mrc.metadata.ReplicationPolicy;
+import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
@@ -885,21 +887,57 @@ public class MRCTest extends TestCase {
         stat = invokeSync(client.getattr(mrcAddress, uc, volumeName, dirName)).get(0);
         assertEquals(0, stat.getBlksize());
         
-        // TODO set the default striping policy of the parent directory via an
-        // extended attribute (not working at the moment)
-        // invokeSync(client.setxattr(mrcAddress, uc, dirName,
-        // "xtreemfs.default_sp", Converter
-        // .stripingPolicyToJSONString(new
-        // BufferBackedStripingPolicy(sp2.getType().name(), sp2
-        // .getStripe_size(), sp2.getWidth())), 0));
-        // xLoc = invokeSync(client.open(mrcAddress, uc, fileName2,
-        // FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()))
-        // .getXlocs();
-        //        
-        // sp = xLoc.getReplicas().get(0).getStriping_policy();
-        // assertEquals(sp2.getType().name(), sp.getType().name());
-        // assertEquals(sp2.getWidth(), sp.getWidth());
-        // assertEquals(sp2.getStripe_size(), sp.getStripe_size());
+    }
+    
+    public void testDefaultReplicationPolicies() throws Exception {
+        
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
+        final UserCredentials uc = MRCClient.getCredentials(uid, gids);
+        
+        final String volumeName = "testVolume";
+        final String dirName = "dir";
+        final String fileName = dirName + "/testFile";
+        
+        final StripingPolicy sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1);
+        
+        ReplicationPolicy rp = new ReplicationPolicy() {
+            
+            @Override
+            public String getName() {
+                return Constants.REPL_UPDATE_PC_WARA;
+            }
+            
+            @Override
+            public int getNumReplicas() {
+                return 2;
+            }
+            
+        };
+        
+        // create a new file in a directory in a new volume
+        invokeSync(client.mkvol(mrcAddress, uc, volumeName, sp, YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
+        invokeSync(client.setxattr(mrcAddress, uc, volumeName, "", "xtreemfs.default_rp", Converter
+                .replicationPolicyToJSONString(rp), 0));
+        
+        String val = invokeSync(client.getxattr(mrcAddress, uc, volumeName, "", "xtreemfs.default_rp"));
+        ReplicationPolicy pol = Converter.jsonStringToReplicationPolicy(val);
+        
+        assertEquals(Constants.REPL_UPDATE_PC_WARA, pol.getName());
+        assertEquals(rp.getNumReplicas(), pol.getNumReplicas());
+        
+        invokeSync(client.mkdir(mrcAddress, uc, volumeName, dirName, 0));
+        invokeSync(client.open(mrcAddress, uc, volumeName, fileName, FileAccessManager.O_CREAT, 0, 0,
+            new VivaldiCoordinates()));
+        
+        // check if the striping policy assigned to the file matches the default
+        // striping policy
+        XLocSet xLoc = invokeSync(
+            client.open(mrcAddress, uc, volumeName, fileName, FileAccessManager.O_RDONLY, 0, 0,
+                new VivaldiCoordinates())).getXlocs();
+        
+        assertEquals(rp.getName(), xLoc.getReplica_update_policy());
+        assertEquals(rp.getNumReplicas(), xLoc.getReplicas().size());
     }
     
     public void testReplicateOnClose() throws Exception {
