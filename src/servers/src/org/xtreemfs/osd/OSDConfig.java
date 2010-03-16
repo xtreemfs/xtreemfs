@@ -116,7 +116,7 @@ public class OSDConfig extends ServiceConfig {
         this.checksumProvider = useChecksums ? this.readOptionalString("checksums.algorithm", null)
             : null;
         
-        this.capabilitySecret = this.readRequiredString("capability_secret");
+        this.setCapabilitySecret(this.readRequiredString("capability_secret"));
 
         this.ignoreCaps = this.readOptionalBoolean("ignore_capabilities", false);
 
@@ -245,6 +245,13 @@ public class OSDConfig extends ServiceConfig {
      */
     public int getFleaseRetries() {
         return fleaseRetries;
+    }
+
+    /**
+     * @param capabilitySecret the capabilitySecret to set
+     */
+    public void setCapabilitySecret(String capabilitySecret) {
+        this.capabilitySecret = capabilitySecret;
     }
     
 }
