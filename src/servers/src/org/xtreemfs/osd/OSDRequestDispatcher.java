@@ -132,6 +132,7 @@ import org.xtreemfs.osd.operations.InternalRWRFetchOperation;
 import org.xtreemfs.osd.operations.InternalRWRStatusOperation;
 import org.xtreemfs.osd.operations.InternalRWRTruncateOperation;
 import org.xtreemfs.osd.operations.InternalRWRUpdateOperation;
+import org.xtreemfs.osd.operations.RWRNotifyOperation;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
@@ -785,6 +786,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         operations.put(op.getProcedureId(), op);
 
         op = new InternalRWRFetchOperation(this);
+        operations.put(op.getProcedureId(), op);
+
+        op = new RWRNotifyOperation(this);
         operations.put(op.getProcedureId(), op);
         
         // --internal events here--
