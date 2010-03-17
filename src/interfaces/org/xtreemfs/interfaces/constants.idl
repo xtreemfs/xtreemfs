@@ -15,6 +15,7 @@ module org
       const string REPL_UPDATE_PC_RONLY = "ronly";
       const string REPL_UPDATE_PC_WARONE = "WaR1";
       const string REPL_UPDATE_PC_WARA = "WaRa";
+      const string REPL_UPDATE_PC_WQRQ = "WqRq";
       
       const uint32_t REPL_FLAG_FULL_REPLICA = 1;
       const uint32_t REPL_FLAG_IS_COMPLETE = 2;
