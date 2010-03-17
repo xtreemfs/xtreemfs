@@ -31,6 +31,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.UnresolvedAddressException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -142,6 +143,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         try {
             sendRequest(server, rec);
         } catch (Throwable e) { // CancelledKeyException, RuntimeException (caused by missing TimeSyncThread)
+            e.printStackTrace();
             listener.requestFailed(rec, new IOException(e));
         } 
     }
@@ -167,7 +169,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             con.getSendQueue().add(request);
             if (!con.isConnected()) {
                 establishConnection(server, con);
-                
+
             } else {
                 if (isEmpty) {
                     final SelectionKey key = con.getChannel().keyFor(selector);
@@ -269,17 +271,19 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         
         synchronized (connections) {
             for (ServerConnection con : connections.values()) {
-                for (ONCRPCRequest rq : con.getSendQueue()) {
-                    rq.getListener().requestFailed(rq, new IOException("client was shut down"));
-                }
-                for (ONCRPCRequest rq : con.getRequests().values()) {
-                    rq.getListener().requestFailed(rq, new IOException("client was shut down"));
-                }
-                try {
-                    if (con.getChannel() != null)
-                        con.getChannel().close();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                synchronized (con) {
+                    for (ONCRPCRequest rq : con.getSendQueue()) {
+                        rq.getListener().requestFailed(rq, new IOException("client was shut down"));
+                    }
+                    for (ONCRPCRequest rq : con.getRequests().values()) {
+                        rq.getListener().requestFailed(rq, new IOException("client was shut down"));
+                    }
+                    try {
+                        if (con.getChannel() != null)
+                            con.getChannel().close();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
         }
@@ -314,7 +318,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 selector.wakeup();
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "connection established");
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "cannot contact server %s",
                         con.getEndpoint().toString());
@@ -324,6 +328,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                     rq.getListener().requestFailed(rq, new IOException("server '"+con.getEndpoint()+"' not reachable", ex));
                 }
                 con.getSendQueue().clear();
+                
             }
         } else {
             if (Logging.isDebug()) {

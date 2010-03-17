@@ -102,6 +102,21 @@ public class rwrepl_test {
                 System.out.println("writing complete");
             }
 
+            if (mode.contains("t")) {
+                System.out.print("t");
+                io.setLength(fileSize/2);
+                ReusableBuffer data = BufferPool.allocate(BLKSIZE);
+                fillData(data);
+                data.flip();
+
+                io.write(data);
+                System.out.println("w");
+
+                BufferPool.free(data);
+            }
+
+
+
             io.close();
 
             Thread.sleep(WAIT_FOR_CLOSE);

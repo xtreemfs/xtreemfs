@@ -15,11 +15,11 @@ import org.xtreemfs.osd.rwre.RWReplicationStage.Operation;
  *
  * @author bjko
  */
-public class WaR1UpdatePolicy extends CoordinatedReplicaUpdatePolicy {
+public class WaRaUpdatePolicy extends CoordinatedReplicaUpdatePolicy {
 
     final int numResponses;
 
-    public WaR1UpdatePolicy(List<InetSocketAddress> remoteOSDs, String fileId, long maxObjVerOnDisk, OSDClient client) throws IOException, InterruptedException {
+    public WaRaUpdatePolicy(List<InetSocketAddress> remoteOSDs, String fileId, long maxObjVerOnDisk, OSDClient client) throws IOException, InterruptedException {
         super(remoteOSDs, fileId, maxObjVerOnDisk, client);
         this.numResponses = remoteOSDs.size();
     }
@@ -31,7 +31,7 @@ public class WaR1UpdatePolicy extends CoordinatedReplicaUpdatePolicy {
 
     @Override
     protected boolean backupCanRead() {
-        return false;
+        return true;
     }
 
 }

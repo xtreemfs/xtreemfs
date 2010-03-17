@@ -100,11 +100,11 @@ public class ClientTest {
         dir.mkdir(0777);
 
         String[] entries = v.list("/");
-        assertEquals(1,entries.length);
-        assertEquals("dir",entries[0]);
+        assertEquals(2,entries.length);
+        assertEquals("dir",entries[1]);
 
         entries = v.list("/dir/");
-        assertEquals(0,entries.length);
+        assertEquals(2,entries.length);
 
         assertTrue(dir.isDirectory());
         assertFalse(dir.isFile());
@@ -123,7 +123,7 @@ public class ClientTest {
         assertTrue(file2.exists());
         
         entries = v.list("/");
-        assertEquals(2,entries.length);
+        assertEquals(3,entries.length);
 
         file2.delete();
         

@@ -185,6 +185,10 @@ public class ReplicatedFileState {
         if (locations.getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_WARONE)) {
             //FIXME: instantiate the right policy
             policy = new WaR1UpdatePolicy(remoteOSDs, fileId, maxObjVer, client);
+        } else if (locations.getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_WARA)) {
+            policy = new WaRaUpdatePolicy(remoteOSDs, fileId, maxObjVer, client);
+        } else if (locations.getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_WQRQ)) {
+            policy = new WqRqUpdatePolicy(remoteOSDs, fileId, maxObjVer, client);
         } else {
             throw new IllegalArgumentException("unsupported replica update mode: "+locations.getReplicaUpdatePolicy());
         }

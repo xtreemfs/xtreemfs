@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.clients.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
@@ -58,18 +59,35 @@ public class OpenFileList extends Thread {
         this.client = client;
     }
 
-    public void openFile(XCap capability) {
+    public void openFile(XCap capability, RandomAccessFile f) {
         synchronized (capabilities) {
-            capabilities.put(capability.getFile_id(),new CapEntry(capability, TimeSync.getLocalSystemTime()+capability.getExpire_timeout_s()*1000));
+            CapEntry e = capabilities.get(capability.getFile_id());
+            if (e == null) {
+                e = new CapEntry(capability, TimeSync.getLocalSystemTime()+capability.getExpire_timeout_s()*1000);
+                capabilities.put(capability.getFile_id(),e);
+            } else {
+                e.upgradeCap(capability, TimeSync.getLocalSystemTime()+capability.getExpire_timeout_s()*1000);
+            }
+            e.addFile(f);
         }
     }
 
-    public void closeFile(String fileId) {
+    public void closeFile(String fileId, RandomAccessFile f) {
+        boolean lastFile = false;
         synchronized (capabilities) {
-            capabilities.remove(fileId);
+            CapEntry e = capabilities.get(fileId);
+            if (e != null) {
+                lastFile = e.removeFile(f);
+                if (lastFile)
+                    capabilities.remove(fileId);
+            } else {
+                throw new IllegalStateException("entry must nut be null");
+            }
         }
-        synchronized (fsUpdateCache) {
-            fsUpdateCache.remove(fileId);
+        if (lastFile) {
+            synchronized (fsUpdateCache) {
+                fsUpdateCache.remove(fileId);
+            }
         }
     }
 
@@ -110,7 +128,7 @@ public class OpenFileList extends Thread {
             CapEntry e = capabilities.get(fileId);
             if (e == null)
                 return null;
-            return e.cap;
+            return e.getCap();
         }
     }
 
@@ -124,18 +142,18 @@ public class OpenFileList extends Thread {
         //check for CAP-renew
 
         do {
-            List<XCap> renewList = new LinkedList();
+            List<CapEntry> renewList = new LinkedList();
             synchronized (capabilities) {
                 //check caps
                 final long expTime = TimeSync.getLocalSystemTime()+Constants.XCAP_EXPIRE_TIMEOUT_S_MIN;
                 for (CapEntry e : capabilities.values()) {
-                    if (e.localTimestamp <= expTime ) {
+                    if (e.getLocalTimestamp() <= expTime ) {
                         //needs renew!
-                        renewList.add(e.cap);
+                        renewList.add(e);
                     }
                 }
             }
-            for (XCap cap : renewList) {
+            for (CapEntry cap : renewList) {
                 renewCap(cap);
             }
             try {
@@ -147,14 +165,14 @@ public class OpenFileList extends Thread {
 
     }
 
-    protected void renewCap(XCap cap) {
+    protected void renewCap(CapEntry cap) {
         assert(cap != null);
         RPCResponse<XCap> r = null;
         try {
-            r = client.xtreemfs_renew_capability(client.getDefaultServerAddress(), cap);
+            r = client.xtreemfs_renew_capability(client.getDefaultServerAddress(), cap.getCap());
             XCap newCap = r.get();
             synchronized (capabilities) {
-                capabilities.put(newCap.getFile_id(), new CapEntry(newCap, TimeSync.getLocalSystemTime()+newCap.getExpire_timeout_s()*1000));
+                cap.updateCap(newCap, TimeSync.getLocalSystemTime()+newCap.getExpire_timeout_s()*1000-1000);
             }
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,"cannot renew cap due to exception");
@@ -167,12 +185,51 @@ public class OpenFileList extends Thread {
     }
 
     public static class CapEntry {
-        XCap cap;
-        long localTimestamp;
+        private XCap cap;
+        private long localTimestamp;
+        final List<RandomAccessFile> files;
 
         public CapEntry(XCap c, long ts) {
             cap = c;
             localTimestamp = ts;
+            files = new LinkedList();
+        }
+
+        public void addFile(RandomAccessFile file) {
+            files.add(file);
+        }
+
+        public boolean removeFile(RandomAccessFile file) {
+            files.remove(file);
+            return files.isEmpty();
+        }
+
+        public void updateCap(XCap c, long ts) {
+            cap = c;
+            localTimestamp = ts;
+            for (RandomAccessFile file : files)
+                file.updateCap(c);
+        }
+
+        public void upgradeCap(XCap c, long ts) {
+            if ( ((cap.getAccess_mode() & Constants.SYSTEM_V_FCNTL_H_O_RDONLY) > 0)
+                 && ((c.getAccess_mode() & Constants.SYSTEM_V_FCNTL_H_O_RDWR) > 0) ) {
+                updateCap(c, ts);
+            }
+        }
+
+        /**
+         * @return the cap
+         */
+        public XCap getCap() {
+            return cap;
+        }
+
+        /**
+         * @return the localTimestamp
+         */
+        public long getLocalTimestamp() {
+            return localTimestamp;
         }
     }
 }

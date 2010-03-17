@@ -28,6 +28,7 @@ import java.io.IOException;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 
 /**
@@ -35,6 +36,10 @@ import org.xtreemfs.interfaces.utils.ONCRPCException;
  * @author bjko
  */
 public class RPCResponse<V extends Object> implements RPCResponseListener {
+
+    private static final boolean TRACE_DUPLICATE_RESPONSES = false;
+
+    private StackTraceElement[] responseTrace;
 
     private ONCRPCRequest request;
 
@@ -102,6 +107,18 @@ public class RPCResponse<V extends Object> implements RPCResponseListener {
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "response received");
         synchronized (this) {
+            if (TRACE_DUPLICATE_RESPONSES) {
+                if (responseTrace != null) {
+                    StringBuffer strace = new StringBuffer();
+                    for (int i = responseTrace.length-1; i >= 0; i--) {
+                        strace.append("\t");
+                        strace.append(responseTrace[i].toString());
+                    }
+                    throw new RuntimeException("response already set:\n"+strace.toString());
+                } else {
+                    responseTrace = Thread.currentThread().getStackTrace();
+                }
+            }
             this.request = request;
             if (listener != null)
                 listener.responseAvailable(this);
@@ -114,6 +131,18 @@ public class RPCResponse<V extends Object> implements RPCResponseListener {
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "remote exception received");
         synchronized (this) {
+            if (TRACE_DUPLICATE_RESPONSES) {
+                if (responseTrace != null) {
+                    StringBuffer strace = new StringBuffer();
+                    for (int i = responseTrace.length-1; i >= 0; i--) {
+                        strace.append("\t");
+                        strace.append(responseTrace[i].toString());
+                    }
+                    throw new RuntimeException("response already set:\n"+strace.toString());
+                } else {
+                    responseTrace = Thread.currentThread().getStackTrace();
+                }
+            }
             this.request = request;
             this.remoteEx = exception;
             if (listener != null)
@@ -127,6 +156,19 @@ public class RPCResponse<V extends Object> implements RPCResponseListener {
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "request failed received");
         synchronized (this) {
+            if (TRACE_DUPLICATE_RESPONSES) {
+                if (responseTrace != null) {
+                    StringBuffer strace = new StringBuffer();
+                    for (int i = responseTrace.length-1; i >= 0; i--) {
+                        strace.append("\t");
+                        strace.append(responseTrace[i].toString());
+                        strace.append("\n");
+                    }
+                    throw new RuntimeException("response already set:\n"+strace.toString());
+                } else {
+                    responseTrace = Thread.currentThread().getStackTrace();
+                }
+            }
             this.request = request;
             this.ioError = reason;
             if (listener != null)

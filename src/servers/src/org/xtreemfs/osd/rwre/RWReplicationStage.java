@@ -48,9 +48,11 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.FileCredentials;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.RedirectException;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.client.OSDClient;
@@ -84,7 +86,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     public static final int STAGEOP_INTERNAL_TRUNCED = 15;
     public static final int STAGEOP_FORCE_RESET = 16;
 
-    
     public  static enum Operation {
         READ,
         WRITE,
@@ -111,6 +112,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     private int                        numObjsInFlight;
 
     private static final int           MAX_OBJS_IN_FLIGHT = 10;
+
+    private static final int MAX_PENDING_PER_FILE = 10;
 
     private final Queue<ReplicatedFileState> filesInReset;
 
@@ -416,6 +419,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     private void doReset(final ReplicatedFileState file, long updateObjVer) {
 
+        if (file.getState() == ReplicaState.RESET) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"file %s is already in RESET",file.getFileId());
+            return;
+        }
         file.setState(ReplicaState.RESET);
         Logging.logMessage(Logging.LEVEL_INFO, this,"replica RESET started: %s (update objVer=%d)",file.getFileId(),updateObjVer);
 
@@ -796,7 +804,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         if (Logging.isDebug()) {
                             Logging.logMessage(Logging.LEVEL_DEBUG, this,"enqeue update for %s (state is %s)",fileId,state.getState());
                         }
-                        state.getPendingRequests().add(method);
+                        if (state.getPendingRequests().size() > MAX_PENDING_PER_FILE) {
+                            callback.failed(new OSDException(ErrorCodes.IO_ERROR, "too many requests in queue for file", ""));
+                        } else {
+                            state.getPendingRequests().add(method);
+                        }
                         return;
                     }
                 }
@@ -851,11 +863,15 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 fStatus.put("pending requests", fState.getPendingRequests() == null ? "0" : ""+fState.getPendingRequests().size());
                 fStatus.put("cellId", cellId.toString());
                 String primary = "unknown";
-                if ((fState.getLease() != null) && (!fState.getLease().isEmptyLease()) && (fState.getLease().isValid())) {
-                    if (fState.isLocalIsPrimary()) {
-                        primary = "primary";
+                if ((fState.getLease() != null) && (!fState.getLease().isEmptyLease())) {
+                    if (fState.getLease().isValid()) {
+                        if (fState.isLocalIsPrimary()) {
+                            primary = "primary";
+                        } else {
+                            primary = "backup ( primary is "+fState.getLease().getLeaseHolder()+")";
+                        }
                     } else {
-                        primary = "backup ( primary is "+fState.getLease().getLeaseHolder()+")";
+                        primary = "outdated lease: "+fState.getLease().getLeaseHolder();
                     }
                 }
                 fStatus.put("role", primary);

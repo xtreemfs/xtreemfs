@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import java.util.concurrent.atomic.AtomicReference;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.internal.ObjectMapper;
@@ -47,6 +48,7 @@ import org.xtreemfs.interfaces.OSDInterface.RedirectException;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.ObjectList;
+import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.osd.client.OSDClient;
@@ -66,13 +68,15 @@ public class RandomAccessFile {
     private final boolean readOnly;
     private final boolean syncMetadata;
     private long position;
-    private FileCredentials credentials;
+    private final FileCredentials credentials;
     private Replica currentReplica;
     private int currentReplicaNo;
     private final int numReplicas;
     private final String fileId;
     private ObjectMapper oMapper;
     private boolean closed;
+
+    private final AtomicReference<XCap> uptodateCap;
 
     RandomAccessFile(File parent, Volume parentVolume, OSDClient client, FileCredentials fc, boolean readOnly, boolean syncMetadata) {
         this.parent = parent;
@@ -88,7 +92,17 @@ public class RandomAccessFile {
         numReplicas = credentials.getXlocs().getReplicas().size();
         fileId = fc.getXcap().getFile_id();
 
+        uptodateCap = new AtomicReference(fc.getXcap());
+
         selectReplica(0);
+    }
+
+    public void updateCap(XCap newXCap) {
+        uptodateCap.set(newXCap);
+    }
+
+    protected void setXCap() {
+        credentials.setXcap(uptodateCap.get());
     }
 
     protected void switchToNextReplica() {
@@ -193,6 +207,7 @@ public class RandomAccessFile {
                     }
                 };
 
+                setXCap();
                 for (int i = 0; i < ors.size(); i++) {
                     ObjectRequest or = ors.get(i);
                     ServiceUUID osd = new ServiceUUID(or.getOsdUUID(), parentVolume.uuidResolver);
@@ -290,6 +305,7 @@ public class RandomAccessFile {
 
             ServiceUUID osd = new ServiceUUID(currentReplica.getOSDForObject(objectNo).toString(), parentVolume.uuidResolver);
 
+            setXCap();
             r = osdClient.check_object(osd.getAddress(),
                     fileId, credentials, objectNo, 0l);
             ObjectData od = r.get();
@@ -375,6 +391,7 @@ public class RandomAccessFile {
                 };
 
                 int bytesWritten = 0;
+                setXCap();
                 for (int i = 0; i < ors.size(); i++) {
                     ObjectRequest or = ors.get(i);
                     bytesWritten += or.getData().capacity();
@@ -399,6 +416,7 @@ public class RandomAccessFile {
                 for (int i = 0; i < ors.size(); i++) {
                     owr = (OSDWriteResponse) resps[i].get();
                 }
+                setXCap();
                 parentVolume.storeFileSizeUpdate(fileId, owr);
                 if (syncMetadata) {
                     parentVolume.pushFileSizeUpdate(fileId);
@@ -438,7 +456,7 @@ public class RandomAccessFile {
 
     public void close() throws IOException {
         this.closed = true;
-        parentVolume.closeFile(fileId, readOnly);
+        parentVolume.closeFile(this,fileId, readOnly);
     }
 
     public void fsync() throws IOException {
@@ -476,6 +494,7 @@ public class RandomAccessFile {
 
             ServiceUUID osd = new ServiceUUID(currentReplica.getHeadOsd().toString(), parentVolume.uuidResolver);
 
+            setXCap();
             r = osdClient.internal_get_file_size(osd.getAddress(), fileId, credentials);
 
             return r.get();
@@ -507,6 +526,7 @@ public class RandomAccessFile {
             if ((replica.getReplication_flags() & Constants.REPL_FLAG_IS_COMPLETE) > 0) {
                 return true;
             }
+            setXCap();
             StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(replica, 0);
             long lastObjectNo = sp.getObjectNoForOffset(this.credentials.getXlocs().getRead_only_file_size());
             int osdRelPos = 0;
@@ -573,6 +593,7 @@ public class RandomAccessFile {
         
         // send requests to all OSDs of this replica
         try {
+            setXCap();
             List<ServiceUUID> osdList = currentReplica.getOSDs();
             List<ServiceUUID> osdListCopy = new ArrayList<ServiceUUID>(currentReplica.getOSDs());
             // take lowest objects of file
@@ -599,5 +620,39 @@ public class RandomAccessFile {
             // ignore
         }
     }
+
+    public void setLength(long newLength) throws IOException {
+        XCap truncCap = parentVolume.truncateFile(fileId);
+        FileCredentials tCred = new FileCredentials(truncCap, this.credentials.getXlocs());
+        
+        RPCResponse<OSDWriteResponse> r = null;
+        try {
+            setXCap();
+            ServiceUUID osd = new ServiceUUID(currentReplica.getHeadOsd().toString(), parentVolume.uuidResolver);
+
+            r = osdClient.truncate(osd.getAddress(), fileId, tCred, newLength);
+
+            OSDWriteResponse resp = r.get();
+
+            parentVolume.storeFileSizeUpdate(fileId, resp);
+            parentVolume.pushFileSizeUpdate(fileId);
+
+
+            if (position > newLength)
+                position = newLength;
+        } catch (InterruptedException ex) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+            throw new IOException("operation aborted", ex);
+        } catch (ONCRPCException ex) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+            throw new IOException("communication failure", ex);
+        } finally {
+            if (r != null)
+                r.freeBuffers();
+        }
+    }
+
 
 }
