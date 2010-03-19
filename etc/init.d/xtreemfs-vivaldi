@@ -62,8 +62,8 @@ start() {
 
     pre_check
     
-    dirport=`grep -e 'dir_service.port' $DEFAULT_DIR | cut -d '=' -f 2`
-    dirhost=`grep -e 'dir_service.host' $DEFAULT_DIR | cut -d '=' -f 2`
+    dirport=`grep -e 'dir_service.port' $DEFAULT_DIR | cut -d '=' -f 2 | sed 's/^[ \t]*//;s/[ \t]*$//'`
+    dirhost=`grep -e 'dir_service.host' $DEFAULT_DIR | cut -d '=' -f 2 | sed 's/^[ \t]*//;s/[ \t]*$//'`
 
     chown xtreemfs $LOG_DS
     echo >> $LOG_DS
@@ -72,11 +72,11 @@ start() {
 
     rm $PID_DS
     echo -n "starting XtreemFS vivaldi module..."
-    sudo -u $XTREEMFS_USER /usr/bin/xtfs_vivaldi ${dirhost// /}:${dirport// /} $COORD_FILE >> $LOG_DS 2>&1 &
+    sudo -u "$XTREEMFS_USER" /usr/bin/xtfs_vivaldi -d DEBUG "oncrpc://${dirhost}:${dirport}" "$COORD_FILE" >> "$LOG_DS" 2>&1 &
     PROCPID=$!
     echo $PROCPID > $PID_DS
     sleep 1s
-	echo
+    echo
 
     if [ ! -e /proc/$PROCPID ]
     then
