@@ -24,9 +24,7 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.Constants;
@@ -116,10 +114,8 @@ public class ReadDirAndStatOperation extends MRCOperation {
         int numEntries = rqArgs.getLimit_directory_entries_count();
         boolean namesOnly = rqArgs.getNames_only();
         
-        DirectoryEntrySet entries = new DirectoryEntrySet();
-        
-        List<DirectoryEntry> tmpDirContent = new ArrayList<DirectoryEntry>(10);
-        
+        DirectoryEntrySet dirContent = new DirectoryEntrySet();
+                
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
         
         // if required, update POSIX timestamps
@@ -134,7 +130,8 @@ public class ReadDirAndStatOperation extends MRCOperation {
             if (!namesOnly)
                 set.add(getStat(sMan, faMan, rq, volume, parentDir));
             
-            tmpDirContent.add(new DirectoryEntry("..", set));
+            if (seenEntries == 0)
+                dirContent.add(new DirectoryEntry("..", set));
         }
         
         // get the current directory
@@ -148,10 +145,11 @@ public class ReadDirAndStatOperation extends MRCOperation {
             if (!namesOnly)
                 set.add(stat);
             
-            tmpDirContent.add(new DirectoryEntry(".", set));
+            if (seenEntries <= 1)
+                dirContent.add(new DirectoryEntry(".", set));
             
             // get all children
-            Iterator<FileMetadata> it = sMan.getChildren(res.getFile().getId());
+            Iterator<FileMetadata> it = sMan.getChildren(res.getFile().getId(), seenEntries - 2, numEntries - dirContent.size());
             while (it.hasNext()) {
                 
                 FileMetadata child = it.next();
@@ -160,21 +158,13 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 if (!namesOnly)
                     set.add(getStat(sMan, faMan, rq, volume, child));
                 
-                tmpDirContent.add(new DirectoryEntry(child.getFileName(), set));
+                dirContent.add(new DirectoryEntry(child.getFileName(), set));
             }
-            
-            // quick and dirty: first, create the entire list, then sort out all
-            // redundant elements
-            // FIXME: provide for a faster solution by only selecting those
-            // entries that are needed
-            int lastEntryPlusOne = Math.min(tmpDirContent.size(), seenEntries + numEntries);
-            for (int i = seenEntries; i < lastEntryPlusOne; i++)
-                entries.add(tmpDirContent.get(i));
             
         }
         
         // set the response
-        rq.setResponse(new readdirResponse(entries));
+        rq.setResponse(new readdirResponse(dirContent));
         
         update.execute();
     }

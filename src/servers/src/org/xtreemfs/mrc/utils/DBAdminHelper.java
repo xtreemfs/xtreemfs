@@ -370,7 +370,7 @@ public class DBAdminHelper {
         dumpAttrs(xmlWriter, sMan.getXAttrs(parentId));
         
         // serialize all nested elements
-        Iterator<FileMetadata> children = sMan.getChildren(parentId);
+        Iterator<FileMetadata> children = sMan.getChildren(parentId, 0, Integer.MAX_VALUE);
         while (children.hasNext()) {
             
             FileMetadata child = children.next();

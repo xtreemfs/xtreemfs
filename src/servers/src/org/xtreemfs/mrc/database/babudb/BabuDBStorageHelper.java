@@ -57,18 +57,28 @@ public class BabuDBStorageHelper {
         
         private byte[][]                              valBufs;
         
-        public ChildrenIterator(DatabaseRO database, Iterator<Entry<byte[], byte[]>> it) {
+        private int                                   remaining;
+        
+        public ChildrenIterator(DatabaseRO database, Iterator<Entry<byte[], byte[]>> it, int from, int num) {
             
             this.database = database;
             this.it = it;
             
             this.keyBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
             this.valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
+            
+            remaining = Integer.MAX_VALUE;
+            
+            // move to the 'from' element
+            for (int i = 0; i < from && hasNext(); i++)
+                next();
+            
+            remaining = num;
         }
         
         @Override
         public boolean hasNext() {
-            return next != null || it.hasNext();
+            return (next != null || it.hasNext()) && remaining > 0;
         }
         
         @Override
@@ -127,6 +137,8 @@ public class BabuDBStorageHelper {
             
             else
                 md = new BufferBackedFileMetadata(tmpKeys, tmpVals, BabuDBStorageManager.FILE_INDEX);
+            
+            remaining--;
             
             prevFileName = null;
             return md;
@@ -235,8 +247,8 @@ public class BabuDBStorageHelper {
     
     public static byte[] getLastAssignedFileId(Database database) throws BabuDBException {
         
-        byte[] bytes = database.lookup(BabuDBStorageManager.VOLUME_INDEX,
-            BabuDBStorageManager.LAST_ID_KEY, null).get();
+        byte[] bytes = database.lookup(BabuDBStorageManager.VOLUME_INDEX, BabuDBStorageManager.LAST_ID_KEY,
+            null).get();
         
         if (bytes == null) {
             bytes = new byte[8];
@@ -276,8 +288,8 @@ public class BabuDBStorageHelper {
         
         // first, determine the collision number
         byte[] prefix = createXAttrPrefixKey(fileId, owner, attrKey);
-        Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.XATTRS_INDEX,
-            prefix, null).get();
+        Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.XATTRS_INDEX, prefix,
+            null).get();
         
         Entry<byte[], byte[]> next = null;
         while (it.hasNext()) {
@@ -313,8 +325,8 @@ public class BabuDBStorageHelper {
         
         // first, determine the collision number
         byte[] prefix = createXAttrPrefixKey(fileId, owner, attrKey);
-        Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.XATTRS_INDEX,
-            prefix, null).get();
+        Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.XATTRS_INDEX, prefix,
+            null).get();
         
         Entry<byte[], byte[]> next = null;
         Entry<byte[], byte[]> curr = null;
@@ -427,8 +439,7 @@ public class BabuDBStorageHelper {
         throws BabuDBException {
         
         byte[] rcKey = BabuDBStorageHelper.createFileKey(parentId, fileName, FileMetadata.RC_METADATA);
-        byte[] rcValue = database.lookup(BabuDBStorageManager.FILE_INDEX, rcKey,
-                null).get();
+        byte[] rcValue = database.lookup(BabuDBStorageManager.FILE_INDEX, rcKey, null).get();
         
         if (rcValue != null) {
             
@@ -437,8 +448,7 @@ public class BabuDBStorageHelper {
                 return resolveLink(database, rcValue, fileName);
             
             byte[] fcKey = BabuDBStorageHelper.createFileKey(parentId, fileName, FileMetadata.FC_METADATA);
-            byte[] fcValue = database.lookup(BabuDBStorageManager.FILE_INDEX, 
-                    fcKey, null).get();
+            byte[] fcValue = database.lookup(BabuDBStorageManager.FILE_INDEX, fcKey, null).get();
             
             byte[][] keyBufs = new byte[][] { fcKey, rcKey };
             byte[][] valBufs = new byte[][] { fcValue, rcValue };
@@ -513,20 +523,20 @@ public class BabuDBStorageHelper {
         return new BufferBackedFileMetadata(keyBufs, valBufs, BabuDBStorageManager.FILE_ID_INDEX);
     }
     
-    public static Iterator<FileMetadata> getChildren(DatabaseRO database, long parentId)
+    public static Iterator<FileMetadata> getChildren(DatabaseRO database, long parentId, int from, int num)
         throws BabuDBException {
         
         byte[] prefix = BabuDBStorageHelper.createFilePrefixKey(parentId);
-        Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.FILE_INDEX,
-            prefix, null).get();
+        Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.FILE_INDEX, prefix,
+            null).get();
         
-        return new ChildrenIterator(database, it);
+        return new ChildrenIterator(database, it, from, num);
     }
     
     public static void getNestedFiles(List<FileMetadata> files, Database database, long dirId,
         boolean recursive) throws BabuDBException {
         
-        Iterator<FileMetadata> children = getChildren(database, dirId);
+        Iterator<FileMetadata> children = getChildren(database, dirId, 0, Integer.MAX_VALUE);
         while (children.hasNext()) {
             
             FileMetadata metadata = children.next();
@@ -540,8 +550,8 @@ public class BabuDBStorageHelper {
     
     public static long getRootParentId(DatabaseRO database) throws BabuDBException {
         
-        Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.FILE_INDEX,
-            null, null).get();
+        Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.FILE_INDEX, null,
+            null).get();
         if (!it.hasNext())
             return -1;
         
@@ -551,8 +561,8 @@ public class BabuDBStorageHelper {
     
     public static String getRootDirName(DatabaseRO database) throws BabuDBException {
         
-        Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.FILE_INDEX,
-            null, null).get();
+        Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.FILE_INDEX, null,
+            null).get();
         if (!it.hasNext())
             return null;
         

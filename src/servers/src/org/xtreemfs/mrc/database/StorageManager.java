@@ -150,7 +150,7 @@ public interface StorageManager {
     
     public String getSoftlinkTarget(long fileId) throws DatabaseException;
     
-    public Iterator<FileMetadata> getChildren(long parentId) throws DatabaseException;
+    public Iterator<FileMetadata> getChildren(long parentId, int seen, int num) throws DatabaseException;
     
     // handling snapshots
     

@@ -174,10 +174,10 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     }
     
     @Override
-    public Iterator<FileMetadata> getChildren(long parentId) throws DatabaseException {
+    public Iterator<FileMetadata> getChildren(long parentId, int from, int num) throws DatabaseException {
         
         try {
-            return BabuDBStorageHelper.getChildren(database, parentId);
+            return BabuDBStorageHelper.getChildren(database, parentId, from, num);
         } catch (Exception exc) {
             throw new DatabaseException(exc);
         }

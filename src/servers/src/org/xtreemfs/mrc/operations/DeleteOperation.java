@@ -95,7 +95,7 @@ public class DeleteOperation extends MRCOperation {
         faMan.checkPermission(FileAccessManager.NON_POSIX_RM_MV_IN_DIR, sMan, file, res.getParentDirId(), rq
                 .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
         
-        if (file.isDirectory() && sMan.getChildren(file.getId()).hasNext())
+        if (file.isDirectory() && sMan.getChildren(file.getId(), 0, Integer.MAX_VALUE).hasNext())
             throw new UserException(ErrNo.ENOTEMPTY, "'" + p + "' is not empty");
         
         FileCredentialsSet creds = new FileCredentialsSet();

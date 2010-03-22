@@ -195,7 +195,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertEquals(groupId, metadata.getOwningGroupId());
         
         // list files; both the nested directory and file should be in 'rootDir'
-        Iterator<FileMetadata> children = mngr.getChildren(rootDir.getId());
+        Iterator<FileMetadata> children = mngr.getChildren(rootDir.getId(), 0, Integer.MAX_VALUE);
         List<String> tmp = new LinkedList<String>();
         while (children.hasNext())
             tmp.add(children.next().getFileName());
@@ -211,7 +211,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         waitForResponse();
         
         // list files; only the nested directory should be in 'rootDir'
-        children = mngr.getChildren(rootDir.getId());
+        children = mngr.getChildren(rootDir.getId(), 0, Integer.MAX_VALUE);
         tmp = new LinkedList<String>();
         while (children.hasNext())
             tmp.add(children.next().getFileName());
@@ -231,7 +231,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         
         // list files; both the nested directory and file should be in 'rootDir'
         // again
-        children = mngr.getChildren(rootDir.getId());
+        children = mngr.getChildren(rootDir.getId(), 0, Integer.MAX_VALUE);
         tmp = new LinkedList<String>();
         while (children.hasNext())
             tmp.add(children.next().getFileName());
@@ -266,7 +266,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         
         // list files; both the nested files are found and contain the correct
         // data
-        Iterator<FileMetadata> children = mngr.getChildren(dirId);
+        Iterator<FileMetadata> children = mngr.getChildren(dirId, 0, Integer.MAX_VALUE);
         Map<String, FileMetadata> map = new HashMap<String, FileMetadata>();
         while (children.hasNext()) {
             FileMetadata child = children.next();
@@ -288,7 +288,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         waitForResponse();
         
         // list files; ensure that only file 2 remains
-        children = mngr.getChildren(dirId);
+        children = mngr.getChildren(dirId, 0, Integer.MAX_VALUE);
         assertTrue(children.hasNext());
         assertEquals(name2, children.next().getFileName());
         assertFalse(children.hasNext());
@@ -340,13 +340,84 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertEquals(comp1Id, id);
         
         // list files in root dir; there should only be one
-        Iterator<FileMetadata> children = mngr.getChildren(1);
+        Iterator<FileMetadata> children = mngr.getChildren(1, 0, Integer.MAX_VALUE);
         List<String> tmp = new LinkedList<String>();
         while (children.hasNext())
             tmp.add(children.next().getFileName());
         
         assertEquals(1, tmp.size());
         assertTrue(tmp.contains("comp2"));
+    }
+    
+    public void testPartialReaddir() throws Exception {
+        
+        final String userId = "me";
+        final String groupId = "myGroup";
+        final short perms = 511;
+        final long w32Attrs = Long.MIN_VALUE;
+        exc = null;
+        
+        AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
+        mngr.createDir(1, 0, "root", 0, 0, 0, userId, groupId, perms, w32Attrs, update).getId();
+        update.execute();
+        waitForResponse();
+        
+        // create 10 nested directories
+        for (int i = 0; i < 10; i++) {
+            
+            update = mngr.createAtomicDBUpdate(listener, null);
+            mngr.createDir(i + 2, 1, "entry" + i, 0, 0, 0, userId, groupId, perms, w32Attrs, update).getId();
+            update.execute();
+            waitForResponse();
+        }
+        
+        // list different subsets of files in root dir
+        
+        Iterator<FileMetadata> children = mngr.getChildren(1, 0, 3);
+        List<String> tmp = new LinkedList<String>();
+        while (children.hasNext())
+            tmp.add(children.next().getFileName());
+
+        assertEquals(3, tmp.size());
+        for (int i = 0; i < 3; i++)
+            assertTrue(tmp.contains("entry" + i));
+        
+        children = mngr.getChildren(1, 3, 3);
+        tmp = new LinkedList<String>();
+        while (children.hasNext())
+            tmp.add(children.next().getFileName());
+        
+        assertEquals(3, tmp.size());
+        for (int i = 3; i < 6; i++)
+            assertTrue(tmp.contains("entry" + i));
+        
+        children = mngr.getChildren(1, 6, 1);
+        tmp = new LinkedList<String>();
+        while (children.hasNext())
+            tmp.add(children.next().getFileName());
+        
+        assertEquals(1, tmp.size());
+        for (int i = 6; i < 7; i++)
+            assertTrue(tmp.contains("entry" + i));
+        
+        children = mngr.getChildren(1, 8, 10);
+        tmp = new LinkedList<String>();
+        while (children.hasNext())
+            tmp.add(children.next().getFileName());
+        
+        assertEquals(2, tmp.size());
+        for (int i = 8; i < 10; i++)
+            assertTrue(tmp.contains("entry" + i));
+        
+        children = mngr.getChildren(1, 0, 10);
+        tmp = new LinkedList<String>();
+        while (children.hasNext())
+            tmp.add(children.next().getFileName());
+        
+        assertEquals(10, tmp.size());
+        for (int i = 0; i < 10; i++)
+            assertTrue(tmp.contains("entry" + i));
+        
     }
     
     private void waitForResponse() throws Exception {

@@ -217,7 +217,7 @@ public class MoveOperation extends MRCOperation {
                     tRes.getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser,
                     rq.getDetails().groupIds);
                 
-                if (sMan.getChildren(target.getId()).hasNext())
+                if (sMan.getChildren(target.getId(), 0, Integer.MAX_VALUE).hasNext())
                     throw new UserException(ErrNo.ENOTEMPTY, "target directory '" + tRes + "' is not empty");
                 else
                     sMan.delete(tRes.getParentDirId(), tRes.getFileName(), update);
