@@ -25,12 +25,11 @@
 
 package org.xtreemfs.osd.storage;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 
 /**
@@ -39,23 +38,23 @@ import org.xtreemfs.common.xloc.StripingPolicyImpl;
  */
 public class FileMetadata {
     
-    private Map<Long, Long>          latestObjVersions;
+    private Map<Long, Long>            latestObjVersions;
     
-    private Map<Long, Long>          largestObjVersions;
+    private Map<Long, Long>            largestObjVersions;
     
-    private Map<String, Long>        objChecksums;
+    private Map<Long, Map<Long, Long>> objChecksums;
     
-    private long                     filesize;
+    private long                       filesize;
     
-    private long                     lastObjectNumber;
+    private long                       lastObjectNumber;
     
-    private long                     globalLastObjectNumber;
+    private long                       globalLastObjectNumber;
     
-    private long                     truncateEpoch;
+    private long                       truncateEpoch;
     
-    private final StripingPolicyImpl stripingPolicy;
+    private final StripingPolicyImpl   stripingPolicy;
     
-    private VersionTable             versionTable;
+    private VersionTable               versionTable;
     
     /** Creates a new instance of FileInfo */
     public FileMetadata(StripingPolicyImpl sp) {
@@ -89,7 +88,12 @@ public class FileMetadata {
     }
     
     public Long getObjectChecksum(long objId, long objVer) {
-        Long c = objChecksums.get(objId + "." + objVer);
+        
+        Map<Long, Long> checksums = objChecksums.get(objId);
+        if (checksums == null)
+            return 0L;
+        
+        Long c = checksums.get(objVer);
         return (c == null) ? 0 : c;
     }
     
@@ -111,7 +115,7 @@ public class FileMetadata {
         this.latestObjVersions = latestObjVersions;
     }
     
-    public void initObjectChecksums(Map<String, Long> objChecksums) {
+    public void initObjectChecksums(Map<Long, Map<Long, Long>> objChecksums) {
         assert (this.objChecksums == null);
         this.objChecksums = objChecksums;
     }
@@ -131,7 +135,14 @@ public class FileMetadata {
     }
     
     public void updateObjectChecksum(long objId, long objVer, long newChecksum) {
-        objChecksums.put(objId + "." + objVer, newChecksum);
+        
+        Map<Long, Long> checksums = objChecksums.get(objId);
+        if (checksums == null) {
+            checksums = new HashMap<Long, Long>();
+            objChecksums.put(objId, checksums);
+        }
+        
+        checksums.put(objVer, newChecksum);
     }
     
     public void discardObject(long objId, long objVer) {

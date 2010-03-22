@@ -631,7 +631,7 @@ public class HashStorageLayout extends StorageLayout {
         if (fileDir.exists()) {
             
             Map<Long, Long> largestObjVersions = new HashMap<Long, Long>();
-            Map<String, Long> objChecksums = new HashMap<String, Long>();
+            Map<Long, Map<Long, Long>> objChecksums = new HashMap<Long, Map<Long, Long>>();
             Map<Long, Long> latestObjVersions = null;
             
             long lastObjNum = -1;
@@ -674,8 +674,16 @@ public class HashStorageLayout extends StorageLayout {
                 ObjFileData ofd = parseFileName(obj);
                 
                 // determine the checksum
-                if (ofd.checksum != 0)
-                    objChecksums.put(ofd.objNo + "." + ofd.objVersion, ofd.checksum);
+                if (ofd.checksum != 0) {
+                    
+                    Map<Long, Long> checksums = objChecksums.get(ofd.objNo);
+                    if(checksums == null) {
+                        checksums = new HashMap<Long, Long>();
+                        objChecksums.put(ofd.objNo, checksums);
+                    }
+                    
+                    checksums.put(ofd.objVersion, ofd.checksum);
+                }
                 
                 // determine the last object
                 if (multiVersionSupport) {
@@ -761,7 +769,7 @@ public class HashStorageLayout extends StorageLayout {
             info.setLastObjectNumber(-1);
             info.initLatestObjectVersions(new HashMap<Long, Long>());
             info.initLargestObjectVersions(new HashMap<Long, Long>());
-            info.initObjectChecksums(new HashMap<String, Long>());
+            info.initObjectChecksums(new HashMap<Long, Map<Long, Long>>());
             info.initVersionTable(new VersionTable(new File(fileDir, VTABLE_FILENAME)));
         }
         

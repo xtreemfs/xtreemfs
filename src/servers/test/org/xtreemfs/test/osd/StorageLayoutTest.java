@@ -30,6 +30,7 @@ package org.xtreemfs.test.osd;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
@@ -116,7 +117,7 @@ public class StorageLayoutTest extends TestCase {
         FileMetadata md = new FileMetadata(sp);
         md.initLatestObjectVersions(new HashMap<Long, Long>());
         md.initLargestObjectVersions(new HashMap<Long, Long>());
-        md.initObjectChecksums(new HashMap<String, Long>());
+        md.initObjectChecksums(new HashMap<Long, Map<Long, Long>>());
         
         assertFalse(layout.fileExists(fileId));
 
@@ -237,7 +238,7 @@ public class StorageLayoutTest extends TestCase {
         FileMetadata md = new FileMetadata(sp);
         md.initLatestObjectVersions(new HashMap<Long, Long>());
         md.initLargestObjectVersions(new HashMap<Long, Long>());
-        md.initObjectChecksums(new HashMap<String, Long>());
+        md.initObjectChecksums(new HashMap<Long, Map<Long, Long>>());
 
         ReusableBuffer data = BufferPool.allocate(64);
         for (int i = 0; i < 64; i++) {
