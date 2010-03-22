@@ -305,8 +305,10 @@ public class StripingTestCOW extends TestCase {
                 
             }
             
-            if (k != 2)
-                Thread.sleep(90000);
+            if (k != 2) {
+                System.out.println("\n########## waiting 61s ##########\n");
+                Thread.sleep(61000);
+            }
             
         }
         

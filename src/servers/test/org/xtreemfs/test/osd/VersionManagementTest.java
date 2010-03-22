@@ -209,6 +209,7 @@ public class VersionManagementTest extends TestCase {
         
         // wait for OSD-internal file close, which will implicitly cause a new
         // version to be created
+        System.out.println("\n########## waiting " + timeoutSpan / 1000 + "s ##########\n");
         Thread.sleep(timeoutSpan);
         
         // overwrite the first object

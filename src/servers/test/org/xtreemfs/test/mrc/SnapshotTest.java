@@ -24,9 +24,13 @@
 
 package org.xtreemfs.test.mrc;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,6 +48,9 @@ import junit.textui.TestRunner;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.DirectoryEntry;
+import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.UserCredentials;
@@ -63,7 +70,7 @@ import org.xtreemfs.test.TestEnvironment.Services;
  */
 public class SnapshotTest extends TestCase {
     
-    private static class TreeEntry {
+    static class TreeEntry implements Comparable<TreeEntry>, Serializable {
         
         private String  name;
         
@@ -84,6 +91,11 @@ public class SnapshotTest extends TestCase {
         
         public String toString() {
             return name;
+        }
+        
+        @Override
+        public int compareTo(TreeEntry o) {
+            return name.compareTo(o.name);
         }
         
     }
@@ -139,7 +151,7 @@ public class SnapshotTest extends TestCase {
         final int numDirs = 20;
         final String volumeName = "testVolume";
         
-        final int numSnaps = 100;
+        final int numSnaps = 50;
         
         // create a volume
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, getDefaultStripingPolicy(),
@@ -150,6 +162,16 @@ public class SnapshotTest extends TestCase {
         
         // create a random tree with some files and directories
         SortedSet<TreeEntry> tree = createRandomTree(numDirs, maxFilesPerDir);
+        
+        // ObjectOutputStream out = new ObjectOutputStream(new
+        // FileOutputStream("/tmp/tree.bin"));
+        // out.writeObject(tree);
+        // out.close();
+        
+        // ObjectInputStream in = new ObjectInputStream(new
+        // FileInputStream("/tmp/tree.bin"));
+        // tree = (SortedSet) in.readObject();
+        // in.close();
         
         for (TreeEntry path : tree)
             if (path.isDir())
@@ -181,31 +203,25 @@ public class SnapshotTest extends TestCase {
             assertTree(tree, volumeName + "@" + i, dir, recursive);
         }
         
-        // add and delete random files and directories from the tree
-        SortedSet<TreeEntry> newTree = modifyTree(tree, 0.2, 0.3, 0.2, 5);
-        for (TreeEntry path : tree)
-            if (!newTree.contains(path)) {
-                // delete
-                if (path.isDir())
-                    try {
-                        invokeSync(client.rmdir(mrcAddress, uc, volumeName, path.getName()));
-                    } catch (Exception exc) {
-                    }
-                else
-                    invokeSync(client.unlink(mrcAddress, uc, volumeName, path.getName()));
-            }
-        for (TreeEntry path : newTree)
-            if (!tree.contains(path)) {
-                // add
-                if (path.isDir())
-                    invokeSync(client.mkdir(mrcAddress, uc, volumeName, path.getName(), 0775));
-                else
-                    invokeSync(client.open(mrcAddress, uc, volumeName, path.getName(),
-                        FileAccessManager.O_CREAT, 0775, 0, new VivaldiCoordinates()));
-            }
+        // delete everything
         
-        // check the new tree
-        assertTree(newTree, volumeName, "", true);
+        ArrayList<TreeEntry> entries = new ArrayList<TreeEntry>(tree);
+        Collections.sort(entries, new Comparator<TreeEntry>() {
+            public int compare(TreeEntry o1, TreeEntry o2) {
+                return o2.getName().length() - o1.getName().length();
+            }
+        });
+        
+        for (TreeEntry path : entries)
+            if (path.isDir())
+                invokeSync(client.rmdir(mrcAddress, uc, volumeName, path.getName()));
+            else
+                invokeSync(client.unlink(mrcAddress, uc, volumeName, path.getName()));
+        
+        TreeSet<TreeEntry> emptyTree = new TreeSet<TreeEntry>();
+        
+        // check the empty tree
+        assertTree(emptyTree, volumeName, "", true);
         
         // check the old snapshot trees
         for (Entry<Integer, Object[]> snap : snaps.entrySet())
@@ -233,17 +249,31 @@ public class SnapshotTest extends TestCase {
             if (relPath.startsWith("/"))
                 relPath = relPath.substring(1);
             
-            try {
-                invokeSync(client.getattr(mrcAddress, uc, volume, relPath));
-            } catch (Exception exc) {
-                System.out.println("file: " + volume + "/" + relPath);
-                System.out.println();
-                printTree(tree);
-                System.out.println();
-                printTree(subtree);
+            invokeSync(client.getattr(mrcAddress, uc, volume, relPath));
+            
+        }
+        
+        checkDir(volume, subtree, "", path, recursive);
+    }
+    
+    private void checkDir(String volume, SortedSet<TreeEntry> subtree, String relPath, String fullPath,
+        boolean recursive) throws Exception {
+        
+        DirectoryEntrySet entries = invokeSync(client.readdir(mrcAddress, uc, volume, relPath));
+        for (DirectoryEntry entry : entries) {
+            
+            boolean isDir = (entry.getStbuf().get(0).getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFDIR) > 0;
+            
+            if (!entry.getName().equals(".") && !entry.getName().equals("..")) {
                 
-                exc.printStackTrace();
-                System.exit(1);
+                if (!subtree.contains(new TreeEntry(fullPath + (fullPath.equals("") ? "" : "/")
+                    + entry.getName(), isDir)))
+                    throw new Exception(entry.getName() + " not contained in subtree");
+                
+                if (recursive && isDir)
+                    checkDir(volume, subtree, relPath + (relPath.equals("") ? "" : "/") + entry.getName(),
+                        fullPath + (fullPath.equals("") ? "" : "/") + entry.getName(), recursive);
+                
             }
             
         }
@@ -284,11 +314,7 @@ public class SnapshotTest extends TestCase {
     
     private static SortedSet<TreeEntry> createRandomTree(int numDirs, int maxFilesPerDir) {
         
-        SortedSet<TreeEntry> tree = new TreeSet<TreeEntry>(new Comparator<TreeEntry>() {
-            public int compare(TreeEntry o1, TreeEntry o2) {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
+        SortedSet<TreeEntry> tree = new TreeSet<TreeEntry>();
         
         // create the directory tree
         String currentPath = "";
@@ -340,15 +366,57 @@ public class SnapshotTest extends TestCase {
     
     private static SortedSet<TreeEntry> getSubtree(SortedSet<TreeEntry> tree, String path, boolean recursive) {
         
+        String[] pathComps = path.equals("") ? new String[0] : path.split("/");
+        
         SortedSet<TreeEntry> subTree = new TreeSet<TreeEntry>(tree.comparator());
         
-        for (TreeEntry entry : tree)
-            if (entry.getName().startsWith(path)
-                && (recursive || entry.getName().equals(path) || (!recursive && !entry.isDir() && entry
-                        .getName().substring(path.length() + 1).indexOf('/') == -1)))
+        for (TreeEntry entry : tree) {
+            
+            String[] comps = entry.getName().split("/");
+            
+            // include top-level dir
+            if (equals(comps, pathComps)) {
                 subTree.add(entry);
+                
+            } else if (recursive) {
+                
+                if (startsWith(comps, pathComps))
+                    subTree.add(entry);
+                
+            } else {
+                
+                if (startsWith(comps, pathComps) && comps.length - pathComps.length == 1)
+                    subTree.add(entry);
+                
+            }
+            
+        }
         
         return subTree;
+    }
+    
+    private static boolean equals(String[] path1, String[] path2) {
+        
+        if (path1.length != path2.length)
+            return false;
+        
+        for (int i = 0; i < path1.length; i++)
+            if (!(path1[i].equals(path2[i])))
+                return false;
+        
+        return true;
+    }
+    
+    private static boolean startsWith(String[] path1, String[] path2) {
+        
+        if (path1.length < path2.length)
+            return false;
+        
+        for (int i = 0; i < path2.length; i++)
+            if (!(path2[i].equals(path1[i])))
+                return false;
+        
+        return true;
     }
     
     private static String getRandomDir(SortedSet<TreeEntry> tree) {

@@ -851,7 +851,6 @@ public class BabuDBStorageManager implements StorageManager {
             
             // determine the prefixes for the snapshot
             byte[][][] prefixes = null;
-            byte[][][] excludedKeys = null;
             
             FileMetadata snapDir = getMetadata(parentId, dirName);
             
@@ -866,7 +865,6 @@ public class BabuDBStorageManager implements StorageManager {
                 
                 List<byte[]> dirEntryPrefixes = new ArrayList<byte[]>(nestedFiles.size());
                 List<byte[]> filePrefixes = new ArrayList<byte[]>(nestedFiles.size());
-                List<byte[]> exclPrefixes = new ArrayList<byte[]>(nestedFiles.size());
                 
                 // include the extended attributes of the volume's root
                 // directory if it's not the snapshot directory - they are
@@ -889,30 +887,16 @@ public class BabuDBStorageManager implements StorageManager {
                 // exclude
                 for (FileMetadata file : nestedFiles) {
                     
-                    BufferBackedFileMetadata f = (BufferBackedFileMetadata) file;
-                    
                     // create a prefix key for the nested file
                     byte[] key = BabuDBStorageHelper.createFilePrefixKey(file.getId());
                     
                     // if the nested file is a directory, ...
                     if (file.isDirectory()) {
                         
-                        // if the snapshot is recursive, exclude the directory
-                        if (!recursive) {
-                            
-                            byte[] buf = f.getKeyBuffer(BufferBackedFileMetadata.RC_METADATA);
-                            byte[] exclKey = new byte[buf.length - 1];
-                            System.arraycopy(buf, 0, exclKey, 0, exclKey.length);
-                            
-                            exclPrefixes.add(exclKey);
-                        }
-
-                        // otherwise, include the directory in the file prefixes
+                        // include the directory in the file prefixes
                         // and the directory prefix in the dir entry prefixes
-                        else {
-                            filePrefixes.add(key);
-                            dirEntryPrefixes.add(key);
-                        }
+                        filePrefixes.add(key);
+                        dirEntryPrefixes.add(key);
                     }
 
                     // if the nested file is a file, ...
@@ -922,7 +906,6 @@ public class BabuDBStorageManager implements StorageManager {
                 
                 byte[][] dirEntryPrefixesA = dirEntryPrefixes.toArray(new byte[dirEntryPrefixes.size()][]);
                 byte[][] filePrefixesA = filePrefixes.toArray(new byte[filePrefixes.size()][]);
-                byte[][] exclPrefixesA = exclPrefixes.toArray(new byte[exclPrefixes.size()][]);
                 
                 Arrays.sort(dirEntryPrefixesA, DefaultByteRangeComparator.getInstance());
                 Arrays.sort(filePrefixesA, DefaultByteRangeComparator.getInstance());
@@ -931,14 +914,10 @@ public class BabuDBStorageManager implements StorageManager {
                 // VOLUME_INDEX
                 prefixes = new byte[][][] { dirEntryPrefixesA, filePrefixesA, filePrefixesA, filePrefixesA,
                     null };
-                
-                if (!recursive)
-                    excludedKeys = new byte[][][] { exclPrefixesA, exclPrefixesA, exclPrefixesA,
-                        exclPrefixesA, null };
             }
             
             // create the snapshot
-            SnapshotConfig snap = new DefaultSnapshotConfig(snapName, ALL_INDICES, prefixes, excludedKeys);
+            SnapshotConfig snap = new DefaultSnapshotConfig(snapName, ALL_INDICES, prefixes, null);
             snapMan.createPersistentSnapshot(database.getName(), snap);
             
         } catch (BabuDBException exc) {
