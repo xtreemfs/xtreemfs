@@ -41,8 +41,8 @@ namespace xtreemfs
     : public Proxy
              <
                org::xtreemfs::interfaces::NettestInterface,
-               org::xtreemfs::interfaces::NettestInterfaceEventFactory,
-               org::xtreemfs::interfaces::NettestInterfaceEventSender
+               org::xtreemfs::interfaces::NettestInterfaceMessageFactory,
+               org::xtreemfs::interfaces::NettestInterfaceMessageSender
              >
   {
   public:
@@ -54,18 +54,15 @@ namespace xtreemfs
     NettestProxy
     (
       uint16_t concurrency_level,
-      uint32_t flags,
+      Log* error_log,
       IOQueue& io_queue,
-      Log* log,
       const Time& operation_timeout,
       SocketAddress& peername,
       uint16_t reconnect_tries_max,
       SocketFactory& socket_factory,
+      Log* trace_log,
       UserCredentialsCache* user_credentials_cache
     );
-
-    // yield::ipc::ONCRPCClient
-    ONCRPCRequest& createONCRPCRequest( MarshallableObject& body );
   };
 
   typedef yidl::runtime::auto_Object<NettestProxy> auto_NettestProxy;

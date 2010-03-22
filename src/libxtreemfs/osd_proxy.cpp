@@ -34,30 +34,30 @@ using namespace xtreemfs;
 OSDProxy::OSDProxy
 (
   uint16_t concurrency_level,
-  uint32_t flags,
+  Log* error_log,
   IOQueue& io_queue,
-  Log* log,
   const Time& operation_timeout,
   SocketAddress& peername,
   uint16_t reconnect_tries_max,
   SocketFactory& socket_factory,
+  Log* trace_log,
   UserCredentialsCache* user_credentials_cache
 )
 : Proxy
   <
     org::xtreemfs::interfaces::OSDInterface,
-    org::xtreemfs::interfaces::OSDInterfaceEventFactory,
-    org::xtreemfs::interfaces::OSDInterfaceEventSender
+    org::xtreemfs::interfaces::OSDInterfaceMessageFactory,
+    org::xtreemfs::interfaces::OSDInterfaceMessageSender
   >
   (
     concurrency_level,
-    flags,
+    error_log,
     io_queue,
-    log,
     operation_timeout,
     peername,
     reconnect_tries_max,
     socket_factory,
+    trace_log,
     user_credentials_cache
   )
 { }
@@ -67,31 +67,26 @@ OSDProxy::create
 (
   const URI& absolute_uri,
   uint16_t concurrency_level,
-  uint32_t flags,
-  Log* log,
+  Log* error_log,
   const Time& operation_timeout,
   uint16_t reconnect_tries_max,
   SSLContext* ssl_context,
+  Log* trace_log,
   UserCredentialsCache* user_credentials_cache
 )
 {
   return *new OSDProxy
               (
                 concurrency_level,
-                flags,
+                error_log,
                 yield::platform::NBIOQueue::create(),
-                log,
                 operation_timeout,
                 createSocketAddress( absolute_uri ),
                 reconnect_tries_max,
                 createSocketFactory( absolute_uri, ssl_context ),
+                trace_log,
                 user_credentials_cache
               );
-}
-
-ONCRPCRequest& OSDProxy::createONCRPCRequest( MarshallableObject& body )
-{
-  return ONCRPCClient::createONCRPCRequest( body );
 }
 
 bool

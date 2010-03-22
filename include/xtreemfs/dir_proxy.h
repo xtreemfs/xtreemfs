@@ -44,8 +44,8 @@ namespace xtreemfs
     : public Proxy
              <
                org::xtreemfs::interfaces::DIRInterface,
-               org::xtreemfs::interfaces::DIRInterfaceEventFactory,
-               org::xtreemfs::interfaces::DIRInterfaceEventSender
+               org::xtreemfs::interfaces::DIRInterfaceMessageFactory,
+               org::xtreemfs::interfaces::DIRInterfaceMessageSender
              >
   {
   public:
@@ -63,11 +63,11 @@ namespace xtreemfs
     (
       const URI& absolute_uri,
       uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
-      uint32_t flags = FLAGS_DEFAULT,
-      Log* log = NULL,
+      Log* error_log = NULL,
       const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT,
       uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
       SSLContext* ssl_context = NULL, // Steals this reference
+      Log* trace_log = NULL,
       UserCredentialsCache* user_credentials_cache = NULL
     );
 
@@ -81,13 +81,13 @@ namespace xtreemfs
     DIRProxy
     (
       uint16_t concurrency_level,
-      uint32_t flags,
+      Log* error_log,
       IOQueue& io_queue,
-      Log* log,
       const Time& operation_timeout,
       SocketAddress& peername,
       uint16_t reconnect_tries_max,
       SocketFactory& socket_factory,
+      Log* tarce_log,
       UserCredentialsCache* user_credentials_cache
     );
 

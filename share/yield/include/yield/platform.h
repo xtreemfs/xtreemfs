@@ -275,6 +275,9 @@ typedef _BY_HANDLE_FILE_INFORMATION BY_HANDLE_FILE_INFORMATION;
 struct _FILETIME;
 typedef _FILETIME FILETIME;
 
+struct _SYSTEMTIME;
+typedef _SYSTEMTIME SYSTEMTIME;
+
 #ifdef _WIN64
 typedef uint64_t fsblkcnt_t;
 typedef uint64_t fsfilcnt_t;
@@ -314,6 +317,7 @@ typedef WIN32_FIND_DATAW WIN32_FIND_DATA;
 #else
 struct statvfs;
 struct timespec;
+struct tm;
 #endif
 struct addrinfo;
 struct sockaddr;
@@ -349,40 +353,51 @@ namespace yield
 #endif
 #endif
 
-  
+    class Path;
     class SocketAddress;
     class Stat;
-
-
+    class Time;
     using yidl::runtime::Buffer;
     using yidl::runtime::Buffers;
+    using yidl::runtime::Object;
+    using yidl::runtime::RTTIObject;
   
 
-
-    class Stream
+    class Exception : public std::exception
     {
     public:
-      virtual ~Stream() { }
+      // error_message is always copied
+      Exception();
+      Exception( uint32_t error_code ); // Use a system error message
+      Exception( const char* error_message );
+      Exception( const string& error_message );
+      Exception( uint32_t error_code, const char* error_message );
+      Exception( uint32_t error_code, const string& error_message );
+      Exception( const Exception& other );
+      virtual ~Exception() throw();
 
-      virtual bool close() = 0;
+      virtual uint32_t get_error_code() const { return error_code; }
+      virtual const char* get_error_message() throw();
+
+      operator const char*() throw() { return get_error_message(); }
+
+      // std::exception
+      const char* what() const throw()
+      {
+        return const_cast<Exception*>( this )->get_error_message();
+      }
 
     protected:
-      // Helper methods
-      static bool close( fd_t fd );
-#ifdef _WIN32
-      static bool close( socket_t socket_ );
-#endif
+      void set_error_code( uint32_t error_code );
+      void set_error_message( const char* error_message );
 
-      // Helper methods
-#ifdef _WIN32
-      static bool set_blocking_mode( bool blocking, socket_t socket_ );
-#else
-      static bool set_blocking_mode( bool blocking, fd_t fd );
-#endif
+    private:
+      uint32_t error_code;
+      char* error_message;
     };
 
 
-    class IStream : public Stream
+    class IStream
     {
     public:
       virtual ~IStream() { }
@@ -409,7 +424,7 @@ namespace yield
     };
 
 
-    class OStream : public Stream
+    class OStream
     {
     public:
       virtual ~OStream() { }
@@ -419,8 +434,15 @@ namespace yield
       public:
         // Completed writes/writev are guaranteed to have transferred
         // the full buffer into the kernel
-        // -> no partial writes -> no bytes_transferred to the callback        
-        virtual void onWriteCompletion( void* context ) = 0;
+        // The bytes_written passed to the callback is only for logging
+        // or statistics
+        virtual void
+        onWriteCompletion
+        ( 
+          size_t bytes_written, 
+          void* context
+        ) = 0;
+
         virtual void onWriteError( uint32_t error_code, void* context ) = 0;
       };
 
@@ -446,22 +468,205 @@ namespace yield
       virtual ssize_t write( const Buffer& buffer );
       // All non-pure virtual *write* methods delegate to the pure write
       virtual ssize_t write( const void* buf, size_t buflen ) = 0;
-      virtual ssize_t writev( const Buffers& buffers );
+      virtual ssize_t writev( Buffers& buffers );
       virtual ssize_t writev( const struct iovec* iov, uint32_t iovlen );
     };
 
     
-    class IOStream 
-      : public yidl::runtime::Object, 
-        public IStream, 
-        public OStream
+    class IOStream : public Object, public IStream, public OStream
     {
     public:
       virtual ~IOStream() { }
+
+    protected:
+      // Helper methods
+      static bool close( fd_t fd );
+#ifdef _WIN32
+      static bool close( socket_t socket_ );
+#endif
+
+      // Helper methods
+#ifdef _WIN32
+      static bool set_blocking_mode( bool blocking, socket_t socket_ );
+#else
+      static bool set_blocking_mode( bool blocking, fd_t fd );
+#endif
     };
 
 
-    class iconv : public yidl::runtime::Object
+    class BufferIOStream : public IOStream
+    {
+    public:
+      BufferIOStream();
+      BufferIOStream( Buffer& buffer );
+      BufferIOStream( const std::string& buffer );
+      ~BufferIOStream();
+
+      Buffer& get_buffer() const { return *buffer; }
+
+      // IStream
+      ssize_t read( void* buf, size_t buflen );
+
+      // OStream
+      ssize_t write( const void* buf, size_t buflen );
+
+    private:
+      Buffer* buffer;
+    };
+
+
+    class FDEventPoller : public Object
+    {
+    public:
+#ifdef _WIN32
+      typedef socket_t fd_t;
+#endif
+
+    public:
+      class FDEvent
+      {
+      public:
+        inline void* get_context() const { return context; }
+        inline fd_t get_fd() const { return fd; }
+        // want_read and want_write can be true at the same time
+        inline bool want_read() const { return want_read_; }
+        inline bool want_write() const { return want_write_; }
+
+        void fill( void* context, fd_t fd, bool want_read_, bool want_write_ )
+        {
+          this->context = context;
+          this->fd = fd;
+          this->want_read_ = want_read_;
+          this->want_write_ = want_write_;
+        }
+
+      private:
+        void* context;
+        fd_t fd;
+        bool want_read_, want_write_;
+      };
+
+    public:
+      virtual ~FDEventPoller() { }
+
+      static FDEventPoller& create();
+
+      bool associate( fd_t fd, bool want_read = true, bool want_write = false )
+      {
+        return associate( fd, NULL, want_read, want_write );
+      }
+
+      virtual bool
+      associate
+      (        
+        fd_t fd,
+        void* context,
+        bool want_read = true,
+        bool want_write = false
+      ) = 0;
+
+      virtual bool dissociate( fd_t fd ) = 0;
+
+      // poll methods do not cache any state, i.e.
+      // they always make a new system call
+
+      // Blocking poll to check if any FD is active
+      bool poll();
+
+      // Timed poll to check if FD any active
+      bool poll( const Time& timeout );
+
+      // Blocking poll for a single FDEvent
+      bool poll( FDEvent& fd_event );
+
+      // Timed poll for a single FDEvent
+      bool poll( FDEvent& fd_event, const Time& timeout ); 
+
+      // Blocking poll for multiple FDEvents
+      int poll( FDEvent* fd_events, int fd_events_len );
+
+      // Timed poll for multiple FDEvents
+      int
+      poll
+      ( 
+        FDEvent* fd_events,
+        int fd_events_len, 
+        const Time& timeout 
+      );
+
+      virtual bool toggle( fd_t fd, bool want_read, bool want_write ) = 0;
+
+      // Non-blocking poll to check if any FD is active
+      bool try_poll();
+
+      // Non-blocking poll for a single FDEvent
+      bool try_poll( FDEvent& fd_event );
+
+      // Non-blocking poll for multiple FDEvents
+      int try_poll( FDEvent* fd_events, int fd_events_len );
+
+    protected:
+      FDEventPoller()
+      { }
+
+      // The real poll for implementations to override
+      virtual int
+      poll
+      ( 
+        FDEvent* fd_events, 
+        int fd_events_len, 
+        const Time* timeout // NULL for a blocking poll
+      ) = 0;
+    };
+
+    
+    class File : public IOStream
+    {
+    public:
+      const static uint32_t ATTRIBUTES_DEFAULT = 0;
+      const static uint32_t FLAGS_DEFAULT = O_RDONLY;
+      const static mode_t MODE_DEFAULT = S_IREAD|S_IWRITE;
+
+    public:
+      File( fd_t fd ); // Takes ownership of the fd
+      virtual ~File() { close(); }
+
+      YIELD_PLATFORM_FILE_PROTOTYPES;
+      virtual size_t getpagesize();
+      inline operator fd_t() const { return fd; }
+      virtual bool seek( uint64_t offset ); // SEEK_SET
+      virtual bool seek( uint64_t offset, unsigned char whence );
+      Stat* stat() { return getattr(); }
+      
+      // IStream
+      // read from the current file position
+      virtual ssize_t read( Buffer& buffer );
+      virtual ssize_t read( void* buf, size_t buflen );
+      
+      // OStream
+      // write to the current file position
+      virtual ssize_t write( const Buffer& buffer );
+      virtual ssize_t write( const void* buf, size_t buflen );
+#ifndef _WIN32
+      virtual ssize_t writev( Buffers& buffers );
+      virtual ssize_t writev( const struct iovec* iov, uint32_t iovlen );
+#endif
+
+      // Object
+      File& inc_ref() { return Object::inc_ref( *this ); }
+
+    protected:
+      File();      
+
+    private:
+      File( const File& ); // Prevent copying
+
+    private:
+      fd_t fd;
+    };
+
+
+    class iconv : public Object
     {
     public:
       ~iconv();
@@ -515,7 +720,438 @@ namespace yield
     };
 
 
-    class Path : public yidl::runtime::Object
+    class IOCB : public Object
+    {
+    protected:
+      IOCB() { }
+      virtual ~IOCB() { }
+    };
+
+
+    class IOQueue : public RTTIObject
+    {
+    public:
+      virtual ~IOQueue() { }
+
+      // Object
+      IOQueue& inc_ref() { return Object::inc_ref( *this ); }
+
+    protected:
+      IOQueue() { }      
+    };
+
+
+    class BIOCB : public IOCB
+    {
+    public:
+      virtual ~BIOCB() { }
+      virtual bool execute() = 0;
+    };
+
+
+    class BIOQueue : public IOQueue
+    {
+    public:
+      static BIOQueue& create();
+      void submit( BIOCB& biocb ); // Takes ownership of biocb
+
+      // RTTIObject
+      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( BIOQueue, 0 );
+      
+    private:
+      BIOQueue() { }
+
+      class WorkerThread;
+    };
+
+
+    class Log : public Object
+    {
+    public:
+      class Level
+      {
+      public:
+        Level( const char* level );
+        Level( const string& level );
+        Level( uint8_t level );
+        Level( const char* level_string, uint8_t level_uint8 );
+        Level( const Level& other );
+
+        inline operator const string&() const { return level_string; }
+        inline operator const char*() const { return level_string.c_str(); }
+        inline operator uint8_t() const { return level_uint8; }
+
+        inline bool operator<( const Level& other ) const
+        {
+          return level_uint8 < other.level_uint8;
+        }
+
+        inline bool operator<=( const Level& other ) const
+        {
+          return level_uint8 < other.level_uint8;
+        }
+
+        inline bool operator==( const Level& other ) const
+        {
+          return level_uint8 == other.level_uint8;
+        }
+
+        inline bool operator>( const Level& other ) const
+        {
+          return level_uint8 > other.level_uint8;
+        }
+
+        inline bool operator>=( const Level& other ) const
+        {
+          return level_uint8 >= other.level_uint8;
+        }
+
+      private:
+        void init( const char* level );
+
+      private:
+        string level_string;
+        uint8_t level_uint8;
+      };
+
+
+      class Stream
+      {
+      public:
+        Stream( const Stream& other );
+        ~Stream();
+
+        template <typename T>
+        Stream& operator<<( T t )
+        {
+          if ( level <= log.get_level() )
+            oss << t;
+          return *this;
+        }
+
+      private:
+        friend class Log;
+
+        Stream( Log& log, Level );
+
+        Log& log;
+        Level level;
+
+        ostringstream oss;
+      };
+
+    public:
+      // Adapted from syslog levels
+      static Level LOG_EMERG;
+      static Level LOG_ALERT;
+      static Level LOG_CRIT;
+      static Level LOG_ERR;
+      static Level LOG_WARNING;
+      static Level LOG_INFO;
+      static Level LOG_DEBUG;
+
+    public:
+      virtual ~Log() { }
+      static Log& open( ostream&, const Level& level = LOG_ERR );
+
+      static Log& 
+      open
+      ( 
+        const Path& file_path, 
+        const Level& level = LOG_ERR, 
+        bool lazy_open = false 
+      );
+
+      const Level& get_level() const { return level; }
+      Stream get_stream() { return Stream( inc_ref(), level ); }
+      Stream get_stream( Level level ) { return Stream( inc_ref(), level ); }
+      void set_level( const Level& level ) { this->level = level; }
+
+      void write( const char* str, const Level& level );
+      void write( const string& str, const Level& level );
+      void write( const void* str, size_t str_len, const Level& level );
+      void write( const unsigned char* str, size_t str_len, const Level& level );
+      void write( const char* str, size_t str_len, const Level& level );
+
+      // Object
+      Log& inc_ref() { return Object::inc_ref( *this ); }
+
+    protected:
+      Log( const Level& level );
+
+      virtual void write( const char* str, size_t str_len ) = 0;
+
+    private:
+      Level level;
+    };
+
+
+    class MemoryMappedFile : public Object
+    {
+    public:
+      virtual ~MemoryMappedFile();
+
+      static MemoryMappedFile* open( const Path& path );
+      static MemoryMappedFile* open( const Path& path, uint32_t flags );
+
+      static MemoryMappedFile*
+      open
+      (
+        const Path& path,
+        uint32_t flags,
+        mode_t mode,
+        uint32_t attributes,
+        size_t minimum_size
+      );
+
+      virtual bool close();
+      operator char*() const { return start; }
+      operator void*() const { return start; }
+      size_t size() const { return size_; }
+      bool resize( size_t );
+      virtual bool sync();
+      virtual bool sync( size_t offset, size_t length );
+      virtual bool sync( void* ptr, size_t length );
+
+    protected:
+      MemoryMappedFile( File& underlying_file, uint32_t open_flags );      
+
+    private:
+      File& underlying_file;
+      uint32_t open_flags;
+
+#ifdef _WIN32
+      void* mapping;
+#endif
+      char* start;
+      size_t size_;
+    };
+
+
+    class Mutex
+    {
+    public:
+      Mutex();
+      ~Mutex();
+
+      // These calls are modeled after the pthread calls they delegate to
+      // Have a separate function for timeout == 0 (never block) to
+      // avoid an if branch on a critical path
+      bool acquire(); // Blocking
+      bool acquire( const Time& timeout ); // May block for timeout
+      bool try_acquire(); // Never blocks
+      void release();
+
+    private:
+#ifdef _WIN32
+      void* hMutex;
+#else
+      pthread_mutex_t pthread_mutex;
+#endif
+    };
+
+
+    class NamedPipe : public File
+    {
+    public:
+      ~NamedPipe() { }
+
+      static NamedPipe*
+      open
+      (
+        const Path& path,
+        uint32_t flags = O_RDWR,
+        mode_t mode = File::MODE_DEFAULT
+      );
+
+#ifdef _WIN32
+      // IStream
+      ssize_t read( void* buf, size_t buflen );
+
+      // OStream
+      ssize_t write( const void* buf, size_t buflen );
+#endif
+
+    private:
+#ifdef WIN32
+      NamedPipe( fd_t fd, bool connected );
+#else
+      NamedPipe( fd_t fd );
+#endif      
+
+#ifdef _WIN32
+      bool connected;
+      bool connect();
+#endif
+    };
+
+    
+    class NBIOCB : public IOCB 
+    {
+    public:
+      enum State 
+      { 
+        STATE_WANT_CONNECT, 
+        STATE_WANT_READ, 
+        STATE_WANT_WRITE, 
+        STATE_COMPLETE, 
+        STATE_ERROR 
+      };
+
+    public:
+      virtual ~NBIOCB() { }
+
+      virtual State execute() = 0;
+
+#ifdef _WIN32
+      virtual socket_t get_fd() const = 0;
+#else
+      virtual int get_fd() const = 0;
+#endif
+
+      State get_state() const { return state; }
+
+    protected:
+      NBIOCB( State state )
+        : state( state )
+      { }
+
+      void set_state( State state ) { this->state = state; }
+
+    private:
+      State state;
+    };
+
+
+    class NBIOQueue : public IOQueue
+    {
+    public:
+      ~NBIOQueue();
+
+      static NBIOQueue& create();
+
+      void submit( NBIOCB& nbiocb ); // Takes ownership of nbiocb
+      
+      // RTTIObject
+      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( NBIOQueue, 2 );
+
+    private:
+      class WorkerThread;
+      NBIOQueue( const vector<WorkerThread*>& worker_threads );      
+
+    private:
+      vector<WorkerThread*> worker_threads;
+    };
+
+
+    class NOPLock
+    {
+    public:
+      inline bool acquire() { return true; }
+      inline bool acquire( const Time& ) { return true; }
+      inline void release() { }
+      inline bool try_acquire() { return true; }      
+    };
+
+
+    // Modelled after Python's optparse.OptionParser class
+    class OptionParser : public Object
+    {
+    public:
+      class Option
+      {
+      public:
+        Option
+        ( 
+          const string& option, 
+          const string& help, 
+          bool require_argument = true
+        );
+
+        Option( const string& option, bool require_argument = true );
+
+        const string& get_help() const { return help; }
+        bool get_require_argument() const { return require_argument; }
+
+        operator const char*() const { return option.c_str(); }
+        operator const string&() const { return option; }
+        bool operator==( const string& option ) const;
+        bool operator==( const char* option ) const;
+        bool operator==( const Option& other ) const;      
+        bool operator<( const Option& other ) const; // For sorting
+
+      private:
+        string help, option;
+        bool require_argument;
+      };
+
+
+      class Options : public vector<Option>
+      {
+      public:
+        void add
+        ( 
+          const string& option, 
+          const string& help, 
+          bool require_argument = true
+        );
+
+        void add( const string& option, bool require_argument = true );
+        void add( const Option& option );
+        void add( const Options& options );
+      };
+
+
+      class ParsedOption : public Option
+      {
+      public:
+        ParsedOption( Option& option );
+        ParsedOption( Option& option, const string& argument );
+
+        const string& get_argument() const { return argument; }
+
+      private:
+        string argument;
+      };
+
+      typedef vector<ParsedOption> ParsedOptions;
+
+
+      YIELD_PLATFORM_EXCEPTION_SUBCLASS( InvalidValueException );
+      YIELD_PLATFORM_EXCEPTION_SUBCLASS( MissingValueException );
+      YIELD_PLATFORM_EXCEPTION_SUBCLASS( UnexpectedValueException );
+      YIELD_PLATFORM_EXCEPTION_SUBCLASS( UnregisteredOptionException );
+
+    public:
+      void 
+      add_option
+      ( 
+        const string& option, 
+        const string& help, 
+        bool require_argument = true
+      );
+
+      void add_option( const string& option, bool require_argument = true );
+      void add_option( const Option& option );
+      void add_options( const Options& options );
+
+      void 
+      parse_args
+      ( 
+        int argc, 
+        char** argv, 
+        ParsedOptions& out_parsed_options,
+        vector<string>& out_positional_arguments
+      );
+
+      string usage();
+
+    private:
+      Options options;
+    };
+
+
+    class Path : public Object
     {
       // Path objects are currently immutable
     public:
@@ -646,801 +1282,8 @@ namespace yield
     }
 
 
-    class Time
-    {
-    public:
-      const static uint64_t NS_IN_US = 1000ULL;
-      const static uint64_t NS_IN_MS = 1000000ULL;
-      const static uint64_t NS_IN_S = 1000000000ULL;
-
-    public:
-      Time(); // Current time
-      Time( uint64_t unix_time_ns ) : unix_time_ns( unix_time_ns ) { }
-      Time( double unix_time_s );
-      Time( const struct timeval& );
-#ifdef _WIN32
-      Time( const FILETIME& );
-      Time( const FILETIME* );
-#else
-      Time( const struct timespec& );
-#endif
-      Time( const Time& other ) : unix_time_ns( other.unix_time_ns ) { }
-
-      void as_common_log_date_time( char* out_str, uint8_t out_str_len ) const;
-      void as_http_date_time( char* out_str, uint8_t out_str_len ) const;
-      void as_iso_date( char* out_str, uint8_t out_str_len ) const;
-      void as_iso_date_time( char* out_str, uint8_t out_str_len ) const;
-
-      inline double as_unix_time_ms() const
-      {
-        return static_cast<double>( unix_time_ns )
-               / static_cast<double>( NS_IN_MS );
-      }
-
-      inline uint64_t as_unix_time_ns() const
-      {
-        return unix_time_ns;
-      }
-
-      inline double as_unix_time_s() const
-      {
-        return static_cast<double>( unix_time_ns )
-               / static_cast<double>( NS_IN_S );
-      }
-
-      inline double as_unix_time_us() const
-      {
-        return static_cast<double>( unix_time_ns ) / NS_IN_US;
-      }
-
-      inline operator uint64_t() const
-      {
-        return as_unix_time_ns();
-      }
-
-      inline operator double() const
-      {
-        return as_unix_time_s();
-      }
-
-      operator struct timeval() const;
-#ifdef _WIN32
-      operator FILETIME() const;
-#else
-      operator struct timespec() const;
-#endif
-      operator string() const;
-
-      Time& operator=( const Time& );
-      Time& operator=( uint64_t unix_time_ns );
-      Time& operator=( double unix_time_s );
-      Time operator+( const Time& ) const;
-      Time operator+( uint64_t unix_time_ns ) const;
-      Time operator+( double unix_time_s ) const;
-      Time& operator+=( const Time& );
-      Time& operator+=( uint64_t unix_time_ns );
-      Time& operator+=( double unix_time_s );
-      Time operator-( const Time& ) const;
-      Time operator-( uint64_t unix_time_ns ) const;
-      Time operator-( double unix_time_s ) const;
-      Time& operator-=( const Time& );
-      Time& operator-=( uint64_t unix_time_ns );
-      Time& operator-=( double unix_time_s );
-      Time& operator*=( const Time& );
-      bool operator==( const Time& ) const;
-      bool operator==( uint64_t unix_time_ns ) const;
-      bool operator==( double unix_time_s ) const;
-      bool operator!=( const Time& ) const;
-      bool operator!=( uint64_t unix_time_ns ) const;
-      bool operator!=( double unix_time_s ) const;
-      bool operator<( const Time& ) const;
-      bool operator<( uint64_t unix_time_ns ) const;
-      bool operator<( double unix_time_s ) const;
-      bool operator<=( const Time& ) const;
-      bool operator<=( uint64_t unix_time_ns ) const;
-      bool operator<=( double unix_time_s ) const;
-      bool operator>( const Time& ) const;
-      bool operator>( uint64_t unix_time_ns ) const;
-      bool operator>( double unix_time_s ) const;
-      bool operator>=( const Time& ) const;
-      bool operator>=( uint64_t unix_time_ns ) const;
-      bool operator>=( double unix_time_s ) const;
-
-    private:
-      // The time is stored internally as a Unix epoch time, i.e.
-      // nanoseconds since January 1, 1970
-      uint64_t unix_time_ns;
-    };
-
-    static inline ostream& operator<<( ostream& os, const Time& time )
-    {
-      char iso_date_time[64];
-      time.as_iso_date_time( iso_date_time, 64 );
-      os << iso_date_time;
-      return os;
-    }
-
-  
-    class Exception : public std::exception
-    {
-    public:
-      // error_message is always copied
-      Exception();
-      Exception( uint32_t error_code ); // Use a system error message
-      Exception( const char* error_message );
-      Exception( const string& error_message );
-      Exception( uint32_t error_code, const char* error_message );
-      Exception( uint32_t error_code, const string& error_message );
-      Exception( const Exception& other );
-      virtual ~Exception() throw();
-
-      virtual uint32_t get_error_code() const { return error_code; }
-      virtual const char* get_error_message() throw();
-
-      operator const char*() throw() { return get_error_message(); }
-
-      // std::exception
-      const char* what() const throw()
-      {
-        return const_cast<Exception*>( this )->get_error_message();
-      }
-
-    protected:
-      void set_error_code( uint32_t error_code );
-      void set_error_message( const char* error_message );
-
-    private:
-      uint32_t error_code;
-      char* error_message;
-    };
-
-
-    class Directory : public yidl::runtime::Object
-    {
-    public:
-      class Entry : public yidl::runtime::Object
-      {
-        // has-a Stat instead of is-a Stat because
-        // (1) readdir on Unix returns a struct dirent,
-        //     which is only a subset of struct stat ->
-        //     the Stat member will be NULL
-        // (2) subclasses of Directory can attach their own
-        //     subclasses of Stat
-      public:
-        Entry( const Path& name );
-        Entry( const Path& name, Stat& stbuf ); // Steals reference to Stat
-        ~Entry();
-
-        const Path& get_name() const { return name; }
-        Stat* get_stat() const { return stbuf; }
-
-      private:
-        Path name;
-        Stat* stbuf;
-
-        // This class used to have ISDIR(), ISREG(), etc. 
-        // methods like Stat to take advantage of Linux's d_type
-        // struct dirent member for optimizing things like
-        // rmtree (which reads a directory and branches according
-        // to the Entry type). d_type is not in POSIX's struct dirent
-        // and more strict POSIX implementations (like Sun's), so
-        // it's been removed here.
-      };
-
-    public:
-      virtual ~Directory();
-
-      YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
-
-      // yidl::runtime::Object
-      Directory& inc_ref() { return Object::inc_ref( *this ); }
-
-    protected:
-      Directory();      
-
-    private:
-      friend class Volume;
-#ifdef _WIN32
-      Directory( void* hDirectory, const WIN32_FIND_DATA& first_find_data );
-#else
-      Directory( void* dirp );
-#endif
-
-    private:
-#ifdef _WIN32
-      void* hDirectory;
-      WIN32_FIND_DATA* first_find_data;
-#else
-      void* dirp;
-#endif
-    };
-
-
-    class File : public IOStream
-    {
-    public:
-      const static uint32_t ATTRIBUTES_DEFAULT = 0;
-      const static uint32_t FLAGS_DEFAULT = O_RDONLY;
-      const static mode_t MODE_DEFAULT = S_IREAD|S_IWRITE;
-
-    public:
-      File( fd_t fd ); // Takes ownership of the fd
-      virtual ~File() { close(); }
-
-      YIELD_PLATFORM_FILE_PROTOTYPES;
-      virtual size_t getpagesize();
-      inline operator fd_t() const { return fd; }
-      virtual bool seek( uint64_t offset ); // SEEK_SET
-      virtual bool seek( uint64_t offset, unsigned char whence );
-      Stat* stat() { return getattr(); }
-      
-      // IStream
-      // read from the current file position
-      virtual ssize_t read( Buffer& buffer );
-      virtual ssize_t read( void* buf, size_t buflen );
-      
-      // OStream
-      // write to the current file position
-      virtual ssize_t write( const Buffer& buffer );
-      virtual ssize_t write( const void* buf, size_t buflen );
-#ifndef _WIN32
-      virtual ssize_t writev( const Buffers& buffers );
-      virtual ssize_t writev( const struct iovec* iov, uint32_t iovlen );
-#endif
-
-      // yidl::runtime::Object
-      File& inc_ref() { return Object::inc_ref( *this ); }
-
-    protected:
-      File();      
-
-    private:
-      File( const File& ); // Prevent copying
-
-    private:
-      fd_t fd;
-    };
-
-
-    class IOCB : public yidl::runtime::Object
-    {
-    protected:
-      IOCB() { }
-      virtual ~IOCB() { }
-    };
-
-
-    class IOQueue : public yidl::runtime::RTTIObject
-    {
-    public:
-      virtual ~IOQueue() { }
-
-      // yidl::runtime::Object
-      IOQueue& inc_ref() { return Object::inc_ref( *this ); }
-
-    protected:
-      IOQueue() { }      
-    };
-
-
-    class BIOCB : public IOCB
-    {
-    public:
-      virtual ~BIOCB() { }
-      virtual void execute() = 0;
-    };
-
-
-    class BIOQueue : public IOQueue
-    {
-    public:
-      static BIOQueue& create();
-      void submit( BIOCB& biocb ); // Takes ownership of biocb
-
-      // yidl::runtime::RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( BIOQueue, 0 );
-      
-    private:
-      BIOQueue() { }
-
-      class WorkerThread;
-    };
-
-
-    class FDEventPoller : public yidl::runtime::Object
-    {
-    public:
-#ifdef _WIN32
-      typedef socket_t fd_t;
-#endif
-
-    public:
-      class FDEvent
-      {
-      public:
-        inline void* get_context() const { return context; }
-        inline fd_t get_fd() const { return fd; }
-        // want_read and want_write can be true at the same time
-        inline bool want_read() const { return want_read_; }
-        inline bool want_write() const { return want_write_; }
-
-        void fill( void* context, fd_t fd, bool want_read_, bool want_write_ )
-        {
-          this->context = context;
-          this->fd = fd;
-          this->want_read_ = want_read_;
-          this->want_write_ = want_write_;
-        }
-
-      private:
-        void* context;
-        fd_t fd;
-        bool want_read_, want_write_;
-      };
-
-    public:
-      virtual ~FDEventPoller() { }
-
-      static FDEventPoller& create();
-
-      bool associate( fd_t fd, bool want_read = true, bool want_write = false )
-      {
-        return associate( fd, NULL, want_read, want_write );
-      }
-
-      virtual bool
-      associate
-      (        
-        fd_t fd,
-        void* context,
-        bool want_read = true,
-        bool want_write = false
-      ) = 0;
-
-      virtual bool dissociate( fd_t fd ) = 0;
-
-      // poll methods do not cache any state, i.e.
-      // they always make a new system call
-
-      // Blocking poll to check if any FD is active
-      bool poll();
-
-      // Timed poll to check if FD any active
-      bool poll( const Time& timeout );
-
-      // Blocking poll for a single FDEvent
-      bool poll( FDEvent& fd_event );
-
-      // Timed poll for a single FDEvent
-      bool poll( FDEvent& fd_event, const Time& timeout ); 
-
-      // Blocking poll for multiple FDEvents
-      int poll( FDEvent* fd_events, int fd_events_len );
-
-      // Timed poll for multiple FDEvents
-      int
-      poll
-      ( 
-        FDEvent* fd_events,
-        int fd_events_len, 
-        const Time& timeout 
-      );
-
-      virtual bool toggle( fd_t fd, bool want_read, bool want_write ) = 0;
-
-      // Non-blocking poll to check if any FD is active
-      bool try_poll();
-
-      // Non-blocking poll for a single FDEvent
-      bool try_poll( FDEvent& fd_event );
-
-      // Non-blocking poll for multiple FDEvents
-      int try_poll( FDEvent* fd_events, int fd_events_len );
-
-    protected:
-      FDEventPoller()
-      { }
-
-      // The real poll for implementations to override
-      virtual int
-      poll
-      ( 
-        FDEvent* fd_events, 
-        int fd_events_len, 
-        const Time* timeout // NULL for a blocking poll
-      ) = 0;
-    };
-
-
-    class Log : public yidl::runtime::Object
-    {
-    public:
-      class Level
-      {
-      public:
-        Level( const char* level );
-        Level( uint8_t level );
-        Level( const char* level_string, uint8_t level_uint8 );
-        Level( const Level& other );
-
-        inline operator const char*() const
-        {
-          return level_string;
-        }
-
-        inline operator uint8_t() const
-        {
-          return level_uint8;
-        }
-
-        inline bool operator<( const Level& other ) const
-        {
-          return level_uint8 < other.level_uint8;
-        }
-
-        inline bool operator<=( const Level& other ) const
-        {
-          return level_uint8 < other.level_uint8;
-        }
-
-        inline bool operator==( const Level& other ) const
-        {
-          return level_uint8 == other.level_uint8;
-        }
-
-        inline bool operator>( const Level& other ) const
-        {
-          return level_uint8 > other.level_uint8;
-        }
-
-        inline bool operator>=( const Level& other ) const
-        {
-          return level_uint8 >= other.level_uint8;
-        }
-
-      private:
-        const char* level_string;
-        uint8_t level_uint8;
-      };
-
-
-      class Stream
-      {
-      public:
-        Stream( const Stream& other );
-        ~Stream();
-
-        template <typename T>
-        Stream& operator<<( T t )
-        {
-          if ( level <= log.get_level() )
-            oss << t;
-          return *this;
-        }
-
-      private:
-        friend class Log;
-
-        Stream( Log& log, Level );
-
-        Log& log;
-        Level level;
-
-        ostringstream oss;
-      };
-
-    public:
-      // Adapted from syslog levels
-      static Level LOG_EMERG;
-      static Level LOG_ALERT;
-      static Level LOG_CRIT;
-      static Level LOG_ERR;
-      static Level LOG_WARNING;
-      static Level LOG_INFO;
-      static Level LOG_DEBUG;
-
-    public:
-      virtual ~Log() { }
-      static Log& open( ostream&, const Level& level = LOG_ERR );
-
-      static Log& 
-      open
-      ( 
-        const Path& file_path, 
-        const Level& level = LOG_ERR, 
-        bool lazy_open = false 
-      );
-
-      const Level& get_level() const { return level; }
-      Stream get_stream() { return Stream( inc_ref(), level ); }
-      Stream get_stream( Level level ) { return Stream( inc_ref(), level ); }
-      void set_level( const Level& level ) { this->level = level; }
-
-      void write( const char* str, const Level& level );
-      void write( const string& str, const Level& level );
-      void write( const void* str, size_t str_len, const Level& level );
-      void write( const unsigned char* str, size_t str_len, const Level& level );
-      void write( const char* str, size_t str_len, const Level& level );
-
-      // yidl::runtime::Object
-      Log& inc_ref() { return Object::inc_ref( *this ); }
-
-    protected:
-      Log( const Level& level );
-
-      virtual void write( const char* str, size_t str_len ) = 0;
-
-    private:
-      Level level;
-    };
-
-
-    class MemoryMappedFile : public yidl::runtime::Object
-    {
-    public:
-      virtual ~MemoryMappedFile();
-
-      static MemoryMappedFile* open( const Path& path );
-      static MemoryMappedFile* open( const Path& path, uint32_t flags );
-
-      static MemoryMappedFile*
-      open
-      (
-        const Path& path,
-        uint32_t flags,
-        mode_t mode,
-        uint32_t attributes,
-        size_t minimum_size
-      );
-
-      virtual bool close();
-      operator char*() const { return start; }
-      operator void*() const { return start; }
-      size_t size() const { return size_; }
-      bool resize( size_t );
-      virtual bool sync();
-      virtual bool sync( size_t offset, size_t length );
-      virtual bool sync( void* ptr, size_t length );
-
-    protected:
-      MemoryMappedFile( File& underlying_file, uint32_t open_flags );      
-
-    private:
-      File& underlying_file;
-      uint32_t open_flags;
-
-#ifdef _WIN32
-      void* mapping;
-#endif
-      char* start;
-      size_t size_;
-    };
-
-
-    class Mutex
-    {
-    public:
-      Mutex();
-      ~Mutex();
-
-      // These calls are modeled after the pthread calls they delegate to
-      // Have a separate function for timeout == 0 (never block) to
-      // avoid an if branch on a critical path
-      bool acquire(); // Blocking
-      bool acquire( const Time& timeout ); // May block for timeout
-      bool try_acquire(); // Never blocks
-      void release();
-
-    private:
-#ifdef _WIN32
-      void* hMutex;
-#else
-      pthread_mutex_t pthread_mutex;
-#endif
-    };
-
-
-    class NamedPipe : public File
-    {
-    public:
-      ~NamedPipe() { }
-
-      static NamedPipe*
-      open
-      (
-        const Path& path,
-        uint32_t flags = O_RDWR,
-        mode_t mode = File::MODE_DEFAULT
-      );
-
-#ifdef _WIN32
-      // IStream
-      ssize_t read( void* buf, size_t buflen );
-
-      // OStream
-      ssize_t write( const void* buf, size_t buflen );
-#endif
-
-    private:
-#ifdef WIN32
-      NamedPipe( fd_t fd, bool connected );
-#else
-      NamedPipe( fd_t fd );
-#endif      
-
-#ifdef _WIN32
-      bool connected;
-      bool connect();
-#endif
-    };
-
-    
-    class NBIOCB : public IOCB 
-    {
-    public:
-      virtual ~NBIOCB() { }
-
-      virtual void execute() = 0;
-
-#ifdef _WIN32
-      virtual socket_t get_fd() const = 0;
-#else
-      virtual int get_fd() const = 0;
-#endif
-
-      enum State 
-      { 
-        STATE_WANT_CONNECT, 
-        STATE_WANT_READ, 
-        STATE_WANT_WRITE, 
-        STATE_COMPLETE, 
-        STATE_ERROR 
-      };
-
-      State get_state() const { return state; }
-
-    protected:
-      NBIOCB( State state )
-        : state( state )
-      { }
-
-      void set_state( State state ) { this->state = state; }
-
-    private:
-      State state;
-    };
-
-
-    class NBIOQueue : public IOQueue
-    {
-    public:
-      ~NBIOQueue();
-
-      static NBIOQueue& create();
-
-      void submit( NBIOCB& nbiocb ); // Takes ownership of nbiocb
-      
-      // yidl::runtime::RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( NBIOQueue, 2 );
-
-    private:
-      class WorkerThread;
-      NBIOQueue( const vector<WorkerThread*>& worker_threads );      
-
-    private:
-      vector<WorkerThread*> worker_threads;
-    };
-
-
-    class NOPLock
-    {
-    public:
-      inline bool acquire() { return true; }
-      inline bool acquire( const Time& ) { return true; }
-      inline void release() { }
-      inline bool try_acquire() { return true; }      
-    };
-
-
-    // Modelled after Python's optparse.OptionParser class
-    class OptionParser : public yidl::runtime::Object
-    {
-    public:
-      class Option
-      {
-      public:
-        Option
-        ( 
-          const string& option, 
-          const string& help, 
-          bool require_argument = true
-        );
-
-        Option( const string& option, bool require_argument = true );
-
-        const string& get_help() const { return help; }
-        bool get_require_argument() const { return require_argument; }
-
-        operator const char*() const { return option.c_str(); }
-        operator const string&() const { return option; }
-        bool operator==( const string& option ) const;
-        bool operator==( const char* option ) const;
-        bool operator==( const Option& other ) const;      
-        bool operator<( const Option& other ) const; // For sorting
-
-      private:
-        string help, option;
-        bool require_argument;
-      };
-
-
-      class Options : public vector<Option>
-      {
-      public:
-        void add
-        ( 
-          const string& option, 
-          const string& help, 
-          bool require_argument = true
-        );
-
-        void add( const string& option, bool require_argument = true );
-        void add( const Option& option );
-        void add( const Options& options );
-      };
-
-
-      class ParsedOption : public Option
-      {
-      public:
-        ParsedOption( Option& option );
-        ParsedOption( Option& option, const string& argument );
-
-        const string& get_argument() const { return argument; }
-
-      private:
-        string argument;
-      };
-
-      typedef vector<ParsedOption> ParsedOptions;
-
-
-      YIELD_PLATFORM_EXCEPTION_SUBCLASS( InvalidValueException );
-      YIELD_PLATFORM_EXCEPTION_SUBCLASS( MissingValueException );
-      YIELD_PLATFORM_EXCEPTION_SUBCLASS( UnexpectedValueException );
-      YIELD_PLATFORM_EXCEPTION_SUBCLASS( UnregisteredOptionException );
-
-    public:
-      void 
-      add_option
-      ( 
-        const string& option, 
-        const string& help, 
-        bool require_argument = true
-      );
-
-      void add_option( const string& option, bool require_argument = true );
-      void add_option( const Option& option );
-      void add_options( const Options& options );
-
-      void 
-      parse_args
-      ( 
-        int argc, 
-        char** argv, 
-        ParsedOptions& out_parsed_options,
-        vector<string>& out_positional_arguments
-      );
-
-      string usage();
-
-    private:
-      Options options;
-    };
-
-
 #ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
-    class PerformanceCounterSet : public yidl::runtime::Object
+    class PerformanceCounterSet : public Object
     {
     public:
       enum Event
@@ -1509,7 +1352,7 @@ namespace yield
     };
 
 
-    class Process : public yidl::runtime::Object
+    class Process : public Object
     {
     public:
       ~Process();
@@ -1559,7 +1402,7 @@ namespace yield
     };
 
 
-    class ProcessorSet : public yidl::runtime::Object
+    class ProcessorSet : public Object
     {
     public:
       ProcessorSet();
@@ -1615,7 +1458,7 @@ namespace yield
     };
 
 
-    class SharedLibrary : public yidl::runtime::Object
+    class SharedLibrary : public Object
     {
     public:
 #ifdef _WIN32
@@ -1692,7 +1535,13 @@ namespace yield
       class AIOConnectCallback
       {
       public:
-        virtual void onConnectCompletion( void* context ) = 0;
+        virtual void
+        onConnectCompletion
+        ( 
+          size_t bytes_sent, 
+          void* context
+        ) = 0;
+
         virtual void onConnectError( uint32_t error_code, void* context ) = 0;
       };
 
@@ -1701,7 +1550,8 @@ namespace yield
       ( 
         SocketAddress& peername,
         AIOConnectCallback& callback,
-        void* callback_context = NULL
+        void* callback_context = NULL,
+        Buffer* send_buffer = NULL
       );
 
       virtual void
@@ -1766,7 +1616,7 @@ namespace yield
       // The real send method, can be overridden by subclasses
       virtual ssize_t send( const void* buf, size_t len, int flags = 0 );
 
-      ssize_t sendmsg( const Buffers& buffers, int flags = 0 )
+      ssize_t sendmsg( Buffers& buffers, int flags = 0 )
       {
         return sendmsg( buffers, buffers.size(), flags );
       }
@@ -1787,7 +1637,7 @@ namespace yield
       virtual bool want_read() const;
       virtual bool want_write() const;
 
-      // yidl::runtime::Object
+      // Object
       Socket& inc_ref() { return Object::inc_ref( *this ); }
 
       // IStream
@@ -1845,7 +1695,7 @@ namespace yield
         return send( buf, buflen, 0 );
       }
 
-      ssize_t writev( const Buffers& buffers )
+      ssize_t writev( Buffers& buffers )
       {
         return OStream::writev( buffers );
       }
@@ -1858,8 +1708,10 @@ namespace yield
     protected:
       static socket_t create( int* domain, int type, int protocol );
 
+      BIOQueue* get_bio_queue() const; // Tries to cast, can return NULL
       IOQueue* get_io_queue() const { return io_queue; }
       static uint32_t get_last_error(); // WSAGetLastError / errno
+      NBIOQueue* get_nbio_queue() const; // Tries to cast, can return NULL
       static int get_platform_recv_flags( int flags );
       static int get_platform_send_flags( int flags );
 
@@ -1888,15 +1740,17 @@ namespace yield
       protected:
         IOConnectCB
         ( 
-          SocketAddress& peername, 
-          Socket& socket_, 
           AIOConnectCallback& callback, 
-          void* callback_context
+          void* callback_context,
+          SocketAddress& peername, 
+          Buffer* send_buffer,
+          Socket& socket_
         );
 
         virtual ~IOConnectCB();
 
         const SocketAddress& get_peername() const { return peername; }
+        Buffer* get_send_buffer() const { return send_buffer; }
         Socket& get_socket() const { return socket_; }
 
         void onConnectCompletion();
@@ -1905,6 +1759,7 @@ namespace yield
 
       private:
         SocketAddress& peername;
+        Buffer* send_buffer;
         Socket& socket_;
       };
 
@@ -1915,10 +1770,10 @@ namespace yield
         IORecvCB
         ( 
           Buffer& buffer, 
-          int flags, 
-          Socket& socket_, 
           AIOReadCallback& callback, 
-          void* callback_context
+          void* callback_context,
+          int flags, 
+          Socket& socket_
         );
 
         virtual ~IORecvCB();
@@ -1943,11 +1798,11 @@ namespace yield
       protected:
         IOSendCB
         ( 
-          Buffer& buffer, 
-          int flags, 
-          Socket& socket_, 
+          Buffer& buffer,
           AIOWriteCallback& callback, 
-          void* callback_context
+          void* callback_context,
+          int flags, 
+          Socket& socket_
         );
 
         virtual ~IOSendCB();
@@ -1976,17 +1831,17 @@ namespace yield
         IOSendMsgCB
         ( 
           Buffers& buffers,
+          AIOWriteCallback& callback,
+          void* callback_context,
           int flags, 
-          Socket& socket_, 
-          AIOWriteCallback& callback, 
-          void* callback_context
+          Socket& socket_
         );
 
         virtual ~IOSendMsgCB();
 
         bool execute( bool blocking_mode );
 
-        const Buffers& get_buffers() const { return buffers; }
+        Buffers& get_buffers() const { return buffers; }
         size_t get_buffers_len() const { return buffers_len; }
         int get_flags() const { return flags; }
         Socket& get_socket() const { return socket_; }
@@ -2025,7 +1880,7 @@ namespace yield
     };
 
 
-    class SocketAddress : public yidl::runtime::Object // immutable
+    class SocketAddress : public Object // immutable
     {
     public:
       SocketAddress( struct addrinfo& ); // Takes ownership
@@ -2074,7 +1929,7 @@ namespace yield
         return !operator==( other );
       }
 
-      // yidl::runtime::Object
+      // Object
       SocketAddress& inc_ref() { return Object::inc_ref( *this ); }
 
     private:
@@ -2096,7 +1951,7 @@ namespace yield
     };
 
 
-    class SocketPair : public yidl::runtime::Object
+    class SocketPair : public Object
     {
     public:
       ~SocketPair();
@@ -2114,147 +1969,131 @@ namespace yield
     };
 
 
-    class Stat : public yidl::runtime::Object
+    class Time
     {
     public:
-      Stat(); // -> set each member individually, for setattr
-      Stat( const Stat& );
+      static Time INVALID_TIME;
+      const static uint64_t NS_IN_US = 1000ULL;
+      const static uint64_t NS_IN_MS = 1000000ULL;
+      const static uint64_t NS_IN_S = 1000000000ULL;
+
+    public:
+      Time(); // Current time
+      Time( uint64_t unix_time_ns ) : unix_time_ns( unix_time_ns ) { }
+      Time( double unix_time_s );
+      Time( const struct timeval& );
+#ifdef _WIN32
+      Time( const FILETIME& );
+      Time( const FILETIME* );
+      Time( const SYSTEMTIME&, bool local = true );
+#else
+      Time( const struct timespec& );
+      Time( const struct tm&, bool local = true );
+#endif      
+      Time( const Time& other ) : unix_time_ns( other.unix_time_ns ) { }
+
+      Time
+      (
+        int tm_sec, // seconds after the minute	0-61*
+        int tm_min, // minutes after the hour	0-59
+        int tm_hour, //	hours since midnight 0-23
+        int tm_mday, //	day of the month 1-31
+        int tm_mon, // months since January	0-11
+        int tm_year, //	years since 1900
+        bool local = true
+      );
 
 #ifdef _WIN32
-      Stat
-      (
-        mode_t mode,
-        nlink_t nlink,
-        uint64_t size,
-        const Time& atime,
-        const Time& mtime,
-        const Time& ctime,
-        uint32_t attributes
-      );
-
-      Stat( const BY_HANDLE_FILE_INFORMATION& );
-
-      Stat( const WIN32_FIND_DATA& );
-
-      Stat
-      (
-        uint32_t nNumberOfLinks,
-        uint32_t nFileSizeHigh,
-        uint32_t nFileSizeLow,
-        const FILETIME* ftLastAccessTime,
-        const FILETIME* ftLastWriteTime,
-        const FILETIME* ftCreationTime,
-        uint32_t dwFileAttributes
-      );
+      SYSTEMTIME as_local_SYSTEMTIME() const;
+      SYSTEMTIME as_utc_SYSTEMTIME() const;
 #else
-      // POSIX field order; Linux, FreeBSD, et al. all have different orders
-      Stat
-      (
-        dev_t dev,
-        ino_t ino,
-        mode_t mode,
-        nlink_t nlink,
-        uid_t uid,
-        gid_t gid,
-        dev_t rdev,
-        uint64_t size,
-        const Time& atime,
-        const Time& mtime,
-        const Time& ctime,
-        blksize_t blksize,
-        blkcnt_t blocks
-      );
-#endif
-      Stat( const struct stat& stbuf );
-      virtual ~Stat() { }
-
-#ifndef _WIN32
-      dev_t get_dev() const { return dev; }
-      ino_t get_ino() const { return ino; }
-#endif
-      mode_t get_mode() const { return mode; }
-      nlink_t get_nlink() const { return nlink; }
-#ifndef _WIN32
-      uid_t get_uid() const { return uid; }
-      gid_t get_gid() const { return gid; }
-      dev_t get_rdev() const { return rdev; }
-#endif
-      uint64_t get_size() const { return size; }
-      const Time& get_atime() const { return atime; }
-      const Time& get_mtime() const { return mtime; }
-      const Time& get_ctime() const { return ctime; }
-#ifndef _WIN32
-      blksize_t get_blksize() const { return blksize; }
-      blkcnt_t get_blocks() const { return blocks; }
-#else
-      uint32_t get_attributes() const;
+      struct tm as_local_struct_tm() const;
+      struct tm as_utc_struct_time() const;
 #endif
 
-      bool ISDIR() const { return ( get_mode() & S_IFDIR ) == S_IFDIR; }
-#ifndef _WIN32
-      bool ISLNK() const { return S_ISLNK( get_mode() ); }
-#endif
-      bool ISREG() const { return ( get_mode() & S_IFREG ) == S_IFREG; }
+      inline double as_unix_time_ms() const
+      {
+        return static_cast<double>( unix_time_ns ) / NS_IN_MS;
+      }
 
-      virtual Stat& operator=( const Stat& );
-      virtual bool operator==( const Stat& ) const;
-      operator struct stat() const;
+      inline uint64_t as_unix_time_ns() const { return unix_time_ns; }
+
+      inline double as_unix_time_s() const
+      {
+        return static_cast<double>( unix_time_ns ) / NS_IN_S;
+      }
+
+      inline double as_unix_time_us() const
+      {
+        return static_cast<double>( unix_time_ns ) / NS_IN_US;
+      }
+
+      inline operator uint64_t() const { return as_unix_time_ns(); }
+      inline operator double() const { return as_unix_time_s(); }
+      operator struct timeval() const;
 #ifdef _WIN32
-      operator BY_HANDLE_FILE_INFORMATION() const;
-      operator WIN32_FIND_DATA() const;
-#endif
-
-      // to_set = bitmask of Volume::SETATTR_* constants
-      virtual void set( const Stat&, uint32_t to_set );
-#ifndef _WIN32
-      virtual void set_dev( dev_t dev );
-      virtual void set_ino( ino_t ino );
-#endif
-      virtual void set_mode( mode_t mode );
-      virtual void set_nlink( nlink_t nlink );
-#ifndef _WIN32
-      virtual void set_uid( uid_t uid );
-      virtual void set_gid( gid_t gid );
-      virtual void set_rdev( dev_t );
-#endif
-      virtual void set_size( uint64_t size );
-      virtual void set_atime( const Time& atime );
-      virtual void set_mtime( const Time& mtime );
-      virtual void set_ctime( const Time& ctime );
-#ifndef _WIN32
-      virtual void set_blksize( blksize_t blksize );
-      virtual void set_blocks( blkcnt_t blocks );
+      operator FILETIME() const;
+      operator SYSTEMTIME() const; // as_local_SYSTEMTIME
 #else
-      virtual void set_attributes( uint32_t attributes );
+      operator struct timespec() const;
+      operator struct tm() const; // as_local_struct_tm
 #endif
+      operator string() const;
 
-      // yidl::runtime::Object
-      Stat& inc_ref() { return Object::inc_ref( *this ); }
+      Time& operator=( const Time& );
+      Time& operator=( uint64_t unix_time_ns );
+      Time& operator=( double unix_time_s );
+      Time operator+( const Time& ) const;
+      Time operator+( uint64_t unix_time_ns ) const;
+      Time operator+( double unix_time_s ) const;
+      Time& operator+=( const Time& );
+      Time& operator+=( uint64_t unix_time_ns );
+      Time& operator+=( double unix_time_s );
+      Time operator-( const Time& ) const;
+      Time operator-( uint64_t unix_time_ns ) const;
+      Time operator-( double unix_time_s ) const;
+      Time& operator-=( const Time& );
+      Time& operator-=( uint64_t unix_time_ns );
+      Time& operator-=( double unix_time_s );
+      Time& operator*=( const Time& );
+      bool operator==( const Time& ) const;
+      bool operator==( uint64_t unix_time_ns ) const;
+      bool operator==( double unix_time_s ) const;
+      bool operator!=( const Time& ) const;
+      bool operator!=( uint64_t unix_time_ns ) const;
+      bool operator!=( double unix_time_s ) const;
+      bool operator<( const Time& ) const;
+      bool operator<( uint64_t unix_time_ns ) const;
+      bool operator<( double unix_time_s ) const;
+      bool operator<=( const Time& ) const;
+      bool operator<=( uint64_t unix_time_ns ) const;
+      bool operator<=( double unix_time_s ) const;
+      bool operator>( const Time& ) const;
+      bool operator>( uint64_t unix_time_ns ) const;
+      bool operator>( double unix_time_s ) const;
+      bool operator>=( const Time& ) const;
+      bool operator>=( uint64_t unix_time_ns ) const;
+      bool operator>=( double unix_time_s ) const;
 
     private:
-      // POSIX field order; Linux, FreeBSD, et al. all have different orders
-#ifndef _WIN32
-      dev_t dev;
-      ino_t ino;
-#endif
-      mode_t mode;
-      nlink_t nlink;
-#ifndef _WIN32
-      uid_t uid;
-      gid_t gid;
-      dev_t rdev;
-#endif
-      uint64_t size;
-      Time atime;
-      Time mtime;
-      Time ctime;
-#ifndef _WIN32
-      blksize_t blksize;
-      blkcnt_t blocks;
+#ifdef _WIN32
+      void init( const FILETIME& );
+      void init( const SYSTEMTIME&, bool local );
 #else
-      uint32_t attributes;
+      void init( struct tm&, bool local );
 #endif
+
+    private:
+      // The time is stored internally as a Unix epoch time, i.e.
+      // nanoseconds since January 1, 1970
+      uint64_t unix_time_ns;
     };
+
+    static inline ostream& operator<<( ostream& os, const Time& time )
+    {
+      os << static_cast<string>( time );
+      return os;
+    }
 
 
     class TCPSocket : public Socket
@@ -2278,7 +2117,8 @@ namespace yield
         onAcceptCompletion
         ( 
           TCPSocket& accepted_tcp_socket,
-          void* context
+          void* context,
+          Buffer* recv_buffer
         ) = 0;
 
         virtual void onAcceptError( uint32_t error_code, void* context ) = 0;
@@ -2287,14 +2127,18 @@ namespace yield
       virtual void 
       aio_accept
       ( 
-        AIOAcceptCallback& callback, 
-        void* callback_context = NULL
+        AIOAcceptCallback& callback,
+        void* callback_context = NULL,
+        Buffer* recv_buffer = NULL // Steals this reference
+        // recv_buffer must be at least 88 bytes long if it's not NULL
+        // ( sizeof( sockaddr_in6 ) + 16 ) * 2 = 88 to store the 
+        // peername on Win32 (position() will be set at 89 on the callback).
       );
 
       static TCPSocket* create(); // AF_INET6
       static TCPSocket* create( int domain );
 
-      // yidl::runtime::Object
+      // Object
       TCPSocket& inc_ref() { return Object::inc_ref( *this ); }
 
       // Socket
@@ -2303,7 +2147,8 @@ namespace yield
       ( 
         SocketAddress& peername,
         AIOConnectCallback& callback,
-        void* callback_context = NULL
+        void* callback_context = NULL,
+        Buffer* send_buffer = NULL // Steals this reference
       );
 
       virtual void
@@ -2348,13 +2193,18 @@ namespace yield
       class IOAcceptCB : public IOCB<AIOAcceptCallback>
       {
       protected:
-        IOAcceptCB( TCPSocket&, AIOAcceptCallback& callback, void* );
+        IOAcceptCB
+        ( 
+          AIOAcceptCallback& callback,
+          void* callback_context,
+          TCPSocket& listen_tcp_socket,
+          Buffer* recv_buffer
+        );
+
         virtual ~IOAcceptCB();
 
-        TCPSocket& get_listen_tcp_socket() const
-        {
-          return listen_tcp_socket;
-        }
+        TCPSocket& get_listen_tcp_socket() const { return listen_tcp_socket; }
+        Buffer* get_recv_buffer() const { return recv_buffer; }
 
         void onAcceptCompletion( TCPSocket& accepted_tcp_socket );
         void onAcceptError();
@@ -2362,6 +2212,7 @@ namespace yield
 
       private:
         TCPSocket& listen_tcp_socket;
+        Buffer* recv_buffer;
       };
 
     private:
@@ -2382,7 +2233,7 @@ namespace yield
     };
 
 
-    class Thread : public yidl::runtime::Object
+    class Thread : public Object
     {
     public:
       Thread();
@@ -2421,7 +2272,7 @@ namespace yield
     };
 
 
-    class TimerQueue : public yidl::runtime::Object
+    class TimerQueue : public Object
     {
 #ifndef _WIN32
     private:
@@ -2429,7 +2280,7 @@ namespace yield
 #endif
 
     public:
-      class Timer : public yidl::runtime::Object
+      class Timer : public Object
       {
       public:
         Timer( const Time& timeout );
@@ -2441,7 +2292,7 @@ namespace yield
         const Time& get_timeout() const { return timeout; }
         virtual void fire() = 0;
 
-        // yidl::runtime::Object
+        // Object
         Timer& inc_ref() { return Object::inc_ref( *this ); }
 
       private:
@@ -2577,7 +2428,7 @@ namespace yield
       ssize_t
       sendmsg
       (
-        const Buffers& buffers,
+        Buffers& buffers,
         const SocketAddress& peername,
         int flags = 0
       ) const
@@ -2635,7 +2486,7 @@ namespace yield
         const SocketAddress& peername
       ) const;
 
-      // yidl::runtime::Object
+      // Object
       UDPSocket& inc_ref() { return Object::inc_ref( *this ); }
 
     private:
@@ -2651,7 +2502,211 @@ namespace yield
     };
 
 
-    class Volume : public yidl::runtime::Object
+    class Directory : public Object
+    {
+    public:
+      class Entry : public Object
+      {
+        // has-a Stat instead of is-a Stat because
+        // (1) readdir on Unix returns a struct dirent,
+        //     which is only a subset of struct stat ->
+        //     the Stat member will be NULL
+        // (2) subclasses of Directory can attach their own
+        //     subclasses of Stat
+      public:
+        Entry( const Path& name );
+        Entry( const Path& name, Stat& stbuf ); // Steals reference to Stat
+        ~Entry();
+
+        const Path& get_name() const { return name; }
+        Stat* get_stat() const { return stbuf; }
+
+      private:
+        Path name;
+        Stat* stbuf;
+
+        // This class used to have ISDIR(), ISREG(), etc. 
+        // methods like Stat to take advantage of Linux's d_type
+        // struct dirent member for optimizing things like
+        // rmtree (which reads a directory and branches according
+        // to the Entry type). d_type is not in POSIX's struct dirent
+        // and more strict POSIX implementations (like Sun's), so
+        // it's been removed here.
+      };
+
+    public:
+      virtual ~Directory();
+
+      YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
+
+      // Object
+      Directory& inc_ref() { return Object::inc_ref( *this ); }
+
+    protected:
+      Directory();      
+
+    private:
+      friend class Volume;
+#ifdef _WIN32
+      Directory( void* hDirectory, const WIN32_FIND_DATA& first_find_data );
+#else
+      Directory( void* dirp );
+#endif
+
+    private:
+#ifdef _WIN32
+      void* hDirectory;
+      WIN32_FIND_DATA* first_find_data;
+#else
+      void* dirp;
+#endif
+    };
+
+
+    class Stat : public Object
+    {
+    public:
+      Stat(); // -> set each member individually, for setattr
+      Stat( const Stat& );
+
+#ifdef _WIN32
+      Stat
+      (
+        mode_t mode,
+        nlink_t nlink,
+        uint64_t size,
+        const Time& atime,
+        const Time& mtime,
+        const Time& ctime,
+        uint32_t attributes
+      );
+
+      Stat( const BY_HANDLE_FILE_INFORMATION& );
+
+      Stat( const WIN32_FIND_DATA& );
+
+      Stat
+      (
+        uint32_t nNumberOfLinks,
+        uint32_t nFileSizeHigh,
+        uint32_t nFileSizeLow,
+        const FILETIME* ftLastAccessTime,
+        const FILETIME* ftLastWriteTime,
+        const FILETIME* ftCreationTime,
+        uint32_t dwFileAttributes
+      );
+#else
+      // POSIX field order; Linux, FreeBSD, et al. all have different orders
+      Stat
+      (
+        dev_t dev,
+        ino_t ino,
+        mode_t mode,
+        nlink_t nlink,
+        uid_t uid,
+        gid_t gid,
+        dev_t rdev,
+        uint64_t size,
+        const Time& atime,
+        const Time& mtime,
+        const Time& ctime,
+        blksize_t blksize,
+        blkcnt_t blocks
+      );
+#endif
+      Stat( const struct stat& stbuf );
+      virtual ~Stat() { }
+
+#ifndef _WIN32
+      dev_t get_dev() const { return dev; }
+      ino_t get_ino() const { return ino; }
+#endif
+      mode_t get_mode() const { return mode; }
+      nlink_t get_nlink() const { return nlink; }
+#ifndef _WIN32
+      uid_t get_uid() const { return uid; }
+      gid_t get_gid() const { return gid; }
+      dev_t get_rdev() const { return rdev; }
+#endif
+      uint64_t get_size() const { return size; }
+      const Time& get_atime() const { return atime; }
+      const Time& get_mtime() const { return mtime; }
+      const Time& get_ctime() const { return ctime; }
+#ifndef _WIN32
+      blksize_t get_blksize() const { return blksize; }
+      blkcnt_t get_blocks() const { return blocks; }
+#else
+      uint32_t get_attributes() const;
+#endif
+
+      bool ISDIR() const { return ( get_mode() & S_IFDIR ) == S_IFDIR; }
+#ifndef _WIN32
+      bool ISLNK() const { return S_ISLNK( get_mode() ); }
+#endif
+      bool ISREG() const { return ( get_mode() & S_IFREG ) == S_IFREG; }
+
+      virtual Stat& operator=( const Stat& );
+      virtual bool operator==( const Stat& ) const;
+      operator struct stat() const;
+#ifdef _WIN32
+      operator BY_HANDLE_FILE_INFORMATION() const;
+      operator WIN32_FIND_DATA() const;
+#endif
+
+      // to_set = bitmask of Volume::SETATTR_* constants
+      virtual void set( const Stat&, uint32_t to_set );
+#ifndef _WIN32
+      virtual void set_dev( dev_t dev );
+      virtual void set_ino( ino_t ino );
+#endif
+      virtual void set_mode( mode_t mode );
+      virtual void set_nlink( nlink_t nlink );
+#ifndef _WIN32
+      virtual void set_uid( uid_t uid );
+      virtual void set_gid( gid_t gid );
+      virtual void set_rdev( dev_t );
+#endif
+      virtual void set_size( uint64_t size );
+      virtual void set_atime( const Time& atime );
+      virtual void set_mtime( const Time& mtime );
+      virtual void set_ctime( const Time& ctime );
+#ifndef _WIN32
+      virtual void set_blksize( blksize_t blksize );
+      virtual void set_blocks( blkcnt_t blocks );
+#else
+      virtual void set_attributes( uint32_t attributes );
+#endif
+
+      // Object
+      Stat& inc_ref() { return Object::inc_ref( *this ); }
+
+    private:
+      // POSIX field order; Linux, FreeBSD, et al. all have different orders
+#ifndef _WIN32
+      dev_t dev;
+      ino_t ino;
+#endif
+      mode_t mode;
+      nlink_t nlink;
+#ifndef _WIN32
+      uid_t uid;
+      gid_t gid;
+      dev_t rdev;
+#endif
+      uint64_t size;
+      Time atime;
+      Time mtime;
+      Time ctime;
+#ifndef _WIN32
+      blksize_t blksize;
+      blkcnt_t blocks;
+#else
+      uint32_t attributes;
+#endif
+    };
+
+
+    class Volume : public Object
     {
     public:
       const static mode_t FILE_MODE_DEFAULT = File::MODE_DEFAULT;
@@ -2736,7 +2791,7 @@ namespace yield
         const Time& ctime
       );
 
-      // yidl::runtime::Object
+      // Object
       Volume& inc_ref() { return Object::inc_ref( *this ); }
     };
 
@@ -2817,7 +2872,7 @@ namespace yield
         unsigned long dwCompletionKey = 0
       );
 
-      // yidl::runtime::RTTIObject
+      // RTTIObject
       YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( Win32AIOQueue, 3 );
 
     private:      

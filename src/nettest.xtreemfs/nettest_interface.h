@@ -1,5 +1,5 @@
-#ifndef _2003416901_H_
-#define _2003416901_H_
+#ifndef _1130839580_H_
+#define _1130839580_H_
 
 
 #include "yield/concurrency.h"
@@ -76,7 +76,7 @@ namespace org
       #endif
 
 
-      class NettestInterfaceEvents
+      class NettestInterfaceMessages
       {
       public:
       // Request/response pair definitions for the operations in NettestInterface
@@ -163,12 +163,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            if ( data != NULL ) marshaller.write( "data", 0, *data );
+            if ( data != NULL ) marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "data", 0 ), *data );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            if ( data != NULL ) unmarshaller.read( "data", 0, *data );
+            if ( data != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ), *data );
           }
 
         protected:
@@ -235,14 +235,14 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "size", 0, size );
-            if ( data != NULL ) marshaller.write( "data", 0, *data );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "size", 0 ), size );
+            if ( data != NULL ) marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "data", 0 ), *data );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            size = unmarshaller.read_uint32( "size", 0 );
-            if ( data != NULL ) unmarshaller.read( "data", 0, *data );
+            size = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "size", 0 ) );
+            if ( data != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ), *data );
           }
 
         protected:
@@ -278,12 +278,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            if ( data != NULL ) marshaller.write( "data", 0, *data );
+            if ( data != NULL ) marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "data", 0 ), *data );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            if ( data != NULL ) unmarshaller.read( "data", 0, *data );
+            if ( data != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ), *data );
           }
 
         protected:
@@ -292,12 +292,12 @@ namespace org
       };
 
 
-      class NettestInterfaceEventFactory
-        : public ::yield::concurrency::EventFactory,
-          private NettestInterfaceEvents
+      class NettestInterfaceMessageFactory
+        : public ::yield::concurrency::MessageFactory,
+          private NettestInterfaceMessages
       {
       public:
-        // yield::concurrency::EventFactory
+        // yield::concurrency::MessageFactory
         virtual ::yield::concurrency::Request* createRequest( uint32_t type_id )
         {
           switch ( type_id )
@@ -336,73 +336,45 @@ namespace org
           else return NULL;
         }
 
-        virtual ::yield::concurrency::Request*
-        isRequest
-        (
-          ::yidl::runtime::MarshallableObject& marshallable_object
-        ) const
-        {
-          switch ( marshallable_object.get_type_id() )
-          {
-            case 2010031317: return static_cast<nopRequest*>( &marshallable_object );
-            case 2010031318: return static_cast<send_bufferRequest*>( &marshallable_object );
-            case 2010031319: return static_cast<recv_bufferRequest*>( &marshallable_object );
-            default: return NULL;
-          }
-        }
-
-        virtual ::yield::concurrency::Response*
-        isResponse
-        (
-          ::yidl::runtime::MarshallableObject& marshallable_object
-        ) const
-        {
-          switch ( marshallable_object.get_type_id() )
-          {
-                case 2010031317: return static_cast<nopResponse*>( &marshallable_object );
-            case 2010031318: return static_cast<send_bufferResponse*>( &marshallable_object );
-            case 2010031319: return static_cast<recv_bufferResponse*>( &marshallable_object );
-            default: return NULL;
-          }
-        }
-
       };
 
 
-      class NettestInterfaceEventHandler
-        : public ::yield::concurrency::EventHandler,
-          protected NettestInterfaceEvents
+      class NettestInterfaceRequestHandler
+        : public ::yield::concurrency::RequestHandler,
+          protected NettestInterfaceMessages
       {
       public:
-        NettestInterfaceEventHandler()  // Subclasses must implement
+        NettestInterfaceRequestHandler()  // Subclasses must implement
           : _interface( NULL ) // all relevant handle*Request methods
         { }
 
         // Steals interface_ to allow for *new
-        NettestInterfaceEventHandler( NettestInterface& _interface )
+        NettestInterfaceRequestHandler( NettestInterface& _interface )
           : _interface( &_interface )
         { }
 
-        virtual ~NettestInterfaceEventHandler()
+        virtual ~NettestInterfaceRequestHandler()
         {
           delete _interface;
         }
 
         // yield::concurrency::EventHandler
-        virtual const char* get_event_handler_name() const
+        virtual const char* get_name() const
         {
           return "NettestInterface";
         }
 
-        virtual void handleEvent( ::yield::concurrency::Event& event )
+        // yield::concurrency::RequestHandler
+
+        virtual void handleRequest( ::yield::concurrency::Request& request )
         {
-          // Switch on the event types that this interface handles, unwrap the corresponding requests and delegate to _interface
-          switch ( event.get_type_id() )
+          // Switch on the request types that this interface handles, unwrap the corresponding requests and delegate to _interface
+          switch ( request.get_type_id() )
           {
-            case 2010031317UL: handlenopRequest( static_cast<nopRequest&>( event ) ); return;
-            case 2010031318UL: handlesend_bufferRequest( static_cast<send_bufferRequest&>( event ) ); return;
-            case 2010031319UL: handlerecv_bufferRequest( static_cast<recv_bufferRequest&>( event ) ); return;
-            default: ::yield::concurrency::Event::dec_ref( event ); return;
+            case 2010031317UL: handlenopRequest( static_cast<nopRequest&>( request ) ); return;
+            case 2010031318UL: handlesend_bufferRequest( static_cast<send_bufferRequest&>( request ) ); return;
+            case 2010031319UL: handlerecv_bufferRequest( static_cast<recv_bufferRequest&>( request ) ); return;
+            default: ::yield::concurrency::Request::dec_ref( request ); return;
           }
         }
 
@@ -496,14 +468,14 @@ namespace org
       virtual void handlerecv_bufferRequest( recv_bufferRequest& __request );
 
 
-      class NettestInterfaceEventSender : public NettestInterface, private NettestInterfaceEvents
+      class NettestInterfaceMessageSender : public NettestInterface, private NettestInterfaceMessages
       {
       public:
-        NettestInterfaceEventSender() // Used when the event_target is a subclass
+        NettestInterfaceMessageSender() // Used when the event_target is a subclass
           : __event_target( NULL )
         { }
 
-        NettestInterfaceEventSender( ::yield::concurrency::EventTarget& event_target )
+        NettestInterfaceMessageSender( ::yield::concurrency::EventTarget& event_target )
           : __event_target( &event_target )
         { }
 
@@ -555,7 +527,7 @@ namespace org
 
       private:
         // __event_target is not a counted reference, since that would create
-        // a reference cycle when __event_target is a subclass of EventSender
+        // a reference cycle when __event_target is a subclass of NettestInterfaceMessageSender
         ::yield::concurrency::EventTarget* __event_target;
       };
     };

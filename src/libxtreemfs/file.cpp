@@ -32,7 +32,7 @@
 #include "xtreemfs/volume.h"
 using org::xtreemfs::interfaces::FileCredentials;
 using org::xtreemfs::interfaces::ObjectData;
-using org::xtreemfs::interfaces::OSDInterfaceEvents;
+using org::xtreemfs::interfaces::OSDInterfaceMessages;
 using org::xtreemfs::interfaces::OSDWriteResponse;
 using org::xtreemfs::interfaces::ReplicaSet;
 using org::xtreemfs::interfaces::XCAP_EXPIRE_TIMEOUT_S_MIN;
@@ -69,11 +69,8 @@ class File::Buffer : public yidl::runtime::FixedBuffer
 {
 public:
   Buffer( const void* buf, size_t len )
-    : FixedBuffer( len )
-  {
-    iov.iov_base = const_cast<void*>( buf );
-    iov.iov_len = len;
-  }
+    : FixedBuffer( const_cast<void*>( buf ), len, len )
+  { }
 
   // yidl::runtime::RTTIObject
   YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( File::Buffer, 0 );
@@ -263,15 +260,15 @@ bool File::listxattr( vector<string>& out_names )
 
 ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 {
-  vector<OSDInterfaceEvents::readResponse*> read_responses;
+  vector<OSDInterfaceMessages::readResponse*> read_responses;
   ssize_t ret = 0;
 
   try
   {
 #ifdef _DEBUG
-    if ( parent_volume.has_flag( Volume::FLAG_TRACE_FILE_IO ) )
+    if ( parent_volume.get_trace_log() != NULL )
     {
-      parent_volume.get_log()->get_stream( Log::LOG_INFO ) <<
+      parent_volume.get_trace_log()->get_stream( Log::LOG_INFO ) <<
         "xtreemfs::SharedFile::read( rbuf, size=" << size <<
         ", offset=" << offset <<
         " )";
@@ -285,7 +282,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     uint32_t stripe_size = xlocs.get_replicas()[0].get_striping_policy().
                              get_stripe_size() * 1024;
 
-    ResponseQueue<OSDInterfaceEvents::readResponse> read_response_queue;
+    ResponseQueue<OSDInterfaceMessages::readResponse> read_response_queue;
     size_t expected_read_response_count = 0;
 
     while ( rbuf_p < rbuf_end )
@@ -297,9 +294,9 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         object_size = stripe_size - object_offset;
 
 #ifdef _DEBUG
-      if ( parent_volume.has_flag( Volume::FLAG_TRACE_FILE_IO ) )
+      if ( parent_volume.get_trace_log() != NULL )
       {
-        parent_volume.get_log()->get_stream( Log::LOG_INFO ) <<
+        parent_volume.get_trace_log()->get_stream( Log::LOG_INFO ) <<
           "xtreemfs::SharedFile: issuing read # " <<
           ( expected_read_response_count + 1 ) <<
           " for " << object_size <<
@@ -320,8 +317,8 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
             xlocs
           );
 
-      OSDInterfaceEvents::readRequest* read_request =
-        new OSDInterfaceEvents::readRequest
+      OSDInterfaceMessages::readRequest* read_request =
+        new OSDInterfaceMessages::readRequest
         (
           FileCredentials( xcap, xlocs ),
           xcap.get_file_id(),
@@ -341,9 +338,9 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     }
 
 #ifdef _DEBUG
-    if ( parent_volume.has_flag( Volume::FLAG_TRACE_FILE_IO ) )
+    if ( parent_volume.get_trace_log() != NULL )
     {
-      parent_volume.get_log()->get_stream( Log::LOG_INFO ) <<
+      parent_volume.get_trace_log()->get_stream( Log::LOG_INFO ) <<
         "xtreemfs::SharedFile: issued " << expected_read_response_count <<
         " parallel reads.";
     }
@@ -356,7 +353,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       read_response_i++
     )
     {
-      OSDInterfaceEvents::readResponse& read_response = read_response_queue.dequeue();
+      OSDInterfaceMessages::readResponse& read_response = read_response_queue.dequeue();
       // Object::dec_ref( read_response );
       read_responses.push_back( &read_response );
 
@@ -365,9 +362,9 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       uint32_t zero_padding = read_response.get_object_data().get_zero_padding();
 
 #ifdef _DEBUG
-      if ( parent_volume.has_flag( Volume::FLAG_TRACE_FILE_IO ) )
+      if ( parent_volume.get_trace_log() != NULL )
       {
-        parent_volume.get_log()->get_stream( Log::LOG_INFO ) <<
+        parent_volume.get_trace_log()->get_stream( Log::LOG_INFO ) <<
           "xtreemfs::SharedFile: read " << data->size() <<
           " bytes from file " << xcap.get_file_id() <<
           " with " << zero_padding << " bytes of zero padding" <<
@@ -402,9 +399,9 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     if ( static_cast<size_t>( ret ) > size )
       DebugBreak();
 
-    if ( parent_volume.has_flag( Volume::FLAG_TRACE_FILE_IO ) )
+    if ( parent_volume.get_trace_log() != NULL )
     {
-      parent_volume.get_log()->get_stream( Log::LOG_INFO ) <<
+      parent_volume.get_trace_log()->get_stream( Log::LOG_INFO ) <<
         "xtreemfs::SharedFile: read " << ret <<
         " bytes from file " << xcap.get_file_id() <<
         " in total, returning from read().";
@@ -424,12 +421,12 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 
   for
   (
-    vector<OSDInterfaceEvents::readResponse*>::iterator 
+    vector<OSDInterfaceMessages::readResponse*>::iterator 
       read_response_i = read_responses.begin();
     read_response_i != read_responses.end();
     read_response_i++
   )
-    OSDInterfaceEvents::readResponse::dec_ref( **read_response_i );
+    OSDInterfaceMessages::readResponse::dec_ref( **read_response_i );
 
   return ret;
 }
@@ -531,7 +528,7 @@ bool File::truncate( uint64_t new_size )
   parent_volume.get_mrc_proxy().ftruncate( xcap, truncate_xcap );
   xcap = truncate_xcap;
   
-  OSDInterfaceEvents::truncateRequest 
+  OSDInterfaceMessages::truncateRequest 
     truncate_request
     ( 
       FileCredentials( xcap, xlocs ), 
@@ -539,7 +536,7 @@ bool File::truncate( uint64_t new_size )
       new_size 
     );
 
-  ResponseQueue<OSDInterfaceEvents::truncateResponse> truncate_response_queue;
+  ResponseQueue<OSDInterfaceMessages::truncateResponse> truncate_response_queue;
   truncate_request.set_response_target( &truncate_response_queue );
 
   for
@@ -566,7 +563,7 @@ bool File::truncate( uint64_t new_size )
     replica_i++
   )
   {
-    OSDInterfaceEvents::truncateResponse& truncate_response 
+    OSDInterfaceMessages::truncateResponse& truncate_response 
       = truncate_response_queue.dequeue();
 
     if 
@@ -575,7 +572,7 @@ bool File::truncate( uint64_t new_size )
     )
       latest_osd_write_response = truncate_response.get_osd_write_response();
 
-    OSDInterfaceEvents::truncateResponse::dec_ref( truncate_response );
+    OSDInterfaceMessages::truncateResponse::dec_ref( truncate_response );
   }
 
   if ( !latest_osd_write_response.get_new_file_size().empty() )
@@ -628,12 +625,12 @@ bool File::unlk( uint64_t offset, uint64_t length )
 ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 {
   ssize_t ret;
-  vector<OSDInterfaceEvents::writeResponse*> write_responses;
+  vector<OSDInterfaceMessages::writeResponse*> write_responses;
 
 #ifdef _DEBUG
-  if ( parent_volume.has_flag( Volume::FLAG_TRACE_FILE_IO ) )
+  if ( parent_volume.get_trace_log() != NULL )
   {
-    parent_volume.get_log()->get_stream( Log::LOG_INFO ) <<
+    parent_volume.get_trace_log()->get_stream( Log::LOG_INFO ) <<
       "xtreemfs::SharedFile::write( wbuf, size=" << size <<
       ", offset=" << offset << " )";
   }
@@ -648,7 +645,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
                              get_stripe_size() * 1024;
 
     size_t expected_write_response_count = 0;
-    ResponseQueue<OSDInterfaceEvents::writeResponse> write_response_queue;
+    ResponseQueue<OSDInterfaceMessages::writeResponse> write_response_queue;
 
     while ( wbuf_p < wbuf_end )
     {
@@ -674,8 +671,8 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
         new Buffer( wbuf_p, static_cast<uint32_t>( object_size ) )
       );
 
-      OSDInterfaceEvents::writeRequest* write_request =
-        new OSDInterfaceEvents::writeRequest
+      OSDInterfaceMessages::writeRequest* write_request =
+        new OSDInterfaceMessages::writeRequest
         (
           FileCredentials( xcap, xlocs ),
           xcap.get_file_id(),
@@ -689,9 +686,9 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
       write_request->set_response_target( &write_response_queue );
 
 #ifdef _DEBUG
-      if ( parent_volume.has_flag( Volume::FLAG_TRACE_FILE_IO ) )
+      if ( parent_volume.get_trace_log() != NULL )
       {
-        parent_volume.get_log()->get_stream( Log::LOG_INFO ) <<
+        parent_volume.get_trace_log()->get_stream( Log::LOG_INFO ) <<
           "xtreemfs::SharedFile: issuing write # " <<
           ( expected_write_response_count + 1 ) <<
           " of " << object_size <<
@@ -720,13 +717,13 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
       write_response_i++
     )
     {
-      OSDInterfaceEvents::writeResponse& write_response =
+      OSDInterfaceMessages::writeResponse& write_response =
         write_response_queue.dequeue();
 
 #ifdef _DEBUG
-      if ( parent_volume.has_flag( Volume::FLAG_TRACE_FILE_IO ) )
+      if ( parent_volume.get_trace_log() != NULL )
       {
-        parent_volume.get_log()->get_stream( Log::LOG_INFO ) <<
+        parent_volume.get_trace_log()->get_stream( Log::LOG_INFO ) <<
           "xtreemfs::SharedFile::write received response # " <<
           ( write_response_i + 1 ) << " of " <<
           expected_write_response_count << ".";
@@ -739,9 +736,9 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
       )
       {
 #ifdef _DEBUG
-        if ( parent_volume.has_flag( Volume::FLAG_TRACE_FILE_IO ) )
+        if ( parent_volume.get_trace_log() != NULL )
         {
-          parent_volume.get_log()->get_stream( Log::LOG_INFO ) <<
+          parent_volume.get_trace_log()->get_stream( Log::LOG_INFO ) <<
             "xtreemfs::SharedFile: OSD write response is newer than latest known.";
         }
 #endif
@@ -779,12 +776,12 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 
   for
   (
-    vector<OSDInterfaceEvents::writeResponse*>::iterator
+    vector<OSDInterfaceMessages::writeResponse*>::iterator
       write_response_i = write_responses.begin();
     write_response_i != write_responses.end();
     write_response_i++
    )
-     OSDInterfaceEvents::writeResponse::dec_ref( **write_response_i );
+     OSDInterfaceMessages::writeResponse::dec_ref( **write_response_i );
 
   return ret;
 }

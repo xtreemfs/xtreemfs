@@ -28,7 +28,7 @@
 
 
 #include "stat_cache.h"
-using org::xtreemfs::interfaces::MRCInterfaceEvents;
+using org::xtreemfs::interfaces::MRCInterfaceMessages;
 using org::xtreemfs::interfaces::StatSet;
 using namespace xtreemfs;
 using yield::platform::Volume;
@@ -247,7 +247,7 @@ Stat* StatCache::getattr( const Path& path )
         if ( stbuf != NULL )
           return stbuf;
         else // Placeholder for a missing file
-          throw MRCInterfaceEvents::MRCException( 2, "file not found", "" );
+          throw MRCInterfaceMessages::MRCException( 2, "file not found", "" );
       }
       // else the entry has expired
     }

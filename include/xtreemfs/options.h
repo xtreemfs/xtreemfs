@@ -49,13 +49,13 @@ namespace xtreemfs
     Options( const Options& other );
     virtual ~Options();
     
-    Log* get_log() const { return log; }
-    const Path& get_log_file_path() const { return log_file_path; }
-    const Log::Level& get_log_level() const { return log_level; }
+    Log* get_error_log() const { return error_log; }
+    const Path& get_error_log_file_path() const { return error_log_file_path; }
+    const Log::Level& get_error_log_level() const { return error_log_level; }
     const vector<string>& get_positional_arguments() const;
-    uint32_t get_proxy_flags() const { return proxy_flags; }
     SSLContext* get_ssl_context() const { return ssl_context; }
     const Time& get_timeout() const { return timeout; }
+    Log* get_trace_log() const { return trace_log; }
     URI* get_uri() const { return uri; }
 
     // Parse global options only
@@ -79,26 +79,26 @@ namespace xtreemfs
   private:
     Options
     (
-      Log* log,
-      const Path& log_file_path,
-      const Log::Level& log_level,
+      Log* error_log,
+      const Path& error_log_file_path,
+      const Log::Level& error_log_level,
       const vector<OptionParser::ParsedOption>& parsed_options,
       const vector<string>& positional_arguments,
-      uint32_t proxy_flags,
       SSLContext* ssl_context,
       const Time& timeout,
+      Log* trace_log,
       URI* uri
     );
 
     static void add_global_options( OptionParser& option_parser );
 
   private:
-    Log* log;
-    Path log_file_path;
-    Log::Level log_level;
-    uint32_t proxy_flags;
+    Log* error_log;
+    Path error_log_file_path;
+    Log::Level error_log_level;
     Time timeout;
     SSLContext* ssl_context;
+    Log* trace_log;
     URI* uri;
     vector<string> positional_arguments;
   };

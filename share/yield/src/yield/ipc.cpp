@@ -1,5 +1,3 @@
-// Revision: 2099
-
 #include "yield/ipc.h"
 using namespace yield::ipc;
 
@@ -8806,40 +8804,70 @@ void yajl_state_set(yajl_handle h, yajl_state state)
 
 
 // http_client.cpp
+using yidl::runtime::HeapBuffer;
+using yidl::runtime::BufferedMarshaller;
+using yidl::runtime::StackBuffer;
+using yield::concurrency::ResponseQueue;
+using yield::platform::File;
+using yield::platform::Stat;
+using yield::platform::Volume;
+
+
 HTTPClient::HTTPClient
 (
   uint16_t concurrency_level,
-  uint32_t flags,
+  Log* error_log,
   IOQueue& io_queue,
-  Log* log,
   const Time& operation_timeout,
   SocketAddress& peername,
   uint16_t reconnect_tries_max,
-  SocketFactory& socket_factory
+  TCPSocketFactory& tcp_socket_factory,
+  Log* trace_log
 )
-  : SocketClient<HTTPRequest, HTTPResponse>
+  : SocketClient
     (
-      concurrency_level,
-      flags,
+      error_log,
       io_queue,
-      log,
       operation_timeout,
       peername,
       reconnect_tries_max,
-      socket_factory
+      trace_log
     )
-{ }
+{
+  uint16_t connection_i = 0;
+  for ( ; connection_i < concurrency_level; connection_i++ )
+  {
+    TCPSocket* tcp_socket = tcp_socket_factory.createTCPSocket();
+    if ( tcp_socket != NULL )
+    {
+      if ( tcp_socket->associate( io_queue ) )
+        connections.enqueue( new Connection( *this, *tcp_socket ) );
+      else
+      {
+        TCPSocket::dec_ref( *tcp_socket );
+        break;
+      }
+    }
+    else
+      break;
+  }
+
+#ifdef _DEBUG
+  if ( connection_i == 0 ) DebugBreak();
+#endif
+  TCPSocketFactory::dec_ref( tcp_socket_factory );
+}
 
 HTTPClient&
 HTTPClient::create
 (
   const URI& absolute_uri,
   uint16_t concurrency_level,
-  uint32_t flags,
-  Log* log,
+  Log* error_log,
   const Time& operation_timeout,
   uint16_t reconnect_tries_max,
-  SSLContext* ssl_context
+  SSLContext* ssl_context,
+  Log* trace_log
 )
 {
   URI checked_absolute_uri( absolute_uri );
@@ -8854,89 +8882,87 @@ HTTPClient::create
   SocketAddress& peername = createSocketAddress( checked_absolute_uri );
 
   IOQueue* io_queue;
-  SocketFactory* socket_factory;
+  TCPSocketFactory* tcp_socket_factory;
 #ifdef YIELD_IPC_HAVE_OPENSSL
   if ( absolute_uri.get_scheme() == "https" )
   {
     io_queue = &yield::platform::NBIOQueue::create();
     if ( ssl_context == NULL )
       ssl_context = &SSLContext::create( SSLv23_client_method() );
-    socket_factory = new SSLSocketFactory( *ssl_context );
+    tcp_socket_factory = new SSLSocketFactory( *ssl_context );
     SSLContext::dec_ref( *ssl_context );
-
   }
   else
 #endif
   {
     io_queue = &createIOQueue();
-    if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-      socket_factory = new TracingTCPSocketFactory( *log );
+    if ( trace_log != NULL )
+      tcp_socket_factory = new TracingTCPSocketFactory( *trace_log );
     else
-      socket_factory = new TCPSocketFactory;
+      tcp_socket_factory = new TCPSocketFactory;
   }
 
   return *new HTTPClient
               (
                 concurrency_level,
-                flags,
+                error_log,
                 *io_queue,
-                log,
                 operation_timeout,
                 peername,
                 reconnect_tries_max,
-                *socket_factory
+                *tcp_socket_factory,
+                trace_log
               );
 }
 
-HTTPResponse& HTTPClient::createResponse( HTTPRequest& )
+HTTPResponse& HTTPClient::GET( const URI& absolute_uri )
 {
-  return *new HTTPResponse;
+  return sendHTTPRequest( "GET", absolute_uri, NULL );
 }
 
-HTTPResponse& HTTPClient::GET( const URI& absolute_uri, Log* log )
+void HTTPClient::handleRequest( Request& request )
 {
-  return sendHTTPRequest( "GET", absolute_uri, NULL, log );
+  if ( request.get_type_id() == HTTPRequest::TYPE_ID )
+  {
+    HTTPRequest& http_request = static_cast<HTTPRequest&>( request );
+    Connection* connection = connections.dequeue();
+    connection->send( http_request );
+  }
+  else
+    DebugBreak();
+}
+
+HTTPResponse& HTTPClient::PUT( const URI& absolute_uri, Buffer& body )
+{
+  return sendHTTPRequest( "PUT", absolute_uri, &body );
 }
 
 HTTPResponse&
 HTTPClient::PUT
 (
   const URI& absolute_uri,
-  Buffer& body,
-  Log* log
+  const Path& body_file_path
 )
 {
-  return sendHTTPRequest( "PUT", absolute_uri, &body, log );
-}
-
-HTTPResponse&
-HTTPClient::PUT
-(
-  const URI& absolute_uri,
-  const yield::platform::Path& body_file_path,
-  Log* log
-)
-{
-  yield::platform::File* file
-    = yield::platform::Volume().open( body_file_path );
+  File* file = Volume().open( body_file_path );
 
   if ( file != NULL )
   {
-    yield::platform::Stat* stbuf = file->stat();
+    Stat* stbuf = file->stat();
     if ( stbuf != NULL )
     {
       size_t file_size = static_cast<size_t>( stbuf->get_size() );
-      yield::platform::Stat::dec_ref( *stbuf );
-      Buffer* body = new yidl::runtime::HeapBuffer( file_size );
+      Stat::dec_ref( *stbuf );
+      Buffer* body = new HeapBuffer( file_size );
       file->read( *body, file_size );
-      yield::platform::File::dec_ref( *file );
-      return sendHTTPRequest( "PUT", absolute_uri, body, log );
+      File::dec_ref( *file );
+      return sendHTTPRequest( "PUT", absolute_uri, body );
     }
     else
-      throw yield::platform::Exception();
+      throw Exception();
   }
   else
-    throw yield::platform::Exception();
+    throw Exception();
 }
 
 HTTPResponse&
@@ -8944,18 +8970,10 @@ HTTPClient::sendHTTPRequest
 (
   const char* method,
   const URI& absolute_uri,
-  Buffer* body,
-  Log* log
+  Buffer* body
 )
 {
-  HTTPClient& http_client
-    = HTTPClient::create
-    (
-      absolute_uri,
-      HTTPClient::CONCURRENCY_LEVEL_DEFAULT,
-      0,
-      log
-    );
+  HTTPClient& http_client = HTTPClient::create( absolute_uri );
 
   HTTPRequest* http_request;
   if ( body != NULL )
@@ -8963,7 +8981,7 @@ HTTPClient::sendHTTPRequest
   else
     http_request = new HTTPRequest( method, absolute_uri );
 
-  yield::concurrency::ResponseQueue<HTTPResponse> http_response_queue;
+  ResponseQueue<HTTPResponse> http_response_queue;
   http_request->set_response_target( &http_response_queue );
 
   http_client.send( *http_request );
@@ -8974,7 +8992,7 @@ HTTPClient::sendHTTPRequest
     HTTPClient::dec_ref( http_client );
     return http_response;
   }
-  catch ( yield::platform::Exception& )
+  catch ( Exception& )
   {
     HTTPClient::dec_ref( http_client );
     throw;
@@ -8982,206 +9000,1894 @@ HTTPClient::sendHTTPRequest
 }
 
 
-// http_message.cpp
-#line 1 "c:\\projects\\yield\\src\\yield\\ipc\\http_message.rl"
-// Copyright (c) 2010 Minor Gordon
-// With original implementations and ideas contributed by Felix Hupfeld
-// All rights reserved
-//
-// This source file is part of the Yield project.
-// It is licensed under the New BSD license:
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-// * Neither the name of the Yield project nor the
-// names of its contributors may be used to endorse or promote products
-// derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-
-
-HTTPMessage::HTTPMessage( Buffer* body )
- : body( body )
+HTTPClient::Connection::Connection
+(
+  HTTPClient& http_client,
+  TCPSocket& tcp_socket
+)
+  : SocketClient::Connection( tcp_socket, http_client )
 { }
 
-/*
-HTTPMessage::HTTPMessage( uint8_t reserve_iovecs_count, Buffer* body )
-  : RFC822Headers( reserve_iovecs_count ),
-    body( body )
+void HTTPClient::Connection::handleRequest( Request& request )
 {
-  http_version = 1;
-}
-*/
-
-ssize_t HTTPMessage::deserialize( Buffer& buffer )
-{
-  return 0;
-}
-
-Buffers& HTTPMessage::serialize()
-{
-/*
-  if ( body != NULL )
+  if ( request.get_type_id() == HTTPRequest::TYPE_ID )
   {
-    if ( get_header( "Content-Length", NULL ) == NULL )
+    HTTPRequest& http_request = static_cast<HTTPRequest&>( request );
+
+    BufferedMarshaller buffered_marshaller;
+    http_request.marshal( buffered_marshaller );
+
+    if ( get_socket().is_connected() )
     {
-      char content_length_str[32];
-#ifdef _WIN32
-      sprintf_s( content_length_str, 32, "%u", body->size() );
-#else
-      snprintf( content_length_str, 32, "%zu", body->size() );
-#endif
-
-      set_header( "Content-Length", content_length_str );
+      Buffers& send_buffers = buffered_marshaller.get_buffers().inc_ref();
+      get_socket().aio_sendmsg( send_buffers, 0, *this, &http_request );
     }
-
-    set_next_iovec( "\r\n", 2 );
-
-    set_next_iovec
-    (
-      static_cast<const char*>( static_cast<void*>( *body ) ),
-      body->size()
-    );
+    else
+    {
+      Buffer& send_buffer = buffered_marshaller.get_buffers().join();
+      get_socket().aio_connect
+      (
+        get_peername(),
+        *this,
+        &http_request,
+        &send_buffer
+      );
+    }
   }
   else
-    set_next_iovec( "\r\n", 2 );
-
-  return RFC822Headers::serialize();
-*/
-  return *new Buffers( NULL, 0 );
+    Request::dec_ref( request );
 }
 
-void HTTPMessage::set_http_version( uint8_t http_version )
-{
-  this->http_version = http_version;
-}
-
-
-// http_request.cpp
-#line 1 "c:\\projects\\yield\\src\\yield\\ipc\\http_request.rl"
-// Copyright (c) 2010 Minor Gordon
-// With original implementations and ideas contributed by Felix Hupfeld
-// All rights reserved
-//
-// This source file is part of the Yield project.
-// It is licensed under the New BSD license:
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-// * Neither the name of the Yield project nor the
-// names of its contributors may be used to endorse or promote products
-// derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-
-
-HTTPRequest::HTTPRequest()
-{ }
-
-HTTPRequest::HTTPRequest
+void HTTPClient::Connection::onConnectCompletion
 (
-  const char* method,
-  const char* relative_uri,
-  const char* host
+  size_t bytes_written,
+  void* context
 )
-//  : HTTPMessage( 4, NULL )
 {
-  init( method, relative_uri, host );
-}
-
-HTTPRequest::HTTPRequest
-(
-  const char* method,
-  const char* relative_uri,
-  const char* host,
-  Buffer& body
-)
-//  : HTTPMessage( 4, &body )
-{
-  init( method, relative_uri, host );
-}
-
-HTTPRequest::HTTPRequest
-(
-  const char* method,
-  const URI& absolute_uri
-)
-//  : HTTPMessage( 4, NULL )
-{
-  init
-  (
-    method,
-    absolute_uri.get_resource().c_str(),
-    absolute_uri.get_host().c_str()
-  );
-}
-
-HTTPRequest::HTTPRequest
-(
-  const char* method,
-  const URI& absolute_uri,
-  Buffer& body
-)
-//  : HTTPMessage( 4, &body )
-{
-  init
-  (
-    method,
-    absolute_uri.get_resource().c_str(),
-    absolute_uri.get_host().c_str()
-  );
+  SocketClient::Connection::onConnectCompletion( bytes_written, context );
+  get_socket().aio_recv( *new StackBuffer<1024>, 0, *this, NULL );
+  onWriteCompletion( bytes_written, context );
 }
 
 void
-HTTPRequest::init
+HTTPClient::Connection::onConnectError
 (
-  const char* method,
-  const char* relative_uri,
-  const char* host
+  uint32_t error_code,
+  void* context
 )
 {
+  SocketClient::Connection::onConnectError( error_code, context );
+}
 
+void HTTPClient::Connection::onReadCompletion( Buffer& buffer, void* context )
+{
+  SocketClient::Connection::onReadCompletion( buffer, context );
+
+  vector<HTTPResponse*> http_responses;
+  HTTPResponseParser::ParseStatus parse_status
+    = HTTPResponseParser::parse( buffer, http_responses );
+
+  if ( !http_responses.empty() )
+  {
+    for
+    (
+      vector<HTTPResponse*>::iterator http_response_i = http_responses.begin();
+      http_response_i != http_responses.end();
+      ++http_response_i
+    )
+    {
+      HTTPRequest* http_request = outstanding_http_requests.front();
+      outstanding_http_requests.pop_front();
+      http_request->respond( **http_response_i );
+    }
+  }
+
+  if ( parse_status != HTTPResponseParser::PARSE_ERROR )
+    get_socket().aio_recv( *new StackBuffer<1024>, 0, *this, NULL );
+  else
+    onReadError( 0, NULL );
+}
+
+void HTTPClient::Connection::onReadError( uint32_t error_code, void* context )
+{
+  SocketClient::Connection::onReadError( error_code, context );
+
+  while ( !outstanding_http_requests.empty() )
+  {
+    HTTPRequest::dec_ref( *outstanding_http_requests.back() );
+    outstanding_http_requests.pop_back();
+  }
+
+  DebugBreak(); // TODO: reconnect
+}
+
+void
+HTTPClient::Connection::onWriteCompletion
+(
+  size_t bytes_written,
+  void* context
+)
+{
+  SocketClient::Connection::onWriteCompletion( bytes_written, context );
+
+  HTTPRequest* http_request = static_cast<HTTPRequest*>( context );
+  outstanding_http_requests.push_back( http_request );
+
+  get_socket().aio_recv( *new StackBuffer<1024>, 0, *this, NULL );
+}
+
+void HTTPClient::Connection::onWriteError( uint32_t error_code, void* context )
+{
+  SocketClient::Connection::onWriteError( error_code, context );
+
+  HTTPRequest* http_request = static_cast<HTTPRequest*>( context );
+  http_request->respond( *new ExceptionResponse( error_code ) );
+  HTTPRequest::dec_ref( *http_request );
+
+  while ( !outstanding_http_requests.empty() )
+  {
+    HTTPRequest::dec_ref( *outstanding_http_requests.back() );
+    outstanding_http_requests.pop_back();
+  }
+
+  DebugBreak(); // TODO: reconnect
+}
+
+
+// http_message.cpp
+using yidl::runtime::StringBuffer;
+
+#ifdef _WIN32
+#include <windows.h> // For SYSTEMTIME
+#endif
+
+
+HTTPMessage::HTTPMessage()
+  : body( NULL )
+{
+  header = new Buffers;
+}
+
+HTTPMessage::HTTPMessage
+(
+  Buffer& header,
+  const FieldOffsets& field_offsets,
+  Buffer* body
+)
+  : body( body ),
+    header( new Buffers( header ) ),
+    field_offsets( field_offsets )
+{ }
+
+HTTPMessage::HTTPMessage( Buffer& body )
+ : body( &body )
+{
+  header = new Buffers;
+}
+
+HTTPMessage::~HTTPMessage()
+{
+  Buffer::dec_ref( body );
+  Buffers::dec_ref( header );
+}
+
+const char*
+HTTPMessage::get_field
+(
+  const char* name,
+  const char* default_value
+) const
+{
+  Buffer& header = this->header->join();
+  const char* value = get_field( header, field_offsets, name, default_value );
+  Buffer::dec_ref( header );
+  return value;
+}
+
+const char*
+HTTPMessage::get_field
+(
+  Buffer& header,
+  const FieldOffsets& field_offsets,
+  const char* name,
+  const char* default_value
+)
+{
+  if ( !field_offsets.empty() )
+  {
+    uint16_t namelen = static_cast<uint16_t>( strnlen( name, UINT16_MAX ) );
+
+    uint16_t field_offsets_base = field_offsets[0].first;
+    const char* fields_base
+      = static_cast<const char*>( header ) + field_offsets_base;
+
+    size_t field_offsets_size = field_offsets.size();
+
+    for ( uint32_t fo_i = 0; fo_i < field_offsets_size; fo_i++ )
+    {
+      const FieldOffset& field_offset = field_offsets[fo_i];
+
+      if
+      (
+        ( field_offset.second - field_offset.first ) >= namelen
+        &&
+        strcmp
+        (
+          fields_base + ( field_offset.first - field_offsets_base ),
+          name
+        ) == 0
+      )
+        return fields_base + ( field_offset.second - field_offsets_base );
+    }
+  }
+
+  return const_cast<char*>( default_value );
+}
+
+Time HTTPMessage::get_time_field( const char* name ) const
+{
+  return HTTPMessageParser<HTTPResponseParser, HTTPResponse>::parse_http_date
+         (
+           get_field( name, NULL )
+         );
+}
+
+void HTTPMessage::marshal( Marshaller& marshaller ) const
+{
+  marshaller.write( "header", *header );
+
+  if ( body != NULL )
+  {
+    if ( get_field( "Content-Length", NULL ) == NULL )
+    {
+      char cl[64];
+#ifdef _WIN32
+      int cl_len = sprintf_s( cl, 64, "Content-Length: %u\r\n", body->size() );
+#else
+      int cl_len = snprintf( cl, 64, "Content-Length: %zu\r\n", body->size() );
+#endif
+      marshaller.write( "content_length", cl, cl_len );
+    }
+
+    marshaller.write( "crlf", "\r\n", 2 );
+
+    marshaller.write( "body", *body );
+  }
+  else
+    marshaller.write( "crlf", "\r\n" );
+
+}
+
+void HTTPMessage::set_body( Buffer* body )
+{
+  Buffer::dec_ref( this->body );
+  this->body = body;
+}
+
+void HTTPMessage::set_field( const char* name, const char* value )
+{
+  header->push_back( name );
+  header->push_back( ": ", 2 );
+  header->push_back( value );
+  header->push_back( "\r\n" );
+}
+
+void HTTPMessage::set_field( const char* name, char* value )
+{
+  header->push_back( name );
+  header->push_back( ": ", 2 );
+  header->push_back( value );
+  header->push_back( "\r\n", 2 );
+}
+
+void HTTPMessage::set_field( char* name, char* value )
+{
+  header->push_back( name );
+  header->push_back( ": ", 2 );
+  header->push_back( value );
+  header->push_back( "\r\n", 2 );
+}
+
+void HTTPMessage::set_field( const string& name, const string& value )
+{
+  header->push_back( name );
+  header->push_back( ": ", 2 );
+  header->push_back( value );
+  header->push_back( "\r\n", 2 );
+}
+
+void HTTPMessage::set_field( const char* name, const Time& value )
+{
+  static const char* HTTPWeekDays[]
+    = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+
+  static const char* HTTPMonths[]
+    = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+      };
+
+  char http_date[30];
+
+#ifdef _WIN32
+  SYSTEMTIME utc_system_time = value.as_utc_SYSTEMTIME();
+
+  _snprintf_s
+  (
+    http_date,
+    30,
+    _TRUNCATE,
+    "%s, %02d %s %04d %02d:%02d:%02d GMT",
+    HTTPWeekDays[utc_system_time.wDayOfWeek],
+    utc_system_time.wDay,
+    HTTPMonths[utc_system_time.wMonth-1],
+    utc_system_time.wYear,
+    utc_system_time.wHour,
+    utc_system_time.wMinute,
+    utc_system_time.wSecond
+  );
+#else
+  struct tm utc_struct_tm = value.as_utc_struct_tm();
+
+  snprintf
+  (
+    http_date,
+    30,
+    "%s, %02d %s %04d %02d:%02d:%02d GMT",
+    HTTPWeekDays[utc_struct_tm.tm_wday],
+    utc_struct_tm.tm_mday,
+    HTTPMonths[utc_struct_tm.tm_mon],
+    utc_struct_tm.tm_year + 1900,
+    utc_struct_tm.tm_hour,
+    utc_struct_tm.tm_min,
+    utc_struct_tm.tm_sec
+  );
+#endif
+
+  set_field( name, http_date );
+}
+
+
+// http_message_parser.cpp
+using yidl::runtime::HeapBuffer;
+using yidl::runtime::StringBuffer;
+using yidl::runtime::SubBuffer;
+
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4702 )
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <class HTTPMessageParserType, class HTTPMessageType>
+HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::HTTPMessageParser()
+{
+  header = NULL;
+  body = NULL;
+}
+
+template <class HTTPMessageParserType, class HTTPMessageType>
+HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::~HTTPMessageParser()
+{
+  Buffer::dec_ref( header );
+  Buffer::dec_ref( body );
+}
+
+template <class HTTPMessageParserType, class HTTPMessageType>
+HTTPMessageType*
+HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::createHTTPMessage
+(
+  Buffer* body
+)
+{
+  return static_cast<HTTPMessageParserType*>( this )
+           ->createHTTPMessage( *header, field_offsets, body );
+}
+
+template <class HTTPMessageParserType, class HTTPMessageType>
+size_t
+HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::get_content_length
+(
+  Buffer& header,
+  const HTTPMessage::FieldOffsets&
+)
+{
+  const char* content_length_string
+    = HTTPMessage::get_field
+      (
+        header,
+        field_offsets,
+        "Content-Length",
+        NULL
+      );
+
+  if ( content_length_string == NULL )
+  {
+    content_length_string
+      = HTTPMessage::get_field
+        (
+          header,
+          field_offsets,
+          "Content-length"
+        );
+  }
+
+  return static_cast<size_t>( atoi( content_length_string ) );
+}
+
+template <class HTTPMessageParserType, class HTTPMessageType>
+HTTPMessageType*
+HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::parse
+(
+  const string& buffer
+)
+{
+  Buffer* string_buffer = new StringBuffer( buffer );
+  HTTPMessageType* http_message = parse( *string_buffer );
+  Buffer::dec_ref( *string_buffer );
+  return http_message;
+}
+
+template <class HTTPMessageParserType, class HTTPMessageType>
+HTTPMessageType*
+HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::parse
+(
+  Buffer& buffer
+)
+{
+  vector<HTTPMessageType*> messages;
+  parse( buffer, messages );
+  if ( messages.size() == 1 )
+    return messages[0];
+  else
+  {
+    while ( !messages.empty() )
+    {
+      HTTPMessageType::dec_ref( *messages.back() );
+      messages.pop_back();
+    }
+
+    return NULL;
+  }
+}
+
+template <class HTTPMessageParserType, class HTTPMessageType>
+typename HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::ParseStatus
+HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::parse
+(
+  const string& buffer,
+  vector<HTTPMessageType*>& out_http_messages
+)
+{
+  Buffer* string_buffer = new StringBuffer( buffer );
+  ParseStatus parse_status = parse( *string_buffer, out_http_messages );
+  Buffer::dec_ref( *string_buffer );
+  return parse_status;
+}
+
+template <class HTTPMessageParserType, class HTTPMessageType>
+typename HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::ParseStatus
+HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::parse
+(
+  Buffer& buffer,
+  vector<HTTPMessageType*>& out_http_messages
+)
+{
+#ifdef _DEBUG
+  if ( buffer.position() == buffer.size() ) DebugBreak();
+#endif
+
+  if ( body == NULL ) // Reading header
+  {
+    if ( header == NULL )
+    {
+      switch ( parse_header( buffer ) )
+      {
+        case PARSE_COMPLETE:
+        {
+          header = &buffer.inc_ref();
+        }
+        break;
+
+        case PARSE_WANT_READ:
+        {
+          header = new StringBuffer( buffer );
+          return PARSE_WANT_READ;
+        }
+
+        case PARSE_ERROR: return PARSE_ERROR;
+      }
+    }
+    else
+    {
+      header->put( buffer ); // header must be a StringBuffer
+
+      switch ( parse_header( *header ) )
+      {
+        case PARSE_COMPLETE: break;
+        case PARSE_WANT_READ: return PARSE_WANT_READ;
+        case PARSE_ERROR:
+        {
+          Buffer::dec_ref( *header );
+          header = NULL;
+          return PARSE_ERROR;
+        }
+      }
+    }
+
+    // Here the header has been parsed successfully and header has been
+    // set to the header buffer. This is a "new" reference that must be
+    // dec_ref'd.
+
+    size_t content_length = get_content_length( *header, field_offsets );
+
+    if ( content_length == 0 ) // No body, done reading this message
+    {
+      const char* transfer_encoding
+        = HTTPMessage::get_field
+          (
+            *header,
+            field_offsets,
+            "Transfer-Encoding",
+            NULL
+          );
+
+      if ( transfer_encoding == NULL ) // No body
+      {
+        out_http_messages.push_back( createHTTPMessage() );
+        field_offsets.clear();
+
+        if ( header->position() == header->size() )
+        {
+          Buffer::dec_ref( *header );
+          header = NULL;
+          return PARSE_COMPLETE;
+        }
+        else
+        {
+          Buffer* buffer = header;
+          header = NULL;
+          return parse( *buffer, out_http_messages );
+        }
+      }
+      else if ( strcmp( transfer_encoding, "chunked" ) == 0 )
+      {
+        body = new StringBuffer;
+        chunked_body = true;
+
+        if ( header->position() == header->size() )
+          return PARSE_WANT_READ;
+        else
+          return parse( *header, out_http_messages );
+      }
+      else
+        return PARSE_ERROR;
+    }
+    else // Have a body
+    {
+      chunked_body = false;
+
+      if ( header->position() < header->size() )
+      {
+        // At least some of the body is in header
+        if ( header->size() - header->position() >= content_length )
+        {
+          // All of the body is in header
+
+          out_http_messages.push_back
+          (
+            createHTTPMessage
+            (
+              new SubBuffer
+                  (
+                    *header,
+                    header->position(),
+                    content_length,
+                    content_length
+                  )
+            )
+          );
+
+          header->position( header->position() + content_length );
+
+          if ( header->position() == header->size() ) // Consumed header
+          {
+            reset();
+            return PARSE_COMPLETE;
+          }
+          else // There may be another message in header
+          {
+            field_offsets.clear();
+            Buffer* buffer = header;
+            header = NULL;
+            return parse( *buffer, out_http_messages );
+          }
+        }
+        else
+        {
+          // Only part of the body is in header
+          body = new HeapBuffer( content_length );
+          body->put( *header ); // Copies from position()
+          // header and field_offsets stay set
+          return PARSE_WANT_READ;
+        }
+      }
+      else // None of the body is in header
+      {
+        body = new HeapBuffer( content_length );
+        // header and field_offsets stay set
+        return PARSE_WANT_READ;
+      }
+    } // else have a body
+  }
+  else // Reading body
+  {
+#ifdef _DEBUG
+    if ( body->size() == body->capacity() ) DebugBreak();
+    if ( header == NULL || field_offsets.empty() ) DebugBreak();
+#endif
+
+    if ( &buffer != body )
+      body->put( buffer );
+
+    if ( chunked_body )
+    {
+      // Variables used by Ragel
+      int cs;
+      char *p = static_cast<char*>( *body ) + body->position(),
+           *ps = p,
+           *pe = p + ( body->size() - body->position() ),
+           *eof = pe;
+
+      // Variables used by machine actions;
+      char *chunk_data_p = NULL, *chunk_size_p = NULL;
+      size_t chunk_size = 0, seen_chunk_size = 0;
+      uint16_t field_name_offset = 0, field_value_offset = 0;
+
+static const char _http_chunk_parser_actions[] = {
+	0, 1, 0, 1, 1, 1, 2, 1,
+	3, 1, 4, 1, 5, 1, 6, 1,
+	8, 1, 9, 2, 0, 6, 2, 2,
+	3, 2, 7, 5
+};
+
+static const char _http_chunk_parser_cond_offsets[] = {
+	0, 0, 0, 0, 0, 1, 1, 1,
+	1, 1, 1, 1, 2, 3, 4, 5,
+	5, 6, 7, 7, 7, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 9,
+	9
+};
+
+static const char _http_chunk_parser_cond_lengths[] = {
+	0, 0, 0, 0, 1, 0, 0, 0,
+	0, 0, 0, 1, 1, 1, 1, 0,
+	1, 1, 0, 0, 1, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 1, 0,
+	1
+};
+
+static const short _http_chunk_parser_cond_keys[] = {
+	0u, 255u, 0u, 255u, 0u, 255u, 0u, 255u,
+	0u, 255u, 0u, 255u, 0u, 255u, 0u, 255u,
+	0u, 255u, 0u, 255u, 0
+};
+
+static const char _http_chunk_parser_cond_spaces[] = {
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0
+};
+
+static const short _http_chunk_parser_key_offsets[] = {
+	0, 0, 7, 15, 16, 54, 55, 70,
+	72, 73, 74, 89, 93, 99, 139, 147,
+	148, 154, 160, 168, 169, 173, 187, 204,
+	219, 235, 256, 261, 263, 265, 272, 291,
+	313, 331, 345, 362, 377, 393, 414, 419,
+	421, 423, 430, 449, 471, 489, 489, 493,
+	508
+};
+
+static const short _http_chunk_parser_trans_keys[] = {
+	48u, 49u, 57u, 65u, 70u, 97u, 102u, 13u,
+	59u, 48u, 57u, 65u, 70u, 97u, 102u, 10u,
+	269u, 380u, 382u, 525u, 556u, 559u, 635u, 637u,
+	289u, 294u, 298u, 299u, 301u, 302u, 304u, 313u,
+	321u, 346u, 350u, 378u, 512u, 544u, 545u, 550u,
+	551u, 553u, 554u, 569u, 570u, 576u, 577u, 602u,
+	603u, 605u, 606u, 638u, 639u, 767u, 10u, 58u,
+	124u, 126u, 33u, 38u, 42u, 43u, 45u, 46u,
+	48u, 57u, 65u, 90u, 94u, 122u, 13u, 32u,
+	13u, 10u, 13u, 124u, 126u, 33u, 38u, 42u,
+	43u, 45u, 46u, 48u, 57u, 65u, 90u, 94u,
+	122u, 269u, 525u, 512u, 767u, 266u, 269u, 522u,
+	525u, 512u, 767u, 269u, 314u, 380u, 382u, 525u,
+	556u, 559u, 570u, 635u, 637u, 289u, 294u, 298u,
+	299u, 301u, 302u, 304u, 313u, 321u, 346u, 350u,
+	378u, 512u, 544u, 545u, 550u, 551u, 553u, 554u,
+	569u, 571u, 576u, 577u, 602u, 603u, 605u, 606u,
+	638u, 639u, 767u, 269u, 288u, 525u, 544u, 256u,
+	511u, 512u, 767u, 10u, 269u, 525u, 256u, 511u,
+	512u, 767u, 266u, 269u, 522u, 525u, 512u, 767u,
+	13u, 59u, 48u, 57u, 65u, 70u, 97u, 102u,
+	10u, 269u, 525u, 512u, 767u, 124u, 126u, 33u,
+	38u, 42u, 43u, 45u, 46u, 48u, 57u, 65u,
+	90u, 94u, 122u, 13u, 59u, 61u, 124u, 126u,
+	33u, 38u, 42u, 43u, 45u, 46u, 48u, 57u,
+	65u, 90u, 94u, 122u, 34u, 124u, 126u, 33u,
+	38u, 42u, 43u, 45u, 46u, 48u, 57u, 65u,
+	90u, 94u, 122u, 13u, 59u, 124u, 126u, 33u,
+	38u, 42u, 43u, 45u, 46u, 48u, 57u, 65u,
+	90u, 94u, 122u, 13u, 34u, 59u, 92u, 124u,
+	126u, 127u, 0u, 31u, 33u, 38u, 42u, 43u,
+	45u, 46u, 48u, 57u, 65u, 90u, 94u, 122u,
+	34u, 92u, 127u, 0u, 31u, 13u, 59u, 34u,
+	92u, 13u, 34u, 59u, 92u, 127u, 0u, 31u,
+	34u, 92u, 124u, 126u, 127u, 0u, 31u, 33u,
+	38u, 42u, 43u, 45u, 46u, 48u, 57u, 65u,
+	90u, 94u, 122u, 13u, 34u, 59u, 61u, 92u,
+	124u, 126u, 127u, 0u, 31u, 33u, 38u, 42u,
+	43u, 45u, 46u, 48u, 57u, 65u, 90u, 94u,
+	122u, 92u, 124u, 126u, 127u, 0u, 31u, 33u,
+	38u, 42u, 43u, 45u, 46u, 48u, 57u, 65u,
+	90u, 94u, 122u, 124u, 126u, 33u, 38u, 42u,
+	43u, 45u, 46u, 48u, 57u, 65u, 90u, 94u,
+	122u, 13u, 59u, 61u, 124u, 126u, 33u, 38u,
+	42u, 43u, 45u, 46u, 48u, 57u, 65u, 90u,
+	94u, 122u, 34u, 124u, 126u, 33u, 38u, 42u,
+	43u, 45u, 46u, 48u, 57u, 65u, 90u, 94u,
+	122u, 13u, 59u, 124u, 126u, 33u, 38u, 42u,
+	43u, 45u, 46u, 48u, 57u, 65u, 90u, 94u,
+	122u, 13u, 34u, 59u, 92u, 124u, 126u, 127u,
+	0u, 31u, 33u, 38u, 42u, 43u, 45u, 46u,
+	48u, 57u, 65u, 90u, 94u, 122u, 34u, 92u,
+	127u, 0u, 31u, 13u, 59u, 34u, 92u, 13u,
+	34u, 59u, 92u, 127u, 0u, 31u, 34u, 92u,
+	124u, 126u, 127u, 0u, 31u, 33u, 38u, 42u,
+	43u, 45u, 46u, 48u, 57u, 65u, 90u, 94u,
+	122u, 13u, 34u, 59u, 61u, 92u, 124u, 126u,
+	127u, 0u, 31u, 33u, 38u, 42u, 43u, 45u,
+	46u, 48u, 57u, 65u, 90u, 94u, 122u, 92u,
+	124u, 126u, 127u, 0u, 31u, 33u, 38u, 42u,
+	43u, 45u, 46u, 48u, 57u, 65u, 90u, 94u,
+	122u, 269u, 525u, 512u, 767u, 13u, 124u, 126u,
+	33u, 38u, 42u, 43u, 45u, 46u, 48u, 57u,
+	65u, 90u, 94u, 122u, 269u, 380u, 382u, 525u,
+	556u, 559u, 635u, 637u, 289u, 294u, 298u, 299u,
+	301u, 302u, 304u, 313u, 321u, 346u, 350u, 378u,
+	512u, 544u, 545u, 550u, 551u, 553u, 554u, 569u,
+	570u, 576u, 577u, 602u, 603u, 605u, 606u, 638u,
+	639u, 767u, 0
+};
+
+static const char _http_chunk_parser_single_lengths[] = {
+	0, 1, 2, 1, 8, 1, 3, 2,
+	1, 1, 3, 2, 4, 10, 4, 1,
+	2, 4, 2, 1, 2, 2, 5, 3,
+	4, 7, 3, 2, 2, 5, 5, 8,
+	4, 2, 5, 3, 4, 7, 3, 2,
+	2, 5, 5, 8, 4, 0, 2, 3,
+	8
+};
+
+static const char _http_chunk_parser_range_lengths[] = {
+	0, 3, 3, 0, 15, 0, 6, 0,
+	0, 0, 6, 1, 1, 15, 2, 0,
+	2, 1, 3, 0, 1, 6, 6, 6,
+	6, 7, 1, 0, 0, 1, 7, 7,
+	7, 6, 6, 6, 6, 7, 1, 0,
+	0, 1, 7, 7, 7, 0, 1, 6,
+	15
+};
+
+static const short _http_chunk_parser_index_offsets[] = {
+	0, 0, 5, 11, 13, 37, 39, 49,
+	52, 54, 56, 66, 70, 76, 102, 109,
+	111, 116, 122, 128, 130, 134, 143, 155,
+	165, 176, 191, 196, 199, 202, 209, 222,
+	238, 250, 259, 271, 281, 292, 307, 312,
+	315, 318, 325, 338, 354, 366, 367, 371,
+	381
+};
+
+static const char _http_chunk_parser_indicies[] = {
+	1, 2, 2, 2, 0, 3, 5, 4,
+	4, 4, 0, 6, 0, 7, 8, 8,
+	10, 9, 9, 9, 9, 8, 8, 8,
+	8, 8, 8, 9, 11, 9, 11, 9,
+	11, 9, 11, 9, 0, 12, 0, 14,
+	13, 13, 13, 13, 13, 13, 13, 13,
+	0, 16, 17, 15, 19, 18, 20, 0,
+	21, 8, 8, 8, 8, 8, 8, 8,
+	8, 0, 21, 23, 22, 0, 12, 21,
+	24, 23, 22, 0, 21, 14, 13, 13,
+	23, 22, 22, 26, 22, 22, 13, 13,
+	13, 13, 13, 13, 22, 25, 22, 25,
+	22, 25, 22, 25, 22, 0, 27, 17,
+	29, 30, 15, 28, 0, 31, 0, 32,
+	34, 18, 33, 0, 31, 21, 35, 23,
+	22, 0, 36, 37, 4, 4, 4, 0,
+	38, 0, 7, 10, 9, 0, 39, 39,
+	39, 39, 39, 39, 39, 39, 0, 40,
+	41, 42, 39, 39, 39, 39, 39, 39,
+	39, 39, 0, 44, 43, 43, 43, 43,
+	43, 43, 43, 43, 0, 40, 41, 43,
+	43, 43, 43, 43, 43, 43, 43, 0,
+	40, 43, 46, 47, 44, 44, 0, 0,
+	44, 44, 44, 44, 44, 44, 45, 48,
+	47, 0, 0, 45, 40, 41, 0, 49,
+	47, 45, 40, 48, 46, 47, 0, 0,
+	45, 39, 47, 50, 50, 0, 0, 50,
+	50, 50, 50, 50, 50, 45, 40, 39,
+	46, 51, 47, 50, 50, 0, 0, 50,
+	50, 50, 50, 50, 50, 45, 47, 44,
+	44, 0, 0, 44, 44, 44, 44, 44,
+	44, 45, 52, 52, 52, 52, 52, 52,
+	52, 52, 0, 53, 54, 55, 52, 52,
+	52, 52, 52, 52, 52, 52, 0, 57,
+	56, 56, 56, 56, 56, 56, 56, 56,
+	0, 53, 54, 56, 56, 56, 56, 56,
+	56, 56, 56, 0, 53, 56, 59, 60,
+	57, 57, 0, 0, 57, 57, 57, 57,
+	57, 57, 58, 61, 60, 0, 0, 58,
+	53, 54, 0, 62, 60, 58, 53, 61,
+	59, 60, 0, 0, 58, 52, 60, 63,
+	63, 0, 0, 63, 63, 63, 63, 63,
+	63, 58, 53, 52, 59, 64, 60, 63,
+	63, 0, 0, 63, 63, 63, 63, 63,
+	63, 58, 60, 57, 57, 0, 0, 57,
+	57, 57, 57, 57, 57, 58, 0, 21,
+	23, 22, 0, 21, 8, 8, 8, 8,
+	8, 8, 8, 8, 0, 21, 8, 8,
+	23, 22, 22, 22, 22, 8, 8, 8,
+	8, 8, 8, 22, 65, 22, 65, 22,
+	65, 22, 65, 22, 0, 0
+};
+
+static const char _http_chunk_parser_trans_targs[] = {
+	0, 2, 18, 3, 18, 33, 4, 5,
+	6, 11, 12, 13, 45, 6, 7, 8,
+	9, 7, 8, 9, 10, 5, 11, 12,
+	46, 13, 14, 15, 16, 17, 14, 47,
+	15, 16, 17, 48, 19, 21, 20, 22,
+	19, 21, 23, 24, 25, 26, 30, 28,
+	27, 29, 31, 32, 34, 3, 33, 35,
+	36, 37, 38, 42, 40, 39, 41, 43,
+	44, 13
+};
+
+static const char _http_chunk_parser_trans_actions[] = {
+	17, 9, 9, 25, 0, 25, 0, 13,
+	1, 13, 13, 19, 15, 0, 3, 5,
+	22, 5, 0, 7, 0, 0, 0, 0,
+	15, 0, 3, 22, 5, 22, 5, 15,
+	7, 0, 7, 15, 11, 11, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 1
+};
+
+static const char _http_chunk_parser_eof_actions[] = {
+	0, 17, 17, 17, 17, 17, 17, 17,
+	17, 17, 17, 17, 17, 17, 17, 17,
+	17, 17, 17, 17, 17, 17, 17, 17,
+	17, 17, 17, 17, 17, 17, 17, 17,
+	17, 17, 17, 17, 17, 17, 17, 17,
+	17, 17, 17, 17, 17, 0, 0, 0,
+	0
+};
+
+static const int http_chunk_parser_start = 1;
+static const int http_chunk_parser_first_final = 45;
+static const int http_chunk_parser_error = 0;
+
+static const int http_chunk_parser_en_main = 1;
+
+
+	{
+	cs = http_chunk_parser_start;
+	}
+
+	{
+	int _klen;
+	unsigned int _trans;
+	short _widec;
+	const char *_acts;
+	unsigned int _nacts;
+	const short *_keys;
+
+	if ( cs == 0 )
+		goto _out;
+_resume:
+	_widec = (*p);
+	_klen = _http_chunk_parser_cond_lengths[cs];
+	_keys = _http_chunk_parser_cond_keys + (_http_chunk_parser_cond_offsets[cs]*2);
+	if ( _klen > 0 ) {
+		const short *_lower = _keys;
+		const short *_mid;
+		const short *_upper = _keys + (_klen<<1) - 2;
+		while (1) {
+			if ( _upper < _lower )
+				break;
+
+			_mid = _lower + (((_upper-_lower) >> 1) & ~1);
+			if ( _widec < _mid[0] )
+				_upper = _mid - 2;
+			else if ( _widec > _mid[1] )
+				_lower = _mid + 2;
+			else {
+				switch ( _http_chunk_parser_cond_spaces[_http_chunk_parser_cond_offsets[cs] + ((_mid - _keys)>>1)] ) {
+	case 0: {
+		_widec = (short)(256u + ((*p) - 0u));
+		if (
+ seen_chunk_size++ < chunk_size  ) _widec += 256;
+		break;
+	}
+				}
+				break;
+			}
+		}
+	}
+
+	_keys = _http_chunk_parser_trans_keys + _http_chunk_parser_key_offsets[cs];
+	_trans = _http_chunk_parser_index_offsets[cs];
+
+	_klen = _http_chunk_parser_single_lengths[cs];
+	if ( _klen > 0 ) {
+		const short *_lower = _keys;
+		const short *_mid;
+		const short *_upper = _keys + _klen - 1;
+		while (1) {
+			if ( _upper < _lower )
+				break;
+
+			_mid = _lower + ((_upper-_lower) >> 1);
+			if ( _widec < *_mid )
+				_upper = _mid - 1;
+			else if ( _widec > *_mid )
+				_lower = _mid + 1;
+			else {
+				_trans += (_mid - _keys);
+				goto _match;
+			}
+		}
+		_keys += _klen;
+		_trans += _klen;
+	}
+
+	_klen = _http_chunk_parser_range_lengths[cs];
+	if ( _klen > 0 ) {
+		const short *_lower = _keys;
+		const short *_mid;
+		const short *_upper = _keys + (_klen<<1) - 2;
+		while (1) {
+			if ( _upper < _lower )
+				break;
+
+			_mid = _lower + (((_upper-_lower) >> 1) & ~1);
+			if ( _widec < _mid[0] )
+				_upper = _mid - 2;
+			else if ( _widec > _mid[1] )
+				_lower = _mid + 2;
+			else {
+				_trans += ((_mid - _keys)>>1);
+				goto _match;
+			}
+		}
+		_trans += _klen;
+	}
+
+_match:
+	_trans = _http_chunk_parser_indicies[_trans];
+	cs = _http_chunk_parser_trans_targs[_trans];
+
+	if ( _http_chunk_parser_trans_actions[_trans] == 0 )
+		goto _again;
+
+	_acts = _http_chunk_parser_actions + _http_chunk_parser_trans_actions[_trans];
+	_nacts = (unsigned int) *_acts++;
+	while ( _nacts-- > 0 )
+	{
+		switch ( *_acts++ )
+		{
+	case 0:
+	{ field_name_offset = static_cast<uint16_t>( p - ps ); }
+	break;
+	case 1:
+	{ *p = 0; }
+	break;
+	case 2:
+	{ field_value_offset = static_cast<uint16_t>( p - ps ); }
+	break;
+	case 3:
+	{
+                       *p = 0;
+                       field_offsets.push_back
+                       (
+                         HTTPMessage::FieldOffset
+                         (
+                           field_name_offset,
+                           field_value_offset
+                         )
+                       );
+                     }
+	break;
+	case 4:
+	{ chunk_size_p = p; }
+	break;
+	case 5:
+	{
+                          char* chunk_size_pe = p;
+                          chunk_size
+                            = static_cast<size_t>
+                              (
+                                strtol
+                                (
+                                  chunk_size_p,
+                                  &chunk_size_pe,
+                                  16
+                                )
+                              );
+                        }
+	break;
+	case 6:
+	{ chunk_data_p = p; }
+	break;
+	case 7:
+	{ chunk_size = 0; }
+	break;
+	case 8:
+	{ {p++; goto _out; } }
+	break;
+	case 9:
+	{ return PARSE_ERROR; }
+	break;
+		}
+	}
+
+_again:
+	if ( cs == 0 )
+		goto _out;
+	p += 1;
+	goto _resume;
+	if ( p == eof )
+	{
+	const char *__acts = _http_chunk_parser_actions + _http_chunk_parser_eof_actions[cs];
+	unsigned int __nacts = (unsigned int) *__acts++;
+	while ( __nacts-- > 0 ) {
+		switch ( *__acts++ ) {
+	case 9:
+	{ return PARSE_ERROR; }
+	break;
+		}
+	}
+	}
+
+	_out: {}
+	}
+
+
+
+      if ( cs != http_chunk_parser_error )
+      {
+        if ( chunk_size > 0 )
+        {
+          // Cut off the chunk size + extension  + CRLF before
+          // the chunk data and the CRLF after
+          out_http_messages.push_back
+          (
+            createHTTPMessage
+            (
+              new SubBuffer
+                  (
+                    *body,
+                    chunk_data_p - ps,
+                    p - chunk_data_p - 2,
+                    p - chunk_data_p - 2
+                  )
+            )
+          );
+
+          body->position( body->position() + ( p - ps ) );
+
+          if ( body->position() == body->size() )
+          {
+            Buffer::dec_ref( *body );
+            body = new StringBuffer;
+            return PARSE_WANT_READ;
+          }
+          else
+            return parse( *body, out_http_messages );
+        }
+        else
+        {
+          out_http_messages.push_back( createHTTPMessage( new StringBuffer ) );
+          Buffer::dec_ref( *body );
+          reset();
+          return PARSE_COMPLETE;
+        }
+      }
+      else
+        return PARSE_WANT_READ;
+    }
+    else
+    {
+      if ( body->size() == body->capacity() )
+      {
+        out_http_messages.push_back( createHTTPMessage( body ) );
+        reset();
+
+        if ( buffer.position() == buffer.size() )
+          return PARSE_COMPLETE;
+        else
+          return parse( buffer, out_http_messages );
+      }
+      else
+        return PARSE_WANT_READ;
+    }
+  }
+}
+
+template <class HTTPMessageParserType, class HTTPMessageType>
+typename HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::ParseStatus
+HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::parse_header
+(
+  Buffer& buffer
+)
+{
+  char *p = static_cast<char*>( buffer ) + buffer.position();
+  const char *ps = p,
+             *pe = p + ( buffer.size() - buffer.position() ),
+             *eof = pe;
+
+  ParseStatus parse_first_header_line_status
+    = static_cast<HTTPMessageParserType*>( this )
+        ->parse_first_header_line( &p, pe );
+
+  if ( parse_first_header_line_status == PARSE_COMPLETE )
+  {
+    // Variables used by Ragel
+    int cs;
+
+    // Variables used by machine actions
+    uint16_t field_name_offset = 0, field_value_offset = 0;
+
+
+static const char _http_field_parser_actions[] = {
+	0, 1, 0, 1, 1, 1, 2, 1,
+	3, 1, 4, 1, 5, 2, 2, 3
+
+};
+
+static const char _http_field_parser_key_offsets[] = {
+	0, 0, 15, 16, 31, 33, 34, 35
+};
+
+static const unsigned char _http_field_parser_trans_keys[] = {
+	13u, 124u, 126u, 33u, 38u, 42u, 43u, 45u,
+	46u, 48u, 57u, 65u, 90u, 94u, 122u, 10u,
+	58u, 124u, 126u, 33u, 38u, 42u, 43u, 45u,
+	46u, 48u, 57u, 65u, 90u, 94u, 122u, 13u,
+	32u, 13u, 10u, 0
+};
+
+static const char _http_field_parser_single_lengths[] = {
+	0, 3, 1, 3, 2, 1, 1, 0
+};
+
+static const char _http_field_parser_range_lengths[] = {
+	0, 6, 0, 6, 0, 0, 0, 0
+};
+
+static const char _http_field_parser_index_offsets[] = {
+	0, 0, 10, 12, 22, 25, 27, 29
+};
+
+static const char _http_field_parser_indicies[] = {
+	1, 2, 2, 2, 2, 2, 2, 2,
+	2, 0, 3, 0, 5, 4, 4, 4,
+	4, 4, 4, 4, 4, 0, 7, 8,
+	6, 10, 9, 11, 0, 0, 0
+};
+
+static const char _http_field_parser_trans_targs[] = {
+	0, 2, 3, 7, 3, 4, 5, 6,
+	4, 5, 6, 1
+};
+
+static const char _http_field_parser_trans_actions[] = {
+	11, 0, 1, 9, 0, 3, 5, 13,
+	5, 0, 7, 0
+};
+
+static const char _http_field_parser_eof_actions[] = {
+	0, 11, 11, 11, 11, 11, 11, 0
+};
+
+static const int http_field_parser_start = 1;
+static const int http_field_parser_first_final = 7;
+static const int http_field_parser_error = 0;
+
+static const int http_field_parser_en_main = 1;
+
+
+	{
+	cs = http_field_parser_start;
+	}
+
+	{
+	int _klen;
+	unsigned int _trans;
+	const char *_acts;
+	unsigned int _nacts;
+	const unsigned char *_keys;
+
+	if ( cs == 0 )
+		goto _out;
+_resume:
+	_keys = _http_field_parser_trans_keys + _http_field_parser_key_offsets[cs];
+	_trans = _http_field_parser_index_offsets[cs];
+
+	_klen = _http_field_parser_single_lengths[cs];
+	if ( _klen > 0 ) {
+		const unsigned char *_lower = _keys;
+		const unsigned char *_mid;
+		const unsigned char *_upper = _keys + _klen - 1;
+		while (1) {
+			if ( _upper < _lower )
+				break;
+
+			_mid = _lower + ((_upper-_lower) >> 1);
+			if ( (*p) < *_mid )
+				_upper = _mid - 1;
+			else if ( (*p) > *_mid )
+				_lower = _mid + 1;
+			else {
+				_trans += (_mid - _keys);
+				goto _match;
+			}
+		}
+		_keys += _klen;
+		_trans += _klen;
+	}
+
+	_klen = _http_field_parser_range_lengths[cs];
+	if ( _klen > 0 ) {
+		const unsigned char *_lower = _keys;
+		const unsigned char *_mid;
+		const unsigned char *_upper = _keys + (_klen<<1) - 2;
+		while (1) {
+			if ( _upper < _lower )
+				break;
+
+			_mid = _lower + (((_upper-_lower) >> 1) & ~1);
+			if ( (*p) < _mid[0] )
+				_upper = _mid - 2;
+			else if ( (*p) > _mid[1] )
+				_lower = _mid + 2;
+			else {
+				_trans += ((_mid - _keys)>>1);
+				goto _match;
+			}
+		}
+		_trans += _klen;
+	}
+
+_match:
+	_trans = _http_field_parser_indicies[_trans];
+	cs = _http_field_parser_trans_targs[_trans];
+
+	if ( _http_field_parser_trans_actions[_trans] == 0 )
+		goto _again;
+
+	_acts = _http_field_parser_actions + _http_field_parser_trans_actions[_trans];
+	_nacts = (unsigned int) *_acts++;
+	while ( _nacts-- > 0 )
+	{
+		switch ( *_acts++ )
+		{
+	case 0:
+	{ field_name_offset = static_cast<uint16_t>( p - ps ); }
+	break;
+	case 1:
+	{ *p = 0; }
+	break;
+	case 2:
+	{ field_value_offset = static_cast<uint16_t>( p - ps ); }
+	break;
+	case 3:
+	{
+                       *p = 0;
+                       field_offsets.push_back
+                       (
+                         HTTPMessage::FieldOffset
+                         (
+                           field_name_offset,
+                           field_value_offset
+                         )
+                       );
+                     }
+	break;
+	case 4:
+	{ {p++; goto _out; } }
+	break;
+	case 5:
+	{ return PARSE_ERROR; }
+	break;
+		}
+	}
+
+_again:
+	if ( cs == 0 )
+		goto _out;
+	p += 1;
+	goto _resume;
+	if ( p == eof )
+	{
+	const char *__acts = _http_field_parser_actions + _http_field_parser_eof_actions[cs];
+	unsigned int __nacts = (unsigned int) *__acts++;
+	while ( __nacts-- > 0 ) {
+		switch ( *__acts++ ) {
+	case 5:
+	{ return PARSE_ERROR; }
+	break;
+		}
+	}
+	}
+
+	_out: {}
+	}
+
+
+
+    if ( cs != http_field_parser_error ) // Done reading the header
+    {
+      buffer.position( buffer.position() + ( p - ps ) );
+      return PARSE_COMPLETE;
+    }
+    else
+      return PARSE_WANT_READ;
+  }
+  else
+    return parse_first_header_line_status;
+}
+
+template <class HTTPMessageParserType, class HTTPMessageType>
+Time
+HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::parse_http_date
+(
+  const char* http_date
+)
+{
+  if ( http_date != NULL && http_date[0] != 0 )
+  {
+    // Variables used by Ragel
+    int cs;
+    const char *p = http_date,
+               *ps = p,
+               *pe = p + strnlen( http_date, UINT8_MAX ),
+               *eof = pe;
+
+    // Variables used by machine actions
+    int hour = 0, minute = 0, second = 0;
+    int day = 0, month = 0, year = 0;
+
+
+static const char _http_date_parser_actions[] = {
+	0, 1, 0, 1, 1, 1, 2, 1,
+	3, 1, 4, 1, 5, 1, 6, 1,
+	7, 1, 8, 1, 9
+};
+
+static const unsigned char _http_date_parser_key_offsets[] = {
+	0, 0, 5, 6, 7, 10, 18, 20,
+	21, 22, 25, 27, 28, 30, 32, 33,
+	35, 37, 38, 40, 42, 43, 45, 47,
+	49, 51, 53, 54, 55, 56, 57, 58,
+	59, 61, 62, 64, 65, 67, 68, 69,
+	70, 71, 72, 73, 74, 76, 78, 79,
+	87, 89, 90, 91, 93, 95, 97, 99,
+	100, 102, 104, 105, 107, 109, 110, 112,
+	114, 115, 116, 117, 118, 119, 120, 121,
+	122, 123, 124, 126, 127, 129, 130, 132,
+	133, 134, 135, 136, 137, 138, 139, 140,
+	141, 142, 144, 146, 147, 155, 157, 158,
+	159, 161, 162, 163, 164, 165, 166, 167,
+	169, 170, 172, 173, 175, 176, 177, 178,
+	179, 180, 181, 182, 183, 185, 186, 189,
+	190, 191, 193, 194, 197, 198, 199, 202,
+	203, 204, 207, 208
+};
+
+static const char _http_date_parser_trans_keys[] = {
+	70, 77, 83, 84, 87, 114, 105, 32,
+	44, 100, 65, 68, 70, 74, 77, 78,
+	79, 83, 112, 117, 114, 32, 32, 48,
+	57, 48, 57, 32, 48, 57, 48, 57,
+	58, 48, 57, 48, 57, 58, 48, 57,
+	48, 57, 32, 48, 57, 48, 57, 48,
+	57, 48, 57, 48, 57, 103, 101, 99,
+	32, 101, 98, 97, 117, 110, 108, 110,
+	97, 114, 121, 111, 118, 99, 116, 101,
+	112, 32, 48, 57, 48, 57, 32, 65,
+	68, 70, 74, 77, 78, 79, 83, 112,
+	117, 114, 32, 48, 57, 48, 57, 48,
+	57, 48, 57, 32, 48, 57, 48, 57,
+	58, 48, 57, 48, 57, 58, 48, 57,
+	48, 57, 32, 71, 77, 84, 103, 101,
+	99, 32, 101, 98, 97, 117, 110, 108,
+	110, 97, 114, 121, 111, 118, 99, 116,
+	101, 112, 97, 121, 44, 32, 48, 57,
+	48, 57, 45, 65, 68, 70, 74, 77,
+	78, 79, 83, 112, 117, 114, 45, 48,
+	57, 103, 101, 99, 45, 101, 98, 97,
+	117, 110, 108, 110, 97, 114, 121, 111,
+	118, 99, 116, 101, 112, 111, 110, 97,
+	117, 116, 32, 44, 117, 114, 100, 104,
+	117, 117, 32, 44, 114, 115, 101, 32,
+	44, 115, 101, 100, 32, 44, 110, 101,
+	0
+};
+
+static const char _http_date_parser_single_lengths[] = {
+	0, 5, 1, 1, 3, 8, 2, 1,
+	1, 1, 0, 1, 0, 0, 1, 0,
+	0, 1, 0, 0, 1, 0, 0, 0,
+	0, 0, 1, 1, 1, 1, 1, 1,
+	2, 1, 2, 1, 2, 1, 1, 1,
+	1, 1, 1, 1, 0, 0, 1, 8,
+	2, 1, 1, 0, 0, 0, 0, 1,
+	0, 0, 1, 0, 0, 1, 0, 0,
+	1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 2, 1, 2, 1, 2, 1,
+	1, 1, 1, 1, 1, 1, 1, 1,
+	1, 0, 0, 1, 8, 2, 1, 1,
+	0, 1, 1, 1, 1, 1, 1, 2,
+	1, 2, 1, 2, 1, 1, 1, 1,
+	1, 1, 1, 1, 2, 1, 3, 1,
+	1, 2, 1, 3, 1, 1, 3, 1,
+	1, 3, 1, 0
+};
+
+static const char _http_date_parser_range_lengths[] = {
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 1, 1, 0, 1, 1, 0, 1,
+	1, 0, 1, 1, 0, 1, 1, 1,
+	1, 1, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 1, 1, 0, 0,
+	0, 0, 0, 1, 1, 1, 1, 0,
+	1, 1, 0, 1, 1, 0, 1, 1,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 1, 1, 0, 0, 0, 0, 0,
+	1, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0
+};
+
+static const short _http_date_parser_index_offsets[] = {
+	0, 0, 6, 8, 10, 14, 23, 26,
+	28, 30, 33, 35, 37, 39, 41, 43,
+	45, 47, 49, 51, 53, 55, 57, 59,
+	61, 63, 65, 67, 69, 71, 73, 75,
+	77, 80, 82, 85, 87, 90, 92, 94,
+	96, 98, 100, 102, 104, 106, 108, 110,
+	119, 122, 124, 126, 128, 130, 132, 134,
+	136, 138, 140, 142, 144, 146, 148, 150,
+	152, 154, 156, 158, 160, 162, 164, 166,
+	168, 170, 172, 175, 177, 180, 182, 185,
+	187, 189, 191, 193, 195, 197, 199, 201,
+	203, 205, 207, 209, 211, 220, 223, 225,
+	227, 229, 231, 233, 235, 237, 239, 241,
+	244, 246, 249, 251, 254, 256, 258, 260,
+	262, 264, 266, 268, 270, 273, 275, 279,
+	281, 283, 286, 288, 292, 294, 296, 300,
+	302, 304, 308, 310
+};
+
+static const unsigned char _http_date_parser_indicies[] = {
+	1, 2, 3, 4, 5, 0, 6, 0,
+	7, 0, 8, 9, 10, 0, 11, 12,
+	13, 14, 15, 16, 17, 18, 0, 19,
+	20, 0, 21, 0, 22, 0, 23, 24,
+	0, 25, 0, 26, 0, 27, 0, 28,
+	0, 29, 0, 30, 0, 31, 0, 32,
+	0, 33, 0, 34, 0, 35, 0, 36,
+	0, 37, 0, 38, 0, 39, 0, 40,
+	0, 21, 0, 41, 0, 42, 0, 43,
+	0, 44, 0, 21, 0, 45, 46, 0,
+	21, 0, 21, 21, 0, 47, 0, 21,
+	21, 0, 48, 0, 21, 0, 49, 0,
+	21, 0, 50, 0, 21, 0, 51, 0,
+	52, 0, 53, 0, 54, 0, 55, 56,
+	57, 58, 59, 60, 61, 62, 0, 63,
+	64, 0, 65, 0, 66, 0, 67, 0,
+	68, 0, 69, 0, 70, 0, 71, 0,
+	72, 0, 73, 0, 74, 0, 75, 0,
+	76, 0, 77, 0, 78, 0, 79, 0,
+	80, 0, 81, 0, 82, 0, 39, 0,
+	65, 0, 83, 0, 84, 0, 85, 0,
+	86, 0, 65, 0, 87, 88, 0, 65,
+	0, 65, 65, 0, 89, 0, 65, 65,
+	0, 90, 0, 65, 0, 91, 0, 65,
+	0, 92, 0, 65, 0, 93, 0, 94,
+	0, 95, 0, 96, 0, 97, 0, 98,
+	0, 99, 0, 100, 101, 102, 103, 104,
+	105, 106, 107, 0, 108, 109, 0, 110,
+	0, 111, 0, 112, 0, 110, 0, 113,
+	0, 114, 0, 115, 0, 116, 0, 110,
+	0, 117, 118, 0, 110, 0, 110, 110,
+	0, 119, 0, 110, 110, 0, 120, 0,
+	110, 0, 121, 0, 110, 0, 122, 0,
+	110, 0, 123, 0, 7, 0, 124, 123,
+	0, 125, 0, 8, 9, 126, 0, 127,
+	0, 10, 0, 128, 129, 0, 130, 0,
+	8, 9, 131, 0, 127, 0, 132, 0,
+	8, 9, 127, 0, 133, 0, 134, 0,
+	8, 9, 135, 0, 131, 0, 0, 0
+};
+
+static const unsigned char _http_date_parser_trans_targs[] = {
+	0, 2, 114, 116, 121, 127, 3, 4,
+	5, 43, 85, 6, 27, 30, 32, 35,
+	37, 39, 41, 7, 26, 8, 9, 10,
+	25, 11, 12, 13, 14, 15, 16, 17,
+	18, 19, 20, 21, 22, 23, 24, 131,
+	11, 28, 29, 9, 31, 33, 34, 36,
+	38, 40, 42, 44, 45, 46, 47, 48,
+	69, 72, 74, 77, 79, 81, 83, 49,
+	68, 50, 51, 52, 53, 54, 55, 56,
+	57, 58, 59, 60, 61, 62, 63, 64,
+	65, 66, 67, 70, 71, 51, 73, 75,
+	76, 78, 80, 82, 84, 86, 87, 88,
+	89, 90, 91, 92, 93, 98, 101, 103,
+	106, 108, 110, 112, 94, 97, 95, 96,
+	54, 99, 100, 96, 102, 104, 105, 107,
+	109, 111, 113, 115, 117, 118, 119, 120,
+	122, 125, 123, 124, 126, 128, 129, 130
+};
+
+static const char _http_date_parser_trans_actions[] = {
+	19, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 11, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	9, 7, 0, 1, 0, 0, 3, 0,
+	0, 5, 0, 0, 17, 0, 0, 0,
+	0, 0, 0, 13, 0, 0, 0, 0,
+	0, 0, 0, 0, 9, 0, 0, 0,
+	11, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 17, 0, 0, 0, 0,
+	1, 0, 0, 3, 0, 0, 5, 0,
+	0, 0, 0, 0, 0, 13, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 9, 0, 0, 0, 11, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	15, 0, 0, 13, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0
+};
+
+static const char _http_date_parser_eof_actions[] = {
+	0, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 19, 19, 19, 19, 19,
+	19, 19, 19, 0
+};
+
+static const int http_date_parser_start = 1;
+static const int http_date_parser_first_final = 131;
+static const int http_date_parser_error = 0;
+
+static const int http_date_parser_en_main = 1;
+
+
+	{
+	cs = http_date_parser_start;
+	}
+
+	{
+	int _klen;
+	unsigned int _trans;
+	const char *_acts;
+	unsigned int _nacts;
+	const char *_keys;
+
+	if ( cs == 0 )
+		goto _out;
+_resume:
+	_keys = _http_date_parser_trans_keys + _http_date_parser_key_offsets[cs];
+	_trans = _http_date_parser_index_offsets[cs];
+
+	_klen = _http_date_parser_single_lengths[cs];
+	if ( _klen > 0 ) {
+		const char *_lower = _keys;
+		const char *_mid;
+		const char *_upper = _keys + _klen - 1;
+		while (1) {
+			if ( _upper < _lower )
+				break;
+
+			_mid = _lower + ((_upper-_lower) >> 1);
+			if ( (*p) < *_mid )
+				_upper = _mid - 1;
+			else if ( (*p) > *_mid )
+				_lower = _mid + 1;
+			else {
+				_trans += (_mid - _keys);
+				goto _match;
+			}
+		}
+		_keys += _klen;
+		_trans += _klen;
+	}
+
+	_klen = _http_date_parser_range_lengths[cs];
+	if ( _klen > 0 ) {
+		const char *_lower = _keys;
+		const char *_mid;
+		const char *_upper = _keys + (_klen<<1) - 2;
+		while (1) {
+			if ( _upper < _lower )
+				break;
+
+			_mid = _lower + (((_upper-_lower) >> 1) & ~1);
+			if ( (*p) < _mid[0] )
+				_upper = _mid - 2;
+			else if ( (*p) > _mid[1] )
+				_lower = _mid + 2;
+			else {
+				_trans += ((_mid - _keys)>>1);
+				goto _match;
+			}
+		}
+		_trans += _klen;
+	}
+
+_match:
+	_trans = _http_date_parser_indicies[_trans];
+	cs = _http_date_parser_trans_targs[_trans];
+
+	if ( _http_date_parser_trans_actions[_trans] == 0 )
+		goto _again;
+
+	_acts = _http_date_parser_actions + _http_date_parser_trans_actions[_trans];
+	_nacts = (unsigned int) *_acts++;
+	while ( _nacts-- > 0 )
+	{
+		switch ( *_acts++ )
+		{
+	case 0:
+	{ hour = atoi( p ); }
+	break;
+	case 1:
+	{ minute = atoi( p ); }
+	break;
+	case 2:
+	{ second = atoi( p ); }
+	break;
+	case 3:
+	{ day = atoi( p ); }
+	break;
+	case 4:
+	{ day = atoi( p ); }
+	break;
+	case 5:
+	{ ps = p; }
+	break;
+	case 6:
+	{
+                   if ( *ps == 'J' ) month = 1;
+                   else if ( *ps == 'F' ) month = 2;
+                   else if ( *ps == 'M' )
+                   {
+                     if ( *(p+1) == 'a' ) month = 3;
+                     else month = 5;
+                   }
+                   else if ( *ps == 'A' )
+                   {
+                     if ( *(ps+1) == 'p' ) month = 4;
+                     else month = 8;
+                   }
+                   else if ( *ps == 'J' )
+                   {
+                     if ( *(ps+2) == 'n') month = 6;
+                     else month = 7;
+                   }
+                   else if ( *ps == 'S' ) month = 9;
+                   else if ( *ps == 'O' ) month = 10;
+                   else if ( *ps == 'N' ) month = 11;
+                   else if ( *ps == 'D' ) month = 12;
+                   else DebugBreak();
+                 }
+	break;
+	case 7:
+	{ year = atoi( p ); }
+	break;
+	case 8:
+	{ year = atoi( p ); }
+	break;
+	case 9:
+	{ return Time::INVALID_TIME; }
+	break;
+		}
+	}
+
+_again:
+	if ( cs == 0 )
+		goto _out;
+	p += 1;
+	goto _resume;
+	if ( p == eof )
+	{
+	const char *__acts = _http_date_parser_actions + _http_date_parser_eof_actions[cs];
+	unsigned int __nacts = (unsigned int) *__acts++;
+	while ( __nacts-- > 0 ) {
+		switch ( *__acts++ ) {
+	case 9:
+	{ return Time::INVALID_TIME; }
+	break;
+		}
+	}
+	}
+
+	_out: {}
+	}
+
+
+
+    if ( cs != http_date_parser_error )
+    {
+      if ( year < 100 ) year += 2000;
+      return Time( second, minute, hour, day, month - 1, year - 1900, false );
+    }
+  }
+
+  return Time::INVALID_TIME;
+}
+
+template <class HTTPMessageParserType, class HTTPMessageType>
+void HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::reset()
+{
+  body = NULL;
+  field_offsets.clear();
+  Buffer::dec_ref( *header );
+  header = NULL;
+}
+
+template class HTTPMessageParser<HTTPRequestParser, HTTPRequest>;
+template class HTTPMessageParser<HTTPResponseParser, HTTPResponse>;
+
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
+
+
+// http_request.cpp
+HTTPRequest::HTTPRequest
+(
+  Buffer& header,
+  uint16_t method_offset,
+  uint16_t uri_offset,
+  uint16_t http_version_offset,
+  const FieldOffsets& field_offsets,
+  Buffer* body
+)
+  : HTTPMessage( header, field_offsets, body ),
+    method_offset( method_offset ),
+    uri_offset( uri_offset ),
+    http_version_offset( http_version_offset )
+{
+  parsed_uri = NULL;
+}
+
+HTTPRequest::HTTPRequest( const char* method, const char* uri )
+{
+  init( method, uri );
+}
+
+HTTPRequest::HTTPRequest( const char* method, const char* uri, Buffer& body )
+{
+  init( method, uri );
+}
+
+HTTPRequest::HTTPRequest( const char* method, const URI& uri )
+{
+  init( method, uri.get_resource().c_str() );
+}
+
+HTTPRequest::HTTPRequest( const char* method, const URI& uri, Buffer& body )
+{
+  init( method, uri.get_resource().c_str() );
 }
 
 HTTPRequest::~HTTPRequest()
 {
+  URI::dec_ref( parsed_uri );
 }
 
-ssize_t HTTPRequest::deserialize( Buffer& buffer )
+double HTTPRequest::get_http_version() const
 {
-  return 0;
+  const char* http_version_string
+    = static_cast<const char*>( get_header() ) + http_version_offset;
+
+  double http_version = atof( http_version_string );
+
+  if ( http_version != 0 )
+    return http_version;
+  else
+    return 1.1;
+}
+
+const char* HTTPRequest::get_method() const
+{
+  return static_cast<const char*>( get_header() ) + method_offset;
+}
+
+URI& HTTPRequest::get_parsed_uri()
+{
+  if ( parsed_uri != NULL )
+    return *parsed_uri;
+  else
+  {
+    parsed_uri = URI::parse( get_uri() );
+#ifdef _DEBUG
+    if ( parsed_uri == NULL ) DebugBreak();
+#endif
+    return *parsed_uri;
+  }
+}
+
+const char* HTTPRequest::get_uri() const
+{
+  return static_cast<const char*>( get_header() ) + uri_offset;
+}
+
+void HTTPRequest::init( const char* method, const char* uri )
+{
+  get_header().push_back( const_cast<char*>( method ) );
+  get_header().push_back( " ", 1 );
+  get_header().push_back( const_cast<char*>( uri ) );
+  get_header().push_back( " HTTP/1.1\r\n", 11 );
+  parsed_uri = NULL;
+}
+
+void HTTPRequest::marshal( Marshaller& marshaller ) const
+{
+  HTTPMessage::marshal( marshaller );
 }
 
 void HTTPRequest::respond( HTTPResponse& http_response )
@@ -9204,66 +10910,351 @@ void HTTPRequest::respond( ExceptionResponse& exception_response )
   Request::respond( exception_response );
 }
 
-Buffers& HTTPRequest::serialize()
+
+// http_request_parser.cpp
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4702 )
+#endif
+
+HTTPRequestParser::HTTPRequestParser()
 {
-  return HTTPMessage::serialize();
+  method_offset = 0;
+  uri_offset = 0;
+  http_version_offset = 0;
 }
+
+HTTPRequest*
+HTTPRequestParser::createHTTPMessage
+(
+  Buffer& header,
+  const HTTPMessage::FieldOffsets& field_offsets,
+  Buffer* body
+)
+{
+  return new HTTPRequest
+             (
+               header,
+               method_offset,
+               uri_offset,
+               http_version_offset,
+               field_offsets,
+               body
+             );
+}
+
+HTTPRequestParser::ParseStatus
+HTTPRequestParser::parse_first_header_line
+(
+  char** inout_p,
+  const char* pe
+)
+{
+  // Variables used by the Ragel parser
+  int cs;
+  char* p = *inout_p;
+  const char *ps = p, *eof = pe;
+
+  // Variables used by machine actions
+  method_offset = 0; uri_offset = 0; http_version_offset = 0;
+
+
+static const char _http_request_line_parser_actions[] = {
+	0, 1, 0, 1, 1, 1, 2, 1,
+	3, 1, 4, 1, 5, 1, 6, 1,
+	7
+};
+
+static const unsigned char _http_request_line_parser_key_offsets[] = {
+	0, 0, 2, 6, 9, 11, 12, 13,
+	14, 15, 16, 18, 21, 23, 27, 28,
+	41, 47, 53, 67, 73, 79, 80, 81,
+	82, 84, 85, 86, 92, 100, 107, 115,
+	121, 133, 140, 142, 147, 153, 161, 167,
+	175, 181, 193, 194
+};
+
+static const unsigned char _http_request_line_parser_trans_keys[] = {
+	65u, 90u, 0u, 32u, 65u, 90u, 42u, 47u,
+	104u, 0u, 32u, 72u, 84u, 84u, 80u, 47u,
+	48u, 57u, 46u, 48u, 57u, 48u, 57u, 0u,
+	13u, 48u, 57u, 10u, 0u, 32u, 33u, 37u,
+	61u, 63u, 95u, 36u, 59u, 64u, 90u, 97u,
+	122u, 48u, 57u, 65u, 70u, 97u, 102u, 48u,
+	57u, 65u, 70u, 97u, 102u, 0u, 32u, 33u,
+	37u, 61u, 95u, 36u, 46u, 48u, 59u, 64u,
+	90u, 97u, 122u, 48u, 57u, 65u, 70u, 97u,
+	102u, 48u, 57u, 65u, 70u, 97u, 102u, 116u,
+	116u, 112u, 58u, 115u, 47u, 47u, 48u, 57u,
+	65u, 90u, 97u, 122u, 45u, 46u, 48u, 57u,
+	65u, 90u, 97u, 122u, 45u, 48u, 57u, 65u,
+	90u, 97u, 122u, 45u, 46u, 48u, 57u, 65u,
+	90u, 97u, 122u, 48u, 57u, 65u, 90u, 97u,
+	122u, 0u, 32u, 45u, 46u, 47u, 58u, 48u,
+	57u, 65u, 90u, 97u, 122u, 45u, 48u, 57u,
+	65u, 90u, 97u, 122u, 48u, 57u, 0u, 32u,
+	47u, 48u, 57u, 48u, 57u, 65u, 90u, 97u,
+	122u, 45u, 46u, 48u, 57u, 65u, 90u, 97u,
+	122u, 48u, 57u, 65u, 90u, 97u, 122u, 45u,
+	46u, 48u, 57u, 65u, 90u, 97u, 122u, 48u,
+	57u, 65u, 90u, 97u, 122u, 0u, 32u, 45u,
+	46u, 47u, 58u, 48u, 57u, 65u, 90u, 97u,
+	122u, 58u, 0
+};
+
+static const char _http_request_line_parser_single_lengths[] = {
+	0, 0, 2, 3, 2, 1, 1, 1,
+	1, 1, 0, 1, 0, 2, 1, 7,
+	0, 0, 6, 0, 0, 1, 1, 1,
+	2, 1, 1, 0, 2, 1, 2, 0,
+	6, 1, 0, 3, 0, 2, 0, 2,
+	0, 6, 1, 0
+};
+
+static const char _http_request_line_parser_range_lengths[] = {
+	0, 1, 1, 0, 0, 0, 0, 0,
+	0, 0, 1, 1, 1, 1, 0, 3,
+	3, 3, 4, 3, 3, 0, 0, 0,
+	0, 0, 0, 3, 3, 3, 3, 3,
+	3, 3, 1, 1, 3, 3, 3, 3,
+	3, 3, 0, 0
+};
+
+static const unsigned char _http_request_line_parser_index_offsets[] = {
+	0, 0, 2, 6, 10, 13, 15, 17,
+	19, 21, 23, 25, 28, 30, 34, 36,
+	47, 51, 55, 66, 70, 74, 76, 78,
+	80, 83, 85, 87, 91, 97, 102, 108,
+	112, 122, 127, 129, 134, 138, 144, 148,
+	154, 158, 168, 170
+};
+
+static const char _http_request_line_parser_indicies[] = {
+	1, 0, 2, 2, 3, 0, 4, 5,
+	6, 0, 7, 7, 0, 8, 0, 9,
+	0, 10, 0, 11, 0, 12, 0, 13,
+	0, 14, 15, 0, 16, 0, 17, 17,
+	16, 0, 18, 0, 7, 7, 19, 20,
+	19, 21, 19, 19, 19, 19, 0, 22,
+	22, 22, 0, 19, 19, 19, 0, 7,
+	7, 21, 23, 21, 21, 21, 21, 21,
+	21, 0, 24, 24, 24, 0, 21, 21,
+	21, 0, 25, 0, 26, 0, 27, 0,
+	28, 29, 0, 30, 0, 31, 0, 32,
+	33, 33, 0, 34, 35, 32, 36, 36,
+	0, 34, 36, 36, 36, 0, 34, 37,
+	36, 36, 36, 0, 36, 33, 33, 0,
+	7, 7, 38, 37, 19, 39, 33, 33,
+	33, 0, 38, 33, 33, 33, 0, 40,
+	0, 7, 7, 19, 40, 0, 41, 33,
+	33, 0, 34, 42, 41, 36, 36, 0,
+	43, 33, 33, 0, 34, 44, 43, 36,
+	36, 0, 45, 33, 33, 0, 7, 7,
+	34, 37, 19, 39, 45, 36, 36, 0,
+	28, 0, 0, 0
+};
+
+static const char _http_request_line_parser_trans_targs[] = {
+	0, 2, 3, 2, 4, 15, 21, 5,
+	6, 7, 8, 9, 10, 11, 12, 11,
+	13, 14, 43, 15, 16, 18, 17, 19,
+	20, 22, 23, 24, 25, 42, 26, 27,
+	28, 32, 29, 36, 30, 31, 33, 34,
+	35, 37, 38, 39, 40, 41
+};
+
+static const char _http_request_line_parser_trans_actions[] = {
+	15, 1, 3, 0, 5, 5, 5, 7,
+	0, 0, 0, 0, 0, 9, 0, 0,
+	0, 11, 13, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0
+};
+
+static const char _http_request_line_parser_eof_actions[] = {
+	0, 15, 15, 15, 15, 15, 15, 15,
+	15, 15, 15, 15, 15, 15, 15, 15,
+	15, 15, 15, 15, 15, 15, 15, 15,
+	15, 15, 15, 15, 15, 15, 15, 15,
+	15, 15, 15, 15, 15, 15, 15, 15,
+	15, 15, 15, 0
+};
+
+static const int http_request_line_parser_start = 1;
+static const int http_request_line_parser_first_final = 43;
+static const int http_request_line_parser_error = 0;
+
+static const int http_request_line_parser_en_main = 1;
+
+
+	{
+	cs = http_request_line_parser_start;
+	}
+
+	{
+	int _klen;
+	unsigned int _trans;
+	const char *_acts;
+	unsigned int _nacts;
+	const unsigned char *_keys;
+
+	if ( cs == 0 )
+		goto _out;
+_resume:
+	_keys = _http_request_line_parser_trans_keys + _http_request_line_parser_key_offsets[cs];
+	_trans = _http_request_line_parser_index_offsets[cs];
+
+	_klen = _http_request_line_parser_single_lengths[cs];
+	if ( _klen > 0 ) {
+		const unsigned char *_lower = _keys;
+		const unsigned char *_mid;
+		const unsigned char *_upper = _keys + _klen - 1;
+		while (1) {
+			if ( _upper < _lower )
+				break;
+
+			_mid = _lower + ((_upper-_lower) >> 1);
+			if ( (*p) < *_mid )
+				_upper = _mid - 1;
+			else if ( (*p) > *_mid )
+				_lower = _mid + 1;
+			else {
+				_trans += (_mid - _keys);
+				goto _match;
+			}
+		}
+		_keys += _klen;
+		_trans += _klen;
+	}
+
+	_klen = _http_request_line_parser_range_lengths[cs];
+	if ( _klen > 0 ) {
+		const unsigned char *_lower = _keys;
+		const unsigned char *_mid;
+		const unsigned char *_upper = _keys + (_klen<<1) - 2;
+		while (1) {
+			if ( _upper < _lower )
+				break;
+
+			_mid = _lower + (((_upper-_lower) >> 1) & ~1);
+			if ( (*p) < _mid[0] )
+				_upper = _mid - 2;
+			else if ( (*p) > _mid[1] )
+				_lower = _mid + 2;
+			else {
+				_trans += ((_mid - _keys)>>1);
+				goto _match;
+			}
+		}
+		_trans += _klen;
+	}
+
+_match:
+	_trans = _http_request_line_parser_indicies[_trans];
+	cs = _http_request_line_parser_trans_targs[_trans];
+
+	if ( _http_request_line_parser_trans_actions[_trans] == 0 )
+		goto _again;
+
+	_acts = _http_request_line_parser_actions + _http_request_line_parser_trans_actions[_trans];
+	_nacts = (unsigned int) *_acts++;
+	while ( _nacts-- > 0 )
+	{
+		switch ( *_acts++ )
+		{
+	case 0:
+	{ method_offset = static_cast<uint16_t>( p - ps ); }
+	break;
+	case 1:
+	{ *p = 0; }
+	break;
+	case 2:
+	{ uri_offset = static_cast<uint16_t>( p - ps ); }
+	break;
+	case 3:
+	{ *p = 0; }
+	break;
+	case 4:
+	{ http_version_offset = static_cast<uint16_t>( p - ps ); }
+	break;
+	case 5:
+	{ *p = 0; }
+	break;
+	case 6:
+	{ {p++; goto _out; } }
+	break;
+	case 7:
+	{ return PARSE_ERROR; }
+	break;
+		}
+	}
+
+_again:
+	if ( cs == 0 )
+		goto _out;
+	p += 1;
+	goto _resume;
+	if ( p == eof )
+	{
+	const char *__acts = _http_request_line_parser_actions + _http_request_line_parser_eof_actions[cs];
+	unsigned int __nacts = (unsigned int) *__acts++;
+	while ( __nacts-- > 0 ) {
+		switch ( *__acts++ ) {
+	case 7:
+	{ return PARSE_ERROR; }
+	break;
+		}
+	}
+	}
+
+	_out: {}
+	}
+
+
+
+  if ( cs != http_request_line_parser_error )
+  {
+    *inout_p = p;
+    return PARSE_COMPLETE;
+  }
+  else
+    return PARSE_WANT_READ;
+}
+
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
 
 
 // http_response.cpp
-#line 1 "c:\\projects\\yield\\src\\yield\\ipc\\http_response.rl"
-// Copyright (c) 2010 Minor Gordon
-// With original implementations and ideas contributed by Felix Hupfeld
-// All rights reserved
-//
-// This source file is part of the Yield project.
-// It is licensed under the New BSD license:
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-// * Neither the name of the Yield project nor the
-// names of its contributors may be used to endorse or promote products
-// derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-
-
-HTTPResponse::HTTPResponse()
+HTTPResponse::HTTPResponse
+(
+  Buffer& header,
+  const FieldOffsets& field_offsets,
+  uint16_t status_code,
+  Buffer* body
+)
+  : HTTPMessage( header, field_offsets, body )
 {
-  memset( status_code_str, 0, sizeof( status_code_str ) );
+  init( status_code );
 }
 
 HTTPResponse::HTTPResponse( uint16_t status_code )
-  // : HTTPMessage( 1, NULL), status_code( status_code )
-{ }
-
-HTTPResponse::HTTPResponse( uint16_t status_code, Buffer& body )
-  // : HTTPMessage( 1, &body ), status_code( status_code )
-{ }
-
-ssize_t HTTPResponse::deserialize( Buffer& buffer )
 {
-  return 0;
+  init( status_code );
 }
 
-Buffers& HTTPResponse::serialize()
+HTTPResponse::HTTPResponse( uint16_t status_code, Buffer& body )
+ : HTTPMessage( body )
 {
+  init( status_code );
+}
+
+void HTTPResponse::init( uint16_t status_code )
+{
+  this->status_code = status_code;
+
   const char* status_line;
   size_t status_line_len;
 
@@ -9315,43 +11306,298 @@ Buffers& HTTPResponse::serialize()
     default: status_line = "HTTP/1.1 500 Internal Server Error\r\n"; status_line_len = 36; break;
   }
 
-  // RFC822Headers::set_iovec( 0, status_line, status_line_len );
+  get_header().push_back( status_line, status_line_len );
 
-  // char date[32];
-  // Time().as_http_date_time( date, 32 );
-  // set_header( "Date", date );
+  set_field( "Date", Time() );
+}
 
-  return HTTPMessage::serialize();
+void HTTPResponse::marshal( Marshaller& marshaller ) const
+{
+  HTTPMessage::marshal( marshaller );
 }
 
 
+// http_response_parser.cpp
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4702 )
+#endif
+
+HTTPResponseParser::HTTPResponseParser()
+{
+  status_code = 0;
+}
+
+HTTPResponse*
+HTTPResponseParser::createHTTPMessage
+(
+  Buffer& header,
+  const HTTPMessage::FieldOffsets& field_offsets,
+  Buffer* body
+)
+{
+  return new HTTPResponse( header, field_offsets, status_code, body );
+}
+
+HTTPResponseParser::ParseStatus
+HTTPResponseParser::parse_first_header_line
+(
+  char** inout_p,
+  const char* pe
+)
+{
+  // Variables used by the Ragel parser
+  int cs;
+  char* p = *inout_p;
+  const char *ps = p, *eof = pe;
+
+  // Variables used by machine actions
+  uint16_t status_code_offset = 0;
+
+
+static const char _http_status_line_parser_actions[] = {
+	0, 1, 0, 1, 1, 1, 2, 1,
+	3
+};
+
+static const char _http_status_line_parser_key_offsets[] = {
+	0, 0, 1, 2, 3, 4, 5, 7,
+	10, 12, 15, 17, 21, 26, 32, 33
+};
+
+static const unsigned char _http_status_line_parser_trans_keys[] = {
+	72u, 84u, 84u, 80u, 47u, 48u, 57u, 46u,
+	48u, 57u, 48u, 57u, 32u, 48u, 57u, 48u,
+	57u, 0u, 32u, 48u, 57u, 32u, 65u, 90u,
+	97u, 122u, 13u, 32u, 65u, 90u, 97u, 122u,
+	10u, 0
+};
+
+static const char _http_status_line_parser_single_lengths[] = {
+	0, 1, 1, 1, 1, 1, 0, 1,
+	0, 1, 0, 2, 1, 2, 1, 0
+};
+
+static const char _http_status_line_parser_range_lengths[] = {
+	0, 0, 0, 0, 0, 0, 1, 1,
+	1, 1, 1, 1, 2, 2, 0, 0
+};
+
+static const char _http_status_line_parser_index_offsets[] = {
+	0, 0, 2, 4, 6, 8, 10, 12,
+	15, 17, 20, 22, 26, 30, 35, 37
+};
+
+static const char _http_status_line_parser_indicies[] = {
+	1, 0, 2, 0, 3, 0, 4, 0,
+	5, 0, 6, 0, 7, 6, 0, 8,
+	0, 9, 8, 0, 10, 0, 11, 11,
+	12, 0, 13, 13, 13, 0, 14, 13,
+	13, 13, 0, 15, 0, 0, 0
+};
+
+static const char _http_status_line_parser_trans_targs[] = {
+	0, 2, 3, 4, 5, 6, 7, 8,
+	9, 10, 11, 12, 11, 13, 14, 15
+};
+
+static const char _http_status_line_parser_trans_actions[] = {
+	7, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 1, 3, 0, 0, 0, 5
+};
+
+static const char _http_status_line_parser_eof_actions[] = {
+	0, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 0
+};
+
+static const int http_status_line_parser_start = 1;
+static const int http_status_line_parser_first_final = 15;
+static const int http_status_line_parser_error = 0;
+
+static const int http_status_line_parser_en_main = 1;
+
+
+	{
+	cs = http_status_line_parser_start;
+	}
+
+	{
+	int _klen;
+	unsigned int _trans;
+	const char *_acts;
+	unsigned int _nacts;
+	const unsigned char *_keys;
+
+	if ( cs == 0 )
+		goto _out;
+_resume:
+	_keys = _http_status_line_parser_trans_keys + _http_status_line_parser_key_offsets[cs];
+	_trans = _http_status_line_parser_index_offsets[cs];
+
+	_klen = _http_status_line_parser_single_lengths[cs];
+	if ( _klen > 0 ) {
+		const unsigned char *_lower = _keys;
+		const unsigned char *_mid;
+		const unsigned char *_upper = _keys + _klen - 1;
+		while (1) {
+			if ( _upper < _lower )
+				break;
+
+			_mid = _lower + ((_upper-_lower) >> 1);
+			if ( (*p) < *_mid )
+				_upper = _mid - 1;
+			else if ( (*p) > *_mid )
+				_lower = _mid + 1;
+			else {
+				_trans += (_mid - _keys);
+				goto _match;
+			}
+		}
+		_keys += _klen;
+		_trans += _klen;
+	}
+
+	_klen = _http_status_line_parser_range_lengths[cs];
+	if ( _klen > 0 ) {
+		const unsigned char *_lower = _keys;
+		const unsigned char *_mid;
+		const unsigned char *_upper = _keys + (_klen<<1) - 2;
+		while (1) {
+			if ( _upper < _lower )
+				break;
+
+			_mid = _lower + (((_upper-_lower) >> 1) & ~1);
+			if ( (*p) < _mid[0] )
+				_upper = _mid - 2;
+			else if ( (*p) > _mid[1] )
+				_lower = _mid + 2;
+			else {
+				_trans += ((_mid - _keys)>>1);
+				goto _match;
+			}
+		}
+		_trans += _klen;
+	}
+
+_match:
+	_trans = _http_status_line_parser_indicies[_trans];
+	cs = _http_status_line_parser_trans_targs[_trans];
+
+	if ( _http_status_line_parser_trans_actions[_trans] == 0 )
+		goto _again;
+
+	_acts = _http_status_line_parser_actions + _http_status_line_parser_trans_actions[_trans];
+	_nacts = (unsigned int) *_acts++;
+	while ( _nacts-- > 0 )
+	{
+		switch ( *_acts++ )
+		{
+	case 0:
+	{ status_code_offset = static_cast<uint16_t>( p - ps ); }
+	break;
+	case 1:
+	{
+                       *p = 0;
+
+                       status_code
+                         = static_cast<uint16_t>
+                           (
+                             atoi( ps + status_code_offset )
+                           );
+
+                       if ( status_code == 0 )
+                        return PARSE_ERROR;
+                     }
+	break;
+	case 2:
+	{ {p++; goto _out; } }
+	break;
+	case 3:
+	{ return PARSE_ERROR; }
+	break;
+		}
+	}
+
+_again:
+	if ( cs == 0 )
+		goto _out;
+	p += 1;
+	goto _resume;
+	if ( p == eof )
+	{
+	const char *__acts = _http_status_line_parser_actions + _http_status_line_parser_eof_actions[cs];
+	unsigned int __nacts = (unsigned int) *__acts++;
+	while ( __nacts-- > 0 ) {
+		switch ( *__acts++ ) {
+	case 3:
+	{ return PARSE_ERROR; }
+	break;
+		}
+	}
+	}
+
+	_out: {}
+	}
+
+
+
+  if ( cs != http_status_line_parser_error )
+  {
+    *inout_p = p;
+    return PARSE_COMPLETE;
+  }
+  else
+    return PARSE_WANT_READ;
+}
+
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
+
+
 // http_server.cpp
+using yidl::runtime::BufferedMarshaller;
+using yidl::runtime::StackBuffer;
+using yield::platform::File;
+using yield::platform::Volume;
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+
 HTTPServer::HTTPServer
 (
-  uint32_t flags,
+  AccessLog* access_log,
+  Log* error_log,
   EventTarget& http_request_target,
   IOQueue& io_queue,
   TCPSocket& listen_tcp_socket,
-  Log* log
+  Log* trace_log
 )
-  : SocketServer<HTTPRequest, HTTPResponse>
+  : TCPSocketServer
     (
-      flags,
+      error_log,
       io_queue,
       listen_tcp_socket,
-      log,
-      http_request_target
-    )
-{ }
+      http_request_target,
+      trace_log
+    ),
+    access_log( Object::inc_ref( access_log ) )
+{
+  get_listen_tcp_socket().aio_accept( *this, NULL, new StackBuffer<1024> );
+}
 
 HTTPServer&
 HTTPServer::create
 (
   const URI& absolute_uri,
   EventTarget& http_request_target,
-  uint32_t flags,
-  Log* log,
-  SSLContext* ssl_context
+  AccessLog* access_log,
+  Log* error_log,
+  SSLContext* ssl_context,
+  Log* trace_log
 )
 {
   URI checked_absolute_uri( absolute_uri );
@@ -9363,64 +11609,344 @@ HTTPServer::create
       checked_absolute_uri.set_port( 80 );
   }
 
-  SocketAddress& sockname = createSocketAddress( checked_absolute_uri );
+  IOQueue& io_queue = createIOQueue( ssl_context != NULL );
 
-  IOQueue* io_queue;
-  TCPSocket* listen_tcp_socket;
-#ifdef YIELD_IPC_HAVE_OPENSSL
-  if ( absolute_uri.get_scheme() == "https" && ssl_context != NULL )
-  {
-    io_queue = &yield::platform::NBIOQueue::create();
-    listen_tcp_socket = SSLSocket::create( *ssl_context );
-    SSLContext::dec_ref( *ssl_context );
-  }
-  else
-#endif
-  {
-    io_queue = &createIOQueue();
-    if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-      listen_tcp_socket = TracingTCPSocket::create( *log );
-    else
-      listen_tcp_socket = TCPSocket::create();
-  }
+  return *new HTTPServer
+             (
+               access_log,
+               error_log,
+               http_request_target,
+               io_queue,
+               createListenTCPSocket
+               (
+                 absolute_uri,
+                 io_queue,
+                 ssl_context,
+                 trace_log
+               ),
+               trace_log
+             );
+}
 
-  if
+void
+HTTPServer::onAcceptCompletion
+(
+  TCPSocket& accepted_tcp_socket,
+  void* context,
+  Buffer* recv_buffer
+)
+{
+  TCPSocketServer::onAcceptCompletion
   (
-    listen_tcp_socket != NULL
-    &&
-    listen_tcp_socket->associate( *io_queue )
-    &&
-    listen_tcp_socket->bind( sockname )
-    &&
-    listen_tcp_socket->listen()
-    &&
-    listen_tcp_socket->setsockopt( Socket::OPTION_SO_KEEPALIVE, true )
-    &&
-    listen_tcp_socket->setsockopt( Socket::OPTION_SO_LINGER, true )
-    &&
-    listen_tcp_socket->setsockopt( TCPSocket::OPTION_TCP_NODELAY, true )
+    accepted_tcp_socket,
+    context,
+    recv_buffer
+  );
+
+  Connection* connection = new Connection( accepted_tcp_socket, *this );
+  connection->onReadCompletion( *recv_buffer, NULL );
+
+  get_listen_tcp_socket().aio_accept( *this, NULL, new StackBuffer<1024> );
+}
+
+
+HTTPServer::AccessLog::AccessLog( Format& format )
+  : format( format )
+{ }
+
+HTTPServer::AccessLog::~AccessLog()
+{
+  delete &format;
+}
+
+
+string
+HTTPServer::AccessLog::CombinedFormat::operator()
+(
+  const HTTPRequest& http_request,
+  const HTTPResponse& http_response
+) const
+{
+  string common_entry
+    = CommonFormat::operator()( http_request, http_response );
+
+  return common_entry;
+}
+
+
+string
+HTTPServer::AccessLog::CommonFormat::operator()
+(
+  const HTTPRequest& http_request,
+  const HTTPResponse& http_response
+) const
+{
+  string client_ip;
+  {
+    SocketAddress* peername = SocketAddress::create( "127.0.0.1" );
+    if ( peername != NULL )
+    {
+      if ( !peername->getnameinfo( client_ip ) )
+        client_ip = "-";
+      SocketAddress::dec_ref( *peername );
+    }
+    else
+      client_ip = "-";
+  }
+
+  char request_creation_time[32];
+  {
+    static const char* Months[]
+      = {
+          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        };
+
+#ifdef _WIN32
+    SYSTEMTIME local_system_time = http_request.get_creation_time();
+    TIME_ZONE_INFORMATION time_zone_information;
+    GetTimeZoneInformation( &time_zone_information );
+
+    // 10/Oct/2000:13:55:36 -0700
+    _snprintf_s
+    (
+      request_creation_time,
+      32,
+      _TRUNCATE,
+      "[%02d/%s/%04d:%02d:%02d:%02d %+0.4d]",
+      local_system_time.wDay,
+      Months[local_system_time.wMonth-1],
+      local_system_time.wYear,
+      local_system_time.wHour,
+      local_system_time.wMinute,
+      local_system_time.wSecond,
+      ( time_zone_information.Bias / 60 ) * -100
+    );
+#else
+    struct tm local_tm = Time();
+
+    snprintf
+    (
+      request_creation_time,
+      32,
+      "[%02d/%s/%04d:%02d:%02d:%02d %d]",
+      local_tm.tm_mday,
+      Months[local_tm.tm_mon],
+      local_tm.tm_year + 1900,
+      local_tm.tm_hour,
+      local_tm.tm_min,
+      local_tm.tm_sec,
+      0
+    );
+#endif
+  }
+
+  const char* request_http_version;
+  if ( http_request.get_http_version() == 1.0 )
+    request_http_version = "1.0";
+  else if ( http_request.get_http_version() == 1.1 )
+    request_http_version = "1.1";
+  else
+    DebugBreak();
+
+  ostringstream entry;
+  entry << client_ip << " ";
+  entry << "- "; // RFC 1413 identity
+  entry << "- "; // HTTP auth userid
+  entry << request_creation_time << " ";
+  entry << "\"";
+  entry << http_request.get_method() << " ";
+  entry << http_request.get_uri() << " ";
+  entry << "HTTP/" << request_http_version;
+  entry << "\" ";
+  entry << http_response.get_status_code() << " ";
+  if ( http_response.get_body() != NULL )
+    entry << http_response.get_body()->size();
+  else
+    entry << "-";
+  entry << "\r\n";
+
+  return entry.str();
+}
+
+
+class HTTPServer::ostreamAccessLog : public AccessLog
+{
+public:
+  ostreamAccessLog( ostream& os, Format& format )
+    : AccessLog( format ), os( os )
+  { }
+
+  // AccessLog
+  void
+  write
+  (
+    const HTTPRequest& http_request,
+    const HTTPResponse& http_response
   )
   {
-    SocketAddress::dec_ref( sockname );
-    return *new HTTPServer
-               (
-                 flags,
-                 http_request_target,
-                 *io_queue,
-                 *listen_tcp_socket,
-                 log
-               );
+    string entry = get_format()( http_request, http_response );
+    os << entry;
   }
+
+private:
+  ostream& os;
+};
+
+HTTPServer::AccessLog&
+HTTPServer::AccessLog::open
+(
+  ostream& os,
+  Format* format
+)
+{
+  if ( format == NULL )
+    format = new CombinedFormat;
+
+  return *new ostreamAccessLog( os, *format );
+}
+
+
+class HTTPServer::FileAccessLog : public AccessLog
+{
+public:
+  FileAccessLog( File& file, Format& format )
+    : AccessLog( format ), file( &file )
+  { }
+
+  FileAccessLog( const Path& file_path, Format& format ) // Lazy open
+    : AccessLog( format ), file_path( file_path )
+  { }
+
+  ~FileAccessLog()
+  {
+    File::dec_ref( file );
+  }
+
+  // AccessLog
+  void
+  write
+  (
+    const HTTPRequest& http_request,
+    const HTTPResponse& http_response
+  )
+  {
+    if ( file == NULL ) // Lazy open
+    {
+      file = Volume().open( file_path, O_CREAT|O_WRONLY|O_APPEND );
+      if ( file == NULL )
+        return;
+    }
+
+    string entry = get_format()( http_request, http_response );
+
+    file->write( entry.c_str(), entry.size() );
+  }
+
+private:
+  File* file;
+  Path file_path;
+};
+
+HTTPServer::AccessLog&
+HTTPServer::AccessLog::open
+(
+  const Path& file_path,
+  Format* format,
+  bool lazy_open
+)
+{
+  if ( format == NULL )
+    format = new CombinedFormat;
+
+  if ( file_path.empty() || file_path == "-" )
+    return *new ostreamAccessLog( cout, *format );
+  else if ( lazy_open )
+    return *new FileAccessLog( file_path, *format );
   else
   {
-    SocketAddress::dec_ref( *io_queue );
-    SocketAddress::dec_ref( sockname );
-    throw yield::platform::Exception();
+    File* file = Volume().open( file_path, O_CREAT|O_WRONLY|O_APPEND );
+    if ( file != NULL )
+      return *new FileAccessLog( *file, *format );
+    else
+      throw Exception();
   }
 }
 
 
+HTTPServer::Connection::Connection
+(
+  TCPSocket& accepted_tcp_socket,
+  HTTPServer& http_server
+)
+  : TCPSocketServer::Connection( accepted_tcp_socket, http_server )
+{ }
+
+void HTTPServer::Connection::onReadCompletion( Buffer& buffer, void* )
+{
+  vector<HTTPRequest*> http_requests;
+  HTTPRequestParser::ParseStatus parse_status
+    = HTTPRequestParser::parse( buffer, http_requests );
+
+  if ( !http_requests.empty() )
+  {
+    for
+    (
+      vector<HTTPRequest*>::iterator http_request_i = http_requests.begin();
+      http_request_i != http_requests.end();
+      ++http_request_i
+    )
+    {
+      HTTPRequest* http_request = *http_request_i;
+      http_request->set_response_target( this );
+      get_socket_server().get_request_target().send( *http_request );
+    }
+  }
+
+  if ( parse_status != HTTPRequestParser::PARSE_ERROR )
+    get_socket().aio_recv( *new StackBuffer<1024>, 0, *this, NULL );
+  else
+    onReadError( 0, NULL );
+}
+
+void HTTPServer::Connection::onWriteCompletion
+(
+  size_t bytes_written,
+  void* context
+)
+{
+  TCPSocketServer::Connection::onWriteCompletion( bytes_written, context );
+  HTTPResponse* http_response = static_cast<HTTPResponse*>( context );
+  HTTPResponse::dec_ref( *http_response );
+}
+
+void HTTPServer::Connection::onWriteError( uint32_t error_code, void* context )
+{
+  HTTPResponse* http_response = static_cast<HTTPResponse*>( context );
+  HTTPResponse::dec_ref( *http_response );
+  TCPSocketServer::Connection::onWriteError( error_code, context );
+}
+
+void HTTPServer::Connection::send( Response& response )
+{
+  if ( response.get_type_id() == HTTPResponse::TYPE_ID )
+  {
+    HTTPResponse& http_response = static_cast<HTTPResponse&>( response );
+
+    BufferedMarshaller buffered_marshaller;
+    http_response.marshal( buffered_marshaller );
+    Buffers& buffers = buffered_marshaller.get_buffers().inc_ref();
+
+    get_socket().aio_sendmsg( buffers, 0, *this, &http_response );
+  }
+  else
+    DebugBreak();
+}
+
+
 // json_marshaller.cpp
+using yidl::runtime::StringBuffer;
+
 extern "C"
 {
 };
@@ -9429,7 +11955,7 @@ extern "C"
 JSONMarshaller::JSONMarshaller( bool write_empty_strings )
 : write_empty_strings( write_empty_strings )
 {
-  buffer = new yidl::runtime::StringBuffer;
+  buffer = new StringBuffer;
   root_key = NULL;
   writer = yajl_gen_alloc( NULL );
 }
@@ -9437,12 +11963,12 @@ JSONMarshaller::JSONMarshaller( bool write_empty_strings )
 JSONMarshaller::JSONMarshaller
 (
   JSONMarshaller& parent_json_marshaller,
-  const char* root_key
+  const Key& root_key
 )
-  : root_key( root_key ),
+  : buffer( parent_json_marshaller.buffer ),
+    root_key( &root_key ),
     write_empty_strings( parent_json_marshaller.write_empty_strings ),
-    writer( parent_json_marshaller.writer ),
-    buffer( parent_json_marshaller.buffer )
+    writer( parent_json_marshaller.writer )
 { }
 
 JSONMarshaller::~JSONMarshaller()
@@ -9461,119 +11987,117 @@ void JSONMarshaller::flushYAJLBuffer()
   yajl_gen_clear( writer );
 }
 
-void JSONMarshaller::write_key( const char* key )
+void JSONMarshaller::write( const Key& key, bool value )
 {
-  if ( in_map && key != NULL )
-  {
-    yajl_gen_string
-    (
-      writer,
-      reinterpret_cast<const unsigned char*>( key ),
-      static_cast<unsigned int>( strnlen( key, UINT16_MAX ) )
-    );
-  }
-}
-
-void JSONMarshaller::write( const char* key, uint32_t, bool value )
-{
-  write_key( key );
+  write( key );
   yajl_gen_bool( writer, static_cast<int>( value ) );
   flushYAJLBuffer();
 }
 
-void JSONMarshaller::write( const char*, uint32_t, const Buffer& )
+void JSONMarshaller::write( const Key& key, double value )
 {
-  DebugBreak();
-}
-
-void JSONMarshaller::write( const char* key, uint32_t, double value )
-{
-  write_key( key );
+  write( key );
   yajl_gen_double( writer, value );
   flushYAJLBuffer();
 }
 
-void JSONMarshaller::write( const char* key, uint32_t, int64_t value )
+void JSONMarshaller::write( const Key& key, int64_t value )
 {
-  write_key( key );
+  write( key );
   yajl_gen_integer( writer, static_cast<long>( value ) );
   flushYAJLBuffer();
 }
 
-void JSONMarshaller::write
-(
-  const char* key,
-  uint32_t,
-  const yidl::runtime::Map& value
-)
+void JSONMarshaller::write( const Key& key )
 {
-  write_key( key );
+  if ( in_map )
+  {
+    Key::Type key_type = key.get_type();
+    if ( key_type == Key::TYPE_DOUBLE )
+      yajl_gen_double( writer, static_cast<const DoubleKey&>( key ) );
+    else if ( key_type == Key::TYPE_INT32 )
+      yajl_gen_integer( writer, static_cast<const Int32Key&>( key ) );
+    else if ( key_type == Key::TYPE_INT64 )
+    {
+      yajl_gen_integer
+      (
+        writer,
+        static_cast<long>( static_cast<const Int64Key&>( key ) )
+      );
+    }
+    else if ( key_type == Key::TYPE_STRING )
+    {
+      yajl_gen_string
+      (
+        writer,
+        reinterpret_cast<const unsigned char*>
+        (
+          static_cast<const StringKey&>( key ).c_str()
+        ),
+        static_cast<const StringKey&>( key ).size()
+      );
+    }
+    else if ( key_type == Key::TYPE_STRING_LITERAL )
+    {
+      yajl_gen_string
+      (
+        writer,
+        reinterpret_cast<const unsigned char*>
+        (
+          static_cast<const char*>
+          (
+            static_cast<const StringLiteralKey&>( key )
+          )
+        ),
+        strnlen( static_cast<const StringLiteralKey&>( key ), UINT16_MAX )
+      );
+    }
+  }
+}
+
+void JSONMarshaller::write( const Key& key, const MarshallableObject& value )
+{
+  write( key );
   JSONMarshaller( *this, key ).write( &value );
 }
 
-void JSONMarshaller::write( const yidl::runtime::Map* value )
+void JSONMarshaller::write( const MarshallableObject* value )
 {
   yajl_gen_map_open( writer );
   in_map = true;
-  if ( value )
+  if ( value != NULL )
     value->marshal( *this );
   yajl_gen_map_close( writer );
   flushYAJLBuffer();
 }
 
-void JSONMarshaller::write
-(
-  const char* key,
-  uint32_t,
-  const yidl::runtime::MarshallableObject& value
-)
+void JSONMarshaller::write( const Key& key, const Sequence& value )
 {
-  write_key( key );
+  write( key );
   JSONMarshaller( *this, key ).write( &value );
 }
 
-void JSONMarshaller::write( const yidl::runtime::MarshallableObject* value )
-{
-  yajl_gen_map_open( writer );
-  in_map = true;
-  if ( value )
-    value->marshal( *this );
-  yajl_gen_map_close( writer );
-  flushYAJLBuffer();
-}
-
-void JSONMarshaller::write
-(
-  const char* key,
-  uint32_t,
-  const yidl::runtime::Sequence& value
-)
-{
-  write_key( key );
-  JSONMarshaller( *this, key ).write( &value );
-}
-
-void JSONMarshaller::write( const yidl::runtime::Sequence* value )
+void JSONMarshaller::write( const Sequence* value )
 {
   yajl_gen_array_open( writer );
   in_map = false;
-  if ( value )
+  if ( value != NULL )
     value->marshal( *this );
   yajl_gen_array_close( writer );
   flushYAJLBuffer();
 }
 
-void JSONMarshaller::write
+void
+JSONMarshaller::write
 (
-  const char* key,
-  uint32_t,
+  const Key& key,
   const char* value,
   size_t value_len
 )
 {
   if ( value_len > 0 || write_empty_strings )
   {
-    write_key( key );
+    write( key );
     yajl_gen_string
     (
       writer,
@@ -9585,587 +12109,676 @@ void JSONMarshaller::write
 }
 
 
-// json_unmarshaller.cpp
+// json_parser.cpp
+using yidl::runtime::StringBuffer;
+
 extern "C"
 {
 };
 
 
-class JSONUnmarshaller::JSONValue
+JSONParser::JSONValue JSONParser::JSONfalse;
+JSONParser::JSONValue JSONParser::JSONnull;
+JSONParser::JSONValue JSONParser::JSONtrue;
+
+
+JSONParser::JSONParser()
 {
-public:
-  JSONValue( Buffer* identifier, bool is_map )
-    : identifier( identifier ), is_map( is_map )
-  {
-    as_double = 0;
-    as_integer = 0;
+  buffer = NULL;
 
-    parent = child = prev = next = NULL;
-    have_read = false;
-  }
+  static yajl_callbacks JSONParser_yajl_callbacks
+   = {
+       handle_yajl_null,
+       handle_yajl_boolean,
+       handle_yajl_integer,
+       handle_yajl_double,
+       NULL,
+       handle_yajl_string,
+       handle_yajl_start_map,
+       handle_yajl_map_key,
+       handle_yajl_end_map,
+       handle_yajl_start_array,
+       handle_yajl_end_array
+    };
 
-  virtual ~JSONValue()
-  {
-    delete child;
-    delete next;
+  reader = yajl_alloc( &JSONParser_yajl_callbacks, NULL, this );
+}
 
-    Buffer::dec_ref( as_string );
-    Buffer::dec_ref( identifier );
-  }
-
-  Buffer* identifier;
-  bool is_map;
-
-  double as_double;
-  int64_t as_integer;
-  Buffer* as_string;
-
-  JSONValue *parent, *child, *prev, *next;
-  bool have_read;
-
-protected:
-  JSONValue()
-  {
-    is_map = true;
-    parent = child = prev = next = NULL;
-    have_read = false;
-    as_integer = 0;
-  }
-};
-
-
-class JSONUnmarshaller::JSONObject : public JSONValue
+JSONParser::~JSONParser()
 {
-public:
-  JSONObject( Buffer& json_buffer )
+  Buffer::dec_ref( buffer );
+  yajl_free( reader );
+}
+
+void JSONParser::handleJSONValue( JSONValue& json_value )
+{
+  if ( !json_value_stack.empty() )
   {
-    current_json_value = parent_json_value = NULL;
-    reader = yajl_alloc( &JSONObject_yajl_callbacks, NULL, this );
-    next_map_key = NULL; next_map_key_len = 0;
-
-    const unsigned char* json_text =
-      static_cast<const unsigned char*>
-      (
-        static_cast<void*>( json_buffer )
-      );
-    unsigned int json_text_len
-      = static_cast<unsigned int>( json_buffer.size() );
-
-    yajl_status yajl_parse_status
-      = yajl_parse( reader, json_text, json_text_len );
-
-    if ( yajl_parse_status == yajl_status_ok )
-      return;
-    else if ( yajl_parse_status != yajl_status_insufficient_data )
+    switch ( json_value_stack.top()->get_type() )
     {
-      unsigned char* yajl_error_str
-        = yajl_get_error( reader, 1, json_text, json_text_len );
-      ostringstream what;
-      what << __FILE__ << ":" << __LINE__ << ": JSON parsing error: "
-        << reinterpret_cast<char*>( yajl_error_str ) << endl;
-      yajl_free_error( yajl_error_str );
-      throw yield::platform::Exception( what.str() );
-    }
-  }
-
-  ~JSONObject()
-  {
-    yajl_free( reader );
-  }
-
-private:
-  yajl_handle reader;
-
-  string type_name;
-  uint32_t tag;
-
-  // Parsing state
-  JSONValue *current_json_value, *parent_json_value;
-  const char* next_map_key; size_t next_map_key_len;
-
-  // yajl callbacks
-  static int handle_yajl_null( void* _self )
-  {
-    JSONObject* self = static_cast<JSONObject*>( _self );
-    self->createNextJSONValue().as_integer = 0;
-    return 1;
-  }
-
-  static int handle_yajl_boolean( void* _self, int value )
-  {
-    JSONObject* self = static_cast<JSONObject*>( _self );
-    self->createNextJSONValue().as_integer = value;
-    return 1;
-  }
-
-  static int handle_yajl_integer( void* _self, long value )
-  {
-    JSONObject* self = static_cast<JSONObject*>( _self );
-    self->createNextJSONValue().as_integer = value;
-    return 1;
-  }
-
-  static int handle_yajl_double( void* _self, double value )
-  {
-    JSONObject* self = static_cast<JSONObject*>( _self );
-    self->createNextJSONValue().as_double = value;
-    return 1;
-  }
-
-  static int handle_yajl_string
-  (
-    void* _self,
-    const unsigned char* buffer,
-    unsigned int len
-  )
-  {
-    JSONObject* self = static_cast<JSONObject*>( _self );
-    JSONValue& json_value = self->createNextJSONValue();
-    json_value.as_string
-      = new yidl::runtime::StringBuffer
-        (
-          reinterpret_cast<const char*>( buffer ),
-          len
-        );
-    return 1;
-  }
-
-  static int handle_yajl_start_map( void* _self )
-  {
-    JSONObject* self = static_cast<JSONObject*>( _self );
-    JSONValue& json_value = self->createNextJSONValue( true );
-    self->parent_json_value = &json_value;
-    self->current_json_value = json_value.child;
-    return 1;
-  }
-
-  static int handle_yajl_map_key
-  (
-    void* _self,
-    const unsigned char* map_key,
-    unsigned int map_key_len
-  )
-  {
-    JSONObject* self = static_cast<JSONObject*>( _self );
-    self->next_map_key = reinterpret_cast<const char*>( map_key );
-    self->next_map_key_len = map_key_len;
-    return 1;
-  }
-
-  static int handle_yajl_end_map( void* _self )
-  {
-    JSONObject* self = static_cast<JSONObject*>( _self );
-    if ( self->current_json_value == NULL ) // Empty map
-      self->current_json_value = self->parent_json_value;
-    else
-      self->current_json_value = self->current_json_value->parent;
-    self->parent_json_value = NULL;
-    return 1;
-  }
-
-  static int handle_yajl_start_array( void* _self )
-  {
-    JSONObject* self = static_cast<JSONObject*>( _self );
-    JSONValue& json_value = self->createNextJSONValue();
-    self->parent_json_value = &json_value;
-    self->current_json_value = json_value.child;
-    return 1;
-  }
-
-  static int handle_yajl_end_array( void* _self )
-  {
-    JSONObject* self = static_cast<JSONObject*>( _self );
-    if ( self->current_json_value == NULL ) // Empty array
-      self->current_json_value = self->parent_json_value;
-    else
-      self->current_json_value = self->current_json_value->parent;
-    self->parent_json_value = NULL;
-    return 1;
-  }
-
-  JSONValue& createNextJSONValue( bool is_map = false )
-  {
-    Buffer* identifier;
-    if ( next_map_key_len != 0 )
-    {
-      identifier
-        = new yidl::runtime::StringBuffer( next_map_key, next_map_key_len );
-    }
-    else
-      identifier = NULL;
-
-    next_map_key = NULL;
-    next_map_key_len = 0;
-
-    if ( current_json_value == NULL )
-    {
-      if ( parent_json_value ) // This is the first value of an array or map
+      case JSONValue::TYPE_ARRAY:
       {
-        current_json_value = new JSONValue( identifier, is_map );
-        current_json_value->parent = parent_json_value;
-        parent_json_value->child = current_json_value;
+        static_cast<JSONArray*>( json_value_stack.top() )->
+          push_back( &json_value );
       }
-      else // This is the first value of the whole object
+      break;
+
+      case JSONValue::TYPE_OBJECT:
       {
 #ifdef _DEBUG
-        if ( identifier != NULL ) DebugBreak();
+        if ( next_map_key == NULL ) DebugBreak();
 #endif
-        current_json_value = this;
+        static_cast<JSONObject*>( json_value_stack.top() )->
+          push_back( make_pair( next_map_key, &json_value ) );
+        next_map_key = NULL;
       }
+      break;
+
+      default: DebugBreak();
+    }
+  }
+  else
+    json_value_stack.push( &json_value );
+}
+
+int JSONParser::handle_yajl_boolean( void* this__, int value )
+{
+  JSONParser* this_ = static_cast<JSONParser*>( this__ );
+
+  if ( value )
+    this_->handleJSONValue( JSONtrue.inc_ref() );
+  else
+    this_->handleJSONValue( JSONfalse.inc_ref() );
+
+  return 1;
+}
+
+int JSONParser::handle_yajl_double( void* this__, double value )
+{
+  JSONParser* this_ = static_cast<JSONParser*>( this__ );
+  this_->handleJSONValue( *new JSONNumber( value ) );
+  return 1;
+}
+
+int JSONParser::handle_yajl_end_array( void* this__ )
+{
+  JSONParser* this_ = static_cast<JSONParser*>( this__ );
+#ifdef _DEBUG
+  if ( this_->json_value_stack.top()->get_type() != JSONValue::TYPE_ARRAY )
+    DebugBreak();
+#endif
+  this_->json_value_stack.pop();
+  return 1;
+}
+
+int JSONParser::handle_yajl_end_map( void* this__ )
+{
+  JSONParser* this_ = static_cast<JSONParser*>( this__ );
+#ifdef _DEBUG
+  if ( this_->json_value_stack.top()->get_type() != JSONValue::TYPE_OBJECT )
+    DebugBreak();
+#endif
+  this_->json_value_stack.pop();
+  return 1;
+}
+
+int JSONParser::handle_yajl_integer( void* this__, long value )
+{
+  JSONParser* this_ = static_cast<JSONParser*>( this__ );
+  this_->handleJSONValue( *new JSONNumber( value ) );
+  return 1;
+}
+
+int JSONParser::handle_yajl_map_key
+(
+  void* this__,
+  const unsigned char* map_key,
+  unsigned int map_key_len
+)
+{
+  JSONParser* this_ = static_cast<JSONParser*>( this__ );
+  this_->next_map_key = new JSONString( *this_->buffer, map_key, map_key_len );
+  return 1;
+}
+
+int JSONParser::handle_yajl_null( void* this__ )
+{
+  JSONParser* this_ = static_cast<JSONParser*>( this__ );
+  this_->handleJSONValue( JSONnull.inc_ref() );
+  return 1;
+}
+
+int JSONParser::handle_yajl_start_array( void* this__ )
+{
+  JSONParser* this_ = static_cast<JSONParser*>( this__ );
+  JSONArray* json_array = new JSONArray;
+  this_->handleJSONValue( *json_array );
+  this_->json_value_stack.push( json_array );
+  return 1;
+}
+
+int JSONParser::handle_yajl_start_map( void* this__ )
+{
+  JSONParser* this_ = static_cast<JSONParser*>( this__ );
+  JSONObject* json_object = new JSONObject;
+  this_->handleJSONValue( *json_object );
+  this_->json_value_stack.push( json_object );
+  return 1;
+}
+
+int JSONParser::handle_yajl_string
+(
+  void* this__,
+  const unsigned char* buffer,
+  unsigned int len
+)
+{
+  JSONParser* this_ = static_cast<JSONParser*>( this__ );
+  this_->handleJSONValue( *new JSONString( *this_->buffer, buffer, len ) );
+  return 1;
+}
+
+JSONParser::JSONValue* JSONParser::parse( Buffer& buffer )
+{
+  if ( this->buffer == NULL )
+    this->buffer = &buffer.inc_ref();
+  else
+    this->buffer->put( buffer );
+
+  const unsigned char* json_text = *this->buffer;
+  unsigned int json_text_len = this->buffer->size();
+
+  next_map_key = NULL;
+  yajl_status yajl_parse_status = yajl_parse( reader, json_text, json_text_len );
+
+  if ( yajl_parse_status == yajl_status_ok )
+  {
+    Buffer::dec_ref( this->buffer );
+    this->buffer = NULL;
+
+    if ( !json_value_stack.empty() )
+    {
+#ifdef _DEBUG
+      if ( json_value_stack.size() > 1 ) DebugBreak();
+#endif
+      JSONValue* json_value = json_value_stack.top();
+      json_value_stack.pop();
+      return json_value;
     }
     else
+      return new JSONObject;
+  }
+  else if ( yajl_parse_status == yajl_status_insufficient_data )
+  {
+    if ( this->buffer == &buffer )
     {
-      JSONValue* next_json_value = new JSONValue( identifier, is_map );
-      next_json_value->parent = current_json_value->parent;
-      next_json_value->prev = current_json_value;
-      current_json_value->next = next_json_value;
-      current_json_value = next_json_value;
+      this->buffer = new StringBuffer;
+      this->buffer->put( buffer );
     }
 
-    return *current_json_value;
+    return NULL;
   }
-
-  static yajl_callbacks JSONObject_yajl_callbacks;
-};
-
-yajl_callbacks
-  JSONUnmarshaller::JSONObject::JSONObject_yajl_callbacks =
-{
-  handle_yajl_null,
-  handle_yajl_boolean,
-  handle_yajl_integer,
-  handle_yajl_double,
-  NULL,
-  handle_yajl_string,
-  handle_yajl_start_map,
-  handle_yajl_map_key,
-  handle_yajl_end_map,
-  handle_yajl_start_array,
-  handle_yajl_end_array
-};
-
-
-JSONUnmarshaller::JSONUnmarshaller
-(
-  Buffer& buffer
-)
-{
-  root_key = NULL;
-  root_json_value = new JSONObject( buffer );
-  next_json_value = root_json_value->child;
+  else
+  {
+    //unsigned char* yajl_error_str
+    //  = yajl_get_error( reader, 1, json_text, json_text_len );
+    //ostringstream what;
+    //what << __FILE__ << ":" << __LINE__ << ": JSON parsing error: "
+    //  << reinterpret_cast<char*>( yajl_error_str ) << endl;
+    //yajl_free_error( yajl_error_str );
+    return NULL;
+  }
 }
 
-JSONUnmarshaller::JSONUnmarshaller
+JSONParser::JSONValue* JSONParser::JSONObject::operator[]( const char* name )
+{
+  return NULL;
+}
+
+JSONParser::JSONString::JSONString
 (
-  const char* root_key,
-  JSONValue& root_json_value
+  Buffer& underlying_buffer,
+  const unsigned char* value,
+  unsigned int value_len
 )
-  : root_key( root_key ), root_json_value( &root_json_value ),
-    next_json_value( root_json_value.child )
+  : underlying_buffer( underlying_buffer.inc_ref() ),
+    value( value ),
+    value_len( value_len )
+
 { }
 
-JSONUnmarshaller::~JSONUnmarshaller()
+JSONParser::JSONString::operator const char*() const
 {
-//  if ( root_key == NULL )
-//    delete root_json_value;
+  return reinterpret_cast<const char*>( value );
 }
 
-bool JSONUnmarshaller::read_bool( const char* key, uint32_t )
+bool JSONParser::JSONString::operator==( const char* other ) const
 {
-  JSONValue* json_value = readJSONValue( key );
-  if ( json_value )
-  {
-    if ( key != NULL ) // Read the value
-      return json_value->as_integer != 0;
-    else // Read the identifier
-      return false; // Doesn't make any sense
-  }
+  return strcmp( *this, other ) == 0;
+}
+
+
+// json_unmarshaller.cpp
+using yidl::runtime::SubBuffer;
+
+
+JSONUnmarshaller::JSONUnmarshaller( const JSONParser::JSONValue& root_json_value )
+  : root_json_value( root_json_value )
+{
+  next_json_value_i = 0;
+}
+
+bool JSONUnmarshaller::read_bool( const Key& key )
+{
+  const JSONParser::JSONValue* json_value = read( key );
+  if ( json_value != NULL )
+    return json_value == &JSONParser::JSONtrue;
   else
     return false;
 }
 
-void JSONUnmarshaller::read
-(
-  const char*,
-  uint32_t,
-  Buffer& value
-)
+void JSONUnmarshaller::read( const Key& key, double& value )
 {
-  DebugBreak();
-}
-
-double JSONUnmarshaller::read_double( const char* key, uint32_t )
-{
-  JSONValue* json_value = readJSONValue( key );
-  if ( json_value )
+  const JSONParser::JSONValue* json_value = read( key );
+  if ( json_value != NULL )
   {
-    if ( key != NULL ) // Read the value
-    {
-      if ( json_value->as_double != 0 || json_value->as_integer == 0 )
-        return json_value->as_double;
-      else
-        return static_cast<double>( json_value->as_integer );
-    }
-    else // Read the identifier
-      return atof( *json_value->identifier );
-  }
-  else
-    return 0;
-}
-
-int64_t JSONUnmarshaller::read_int64( const char* key, uint32_t )
-{
-  JSONValue* json_value = readJSONValue( key );
-  if ( json_value )
-  {
-    if ( key != NULL ) // Read the value
-      return json_value->as_integer;
-    else // Read the identifier
-      return atoi( *json_value->identifier );
-  }
-  else
-    return 0;
-}
-
-void JSONUnmarshaller::read
-(
-  const char* key,
-  uint32_t,
-  yidl::runtime::Map& value
-)
-{
-  JSONValue* json_value;
-  if ( key != NULL )
-  {
-    json_value = readJSONValue( key );
-    if ( json_value == NULL )
-      return;
-  }
-  else if ( root_json_value && !root_json_value->have_read )
-  {
-    if ( root_json_value->is_map )
-      json_value = root_json_value;
+    if ( json_value->get_type() == JSONParser::JSONValue::TYPE_NUMBER )
+      value = *static_cast<const JSONParser::JSONNumber*>( json_value );
     else
-      return;
+      value = 0;
   }
   else
-    return;
-
-  JSONUnmarshaller child_json_unmarshaller( key, *json_value );
-  child_json_unmarshaller.read( value );
-  json_value->have_read = true;
+    value = 0;
 }
 
-void JSONUnmarshaller::read( yidl::runtime::Map& value )
+void JSONUnmarshaller::read( const Key& key, int64_t& value )
 {
-  while ( next_json_value )
+  const JSONParser::JSONValue* json_value = read( key );
+  if ( json_value != NULL )
+  {
+    if ( json_value->get_type() == JSONParser::JSONValue::TYPE_NUMBER )
+    {
+      value
+        = static_cast<int64_t>
+          (
+            *static_cast<const JSONParser::JSONNumber*>( json_value )
+          );
+    }
+    else
+      value = 0;
+  }
+  else
+    value = 0;
+}
+
+JSONUnmarshaller::Key* JSONUnmarshaller::read( Key::Type key_type )
+{
+  if
+  (
+    key_type == Key::TYPE_STRING
+    &&
+    root_json_value.get_type() == JSONParser::JSONValue::TYPE_OBJECT
+    &&
+    next_json_value_i
+    <
+    static_cast<const JSONParser::JSONObject&>( root_json_value ).size()
+  )
+  {
+    const JSONParser::JSONObject& json_object
+      = static_cast<const JSONParser::JSONObject&>( root_json_value );
+    const JSONParser::JSONString* name = json_object.at( next_json_value_i ).first;
+    return new StringKey( *name, name->size() );
+  }
+  else
+    return NULL;
+}
+
+const JSONParser::JSONValue* JSONUnmarshaller::read( const Key& key )
+{
+  if ( root_json_value.get_type() == JSONParser::JSONValue::TYPE_ARRAY )
+  {
+    const JSONParser::JSONArray& json_array
+      = static_cast<const JSONParser::JSONArray&>( root_json_value );
+
+    if ( next_json_value_i < json_array.size() )
+      return json_array[next_json_value_i++];
+    else
+      return NULL;
+  }
+  else if ( root_json_value.get_type() == JSONParser::JSONValue::TYPE_OBJECT )
+  {
+    const JSONParser::JSONObject& json_object
+      = static_cast<const JSONParser::JSONObject&>( root_json_value );
+
+    if ( next_json_value_i < json_object.size() )
+      return json_object.at( next_json_value_i++ ).second;
+    else
+      return NULL;
+  }
+  else
+    return &root_json_value;
+}
+
+void JSONUnmarshaller::read( const Key& key, Map& value )
+{
+  const JSONParser::JSONValue* json_value = read( key );
+  if ( json_value != NULL )
+  {
+    if ( json_value->get_type() == JSONParser::JSONValue::TYPE_OBJECT )
+      JSONUnmarshaller( *json_value ).read( value );
+  }
+  else if ( root_json_value.get_type() == JSONParser::JSONValue::TYPE_OBJECT )
+    JSONUnmarshaller( root_json_value ).read( value );
+}
+
+void JSONUnmarshaller::read( Map& value )
+{
+  size_t size
+    = static_cast<const JSONParser::JSONObject&>( root_json_value ).size();
+  while ( next_json_value_i < size )
     value.unmarshal( *this );
 }
 
-void JSONUnmarshaller::read
-(
-  const char* key,
-  uint32_t,
-  yidl::runtime::MarshallableObject& value
-)
+void JSONUnmarshaller::read( const Key& key, MarshallableObject& value )
 {
-  JSONValue* json_value;
-  if ( key != NULL )
+  const JSONParser::JSONValue* json_value = read( key );
+  if ( json_value != NULL )
   {
-    json_value = readJSONValue( key );
-    if ( json_value == NULL )
-      return;
+    if ( json_value->get_type() == JSONParser::JSONValue::TYPE_OBJECT )
+      JSONUnmarshaller( *json_value ).read( value );
   }
-  else if ( root_json_value && !root_json_value->have_read )
-  {
-    if ( root_json_value->is_map )
-      json_value = root_json_value;
-    else
-      return;
-  }
-  else
-    return;
-
-  JSONUnmarshaller( key, *json_value ).read( value );
-  json_value->have_read = true;
+  else if ( root_json_value.get_type() == JSONParser::JSONValue::TYPE_OBJECT )
+    JSONUnmarshaller( root_json_value ).read( value );
 }
 
-void JSONUnmarshaller::read( yidl::runtime::MarshallableObject& s )
+void JSONUnmarshaller::read( MarshallableObject& value )
 {
-  s.unmarshal( *this );
+  value.unmarshal( *this );
 }
 
-void JSONUnmarshaller::read
-(
-  const char* key,
-  uint32_t,
-  yidl::runtime::Sequence& value
-)
+void JSONUnmarshaller::read( const Key& key, Sequence& value )
 {
-  JSONValue* json_value;
-  if ( key != NULL )
+  const JSONParser::JSONValue* json_value = read( key );
+  if ( json_value != NULL )
   {
-    json_value = readJSONValue( key );
-    if ( json_value == NULL )
-      return;
+    if ( json_value->get_type() == JSONParser::JSONValue::TYPE_ARRAY )
+      JSONUnmarshaller( *json_value ).read( value );
   }
-  else if ( root_json_value && !root_json_value->have_read )
-  {
-    if ( !root_json_value->is_map )
-      json_value = root_json_value;
-    else
-      return;
-  }
-  else
-    return;
-
-  JSONUnmarshaller( key, *json_value ).read( value );
-  json_value->have_read = true;
+  else if ( root_json_value.get_type() == JSONParser::JSONValue::TYPE_ARRAY )
+    JSONUnmarshaller( root_json_value ).read( value );
 }
 
-void JSONUnmarshaller::read
-(
-  yidl::runtime::Sequence& value
-)
+void JSONUnmarshaller::read( Sequence& value )
 {
-  while ( next_json_value )
+  size_t size
+    = static_cast<const JSONParser::JSONArray&>( root_json_value ).size();
+  while ( next_json_value_i < size )
     value.unmarshal( *this );
 }
 
-void JSONUnmarshaller::read
-(
-  const char* key,
-  uint32_t,
-  string& str
-)
+void JSONUnmarshaller::read( const Key& key, string& value )
 {
-  JSONValue* json_value = readJSONValue( key );
-  if ( json_value )
+  const JSONParser::JSONValue* json_value = read( key );
+  if
+  (
+    json_value != NULL
+    &&
+    json_value->get_type() == JSONParser::JSONValue::TYPE_STRING
+  )
   {
-    if ( key != NULL ) // Read the value
-    {
-      if ( json_value->as_string != NULL )
-        str.assign( *json_value->as_string, json_value->as_string->size() );
-    }
-    else // Read the identifier
-      str.assign( *json_value->identifier );
+    value.assign
+    (
+      *static_cast<const JSONParser::JSONString*>( json_value ),
+      static_cast<const JSONParser::JSONString*>( json_value )->size()
+    );
   }
-}
-
-JSONUnmarshaller::JSONValue*
-  JSONUnmarshaller::readJSONValue( const char* key )
-{
-  if ( root_json_value->is_map )
-  {
-    if ( key != NULL ) // Given a key, reading a value
-    {
-      JSONValue* child_json_value = root_json_value->child;
-
-      while ( child_json_value )
-      {
-        if
-        (
-          !child_json_value->have_read
-          &&
-          *child_json_value->identifier == key
-        )
-        {
-          child_json_value->have_read = true;
-          return child_json_value;
-        }
-
-        child_json_value = child_json_value->next;
-      }
-    }
-    else if ( next_json_value && !next_json_value->have_read )
-    {
-      // Reading the next key
-      JSONValue* json_value = next_json_value;
-      next_json_value = json_value->next;
-      return json_value;
-    }
-  }
-  else
-  {
-    if ( next_json_value != NULL && !next_json_value->have_read )
-    {
-      JSONValue* json_value = next_json_value;
-      next_json_value = json_value->next;
-      json_value->have_read = true;
-      return json_value;
-    }
-  }
-
-  return NULL;
 }
 
 
 // oncrpc_client.cpp
-class ONCRPCClient::ONCRPCResponseTarget : public EventTarget
+using yidl::runtime::StackBuffer;
+
+
+#ifdef _WIN32
+#define ETIMEDOUT 10060 // WSAETIMEDOUT
+#endif
+
+
+class ONCRPCClient::Connection
+  : public SocketClient::Connection,
+    private ONCRPCResponseParser
 {
 public:
-  ONCRPCResponseTarget( ONCRPCClient& oncrpc_client, Request& request )
-    : oncrpc_client( oncrpc_client.inc_ref() ), request( request.inc_ref() )
+  Connection
+  (
+    ONCRPCClient& oncrpc_client,
+    Socket& socket_
+  )
+  : SocketClient::Connection( socket_, oncrpc_client ),
+    ONCRPCResponseParser( oncrpc_client.get_message_factory() ),
+    operation_timeout( oncrpc_client.get_operation_timeout() )
   { }
 
-  ~ONCRPCResponseTarget()
+  // RequestHandler
+  void handleRequest( Request& request )
   {
-    ONCRPCClient::dec_ref( oncrpc_client );
-    Request::dec_ref( request );
+    if ( request.get_type_id() == ONCRPCRequest::TYPE_ID )
+    {
+      ONCRPCRequest& oncrpc_request = static_cast<ONCRPCRequest&>( request );
+
+      XDRMarshaller xdr_marshaller;
+      oncrpc_request.marshal( xdr_marshaller );
+      ONCRPCRecordFragment* record_fragment
+        = new ONCRPCRecordFragment( xdr_marshaller.get_buffer() );
+
+      if ( get_socket().is_connected() )
+        get_socket().aio_send( *record_fragment, 0, *this, &oncrpc_request );
+      else
+      {
+        get_socket().aio_connect
+        (
+          get_peername(),
+          *this,
+          &oncrpc_request,
+          record_fragment
+        );
+      }
+    }
+    else
+      DebugBreak();
   }
 
-  // yield::concurrency::EventTarget
-  void send( Event& );
+private:
+  // Socket::AIOConnectCallback
+  void onConnectCompletion( size_t bytes_written, void* context )
+  {
+    SocketClient::Connection::onConnectCompletion( bytes_written, context );
+
+    onWriteCompletion( bytes_written, context );
+  }
+
+  void onConnectError( uint32_t error_code, void* context )
+  {
+    SocketClient::Connection::onConnectError( error_code, context );
+
+    ONCRPCRequest::dec_ref( static_cast<ONCRPCRequest*>( context ) );
+  }
+
+  // Socket::AIOReadCallback
+  void onReadCompletion( Buffer& buffer, void* context )
+  {
+    SocketClient::Connection::onReadCompletion( buffer, context );
+
+    if ( buffer.size() == buffer.capacity() )
+    {
+      ONCRPCRequest* oncrpc_request = static_cast<ONCRPCRequest*>( context );
+
+      if ( oncrpc_request == NULL )
+      {
+        uint32_t nbo_record_fragment_marker, nbo_xid;
+        buffer.get( &nbo_record_fragment_marker, sizeof( uint32_t ) );
+        buffer.get( &nbo_xid, sizeof( nbo_xid ) );
+#ifdef __MACH__
+        uint32_t hbo_xid = ntohl( nbo_xid );
+#else
+        uint32_t hbo_xid = XDRUnmarshaller::ntohl( nbo_xid );
+#endif
+
+        map<uint32_t, ONCRPCRequest*>::iterator oncrpc_request_i
+          = outstanding_oncrpc_requests.find( hbo_xid );
+
+        if ( oncrpc_request_i != outstanding_oncrpc_requests.end() )
+        {
+          oncrpc_request = oncrpc_request_i->second;
+          outstanding_oncrpc_requests.erase( oncrpc_request_i );
+
+          ONCRPCRecordFragment* record_fragment
+            = new ONCRPCRecordFragment( nbo_record_fragment_marker );
+
+          record_fragment->put( &nbo_xid, sizeof( nbo_xid ) );
+          record_fragment->position
+          (
+            record_fragment->position() + sizeof( nbo_xid )
+          );
+
+          get_socket().aio_read( *record_fragment, *this, oncrpc_request );
+        }
+        else
+          DebugBreak();
+      }
+      else
+      {
+        ONCRPCResponse* oncrpc_response
+          = ONCRPCResponseParser::parse
+            (
+              static_cast<ONCRPCRecordFragment&>( buffer ),
+              *oncrpc_request
+            );
+
+        if ( oncrpc_response != NULL )
+        {
+          oncrpc_request->respond( *oncrpc_response );
+          ONCRPCRequest::dec_ref( *oncrpc_request );
+
+          get_socket().aio_recv( *new StackBuffer<8>, 0, *this, NULL );
+        }
+        else
+          DebugBreak();
+      }
+    }
+    else // buffer.size() < buffer.capacity()
+      get_socket().aio_recv( buffer, 0, *this, context );
+
+  }
+
+  void onReadError( uint32_t error_code, void* context )
+  {
+    SocketClient::Connection::onReadError( error_code, context );
+
+    ONCRPCRequest::dec_ref( static_cast<ONCRPCRequest*>( context ) );
+  }
+
+  // Socket::AIOWriteCallback
+  void onWriteCompletion( size_t bytes_written, void* context )
+  {
+    SocketClient::Connection::onWriteCompletion( bytes_written, context );
+
+    ONCRPCRequest* oncrpc_request = static_cast<ONCRPCRequest*>( context );
+    outstanding_oncrpc_requests[oncrpc_request->get_xid()] = oncrpc_request;
+
+    get_socket().aio_recv( *new StackBuffer<8>, 0, *this, NULL );
+  }
+
+  void onWriteError( uint32_t error_code, void* context )
+  {
+    SocketClient::Connection::onWriteError( error_code, context );
+
+    ONCRPCRequest::dec_ref( static_cast<ONCRPCRequest*>( context ) );
+  }
 
 private:
-  ONCRPCClient& oncrpc_client;
-  Request& request;
+  Time operation_timeout;
+  map<uint32_t, ONCRPCRequest*> outstanding_oncrpc_requests;
 };
 
 
 ONCRPCClient::ONCRPCClient
 (
   uint16_t concurrency_level,
-  uint32_t flags,
+  MarshallableObject* cred,
+  Log* error_log,
   IOQueue& io_queue,
-  Log* log,
-  MarshallableObjectFactory& marshallable_object_factory,
+  MessageFactory& message_factory,
   const Time& operation_timeout,
   SocketAddress& peername,
   uint32_t prog,
   uint16_t reconnect_tries_max,
   SocketFactory& socket_factory,
+  Log* trace_log,
   uint32_t vers
 )
-  : SocketClient<ONCRPCRequest, ONCRPCResponse>
+  : SocketClient
     (
-      concurrency_level,
-      flags,
+      error_log,
       io_queue,
-      log,
       operation_timeout,
       peername,
       reconnect_tries_max,
-      socket_factory
+      trace_log
     ),
-    marshallable_object_factory( marshallable_object_factory.inc_ref() ),
+    RPCClient( message_factory ),
+    cred( Object::inc_ref( cred ) ),
     prog( prog ),
     vers( vers )
-{ }
+{
+  uint16_t connection_i = 0;
+  for ( ; connection_i < concurrency_level; connection_i++ )
+  {
+    Socket* socket_ = socket_factory.createSocket();
+    if ( socket_ != NULL )
+    {
+      if ( socket_->associate( io_queue ) )
+        connections.enqueue( new Connection( *this, *socket_ ) );
+      else
+      {
+        Socket::dec_ref( *socket_ );
+        break;
+      }
+    }
+    else
+      break;
+  }
+
+#ifdef _DEBUG
+  if ( connection_i == 0 ) DebugBreak();
+#endif
+  SocketFactory::dec_ref( socket_factory );
+}
+
+ONCRPCClient::~ONCRPCClient()
+{
+  Connection* connection = connections.try_dequeue();
+  while ( connection != NULL )
+  {
+    Connection::dec_ref( *connection );
+    connection = connections.try_dequeue();
+  }
+}
 
 ONCRPCClient&
 ONCRPCClient::create
 (
   const URI& absolute_uri,
-  MarshallableObjectFactory& marshallable_object_factory,
+  MessageFactory& message_factory,
   uint32_t prog,
   uint32_t vers,
   uint16_t concurrency_level,
-  uint32_t flags,
-  Log* log,
+  MarshallableObject* cred,
+  Log* error_log,
   const Time& operation_timeout,
   uint16_t reconnect_tries_max,
-  SSLContext* ssl_context
+  SSLContext* ssl_context,
+  Log* trace_log
 )
 {
   SocketAddress& peername = createSocketAddress( absolute_uri );
@@ -10187,8 +12800,8 @@ ONCRPCClient::create
     io_queue = &createIOQueue();
     if ( absolute_uri.get_scheme() == "oncrpcu" )
       socket_factory = new UDPSocketFactory;
-    else if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-      socket_factory = new TracingTCPSocketFactory( *log );
+    else if ( trace_log!= NULL )
+      socket_factory = new TracingTCPSocketFactory( *trace_log );
     else
       socket_factory = new TCPSocketFactory;
   }
@@ -10196,487 +12809,187 @@ ONCRPCClient::create
   return *new ONCRPCClient
               (
                 concurrency_level,
-                flags,
+                cred,
+                error_log,
                 *io_queue,
-                log,
-                marshallable_object_factory,
+                message_factory,
                 operation_timeout,
                 peername,
                 prog,
                 reconnect_tries_max,
                 *socket_factory,
+                trace_log,
                 vers
               );
 }
 
-ONCRPCRequest& ONCRPCClient::createONCRPCRequest( MarshallableObject& body )
+void ONCRPCClient::handleRequest( Request& request )
 {
-  return *new ONCRPCRequest( body, body.get_type_id(), prog, vers );
-}
+  ONCRPCRequest* oncrpc_request;
 
-ONCRPCResponse& ONCRPCClient::createResponse( ONCRPCRequest& oncrpc_request )
-{
-  return *new ONCRPCResponse
-              (
-                oncrpc_request.get_body().get_type_id(),
-                get_marshallable_object_factory(),
-                oncrpc_request.get_xid()
-              );
-}
-
-EventFactory* ONCRPCClient::get_event_factory() const
-{
-  if ( marshallable_object_factory.get_type_id() == EventFactory::TYPE_ID )
-    return static_cast<EventFactory*>( &marshallable_object_factory );
-  else
-    return NULL;
-}
-
-MarshallableObjectFactory& ONCRPCClient::get_marshallable_object_factory() const
-{
-  return marshallable_object_factory;
-}
-
-void ONCRPCClient::handleEvent( Event& ev )
-{
-  switch ( ev.get_type_id() )
+  switch ( request.get_type_id() )
   {
     case ONCRPCRequest::TYPE_ID:
     {
-      SocketClient<ONCRPCRequest, ONCRPCResponse>::handleEvent( ev );
+      oncrpc_request = static_cast<ONCRPCRequest*>( &request );
     }
     break;
 
     default:
     {
-      ONCRPCRequest& oncrpc_request = createONCRPCRequest( ev );
+      oncrpc_request
+        = new ONCRPCRequest
+              (
+                request, // Steals this reference
+                request.get_type_id(),
+                prog,
+                vers,
+                static_cast<uint32_t>( Time().as_unix_time_s() ),
+                get_cred()
+              );
 
-      if
-      (
-        get_event_factory() != NULL
-        &&
-        get_event_factory()->isRequest( ev ) != NULL
-      )
-      {
-        ONCRPCResponseTarget* oncrpc_response_target
-          = new ONCRPCResponseTarget( *this, static_cast<Request&>( ev ) );
-        oncrpc_request.set_response_target( oncrpc_response_target );
-      }
-
-      SocketClient<ONCRPCRequest, ONCRPCResponse>::
-        handleEvent( oncrpc_request );
-
-      Event::dec_ref( ev );
+      ResponseTarget* response_target = new RPCResponseTarget( request );
+      oncrpc_request->set_response_target( response_target );
+      ResponseTarget::dec_ref( *response_target );
     }
     break;
   }
-}
 
-
-void ONCRPCClient::ONCRPCResponseTarget::send( Event& ev )
-{
-  switch ( ev.get_type_id() )
-  {
-    case ONCRPCResponse::TYPE_ID:
-    {
-      ONCRPCResponse& oncrpc_response = static_cast<ONCRPCResponse&>( ev );
-
-      if ( oncrpc_client.get_event_factory() != NULL )
-      {
-        Response* response
-          = oncrpc_client.get_event_factory()->
-              isResponse( oncrpc_response.get_body() );
-
-        if ( response != NULL )
-          request.respond( response->inc_ref() );
-      }
-
-      ONCRPCResponse::dec_ref( oncrpc_response );
-    }
-    break;
-
-    case ExceptionResponse::TYPE_ID:
-    {
-      request.respond( static_cast<ExceptionResponse&>( ev ) );
-    }
-    break;
-
-    default: DebugBreak();
-  }
+  Connection* connection = connections.dequeue();
+  connection->send( *oncrpc_request );
 }
 
 
 // oncrpc_message.cpp
-using yidl::runtime::HeapBuffer;
-using yidl::runtime::StringBuffer;
+ONCRPCMessage::ONCRPCMessage( MarshallableObject* verf, uint32_t xid )
+  : verf( verf ), xid( xid )
+{ }
 
-
-template <class ONCRPCMessageType>
-ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage
-(
-  MarshallableObjectFactory& marshallable_object_factory,
-  uint32_t xid
-)
-  : RPCMessage( marshallable_object_factory ),
-    verf( NULL ),
-    xid( xid )
+ONCRPCMessage::~ONCRPCMessage()
 {
-  deserialize_state = DESERIALIZING_RECORD_FRAGMENT_MARKER;
-  record_fragment_buffer = NULL;
-  record_fragment_length = 0;
-}
-
-template <class ONCRPCMessageType>
-ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage
-(
-   MarshallableObject& body,
-   MarshallableObject* verf,
-   uint32_t xid
-) : RPCMessage( body ),
-    verf( yidl::runtime::Object::inc_ref( verf ) ),
-    xid( xid )
-{
-  deserialize_state = DESERIALIZING_RECORD_FRAGMENT_MARKER;
-  record_fragment_buffer = NULL;
-  record_fragment_length = 0;
-}
-
-template <class ONCRPCMessageType>
-ONCRPCMessage<ONCRPCMessageType>::~ONCRPCMessage()
-{
-  Buffer::dec_ref( record_fragment_buffer );
   MarshallableObject::dec_ref( verf );
 }
 
-template <class ONCRPCMessageType>
-ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize
+void ONCRPCMessage::marshal_opaque_auth
 (
-  Buffer& buffer
-)
-{
-  switch ( deserialize_state )
-  {
-    case DESERIALIZING_RECORD_FRAGMENT_MARKER:
-    {
-      ssize_t deserialize_ret = deserializeRecordFragmentMarker( buffer );
-
-      if ( deserialize_ret == 0 )
-        deserialize_state = DESERIALIZING_RECORD_FRAGMENT;
-      else
-        return deserialize_ret;
-    }
-    // Drop down
-
-    case DESERIALIZING_RECORD_FRAGMENT:
-    {
-      ssize_t deserialize_ret = deserializeRecordFragment( buffer );
-
-      if ( deserialize_ret == 0 )
-        deserialize_state = DESERIALIZE_DONE;
-      else if ( deserialize_ret > 0 )
-        deserialize_state = DESERIALIZING_LONG_RECORD_FRAGMENT;
-
-      return deserialize_ret;
-    }
-
-    case DESERIALIZING_LONG_RECORD_FRAGMENT:
-    {
-      ssize_t deserialize_ret = deserializeLongRecordFragment( buffer );
-
-      if ( deserialize_ret == 0 )
-        deserialize_state = DESERIALIZE_DONE;
-      else
-        return deserialize_ret;
-    }
-    // Drop down
-
-    case DESERIALIZE_DONE: return 0;
-  }
-
-  return -1;
-}
-
-template <class ONCRPCMessageType>
-ssize_t
-ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker
-(
-  Buffer& buffer
-)
-{
-  uint32_t record_fragment_marker = 0;
-  size_t record_fragment_marker_filled
-    = buffer.get( &record_fragment_marker, sizeof( record_fragment_marker ) );
-  if ( record_fragment_marker_filled == sizeof( record_fragment_marker ) )
-  {
-#ifdef __MACH__
-    record_fragment_marker = ntohl( record_fragment_marker );
-#else
-    record_fragment_marker = XDRUnmarshaller::ntohl( record_fragment_marker );
-#endif
-    if ( ( record_fragment_marker >> 31 ) != 0 )
-    {
-      // The highest bit set = last record fragment
-      record_fragment_length = record_fragment_marker ^ ( 1 << 31UL );
-      if ( record_fragment_length < 32 * 1024 * 1024 )
-        return 0;
-      else
-        return -1;
-    }
-    else
-      return -1;
-  }
-  else if ( record_fragment_marker_filled == 0 )
-    return sizeof( record_fragment_marker );
-  else
-    return -1;
-}
-
-template <class ONCRPCMessageType>
-ssize_t
-ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment
-(
-  Buffer& buffer
-)
-{
-  size_t gettable_buffer_size = buffer.size() - buffer.position();
-  if ( gettable_buffer_size == record_fragment_length ) // Common case
-  {
-    record_fragment_buffer = &buffer.inc_ref();
-    XDRUnmarshaller xdr_unmarshaller( buffer );
-
-    try
-    {
-      static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
-      return 0;
-    }
-    catch ( yield::platform::Exception& )
-    {
-      return -1;
-    }
-  }
-  else if ( gettable_buffer_size < record_fragment_length )
-  {
-    record_fragment_buffer = new HeapBuffer( record_fragment_length );
-
-    buffer.get
-    (
-      static_cast<void*>( *record_fragment_buffer ),
-      gettable_buffer_size
-    );
-
-    record_fragment_buffer->put( gettable_buffer_size );
-
-    return record_fragment_length - record_fragment_buffer->size();
-  }
-  else
-    return -1;
-}
-
-template <class ONCRPCMessageType>
-ssize_t
-ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment
-(
-  Buffer& buffer
-)
-{
-  size_t gettable_buffer_size = buffer.size() - buffer.position();
-  size_t remaining_record_fragment_length
-    = record_fragment_length - record_fragment_buffer->size();
-
-  if ( gettable_buffer_size < remaining_record_fragment_length )
-  {
-    buffer.get
-    (
-      static_cast<char*>( *record_fragment_buffer )
-        + record_fragment_buffer->size(),
-      gettable_buffer_size
-    );
-
-    record_fragment_buffer->put( gettable_buffer_size );
-
-    return static_cast<ssize_t>
-           (
-             record_fragment_length
-              - record_fragment_buffer->size()
-           );
-  }
-  else if ( gettable_buffer_size == remaining_record_fragment_length )
-  {
-    buffer.get
-    (
-      static_cast<char*>( *record_fragment_buffer )
-        + record_fragment_buffer->size(),
-      gettable_buffer_size
-    );
-
-    record_fragment_buffer->put( gettable_buffer_size );
-
-    XDRUnmarshaller xdr_unmarshaller( *record_fragment_buffer );
-
-    try
-    {
-      static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
-      return 0;
-    }
-    catch ( yield::platform::Exception& )
-    {
-      return -1;
-    }
-  }
-  else // The buffer is larger than we need to fill the record fragment,
-       // logic error somewhere
-    return -1;
-}
-
-template <class ONCRPCMessageType>
-void ONCRPCMessage<ONCRPCMessageType>::marshal( Marshaller& marshaller ) const
-{
-  marshaller.write( "xid", 0, xid );
-}
-
-template <class ONCRPCMessageType>
-void
-ONCRPCMessage<ONCRPCMessageType>::marshal_verf
-(
-  Marshaller& marshaller
-) const
-{
-  marshal_opaque_auth( verf, marshaller );
-}
-
-template <class ONCRPCMessageType>
-void
-ONCRPCMessage<ONCRPCMessageType>::marshal_opaque_auth
-(
-  MarshallableObject* opaque_auth,
-  Marshaller& marshaller
+  Marshaller& marshaller,
+  MarshallableObject* opaque_auth
 ) const
 {
   if ( opaque_auth != NULL  )
   {
-    marshaller.write( "auth_flavor", 0, opaque_auth->get_type_id() );
-    XDRMarshaller xdr_marshaller;
-    opaque_auth->marshal( xdr_marshaller );
-    marshaller.write( "auth_body", 0, xdr_marshaller.get_buffer() );
+    marshaller.write( "auth_flavor", opaque_auth->get_type_id() );
+    XDRMarshaller temp_xdr_marshaller;
+    opaque_auth->marshal( temp_xdr_marshaller );
+    marshaller.write( "auth_body", temp_xdr_marshaller.get_buffer() );
   }
   else
   {
-    marshaller.write( "auth_flavor", 0, AUTH_NONE );
-    marshaller.write( "auth_body_length", 0, 0 );
+    marshaller.write( "auth_flavor", ONCRPCMessage::AUTH_NONE );
+    marshaller.write( "auth_body_length", 0 );
   }
 }
 
-template <class ONCRPCMessageType>
-Buffers& ONCRPCMessage<ONCRPCMessageType>::serialize()
+
+// oncrpc_message_parser.cpp
+ONCRPCMessageParser::ONCRPCMessageParser( MessageFactory& message_factory )
+  : message_factory( message_factory.inc_ref() )
+{ }
+
+ONCRPCMessageParser::~ONCRPCMessageParser()
 {
-  XDRMarshaller xdr_marshaller;
-
-  uint32_t record_fragment_marker = 0;
-  xdr_marshaller.write( "record_fragment_marker", 0, record_fragment_marker );
-
-  static_cast<ONCRPCMessageType*>( this )->marshal( xdr_marshaller );
-
-  Buffer& xdr_buffer = xdr_marshaller.get_buffer();
-
-  uint32_t record_fragment_length
-    = static_cast<uint32_t>( xdr_buffer.size() - sizeof( uint32_t ) );
-  // Indicate that this is the last fragment
-  record_fragment_marker
-    = record_fragment_length | ( 1 << 31 );
-#ifdef __MACH__
-  record_fragment_marker = htonl( record_fragment_marker );
-#else
-  record_fragment_marker = XDRMarshaller::htonl( record_fragment_marker );
-#endif
-  static_cast<string&>( static_cast<StringBuffer&>( xdr_buffer ) )
-  .replace
-  (
-    0,
-    sizeof( uint32_t ),
-    reinterpret_cast<const char*>( &record_fragment_marker ),
-    sizeof( uint32_t )
-  );
-
-  return *new Buffers( xdr_buffer );
+  MessageFactory::dec_ref( message_factory );
 }
 
-template <class ONCRPCMessageType>
-void ONCRPCMessage<ONCRPCMessageType>::unmarshal( Unmarshaller& unmarshaller )
-{
-  xid = unmarshaller.read_uint32( "xid", 0 );
-}
-
-template <class ONCRPCMessageType>
 MarshallableObject*
-ONCRPCMessage<ONCRPCMessageType>::unmarshal_opaque_auth
+ONCRPCMessageParser::unmarshal_opaque_auth
 (
-  Unmarshaller& unmarshaller
+  XDRUnmarshaller& xdr_unmarshaller
 )
 {
-  uint32_t auth_flavor = unmarshaller.read_uint32( "auth_flavor", 0 );
-  if ( auth_flavor != AUTH_NONE )
+  uint32_t auth_flavor = xdr_unmarshaller.read_uint32();
+  if ( auth_flavor != ONCRPCMessage::AUTH_NONE )
   {
     MarshallableObject* opaque_auth
-      = get_marshallable_object_factory().
-          createMarshallableObject( auth_flavor );
+      = message_factory.createMarshallableObject( auth_flavor );
 
     if ( opaque_auth != NULL )
     {
-      unmarshaller.read_uint32( "auth_body_length", 0 );
-      unmarshaller.read( "auth_body", 0, *opaque_auth );
+      xdr_unmarshaller.read_int32(); // length
+      xdr_unmarshaller.read( *opaque_auth );
       return opaque_auth;
     }
   }
 
-  string cred;
-  unmarshaller.read( "auth_body", 0, cred );
+  string opaque_auth;
+  xdr_unmarshaller.read( opaque_auth );
 
   return NULL;
 }
 
-template <class ONCRPCMessageType>
-void
-ONCRPCMessage<ONCRPCMessageType>::unmarshal_verf
-(
-  Unmarshaller& unmarshaller
-)
+
+// oncrpc_record_fragment.cpp
+ONCRPCRecordFragment::ONCRPCRecordFragment( uint32_t nbo_marker )
+  : yidl::runtime::HeapBuffer
+    (
+      sizeof( nbo_marker )
+      +
+#ifdef __MACH__
+      ntohl( nbo_marker ) ^ ( 1 << 31UL )
+#else
+      XDRUnmarshaller::ntohl( nbo_marker ) ^ ( 1 << 31UL )
+#endif
+    )
 {
-  MarshallableObject* verf = unmarshal_opaque_auth( unmarshaller );
-  if ( verf != NULL )
-  {
-    MarshallableObject::dec_ref( this->verf );
-    this->verf = verf;
-  }
+  put( &nbo_marker, sizeof( nbo_marker ) );
+  position( sizeof( nbo_marker ) );
+
+#ifdef __MACH__
+  hbo_marker = ntohl( nbo_marker );
+#else
+  hbo_marker = XDRUnmarshaller::ntohl( nbo_marker );
+#endif
 }
 
-template class ONCRPCMessage<ONCRPCRequest>;
-template class ONCRPCMessage<ONCRPCResponse>;
+ONCRPCRecordFragment::ONCRPCRecordFragment( Buffer& buffer, bool is_last )
+  : yidl::runtime::HeapBuffer
+    (
+      buffer.size() - buffer.position() + sizeof( hbo_marker )
+    )
+{
+  hbo_marker = buffer.size() - buffer.position();
+  if ( is_last ) hbo_marker |= ( 1 << 31UL );
+
+  uint32_t nbo_marker;
+#ifdef __MACH__
+  nbo_marker = htonl( marker );
+#else
+  nbo_marker = XDRMarshaller::htonl( hbo_marker );
+#endif
+  put( &nbo_marker, sizeof( nbo_marker ) );
+
+  Buffer::put( buffer );
+}
+
+bool ONCRPCRecordFragment::is_last() const
+{
+  return ( hbo_marker >> 31 ) != 0;
+}
 
 
 // oncrpc_request.cpp
 ONCRPCRequest::ONCRPCRequest
 (
-   MarshallableObjectFactory& marshallable_object_factory
- )
-  : ONCRPCMessage<ONCRPCRequest>( marshallable_object_factory, 0 )
-{ }
-
-// Outgoing
-ONCRPCRequest::ONCRPCRequest
-(
-  MarshallableObject& body,
+  Request& body,
   uint32_t proc,
   uint32_t prog,
   uint32_t vers,
+  uint32_t xid,
   MarshallableObject* cred,
   MarshallableObject* verf
 )
-  : ONCRPCMessage<ONCRPCRequest>
-    (
-      body,
-      verf,
-      static_cast<uint32_t>( Time().as_unix_time_s() ) // xid
-    ),
+  : ONCRPCMessage( verf, xid ),
+    body( body ),
     cred( Object::inc_ref( cred ) ),
     proc( proc ),
     prog( prog ),
@@ -10685,916 +12998,900 @@ ONCRPCRequest::ONCRPCRequest
 
 ONCRPCRequest::~ONCRPCRequest()
 {
+  Request::dec_ref( body );
   MarshallableObject::dec_ref( cred );
 }
 
 void ONCRPCRequest::marshal( Marshaller& marshaller ) const
 {
-  ONCRPCMessage<ONCRPCRequest>::marshal( marshaller );
-  marshaller.write( "msg_type", 0, 0 ); // MSG_CALL
-  marshaller.write( "rpcvers", 0, 2 );
-  marshaller.write( "prog", 0, prog );
-  marshaller.write( "vers", 0, vers );
-  marshaller.write( "proc", 0, proc );
-  marshal_opaque_auth( cred, marshaller );
-  marshal_opaque_auth( get_verf(), marshaller );
-  marshal_body( "body", 0, marshaller );
+  marshaller.write( "xid", get_xid() );
+  marshaller.write( "msg_type", CALL );
+  marshaller.write( "rpcvers", 2 );
+  marshaller.write( "prog", get_prog() );
+  marshaller.write( "vers", get_vers() );
+  marshaller.write( "proc", get_proc() );
+  marshal_opaque_auth( marshaller, get_cred() );
+  marshal_opaque_auth( marshaller, get_verf() );
+  marshaller.write( "body", get_body() );
 }
 
-void ONCRPCRequest::respond( ONCRPCResponse& oncrpc_response )
+void ONCRPCRequest::respond( ONCRPCResponse& response )
 {
-  Request::respond( oncrpc_response );
+  Request::respond( response );
 }
 
-void ONCRPCRequest::respond( MarshallableObject& response_body )
+void ONCRPCRequest::respond( Response& response )
 {
-  Request::respond
-  (
-    *new ONCRPCResponse( response_body, get_xid(), get_verf() )
-  );
+  Request::respond( *new ONCRPCResponse( response, get_xid(), get_verf() ) );
 }
 
-void ONCRPCRequest::respond( ExceptionResponse& exception_response )
+void ONCRPCRequest::respond( ExceptionResponse& response )
 {
-  Request::respond( exception_response );
+  Request::respond( *new ONCRPCResponse( response, get_xid(), get_verf() ) );
 }
 
-void ONCRPCRequest::unmarshal( Unmarshaller& unmarshaller )
-{
-  ONCRPCMessage<ONCRPCRequest>::unmarshal( unmarshaller );
 
-  uint32_t msg_type = unmarshaller.read_uint32( "msg_type", 0 );
-  if ( msg_type == 0 ) // CALL
+// oncrpc_request_parser.cpp
+ONCRPCRequestParser::ONCRPCRequestParser( MessageFactory& message_factory )
+  : ONCRPCMessageParser( message_factory )
+{ }
+
+Message*
+ONCRPCRequestParser::parse
+(
+  ONCRPCRecordFragment& record_fragment
+)
+{
+  XDRUnmarshaller xdr_unmarshaller( record_fragment );
+
+  uint32_t xid = xdr_unmarshaller.read_uint32();
+
+  uint32_t msg_type = xdr_unmarshaller.read_uint32();
+  if ( msg_type == ONCRPCMessage::CALL )
   {
-    uint32_t rpcvers = unmarshaller.read_uint32( "rpcvers", 0 );
+    uint32_t rpcvers = xdr_unmarshaller.read_uint32();
     if ( rpcvers == 2 )
     {
-      unmarshaller.read_uint32( "prog", 0 );
-      unmarshaller.read_uint32( "vers", 0 );
-      uint32_t proc = unmarshaller.read_uint32( "proc", 0 );
-      cred = unmarshal_opaque_auth( unmarshaller );
-      unmarshal_verf( unmarshaller );
-      unmarshal_new_Request_body( "body", 0, proc, unmarshaller );
+      uint32_t prog = xdr_unmarshaller.read_uint32();
+      uint32_t vers = xdr_unmarshaller.read_uint32();
+      uint32_t proc = xdr_unmarshaller.read_uint32();
+
+      MarshallableObject* cred = unmarshal_opaque_auth( xdr_unmarshaller );
+      MarshallableObject* verf = unmarshal_opaque_auth( xdr_unmarshaller );
+
+      Request* body = get_message_factory().createRequest( proc );
+      if ( body != NULL )
+      {
+        xdr_unmarshaller.read( *body );
+        return new ONCRPCRequest( *body, proc, prog, vers, xid, cred, verf );
+      }
+      else
+      {
+        MarshallableObject::dec_ref( cred );
+        return new ONCRPCResponse
+                   (
+                     *new ONCRPCProcedureUnavailableError,
+                     xid,
+                     verf
+                   );
+      }
     }
     else
-      throw yield::platform::Exception( "ONC-RPC request: invalid rpcvers" );
+    {
+      ONCRPCResponse::mismatch_info mismatch_info_ = { 0 };
+      return new ONCRPCResponse( mismatch_info_, xid );
+    }
   }
   else
-    throw yield::platform::Exception( "ONC-RPC request: invalid msg_type" );
+    return new ONCRPCResponse( *new ONCRPCGarbageArgumentsError, xid );
 }
 
 
 // oncrpc_response.cpp
 ONCRPCResponse::ONCRPCResponse
 (
-  uint32_t default_body_type_id,
-  MarshallableObjectFactory& marshallable_object_factory,
-  uint32_t xid
-)
-  : ONCRPCMessage<ONCRPCResponse>( marshallable_object_factory, xid ),
-    default_body_type_id( default_body_type_id )
-{ }
-
-// Outgoing
-ONCRPCResponse::ONCRPCResponse
-(
-  MarshallableObject& body,
+  Response& body,
   uint32_t xid,
   MarshallableObject* verf
 )
-  : ONCRPCMessage<ONCRPCResponse>( body, verf, xid )
+  : ONCRPCMessage( verf, xid ),
+    accept_stat_( SUCCESS ),
+    body( body ),
+    auth_stat_( AUTH_OK ),
+    reply_stat_( MSG_ACCEPTED ),
+    reject_stat_( RPC_MISMATCH )
 {
-  default_body_type_id = 0;
+  memset( &mismatch_info_, 0, sizeof( mismatch_info_ ) );
+}
+
+ONCRPCResponse::ONCRPCResponse
+(
+  ExceptionResponse& body,
+  uint32_t xid,
+  MarshallableObject* verf
+)
+  : ONCRPCMessage( verf, xid ),
+    accept_stat_( body.get_type_id() ),
+    body( body ),
+    auth_stat_( AUTH_OK ),
+    reply_stat_( MSG_ACCEPTED ),
+    reject_stat_( RPC_MISMATCH )
+{
+  memset( &mismatch_info_, 0, sizeof( mismatch_info_ ) );
+}
+
+ONCRPCResponse::ONCRPCResponse
+(
+  const struct mismatch_info& mismatch_info_,
+  uint32_t xid
+)
+ : ONCRPCMessage( NULL, xid ),
+   accept_stat_( SYSTEM_ERR ),
+   body( *new ONCRPCRPCMismatchError ),
+   auth_stat_( AUTH_OK ),
+   mismatch_info_( mismatch_info_ ),
+   reply_stat_( MSG_DENIED ),
+   reject_stat_( RPC_MISMATCH )
+{ }
+
+ONCRPCResponse::ONCRPCResponse( auth_stat auth_stat_, uint32_t xid )
+  : ONCRPCMessage( NULL, xid ),
+    accept_stat_( SYSTEM_ERR ),
+    body( *new ONCRPCAuthError( auth_stat_ ) ),
+    auth_stat_( auth_stat_ ),
+    reply_stat_( MSG_DENIED ),
+    reject_stat_( AUTH_ERROR )
+{
+  memset( &mismatch_info_, 0, sizeof( mismatch_info_ ) );
+}
+
+ONCRPCResponse::~ONCRPCResponse()
+{
+  Response::dec_ref( body );
 }
 
 void ONCRPCResponse::marshal( Marshaller& marshaller ) const
 {
-  ONCRPCMessage<ONCRPCResponse>::marshal( marshaller );
-  marshaller.write( "msg_type", 0, 1 ); // MSG_REPLY
-  marshaller.write( "reply_stat", 0, 0 ); // MSG_ACCEPTED
-  marshal_verf( marshaller );
-  if ( get_body().get_type_id() != ExceptionResponse::TYPE_ID )
+  marshaller.write( "xid", get_xid() );
+  marshaller.write( "msg_type", REPLY );
+  marshaller.write( "reply_stat", reply_stat_ );
+  if ( reply_stat_ == MSG_ACCEPTED )
   {
-    marshaller.write( "accept_stat", 0, 0 ); // SUCCESS
-    marshaller.write( "body", 0, get_body() );
+    marshal_opaque_auth( marshaller, get_verf() );
+    marshaller.write( "accept_stat", accept_stat_ );
+    marshaller.write( "body", get_body() );
   }
   else
-    marshaller.write( "accept_stat", 0, 5 ); // SYSTEM_ERR
+  {
+    marshaller.write( "reject_stat", reject_stat_ );
+    if ( reject_stat_ == RPC_MISMATCH )
+    {
+      marshaller.write( "mismatch_info_low", mismatch_info_.low );
+      marshaller.write( "mismatch_info_high", mismatch_info_.high );
+    }
+    else
+      marshaller.write( "auth_stat", auth_stat_ );
+  }
 }
 
-void ONCRPCResponse::unmarshal
+
+// oncrpc_response_parser.cpp
+ONCRPCResponseParser::ONCRPCResponseParser( MessageFactory& message_factory )
+  : ONCRPCMessageParser( message_factory )
+{ }
+
+ONCRPCResponse*
+ONCRPCResponseParser::parse
 (
-  Unmarshaller& unmarshaller
+  ONCRPCRecordFragment& record_fragment,
+  ONCRPCRequest& oncrpc_request
 )
 {
-  ONCRPCMessage<ONCRPCResponse>::unmarshal( unmarshaller );
+  return parse
+         (
+           oncrpc_request.get_body().get_type_id(),
+           record_fragment,
+           oncrpc_request.get_xid()
+         );
+}
 
-  uint32_t msg_type = unmarshaller.read_uint32( "msg_type", 0 );
-  if ( msg_type == 1 ) // REPLY
+ONCRPCResponse*
+ONCRPCResponseParser::parse
+(
+  uint32_t default_body_type_id,
+  ONCRPCRecordFragment& record_fragment,
+  uint32_t xid
+)
+{
+  XDRUnmarshaller xdr_unmarshaller( record_fragment );
+
+  uint32_t msg_type = xdr_unmarshaller.read_uint32();
+  if ( msg_type == ONCRPCMessage::REPLY )
   {
-    uint32_t reply_stat = unmarshaller.read_uint32( "reply_stat", 0 );
-    if ( reply_stat == 0 ) // MSG_ACCEPTED
+    uint32_t reply_stat = xdr_unmarshaller.read_uint32();
+    if ( reply_stat == ONCRPCResponse::MSG_ACCEPTED )
     {
-      unmarshal_verf( unmarshaller );
+      MarshallableObject* verf = unmarshal_opaque_auth( xdr_unmarshaller );
 
-      uint32_t accept_stat = unmarshaller.read_uint32( "accept_stat", 0 );
+      uint32_t accept_stat = xdr_unmarshaller.read_uint32();
       switch ( accept_stat )
       {
-        case 0:
+        case ONCRPCResponse::SUCCESS:
         {
-          unmarshal_new_Response_body
-          (
-            NULL,
-            0,
-            default_body_type_id,
-            unmarshaller
-          );
+          Response* body
+            = get_message_factory().createResponse( default_body_type_id );
+
+          if ( body != NULL )
+          {
+            xdr_unmarshaller.read( *body );
+            return new ONCRPCResponse( *body, xid, verf );
+          }
+          else
+          {
+            return new ONCRPCResponse
+                       (
+                         *new ONCRPCProcedureUnavailableError,
+                         xid,
+                         verf
+                       );
+          }
         }
         break;
 
-        case 1: set_body( new ONCRPCProgramUnavailableError ); break;
-        case 2: set_body( new ONCRPCProgramMismatchError ); break;
-        case 3: set_body( new ONCRPCProcedureUnavailableError ); break;
-        case 4: set_body( new ONCRPCGarbageArgumentsError ); break;
-        case 5: set_body( new ONCRPCSystemError ); break;
+        case ONCRPCResponse::PROG_UNAVAIL:
+        {
+          return new ONCRPCResponse
+                     (
+                       *new ONCRPCProgramUnavailableError,
+                       xid,
+                       verf
+                     );
+        }
+        break;
+
+        case ONCRPCResponse::PROG_MISMATCH:
+        {
+          return new ONCRPCResponse
+                     (
+                       *new ONCRPCProgramMismatchError,
+                       xid,
+                       verf
+                     );
+        }
+        break;
+
+        case ONCRPCResponse::PROC_UNAVAIL:
+        {
+          return new ONCRPCResponse
+                     (
+                       *new ONCRPCProcedureUnavailableError,
+                       xid,
+                       verf
+                     );
+        }
+        break;
+
+        case ONCRPCResponse::GARBAGE_ARGS:
+        {
+          return new ONCRPCResponse
+                     (
+                       *new ONCRPCGarbageArgumentsError,
+                       xid,
+                       verf
+                     );
+
+        }
+        break;
+
+        case ONCRPCResponse::SYSTEM_ERR:
+        {
+          return new ONCRPCResponse
+                     (
+                       *new ONCRPCSystemError,
+                       xid,
+                       verf
+                     );
+        }
+        break;
 
         default:
         {
-          if
-          (
-            !unmarshal_new_ExceptionResponse_body
-            (
-              NULL,
-              0,
-              accept_stat,
-              unmarshaller
-            )
-          )
-            set_body( new ONCRPCSystemError );
+          ExceptionResponse* body
+            = get_message_factory().createExceptionResponse( accept_stat );
+
+          if ( body != NULL )
+            xdr_unmarshaller.read( *body );
+          else
+            body = new ONCRPCSystemError;
+
+          return new ONCRPCResponse( *body, xid, verf );
         }
         break;
       }
     }
-    else if ( reply_stat == 1 ) // MSG_REJECTED
-      set_body( new ONCRPCMessageRejectedError );
+    else if ( reply_stat == ONCRPCResponse::MSG_DENIED )
+    {
+      uint32_t reject_stat = xdr_unmarshaller.read_uint32();
+      if ( reject_stat == ONCRPCResponse::RPC_MISMATCH )
+      {
+        struct ONCRPCResponse::mismatch_info mismatch_info_;
+        mismatch_info_.low = xdr_unmarshaller.read_uint32();
+        mismatch_info_.high =  xdr_unmarshaller.read_uint32();
+        return new ONCRPCResponse( mismatch_info_, xid );
+      }
+      else if ( reject_stat == ONCRPCResponse::AUTH_ERROR )
+      {
+        uint32_t auth_stat = xdr_unmarshaller.read_uint32();
+        if
+        (
+          auth_stat >= ONCRPCResponse::AUTH_OK
+          &&
+          auth_stat <= ONCRPCResponse::AUTH_FAILED
+        )
+        {
+          return new ONCRPCResponse
+                     (
+                       static_cast<ONCRPCResponse::auth_stat>( auth_stat ),
+                       xid
+                     );
+        }
+        else
+          return NULL;
+      }
+      else // Unknown reject_stat
+        return NULL;
+    }
     else // Unknown reply_stat value
-      set_body( new ONCRPCMessageRejectedError );
+      return NULL;
   }
-  else // Unknown msg_type value
-    set_body( new ONCRPCMessageRejectedError );
+  else // msg_type != REPLY
+    return NULL;
 }
 
 
 // oncrpc_server.cpp
-class ONCRPCServer::ONCRPCResponseTarget : public EventTarget
+using yidl::runtime::StackBuffer;
+
+
+namespace yield
 {
-public:
-  ONCRPCResponseTarget( ONCRPCRequest& oncrpc_request )
-    : oncrpc_request( &oncrpc_request )
-  { }
-
-  ~ONCRPCResponseTarget()
+  namespace ipc
   {
-    ONCRPCRequest::dec_ref( oncrpc_request );
-  }
+    class TCPONCRPCServer : public TCPSocketServer, private ONCRPCServer
+    {
+    public:
+      static TCPONCRPCServer&
+      create
+      (
+        const URI& absolute_uri,
+        Log* error_log,
+        MessageFactory& message_factory,
+        EventTarget& request_target,
+        bool send_oncrpc_requests,
+        SSLContext* ssl_context,
+        Log* trace_log
+      )
+      {
+        IOQueue& io_queue = createIOQueue( ssl_context != NULL );
 
-  // yield::concurrency::EventTarget
-  void send( Event& ev )
-  {
-    oncrpc_request->respond( ev );
-    ONCRPCRequest::dec_ref( oncrpc_request ); // Have to do this to avoid
-    oncrpc_request = NULL;                    // circular references
-  }
+        return *new TCPONCRPCServer
+                    (
+                      error_log,
+                      io_queue,
+                      createListenTCPSocket
+                      (
+                        absolute_uri,
+                        io_queue,
+                        ssl_context,
+                        trace_log
+                      ),
+                      message_factory,
+                      request_target,
+                      send_oncrpc_requests,
+                      trace_log
+                    );
+      }
 
-private:
-  ONCRPCRequest* oncrpc_request;
+      // EventHandler
+      const char* get_name() const { return "TCPONCRPCServer"; }
+
+    private:
+      TCPONCRPCServer
+      (
+        Log* error_log,
+        IOQueue& io_queue,
+        TCPSocket& listen_tcp_socket,
+        MessageFactory& message_factory,
+        EventTarget& request_target,
+        bool send_oncrpc_requests,
+        Log* trace_log
+      )
+      : TCPSocketServer
+        (
+          error_log,
+          io_queue,
+          listen_tcp_socket,
+          request_target,
+          trace_log
+        ),
+        ONCRPCServer
+        (
+          message_factory,
+          request_target,
+          send_oncrpc_requests
+        )
+      {
+        get_listen_tcp_socket().aio_accept( *this, NULL, new StackBuffer<4> );
+      }
+
+      // TCPSocket::AIOAcceptCallback
+      void
+      onAcceptCompletion
+      (
+        TCPSocket& accepted_tcp_socket,
+        void* context,
+        Buffer* recv_buffer
+      )
+      {
+        TCPSocketServer::onAcceptCompletion
+        (
+          accepted_tcp_socket,
+          context,
+          recv_buffer
+        );
+
+        Connection* connection = new Connection( accepted_tcp_socket, *this );
+        connection->onReadCompletion( *recv_buffer, NULL );
+
+        // get_listen_tcp_socket().aio_accept( *this, NULL, new StackBuffer<4> );
+      }
+
+    private:
+      class Connection
+        : public TCPSocketServer::Connection,
+          private ONCRPCRequestParser
+      {
+      public:
+        Connection( TCPSocket& tcp_socket, TCPONCRPCServer& tcp_oncrpc_server )
+          : TCPSocketServer::Connection( tcp_socket, tcp_oncrpc_server ),
+            ONCRPCRequestParser( tcp_oncrpc_server.get_message_factory() )
+        { }
+
+        // TCPSocket::AIOReadCallback
+        void onReadCompletion( Buffer& buffer, void* context )
+        {
+          TCPSocketServer::Connection::onReadCompletion( buffer, context );
+
+          if ( buffer.size() == buffer.capacity() )
+          {
+            if ( buffer.get_type_id() == StackBuffer<4>::TYPE_ID )
+            {
+              uint32_t nbo_record_fragment_marker;
+              buffer.get( &nbo_record_fragment_marker, sizeof( uint32_t ) );
+
+              ONCRPCRecordFragment* record_fragment
+                = new ONCRPCRecordFragment( nbo_record_fragment_marker );
+
+              get_socket().aio_recv( *record_fragment, 0, *this, NULL );
+            }
+            else if ( buffer.get_type_id() == ONCRPCRecordFragment::TYPE_ID )
+            {
+              Message* message
+                = ONCRPCRequestParser::parse
+                  (
+                    static_cast<ONCRPCRecordFragment&>( buffer )
+                  );
+
+              if ( message != NULL )
+              {
+                if ( message->get_type_id() == ONCRPCRequest::TYPE_ID )
+                {
+                  ONCRPCRequest* oncrpc_request
+                    = static_cast<ONCRPCRequest*>( message );
+                  oncrpc_request->set_response_target( this );
+                  get_tcp_oncrpc_server().sendRPCRequest( *oncrpc_request );
+                }
+                else if ( message->get_type_id() == ONCRPCResponse::TYPE_ID )
+                  send( *static_cast<ONCRPCResponse*>( message ) );
+                else
+                  DebugBreak();
+              }
+              else
+                DebugBreak();
+            }
+            else
+              DebugBreak();
+          }
+          else // buffer.size() < buffer.capacity()
+            get_socket().aio_recv( buffer, 0, *this, context );
+        }
+
+        // TCPSocket::AIOWriteCallback
+        void onWriteCompletion( size_t bytes_written, void* context )
+        {
+          TCPSocketServer::Connection::onWriteCompletion
+          (
+            bytes_written,
+            context
+          );
+
+          get_socket().aio_recv( *new StackBuffer<4>, 0, *this, NULL );
+        }
+
+        // ResponseTarget
+        void send( Response& response )
+        {
+          if ( response.get_type_id() == ONCRPCResponse::TYPE_ID )
+          {
+            ONCRPCResponse& oncrpc_response
+              = static_cast<ONCRPCResponse&>( response );
+
+            XDRMarshaller xdr_marshaller;
+            oncrpc_response.marshal( xdr_marshaller );
+            ONCRPCResponse::dec_ref( oncrpc_response );
+
+            ONCRPCRecordFragment* record_fragment =
+              new ONCRPCRecordFragment( xdr_marshaller.get_buffer() );
+
+            get_socket().aio_send( *record_fragment, 0, *this, NULL );
+          }
+          else
+            DebugBreak();
+        }
+
+      private:
+        TCPONCRPCServer& get_tcp_oncrpc_server() const
+        {
+          return static_cast<TCPONCRPCServer&>( get_socket_server() );
+        }
+      };
+    };
+
+
+    class UDPONCRPCServer
+      : public UDPSocketServer,
+        private ONCRPCServer,
+        private ONCRPCRequestParser
+    {
+    public:
+      static UDPONCRPCServer&
+      create
+      (
+        const URI& absolute_uri,
+        Log* error_log,
+        MessageFactory& message_factory,
+        EventTarget& request_target,
+        bool send_oncrpc_requests,
+        Log* trace_log
+      )
+      {
+        IOQueue& io_queue = createIOQueue();
+        return *new UDPONCRPCServer
+                    (
+                      error_log,
+                      io_queue,
+                      message_factory,
+                      request_target,
+                      send_oncrpc_requests,
+                      trace_log,
+                      createUDPSocket( absolute_uri, io_queue, trace_log )
+                    );
+      }
+
+      // EventHandler
+      const char* get_name() const { return "UDPONCRPCServer"; }
+
+    private:
+      UDPONCRPCServer
+      (
+        Log* error_log,
+        IOQueue& io_queue,
+        MessageFactory& message_factory,
+        EventTarget& request_target,
+        bool send_oncrpc_requests,
+        Log* trace_log,
+        UDPSocket& udp_socket
+      )
+      : UDPSocketServer
+        (
+          error_log,
+          io_queue,
+          request_target,
+          trace_log,
+          udp_socket
+        ),
+        ONCRPCServer
+        (
+          message_factory,
+          request_target,
+          send_oncrpc_requests
+        ),
+        ONCRPCRequestParser( message_factory )
+      {
+        // get_udp_socket().aio_recvfrom( *new StackBuffer<1024>, *this, NULL );
+      }
+
+      // UDPSocket::AIORecvFromCallback
+      void
+      onRecvFromCompletion
+      (
+        Buffer& buffer,
+        SocketAddress& peername,
+        void* context
+      )
+      {
+        DebugBreak();
+        //ONCRPCRequest* request = static_cast<ONCRPCRequest*>( context );
+        //
+        //Buffer* next_buffer = request->deserialize( &buffer );
+        //if ( next_buffer == NULL )
+        //{
+        //  UDPConnection* udp_connection = new UDPConnection( peername, *udp_socket );
+        //  request->set_response_target( udp_connection );
+        //  UDPConnection::dec_ref( *udp_connection );
+        //  sendRequest( *request );
+        //}
+        //else if ( next_buffer != reinterpret_cast<Buffer*>( -1 ) )
+        //  Buffer::dec_ref( *next_buffer );
+
+        //request = createRequest();
+        //udp_socket->aio_recvfrom( *request->deserialize( NULL ), *this, request );
+      }
+
+      void onRecvFromError( uint32_t, void* context )
+      {
+        DebugBreak();
+        //ONCRPCRequest* request = static_cast<ONCRPCRequest*>( context );
+        //delete request;
+        //request = createRequest();
+        //udp_socket->aio_recvfrom( *request->deserialize( NULL ), *this, request );
+      }
+
+    private:
+      class Connection : public UDPSocketServer::Connection
+      {
+      public:
+        Connection
+        (
+          SocketAddress& peername,
+          UDPSocket& udp_socket,
+          UDPSocketServer& udp_socket_server
+        )
+          : UDPSocketServer::Connection
+            (
+              peername,
+              udp_socket,
+              udp_socket_server
+            )
+        { }
+
+        // ResponseTarget
+        void send( Response& response )
+        {
+          //if ( request_target.get_type_id() == ONCRPC
+          //switch ( ev.get_type_id() )
+          //{
+          //  case ONCRPCResponse::TYPE_ID:
+          //  {
+          //    ONCRPCResponse& response = static_cast<ONCRPCResponse&>( ev );
+          //    DebugBreak();
+          //    //response.serialize( udp_socket, *this, NULL );
+          //    //ONCRPCResponse::dec_ref( response );
+          //  }
+          //  break;
+
+          //  default: Event::dec_ref( ev );
+          //}
+        }
+      };
+    };
+  };
 };
 
 
 ONCRPCServer::ONCRPCServer
 (
-  uint32_t flags,
-  IOQueue& io_queue,
-  TCPSocket& listen_tcp_socket,
-  Log* log,
-  MarshallableObjectFactory& marshallable_object_factory,
+  MessageFactory& message_factory,
   EventTarget& request_target,
   bool send_oncrpc_requests
-)
-  : SocketServer<ONCRPCRequest, ONCRPCResponse>
+) : RPCServer
     (
-      flags,
-      io_queue,
-      listen_tcp_socket,
-      log,
-      request_target
-    ),
-    marshallable_object_factory( marshallable_object_factory ),
-    send_oncrpc_requests( send_oncrpc_requests )
-{ }
-
-ONCRPCServer::ONCRPCServer
-(
-  uint32_t flags,
-  IOQueue& io_queue,
-  Log* log,
-  MarshallableObjectFactory& marshallable_object_factory,
-  EventTarget& request_target,
-  bool send_oncrpc_requests,
-  UDPSocket& udp_socket
-)
-  : SocketServer<ONCRPCRequest, ONCRPCResponse>
-    (
-      flags,
-      io_queue,
-      log,
+      message_factory,
       request_target,
-      udp_socket
-    ),
-    marshallable_object_factory( marshallable_object_factory ),
-    send_oncrpc_requests( send_oncrpc_requests )
+      send_oncrpc_requests
+    )
 { }
 
-ONCRPCServer&
+SocketServer&
 ONCRPCServer::create
 (
   const URI& absolute_uri,
-  MarshallableObjectFactory& marshallable_object_factory,
+  MessageFactory& message_factory,
   EventTarget& request_target,
-  uint32_t flags,
-  Log* log,
+  Log* error_log,
   bool send_oncrpc_requests,
-  SSLContext* ssl_context
+  SSLContext* ssl_context,
+  Log* trace_log
 )
 {
-  SocketAddress& sockname = createSocketAddress( absolute_uri );
-
   if ( absolute_uri.get_scheme() == "oncrpcu" )
   {
-    IOQueue& io_queue = createIOQueue();
-    UDPSocket* udp_socket = UDPSocket::create();
-    if
-    (
-      udp_socket != NULL
-      &&
-      udp_socket->associate( io_queue )
-      &&
-      udp_socket->bind( sockname )
-    )
-    {
-      return *new ONCRPCServer
-                  (
-                    flags,
-                    io_queue,
-                    log,
-                    marshallable_object_factory,
-                    request_target,
-                    send_oncrpc_requests,
-                    *udp_socket
-                  );
-    }
-    else
-      SocketAddress::dec_ref( sockname );
+    return UDPONCRPCServer::create
+           (
+             absolute_uri,
+             error_log,
+             message_factory,
+             request_target,
+             send_oncrpc_requests,
+             trace_log
+           );
   }
   else
   {
-    IOQueue* io_queue;
-    TCPSocket* listen_tcp_socket;
-#ifdef YIELD_IPC_HAVE_OPENSSL
-    if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context != NULL )
-    {
-      io_queue = &yield::platform::NBIOQueue::create();
-      listen_tcp_socket = SSLSocket::create( *ssl_context );
-      SSLContext::dec_ref( *ssl_context );
-    }
-    else
-#endif
-    {
-      io_queue = &createIOQueue();
-      listen_tcp_socket = TCPSocket::create();
-    }
-
-    if
-    (
-      listen_tcp_socket != NULL
-      &&
-      listen_tcp_socket->associate( *io_queue )
-      &&
-      listen_tcp_socket->bind( sockname )
-      &&
-      listen_tcp_socket->listen()
-    )
-    {
-      return *new ONCRPCServer
-                  (
-                    flags,
-                    *io_queue,
-                    *listen_tcp_socket,
-                    log,
-                    marshallable_object_factory,
-                    request_target,
-                    send_oncrpc_requests
-                  );
-    }
-    else
-      SocketAddress::dec_ref( sockname );
+    return TCPONCRPCServer::create
+           (
+             absolute_uri,
+             error_log,
+             message_factory,
+             request_target,
+             send_oncrpc_requests,
+             ssl_context,
+             trace_log
+           );
   }
-
-  throw yield::platform::Exception();
-}
-
-EventFactory* ONCRPCServer::get_event_factory() const
-{
-  if ( marshallable_object_factory.get_type_id() == EventFactory::TYPE_ID )
-    return static_cast<EventFactory*>( &marshallable_object_factory );
-  else
-    return NULL;
-}
-
-MarshallableObjectFactory& ONCRPCServer::get_marshallable_object_factory() const
-{
-  return marshallable_object_factory;
-}
-
-void ONCRPCServer::sendRequest( ONCRPCRequest& oncrpc_request )
-{
-  if ( send_oncrpc_requests )
-    get_request_target().send( oncrpc_request );
-  else if
-  (
-    get_event_factory() != NULL
-    &&
-    get_event_factory()->isRequest( oncrpc_request.get_body() )
-  )
-  {
-    Request& request = static_cast<Request&>( oncrpc_request.get_body() );
-
-    ONCRPCResponseTarget* oncrpc_response_target
-      = new ONCRPCResponseTarget( oncrpc_request );
-    request.set_response_target( oncrpc_response_target );
-    ONCRPCResponseTarget::dec_ref( *oncrpc_response_target );
-
-    get_request_target().send( request.inc_ref() );
-  }
-  else
-    DebugBreak();
-}
-
-
-// rpc_message.cpp
-using yield::concurrency::EventFactory;
-
-
-// Incoming
-RPCMessage::RPCMessage
-(
-  MarshallableObjectFactory& marshallable_object_factory
-)
-  : marshallable_object_factory( &marshallable_object_factory.inc_ref() )
-{
-  body = NULL;
-}
-
-// Outgoing
-RPCMessage::RPCMessage( MarshallableObject& body )
-  : body( &body )
-{
-  marshallable_object_factory = NULL;
-}
-
-RPCMessage::~RPCMessage()
-{
-  MarshallableObject::dec_ref( body );
-  MarshallableObjectFactory::dec_ref( marshallable_object_factory );
-}
-
-MarshallableObject& RPCMessage::get_body() const
-{
-  if ( body != NULL )
-    return *body;
-  else
-  {
-    DebugBreak();
-    return *body;
-  }
-}
-
-MarshallableObjectFactory& RPCMessage::get_marshallable_object_factory() const
-{
-  if ( marshallable_object_factory != NULL )
-    return *marshallable_object_factory;
-  else
-  {
-    DebugBreak();
-    return *marshallable_object_factory;
-  }
-}
-
-void RPCMessage::marshal_body
-(
-  const char* key,
-  uint32_t tag,
-  Marshaller& marshaller
-) const
-{
-  marshaller.write( key, tag, get_body() );
-}
-
-void RPCMessage::set_body( MarshallableObject* body )
-{
-  MarshallableObject::dec_ref( this->body );
-  this->body = yidl::runtime::Object::inc_ref( body );
-}
-
-bool
-RPCMessage::unmarshal_new_ExceptionResponse_body
-(
-  const char* key,
-  uint32_t tag,
-  uint32_t type_id,
-  Unmarshaller& unmarshaller
-)
-{
-  if ( marshallable_object_factory != NULL )
-  {
-    if ( marshallable_object_factory->get_type_id() == EventFactory::TYPE_ID )
-    {
-      body = static_cast<EventFactory*>( marshallable_object_factory )
-               ->createExceptionResponse( type_id );
-
-      if ( body != NULL )
-      {
-        unmarshaller.read( key, tag, *body );
-        return true;
-      }
-    }
-
-    body = marshallable_object_factory->createMarshallableObject( type_id );
-    if ( body != NULL )
-    {
-      unmarshaller.read( key, tag, *body );
-      return true;
-    }
-    else
-      return false;
-  }
-  else
-    return false;
-}
-
-bool
-RPCMessage::unmarshal_new_Request_body
-(
-  const char* key,
-  uint32_t tag,
-  uint32_t type_id,
-  Unmarshaller& unmarshaller
-)
-{
-  if ( marshallable_object_factory != NULL )
-  {
-    if ( marshallable_object_factory->get_type_id() == EventFactory::TYPE_ID )
-    {
-      body = static_cast<EventFactory*>( marshallable_object_factory )
-             ->createRequest( type_id );
-
-      if ( body != NULL )
-      {
-        unmarshaller.read( key, tag, *body );
-        return true;
-      }
-    }
-
-    body = marshallable_object_factory->createMarshallableObject( type_id );
-    if ( body != NULL )
-    {
-      unmarshaller.read( key, tag, *body );
-      return true;
-    }
-    else
-      return false;
-  }
-  else
-    return false;
-}
-
-bool
-RPCMessage::unmarshal_new_Response_body
-(
-  const char* key,
-  uint32_t tag,
-  uint32_t type_id,
-  Unmarshaller& unmarshaller
-)
-{
-  if ( marshallable_object_factory != NULL )
-  {
-    if ( marshallable_object_factory->get_type_id() == EventFactory::TYPE_ID )
-    {
-      body = static_cast<EventFactory*>( marshallable_object_factory )
-             ->createResponse( type_id );
-
-      if ( body != NULL )
-      {
-        unmarshaller.read( key, tag, *body );
-        return true;
-      }
-    }
-
-    body = marshallable_object_factory->createMarshallableObject( type_id );
-    if ( body != NULL )
-    {
-      unmarshaller.read( key, tag, *body );
-      return true;
-    }
-    else
-      return false;
-  }
-  else
-    return false;
 }
 
 
 // socket_client.cpp
-#ifdef _WIN32
-#undef INVALID_SOCKET
-#pragma warning( push )
-#pragma warning( disable: 4995 )
-#include <ws2tcpip.h>
-#pragma warning( pop )
-#define INVALID_SOCKET  (SOCKET)(~0)
-#ifndef ECONNABORTED
-#define ECONNABORTED WSAECONNABORTED
-#endif
-#ifndef ETIMEDOUT
-#define ETIMEDOUT WSAETIMEDOUT
-#endif
-#endif
-
-
-template <class RequestType, class ResponseType>
-SocketClient<RequestType, ResponseType>::SocketClient
+SocketClient::SocketClient
 (
-  uint16_t concurrency_level,
-  uint32_t flags,
+  Log* error_log,
   IOQueue& io_queue,
-  Log* log,
   const Time& operation_timeout,
   SocketAddress& peername,
   uint16_t reconnect_tries_max,
-  SocketFactory& socket_factory
+  Log* trace_log
 )
-  : SocketPeer( flags, io_queue, log ),
-    concurrency_level( concurrency_level ),
+  : SocketPeer( error_log, io_queue, trace_log ),
     operation_timeout( operation_timeout ),
     peername( peername ),
-    reconnect_tries_max( reconnect_tries_max ),
-    socket_factory( socket_factory )
-{
-  for ( uint16_t socket_i = 0; socket_i < concurrency_level; socket_i++ )
-    sockets.enqueue( NULL ); // Enqueue a placeholder for each socket;
-                             // the sockets will be created on demand
-}
+    reconnect_tries_max( reconnect_tries_max )
+{ }
 
-template <class RequestType, class ResponseType>
-SocketClient<RequestType, ResponseType>::~SocketClient()
+SocketClient::~SocketClient()
 {
   SocketAddress::dec_ref( peername );
-  SocketFactory::dec_ref( socket_factory );
-
-  for ( uint16_t socket_i = 0; socket_i < concurrency_level; socket_i++ )
-  {
-    Socket* socket_ = sockets.try_dequeue();
-    if ( socket_ != NULL )
-    {
-      socket_->shutdown();
-      socket_->close();
-      Socket::dec_ref( *socket_ );
-      socket_ = sockets.try_dequeue();
-    }
-    else
-      break;
-  }
 }
 
-template <class RequestType, class ResponseType>
-void SocketClient<RequestType, ResponseType>::handleEvent( Event& ev )
+SocketClient::Connection::Connection
+(
+  Socket& socket_,
+  SocketClient& socket_client
+) : socket_( socket_ ),
+    socket_client( socket_client )
 {
-  switch ( ev.get_type_id() )
-  {
-    case RequestType::TYPE_ID:
-    {
-      RequestType& request = static_cast<RequestType&>( ev );
-
-      if ( has_flag( FLAG_TRACE_OPERATIONS ) )
-      {
-        get_log()->get_stream( Log::LOG_INFO ) <<
-        "yield::ipc::SocketClient sending " << request.get_type_name() << "/" <<
-        reinterpret_cast<uint64_t>( &request ) << " to <host>:" <<
-        this->peername.get_port() << ".";
-      }
-
-      Socket* socket_;
-      for ( ;; )
-      {
-        socket_ = sockets.dequeue(); // Blocking dequeue
-        if ( socket_ == NULL ) // We dequeued a placeholder;
-                               // try to create the socket on demand
-        {
-          socket_ = socket_factory.createSocket();
-          if ( socket_ != NULL )
-          {
-            if ( !socket_->associate( get_io_queue() ) ) DebugBreak();
-            break;
-          }
-          else if ( get_log() != NULL )
-          {
-            get_log()->get_stream( Log::LOG_ERR ) <<
-            "yield::ipc::SocketClient: could not create new socket " <<
-            "to connect to <host>:"
-            << this->peername.get_port() <<
-            ", error: " << yield::platform::Exception() << ".";
-          }
-        }
-      }
-
-      Connection* connection = new Connection( *this, get_log(), request, *socket_ );
-      connection->connect();
-    }
-    break;
-
-    default:
-    {
-      Event::dec_ref( ev );
-    }
-    break;
-  }
+  reconnect_tries = 0;
 }
 
-
-template <class RequestType, class ResponseType>
-class SocketClient<RequestType, ResponseType>::Connection
-  : public Socket::AIOConnectCallback,
-    public Socket::AIOReadCallback,
-    public Socket::AIOWriteCallback
+SocketClient::Connection::~Connection()
 {
-public:
-  Connection
-  (
-    SocketClient<RequestType, ResponseType>& client,
-    Log* log,
-    RequestType& request,
-    Socket& socket_
-  )
-  : client( client ),
-    log( log ),
-    operation_timeout( client.get_operation_timeout() ),
-    request( request ),
-    socket_( socket_ )
+  Socket::dec_ref( socket_ );
+}
+
+//void SocketClient::Connection::connect()
+//{
+//  if ( socket_.is_connected() )
+//    onConnectCompletion( NULL );
+//  else
+//  {
+//    if ( socket_client.get_trace_log() != NULL )
+//    {
+//      socket_client.get_log()->get_stream( Log::LOG_INFO ) <<
+//      "yield::ipc::SocketClient: connecting to <host>:" <<
+//      socket_client.get_peername().get_port() <<
+//      " with socket #" << reinterpret_cast<uint64_t>( &socket_ ) <<
+//      " (try #" <<
+//      reconnect_tries+1
+//      << ").";
+//    }
+//
+//    socket_.aio_connect( socket_client.get_peername(), *this );
+//  }
+//}
+
+SocketAddress& SocketClient::Connection::get_peername() const
+{
+  return socket_client.get_peername();
+}
+
+void SocketClient::Connection::onConnectCompletion( size_t, void* )
+{
+  if ( socket_client.get_trace_log() != NULL )
   {
-    reconnect_tries = 0;
-  }
-
-  ~Connection()
-  {
-    RequestType::dec_ref( request );
-  }
-
-  void connect()
-  {
-    if ( socket_.is_connected() )
-      onConnectCompletion( NULL );
-    else
-    {
-      if ( client.has_flag( FLAG_TRACE_OPERATIONS ) )
-      {
-        log->get_stream( Log::LOG_INFO ) <<
-        "yield::ipc::SocketClient: connecting to <host>:" <<
-        client.get_peername().get_port() <<
-        " with socket #" << reinterpret_cast<uint64_t>( &socket_ ) <<
-        " (try #" <<
-        reconnect_tries+1
-        << ").";
-      }
-
-      socket_.aio_connect( client.get_peername(), *this );
-    }
-  }
-
-private:
-  void onError( uint32_t error_code )
-  {
-    socket_.shutdown();
-    socket_.close();
-
-    if ( reconnect_tries < client.get_reconnect_tries_max() )
-    {
-      if ( socket_.recreate() ) // Try again
-      {
-        // Hack: if the read timed out, increase the timeout for the next try
-        if ( error_code == ETIMEDOUT )
-          operation_timeout *= 2.0;
-
-        reconnect_tries++;
-
-        connect();
-
-        return;
-      }
-    }
-
-    client.sockets.enqueue( NULL );
-
-    request.respond( *new ExceptionResponse( error_code ) );
-
-    delete this;
-  }
-
-  // Socket::AIOConnectCallback
-  void onConnectCompletion( void* )
-  {
-    if ( client.has_flag( FLAG_TRACE_OPERATIONS ) )
-    {
-      log->get_stream( Log::LOG_INFO ) <<
+    socket_client.get_trace_log()->get_stream( Log::LOG_INFO ) <<
       "yield::ipc::SocketClient: successfully connected to <host>:" <<
-      client.get_peername().get_port() << " on socket #" <<
+      socket_client.get_peername().get_port() << " on socket #" <<
       reinterpret_cast<uint64_t>( &socket_ ) << ".";
 
-      log->get_stream( Log::LOG_INFO ) <<
-      "yield::ipc::SocketClient: writing " << request.get_type_name()
-      << "/" << reinterpret_cast<uint64_t>( &request ) <<
-      " to <host>:" << client.get_peername().get_port() <<
-      " on socket #" << reinterpret_cast<uint64_t>( &socket_ ) << ".";
-    }
-
-    socket_.aio_writev( request.serialize(), *this );
+    //log->get_stream( Log::LOG_INFO ) <<
+    //"yield::ipc::SocketClient: writing " << request.get_type_name()
+    //<< "/" << reinterpret_cast<uint64_t>( &request ) <<
+    //" to <host>:" << client.get_peername().get_port() <<
+    //" on socket #" << reinterpret_cast<uint64_t>( &socket_ ) << ".";
   }
+}
 
-  void onConnectError( uint32_t error_code, void* )
+void SocketClient::Connection::onConnectError( uint32_t error_code, void* )
+{
+  if ( socket_client.get_error_log() != NULL )
   {
-    if ( log != NULL )
-    {
-      log->get_stream( Log::LOG_ERR ) <<
+    socket_client.get_error_log()->get_stream( Log::LOG_ERR ) <<
       "yield::ipc::SocketClient: connect() to <host>:" <<
-      client.get_peername().get_port() <<
-      " failed: " <<
-      yield::platform::Exception( error_code ) << ".";
-    }
-
-    onError( error_code );
+      socket_client.get_peername().get_port() <<
+      " failed: " << Exception( error_code ) << ".";
   }
+}
 
-  // Socket::AIOReadCallback
-  void onReadCompletion( Buffer& buffer, void* )
+void SocketClient::Connection::onReadCompletion( Buffer&, void* )
+{
+  if ( socket_client.get_trace_log() != NULL )
   {
-    if ( client.has_flag( FLAG_TRACE_OPERATIONS ) )
-    {
-      log->get_stream( Log::LOG_INFO ) <<
-      "yield::ipc::SocketClient: read " << buffer.size() <<
-      " bytes from socket #" << reinterpret_cast<uint64_t>( &socket_ ) <<
-      " for " << response->get_type_name() << "/" <<
-      reinterpret_cast<uint64_t>( response ) << ".";
-    }
-
-    ssize_t deserialize_ret = response->deserialize( buffer );
-
-    if ( deserialize_ret == 0 )
-    {
-      if ( client.has_flag( FLAG_TRACE_OPERATIONS ) )
-      {
-        log->get_stream( Log::LOG_INFO ) <<
-        "yield::ipc::SocketClient: successfully deserialized " <<
-        response->get_type_name() <<
-          "/" << reinterpret_cast<uint64_t>( response ) <<
-        ", responding to " << request.get_type_name() <<
-          "/" << reinterpret_cast<uint64_t>( &request ) << ".";
-      }
-
-      request.respond( *response );
-
-      client.sockets.enqueue( &socket_ );
-
-      delete this;
-    }
-    else if ( deserialize_ret > 0 )
-    {
-      if
-      (
-        buffer.capacity() - buffer.size() <
-        static_cast<size_t>( deserialize_ret )
-      )
-        socket_.aio_read( *new yidl::runtime::HeapBuffer( deserialize_ret ), *this );
-      else // re-use the same buffer
-        socket_.aio_read( buffer.inc_ref(), *this );
-    }
-    else
-      onError( ECONNABORTED );
   }
+}
 
-  void onReadError( uint32_t error_code, void* )
+void SocketClient::Connection::onReadError( uint32_t error_code, void* )
+{
+  if ( socket_client.get_error_log() != NULL )
   {
-    if ( log != NULL )
-    {
-      log->get_stream( Log::LOG_ERR ) <<
-      "yield::ipc::SocketClient: error reading " << response->get_type_name() <<
-        "/" << reinterpret_cast<uint64_t>( response ) <<
-      " from socket #" << reinterpret_cast<uint64_t>( &socket_ ) <<
-      ", error='" << yield::platform::Exception( error_code ) <<
-      "', responding to " << request.get_type_name() <<
-        "/" << reinterpret_cast<uint64_t>( &request ) <<
-        " with ExceptionResponse.";
-    }
-
-    onError( error_code );
+    //log->get_stream( Log::LOG_ERR ) <<
+    //"yield::ipc::SocketClient: error reading " << response->get_type_name() <<
+    //  "/" << reinterpret_cast<uint64_t>( response ) <<
+    //" from socket #" << reinterpret_cast<uint64_t>( &socket_ ) <<
+    //", error='" << Exception( error_code ) <<
+    //"', responding to " << request.get_type_name() <<
+    //  "/" << reinterpret_cast<uint64_t>( &request ) <<
+    //  " with ExceptionResponse.";
   }
+}
 
-  // Socket::AIOWriteCallback
-  void onWriteCompletion( void* )
+void SocketClient::Connection::onWriteCompletion( size_t bytes_written, void* )
+{ }
+
+void SocketClient::Connection::onWriteError( uint32_t error_code, void* )
+{
+  if ( socket_client.get_error_log() != NULL )
   {
-    //if
-    //(
-    //  ( client.get_flags() & FLAG_TRACE_OPERATIONS ) == FLAG_TRACE_OPERATIONS
-    //)
-    //{
-    //  log->get_stream( Log::LOG_INFO ) <<
-    //  "yield::ipc::SocketClient: wrote " << bytes_transferred <<
-    //  " bytes to socket #" << static_cast<uint64_t>( *get_socket() ) <<
-    //  " for " << request.get_type_name() <<
-    //    "/" << reinterpret_cast<uint64_t>( &request ) << ".";
-    //}
-
-    response = &client.createResponse( request );
-
-    if ( client.has_flag( FLAG_TRACE_OPERATIONS ) )
-    {
-      log->get_stream( Log::LOG_INFO ) <<
-      "yield::ipc::SocketClient: created " << response->get_type_name() <<
-        "/" << reinterpret_cast<uint64_t>( response ) <<
-      " to " << request.get_type_name() <<
-        "/" << reinterpret_cast<uint64_t>( &request ) << ".";
-    }
-
-    socket_.aio_read( *new yidl::runtime::HeapBuffer( 1024 ), *this );
+    //log->get_stream( Log::LOG_ERR ) <<
+    //"yield::ipc::SocketClient: error writing " <<
+    //request.get_type_name() <<
+    //  "/" << reinterpret_cast<uint64_t>( &request ) <<
+    //" to socket #" << reinterpret_cast<uint64_t>( &socket_ ) <<
+    //", error='" << Exception( error_code ) <<
+    //"', responding to " << request.get_type_name() <<
+    //  "/" << reinterpret_cast<uint64_t>( &request ) <<
+    //  " with ExceptionResponse.";
   }
+}
 
-  void onWriteError( uint32_t error_code, void* )
-  {
-    if ( log != NULL )
-    {
-      log->get_stream( Log::LOG_ERR ) <<
-      "yield::ipc::SocketClient: error writing " <<
-      request.get_type_name() <<
-        "/" << reinterpret_cast<uint64_t>( &request ) <<
-      " to socket #" << reinterpret_cast<uint64_t>( &socket_ ) <<
-      ", error='" << yield::platform::Exception( error_code ) <<
-      "', responding to " << request.get_type_name() <<
-        "/" << reinterpret_cast<uint64_t>( &request ) <<
-        " with ExceptionResponse.";
-    }
-
-    onError( error_code );
-  }
-
-private:
-  SocketClient<RequestType, ResponseType>& client;
-  Log* log;
-  Time operation_timeout; // May be adjusted for timeouts
-  uint16_t reconnect_tries;
-  RequestType& request;
-  ResponseType* response;
-  Socket& socket_;
-};
-
-
-template class SocketClient<HTTPRequest, HTTPResponse>;
-template class SocketClient<ONCRPCRequest, ONCRPCResponse>;
 
 
 // socket_peer.cpp
 SocketPeer::SocketPeer
 (
-  uint32_t flags,
+  Log* error_log,
   IOQueue& io_queue,
-  Log* log
+  Log* trace_log
 )
-  : flags( flags ),
+  : error_log( Object::inc_ref( error_log ) ),
     io_queue( io_queue ),
-    log( yidl::runtime::Object::inc_ref( log ) )
-{
-  if ( log == NULL )
-  {
-    if ( ( flags & FLAG_TRACE_NETWORK_IO ) == FLAG_TRACE_NETWORK_IO )
-      flags ^= FLAG_TRACE_NETWORK_IO;
-
-    if ( ( flags & FLAG_TRACE_OPERATIONS ) == FLAG_TRACE_OPERATIONS )
-      flags ^= FLAG_TRACE_OPERATIONS;
-  }
-}
+    trace_log( Object::inc_ref( trace_log ) )
+{ }
 
 SocketPeer::~SocketPeer()
 {
+  Log::dec_ref( error_log );
   IOQueue::dec_ref( io_queue );
-  Log::dec_ref( log );
+  Log::dec_ref( trace_log );
 }
 
 IOQueue& SocketPeer::createIOQueue()
@@ -11618,284 +13915,42 @@ SocketAddress& SocketPeer::createSocketAddress( const URI& absolute_uri )
   if ( sockaddr != NULL )
     return *sockaddr;
   else
-    throw yield::platform::Exception();
+    throw Exception();
 }
 
 
 // socket_server.cpp
-template <class RequestType, class ResponseType>
-class SocketServer<RequestType, ResponseType>::TCPConnection
-  : public TCPSocket::AIOReadCallback,
-    public TCPSocket::AIOWriteCallback,
-    public EventTarget
-{
-public:
-  TCPConnection
-  (
-    EventTarget& request_target,
-    SocketServer<RequestType, ResponseType>& server,
-    TCPSocket& tcp_socket
-  )
-  : request_target( request_target.inc_ref() ),
-    server( server.inc_ref() ),
-    tcp_socket( tcp_socket.inc_ref() )
-  {
-    request = NULL;
-  }
-
-  ~TCPConnection()
-  {
-    RequestType::dec_ref( request );
-    EventTarget::dec_ref( request_target );
-    SocketServer<RequestType, ResponseType>::dec_ref( server );
-    TCPSocket::dec_ref( tcp_socket );
-  }
-
-  void read()
-  {
-    tcp_socket.aio_read( *new yidl::runtime::HeapBuffer( 1024 ), *this );
-  }
-
-private:
-  // TCPSocket::AIOReadCallback
-  void onReadCompletion( Buffer& buffer, void* )
-  {
-    if ( request == NULL )
-      request = server.createRequest();
-
-    for ( ;; )
-    {
-      ssize_t deserialize_ret = request->deserialize( buffer );
-      if ( deserialize_ret == 0 )
-      {
-        request->set_response_target( this );
-        server.sendRequest( *request );
-        request = server.createRequest();
-      }
-      else if ( deserialize_ret > 0 )
-      {
-        tcp_socket.aio_read( *new yidl::runtime::HeapBuffer( 1024 ), *this );
-        return;
-      }
-      else
-      {
-        tcp_socket.shutdown();
-        tcp_socket.close();
-        delete this;
-        return;
-      }
-    }
-  }
-
-  void onReadError( uint32_t, void* )
-  {
-    tcp_socket.shutdown();
-    tcp_socket.close();
-    delete this;
-  }
-
-  // TCPSocket::AIOWriteCallback
-  void onWriteCompletion( void* )
-  {
-    read();
-  }
-
-  void onWriteError( uint32_t, void* )
-  {
-    tcp_socket.shutdown();
-    tcp_socket.close();
-    delete this;
-  }
-
-  // yield::concurrency::EventTarget
-  void send( Event& ev )
-  {
-    if ( ev.get_type_id() == ResponseType::TYPE_ID )
-    {
-      ResponseType& response = static_cast<ResponseType&>( ev );
-      tcp_socket.aio_writev( response.serialize(), *this );
-      ResponseType::dec_ref( response );
-    }
-    else
-      DebugBreak();
-  }
-
-private:
-  RequestType* request;
-  EventTarget& request_target;
-  SocketServer<RequestType, ResponseType>& server;
-  TCPSocket& tcp_socket;
-};
-
-
-template <class RequestType, class ResponseType>
-class SocketServer<RequestType, ResponseType>::UDPConnection
- : public EventTarget
-{
-public:
-  UDPConnection
-  (
-    SocketAddress& peername,
-    UDPSocket& udp_socket
-  )
-    : peername( peername.inc_ref() ),
-      udp_socket( udp_socket.inc_ref() )
-  { }
-
-  ~UDPConnection()
-  {
-    SocketAddress::dec_ref( peername );
-    UDPSocket::dec_ref( udp_socket );
-  }
-
-private:
-  SocketAddress& peername;
-  UDPSocket& udp_socket;
-
-private:
-  // EventTarget
-  void send( Event& ev )
-  {
-    switch ( ev.get_type_id() )
-    {
-      case ResponseType::TYPE_ID:
-      {
-        ResponseType& response = static_cast<ResponseType&>( ev );
-        Buffers& response_buffers = response.serialize();
-        udp_socket.sendmsg( response_buffers, peername );
-        Buffers::dec_ref( response_buffers );
-        ResponseType::dec_ref( response );
-      }
-      break;
-
-      default: Event::dec_ref( ev );
-    }
-  }
-};
-
-
-template <class RequestType, class ResponseType>
-SocketServer<RequestType, ResponseType>::SocketServer
+SocketServer::SocketServer
 (
-  uint32_t flags,
+  Log* error_log,
   IOQueue& io_queue,
-  TCPSocket& listen_tcp_socket,
-  Log* log,
-  EventTarget& request_target
-)
-: SocketPeer( flags, io_queue, log ),
-  listen_tcp_socket( &listen_tcp_socket ),
-  request_target( request_target )
-{
-  udp_socket = NULL;
-
-#ifdef _WIN32
-  if ( io_queue.get_type_id() == yield::platform::Win32AIOQueue::TYPE_ID )
-  {
-    for ( uint8_t aio_accept_i = 0; aio_accept_i < 10; aio_accept_i++ )
-      listen_tcp_socket.aio_accept( *this );
-  }
-  else
-#endif
-
-  listen_tcp_socket.aio_accept( *this );
-}
-
-template <class RequestType, class ResponseType>
-SocketServer<RequestType, ResponseType>::SocketServer
-(
-  uint32_t flags,
-  IOQueue& io_queue,
-  Log* log,
   EventTarget& request_target,
-  UDPSocket& udp_socket
+  Log* trace_log
 )
-  : SocketPeer( flags, io_queue, log ),
-    request_target( request_target ),
-    udp_socket( &udp_socket )
-{
-  listen_tcp_socket = NULL;
+  : SocketPeer( error_log, io_queue, trace_log ),
+    request_target( request_target )
+{ }
 
-  udp_socket.aio_recvfrom( *new yidl::runtime::HeapBuffer( 1024 ), *this );
-}
-
-template <class RequestType, class ResponseType>
-SocketServer<RequestType, ResponseType>::~SocketServer()
+SocketServer::~SocketServer()
 {
-  TCPSocket::dec_ref( listen_tcp_socket );
   EventTarget::dec_ref( request_target );
-  UDPSocket::dec_ref( udp_socket );
 }
 
-template <class RequestType, class ResponseType>
-void SocketServer<RequestType, ResponseType>::onAcceptCompletion( TCPSocket& accepted_tcp_socket, void* )
-{
-  if ( !accepted_tcp_socket.associate( get_io_queue() ) ) DebugBreak();
 
-  TCPConnection* tcp_connection
-    = new TCPConnection( request_target, *this, accepted_tcp_socket );
-  tcp_connection->read();
-
-  listen_tcp_socket->aio_accept( *this );
-}
-
-template <class RequestType, class ResponseType>
-void
-SocketServer<RequestType, ResponseType>::onAcceptError
+SocketServer::Connection::Connection
 (
-  uint32_t error_code,
-  void*
+  Socket& socket_,
+  SocketServer& socket_server
 )
+: socket_( socket_ ),
+  socket_server( socket_server )
+{ }
+
+SocketServer::Connection::~Connection()
 {
-  DebugBreak();
-  // listen_tcp_socket->aio_accept( *this );
+  Socket::dec_ref( socket_ );
 }
 
-template <class RequestType, class ResponseType>
-void
-SocketServer<RequestType, ResponseType>::onRecvFromCompletion
-(
-  Buffer& buffer,
-  SocketAddress& peername,
-  void*
-)
-{
-  RequestType* request = createRequest();
-
-  ssize_t deserialize_ret = request->deserialize( buffer );
-  if ( deserialize_ret == 0 )
-  {
-    UDPConnection* udp_connection = new UDPConnection( peername, *udp_socket );
-    request->set_response_target( udp_connection );
-    UDPConnection::dec_ref( *udp_connection );
-    sendRequest( *request );
-  }
-
-  udp_socket->aio_recvfrom( *new yidl::runtime::HeapBuffer( 1024 ), *this );
-}
-
-template <class RequestType, class ResponseType>
-void SocketServer<RequestType, ResponseType>::onRecvFromError
-(
-  uint32_t,
-  void*
-)
-{
-  udp_socket->aio_recvfrom( *new yidl::runtime::HeapBuffer( 1024 ), *this );
-}
-
-template <class RequestType, class ResponseType>
-void SocketServer<RequestType, ResponseType>::sendRequest
-(
-  RequestType& request
-)
-{
-  request_target.send( request );
-}
-
-
-template class SocketServer<HTTPRequest, HTTPResponse>;
-template class SocketServer<ONCRPCRequest, ONCRPCResponse>;
 
 
 // ssl_context.cpp
@@ -11922,11 +13977,11 @@ namespace yield
 {
   namespace ipc
   {
-    class SSLException : public yield::platform::Exception
+    class SSLException : public Exception
     {
     public:
       SSLException()
-        : yield::platform::Exception( ERR_peek_error() )
+        : Exception( ERR_peek_error() )
       {
         SSL_load_error_strings();
 
@@ -11974,11 +14029,11 @@ SSLContext::create
 #endif
   SSL_METHOD* method,
 #ifdef _WIN32
-  const yield::platform::Path& _pem_certificate_file_path,
-  const yield::platform::Path& _pem_private_key_file_path,
+  const Path& _pem_certificate_file_path,
+  const Path& _pem_private_key_file_path,
 #else
-  const yield::platform::Path& pem_certificate_file_path,
-  const yield::platform::Path& pem_private_key_file_path,
+  const Path& pem_certificate_file_path,
+  const Path& pem_private_key_file_path,
 #endif
   const string& pem_private_key_passphrase
 )
@@ -12122,9 +14177,9 @@ SSLContext::create
 #endif
   SSL_METHOD* method,
 #ifdef _WIN32
-  const yield::platform::Path& _pkcs12_file_path,
+  const Path& _pkcs12_file_path,
 #else
-  const yield::platform::Path& pkcs12_file_path,
+  const Path& pkcs12_file_path,
 #endif
   const string& pkcs12_passphrase
 )
@@ -12176,16 +14231,6 @@ SSLContext::create
   throw SSLException();
 }
 
-#else
-
-SSLContext::SSLContext()
-{ }
-
-SSLContext& SSLContext::create()
-{
-  return *new SSLContext;
-}
-
 #endif
 
 SSLContext::~SSLContext()
@@ -12235,7 +14280,7 @@ SSLContext::createSSL_CTX
 SSLSocket::SSLSocket
 (
   int domain,
-  yield::platform::socket_t socket_,
+  socket_t socket_,
   SSL* ssl,
   SSLContext& ssl_context
 )
@@ -12253,7 +14298,7 @@ SSLSocket::~SSLSocket()
 TCPSocket* SSLSocket::accept()
 {
   SSL_set_fd( ssl, *this );
-  yield::platform::socket_t peer_socket = TCPSocket::_accept();
+  socket_t peer_socket = TCPSocket::_accept();
   if ( peer_socket != -1 )
   {
     SSL* peer_ssl = SSL_new( ssl_context );
@@ -12265,7 +14310,7 @@ TCPSocket* SSLSocket::accept()
     return NULL;
 }
 
-bool SSLSocket::associate( yield::platform::IOQueue& io_queue )
+bool SSLSocket::associate( IOQueue& io_queue )
 {
   if ( get_io_queue() == NULL )
   {
@@ -12308,7 +14353,7 @@ SSLSocket* SSLSocket::create( int domain, SSLContext& ssl_context )
   SSL* ssl = SSL_new( ssl_context );
   if ( ssl != NULL )
   {
-    yield::platform::socket_t socket_ = TCPSocket::create( &domain );
+    socket_t socket_ = TCPSocket::create( &domain );
     if ( socket_ != -1 )
       return new SSLSocket( domain, socket_, ssl, ssl_context );
     else
@@ -12370,7 +14415,7 @@ ssize_t SSLSocket::send( const void* buf, size_t buflen, int )
 ssize_t SSLSocket::sendmsg( const struct iovec* iov, uint32_t iovlen, int )
 {
   // Concatenate the buffers
-  return yield::platform::OStream::writev( iov, iovlen );
+  return OStream::writev( iov, iovlen );
 }
 
 bool SSLSocket::shutdown()
@@ -12394,18 +14439,149 @@ bool SSLSocket::want_write() const
 #endif
 
 
+// tcp_socket_server.cpp
+TCPSocketServer::TCPSocketServer
+(
+  Log* error_log,
+  IOQueue& io_queue,
+  TCPSocket& listen_tcp_socket,
+  EventTarget& request_target,
+  Log* trace_log
+) : SocketServer( error_log, io_queue, request_target, trace_log ),
+    listen_tcp_socket( listen_tcp_socket )
+{ }
+
+TCPSocketServer::~TCPSocketServer()
+{
+  TCPSocket::dec_ref( listen_tcp_socket );
+}
+
+IOQueue& TCPSocketServer::createIOQueue( bool for_ssl )
+{
+  if ( for_ssl )
+    return yield::platform::NBIOQueue::create();
+  else
+    return SocketServer::createIOQueue();
+}
+
+TCPSocket&
+TCPSocketServer::createListenTCPSocket
+(
+  const URI& absolute_uri,
+  IOQueue& io_queue,
+  SSLContext* ssl_context,
+  Log* trace_log
+)
+{
+  SocketAddress& sockname = createSocketAddress( absolute_uri );
+
+  TCPSocket* listen_tcp_socket = NULL;
+#ifdef YIELD_IPC_HAVE_OPENSSL
+  if
+  (
+    absolute_uri.get_scheme()[absolute_uri.get_scheme().size()-1] == 's'
+    &&
+    ssl_context != NULL
+  )
+  {
+    listen_tcp_socket = SSLSocket::create( *ssl_context );
+    SSLContext::dec_ref( *ssl_context );
+  }
+  else
+#endif
+  if ( trace_log != NULL )
+    listen_tcp_socket = TracingTCPSocket::create( *trace_log );
+  else
+    listen_tcp_socket = TCPSocket::create();
+
+  if
+  (
+    listen_tcp_socket != NULL
+    &&
+    listen_tcp_socket->associate( io_queue )
+    &&
+    listen_tcp_socket->bind( sockname )
+    &&
+    listen_tcp_socket->listen()
+    &&
+    listen_tcp_socket->setsockopt( Socket::OPTION_SO_KEEPALIVE, true )
+    &&
+    listen_tcp_socket->setsockopt( Socket::OPTION_SO_LINGER, true )
+    &&
+    listen_tcp_socket->setsockopt( TCPSocket::OPTION_TCP_NODELAY, true )
+  )
+  {
+    SocketAddress::dec_ref( sockname );
+    return *listen_tcp_socket;
+  }
+  else
+  {
+    TCPSocket::dec_ref( listen_tcp_socket );
+    SocketAddress::dec_ref( sockname );
+    throw Exception();
+  }
+}
+
+void
+TCPSocketServer::onAcceptCompletion
+(
+  TCPSocket& accepted_tcp_socket,
+  void* context,
+  Buffer* recv_buffer
+)
+{
+  if ( !accepted_tcp_socket.associate( get_io_queue() ) )
+    DebugBreak();
+}
+
+void TCPSocketServer::onAcceptError( uint32_t error_code, void* )
+{
+  DebugBreak();
+  // listen_tcp_socket->aio_accept( *this );
+}
+
+
+TCPSocketServer::Connection::Connection
+(
+  TCPSocket& accepted_tcp_socket,
+  TCPSocketServer& tcp_socket_server
+)
+  : SocketServer::Connection( accepted_tcp_socket, tcp_socket_server )
+{ }
+
+void TCPSocketServer::Connection::onReadCompletion( Buffer& buffer, void* )
+{ }
+
+void TCPSocketServer::Connection::onReadError( uint32_t error_code, void* )
+{
+  get_socket().shutdown();
+  get_socket().close();
+  dec_ref( *this );
+}
+
+void
+TCPSocketServer::Connection::onWriteCompletion
+(
+  size_t bytes_written,
+  void*
+)
+{ }
+
+void TCPSocketServer::Connection::onWriteError( uint32_t error_code, void* )
+{
+  get_socket().shutdown();
+  get_socket().close();
+  dec_ref( *this );
+}
+
+
 // tracing_tcp_socket.cpp
 #ifdef _WIN32
 #pragma warning( 4 : 4365 )
 #endif
 
 
-TracingTCPSocket::TracingTCPSocket
-(
-   int domain,
-   Log& log,
-   yield::platform::socket_t socket_
- )
+TracingTCPSocket::TracingTCPSocket( int domain, Log& log, socket_t socket_ )
   : TCPSocket( domain, socket_ ),
     log( log.inc_ref() )
 { }
@@ -12417,7 +14593,7 @@ TracingTCPSocket::~TracingTCPSocket()
 
 TCPSocket* TracingTCPSocket::accept()
 {
-  yield::platform::socket_t socket_ = TCPSocket::_accept();
+  socket_t socket_ = TCPSocket::_accept();
   if ( socket_ != INVALID_SOCKET )
     return new TracingTCPSocket( get_domain(), log, socket_ );
   else
@@ -12431,7 +14607,7 @@ TracingTCPSocket* TracingTCPSocket::create( Log& log )
 
 TracingTCPSocket* TracingTCPSocket::create( int domain, Log& log )
 {
-  yield::platform::socket_t socket_ = TCPSocket::create( &domain );
+  socket_t socket_ = TCPSocket::create( &domain );
   if ( socket_ != INVALID_SOCKET )
     return new TracingTCPSocket( domain, log, socket_ );
   else
@@ -12594,6 +14770,75 @@ bool TracingTCPSocket::want_write() const
 }
 
 
+// udp_socket_server.cpp
+UDPSocketServer::UDPSocketServer
+(
+  Log* error_log,
+  IOQueue& io_queue,
+  EventTarget& request_target,
+  Log* trace_log,
+  UDPSocket& udp_socket
+) : SocketServer( error_log, io_queue, request_target, trace_log ),
+    udp_socket( udp_socket )
+{ }
+
+UDPSocketServer::~UDPSocketServer()
+{
+  UDPSocket::dec_ref( udp_socket );
+}
+
+UDPSocket&
+UDPSocketServer::createUDPSocket
+(
+  const URI& absolute_uri,
+  IOQueue& io_queue,
+  Log* trace_log
+)
+{
+  SocketAddress& sockname = createSocketAddress( absolute_uri );
+
+  UDPSocket* udp_socket = UDPSocket::create();
+  if
+  (
+    udp_socket != NULL
+    &&
+    udp_socket->associate( io_queue )
+    &&
+    udp_socket->bind( sockname )
+  )
+  {
+    SocketAddress::dec_ref( sockname );
+    return *udp_socket;
+  }
+  else
+  {
+    SocketAddress::dec_ref( sockname );
+    throw Exception();
+  }
+}
+
+
+UDPSocketServer::Connection::Connection
+(
+  SocketAddress& peername,
+  UDPSocket& udp_socket,
+  UDPSocketServer& udp_socket_server
+)
+: SocketServer::Connection( udp_socket, udp_socket_server ),
+  peername( peername )
+{ }
+
+UDPSocketServer::Connection::~Connection()
+{
+  SocketAddress::dec_ref( peername );
+}
+
+UDPSocket& UDPSocketServer::Connection::get_udp_socket() const
+{
+  return static_cast<UDPSocket&>( get_socket() );
+}
+
+
 // uri.cpp
 extern "C"
 {
@@ -12655,7 +14900,7 @@ void URI::init( const char* uri, size_t uri_len )
   else
   {
     uriFreeUriMembersA( &parsed_uri );
-    throw yield::platform::Exception( "invalid URI" );
+    throw Exception( "invalid URI" );
   }
 }
 

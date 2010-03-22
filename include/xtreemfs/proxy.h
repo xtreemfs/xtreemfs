@@ -63,11 +63,11 @@ namespace xtreemfs
   template
   <
     class InterfaceType,
-    class InterfaceEventFactoryType,
-    class InterfaceEventSenderType
+    class InterfaceMessageFactoryType,
+    class InterfaceMessageSenderType
   >
   class Proxy
-    : public InterfaceEventSenderType,
+    : public InterfaceMessageSenderType,
       public yield::ipc::ONCRPCClient
   {
   protected:
@@ -75,31 +75,32 @@ namespace xtreemfs
     Proxy
     (
       uint16_t concurrency_level,
-      uint32_t flags,
+      Log* error_log,
       IOQueue& io_queue,
-      Log* log,
       const Time& operation_timeout,
       SocketAddress& peername,
       uint16_t reconnect_tries_max,
       SocketFactory& socket_factory,
+      Log* trace_log,
       UserCredentialsCache* user_credentials_cache
     )
     : ONCRPCClient
       (
         concurrency_level,
-        flags,
+        NULL,
+        error_log,
         io_queue,
-        log,
-        *new InterfaceEventFactoryType,
+        *new InterfaceMessageFactoryType,
         operation_timeout,
         peername,
         0x20000000 + InterfaceType::TAG,
         reconnect_tries_max,
         socket_factory,
+        trace_log,
         InterfaceType::TAG
       )
     {
-      InterfaceEventSenderType::set_event_target( *this );
+      InterfaceMessageSenderType::set_event_target( *this );
 
       if ( user_credentials_cache != NULL )
         this->user_credentials_cache = Object::inc_ref( user_credentials_cache );
@@ -110,25 +111,6 @@ namespace xtreemfs
     virtual ~Proxy()
     {
       UserCredentialsCache::dec_ref( *user_credentials_cache );
-    }
-
-    // ONCRPCClient
-    ONCRPCRequest& createONCRPCRequest( MarshallableObject& body )
-    {
-      UserCredentials* user_credentials;
-      if ( user_credentials_cache != NULL )
-        user_credentials = user_credentials_cache->getCurrentUserCredentials();
-      else
-        user_credentials = NULL;
-
-      return *new ONCRPCRequest
-                  (
-                    body,
-                    body.get_type_id(),
-                    get_prog(),
-                    get_vers(),
-                    user_credentials
-                  );
     }
 
     // Helper methods for subclasses

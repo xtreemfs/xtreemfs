@@ -1,5 +1,5 @@
-#ifndef _1284176496_H_
-#define _1284176496_H_
+#ifndef _1136993229_H_
+#define _1136993229_H_
 
 
 #include "yidl.h"
@@ -31,14 +31,14 @@ namespace org
           size_type value_i_max = size();
           for ( size_type value_i = 0; value_i < value_i_max; value_i++ )
           {
-            marshaller.write( "value", 0, ( *this )[value_i] );
+            marshaller.write( ::yidl::runtime::Marshaller::Key(), ( *this )[value_i] );
           }
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
           string value;
-          unmarshaller.read( "value", 0, value );
+          unmarshaller.read( ::yidl::runtime::Marshaller::Key(), value );
           push_back( value );
         }
 
@@ -84,16 +84,16 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( "user_id", 0, user_id );
-          marshaller.write( "group_ids", 0, group_ids );
-          marshaller.write( "password", 0, password );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "user_id", 0 ), user_id );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "group_ids", 0 ), group_ids );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "password", 0 ), password );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
-          unmarshaller.read( "user_id", 0, user_id );
-          unmarshaller.read( "group_ids", 0, group_ids );
-          unmarshaller.read( "password", 0, password );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "user_id", 0 ), user_id );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "group_ids", 0 ), group_ids );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "password", 0 ), password );
         }
 
       protected:

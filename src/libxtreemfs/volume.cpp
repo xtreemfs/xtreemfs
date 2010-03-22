@@ -80,22 +80,24 @@ uint32_t Volume::ERROR_CODE_DEFAULT = EIO;
 Volume::Volume
 (
   DIRProxy& dir_proxy,
+  Log* error_log,
   uint32_t flags,
-  Log* log,
   MRCProxy& mrc_proxy,
   const string& name_utf8,
   OSDProxies& osd_proxies,
   StageGroup& stage_group,
+  Log* trace_log,
   UserCredentialsCache& user_credentials_cache,
   const Path& vivaldi_coordinates_file_path
 )
   : dir_proxy( dir_proxy ),
+    error_log( Object::inc_ref( error_log ) ),
     flags( flags ),
-    log( Object::inc_ref( log ) ),
     mrc_proxy( mrc_proxy ),
     name_utf8( name_utf8 ),
     osd_proxies( osd_proxies ),
     stage_group( stage_group ),
+    trace_log( Object::inc_ref( trace_log ) ),
     user_credentials_cache( user_credentials_cache ),
     vivaldi_coordinates_file_path( vivaldi_coordinates_file_path )
 {
@@ -104,17 +106,17 @@ Volume::Volume
   double stat_cache_read_ttl_s;
   uint32_t stat_cache_write_back_attrs;
 
-  if ( has_flag( FLAG_WRITE_BACK_FILE_SIZE_CACHE ) )
+  if ( flags & FLAG_WRITE_BACK_FILE_SIZE_CACHE ) 
   {
     stat_cache_read_ttl_s = 0; // Don't cache read Stats
     stat_cache_write_back_attrs = yield::platform::Volume::SETATTR_SIZE;
   }
-  else if ( has_flag( FLAG_WRITE_BACK_STAT_CACHE ) )
+  else if ( flags & FLAG_WRITE_BACK_STAT_CACHE )
   {
     stat_cache_read_ttl_s = 5;
     stat_cache_write_back_attrs = yield::platform::Volume::SETATTR_SIZE;
   }
-  else if ( has_flag( FLAG_WRITE_THROUGH_STAT_CACHE ) )
+  else if ( flags & FLAG_WRITE_THROUGH_STAT_CACHE )
   {
     stat_cache_read_ttl_s = 5;
     stat_cache_write_back_attrs = 0;
@@ -141,11 +143,12 @@ Volume::Volume
 Volume::~Volume()
 {
   DIRProxy::dec_ref( dir_proxy );
-  Log::dec_ref( log );
+  Log::dec_ref( error_log );
   OSDProxies::dec_ref( osd_proxies );
   delete open_file_table;
   StageGroup::dec_ref( stage_group );
   delete stat_cache;
+  Log::dec_ref( trace_log );
   UserCredentialsCache::dec_ref( user_credentials_cache );
 }
 
@@ -171,12 +174,12 @@ Volume::create
          (
            *dir_uri,
            name_utf8,
+           options.get_error_log(),
            flags,
-           options.get_log(),
-           options.get_proxy_flags(),
            options.get_timeout(),
            DIRProxy::RECONNECT_TRIES_MAX_DEFAULT,
            options.get_ssl_context(),
+           options.get_trace_log(),
            vivaldi_coordinates_file_path           
          );
 }
@@ -186,12 +189,12 @@ Volume::create
 (
   const URI& dir_uri,
   const string& name_utf8,
+  Log* error_log,
   uint32_t flags,
-  Log* log,
-  uint32_t proxy_flags,
   const Time& proxy_operation_timeout,
   uint8_t proxy_reconnect_tries_max,
   SSLContext* proxy_ssl_context,
+  Log* trace_log,
   const Path& vivaldi_coordinates_file_path
 )
 {
@@ -202,11 +205,11 @@ Volume::create
       (
         dir_uri,
         DIRProxy::CONCURRENCY_LEVEL_DEFAULT,
-        proxy_flags,
-        log,
+        error_log,
         proxy_operation_timeout,
         proxy_reconnect_tries_max,
         proxy_ssl_context,
+        trace_log,
         user_credentials_cache
       );
 
@@ -222,11 +225,11 @@ Volume::create
       (
         mrc_uri,
         MRCProxy::CONCURRENCY_LEVEL_DEFAULT,
-        proxy_flags,
-        log,
+        error_log,
         proxy_operation_timeout,
         proxy_reconnect_tries_max,
         proxy_ssl_context,
+        trace_log,
         user_credentials_cache
       );
 
@@ -242,24 +245,25 @@ Volume::create
           (
             dir_proxy,
             OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
-            proxy_flags,
-            log,
+            error_log,
             proxy_operation_timeout,
             proxy_reconnect_tries_max,
             proxy_ssl_context,
             stage_group,
+            trace_log,
             user_credentials_cache
           );
 
   return *new Volume
               (
                 dir_proxy,
+                error_log,
                 flags,
-                log,
                 mrc_proxy,
                 name_utf8,
                 *osd_proxies,
                 *stage_group,
+                trace_log,
                 *user_credentials_cache,
                 vivaldi_coordinates_file_path
               );
@@ -736,7 +740,7 @@ void Volume::set_errno( const char* operation_name, Exception& exception )
 #endif
   }
 
-  if ( log != NULL )
+  if ( error_log != NULL )
   {
     switch ( error_code )
     {
@@ -754,7 +758,7 @@ void Volume::set_errno( const char* operation_name, Exception& exception )
 #endif
       default:
       {
-        log->get_stream( Log::LOG_ERR ) <<
+        error_log->get_stream( Log::LOG_ERR ) <<
           "xtreemfs: caught exception on " <<
           operation_name << ": " << exception;
       }
@@ -771,10 +775,12 @@ void Volume::set_errno( const char* operation_name, Exception& exception )
 
 void Volume::set_errno( const char* operation_name, std::exception& exception )
 {
-  if ( log != NULL )
-    log->get_stream( Log::LOG_ERR ) <<
+  if ( error_log != NULL )
+  {
+    error_log->get_stream( Log::LOG_ERR ) <<
       "xtreemfs::Volume: caught exception on " <<
       operation_name << ": " << exception.what();
+  }
 
 #ifdef _WIN32
   ::SetLastError( ERROR_CODE_DEFAULT );

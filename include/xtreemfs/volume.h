@@ -59,9 +59,6 @@ namespace xtreemfs
     const static uint32_t FLAG_WRITE_THROUGH_DATA_CACHE = 8;
     const static uint32_t FLAG_WRITE_THROUGH_FILE_SIZE_CACHE = 16;
     const static uint32_t FLAG_WRITE_THROUGH_STAT_CACHE = 32;
-    const static uint32_t FLAG_TRACE_DATA_CACHE = 64;
-    const static uint32_t FLAG_TRACE_FILE_IO = 128;
-    const static uint32_t FLAG_TRACE_STAT_CACHE = 256;
     const static uint32_t FLAGS_DEFAULT = FLAG_WRITE_BACK_FILE_SIZE_CACHE;
 
 
@@ -80,14 +77,14 @@ namespace xtreemfs
     (
       const URI& dir_uri,
       const std::string& name_utf8,
+      Log* error_log = NULL,
       uint32_t flags = FLAGS_DEFAULT,
-      Log* log = NULL,
-      uint32_t proxy_flags = 0,
       const Time& proxy_operation_timeout
         = DIRProxy::OPERATION_TIMEOUT_DEFAULT,
       uint8_t proxy_reconnect_tries_max
         = DIRProxy::RECONNECT_TRIES_MAX_DEFAULT,
       SSLContext* proxy_ssl_context = NULL,
+      Log* trace_log = NULL,
       const Path& vivaldi_coordinates_file_path = Path()
     );
 
@@ -101,15 +98,14 @@ namespace xtreemfs
     );
 
     DIRProxy& get_dir_proxy() const { return dir_proxy; }
-    uint32_t get_flags() const { return flags; }
-    Log* get_log() const { return log; }
+    uint32_t get_flags() const { return flags; }    
     MRCProxy& get_mrc_proxy() const { return mrc_proxy; }
     const std::string& get_name() const { return name_utf8; }
     OSDProxies& get_osd_proxies() const { return osd_proxies; }
-    const string& get_uuid() const { return uuid; }
+    Log* get_trace_log() const { return trace_log; }
     UserCredentialsCache& get_user_credentials_cache() const;
+    const string& get_uuid() const { return uuid; }
     VivaldiCoordinates get_vivaldi_coordinates() const;
-    bool has_flag( uint32_t flag ) { return ( flags & flag ) == flag; }
     void metadatasync( const Path& path, const XCap& write_xcap );
     void release( File& file );
     void set_errno( const char* operation_name, Exception& exception );
@@ -125,20 +121,21 @@ namespace xtreemfs
     Volume
     (
       DIRProxy& dir_proxy,
+      Log* error_log,
       uint32_t flags,
-      Log* log,
       MRCProxy& mrc_proxy,
       const string& name_utf8,
       OSDProxies& osd_proxies,
       StageGroup& stage_group,
+      Log* trace_log,
       UserCredentialsCache& user_credentials_cache,
       const Path& vivaldi_coordinates_file_path
     );
 
   private:
     DIRProxy& dir_proxy;
+    Log* error_log;
     uint32_t flags;
-    Log* log;
     MRCProxy& mrc_proxy;
     std::string name_utf8;
     OpenFileTable* open_file_table;
@@ -146,6 +143,7 @@ namespace xtreemfs
     StageGroup& stage_group;
     string uuid;
     StatCache* stat_cache;
+    Log* trace_log;
     UserCredentialsCache& user_credentials_cache;
     Path vivaldi_coordinates_file_path;
   };

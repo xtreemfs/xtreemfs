@@ -1,5 +1,5 @@
-#ifndef _816849364_H_
-#define _816849364_H_
+#ifndef _671339613_H_
+#define _671339613_H_
 
 
 #include "constants.h"
@@ -89,26 +89,26 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( "uuid", 0, uuid );
-          marshaller.write( "version", 0, version );
-          marshaller.write( "protocol", 0, protocol );
-          marshaller.write( "address", 0, address );
-          marshaller.write( "port", 0, port );
-          marshaller.write( "match_network", 0, match_network );
-          marshaller.write( "ttl_s", 0, ttl_s );
-          marshaller.write( "uri", 0, uri );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "uuid", 0 ), uuid );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "version", 0 ), version );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "protocol", 0 ), protocol );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "address", 0 ), address );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "port", 0 ), port );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "match_network", 0 ), match_network );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "ttl_s", 0 ), ttl_s );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "uri", 0 ), uri );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
-          unmarshaller.read( "uuid", 0, uuid );
-          version = unmarshaller.read_uint64( "version", 0 );
-          unmarshaller.read( "protocol", 0, protocol );
-          unmarshaller.read( "address", 0, address );
-          port = unmarshaller.read_uint16( "port", 0 );
-          unmarshaller.read( "match_network", 0, match_network );
-          ttl_s = unmarshaller.read_uint32( "ttl_s", 0 );
-          unmarshaller.read( "uri", 0, uri );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "uuid", 0 ), uuid );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "version", 0 ), version );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "protocol", 0 ), protocol );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "address", 0 ), address );
+          port = unmarshaller.read_uint16( ::yidl::runtime::Unmarshaller::StringLiteralKey( "port", 0 ) );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "match_network", 0 ), match_network );
+          ttl_s = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "ttl_s", 0 ) );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "uri", 0 ), uri );
         }
 
       protected:
@@ -141,14 +141,14 @@ namespace org
           size_type value_i_max = size();
           for ( size_type value_i = 0; value_i < value_i_max; value_i++ )
           {
-            marshaller.write( "value", 0, ( *this )[value_i] );
+            marshaller.write( ::yidl::runtime::Marshaller::Key(), ( *this )[value_i] );
           }
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
           org::xtreemfs::interfaces::AddressMapping value;
-          unmarshaller.read( "value", 0, value );
+          unmarshaller.read( ::yidl::runtime::Marshaller::Key(), value );
           push_back( value );
         }
 
@@ -158,7 +158,7 @@ namespace org
 
       class ServiceDataMap
           : public ::yidl::runtime::Map,
-            public map<string,string>
+            public map<::yidl::runtime::Marshaller::StringKey,string>
       {
       public:
         virtual ~ServiceDataMap() { }
@@ -171,19 +171,24 @@ namespace org
         {
           for ( const_iterator i = begin(); i != end(); i++ )
           {
-            marshaller.write( i->first.c_str(), static_cast<uint32_t>( 0 ), i->second );
+            marshaller.write( i->first, i->second );
           }
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
-          string key;
-          unmarshaller.read( 0, static_cast<uint32_t>( 0 ), key );
-          if ( !key.empty() )
+          ::yidl::runtime::Marshaller::StringKey* key
+            = static_cast<::yidl::runtime::Marshaller::StringKey*>
+              (
+                unmarshaller.read( ::yidl::runtime::Marshaller::Key::TYPE_STRING )
+              );
+
+          if ( key != NULL )
           {
             string value;
-            unmarshaller.read( key.c_str(), static_cast<uint32_t>( 0 ), value );
-            ( *this )[key] = value;
+            unmarshaller.read( *key, value );
+            ( *this )[*key] = value;
+            ::yidl::runtime::Unmarshaller::Key::dec_ref( *key );
           }
         }
 
@@ -251,22 +256,22 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( "type", 0, static_cast<int32_t>( type ) );
-          marshaller.write( "uuid", 0, uuid );
-          marshaller.write( "version", 0, version );
-          marshaller.write( "name", 0, name );
-          marshaller.write( "last_updated_s", 0, last_updated_s );
-          marshaller.write( "data", 0, data );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "type", 0 ), static_cast<int32_t>( type ) );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "uuid", 0 ), uuid );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "version", 0 ), version );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "name", 0 ), name );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "last_updated_s", 0 ), last_updated_s );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "data", 0 ), data );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
-          type = static_cast<org::xtreemfs::interfaces::ServiceType>( unmarshaller.read_int32( "type", 0 ) );
-          unmarshaller.read( "uuid", 0, uuid );
-          version = unmarshaller.read_uint64( "version", 0 );
-          unmarshaller.read( "name", 0, name );
-          last_updated_s = unmarshaller.read_uint64( "last_updated_s", 0 );
-          unmarshaller.read( "data", 0, data );
+          type = static_cast<org::xtreemfs::interfaces::ServiceType>( unmarshaller.read_int32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "type", 0 ) ) );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "uuid", 0 ), uuid );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "version", 0 ), version );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "name", 0 ), name );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "last_updated_s", 0 ), last_updated_s );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ), data );
         }
 
       protected:
@@ -297,14 +302,14 @@ namespace org
           size_type value_i_max = size();
           for ( size_type value_i = 0; value_i < value_i_max; value_i++ )
           {
-            marshaller.write( "value", 0, ( *this )[value_i] );
+            marshaller.write( ::yidl::runtime::Marshaller::Key(), ( *this )[value_i] );
           }
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
           org::xtreemfs::interfaces::Service value;
-          unmarshaller.read( "value", 0, value );
+          unmarshaller.read( ::yidl::runtime::Marshaller::Key(), value );
           push_back( value );
         }
 
@@ -360,18 +365,18 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( "address", 0, address );
-          marshaller.write( "port", 0, port );
-          marshaller.write( "protocol", 0, protocol );
-          marshaller.write( "interface_version", 0, interface_version );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "address", 0 ), address );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "port", 0 ), port );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "protocol", 0 ), protocol );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "interface_version", 0 ), interface_version );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
-          unmarshaller.read( "address", 0, address );
-          port = unmarshaller.read_uint16( "port", 0 );
-          unmarshaller.read( "protocol", 0, protocol );
-          interface_version = unmarshaller.read_uint32( "interface_version", 0 );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "address", 0 ), address );
+          port = unmarshaller.read_uint16( ::yidl::runtime::Unmarshaller::StringLiteralKey( "port", 0 ) );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "protocol", 0 ), protocol );
+          interface_version = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "interface_version", 0 ) );
         }
 
       protected:
@@ -555,7 +560,7 @@ namespace org
       #endif
 
 
-      class DIRInterfaceEvents
+      class DIRInterfaceMessages
       {
       public:
       // Request/response pair definitions for the operations in DIRInterface
@@ -605,12 +610,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "uuid", 0, uuid );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "uuid", 0 ), uuid );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "uuid", 0, uuid );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "uuid", 0 ), uuid );
           }
 
         protected:
@@ -646,12 +651,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "address_mappings", 0, address_mappings );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "address_mappings", 0 ), address_mappings );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "address_mappings", 0, address_mappings );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "address_mappings", 0 ), address_mappings );
           }
 
         protected:
@@ -695,12 +700,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "uuid", 0, uuid );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "uuid", 0 ), uuid );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "uuid", 0, uuid );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "uuid", 0 ), uuid );
           }
 
         protected:
@@ -764,12 +769,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "address_mappings", 0, address_mappings );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "address_mappings", 0 ), address_mappings );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "address_mappings", 0, address_mappings );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "address_mappings", 0 ), address_mappings );
           }
 
         protected:
@@ -804,12 +809,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "_return_value", 0, _return_value );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "_return_value", 0 ), _return_value );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            _return_value = unmarshaller.read_uint64( "_return_value", 0 );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "_return_value", 0 ), _return_value );
           }
 
         protected:
@@ -928,12 +933,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "dir_service", 0, dir_service );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "dir_service", 0 ), dir_service );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "dir_service", 0, dir_service );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "dir_service", 0 ), dir_service );
           }
 
         protected:
@@ -996,12 +1001,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "_return_value", 0, _return_value );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "_return_value", 0 ), _return_value );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            _return_value = unmarshaller.read_uint64( "_return_value", 0 );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "_return_value", 0 ), _return_value );
           }
 
         protected:
@@ -1090,12 +1095,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "uuid", 0, uuid );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "uuid", 0 ), uuid );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "uuid", 0, uuid );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "uuid", 0 ), uuid );
           }
 
         protected:
@@ -1156,12 +1161,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "name", 0, name );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "name", 0 ), name );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "name", 0, name );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "name", 0 ), name );
           }
 
         protected:
@@ -1197,12 +1202,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "services", 0, services );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "services", 0 ), services );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "services", 0, services );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "services", 0 ), services );
           }
 
         protected:
@@ -1251,12 +1256,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "type", 0, static_cast<int32_t>( type ) );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "type", 0 ), static_cast<int32_t>( type ) );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            type = static_cast<org::xtreemfs::interfaces::ServiceType>( unmarshaller.read_int32( "type", 0 ) );
+            type = static_cast<org::xtreemfs::interfaces::ServiceType>( unmarshaller.read_int32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "type", 0 ) ) );
           }
 
         protected:
@@ -1292,12 +1297,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "services", 0, services );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "services", 0 ), services );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "services", 0, services );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "services", 0 ), services );
           }
 
         protected:
@@ -1341,12 +1346,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "uuid", 0, uuid );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "uuid", 0 ), uuid );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "uuid", 0, uuid );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "uuid", 0 ), uuid );
           }
 
         protected:
@@ -1382,12 +1387,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "services", 0, services );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "services", 0 ), services );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "services", 0, services );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "services", 0 ), services );
           }
 
         protected:
@@ -1431,12 +1436,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "uuid", 0, uuid );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "uuid", 0 ), uuid );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "uuid", 0, uuid );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "uuid", 0 ), uuid );
           }
 
         protected:
@@ -1500,12 +1505,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "service", 0, service );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "service", 0 ), service );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "service", 0, service );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "service", 0 ), service );
           }
 
         protected:
@@ -1540,12 +1545,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "_return_value", 0, _return_value );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "_return_value", 0 ), _return_value );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            _return_value = unmarshaller.read_uint64( "_return_value", 0 );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "_return_value", 0 ), _return_value );
           }
 
         protected:
@@ -1613,15 +1618,18 @@ namespace org
           const string& get_stack_trace() const { return stack_trace; }
           void set_stack_trace( const string& stack_trace ) { this->stack_trace = stack_trace; }
 
+          // yidl::runtime::RTTIObject
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ConcurrentModificationException, 2010031036 );
+
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "stack_trace", 0, stack_trace );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "stack_trace", 0, stack_trace );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
           }
 
           // yield::concurrency::ExceptionResponse
@@ -1668,19 +1676,22 @@ namespace org
           void set_error_message( const string& error_message ) { this->error_message = error_message; }
           void set_stack_trace( const string& stack_trace ) { this->stack_trace = stack_trace; }
 
+          // yidl::runtime::RTTIObject
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( DIRException, 2010031039 );
+
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "error_code", 0, error_code );
-            marshaller.write( "error_message", 0, error_message );
-            marshaller.write( "stack_trace", 0, stack_trace );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_code", 0 ), error_code );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_message", 0 ), error_message );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            error_code = unmarshaller.read_uint32( "error_code", 0 );
-            unmarshaller.read( "error_message", 0, error_message );
-            unmarshaller.read( "stack_trace", 0, stack_trace );
+            error_code = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_code", 0 ) );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_message", 0 ), error_message );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
           }
 
           // yield::concurrency::ExceptionResponse
@@ -1716,15 +1727,18 @@ namespace org
           const string& get_error_message() const { return error_message; }
           void set_error_message( const string& error_message ) { this->error_message = error_message; }
 
+          // yidl::runtime::RTTIObject
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( InvalidArgumentException, 2010031037 );
+
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "error_message", 0, error_message );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_message", 0 ), error_message );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "error_message", 0, error_message );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_message", 0 ), error_message );
           }
 
           // yield::concurrency::ExceptionResponse
@@ -1769,19 +1783,22 @@ namespace org
           void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
           void set_stack_trace( const string& stack_trace ) { this->stack_trace = stack_trace; }
 
+          // yidl::runtime::RTTIObject
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ProtocolException, 2010031038 );
+
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "accept_stat", 0, accept_stat );
-            marshaller.write( "error_code", 0, error_code );
-            marshaller.write( "stack_trace", 0, stack_trace );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "accept_stat", 0 ), accept_stat );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_code", 0 ), error_code );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            accept_stat = unmarshaller.read_uint32( "accept_stat", 0 );
-            error_code = unmarshaller.read_uint32( "error_code", 0 );
-            unmarshaller.read( "stack_trace", 0, stack_trace );
+            accept_stat = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "accept_stat", 0 ) );
+            error_code = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_code", 0 ) );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
           }
 
           // yield::concurrency::ExceptionResponse
@@ -1821,17 +1838,20 @@ namespace org
           void set_address( const string& address ) { this->address = address; }
           void set_port( uint16_t port ) { this->port = port; }
 
+          // yidl::runtime::RTTIObject
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( RedirectException, 2010031040 );
+
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( "address", 0, address );
-            marshaller.write( "port", 0, port );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "address", 0 ), address );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "port", 0 ), port );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( "address", 0, address );
-            port = unmarshaller.read_uint16( "port", 0 );
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "address", 0 ), address );
+            port = unmarshaller.read_uint16( ::yidl::runtime::Unmarshaller::StringLiteralKey( "port", 0 ) );
           }
 
           // yield::concurrency::ExceptionResponse
@@ -1852,12 +1872,12 @@ namespace org
       };
 
 
-      class DIRInterfaceEventFactory
-        : public ::yield::concurrency::EventFactory,
-          private DIRInterfaceEvents
+      class DIRInterfaceMessageFactory
+        : public ::yield::concurrency::MessageFactory,
+          private DIRInterfaceMessages
       {
       public:
-        // yield::concurrency::EventFactory
+        // yield::concurrency::MessageFactory
         virtual ::yield::concurrency::ExceptionResponse*
         createExceptionResponse
         (
@@ -1971,123 +1991,56 @@ namespace org
           else return NULL;
         }
 
-        virtual ::yield::concurrency::ExceptionResponse*
-        isExceptionResponse
-        (
-          ::yidl::runtime::MarshallableObject& marshallable_object
-        ) const
-        {
-          switch ( marshallable_object.get_type_id() )
-          {
-            case 2010031036: return static_cast<ConcurrentModificationException*>( &marshallable_object );
-            case 2010031039: return static_cast<DIRException*>( &marshallable_object );
-            case 2010031037: return static_cast<InvalidArgumentException*>( &marshallable_object );
-            case 2010031038: return static_cast<ProtocolException*>( &marshallable_object );
-            case 2010031040: return static_cast<RedirectException*>( &marshallable_object );
-            default: return NULL;
-          }
-        }
-
-        virtual ::yield::concurrency::Request*
-        isRequest
-        (
-          ::yidl::runtime::MarshallableObject& marshallable_object
-        ) const
-        {
-          switch ( marshallable_object.get_type_id() )
-          {
-            case 2010031017: return static_cast<xtreemfs_address_mappings_getRequest*>( &marshallable_object );
-            case 2010031018: return static_cast<xtreemfs_address_mappings_removeRequest*>( &marshallable_object );
-            case 2010031019: return static_cast<xtreemfs_address_mappings_setRequest*>( &marshallable_object );
-            case 2010031020: return static_cast<xtreemfs_checkpointRequest*>( &marshallable_object );
-            case 2010031021: return static_cast<xtreemfs_discover_dirRequest*>( &marshallable_object );
-            case 2010031022: return static_cast<xtreemfs_global_time_s_getRequest*>( &marshallable_object );
-            case 2010031023: return static_cast<xtreemfs_replication_to_masterRequest*>( &marshallable_object );
-            case 2010031028: return static_cast<xtreemfs_service_deregisterRequest*>( &marshallable_object );
-            case 2010031026: return static_cast<xtreemfs_service_get_by_nameRequest*>( &marshallable_object );
-            case 2010031024: return static_cast<xtreemfs_service_get_by_typeRequest*>( &marshallable_object );
-            case 2010031025: return static_cast<xtreemfs_service_get_by_uuidRequest*>( &marshallable_object );
-            case 2010031029: return static_cast<xtreemfs_service_offlineRequest*>( &marshallable_object );
-            case 2010031027: return static_cast<xtreemfs_service_registerRequest*>( &marshallable_object );
-            case 2010031030: return static_cast<xtreemfs_shutdownRequest*>( &marshallable_object );
-            default: return NULL;
-          }
-        }
-
-        virtual ::yield::concurrency::Response*
-        isResponse
-        (
-          ::yidl::runtime::MarshallableObject& marshallable_object
-        ) const
-        {
-          switch ( marshallable_object.get_type_id() )
-          {
-                case 2010031017: return static_cast<xtreemfs_address_mappings_getResponse*>( &marshallable_object );
-            case 2010031018: return static_cast<xtreemfs_address_mappings_removeResponse*>( &marshallable_object );
-            case 2010031019: return static_cast<xtreemfs_address_mappings_setResponse*>( &marshallable_object );
-            case 2010031020: return static_cast<xtreemfs_checkpointResponse*>( &marshallable_object );
-            case 2010031021: return static_cast<xtreemfs_discover_dirResponse*>( &marshallable_object );
-            case 2010031022: return static_cast<xtreemfs_global_time_s_getResponse*>( &marshallable_object );
-            case 2010031023: return static_cast<xtreemfs_replication_to_masterResponse*>( &marshallable_object );
-            case 2010031028: return static_cast<xtreemfs_service_deregisterResponse*>( &marshallable_object );
-            case 2010031026: return static_cast<xtreemfs_service_get_by_nameResponse*>( &marshallable_object );
-            case 2010031024: return static_cast<xtreemfs_service_get_by_typeResponse*>( &marshallable_object );
-            case 2010031025: return static_cast<xtreemfs_service_get_by_uuidResponse*>( &marshallable_object );
-            case 2010031029: return static_cast<xtreemfs_service_offlineResponse*>( &marshallable_object );
-            case 2010031027: return static_cast<xtreemfs_service_registerResponse*>( &marshallable_object );
-            case 2010031030: return static_cast<xtreemfs_shutdownResponse*>( &marshallable_object );
-            default: return NULL;
-          }
-        }
-
       };
 
 
-      class DIRInterfaceEventHandler
-        : public ::yield::concurrency::EventHandler,
-          protected DIRInterfaceEvents
+      class DIRInterfaceRequestHandler
+        : public ::yield::concurrency::RequestHandler,
+          protected DIRInterfaceMessages
       {
       public:
-        DIRInterfaceEventHandler()  // Subclasses must implement
+        DIRInterfaceRequestHandler()  // Subclasses must implement
           : _interface( NULL ) // all relevant handle*Request methods
         { }
 
         // Steals interface_ to allow for *new
-        DIRInterfaceEventHandler( DIRInterface& _interface )
+        DIRInterfaceRequestHandler( DIRInterface& _interface )
           : _interface( &_interface )
         { }
 
-        virtual ~DIRInterfaceEventHandler()
+        virtual ~DIRInterfaceRequestHandler()
         {
           delete _interface;
         }
 
         // yield::concurrency::EventHandler
-        virtual const char* get_event_handler_name() const
+        virtual const char* get_name() const
         {
           return "DIRInterface";
         }
 
-        virtual void handleEvent( ::yield::concurrency::Event& event )
+        // yield::concurrency::RequestHandler
+
+        virtual void handleRequest( ::yield::concurrency::Request& request )
         {
-          // Switch on the event types that this interface handles, unwrap the corresponding requests and delegate to _interface
-          switch ( event.get_type_id() )
+          // Switch on the request types that this interface handles, unwrap the corresponding requests and delegate to _interface
+          switch ( request.get_type_id() )
           {
-            case 2010031017UL: handlextreemfs_address_mappings_getRequest( static_cast<xtreemfs_address_mappings_getRequest&>( event ) ); return;
-            case 2010031018UL: handlextreemfs_address_mappings_removeRequest( static_cast<xtreemfs_address_mappings_removeRequest&>( event ) ); return;
-            case 2010031019UL: handlextreemfs_address_mappings_setRequest( static_cast<xtreemfs_address_mappings_setRequest&>( event ) ); return;
-            case 2010031020UL: handlextreemfs_checkpointRequest( static_cast<xtreemfs_checkpointRequest&>( event ) ); return;
-            case 2010031021UL: handlextreemfs_discover_dirRequest( static_cast<xtreemfs_discover_dirRequest&>( event ) ); return;
-            case 2010031022UL: handlextreemfs_global_time_s_getRequest( static_cast<xtreemfs_global_time_s_getRequest&>( event ) ); return;
-            case 2010031023UL: handlextreemfs_replication_to_masterRequest( static_cast<xtreemfs_replication_to_masterRequest&>( event ) ); return;
-            case 2010031028UL: handlextreemfs_service_deregisterRequest( static_cast<xtreemfs_service_deregisterRequest&>( event ) ); return;
-            case 2010031026UL: handlextreemfs_service_get_by_nameRequest( static_cast<xtreemfs_service_get_by_nameRequest&>( event ) ); return;
-            case 2010031024UL: handlextreemfs_service_get_by_typeRequest( static_cast<xtreemfs_service_get_by_typeRequest&>( event ) ); return;
-            case 2010031025UL: handlextreemfs_service_get_by_uuidRequest( static_cast<xtreemfs_service_get_by_uuidRequest&>( event ) ); return;
-            case 2010031029UL: handlextreemfs_service_offlineRequest( static_cast<xtreemfs_service_offlineRequest&>( event ) ); return;
-            case 2010031027UL: handlextreemfs_service_registerRequest( static_cast<xtreemfs_service_registerRequest&>( event ) ); return;
-            case 2010031030UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( event ) ); return;
-            default: ::yield::concurrency::Event::dec_ref( event ); return;
+            case 2010031017UL: handlextreemfs_address_mappings_getRequest( static_cast<xtreemfs_address_mappings_getRequest&>( request ) ); return;
+            case 2010031018UL: handlextreemfs_address_mappings_removeRequest( static_cast<xtreemfs_address_mappings_removeRequest&>( request ) ); return;
+            case 2010031019UL: handlextreemfs_address_mappings_setRequest( static_cast<xtreemfs_address_mappings_setRequest&>( request ) ); return;
+            case 2010031020UL: handlextreemfs_checkpointRequest( static_cast<xtreemfs_checkpointRequest&>( request ) ); return;
+            case 2010031021UL: handlextreemfs_discover_dirRequest( static_cast<xtreemfs_discover_dirRequest&>( request ) ); return;
+            case 2010031022UL: handlextreemfs_global_time_s_getRequest( static_cast<xtreemfs_global_time_s_getRequest&>( request ) ); return;
+            case 2010031023UL: handlextreemfs_replication_to_masterRequest( static_cast<xtreemfs_replication_to_masterRequest&>( request ) ); return;
+            case 2010031028UL: handlextreemfs_service_deregisterRequest( static_cast<xtreemfs_service_deregisterRequest&>( request ) ); return;
+            case 2010031026UL: handlextreemfs_service_get_by_nameRequest( static_cast<xtreemfs_service_get_by_nameRequest&>( request ) ); return;
+            case 2010031024UL: handlextreemfs_service_get_by_typeRequest( static_cast<xtreemfs_service_get_by_typeRequest&>( request ) ); return;
+            case 2010031025UL: handlextreemfs_service_get_by_uuidRequest( static_cast<xtreemfs_service_get_by_uuidRequest&>( request ) ); return;
+            case 2010031029UL: handlextreemfs_service_offlineRequest( static_cast<xtreemfs_service_offlineRequest&>( request ) ); return;
+            case 2010031027UL: handlextreemfs_service_registerRequest( static_cast<xtreemfs_service_registerRequest&>( request ) ); return;
+            case 2010031030UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( request ) ); return;
+            default: ::yield::concurrency::Request::dec_ref( request ); return;
           }
         }
 
@@ -2514,14 +2467,14 @@ namespace org
       virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& __request );
 
 
-      class DIRInterfaceEventSender : public DIRInterface, private DIRInterfaceEvents
+      class DIRInterfaceMessageSender : public DIRInterface, private DIRInterfaceMessages
       {
       public:
-        DIRInterfaceEventSender() // Used when the event_target is a subclass
+        DIRInterfaceMessageSender() // Used when the event_target is a subclass
           : __event_target( NULL )
         { }
 
-        DIRInterfaceEventSender( ::yield::concurrency::EventTarget& event_target )
+        DIRInterfaceMessageSender( ::yield::concurrency::EventTarget& event_target )
           : __event_target( &event_target )
         { }
 
@@ -2755,7 +2708,7 @@ namespace org
 
       private:
         // __event_target is not a counted reference, since that would create
-        // a reference cycle when __event_target is a subclass of EventSender
+        // a reference cycle when __event_target is a subclass of DIRInterfaceMessageSender
         ::yield::concurrency::EventTarget* __event_target;
       };
     };

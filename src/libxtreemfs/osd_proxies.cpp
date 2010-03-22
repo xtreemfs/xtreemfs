@@ -44,22 +44,22 @@ OSDProxies::OSDProxies
 (
   DIRProxy& dir_proxy,
   uint16_t concurrency_level,
-  uint32_t flags,
-  Log* log,
+  Log* error_log,
   const Time& operation_timeout,
   uint8_t reconnect_tries_max,
   SSLContext* ssl_context,
   StageGroup* stage_group,
+  Log* trace_log,
   UserCredentialsCache* user_credentials_cache
 )
   : concurrency_level( concurrency_level ),
     dir_proxy( dir_proxy.inc_ref() ),
-    flags( flags ),
-    log( Object::inc_ref( log ) ),
+    error_log( Object::inc_ref( error_log ) ),
     operation_timeout( operation_timeout ),
     reconnect_tries_max( reconnect_tries_max ),
     ssl_context( Object::inc_ref( ssl_context ) ),
     stage_group( Object::inc_ref( stage_group ) ),
+    trace_log( Object::inc_ref( trace_log ) ),
     user_credentials_cache( Object::inc_ref( user_credentials_cache ) )
 { }
 
@@ -69,9 +69,10 @@ OSDProxies::~OSDProxies()
     OSDProxy::dec_ref( *osd_proxy_i->second );
 
   DIRProxy::dec_ref( dir_proxy );
-  Log::dec_ref( log );
+  Log::dec_ref( error_log );
   SSLContext::dec_ref( ssl_context );
   StageGroup::dec_ref( stage_group );
+  Log::dec_ref( trace_log );
   UserCredentialsCache::dec_ref( user_credentials_cache );
 }
 
@@ -185,11 +186,11 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
             (
               ( *address_mapping_i ).get_uri(),
               concurrency_level,
-              flags,
-              log,
+              error_log,
               operation_timeout,
               reconnect_tries_max,
               ssl_context,
+              trace_log,
               user_credentials_cache
             );
 
@@ -205,11 +206,11 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
             (
               ( *address_mapping_i ).get_uri(),
               concurrency_level,
-              flags,
-              log,
+              error_log,
               operation_timeout,
               reconnect_tries_max,
               ssl_context,
+              trace_log,
               user_credentials_cache
             );
 

@@ -156,42 +156,54 @@ namespace yunit
 
     const std::string& get_name() const { return name; }
 
-    virtual void run( TestResult& test_result )
+    virtual int run( TestResult& test_result )
     {
-      for ( iterator test_i = begin(); test_i != end(); test_i++ )
+      int failed_test_case_count = 0;
+
+      for
+      (
+        iterator test_case_i = begin();
+        test_case_i != end();
+        ++test_case_i
+      )
       {
+        TestCase* test_case = *test_case_i;
+
         bool called_runTest = false, called_tearDown = false;
 
         try
         {
-          std::cout << ( *test_i )->shortDescription();
-          ( *test_i )->setUp();
+          std::cout << test_case->shortDescription();
+          test_case->setUp();
           called_runTest = true;
-          ( *test_i )->run( test_result );
+          test_case->run( test_result );
           called_tearDown = true;
-          ( *test_i )->tearDown();
+          test_case->tearDown();
           std::cout << ": passed";
         }
         catch ( yunit::AssertionException& exc )
         {
           std::cout << " failed: " << exc.what();
+          failed_test_case_count++;
         }
         catch ( std::exception& exc )
         {
           std::cout << " threw exception: " << exc.what();
+          failed_test_case_count++;
         }
         catch ( ... )
         {
           std::cout << " threw unknown non-exception";
+          failed_test_case_count++;
         }
 
         std::cout << std::endl;
 
         if ( called_runTest && !called_tearDown )
-          try { ( *test_i )->tearDown(); } catch ( ... ) { }
-
-       // ret_code |= 1;
+          try { test_case->tearDown(); } catch ( ... ) { }
       }
+
+      return failed_test_case_count;
     }
 
   private:
@@ -202,8 +214,7 @@ namespace yunit
   inline int TestRunner::run( TestSuite& test_suite )
   {
     TestResult* test_result = new TestResult;
-    test_suite.run( *test_result );
-    return 0;
+    return test_suite.run( *test_result );
   }
 };
 

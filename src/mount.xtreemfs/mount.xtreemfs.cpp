@@ -89,7 +89,6 @@ int main( int argc, char** argv )
 #if FUSE_MAJOR_VERSION > 2 || ( FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 8 )
     bool no_big_writes = false;
 #endif
-    bool trace_volume_operations = false;
     Path vivaldi_coordinates_file_path;
     uint32_t volume_flags = Volume::FLAGS_DEFAULT;
 
@@ -115,17 +114,6 @@ int main( int argc, char** argv )
         if ( popt.get_argument().find_first_of( "direct_io" ) != string::npos )
           fuse_flags |= FUSE::FLAG_DIRECT_IO;  
       }
-      else if ( popt == "--trace-data-cache" )
-        volume_flags |= Volume::FLAG_TRACE_DATA_CACHE;
-      else if ( popt == "--trace-file-io" )
-        volume_flags |= Volume::FLAG_TRACE_FILE_IO;
-      else if ( popt == "--trace-stat-cache" )
-        volume_flags |= Volume::FLAG_TRACE_STAT_CACHE;
-      else if ( popt == "--trace-volume-operations" )
-      {
-        trace_volume_operations = true;
-        fuse_flags |= FUSE::FLAG_DEBUG;
-      }
       else if ( popt == "--vivaldi-coordinates-file-path" )
         vivaldi_coordinates_file_path = popt.get_argument();
       else if ( popt == "--write-back-data-cache" )
@@ -148,7 +136,10 @@ int main( int argc, char** argv )
       else if ( popt == "--write-through-stat-cache" )
         volume_flags |= Volume::FLAG_WRITE_THROUGH_STAT_CACHE;
     }
-      
+
+    if ( options.get_trace_log() != NULL )
+      fuse_flags |= FUSE::FLAG_DEBUG;
+
     if ( !options.get_positional_arguments().empty() )
       mount_point = options.get_positional_arguments()[0];
     else
@@ -168,8 +159,15 @@ int main( int argc, char** argv )
 
     if ( foreground )
     {
-      if ( trace_volume_operations && options.get_log() != NULL )
-        volume = new yieldfs::TracingVolume( *options.get_log(), *volume );
+      if ( options.get_trace_log() != NULL )
+      {
+        volume 
+          = new yieldfs::TracingVolume
+                ( 
+                  *options.get_trace_log(), 
+                  *volume 
+                );
+      }
 
       auto_ptr<FUSE> fuse( &FUSE::create( *volume, fuse_flags ) );
 
@@ -213,7 +211,7 @@ int main( int argc, char** argv )
       child_argv.push_back( "-f" );
 
       child_argv.push_back( "--log-file-path" );
-      string log_file_path( options.get_log_file_path() );
+      string log_file_path( options.get_error_log_file_path() );
       if ( log_file_path.empty() )
       {
         ostringstream log_file_path_oss;

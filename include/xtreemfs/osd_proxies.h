@@ -49,12 +49,12 @@ namespace xtreemfs
     (
       DIRProxy& dir_proxy,
       uint16_t concurrency_level = OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
-      uint32_t flags = OSDProxy::FLAGS_DEFAULT,
-      Log* log = NULL,
+      Log* error_log = NULL,
       const Time& operation_timeout = OSDProxy::OPERATION_TIMEOUT_DEFAULT,
       uint8_t reconnect_tries_max = OSDProxy::RECONNECT_TRIES_MAX_DEFAULT,
       SSLContext* ssl_context = NULL,
       StageGroup* stage_group = NULL,
+      Log* trace_log = NULL,
       UserCredentialsCache* user_credentials_cache = NULL
     );
 
@@ -75,13 +75,13 @@ namespace xtreemfs
   private:
     uint16_t concurrency_level;
     DIRProxy& dir_proxy;
-    uint32_t flags;
+    Log* error_log;
     yield::platform::Mutex lock;
-    Log* log;
     Time operation_timeout;
     uint8_t reconnect_tries_max;
     SSLContext* ssl_context;
     StageGroup* stage_group;
+    Log* trace_log;
     UserCredentialsCache* user_credentials_cache;
   };
 };

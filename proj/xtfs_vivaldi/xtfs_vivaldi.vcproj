@@ -37,7 +37,7 @@
                 DebugInformationFormat="4"
                 ProgramDataBaseFileName="$(TargetDir)$(TargetName).pdb"
                 CompileAs="0"
-                DisableSpecificWarnings="4100;4355;4512"
+                DisableSpecificWarnings="4100;4127;4355;4512"
             />
             <Tool
                 Name="VCLibrarianTool"
@@ -82,7 +82,7 @@
                 UsePrecompiledHeader="0"
                 WarningLevel="3"
                 DebugInformationFormat="0"
-                DisableSpecificWarnings="4100;4355;4512"
+                DisableSpecificWarnings="4100;4127;4355;4512"
             />
             <Tool
                 Name="VCLibrarianTool"
@@ -163,15 +163,11 @@
             UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
             >
             <File
-    RelativePath="..\..\src\xtfs_vivaldi\vivaldi_node.h"
-    >
-</File>
-<File
-    RelativePath="..\..\src\xtfs_vivaldi\zipf_generator.h"
-    >
-</File>
-<File
     RelativePath="..\..\src\xtfs_vivaldi\vivaldi_node.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\xtfs_vivaldi\vivaldi_node.h"
     >
 </File>
 <File
@@ -180,6 +176,10 @@
 </File>
 <File
     RelativePath="..\..\src\xtfs_vivaldi\zipf_generator.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\xtfs_vivaldi\zipf_generator.h"
     >
 </File>
 

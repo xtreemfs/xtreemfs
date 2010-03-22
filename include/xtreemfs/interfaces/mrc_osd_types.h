@@ -1,5 +1,5 @@
-#ifndef _1844935817_H_
-#define _1844935817_H_
+#ifndef _981549860_H_
+#define _981549860_H_
 
 
 #include "types.h"
@@ -50,14 +50,14 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( "size_in_bytes", 0, size_in_bytes );
-          marshaller.write( "truncate_epoch", 0, truncate_epoch );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "size_in_bytes", 0 ), size_in_bytes );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "truncate_epoch", 0 ), truncate_epoch );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
-          size_in_bytes = unmarshaller.read_uint64( "size_in_bytes", 0 );
-          truncate_epoch = unmarshaller.read_uint32( "truncate_epoch", 0 );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "size_in_bytes", 0 ), size_in_bytes );
+          truncate_epoch = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "truncate_epoch", 0 ) );
         }
 
       protected:
@@ -84,14 +84,14 @@ namespace org
           size_type value_i_max = size();
           for ( size_type value_i = 0; value_i < value_i_max; value_i++ )
           {
-            marshaller.write( "value", 0, ( *this )[value_i] );
+            marshaller.write( ::yidl::runtime::Marshaller::Key(), ( *this )[value_i] );
           }
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
           org::xtreemfs::interfaces::NewFileSize value;
-          unmarshaller.read( "value", 0, value );
+          unmarshaller.read( ::yidl::runtime::Marshaller::Key(), value );
           push_back( value );
         }
 
@@ -127,12 +127,12 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( "new_file_size", 0, new_file_size );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "new_file_size", 0 ), new_file_size );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
-          unmarshaller.read( "new_file_size", 0, new_file_size );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "new_file_size", 0 ), new_file_size );
         }
 
       protected:
@@ -179,16 +179,16 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( "type", 0, static_cast<int32_t>( type ) );
-          marshaller.write( "stripe_size", 0, stripe_size );
-          marshaller.write( "width", 0, width );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "type", 0 ), static_cast<int32_t>( type ) );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stripe_size", 0 ), stripe_size );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "width", 0 ), width );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
-          type = static_cast<org::xtreemfs::interfaces::StripingPolicyType>( unmarshaller.read_int32( "type", 0 ) );
-          stripe_size = unmarshaller.read_uint32( "stripe_size", 0 );
-          width = unmarshaller.read_uint32( "width", 0 );
+          type = static_cast<org::xtreemfs::interfaces::StripingPolicyType>( unmarshaller.read_int32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "type", 0 ) ) );
+          stripe_size = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "stripe_size", 0 ) );
+          width = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "width", 0 ) );
         }
 
       protected:
@@ -239,16 +239,16 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( "osd_uuids", 0, osd_uuids );
-          marshaller.write( "replication_flags", 0, replication_flags );
-          marshaller.write( "striping_policy", 0, striping_policy );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "osd_uuids", 0 ), osd_uuids );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "replication_flags", 0 ), replication_flags );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "striping_policy", 0 ), striping_policy );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
-          unmarshaller.read( "osd_uuids", 0, osd_uuids );
-          replication_flags = unmarshaller.read_uint32( "replication_flags", 0 );
-          unmarshaller.read( "striping_policy", 0, striping_policy );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "osd_uuids", 0 ), osd_uuids );
+          replication_flags = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "replication_flags", 0 ) );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "striping_policy", 0 ), striping_policy );
         }
 
       protected:
@@ -276,14 +276,14 @@ namespace org
           size_type value_i_max = size();
           for ( size_type value_i = 0; value_i < value_i_max; value_i++ )
           {
-            marshaller.write( "value", 0, ( *this )[value_i] );
+            marshaller.write( ::yidl::runtime::Marshaller::Key(), ( *this )[value_i] );
           }
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
           org::xtreemfs::interfaces::Replica value;
-          unmarshaller.read( "value", 0, value );
+          unmarshaller.read( ::yidl::runtime::Marshaller::Key(), value );
           push_back( value );
         }
 
@@ -333,16 +333,16 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( "x_coordinate", 0, x_coordinate );
-          marshaller.write( "y_coordinate", 0, y_coordinate );
-          marshaller.write( "local_error", 0, local_error );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "x_coordinate", 0 ), x_coordinate );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "y_coordinate", 0 ), y_coordinate );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "local_error", 0 ), local_error );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
-          x_coordinate = unmarshaller.read_double( "x_coordinate", 0 );
-          y_coordinate = unmarshaller.read_double( "y_coordinate", 0 );
-          local_error = unmarshaller.read_double( "local_error", 0 );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "x_coordinate", 0 ), x_coordinate );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "y_coordinate", 0 ), y_coordinate );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "local_error", 0 ), local_error );
         }
 
       protected:
@@ -441,30 +441,30 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( "access_mode", 0, access_mode );
-          marshaller.write( "client_identity", 0, client_identity );
-          marshaller.write( "expire_time_s", 0, expire_time_s );
-          marshaller.write( "expire_timeout_s", 0, expire_timeout_s );
-          marshaller.write( "file_id", 0, file_id );
-          marshaller.write( "replicate_on_close", 0, replicate_on_close );
-          marshaller.write( "server_signature", 0, server_signature );
-          marshaller.write( "truncate_epoch", 0, truncate_epoch );
-          marshaller.write( "snap_config", 0, static_cast<int32_t>( snap_config ) );
-          marshaller.write( "snap_timestamp", 0, snap_timestamp );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "access_mode", 0 ), access_mode );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "client_identity", 0 ), client_identity );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "expire_time_s", 0 ), expire_time_s );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "expire_timeout_s", 0 ), expire_timeout_s );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_id", 0 ), file_id );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "replicate_on_close", 0 ), replicate_on_close );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "server_signature", 0 ), server_signature );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "truncate_epoch", 0 ), truncate_epoch );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "snap_config", 0 ), static_cast<int32_t>( snap_config ) );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "snap_timestamp", 0 ), snap_timestamp );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
-          access_mode = unmarshaller.read_uint32( "access_mode", 0 );
-          unmarshaller.read( "client_identity", 0, client_identity );
-          expire_time_s = unmarshaller.read_uint64( "expire_time_s", 0 );
-          expire_timeout_s = unmarshaller.read_uint32( "expire_timeout_s", 0 );
-          unmarshaller.read( "file_id", 0, file_id );
-          replicate_on_close = unmarshaller.read_bool( "replicate_on_close", 0 );
-          unmarshaller.read( "server_signature", 0, server_signature );
-          truncate_epoch = unmarshaller.read_uint32( "truncate_epoch", 0 );
-          snap_config = static_cast<org::xtreemfs::interfaces::SnapConfig>( unmarshaller.read_int32( "snap_config", 0 ) );
-          snap_timestamp = unmarshaller.read_uint64( "snap_timestamp", 0 );
+          access_mode = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "access_mode", 0 ) );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "client_identity", 0 ), client_identity );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "expire_time_s", 0 ), expire_time_s );
+          expire_timeout_s = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "expire_timeout_s", 0 ) );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "file_id", 0 ), file_id );
+          replicate_on_close = unmarshaller.read_bool( ::yidl::runtime::Unmarshaller::StringLiteralKey( "replicate_on_close", 0 ) );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "server_signature", 0 ), server_signature );
+          truncate_epoch = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "truncate_epoch", 0 ) );
+          snap_config = static_cast<org::xtreemfs::interfaces::SnapConfig>( unmarshaller.read_int32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "snap_config", 0 ) ) );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "snap_timestamp", 0 ), snap_timestamp );
         }
 
       protected:
@@ -528,18 +528,18 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( "read_only_file_size", 0, read_only_file_size );
-          marshaller.write( "replicas", 0, replicas );
-          marshaller.write( "replica_update_policy", 0, replica_update_policy );
-          marshaller.write( "version", 0, version );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "read_only_file_size", 0 ), read_only_file_size );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "replicas", 0 ), replicas );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "replica_update_policy", 0 ), replica_update_policy );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "version", 0 ), version );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
-          read_only_file_size = unmarshaller.read_uint64( "read_only_file_size", 0 );
-          unmarshaller.read( "replicas", 0, replicas );
-          unmarshaller.read( "replica_update_policy", 0, replica_update_policy );
-          version = unmarshaller.read_uint32( "version", 0 );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "read_only_file_size", 0 ), read_only_file_size );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "replicas", 0 ), replicas );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "replica_update_policy", 0 ), replica_update_policy );
+          version = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "version", 0 ) );
         }
 
       protected:
@@ -582,14 +582,14 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( "xcap", 0, xcap );
-          marshaller.write( "xlocs", 0, xlocs );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "xcap", 0 ), xcap );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "xlocs", 0 ), xlocs );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
-          unmarshaller.read( "xcap", 0, xcap );
-          unmarshaller.read( "xlocs", 0, xlocs );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "xcap", 0 ), xcap );
+          unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "xlocs", 0 ), xlocs );
         }
 
       protected:
@@ -616,14 +616,14 @@ namespace org
           size_type value_i_max = size();
           for ( size_type value_i = 0; value_i < value_i_max; value_i++ )
           {
-            marshaller.write( "value", 0, ( *this )[value_i] );
+            marshaller.write( ::yidl::runtime::Marshaller::Key(), ( *this )[value_i] );
           }
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
           org::xtreemfs::interfaces::FileCredentials value;
-          unmarshaller.read( "value", 0, value );
+          unmarshaller.read( ::yidl::runtime::Marshaller::Key(), value );
           push_back( value );
         }
 

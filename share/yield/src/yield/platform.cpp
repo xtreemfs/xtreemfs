@@ -34,6 +34,40 @@ void BIOQueue::submit( BIOCB& biocb )
 }
 
 
+// buffer_iostream.cpp
+using yidl::runtime::StringBuffer;
+
+
+BufferIOStream::BufferIOStream()
+{
+  buffer = new StringBuffer;
+}
+
+BufferIOStream::BufferIOStream( Buffer& buffer )
+  : buffer( &buffer.inc_ref() )
+{ }
+
+BufferIOStream::BufferIOStream( const std::string& buffer )
+{
+  this->buffer = new StringBuffer( buffer );
+}
+
+BufferIOStream::~BufferIOStream()
+{
+  Buffer::dec_ref( *buffer );
+}
+
+ssize_t BufferIOStream::read( void* buf, size_t buflen )
+{
+  return buffer->get( buf, buflen );
+}
+
+ssize_t BufferIOStream::write( const void* buf, size_t buflen )
+{
+  return buffer->put( buf, buflen );
+}
+
+
 // directory.cpp
 #ifdef _WIN32
 #include <windows.h>
@@ -1342,7 +1376,7 @@ File::File( const File& other )
 
 bool File::close()
 {
-  if ( Stream::close( fd ) )
+  if ( IOStream::close( fd ) )
   {
     fd = INVALID_FD;
     return true;
@@ -2099,6 +2133,77 @@ bool iconv::reset()
 #endif
 
 
+// iostream.cpp
+#ifdef _WIN32
+#undef INVALID_SOCKET
+#pragma warning( push )
+#pragma warning( disable: 4365 4995 )
+#include <ws2tcpip.h>
+#pragma warning( pop )
+#define INVALID_SOCKET  (SOCKET)(~0)
+#endif
+
+
+bool IOStream::close( fd_t fd )
+{
+  if ( fd != INVALID_FD )
+#ifdef _WIN32
+    return CloseHandle( fd ) == TRUE;
+#else
+    return ::close( fd ) != -1;
+#endif
+  else
+  {
+#ifdef _WIN32
+    SetLastError( ERROR_INVALID_HANDLE );
+#else
+    errno = EBADF;
+#endif
+    return false;
+  }
+}
+
+#ifdef _WIN32
+bool IOStream::close( socket_t socket_ )
+{
+  if ( socket_ != INVALID_SOCKET )
+    return ::closesocket( socket_ ) != -1;
+  else
+  {
+#ifdef _WIN32
+    WSASetLastError( WSAENOTSOCK );
+#else
+    errno = EBADF;
+#endif
+    return false;
+  }
+}
+#endif
+
+#ifdef _WIN32
+bool IOStream::set_blocking_mode( bool blocking, socket_t socket_ )
+{
+  unsigned long val = blocking ? 0UL : 1UL;
+  return ::ioctlsocket( socket_, FIONBIO, &val ) != SOCKET_ERROR;
+}
+#else
+bool IOStream::set_blocking_mode( bool blocking, fd_t fd )
+{
+  int current_fcntl_flags = fcntl( fd, F_GETFL, 0 );
+  if ( blocking )
+  {
+    if ( ( current_fcntl_flags & O_NONBLOCK ) == O_NONBLOCK )
+      return fcntl( fd, F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1;
+    else
+      return true;
+  }
+  else
+    return fcntl( fd, F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1;
+}
+#endif
+
+
+
 // istream.cpp
 void
 IStream::aio_read
@@ -2139,7 +2244,7 @@ ssize_t IStream::read( Buffer& buffer )
       );
 
   if ( read_ret > 0 )
-    buffer.put( static_cast<size_t>( read_ret ) );
+    buffer.resize( buffer.size() + static_cast<size_t>( read_ret ) );
 
   return read_ret;
 }
@@ -2197,18 +2302,18 @@ namespace yield
     class ostreamLog : public Log
     {
     public:
-      ostreamLog( ostream& underlying_ostream, const Level& level )
-        : Log( level ), underlying_ostream( underlying_ostream )
+      ostreamLog( ostream& os, const Level& level )
+        : Log( level ), os( os )
       { }
 
       // Log
       void write( const char* str, size_t str_len )
       {
-        underlying_ostream.write( str, str_len );
+        os.write( str, str_len );
       }
 
     private:
-      ostream& underlying_ostream;
+      ostream& os;
     };
   };
 };
@@ -2216,6 +2321,42 @@ namespace yield
 
 Log::Level::Level( const char* level )
   : level_string( level )
+{
+  init( level );
+}
+
+Log::Level::Level( const string& level )
+  : level_string( level )
+{
+  init( level.c_str() );
+}
+
+
+Log::Level::Level( uint8_t level )
+  : level_uint8( level )
+{
+  switch ( level )
+  {
+    case 0: level_string = "EMERG"; break;
+    case 1: level_string = "ALERT"; break;
+    case 2: level_string = "CRIT"; break;
+    case 3: level_string = "ERR"; break;
+    case 4: level_string = "WARNING"; break;
+    case 5: level_string = "NOTICE"; break;
+    case 6: level_string = "INFO"; break;
+    default: level_string = "DEBUG"; break;
+  }
+}
+
+Log::Level::Level( const char* level_string, uint8_t level_uint8 )
+: level_string( level_string ), level_uint8( level_uint8 )
+{ }
+
+Log::Level::Level( const Level& other )
+: level_string( other.level_string ), level_uint8( other.level_uint8 )
+{ }
+
+void Log::Level::init( const char* level )
 {
   level_uint8 = static_cast<uint8_t>( atoi( level ) );
   if ( level_uint8 == 0 )
@@ -2288,30 +2429,6 @@ Log::Level::Level( const char* level )
   }
 }
 
-Log::Level::Level( uint8_t level )
-  : level_uint8( level )
-{
-  switch ( level )
-  {
-    case 0: level_string = "EMERG"; break;
-    case 1: level_string = "ALERT"; break;
-    case 2: level_string = "CRIT"; break;
-    case 3: level_string = "ERR"; break;
-    case 4: level_string = "WARNING"; break;
-    case 5: level_string = "NOTICE"; break;
-    case 6: level_string = "INFO"; break;
-    default: level_string = "DEBUG"; break;
-  }
-}
-
-Log::Level::Level( const char* level_string, uint8_t level_uint8 )
-: level_string( level_string ), level_uint8( level_uint8 )
-{ }
-
-Log::Level::Level( const Level& other )
-: level_string( other.level_string ), level_uint8( other.level_uint8 )
-{ }
-
 Log::Stream::Stream( Log& log, Log::Level level )
   : log( log ), level( level )
 { }
@@ -2343,9 +2460,9 @@ Log::Log( const Level& level )
   : level( level )
 { }
 
-Log& Log::open( ostream& underlying_ostream, const Level& level )
+Log& Log::open( ostream& os, const Level& level )
 {
-  return *new ostreamLog( underlying_ostream, level );
+  return *new ostreamLog( os, level );
 }
 
 Log& Log::open( const Path& file_path, const Level& level, bool lazy_open )
@@ -4276,7 +4393,7 @@ OStream::aio_write
     if ( static_cast<size_t>( write_ret ) != buffer.size() )
       DebugBreak();
 #endif
-    callback.onWriteCompletion( callback_context );
+    callback.onWriteCompletion( write_ret, callback_context );
   }
   else
 #ifdef _WIN32
@@ -4298,7 +4415,7 @@ OStream::aio_writev
 {
   ssize_t writev_ret = writev( buffers );
   if ( writev_ret >= 0 )
-    callback.onWriteCompletion( callback_context );
+    callback.onWriteCompletion( writev_ret, callback_context );
   else
 #ifdef _WIN32
     callback.onWriteError( GetLastError(), callback_context );
@@ -4313,7 +4430,7 @@ ssize_t OStream::write( const Buffer& buffer )
   return write( static_cast<void*>( buffer ), buffer.size() );
 }
 
-ssize_t OStream::writev( const Buffers& buffers )
+ssize_t OStream::writev( Buffers& buffers )
 {
   return writev( buffers, buffers.size() );
 }
@@ -4820,12 +4937,7 @@ Pipe::~Pipe()
 
 bool Pipe::close()
 {
-  if
-  (
-    Stream::close( ends[0] )
-    &&
-    Stream::close( ends[1] )
-  )
+  if ( IOStream::close( ends[0] ) && IOStream::close( ends[1] ) )
   {
     ends[0] = INVALID_FD;
     ends[1] = INVALID_FD;
@@ -4893,7 +5005,7 @@ bool Pipe::set_read_blocking_mode( bool blocking )
 #ifdef _WIN32
   return false;
 #else
-  return Stream::set_blocking_mode( blocking, ends[0] );
+  return IOStream::set_blocking_mode( blocking, ends[0] );
 #endif
 }
 
@@ -4902,7 +5014,7 @@ bool Pipe::set_write_blocking_mode( bool blocking )
 #ifdef _WIN32
   return false;
 #else
-  return Stream::set_blocking_mode( blocking, ends[1] );
+  return IOStream::set_blocking_mode( blocking, ends[1] );
 #endif
 }
 
@@ -5688,25 +5800,32 @@ int Socket::DOMAIN_DEFAULT = AF_INET6;
 
 Socket::IOConnectCB::IOConnectCB
 (
-  SocketAddress& peername,
-  Socket& socket_,
   AIOConnectCallback& callback,
-  void* callback_context
+  void* callback_context,
+  SocketAddress& peername,
+  Buffer* send_buffer,
+  Socket& socket_
 )
   : IOCB<AIOConnectCallback>( callback, callback_context ),
     peername( peername ),
+    send_buffer( send_buffer ),
     socket_( socket_ )
 { }
 
 Socket::IOConnectCB::~IOConnectCB()
 {
   SocketAddress::dec_ref( peername );
+  Buffers::dec_ref( send_buffer );
   Socket::dec_ref( socket_ );
 }
 
 void Socket::IOConnectCB::onConnectCompletion()
 {
-  callback.onConnectCompletion( callback_context );
+  callback.onConnectCompletion
+  (
+    send_buffer != NULL ? send_buffer->size() : 0,
+    callback_context
+  );
 }
 
 void Socket::IOConnectCB::onConnectError()
@@ -5723,10 +5842,10 @@ void Socket::IOConnectCB::onConnectError( uint32_t error_code )
 Socket::IORecvCB::IORecvCB
 (
   Buffer& buffer,
-  int flags,
-  Socket& socket_,
   AIOReadCallback& callback,
-  void* callback_context
+  void* callback_context,
+  int flags,
+  Socket& socket_
 )
   : IOCB<AIOReadCallback>( callback, callback_context ),
     buffer( buffer ),
@@ -5742,7 +5861,7 @@ Socket::IORecvCB::~IORecvCB()
 
 void Socket::IORecvCB::onReadCompletion()
 {
-  // Assumes buffer->put( recv_ret ) has already been called
+  // Assumes buffer->resize( recv_ret ) has already been called
   callback.onReadCompletion( buffer, callback_context );
 }
 
@@ -5760,10 +5879,10 @@ void Socket::IORecvCB::onReadError( uint32_t error_code )
 Socket::IOSendCB::IOSendCB
 (
   Buffer& buffer,
-  int flags,
-  Socket& socket_,
   AIOWriteCallback& callback,
-  void* callback_context
+  void* callback_context,
+  int flags,
+  Socket& socket_
 )
   : IOCB<AIOWriteCallback>( callback, callback_context ),
     buffer( buffer ),
@@ -5789,6 +5908,7 @@ bool Socket::IOSendCB::execute( bool blocking_mode )
         = get_socket().send
           (
             static_cast<const char*>( get_buffer() ) + partial_send_len,
+            get_buffer().size() - partial_send_len,
             get_flags()
           );
 
@@ -5810,7 +5930,7 @@ bool Socket::IOSendCB::execute( bool blocking_mode )
 
 void Socket::IOSendCB::onWriteCompletion()
 {
-  callback.onWriteCompletion( callback_context );
+  callback.onWriteCompletion( buffer.size(), callback_context );
 }
 
 void Socket::IOSendCB::onWriteError()
@@ -5827,10 +5947,10 @@ void Socket::IOSendCB::onWriteError( uint32_t error_code )
 Socket::IOSendMsgCB::IOSendMsgCB
 (
   Buffers& buffers,
-  int flags,
-  Socket& socket_,
   AIOWriteCallback& callback,
-  void* callback_context
+  void* callback_context,
+  int flags,
+  Socket& socket_
 )
   : IOCB<AIOWriteCallback>( callback, callback_context ),
     buffers( buffers ),
@@ -5935,7 +6055,7 @@ bool Socket::IOSendMsgCB::execute( bool blocking_mode )
 
 void Socket::IOSendMsgCB::onWriteCompletion()
 {
-  callback.onWriteCompletion( callback_context );
+  callback.onWriteCompletion( buffers.join_size(), callback_context );
 }
 
 void Socket::IOSendMsgCB::onWriteError()
@@ -5954,26 +6074,40 @@ class Socket::BIOConnectCB : public BIOCB, public IOConnectCB
 public:
   BIOConnectCB
   (
-    SocketAddress& peername,
-    Socket& socket_,
     AIOConnectCallback& callback,
-    void* callback_context
+    void* callback_context,
+    SocketAddress& peername,
+    Buffer* send_buffer,
+    Socket& socket_
   )
-    : IOConnectCB( peername, socket_, callback, callback_context )
+    : IOConnectCB
+      (
+        callback,
+        callback_context,
+        peername,
+        send_buffer,
+        socket_
+      )
   { }
 
   // BIOCB
-  void execute()
+  bool execute()
   {
     if ( get_socket().set_blocking_mode( true ) )
     {
       if ( get_socket().connect( get_peername() ) )
+      {
+        DebugBreak();
         onConnectCompletion();
+        return true;
+      }
       else
         onConnectError();
     }
     else
       onConnectError();
+
+    return false;
   }
 };
 
@@ -5984,22 +6118,25 @@ public:
   BIORecvCB
   (
     Buffer& buffer,
-    int flags,
-    Socket& socket_,
     AIOReadCallback& callback,
-    void* callback_context
+    void* callback_context,
+    int flags,
+    Socket& socket_
   )
-    : IORecvCB( buffer, flags, socket_, callback, callback_context )
+    : IORecvCB( buffer, callback, callback_context, flags, socket_)
   { }
 
   // BIOCB
-  void execute()
+  bool execute()
   {
     if ( get_socket().set_blocking_mode( true ) )
     {
       ssize_t recv_ret = get_socket().recv( get_buffer(), get_flags() );
       if ( recv_ret > 0 )
+      {
         onReadCompletion();
+        return true;
+      }
       else if ( recv_ret == 0 )
         onReadError( ECONNABORTED );
       else
@@ -6007,6 +6144,8 @@ public:
     }
     else
       onReadError();
+
+    return false;
   }
 };
 
@@ -6017,21 +6156,27 @@ public:
   BIOSendCB
   (
     Buffer& buffer,
-    int flags,
-    Socket& socket_,
     AIOWriteCallback& callback,
-    void* callback_context
+    void* callback_context,
+    int flags,
+    Socket& socket_
   )
-    : IOSendCB( buffer, flags, socket_, callback, callback_context )
+    : IOSendCB( buffer, callback, callback_context, flags, socket_ )
   { }
 
   // BIOCB
-  void execute()
+  bool execute()
   {
     if ( IOSendCB::execute( true ) )
+    {
       onWriteCompletion();
+      return true;
+    }
     else
+    {
       onWriteError();
+      return false;
+    }
   }
 };
 
@@ -6043,21 +6188,27 @@ public:
   BIOSendMsgCB
   (
     Buffers& buffers,
-    int flags,
-    Socket& socket_,
     AIOWriteCallback& callback,
-    void* callback_context
+    void* callback_context,
+    int flags,
+    Socket& socket_
   )
-    : IOSendMsgCB( buffers, flags, socket_, callback, callback_context )
+    : IOSendMsgCB( buffers, callback, callback_context, flags, socket_ )
   { }
 
   // BIOCB
-  void execute()
+  bool execute()
   {
     if ( IOSendMsgCB::execute( true ) )
+    {
       onWriteCompletion();
+      return true;
+    }
     else
+    {
       onWriteError();
+      return false;
+    }
   }
 };
 
@@ -6067,17 +6218,18 @@ class Socket::NBIOConnectCB : public NBIOCB, public IOConnectCB
 public:
   NBIOConnectCB
   (
-    SocketAddress& peername,
-    Socket& socket_,
     AIOConnectCallback& callback,
-    void* callback_context
+    void* callback_context,
+    SocketAddress& peername,
+    Buffer* send_buffer,
+    Socket& socket_
   )
   : NBIOCB( STATE_WANT_CONNECT ),
-    IOConnectCB( peername, socket_, callback, callback_context )
+    IOConnectCB( callback, callback_context, peername, send_buffer, socket_ )
   { }
 
   // NBIOCB
-  void execute()
+  State execute()
   {
     if ( get_socket().set_blocking_mode( false ) )
     {
@@ -6099,6 +6251,8 @@ public:
       set_state( STATE_ERROR );
       onConnectError();
     }
+
+    return get_state();
   }
 
   socket_t get_fd() const { return get_socket(); }
@@ -6110,19 +6264,19 @@ class Socket::NBIORecvCB : public NBIOCB, public IORecvCB
 public:
   NBIORecvCB
   (
-    State state,
     Buffer& buffer,
+    AIOReadCallback& callback,
+    void* callback_context,
     int flags,
     Socket& socket_,
-    AIOReadCallback& callback,
-    void* callback_context
+    State state
   )
     : NBIOCB( state ),
-      IORecvCB( buffer, flags, socket_, callback, callback_context )
+      IORecvCB( buffer, callback, callback_context, flags, socket_ )
   { }
 
   // NBIOCB
-  void execute()
+  State execute()
   {
     if ( get_socket().set_blocking_mode( false ) )
     {
@@ -6152,6 +6306,8 @@ public:
       set_state( STATE_ERROR );
       onReadError();
     }
+
+    return get_state();
   }
 
   socket_t get_fd() const { return get_socket(); }
@@ -6163,19 +6319,19 @@ class Socket::NBIOSendCB : public NBIOCB, public IOSendCB
 public:
   NBIOSendCB
   (
-    State state,
     Buffer& buffer,
+    AIOWriteCallback& callback,
+    void* callback_context,
     int flags,
     Socket& socket_,
-    AIOWriteCallback& callback,
-    void* callback_context
+    State state
   )
     : NBIOCB( state ),
-      IOSendCB( buffer, flags, socket_, callback, callback_context )
+      IOSendCB( buffer, callback, callback_context, flags, socket_ )
   { }
 
   // NBIOCB
-  void execute()
+  State execute()
   {
     if ( IOSendCB::execute( false ) )
     {
@@ -6191,6 +6347,8 @@ public:
       set_state( STATE_ERROR );
       onWriteError();
     }
+
+    return get_state();
   }
 
   socket_t get_fd() const { return get_socket(); }
@@ -6202,19 +6360,19 @@ class Socket::NBIOSendMsgCB : public NBIOCB, public IOSendMsgCB
 public:
   NBIOSendMsgCB
   (
-    State state,
     Buffers& buffers,
+    AIOWriteCallback& callback,
+    void* callback_context,
     int flags,
     Socket& socket_,
-    AIOWriteCallback& callback,
-    void* callback_context
+    State state
   )
     : NBIOCB( state ),
-      IOSendMsgCB( buffers, flags, socket_, callback, callback_context )
+      IOSendMsgCB( buffers, callback, callback_context, flags, socket_ )
   { }
 
   // NBIOCB
-  void execute()
+  State execute()
   {
     if ( IOSendMsgCB::execute( false ) )
     {
@@ -6230,6 +6388,8 @@ public:
       set_state( STATE_ERROR );
       onWriteError();
     }
+
+    return get_state();
   }
 
   socket_t get_fd() const { return get_socket(); }
@@ -6255,67 +6415,68 @@ Socket::aio_connect
 (
   SocketAddress& peername,
   AIOConnectCallback& callback,
-  void* callback_context
+  void* callback_context,
+  Buffer* send_buffer
 )
 {
   // Try a non-blocking connect first (for e.g. localhost)
-  if ( set_blocking_mode( false ) )
+  switch
+  (
+    NBIOConnectCB
+    (
+      callback,
+      callback_context,
+      peername,
+      Object::inc_ref( send_buffer ),
+      inc_ref()
+    ).execute()
+  )
   {
-    if ( connect( peername ) )
-    {
-      callback.onConnectCompletion( callback_context );
-      return;
-    }
-    else if ( !want_connect() )
-    {
-      callback.onConnectError( get_last_error(), callback_context );
-      return;
-    }
+    case NBIOConnectCB::STATE_COMPLETE:
+    case NBIOConnectCB::STATE_ERROR: Buffer::dec_ref( send_buffer ); return;
   }
 
-  if ( io_queue != NULL )
+  if ( get_bio_queue() != NULL )
   {
-    switch ( io_queue->get_type_id() )
-    {
-      case BIOQueue::TYPE_ID:
-      {
-        static_cast<BIOQueue*>( io_queue )
-          ->submit
-            (
-              *new BIOConnectCB
-                   (
-                     peername.inc_ref(),
-                     inc_ref(),
-                     callback,
-                     callback_context
-                   )
-            );
-      }
-      return;
+    get_bio_queue()->submit
+    (
+      *new BIOConnectCB
+           (
+             callback,
+             callback_context,
+             peername.inc_ref(),
+             send_buffer,
+             inc_ref()
+           )
+    );
 
-      case NBIOQueue::TYPE_ID:
-      {
-        static_cast<NBIOQueue*>( io_queue )
-          ->submit
+    return;
+  }
+  else if ( get_nbio_queue() != NULL )
+  {
+    get_nbio_queue()->submit
+    (
+      *new NBIOConnectCB
             (
-              *new NBIOConnectCB
-                    (
-                      peername.inc_ref(),
-                      inc_ref(),
-                      callback,
-                      callback_context
-                    )
-            );
-      }
-      return;
-    }
+              callback,
+              callback_context,
+              peername.inc_ref(),
+              send_buffer,
+              inc_ref()
+            )
+    );
+
+    return;
   }
 
-  set_blocking_mode( true );
-  if ( connect( peername ) )
-    callback.onConnectCompletion( callback_context );
-  else
-    callback.onConnectError( get_last_error(), callback_context );
+  BIOConnectCB
+  (
+    callback,
+    callback_context,
+    peername,
+    send_buffer,
+    inc_ref()
+  ).execute();
 }
 
 void
@@ -6328,71 +6489,58 @@ Socket::aio_recv
 )
 {
   // Try a non-blocking recv first
-  if ( set_blocking_mode( false ) )
+  switch
+  (
+    NBIORecvCB
+    (
+      buffer.inc_ref(),
+      callback,
+      callback_context,
+      flags,
+      inc_ref(),
+      NBIORecvCB::STATE_WANT_READ
+    ).execute()
+  )
   {
-    ssize_t recv_ret = recv( buffer, flags );
-    if ( recv_ret > 0 )
-    {
-      callback.onReadCompletion( buffer, callback_context );
-      Buffer::dec_ref( buffer );
-      return;
-    }
-    else if ( recv_ret == 0 )
-    {
-      callback.onReadError( ECONNABORTED, callback_context );
-      Buffer::dec_ref( buffer );
-      return;
-    }
-    else if ( !want_read() && !want_write() )
-    {
-      callback.onReadError( get_last_error(), callback_context );
-      Buffer::dec_ref( buffer );
-      return;
-    }
+    case NBIORecvCB::STATE_COMPLETE:
+    case NBIORecvCB::STATE_ERROR: Buffer::dec_ref( buffer ); return;
   }
 
   // Next try to offload the recv to an IOQueue
-  if ( io_queue != NULL )
+  if ( get_bio_queue() != NULL )
   {
-    switch ( io_queue->get_type_id() )
-    {
-      case BIOQueue::TYPE_ID:
-      {
-        static_cast<BIOQueue*>( io_queue )
-          ->submit
-            (
-              *new BIORecvCB
-                   (
-                     buffer,
-                     flags,
-                     inc_ref(),
-                     callback,
-                     callback_context
-                   )
-            );
-      }
-      return;
+    get_bio_queue()->submit
+    (
+      *new BIORecvCB
+           (
+             buffer,
+             callback,
+             callback_context,
+             flags,
+             inc_ref()
+           )
+    );
 
-      case NBIOQueue::TYPE_ID:
-      {
-        static_cast<NBIOQueue*>( io_queue )
-          ->submit
-            (
-              *new NBIORecvCB
-                   (
-                     want_read()
-                       ? NBIORecvCB::STATE_WANT_READ
-                       : NBIORecvCB::STATE_WANT_WRITE,
-                     buffer,
-                     flags,
-                     inc_ref(),
-                     callback,
-                     callback_context
-                   )
-            );
-      }
-      return;
-    }
+    return;
+  }
+  else if ( get_nbio_queue() != NULL )
+  {
+    get_nbio_queue()->submit
+    (
+      *new NBIORecvCB
+           (
+             buffer,
+             callback,
+             callback_context,
+             flags,
+             inc_ref(),
+             want_read()
+               ? NBIORecvCB::STATE_WANT_READ
+               : NBIORecvCB::STATE_WANT_WRITE
+           )
+     );
+
+    return;
   }
 
   // Nothing worked, return an error
@@ -6409,90 +6557,63 @@ Socket::aio_send
   void* callback_context
 )
 {
-  // Don't translate flags here, since they'll be translated again
-  // on the ->send call (except on Win32)
-
-  // Try a non-blocking send first
-  if ( set_blocking_mode( false ) )
+  // First try a non-blocking send
+  switch
+  (
+    NBIOSendCB
+    (
+      buffer.inc_ref(),
+      callback,
+      callback_context,
+      flags,
+      inc_ref(),
+      NBIOSendCB::STATE_WANT_WRITE
+    ).execute()
+  )
   {
-    ssize_t send_ret = send( buffer, flags );
-    if ( send_ret >= 0 )
-    {
-#ifdef _WIN32
-      if ( static_cast<size_t>( send_ret ) != buffer.size() )
-        DebugBreak();
-#endif
-      callback.onWriteCompletion( callback_context );
-      Buffer::dec_ref( buffer );
-      return;
-    }
-    else if ( !want_write() && !want_read() )
-    {
-      callback.onWriteError( get_last_error(), callback_context );
-      Buffer::dec_ref( buffer );
-      return;
-    }
+    case NBIOSendCB::STATE_COMPLETE:
+    case NBIOSendCB::STATE_ERROR: Buffer::dec_ref( buffer ); return;
   }
 
   // Next try to offload the send to an IOQueue
-  if ( io_queue != NULL )
+  if ( get_bio_queue() != NULL )
   {
-    switch ( io_queue->get_type_id() )
-    {
-      case BIOQueue::TYPE_ID:
-      {
-        static_cast<BIOQueue*>( io_queue )
-          ->submit
-            (
-              *new BIOSendCB
-                   (
-                     buffer,
-                     flags,
-                     inc_ref(),
-                     callback,
-                     callback_context
-                   )
-            );
-      }
-      return;
+    get_bio_queue()->submit
+    (
+      *new BIOSendCB
+           (
+             buffer,
+             callback,
+             callback_context,
+             flags,
+             inc_ref()
+           )
+    );
 
-      case NBIOQueue::TYPE_ID:
-      {
-        static_cast<NBIOQueue*>( io_queue )
-          ->submit
+    return;
+  }
+  else if ( get_nbio_queue() != NULL )
+  {
+    get_nbio_queue()->submit
+    (
+       *new NBIOSendCB
             (
-               *new NBIOSendCB
-                    (
-                      want_write()
-                        ? NBIOSendCB::STATE_WANT_WRITE
-                        : NBIOSendCB::STATE_WANT_READ,
-                      buffer,
-                      flags,
-                      inc_ref(),
-                      callback,
-                      callback_context
-                    )
-            );
-      }
-      return;
+              buffer,
+              callback,
+              callback_context,
+              flags,
+              inc_ref(),
+              want_write()
+                ? NBIOSendCB::STATE_WANT_WRITE
+                : NBIOSendCB::STATE_WANT_READ
+            )
+    );
 
-    }
+    return;
   }
 
-  // Finally, try a blocking send
-  set_blocking_mode( true );
-  ssize_t send_ret = send( buffer, flags );
-  if ( send_ret >= 0 )
-  {
-#ifdef _DEBUG
-    if ( static_cast<size_t>( send_ret ) != buffer.size() )
-      DebugBreak();
-#endif
-    callback.onWriteCompletion( callback_context );
-  }
-  else
-    callback.onWriteError( get_last_error(), callback_context );
-  Buffer::dec_ref( buffer );
+  // Finally try a blocking send
+  BIOSendCB( buffer, callback, callback_context, flags, inc_ref() ).execute();
 }
 
 void Socket::aio_sendmsg
@@ -6503,78 +6624,70 @@ void Socket::aio_sendmsg
   void* callback_context
 )
 {
-  // Try a non-blocking sendmsg first
-  if ( set_blocking_mode( false ) )
+  // First try a non-blocking sendmsg
+  switch
+  (
+    NBIOSendMsgCB
+    (
+      buffers,
+      callback,
+      callback_context,
+      flags,
+      inc_ref(),
+      NBIOSendMsgCB::STATE_WANT_WRITE
+    ).execute()
+  )
   {
-    ssize_t sendmsg_ret = sendmsg( buffers, flags );
-    if ( sendmsg_ret >= 0 )
-    {
-      callback.onWriteCompletion( callback_context );
-      Buffer::dec_ref( buffers );
-      return;
-    }
-    else if ( !want_write() && !want_read() )
-    {
-      callback.onWriteError( get_last_error(), callback_context );
-      Buffer::dec_ref( buffers );
-      return;
-    }
+    case NBIOSendMsgCB::STATE_COMPLETE:
+    case NBIOSendMsgCB::STATE_ERROR: Buffers::dec_ref( buffers ); return;
   }
 
   // Next try to offload the sendmsg to an IOQueue
-  if ( io_queue != NULL )
+  if ( get_bio_queue() != NULL )
   {
-    switch ( io_queue->get_type_id() )
-    {
-      case BIOQueue::TYPE_ID:
-      {
-        static_cast<BIOQueue*>( io_queue )
-          ->submit
-            (
-              *new BIOSendMsgCB
-                   (
-                     buffers,
-                     flags,
-                     inc_ref(),
-                     callback,
-                     callback_context
-                   )
-            );
-      }
-      return;
+    get_bio_queue()->submit
+    (
+      *new BIOSendMsgCB
+           (
+             buffers,
+             callback,
+             callback_context,
+             flags,
+             inc_ref()
+           )
+    );
 
-      case NBIOQueue::TYPE_ID:
-      {
-        static_cast<NBIOQueue*>( io_queue )
-          ->submit
-            (
-              *new NBIOSendMsgCB
-                   (
-                     want_write()
-                       ? NBIOSendCB::STATE_WANT_WRITE
-                       : NBIOSendCB::STATE_WANT_READ,
-                     buffers,
-                     flags,
-                     inc_ref(),
-                     callback,
-                     callback_context
-                   )
-            );
-      }
-      return;
+    return;
+  }
+  else if ( get_nbio_queue() != NULL )
+  {
+    get_nbio_queue()->submit
+    (
+      *new NBIOSendMsgCB
+           (
+             buffers,
+             callback,
+             callback_context,
+             flags,
+             inc_ref(),
+             want_write()
+               ? NBIOSendCB::STATE_WANT_WRITE
+               : NBIOSendCB::STATE_WANT_READ
+           )
+    );
 
-      // default: unknown io_queue, drop down
-    }
+    return;
   }
 
   // Finally, try a blocking sendmsg
-  set_blocking_mode( true );
-  ssize_t sendmsg_ret = sendmsg( buffers, flags );
-  if ( sendmsg_ret >= 0 )
-    callback.onWriteCompletion( callback_context );
-  else
-    callback.onWriteError( get_last_error(), callback_context );
-  Buffer::dec_ref( buffers );
+  BIOSendMsgCB
+  (
+    buffers,
+    callback,
+    callback_context,
+    flags,
+    inc_ref()
+  ).execute();
 }
 
 bool Socket::associate( IOQueue& io_queue )
@@ -6632,7 +6745,7 @@ bool Socket::bind( const SocketAddress& to_sockaddr )
 
 bool Socket::close()
 {
-  if ( Stream::close( socket_ ) )
+  if ( IOStream::close( socket_ ) )
   {
     connected = false;
     // socket_ = INVALID_SOCKET;
@@ -6766,6 +6879,14 @@ socket_t Socket::create( int* domain, int type, int protocol )
   else
     return -1;
 #endif
+}
+
+BIOQueue* Socket::get_bio_queue() const
+{
+  if ( io_queue != NULL && io_queue->get_type_id() == BIOQueue::TYPE_ID )
+    return static_cast<BIOQueue*>( io_queue );
+  else
+    return NULL;
 }
 
 bool Socket::get_blocking_mode() const
@@ -6906,6 +7027,14 @@ uint32_t Socket::get_last_error()
 #else
   return static_cast<uint32_t>( errno );
 #endif
+}
+
+NBIOQueue* Socket::get_nbio_queue() const
+{
+  if ( io_queue != NULL && io_queue->get_type_id() == NBIOQueue::TYPE_ID )
+    return static_cast<NBIOQueue*>( io_queue );
+  else
+    return NULL;
 }
 
 SocketAddress* Socket::getpeername() const
@@ -7056,7 +7185,7 @@ ssize_t Socket::recv( Buffer& buffer, int flags )
       );
 
   if ( recv_ret > 0 )
-    buffer.put( static_cast<size_t>( recv_ret ) );
+    buffer.resize( buffer.size() + static_cast<size_t>( recv_ret ) );
 
   return recv_ret;
 }
@@ -8204,78 +8333,9 @@ void Stat::set_blocks( blkcnt_t blocks )
 #endif
 
 
-// stream.cpp
-#ifdef _WIN32
-#undef INVALID_SOCKET
-#pragma warning( push )
-#pragma warning( disable: 4365 4995 )
-#include <ws2tcpip.h>
-#pragma warning( pop )
-#define INVALID_SOCKET  (SOCKET)(~0)
-#endif
-
-
-bool Stream::close( fd_t fd )
-{
-  if ( fd != INVALID_FD )
-#ifdef _WIN32
-    return CloseHandle( fd ) == TRUE;
-#else
-    return ::close( fd ) != -1;
-#endif
-  else
-  {
-#ifdef _WIN32
-    SetLastError( ERROR_INVALID_HANDLE );
-#else
-    errno = EBADF;
-#endif
-    return false;
-  }
-}
-
-#ifdef _WIN32
-bool Stream::close( socket_t socket_ )
-{
-  if ( socket_ != INVALID_SOCKET )
-    return ::closesocket( socket_ ) != -1;
-  else
-  {
-#ifdef _WIN32
-    WSASetLastError( WSAENOTSOCK );
-#else
-    errno = EBADF;
-#endif
-    return false;
-  }
-}
-#endif
-
-#ifdef _WIN32
-bool Stream::set_blocking_mode( bool blocking, socket_t socket_ )
-{
-  unsigned long val = blocking ? 0UL : 1UL;
-  return ::ioctlsocket( socket_, FIONBIO, &val ) != SOCKET_ERROR;
-}
-#else
-bool Stream::set_blocking_mode( bool blocking, fd_t fd )
-{
-  int current_fcntl_flags = fcntl( fd, F_GETFL, 0 );
-  if ( blocking )
-  {
-    if ( ( current_fcntl_flags & O_NONBLOCK ) == O_NONBLOCK )
-      return fcntl( fd, F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1;
-    else
-      return true;
-  }
-  else
-    return fcntl( fd, F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1;
-}
-#endif
-
-
-
 // tcp_socket.cpp
+using yidl::runtime::HeapBuffer;
+
 #if defined(_WIN32)
 #undef INVALID_SOCKET
 #undef WSABUF
@@ -8304,22 +8364,34 @@ void* TCPSocket::lpfnConnectEx = NULL;
 
 TCPSocket::IOAcceptCB::IOAcceptCB
 (
-  TCPSocket& listen_tcp_socket,
   AIOAcceptCallback& callback,
-  void* callback_context
+  void* callback_context,
+  TCPSocket& listen_tcp_socket,
+  Buffer* recv_buffer
 )
   : IOCB<AIOAcceptCallback>( callback, callback_context ),
-    listen_tcp_socket( listen_tcp_socket )
+    listen_tcp_socket( listen_tcp_socket ),
+    recv_buffer( recv_buffer )
 { }
 
 TCPSocket::IOAcceptCB::~IOAcceptCB()
 {
   TCPSocket::dec_ref( listen_tcp_socket );
+  Buffer::dec_ref( recv_buffer );
 }
 
-void TCPSocket::IOAcceptCB::onAcceptCompletion( TCPSocket& accepted_tcp_socket )
+void
+TCPSocket::IOAcceptCB::onAcceptCompletion
+(
+  TCPSocket& accepted_tcp_socket
+)
 {
-  callback.onAcceptCompletion( accepted_tcp_socket, callback_context );
+  callback.onAcceptCompletion
+  (
+    accepted_tcp_socket,
+    callback_context,
+    recv_buffer
+  );
 }
 
 void TCPSocket::IOAcceptCB::onAcceptError()
@@ -8338,28 +8410,57 @@ class TCPSocket::BIOAcceptCB : public BIOCB, public IOAcceptCB
 public:
   BIOAcceptCB
   (
-    TCPSocket& listen_tcp_socket,
     AIOAcceptCallback& callback,
-    void* callback_context
-  ) : IOAcceptCB( listen_tcp_socket, callback, callback_context )
+    void* callback_context,
+    TCPSocket& listen_tcp_socket,
+    Buffer* recv_buffer
+  ) : IOAcceptCB( callback, callback_context, listen_tcp_socket, recv_buffer )
   { }
 
   // BIOCB
-  void execute()
+  bool execute()
   {
     if ( get_listen_tcp_socket().set_blocking_mode( true ) )
     {
       TCPSocket* accepted_tcp_socket = get_listen_tcp_socket().accept();
       if ( accepted_tcp_socket != NULL )
       {
-        onAcceptCompletion( *accepted_tcp_socket );
+        if ( get_recv_buffer() != NULL )
+        {
+          if ( accepted_tcp_socket->set_blocking_mode( true ) )
+          {
+            ssize_t recv_ret
+              = accepted_tcp_socket->recv( *get_recv_buffer(), 0 );
+
+            if ( recv_ret > 0 )
+            {
+              onAcceptCompletion( *accepted_tcp_socket );
+              return true;
+            }
+            else if ( recv_ret == 0 )
+              onAcceptError( ECONNABORTED );
+            else
+              onAcceptError();
+
+            return false;
+          }
+          else
+            onAcceptCompletion( *accepted_tcp_socket );
+        }
+        else
+          onAcceptCompletion( *accepted_tcp_socket );
+
         TCPSocket::dec_ref( *accepted_tcp_socket );
+
+        return true;
       }
       else
         onAcceptError();
     }
     else
       onAcceptError();
+
+    return false;
   }
 };
 
@@ -8369,15 +8470,16 @@ class TCPSocket::NBIOAcceptCB : public NBIOCB, public IOAcceptCB
 public:
   NBIOAcceptCB
   (
-    TCPSocket& listen_tcp_socket,
     AIOAcceptCallback& callback,
-    void* callback_context
+    void* callback_context,
+    TCPSocket& listen_tcp_socket,
+    Buffer* recv_buffer
   ) : NBIOCB( STATE_WANT_READ ),
-      IOAcceptCB( listen_tcp_socket, callback, callback_context )
+      IOAcceptCB( callback, callback_context, listen_tcp_socket, recv_buffer )
   { }
 
   // NBIOCB
-  void execute()
+  State execute()
   {
     if ( get_listen_tcp_socket().set_blocking_mode( false ) )
     {
@@ -8385,7 +8487,29 @@ public:
       if ( accepted_tcp_socket != NULL )
       {
         set_state( STATE_COMPLETE );
-        onAcceptCompletion( *accepted_tcp_socket );
+
+        if ( get_recv_buffer() != NULL )
+        {
+          ssize_t recv_ret
+            = accepted_tcp_socket->recv( *get_recv_buffer(), 0 );
+
+          if ( recv_ret > 0 )
+            onAcceptCompletion( *accepted_tcp_socket );
+          else if ( recv_ret == 0 )
+            onAcceptError( ECONNABORTED );
+          else if
+          (
+            accepted_tcp_socket->want_read()
+            ||
+            accepted_tcp_socket->want_write()
+          ) // The recv WOULDBLOCK, just complete without reading
+            onAcceptCompletion( *accepted_tcp_socket );
+          else
+            onAcceptError();
+        }
+        else
+          onAcceptCompletion( *accepted_tcp_socket );
+
         TCPSocket::dec_ref( *accepted_tcp_socket );
       }
       else if ( get_listen_tcp_socket().want_accept() )
@@ -8401,6 +8525,8 @@ public:
       set_state( STATE_ERROR );
       onAcceptError();
     }
+
+    return get_state();
   }
 
   socket_t get_fd() const { return get_listen_tcp_socket(); }
@@ -8414,16 +8540,22 @@ public:
   Win32AIOAcceptCB
   (
     TCPSocket& accepted_tcp_socket,
-    TCPSocket& listen_tcp_socket,
     AIOAcceptCallback& callback,
-    void* callback_context
-  ) : IOAcceptCB( listen_tcp_socket, callback, callback_context ),
+    void* callback_context,
+    TCPSocket& listen_tcp_socket,
+    Buffer* recv_buffer
+  ) : IOAcceptCB( callback, callback_context, listen_tcp_socket, recv_buffer ),
       accepted_tcp_socket( accepted_tcp_socket )
   { }
 
   // Win32AIOCB
-  void onCompletion( DWORD )
+  void onCompletion( DWORD dwNumberOfBytesTransferred )
   {
+    // dwNumberOfBytesTransferred does not include the sockaddr's
+    // The sockaddr's are after any recv'd data in the recv_buffer
+    if ( get_recv_buffer() != NULL )
+      get_recv_buffer()->resize( dwNumberOfBytesTransferred );
+
     onAcceptCompletion( accepted_tcp_socket );
   }
 
@@ -8432,9 +8564,8 @@ public:
     onAcceptError( static_cast<uint32_t>( dwErrorCode ) );
   }
 
-
+private:
   TCPSocket& accepted_tcp_socket;
-  char peername[88]; // ( sizeof( sockaddr_in6 ) + 16 ) * 2
 };
 
 
@@ -8443,16 +8574,30 @@ class TCPSocket::Win32AIOConnectCB : public Win32AIOCB, IOConnectCB
 public:
   Win32AIOConnectCB
   (
-    SocketAddress& peername,
-    Socket& socket_,
     AIOConnectCallback& callback,
-    void* callback_context
-  ) : IOConnectCB( peername, socket_, callback, callback_context )
+    void* callback_context,
+    SocketAddress& peername,
+    Buffer* send_buffer,
+    Socket& socket_
+  ) : IOConnectCB
+      (
+        callback,
+        callback_context,
+        peername,
+        send_buffer,
+        socket_
+      )
   { }
 
   // Win32AIOCB
-  void onCompletion( DWORD )
+  void onCompletion( DWORD dwNumberOfBytesTransferred )
   {
+#ifdef _DEBUG
+    if ( get_send_buffer() != NULL )
+      if ( dwNumberOfBytesTransferred != get_send_buffer()->size() )
+        DebugBreak();
+#endif
+
     onConnectCompletion();
   }
 
@@ -8468,11 +8613,11 @@ public:
   Win32AIORecvCB
   (
     Buffer& buffer,
-    Socket& socket_,
     AIOReadCallback& callback,
-    void* callback_context
+    void* callback_context,
+    Socket& socket_
   )
-    : IORecvCB( buffer, 0, socket_, callback, callback_context )
+    : IORecvCB( buffer, callback, callback_context, 0, socket_ )
   { }
 
   // Win32AIOCB
@@ -8480,7 +8625,7 @@ public:
   {
     if ( dwNumberOfBytesTransferred > 0 )
     {
-      get_buffer().put( dwNumberOfBytesTransferred );
+      get_buffer().resize( get_buffer().size() + dwNumberOfBytesTransferred );
       onReadCompletion();
     }
     else
@@ -8500,11 +8645,11 @@ public:
   Win32AIOSendCB
   (
     Buffer& buffer,
-    Socket& socket_,
     AIOWriteCallback& callback,
-    void* callback_context
+    void* callback_context,
+    Socket& socket_
   )
-    : IOSendCB( buffer, 0, socket_, callback, callback_context )
+    : IOSendCB( buffer, callback, callback_context, 0, socket_ )
   { }
 
   // Win32AIOCB
@@ -8531,11 +8676,11 @@ public:
   Win32AIOSendMsgCB
   (
     Buffers& buffers,
-    Socket& socket_,
     AIOWriteCallback& callback,
-    void* callback_context
+    void* callback_context,
+    Socket& socket_
   )
-    : IOSendMsgCB( buffers, 0, socket_, callback, callback_context )
+    : IOSendMsgCB( buffers, callback, callback_context, 0, socket_ )
   { }
 
   // Win32AIOCB
@@ -8586,7 +8731,8 @@ void
 TCPSocket::aio_accept
 (
   AIOAcceptCallback& callback,
-  void* callback_context
+  void* callback_context,
+  Buffer* recv_buffer
 )
 {
 #ifdef _WIN32
@@ -8618,11 +8764,37 @@ TCPSocket::aio_accept
     TCPSocket* accepted_tcp_socket = TCPSocket::create( get_domain() );
     if ( accepted_tcp_socket != NULL )
     {
-      DWORD peername_len;
+      size_t sockaddrlen;
       if ( get_domain() == AF_INET6 )
-        peername_len = sizeof( sockaddr_in6 );
+        sockaddrlen = sizeof( sockaddr_in6 );
       else
-        peername_len = sizeof( sockaddr_in );
+        sockaddrlen = sizeof( sockaddr_in );
+
+      DWORD dwReceiveDataLength;
+      if ( recv_buffer != NULL )
+      {
+#ifdef _DEBUG
+        if ( recv_buffer->position() > 0 ) DebugBreak();
+        if ( recv_buffer->size() > 0 ) DebugBreak();
+#endif
+        if ( recv_buffer->capacity() >= ( sockaddrlen + 16 ) * 2 )
+        {
+          dwReceiveDataLength = recv_buffer->capacity()
+                                -
+                                ( sockaddrlen + 16 ) * 2;
+        }
+        else
+        {
+          TCPSocket::dec_ref( *accepted_tcp_socket );
+          callback.onAcceptError( WSAENOBUFS, callback_context );
+          return;
+        }
+      }
+      else
+      {
+        recv_buffer = new HeapBuffer( ( sockaddrlen + 16 ) * 2 );
+        dwReceiveDataLength = 0;
+      }
 
       DWORD dwBytesReceived;
 
@@ -8630,9 +8802,10 @@ TCPSocket::aio_accept
         = new Win32AIOAcceptCB
               (
                 *accepted_tcp_socket,
-                inc_ref(),
                 callback,
-                callback_context
+                callback_context,
+                inc_ref(),
+                recv_buffer
               );
 
       if
@@ -8641,10 +8814,10 @@ TCPSocket::aio_accept
         (
           *this,
           *accepted_tcp_socket,
-          aiocb->peername,
-          0,
-          peername_len + 16,
-          peername_len + 16,
+          *recv_buffer,
+          dwReceiveDataLength,
+          sockaddrlen + 16,
+          sockaddrlen + 16,
           &dwBytesReceived,
           *aiocb
         )
@@ -8664,47 +8837,39 @@ TCPSocket::aio_accept
 #endif
 
   // Try a non-blocking accept first
-  if ( set_blocking_mode( false ) )
+  switch
+  (
+    NBIOAcceptCB
+    (
+      callback,
+      callback_context,
+      inc_ref(),
+      Object::inc_ref( recv_buffer )
+    ).execute()
+  )
   {
-    TCPSocket* accepted_tcp_socket = accept();
-    if ( accepted_tcp_socket != NULL )
-    {
-      callback.onAcceptCompletion( *accepted_tcp_socket, callback_context );
-      TCPSocket::dec_ref( *accepted_tcp_socket );
-      return;
-    }
-    else if ( !want_accept() )
-    {
-      callback.onAcceptError( get_last_error(), callback_context );
-      return;
-    }
+    case NBIOAcceptCB::STATE_COMPLETE:
+    case NBIOAcceptCB::STATE_ERROR: Buffer::dec_ref( recv_buffer ); return;
   }
 
   // Next try to offload the accept to an IOQueue
-  if ( get_io_queue() != NULL )
+  if ( get_bio_queue() != NULL )
   {
-    switch ( get_io_queue()->get_type_id() )
-    {
-      case BIOQueue::TYPE_ID:
-      {
-        static_cast<BIOQueue*>( get_io_queue() )
-          ->submit
-            (
-              *new BIOAcceptCB( inc_ref(), callback, callback_context )
-            );
-      }
-      return;
+    get_bio_queue()->submit
+    (
+      *new BIOAcceptCB( callback, callback_context, inc_ref(), recv_buffer )
+    );
 
-      case NBIOQueue::TYPE_ID:
-      {
-        static_cast<NBIOQueue*>( get_io_queue() )
-          ->submit
-            (
-              *new NBIOAcceptCB( inc_ref(), callback, callback_context )
-            );
-      }
-      return;
-    }
+    return;
+  }
+  else if ( get_nbio_queue() != NULL )
+  {
+    get_nbio_queue()->submit
+    (
+      *new NBIOAcceptCB( callback, callback_context, inc_ref(), recv_buffer )
+    );
+
+    return;
   }
 
   // Give up instead of blocking on accept
@@ -8716,7 +8881,8 @@ TCPSocket::aio_connect
 (
   SocketAddress& peername,
   AIOConnectCallback& callback,
-  void* callback_context
+  void* callback_context,
+  Buffer* send_buffer
 )
 {
 #ifdef _WIN32
@@ -8756,15 +8922,29 @@ TCPSocket::aio_connect
         {
           if ( bind( *ephemeral_sockname ) )
           {
+            PVOID lpSendBuffer;
+            DWORD dwSendDataLength;
+            if ( send_buffer != NULL )
+            {
+              lpSendBuffer = *send_buffer;
+              dwSendDataLength = send_buffer->size();
+            }
+            else
+            {
+              lpSendBuffer = NULL;
+              dwSendDataLength = 0;
+            }
+
             DWORD dwBytesSent;
 
             Win32AIOConnectCB* aiocb
               = new Win32AIOConnectCB
                     (
-                      peername.inc_ref(),
-                      inc_ref(),
                       callback,
-                      callback_context
+                      callback_context,
+                      peername.inc_ref(),
+                      send_buffer,
+                      inc_ref()
                     );
 
             if
@@ -8774,8 +8954,8 @@ TCPSocket::aio_connect
                 *this,
                 name,
                 namelen,
-                NULL,
-                0,
+                lpSendBuffer,
+                dwSendDataLength,
                 &dwBytesSent,
                 *aiocb
               )
@@ -8809,6 +8989,7 @@ TCPSocket::aio_connect
         break;
     }
 
+    Buffer::dec_ref( send_buffer );
     callback.onConnectError( get_last_error(), callback_context );
 
     return;
@@ -8845,9 +9026,9 @@ void TCPSocket::aio_recv
       = new Win32AIORecvCB
             (
               buffer,
-              inc_ref(),
               callback,
-              callback_context
+              callback_context,
+              inc_ref()
             );
 
     if
@@ -8910,9 +9091,9 @@ TCPSocket::aio_send
       = new Win32AIOSendCB
             (
               buffer,
-              inc_ref(),
               callback,
-              callback_context
+              callback_context,
+              inc_ref()
             );
 
     if
@@ -8966,7 +9147,7 @@ TCPSocket::aio_sendmsg
     DWORD dwNumberOfBytesSent;
 
     Win32AIOSendMsgCB* aiocb
-      = new Win32AIOSendMsgCB( buffers, inc_ref(), callback, callback_context );
+      = new Win32AIOSendMsgCB( buffers, callback, callback_context, inc_ref() );
 
 #ifdef _WIN64
     vector<iovec64> wsabufs( buffers->get_iovecs_len() );
@@ -9320,7 +9501,7 @@ void Thread::yield()
 // time.cpp
 #ifdef _WIN32
 #undef INVALID_SOCKET
-#include <windows.h> // For FILETIME
+#include <windows.h> // For FILETIME and SYSTEMTIME
 #include <winsock.h> // For timeval
 #define INVALID_SOCKET  (SOCKET)(~0)
 #else
@@ -9330,75 +9511,8 @@ void Thread::yield()
 #endif
 #endif
 
-const char* HTTPDaysOfWeek[]
-  = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 
-const char* ISOMonths[]
-  = {
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    };
-
-
-#ifdef _WIN32
-static ULONGLONG FILETIMEToUnixTimeNS( const FILETIME& file_time )
-{
-  ULARGE_INTEGER file_time_combined;
-  file_time_combined.LowPart = file_time.dwLowDateTime;
-  file_time_combined.HighPart = file_time.dwHighDateTime;
-  // Subtract the number of 100-ns intervals between
-  // January 1, 1601 and January 1, 1970
-  file_time_combined.QuadPart -= 116444736000000000;
-  file_time_combined.QuadPart *= 100; // Into nanoseconds
-  return file_time_combined.QuadPart;
-}
-
-// Adapted from http://support.microsoft.com/kb/167296
-//static FILETIME UnixTimeSToFILETIME( uint32_t unix_time_s )
-//{
-// LONGLONG ll = Int32x32To64( unix_time_s, 10000000 ) + 116444736000000000;
-// FILETIME file_time;
-// file_time.dwLowDateTime = static_cast<DWORD>( ll );
-// file_time.dwHighDateTime = ll >> 32;
-// return file_time;
-//}
-
-static FILETIME UnixTimeNSToFILETIME( uint64_t unix_time_ns )
-{
-  // Add the difference in nanoseconds between
-  // January 1, 1601 (start of the Windows epoch) and
-  // January 1, 1970 (start of the Unix epoch)
-  unix_time_ns += 11644473600000000000;
-  uint64_t unix_time_100_ns_intervals = unix_time_ns / 100;
-  FILETIME file_time;
-  file_time.dwLowDateTime = static_cast<DWORD>( unix_time_100_ns_intervals );
-  file_time.dwHighDateTime = unix_time_100_ns_intervals >> 32;
-  return file_time;
-}
-
-static SYSTEMTIME UnixTimeNSToUTCSYSTEMTIME( uint64_t unix_time_ns )
-{
-  FILETIME file_time = UnixTimeNSToFILETIME( unix_time_ns );
-  SYSTEMTIME system_time;
-  FileTimeToSystemTime( &file_time, &system_time );
-  return system_time;
-}
-
-static SYSTEMTIME UnixTimeNSToLocalSYSTEMTIME( uint64_t unix_time_ns )
-{
-  SYSTEMTIME utc_system_time = UnixTimeNSToUTCSYSTEMTIME( unix_time_ns );
-  TIME_ZONE_INFORMATION time_zone_information;
-  GetTimeZoneInformation( &time_zone_information );
-  SYSTEMTIME local_system_time;
-  SystemTimeToTzSpecificLocalTime
-  (
-    &time_zone_information,
-    &utc_system_time,
-    &local_system_time
-  );
-  return local_system_time;
-}
-#endif
+Time Time::INVALID_TIME( static_cast<uint64_t>( -1 ) );
 
 
 Time::Time()
@@ -9406,7 +9520,7 @@ Time::Time()
 #if defined(_WIN32)
   FILETIME file_time;
   GetSystemTimeAsFileTime( &file_time );
-  unix_time_ns = FILETIMEToUnixTimeNS( file_time );
+  init( file_time );
 #elif defined(__MACH__)
   struct timeval tv;
   gettimeofday( &tv, NULL );
@@ -9431,259 +9545,171 @@ Time::Time( double unix_time_s )
 
 Time::Time( const struct timeval& tv )
 {
-  unix_time_ns = tv.tv_sec * NS_IN_S + tv.tv_usec * NS_IN_US;
+  unix_time_ns = tv.tv_sec * NS_IN_S
+                 +
+                 static_cast<uint64_t>( tv.tv_usec * NS_IN_US );
 }
 
 #ifdef _WIN32
 Time::Time( const FILETIME& file_time )
 {
-  unix_time_ns = FILETIMEToUnixTimeNS( file_time );
+  init( file_time );
 }
 
 Time::Time( const FILETIME* file_time )
 {
   if ( file_time != NULL )
-    unix_time_ns = FILETIMEToUnixTimeNS( *file_time );
+    init( *file_time );
   else
     unix_time_ns = 0;
+}
+
+Time::Time( const SYSTEMTIME& system_time, bool local )
+{
+  init( system_time, local );
 }
 #else
 Time::Time( const struct timespec& ts )
 {
   unix_time_ns = ts.tv_sec * NS_IN_S + ts.tv_nsec;
 }
+
+Time::Time( const struct tm& unix_tm, bool local )
+{
+  init( unix_tm, local );
+}
 #endif
 
-void Time::as_common_log_date_time( char* out_str, uint8_t out_str_len ) const
+Time::Time
+(
+  int tm_sec, // seconds after the minute  0-61*
+  int tm_min, // minutes after the hour  0-59
+  int tm_hour, //  hours since midnight 0-23
+  int tm_mday, //  day of the month 1-31
+  int tm_mon, // months since January  0-11
+  int tm_year, //  years since 1900
+  bool local
+)
 {
 #ifdef _WIN32
-  SYSTEMTIME local_system_time = UnixTimeNSToLocalSYSTEMTIME( unix_time_ns );
-  TIME_ZONE_INFORMATION win_tz;
-  GetTimeZoneInformation( &win_tz );
-
-  // 10/Oct/2000:13:55:36 -0700
-  _snprintf_s( out_str, out_str_len, _TRUNCATE,
-          "%02d/%s/%04d:%02d:%02d:%02d %+0.4d",
-            local_system_time.wDay,
-            ISOMonths[local_system_time.wMonth-1],
-            local_system_time.wYear,
-            local_system_time.wHour,
-            local_system_time.wMinute,
-            local_system_time.wSecond,
-            ( win_tz.Bias / 60 ) * -100 );
+  SYSTEMTIME system_time;
+  system_time.wMilliseconds = 0;
+  system_time.wSecond = static_cast<WORD>( tm_sec );
+  system_time.wMinute = static_cast<WORD>( tm_min );
+  system_time.wHour = static_cast<WORD>( tm_hour );
+  system_time.wDay = static_cast<WORD>( tm_mday );
+  system_time.wDayOfWeek = 0;
+  system_time.wMonth = static_cast<WORD>( tm_mon + 1 );
+  system_time.wYear = static_cast<WORD>( 1900 + tm_year );
+  init( system_time, local );
 #else
-  time_t unix_time_s = static_cast<time_t>( unix_time_ns / NS_IN_S );
   struct tm unix_tm;
-  localtime_r( &unix_time_s, &unix_tm );
-
-  snprintf( out_str, out_str_len,
-            "%02d/%s/%04d:%02d:%02d:%02d %d",
-            unix_tm.tm_mday,
-            ISOMonths[unix_tm.tm_mon],
-            unix_tm.tm_year + 1900,
-            unix_tm.tm_hour,
-            unix_tm.tm_min,
-            unix_tm.tm_sec,
-            0 ); // Could use the extern timezone,
-                 // which is supposed to be secs west of GMT.
+  unix_tm.tm_sec = tm_sec;
+  unix_tm.tm_min = 0;
+  unix_tm.tm_hour = hour;
+  unix_tm.tm_day = tm_mday;
+  unix_tm.tm_mon = tm_mon;
+  unix_tm.tm_year = tm_year;
+  unix_tm.tm_wday = 0; // Will be filled in by mktime
+  unix_tm.tm_yday = 0; // Will be filled in by mktime
+  mktime( &unix_tm );
+  init( unix_tm, local );
 #endif
 }
 
-void Time::as_http_date_time( char* out_str, uint8_t out_str_len ) const
-{
 #ifdef _WIN32
-  SYSTEMTIME utc_system_time = UnixTimeNSToUTCSYSTEMTIME( unix_time_ns );
+SYSTEMTIME Time::as_local_SYSTEMTIME() const
+{
+  SYSTEMTIME utc_system_time = this->as_utc_SYSTEMTIME();
 
-  _snprintf_s
+  TIME_ZONE_INFORMATION time_zone_information;
+  GetTimeZoneInformation( &time_zone_information );
+  SYSTEMTIME local_system_time;
+  SystemTimeToTzSpecificLocalTime
   (
-    out_str,
-    out_str_len,
-    _TRUNCATE,
-    "%s, %02d %s %04d %02d:%02d:%02d GMT",
-    HTTPDaysOfWeek[utc_system_time.wDayOfWeek],
-    utc_system_time.wDay,
-    ISOMonths[utc_system_time.wMonth-1],
-    utc_system_time.wYear,
-    utc_system_time.wHour,
-    utc_system_time.wMinute,
-    utc_system_time.wSecond
+    &time_zone_information,
+    &utc_system_time,
+    &local_system_time
   );
+  return local_system_time;
+}
+
+SYSTEMTIME Time::as_utc_SYSTEMTIME() const
+{
+  FILETIME file_time = *this;
+  SYSTEMTIME utc_system_time;
+  FileTimeToSystemTime( &file_time, &utc_system_time );
+  return utc_system_time;
+}
 #else
-  time_t unix_time_s = static_cast<time_t>( unix_time_ns / NS_IN_S );
+struct tm Time::as_local_struct_tm() const
+{
+  time_t unix_time_s = static_cast<time_t>( as_unix_time_s() );
+  struct tm unix_tm;
+  localtime_r( &unix_time_s, &unix_tm );
+  return unix_tm;
+}
+
+struct tm Time::as_utc_struct_tm() const
+{
+  time_t unix_time_s = static_cast<time_t>( as_unix_time_s() );
   struct tm unix_tm;
   gmtime_r( &unix_time_s, &unix_tm );
-
-  snprintf
-  (
-    out_str,
-    out_str_len,
-    "%s, %02d %s %04d %02d:%02d:%02d GMT",
-    HTTPDaysOfWeek[unix_tm.tm_wday],
-    unix_tm.tm_mday,
-    ISOMonths[unix_tm.tm_mon],
-    unix_tm.tm_year + 1900,
-    unix_tm.tm_hour,
-    unix_tm.tm_min,
-    unix_tm.tm_sec
-  );
-#endif
+  return unix_tm;
 }
-
-/*
-uint64_t Time::parseHTTPDateTimeToUnixTimeNS( const char* date_str )
-{
-  char day[4], month[4];
+#endif
 
 #ifdef _WIN32
-  SYSTEMTIME utc_system_time;
+void Time::init( const FILETIME& file_time )
+{
+  ULARGE_INTEGER file_time_combined;
+  file_time_combined.LowPart = file_time.dwLowDateTime;
+  file_time_combined.HighPart = file_time.dwHighDateTime;
+  // Subtract the number of 100-ns intervals between
+  // January 1, 1601 and January 1, 1970
+  file_time_combined.QuadPart -= 116444736000000000;
+  file_time_combined.QuadPart *= 100; // Into nanoseconds
+  unix_time_ns = file_time_combined.QuadPart;
+}
 
-  int sf_ret
-    = sscanf
-      (
-        date_str,
-        "%03s, %02d %03s %04d %02d:%02d:%02d GMT",
-        &day,
-        &utc_system_time.wDay,
-        &month,
-        &utc_system_time.wYear,
-        &utc_system_time.wHour,
-        &utc_system_time.wMinute,
-        &utc_system_time.wSecond
-      );
-
-  if ( sf_ret != 7 )
-    return 0;
-
-  for
-  (
-    utc_system_time.wDayOfWeek = 0;
-    utc_system_time.wDayOfWeek < 7;
-    utc_system_time.wDayOfWeek++
-  )
-  {
-    if ( strcmp( day, HTTPDaysOfWeek[utc_system_time.wDayOfWeek] ) == 0 )
-      break;
-  }
-
-  for
-  (
-    utc_system_time.wMonth = 0;
-    utc_system_time.wMonth < 12;
-    utc_system_time.wMonth++
-  )
-  {
-    if ( strcmp( month, ISOMonths[utc_system_time.wMonth] ) == 0 )
-      break;
-  }
-  utc_system_time.wMonth++; // Windows starts the months from 1
-
+void Time::init( const SYSTEMTIME& system_time, bool local )
+{
   FILETIME file_time;
-  SystemTimeToFileTime( &utc_system_time, &file_time );
-  return FILETIMEToUnixTimeNS( file_time );
-#else
-  struct tm unix_tm;
 
-  int sf_ret
-    = sscanf
-      (
-        date_str,
-        "%03s, %02d %03s %04d %02d:%02d:%02d GMT",
-        &day,
-        &unix_tm.tm_mday,
-        &month,
-        &unix_tm.tm_year,
-        &unix_tm.tm_hour,
-        &unix_tm.tm_min,
-        &unix_tm.tm_sec
-      );
+  if ( local )
+  {
+    TIME_ZONE_INFORMATION time_zone_information;
+    GetTimeZoneInformation( &time_zone_information );
+    SYSTEMTIME utc_system_time;
+    TzSpecificLocalTimeToSystemTime
+    (
+      &time_zone_information,
+      &system_time,
+      &utc_system_time
+    );
+    SystemTimeToFileTime( &utc_system_time, &file_time );
+  }
+  else
+    SystemTimeToFileTime( &system_time, &file_time );
 
-  if ( sf_ret != 7 )
-    return 0;
-
-  unix_tm.tm_year -= 1900;
-
-  for ( unix_tm.tm_wday = 0; unix_tm.tm_wday < 7; unix_tm.tm_wday++ )
-    if ( strcmp( day, HTTPDaysOfWeek[unix_tm.tm_wday] ) == 0 )
-      break;
-
-  for ( unix_tm.tm_mon = 0; unix_tm.tm_mon < 12; unix_tm.tm_mon++ )
-    if ( strcmp( month, ISOMonths[unix_tm.tm_mon] ) == 0 )
-      break;
-
-  time_t unix_time_s = mktime( &unix_tm ); // mktime is thread-safe
-
-  return unix_time_s * NS_IN_S;
-#endif
+  init( file_time );
 }
-*/
-
-void Time::as_iso_date( char* out_str, uint8_t out_str_len ) const
+#else
+void Time::init( const struct tm& unix_tm, bool local )
 {
-#ifdef _WIN32
-  SYSTEMTIME local_system_time = UnixTimeNSToLocalSYSTEMTIME( unix_time_ns );
-  _snprintf_s
-  (
-    out_str,
-    out_str_len,
-    _TRUNCATE,
-    "%04d-%02d-%02d",
-    local_system_time.wYear,
-    local_system_time.wMonth,
-    local_system_time.wDay
-  );
-#else
-  time_t unix_time_s = static_cast<time_t>( unix_time_ns / NS_IN_S );
-  struct tm unix_tm;
-  localtime_r( &unix_time_s, &unix_tm );
-  snprintf
-  (
-    out_str,
-    out_str_len,
-    "%04d-%02d-%02d",
-    unix_tm.tm_year + 1900,
-    unix_tm.tm_mon + 1,
-    unix_tm.tm_mday
-  );
-#endif
+  time_t unix_time_s;
+
+  if ( local )
+    unix_time_s = mktime( &unix_tm );
+  els
+    unix_time_s = timegm( &unix_tm );
+
+  if ( unix_time_s != static_cast<time_t>( -1 ) )
+    unix_time_ns = unix_time_s * NS_IN_S;
+  else
+    *this = INVALID_TIME;
 }
-
-void Time::as_iso_date_time( char* out_str, uint8_t out_str_len ) const
-{
-#ifdef _WIN32
-  SYSTEMTIME local_system_time = UnixTimeNSToLocalSYSTEMTIME( unix_time_ns );
-
-  _snprintf_s
-  (
-    out_str,
-    out_str_len,
-    _TRUNCATE,
-    "%04d-%02d-%02dT%02d:%02d:%02d.000Z",
-    local_system_time.wYear,
-    local_system_time.wMonth,
-    local_system_time.wDay,
-    local_system_time.wHour,
-    local_system_time.wMinute,
-    local_system_time.wSecond
-  );
-#else
-  time_t unix_time_s = static_cast<time_t>(  unix_time_ns / NS_IN_S );
-  struct tm unix_tm;
-  localtime_r( &unix_time_s, &unix_tm );
-
-  snprintf
-  (
-    out_str,
-    out_str_len,
-    "%04d-%02d-%02dT%02d:%02d:%02d.000Z",
-    unix_tm.tm_year + 1900,
-    unix_tm.tm_mon + 1,
-    unix_tm.tm_mday,
-    unix_tm.tm_hour,
-    unix_tm.tm_min,
-    unix_tm.tm_sec
-  );
 #endif
-}
 
 Time::operator struct timeval() const
 {
@@ -9700,7 +9726,21 @@ Time::operator struct timeval() const
 #ifdef _WIN32
 Time::operator FILETIME() const
 {
-  return UnixTimeNSToFILETIME( unix_time_ns );
+  uint64_t unix_time_ns = this->unix_time_ns;
+  // Add the difference in nanoseconds between
+  // January 1, 1601 (start of the Windows epoch) and
+  // January 1, 1970 (start of the Unix epoch)
+  unix_time_ns += 11644473600000000000;
+  uint64_t unix_time_100_ns_intervals = unix_time_ns / 100;
+  FILETIME file_time;
+  file_time.dwLowDateTime = static_cast<DWORD>( unix_time_100_ns_intervals );
+  file_time.dwHighDateTime = unix_time_100_ns_intervals >> 32;
+  return file_time;
+}
+
+Time::operator SYSTEMTIME() const
+{
+  return as_local_SYSTEMTIME();
 }
 #else
 Time::operator struct timespec() const
@@ -9710,12 +9750,50 @@ Time::operator struct timespec() const
   ts.tv_nsec = unix_time_ns % NS_IN_S;
   return ts;
 }
+
+operator Time::struct tm() const
+{
+  return as_local_struct_tm();
+}
 #endif
 
 Time::operator string() const
 {
-  char iso_date_time[30];
-  as_iso_date_time( iso_date_time, 30 );
+  char iso_date_time[64];
+
+#ifdef _WIN32
+  SYSTEMTIME local_system_time = this->as_local_SYSTEMTIME();
+
+  _snprintf_s
+  (
+    iso_date_time,
+    64,
+    _TRUNCATE,
+    "%04d-%02d-%02dT%02d:%02d:%02d.000Z",
+    local_system_time.wYear,
+    local_system_time.wMonth,
+    local_system_time.wDay,
+    local_system_time.wHour,
+    local_system_time.wMinute,
+    local_system_time.wSecond
+  );
+#else
+  struct tm local_struct_tm = as_local_struct_tm();
+
+  snprintf
+  (
+    iso_date_time,
+    64,
+    "%04d-%02d-%02dT%02d:%02d:%02d.000Z",
+    local_struct_tm.tm_year + 1900,
+    local_struct_tm.tm_mon + 1,
+    local_struct_tm.tm_mday,
+    local_struct_tm.tm_hour,
+    local_struct_tm.tm_min,
+    local_struct_tm.tm_sec
+  );
+#endif
+
   return iso_date_time;
 }
 
@@ -10207,10 +10285,10 @@ protected:
   IORecvFromCB
   (
     Buffer& buffer,
-    int flags,
-    UDPSocket& udp_socket,
     AIORecvFromCallback& callback,
-    void* callback_context
+    void* callback_context,
+    int flags,
+    UDPSocket& udp_socket
   )
   : IOCB<AIORecvFromCallback>( callback, callback_context ),
     buffer( buffer ),
@@ -10266,16 +10344,15 @@ public:
   BIORecvFromCB
   (
     Buffer& buffer,
-    int flags,
-    UDPSocket& udp_socket,
     AIORecvFromCallback& callback,
-    void* callback_context
-  ) : IORecvFromCB( buffer, flags, udp_socket, callback, callback_context )
+    void* callback_context,
+    int flags,
+    UDPSocket& udp_socket
+  ) : IORecvFromCB( buffer, callback, callback_context, flags, udp_socket )
   { }
 
-private:
   // BIOCB
-  void execute()
+  bool execute()
   {
     if ( get_udp_socket().set_blocking_mode( true ) )
     {
@@ -10283,12 +10360,17 @@ private:
       ssize_t recvfrom_ret
         = get_udp_socket().recvfrom( get_buffer(), get_flags(), peername );
       if ( recvfrom_ret > 0 )
+      {
         onRecvFromCompletion( peername );
+        return true;
+      }
       else
         onRecvFromError();
     }
     else
       onRecvFromError();
+
+    return false;
   }
 };
 
@@ -10300,17 +10382,16 @@ public:
   NBIORecvFromCB
   (
     Buffer& buffer,
-    int flags,
-    UDPSocket& udp_socket,
     AIORecvFromCallback& callback,
-    void* callback_context
+    void* callback_context,
+    int flags,
+    UDPSocket& udp_socket
   ) : NBIOCB( STATE_WANT_READ ),
-      IORecvFromCB( buffer, flags, udp_socket, callback, callback_context )
+      IORecvFromCB( buffer, callback, callback_context, flags, udp_socket )
   { }
 
-private:
   // NBIOCB
-  void execute()
+  State execute()
   {
     if ( get_udp_socket().set_blocking_mode( false ) )
     {
@@ -10336,6 +10417,8 @@ private:
       set_state( STATE_ERROR );
       onRecvFromError();
     }
+
+    return get_state();
   }
 
   socket_t get_fd() const { return get_udp_socket(); }
@@ -10353,7 +10436,7 @@ public:
     UDPSocket& udp_socket,
     AIORecvFromCallback& callback,
     void* callback_context
-  ) : IORecvFromCB( buffer, 0, udp_socket, callback, callback_context )
+  ) : IORecvFromCB( buffer, callback, callback_context, 0, udp_socket )
   { }
 
   struct sockaddr_storage peername;
@@ -10362,7 +10445,7 @@ private:
   // Win32AIOCB
   void onCompletion( DWORD dwNumberOfBytesTransferred )
   {
-    get_buffer().put( dwNumberOfBytesTransferred );
+    get_buffer().resize( get_buffer().size() + dwNumberOfBytesTransferred );
     onRecvFromCompletion( peername );
   }
 
@@ -10441,65 +10524,54 @@ UDPSocket::aio_recvfrom
 #endif
 
   // Try a non-blocking recvfrom first
-  if ( set_blocking_mode( false ) )
+  switch
+  (
+    NBIORecvFromCB
+    (
+      buffer.inc_ref(),
+      callback,
+      callback_context,
+      flags,
+      inc_ref()
+    ).execute()
+  )
   {
-    struct sockaddr_storage peername;
-    ssize_t recvfrom_ret = recvfrom( buffer, flags, peername );
-    if ( recvfrom_ret > 0 )
-    {
-      SocketAddress* peername_sa = new SocketAddress( peername );
-      callback.onRecvFromCompletion( buffer, *peername_sa, callback_context );
-      SocketAddress::dec_ref( *peername_sa );
-      Buffer::dec_ref( buffer );
-      return;
-    }
-    else if ( !want_read( ))
-    {
-      callback.onRecvFromError( get_last_error(), callback_context );
-      Buffer::dec_ref( buffer );
-      return;
-    }
+    case NBIORecvFromCB::STATE_COMPLETE:
+    case NBIORecvFromCB::STATE_ERROR: Buffer::dec_ref( buffer ); return;
   }
 
   // Next try to offload the recvfrom to an IOQueue
-  if ( get_io_queue() != NULL )
+  if ( get_bio_queue() != NULL )
   {
-    switch ( get_io_queue()->get_type_id() )
-    {
-      case BIOQueue::TYPE_ID:
-      {
-        static_cast<BIOQueue*>( get_io_queue() )
-          ->submit
-            (
-              *new BIORecvFromCB
-                   (
-                     buffer,
-                     flags,
-                     inc_ref(),
-                     callback,
-                     callback_context
-                   )
-            );
-      }
-      return;
+    get_bio_queue()->submit
+    (
+      *new BIORecvFromCB
+           (
+             buffer,
+             callback,
+             callback_context,
+             flags,
+             inc_ref()
+           )
+    );
 
-      case NBIOQueue::TYPE_ID:
-      {
-        static_cast<NBIOQueue*>( get_io_queue() )
-          ->submit
+    return;
+  }
+  else if ( get_nbio_queue() != NULL )
+  {
+    get_nbio_queue()->submit
+    (
+       *new NBIORecvFromCB
             (
-               *new NBIORecvFromCB
-                    (
-                      buffer,
-                      flags,
-                      inc_ref(),
-                      callback,
-                      callback_context
-                    )
-            );
-      }
-      return;
-    }
+              buffer,
+              callback,
+              callback_context,
+              flags,
+              inc_ref()
+            )
+    );
+
+    return;
   }
 
   // Give up instead of blocking on recvfrom
@@ -10535,7 +10607,7 @@ UDPSocket::recvfrom
       );
 
   if ( recvfrom_ret > 0 )
-    buffer.put( static_cast<size_t>( recvfrom_ret ) );
+    buffer.resize( buffer.size() + static_cast<size_t>( recvfrom_ret ) );
 
   return recvfrom_ret;
 }

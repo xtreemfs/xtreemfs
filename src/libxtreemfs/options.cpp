@@ -40,43 +40,44 @@ using yield::platform::Path;
 
 Options::Options
 (
-  Log* log,
-  const Path& log_file_path,
-  const Log::Level& log_level,
+  Log* error_log,
+  const Path& error_log_file_path,
+  const Log::Level& error_log_level,
   const vector<OptionParser::ParsedOption>& parsed_options,
   const vector<string>& positional_arguments,
-  uint32_t proxy_flags,
   SSLContext* ssl_context,
   const Time& timeout,
+  Log* trace_log,
   URI* uri
 )
-  : log( log ),
-    log_file_path( log_file_path ),
-    log_level( log_level ),
+  : error_log( error_log ),
+    error_log_file_path( error_log_file_path ),
+    error_log_level( error_log_level ),
     positional_arguments( positional_arguments ),
-    proxy_flags( proxy_flags ),
     ssl_context( ssl_context ),
     timeout( timeout ),
+    trace_log( trace_log ),
     uri( uri )
 {
   assign( parsed_options.begin(), parsed_options.end() );
 }
 
 Options::Options( const Options& other )
-  : log( yidl::runtime::Object::inc_ref( other.log ) ),
-    log_file_path( other.log_file_path ),
-    log_level( other.log_level ),
+  : error_log( yidl::runtime::Object::inc_ref( other.error_log ) ),
+    error_log_file_path( other.error_log_file_path ),
+    error_log_level( other.error_log_level ),
     positional_arguments( other.positional_arguments ),
-    proxy_flags( other.proxy_flags ),
     ssl_context( yidl::runtime::Object::inc_ref( other.ssl_context ) ),
     timeout( other.timeout ),
+    trace_log( yidl::runtime::Object::inc_ref( other.trace_log ) ),
     uri( yidl::runtime::Object::inc_ref( other.uri ) )
 { }
 
 Options::~Options()
 {
-  Log::dec_ref( log );
+  Log::dec_ref( error_log );
   SSLContext::dec_ref( ssl_context );
+  Log::dec_ref( trace_log );
   URI::dec_ref( uri );
 }
 
@@ -106,10 +107,6 @@ void Options::add_global_options( OptionParser& option_parser )
   option_parser.add_option( "--pkcs12-file-path" );
   option_parser.add_option( "--pkcs12-passphrase" );
 #endif
-
-  option_parser.add_option( "--trace-auth", false );
-  option_parser.add_option( "--trace-network-io", false );
-  option_parser.add_option( "--trace-network-operations", false );
 }
 
 const vector<string>& Options::get_positional_arguments() const
@@ -130,8 +127,9 @@ Options::parse
    const OptionParser::Options& other_options 
 )
 {
-  string log_file_path;
-  Log::Level log_level( Log::LOG_ERR );
+  string error_log_file_path;
+  Log::Level error_log_level( Log::LOG_ERR );
+  Log* trace_log = NULL;
 
   uint64_t timeout_ns = ONCRPCClient::OPERATION_TIMEOUT_DEFAULT;
 
@@ -141,8 +139,6 @@ Options::parse
          pem_private_key_passphrase;
   string pkcs12_file_path, pkcs12_passphrase;
 #endif
-
-  uint32_t proxy_flags = 0;
 
   OptionParser option_parser;
   add_global_options( option_parser );
@@ -161,17 +157,12 @@ Options::parse
   {
     const OptionParser::ParsedOption& option = *parsed_option_i;
 
+    if ( option == "-d" || option == "--debug" )
+      trace_log = &Log::open( std::cout, Log::Level( option.get_argument() ) );
     if ( option == "--log-file-path" )
-      log_file_path = option.get_argument();
-    else if 
-    ( 
-      option == "-d" 
-      || 
-      option == "--debug" 
-      || 
-      option == "--log-level" 
-    )
-      log_level = Log::Level( option.get_argument().c_str() );
+      error_log_file_path = option.get_argument();
+    else if ( option == "--log-level" )
+      error_log_level = Log::Level( option.get_argument() );
     else if ( option == "-t" )
     {
       double timeout_ms = atof( option.get_argument().c_str() );
@@ -188,12 +179,6 @@ Options::parse
       pkcs12_file_path = option.get_argument();
     else if ( option == "--pkcs12-passphrase" )
       pkcs12_passphrase = option.get_argument();
-    //else if ( option == "--trace-auth" )
-    //  proxy_flags |= ONCPCClient::FLAG_TRACE_AUTH;
-    else if ( option == "--trace-network-io" )
-      proxy_flags |= ONCRPCClient::FLAG_TRACE_NETWORK_IO;
-    else if ( option == "--trace-network-operations" )
-      proxy_flags |= ONCRPCClient::FLAG_TRACE_OPERATIONS;
     else
       continue;
 
@@ -202,7 +187,7 @@ Options::parse
 
 
   // TODO: have a silent mode where no logging is done?
-  Log* log = &Log::open( log_file_path, log_level );
+  Log* error_log = &Log::open( error_log_file_path, error_log_level );
   
 
   SSLContext* ssl_context;
@@ -261,14 +246,14 @@ Options::parse
 
   return *new Options
               (
-                log,
-                log_file_path,
-                log_level,
+                error_log,
+                error_log_file_path,
+                error_log_level,
                 parsed_options,
                 positional_arguments,
-                proxy_flags,
                 ssl_context,
                 timeout_ns,
+                trace_log,
                 uri
               );
 }

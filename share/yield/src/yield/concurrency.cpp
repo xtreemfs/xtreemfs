@@ -3,6 +3,9 @@ using namespace yield::concurrency;
 
 
 // color_stage_group.cpp
+using yidl::runtime::auto_Object;
+
+
 class ColorStageGroup::Thread : public ::yield::platform::Thread
 {
 public:
@@ -23,8 +26,8 @@ public:
   {
     should_run = false;
 
-    yidl::runtime::auto_Object<Stage::ShutdownEvent>
-      stage_shutdown_event( new Stage::ShutdownEvent );
+    auto_Object<Stage::ShutdownEvent> stage_shutdown_event
+      = new Stage::ShutdownEvent;
 
     event_queue.enqueue( stage_shutdown_event->inc_ref() );
 
@@ -147,10 +150,10 @@ void EventTargetMux::addEventTarget( EventTarget& event_target )
   event_targets_len++;
 }
 
-void EventTargetMux::send( Event& ev )
+void EventTargetMux::send( Event& event )
 {
   next_event_target_i = ( next_event_target_i + 1 ) % event_targets_len;
-  event_targets[next_event_target_i]->send( ev );
+  event_targets[next_event_target_i]->send( event );
 }
 
 
@@ -523,7 +526,7 @@ public:
   // Thread
   void run()
   {
-    Thread::set_name( stage.get_stage_name() );
+    Thread::set_name( stage.get_name() );
 
     while ( should_run )
       stage.visit();
@@ -643,11 +646,11 @@ Stage::Stage( const char* name )
 Stage::~Stage()
 {
 #ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
-  cout << get_stage_name() << ": L1 data cache misses: " <<
+  cout << get_name() << ": L1 data cache misses: " <<
     performance_counter_totals[0] <<
     endl;
 
-  cout << get_stage_name() << ": L2 instruction cache misses: " <<
+  cout << get_name() << ": L2 instruction cache misses: " <<
     performance_counter_totals[1] <<
     endl;
 #endif
@@ -702,9 +705,9 @@ public:
       return NULL;
   }
 
-  void push( Event& ev )
+  void push( Event& event )
   {
-    std::stack<Event*>::push( &ev );
+    std::stack<Event*>::push( &event );
   }
 };
 
@@ -743,7 +746,7 @@ Event* ThreadLocalEventQueue::dequeue( const Time& timeout )
     return all_processor_event_queue.dequeue( timeout );
 }
 
-bool ThreadLocalEventQueue::enqueue( Event& ev )
+bool ThreadLocalEventQueue::enqueue( Event& event )
 {
   EventStack* event_stack
     = static_cast<EventStack*>
@@ -753,11 +756,11 @@ bool ThreadLocalEventQueue::enqueue( Event& ev )
 
   if ( event_stack != NULL )
   {
-    event_stack->push( ev );
+    event_stack->push( event );
     return true;
   }
   else
-    return all_processor_event_queue.enqueue( &ev );
+    return all_processor_event_queue.enqueue( &event );
 }
 
 ThreadLocalEventQueue::EventStack* ThreadLocalEventQueue::getEventStack()

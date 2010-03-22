@@ -37,7 +37,7 @@
                 DebugInformationFormat="4"
                 ProgramDataBaseFileName="$(TargetDir)$(TargetName).pdb"
                 CompileAs="0"
-                DisableSpecificWarnings="4100;4355;4512"
+                DisableSpecificWarnings="4100;4127;4355;4512"
             />
             <Tool
                 Name="VCLibrarianTool"
@@ -82,7 +82,7 @@
                 UsePrecompiledHeader="0"
                 WarningLevel="3"
                 DebugInformationFormat="0"
-                DisableSpecificWarnings="4100;4355;4512"
+                DisableSpecificWarnings="4100;4127;4355;4512"
             />
             <Tool
                 Name="VCLibrarianTool"
@@ -178,10 +178,13 @@
     RelativePath="..\..\share\google-breakpad\src\client\windows\crash_generation\minidump_generator.cc"
     >
 </File>
+<Filter Name="handler">
 <File
     RelativePath="..\..\share\google-breakpad\src\client\windows\handler\exception_handler.cc"
     >
 </File>
+</Filter>
+<Filter Name="common">
 <File
     RelativePath="..\..\share\google-breakpad\src\common\convert_UTF.c"
     >
@@ -190,6 +193,7 @@
     RelativePath="..\..\share\google-breakpad\src\common\string_conversion.cc"
     >
 </File>
+<Filter Name="windows">
 <File
     RelativePath="..\..\share\google-breakpad\src\common\windows\guid_string.cc"
     >
@@ -198,6 +202,8 @@
     RelativePath="..\..\share\google-breakpad\src\common\windows\string_utils.cc"
     >
 </File>
+</Filter>
+</Filter>
 
         </Filter>
 

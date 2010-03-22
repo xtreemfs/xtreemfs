@@ -37,7 +37,7 @@
                 DebugInformationFormat="4"
                 ProgramDataBaseFileName="$(TargetDir)$(TargetName).pdb"
                 CompileAs="0"
-                DisableSpecificWarnings="4100;4355;4512"
+                DisableSpecificWarnings="4100;4127;4355;4512"
             />
             <Tool
                 Name="VCLibrarianTool"
@@ -82,7 +82,7 @@
                 UsePrecompiledHeader="0"
                 WarningLevel="3"
                 DebugInformationFormat="0"
-                DisableSpecificWarnings="4100;4355;4512"
+                DisableSpecificWarnings="4100;4127;4355;4512"
             />
             <Tool
                 Name="VCLibrarianTool"
@@ -163,19 +163,19 @@
             UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
             >
             <File
-    RelativePath="..\..\src\nettest.xtreemfs\nettest_interface.h"
-    >
-</File>
-<File
-    RelativePath="..\..\src\nettest.xtreemfs\nettest_proxy.h"
-    >
-</File>
-<File
     RelativePath="..\..\src\nettest.xtreemfs\nettest.xtreemfs.cpp"
     >
 </File>
 <File
+    RelativePath="..\..\src\nettest.xtreemfs\nettest_interface.h"
+    >
+</File>
+<File
     RelativePath="..\..\src\nettest.xtreemfs\nettest_proxy.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\nettest.xtreemfs\nettest_proxy.h"
     >
 </File>
 

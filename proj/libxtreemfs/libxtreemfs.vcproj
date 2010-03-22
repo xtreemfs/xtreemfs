@@ -37,7 +37,7 @@
                 DebugInformationFormat="4"
                 ProgramDataBaseFileName="$(TargetDir)$(TargetName).pdb"
                 CompileAs="0"
-                DisableSpecificWarnings="4100;4355;4512"
+                DisableSpecificWarnings="4100;4127;4355;4512"
             />
             <Tool
                 Name="VCLibrarianTool"
@@ -82,7 +82,7 @@
                 UsePrecompiledHeader="0"
                 WarningLevel="3"
                 DebugInformationFormat="0"
-                DisableSpecificWarnings="4100;4355;4512"
+                DisableSpecificWarnings="4100;4127;4355;4512"
             />
             <Tool
                 Name="VCLibrarianTool"
@@ -205,6 +205,7 @@
     RelativePath="..\..\include\xtreemfs\volume.h"
     >
 </File>
+<Filter Name="interfaces">
 <File
     RelativePath="..\..\include\xtreemfs\interfaces\constants.h"
     >
@@ -229,6 +230,21 @@
     RelativePath="..\..\include\xtreemfs\interfaces\types.h"
     >
 </File>
+</Filter>
+<Filter Name="share">
+<File
+    RelativePath="..\..\share\yield\src\yield\platform\directory_test.h"
+    >
+</File>
+<File
+    RelativePath="..\..\share\yield\src\yield\platform\file_test.h"
+    >
+</File>
+<File
+    RelativePath="..\..\share\yield\src\yield\platform\volume_test.h"
+    >
+</File>
+</Filter>
 
         </Filter>
 
@@ -249,10 +265,13 @@
     RelativePath="..\..\share\yield\src\yield\platform.cpp"
     >
 </File>
+<Filter Name="yieldfs">
 <File
     RelativePath="..\..\share\yieldfs\src\yieldfs.cpp"
     >
 </File>
+</Filter>
+<Filter Name="src">
 <File
     RelativePath="..\..\src\interfaces\org\xtreemfs\interfaces\constants.idl"
     >
@@ -351,26 +370,7 @@
         >
     </FileConfiguration>
 </File>
-<File
-    RelativePath="..\..\src\libxtreemfs\directory.h"
-    >
-</File>
-<File
-    RelativePath="..\..\src\libxtreemfs\file.h"
-    >
-</File>
-<File
-    RelativePath="..\..\src\libxtreemfs\open_file_table.h"
-    >
-</File>
-<File
-    RelativePath="..\..\src\libxtreemfs\stat.h"
-    >
-</File>
-<File
-    RelativePath="..\..\src\libxtreemfs\stat_cache.h"
-    >
-</File>
+<Filter Name="libxtreemfs">
 <File
     RelativePath="..\..\src\libxtreemfs\crash_reporter.cpp"
     >
@@ -384,7 +384,15 @@
     >
 </File>
 <File
+    RelativePath="..\..\src\libxtreemfs\directory.h"
+    >
+</File>
+<File
     RelativePath="..\..\src\libxtreemfs\file.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\libxtreemfs\file.h"
     >
 </File>
 <File
@@ -397,6 +405,10 @@
 </File>
 <File
     RelativePath="..\..\src\libxtreemfs\open_file_table.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\libxtreemfs\open_file_table.h"
     >
 </File>
 <File
@@ -416,7 +428,15 @@
     >
 </File>
 <File
+    RelativePath="..\..\src\libxtreemfs\stat.h"
+    >
+</File>
+<File
     RelativePath="..\..\src\libxtreemfs\stat_cache.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\libxtreemfs\stat_cache.h"
     >
 </File>
 <File
@@ -427,6 +447,8 @@
     RelativePath="..\..\src\libxtreemfs\volume.cpp"
     >
 </File>
+</Filter>
+</Filter>
 
         </Filter>
 

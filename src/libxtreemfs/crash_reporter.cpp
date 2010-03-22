@@ -122,7 +122,7 @@ CrashReporter::MinidumpCallback
 
     try
     {
-      HTTPClient::PUT( put_crash_dump_uri, dump_file_path, log );
+      HTTPClient::PUT( put_crash_dump_uri, dump_file_path );
     }
     catch ( std::exception& exc )
     {

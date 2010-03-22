@@ -326,7 +326,7 @@ extern "C"
 
 struct iovec // a WSABUF on 32-bit systems
 {
-  size_t iov_len; 
+  size_t iov_len;
   void* iov_base;
 };
 
@@ -394,7 +394,7 @@ namespace yidl
     typedef int32_t atomic_t;
 #endif
 
-    static inline atomic_t 
+    static inline atomic_t
     atomic_cas
     (
       volatile atomic_t* current_value,
@@ -406,19 +406,19 @@ namespace yidl
       return _InterlockedCompareExchange64( current_value, new_value, old_value );
 #elif defined(_WIN32)
       return InterlockedCompareExchange( current_value, new_value, old_value );
-#elif defined(__sun) 
+#elif defined(__sun)
 #if defined(__LLP64__) || defined(__LP64)
       return atomic_cas_64
-             ( 
+             (
                reinterpret_cast<volatile uint64_t*>( current_value ),
-               static_cast<uint64_t>( old_value ), 
+               static_cast<uint64_t>( old_value ),
                static_cast<uint64_t>( new_value )
              );
 #else
       return atomic_cas_32
-             ( 
+             (
                reinterpret_cast<volatile uint32_t*>( current_value ),
-               static_cast<uint32_t>( old_value ), 
+               static_cast<uint32_t>( old_value ),
                static_cast<uint32_t>( new_value )
              );
 #endif
@@ -491,12 +491,12 @@ namespace yidl
 #elif defined(__sun)
 #if defined(__LLP64__) || defined(__LP64)
       return atomic_dec_64_nv
-             ( 
+             (
                reinterpret_cast<volatile uint64_t*>( current_value )
              );
 #else
       return atomic_dec_32_nv
-             ( 
+             (
                reinterpret_cast<volatile uint32_t*>( current_value )
              );
 #endif
@@ -525,12 +525,12 @@ namespace yidl
 #elif defined(__sun)
 #if defined(__LLP64__) || defined(__LP64)
       return atomic_inc_64_nv
-             ( 
+             (
                reinterpret_cast<volatile uint64_t*>( current_value )
              );
 #else
       return atomic_inc_32_nv
-             ( 
+             (
                reinterpret_cast<volatile uint32_t*>( current_value )
              );
 #endif
@@ -561,7 +561,7 @@ namespace yidl
     // method( const Object& ) -> Object is on stack, not a new reference
     // method( Object* or Object* ) -> Object is on heap, but not a
     //   new reference; callee should inc_ref() references for itself
-    //   as necessary  
+    //   as necessary
     // Exceptions to these conventions will be marked.
     class Object
     {
@@ -571,28 +571,19 @@ namespace yidl
 
       static inline void dec_ref( Object& object )
       {
-#ifdef YIDL_DEBUG_REFERENCE_COUNTING
-        if ( atomic_dec( &object.refcnt ) < 0 )
-          DebugBreak();
-#else
         if ( atomic_dec( &object.refcnt ) == 0 )
           delete &object;
-#endif
       }
 
       static inline void dec_ref( Object* object )
       {
-        if ( object )
+        if ( object != NULL )
           Object::dec_ref( *object );
       }
 
       template <class ObjectType>
       static inline ObjectType& inc_ref( ObjectType& object )
       {
-#ifdef YIDL_DEBUG_REFERENCE_COUNTING
-        if ( object.refcnt <= 0 )
-          DebugBreak();
-#endif
         atomic_inc( &object.refcnt );
         return object;
       }
@@ -600,7 +591,7 @@ namespace yidl
       template <class ObjectType>
       static inline ObjectType* inc_ref( ObjectType* object )
       {
-        if ( object )
+        if ( object != NULL )
           inc_ref( *object );
         return object;
       }
@@ -696,7 +687,7 @@ namespace yidl
       inline bool empty() const { return size() == 0; }
 
       // get: copy out of the buffer, advancing position
-      virtual size_t get( void* into_buffer, size_t into_buffer_len ) = 0;
+      virtual size_t get( void* buf, size_t len ) = 0;
 
       virtual bool is_fixed() const = 0;
 
@@ -731,6 +722,11 @@ namespace yidl
 
       virtual operator void*() const = 0;
 
+      char operator[]( int n )
+      {
+        return static_cast<char*>( *this )[n];
+      }
+
       bool operator==( const Buffer& other ) const
       {
         if ( size() == other.size() )
@@ -758,17 +754,26 @@ namespace yidl
       }
 
       // put: append bytes to the buffer, increases size but not position
-      size_t put( const Buffer& from_buffer )
+      size_t put( Buffer& buf )
       {
-        return put( static_cast<void*>( from_buffer ), from_buffer.size() );
+        size_t put_ret
+          = put
+            (
+              static_cast<char*>( buf ) + buf.position(),
+              buf.size() - buf.position()
+            );
+
+        buf.position( buf.position() + put_ret );
+
+        return put_ret;
       }
 
-      virtual size_t put( char from_char, size_t repeat_count )
+      virtual size_t put( char buf, size_t repeat_count )
       {
         size_t total_put_ret = 0;
         for ( size_t char_i = 0; char_i < repeat_count; char_i++ )
         {
-          size_t put_ret = put( &from_char, 1 );
+          size_t put_ret = put( &buf, 1 );
           if ( put_ret == 1 )
             total_put_ret++;
           else
@@ -777,26 +782,24 @@ namespace yidl
         return total_put_ret;
       }
 
-      size_t put( const struct iovec& from_iovec )
+      size_t put( const struct iovec& iov )
       {
-        return put( from_iovec.iov_base, from_iovec.iov_len );
+        return put( iov.iov_base, iov.iov_len );
       }
 
-      size_t put( const char* from_string )
+      size_t put( const char* buf )
       {
-        return put( from_string, strlen( from_string ) );
+        return put( buf, strlen( buf ) );
       }
 
-      size_t put( const string& from_string )
+      size_t put( const string& buf )
       {
-        return put( from_string.c_str(), from_string.size() );
+        return put( buf.c_str(), buf.size() );
       }
 
-      virtual size_t put( const void* from_buf, size_t from_buf_len ) = 0;
+      virtual size_t put( const void* buf, size_t len ) = 0;
 
-      // put( size_t ): increase the size, usually after copying data
-      // directly into the buffer
-      virtual void put( size_t len ) = 0;
+      virtual void resize( size_t n ) = 0;
 
       // size: the number of filled bytes, <= capacity
       virtual size_t size() const = 0;
@@ -815,73 +818,319 @@ namespace yidl
     };
 
 
-    class Buffers : public Object
+    class Buffers : public Object, private vector<struct iovec>
     {
     public:
-      Buffers( Buffer& buffer )
-        : buffers( 1 ),
-          iovecs( 1 )
+      Buffers()
       {
-        iovecs[0] = buffer;
-        buffers[0] = &buffer.inc_ref();
+        init();
       }
 
-      Buffers( const struct iovec* iovecs, uint32_t iovecs_len )
-        : iovecs( iovecs_len )
-      { 
+      Buffers( Buffer& buffer )
+        : vector<struct iovec>( 1 )
+      {
+        vector<struct iovec>::at( 0 ).iov_base = &buffer.inc_ref();
+        vector<struct iovec>::at( 0 ).iov_len = static_cast<size_t>( -1 );
+        init();
+      }
+
+      Buffers( const struct iovec* iov, uint32_t iov_size )
+        : vector<struct iovec>( iov_size )
+      {
         memcpy_s
         (
-          &this->iovecs[0],
-          this->iovecs.size() * sizeof( struct iovec ),
-          iovecs,
-          iovecs_len * sizeof( iovecs )
+          &vector<struct iovec>::front(),
+          size() * sizeof( struct iovec ),
+          iov,
+          iov_size * sizeof( iov )
         );
+
+        init();
+      }
+
+      Buffers( const Buffers& other )
+        : vector<struct iovec>( other )
+      {
+        for ( size_t iov_i = 0; iov_i < size(); iov_i++ )
+          Object::inc_ref( get_Buffer( iov_i ) );
+
+        init();
+      }
+
+      Buffers( const Buffers& head, const Buffers& tail )
+        : vector<struct iovec>( head )
+      {
+        vector<struct iovec>::insert( end(), tail.begin(), tail.end() );
+
+        for ( size_t iov_i = 0; iov_i < size(); iov_i++ )
+          Object::inc_ref( get_Buffer( iov_i ) );
+
+        init();
       }
 
       virtual ~Buffers()
       {
-        for 
-        ( 
-          vector<Buffer*>::iterator buffer_i = buffers.begin(); 
-          buffer_i != buffers.end(); 
-          buffer_i++ 
-        )
-          Buffer::dec_ref( **buffer_i );          
+        for ( size_t iov_i = 0; iov_i < size(); iov_i++ )
+          Buffer::dec_ref( get_Buffer( iov_i ) );
+
+        delete [] finalized_iov;
+        Buffer::dec_ref( joined_buffer );
       }
 
-      operator const struct iovec*() const
-      { 
-        return &iovecs[0];
+      inline bool empty() const
+      {
+        return vector<struct iovec>::empty();
+      }
+
+      void extend( const Buffers& other )
+      {
+        size_t start_size = size();
+        vector<struct iovec>::insert( end(), other.begin(), other.end() );
+        for ( size_t iov_i = start_size; iov_i < size(); iov_i++ )
+          Object::inc_ref( get_Buffer( iov_i ) );
+      }
+
+      size_t get( void* buf, size_t len )
+      {
+        char* buf_p = static_cast<char*>( buf );
+
+        uint32_t iov_i = 0;
+        size_t iov_off = position();
+        size_t iov_len = get_iov_len( 0 );
+        while ( iov_off >= iov_len )
+        {
+          iov_off -= iov_len;
+          if ( ++iov_i < size() )
+            iov_len = get_iov_len( iov_i );
+          else
+            return 0;
+        }
+
+        for ( ;; )
+        {
+          if ( iov_len - iov_off < len )
+          {
+            // len is larger than the current iovec
+            size_t copy_len = iov_len - iov_off;
+            memcpy_s
+            (
+              buf_p,
+              len,
+              get_iov_base( iov_i ) + iov_off,
+              copy_len
+            );
+
+            buf_p += copy_len;
+            _position += copy_len;
+
+            if ( ++iov_i < size() )
+            {
+              len -= copy_len;
+              iov_off = 0;
+              iov_len = get_iov_len( iov_i );
+            }
+            else
+              break;
+          }
+          else
+          {
+            // len is smaller than the current iovec
+            memcpy_s
+            (
+              buf_p,
+              len,
+              get_iov_base( iov_i ) + iov_off,
+              len
+            );
+
+            buf_p += len;
+            _position += len;
+
+            break;
+          }
+        }
+
+        return buf_p - static_cast<char*>( buf );
+      }
+
+      Buffer& join();
+
+      size_t join_size() const
+      {
+        size_t join_size = 0;
+        for ( uint32_t iov_i = 0; iov_i < size(); iov_i++ )
+          join_size += get_iov_len( iov_i );
+        return join_size;
+      }
+
+      struct iovec operator[]( int iov_i ) const
+      {
+        Buffer* buffer = get_Buffer( iov_i );
+        if ( buffer != NULL )
+          return *buffer;
+        else
+          return vector<struct iovec>::at( iov_i );
+      }
+
+      operator const struct iovec*()
+      {
+        for ( uint32_t iov_i = 0; iov_i < size(); iov_i++ )
+        {
+          Buffer* buffer = get_Buffer( iov_i );
+          if ( buffer != NULL )
+          {
+            delete [] finalized_iov;
+
+            finalized_iov = new struct iovec[size()];
+
+            for ( uint32_t iov_j = 0; iov_j < iov_i; iov_j++ )
+              finalized_iov[iov_j] = at( iov_j );
+
+            finalized_iov[iov_i] = *buffer;
+
+            for ( ; iov_i < size(); iov_i++ )
+            {
+              buffer = get_Buffer( iov_i );
+              if ( buffer != NULL )
+                finalized_iov[iov_i] = *buffer;
+              else
+                finalized_iov[iov_i] = vector<struct iovec>::at( iov_i );
+            }
+
+            return finalized_iov;
+          }
+        }
+
+        // No Buffers
+        return &front();
+      }
+
+      operator char*()
+      {
+        Buffer& joined_buffer = join();
+        Buffer::dec_ref( joined_buffer );
+        return joined_buffer;
+      }
+
+      operator unsigned char*()
+      {
+        Buffer& joined_buffer = join();
+        Buffer::dec_ref( joined_buffer );
+        return joined_buffer;
+      }
+
+      // position: get and set the get() position
+      size_t position() const { return _position; }
+
+      void position( size_t new_position )
+      {
+        size_t join_size = this->join_size();
+        if ( new_position <= join_size )
+          _position = new_position;
+        else
+          _position = join_size;
       }
 
       void push_back( Buffer& buffer )
       {
-        iovecs.push_back( buffer );
-        buffers.push_back( &buffer.inc_ref() );
+        struct iovec iov;
+        iov.iov_base = &buffer.inc_ref();
+        iov.iov_len = static_cast<size_t>( -1 );
+        push_back( iov );
       }
 
-      void push_back( const struct iovec& iovec )
+      void push_back( Buffer* buffer ) // Steals this reference
       {
-        iovecs.push_back( iovec );
+        struct iovec iov;
+        iov.iov_base = buffer;
+        iov.iov_len = static_cast<size_t>( -1 );
+        push_back( iov );
       }
 
-      uint32_t size() const
-      { 
-        return static_cast<uint32_t>( iovecs.size() );
+      void push_back( char* buf ); // Copies
+
+      void push_back( const char* buf )
+      {
+        push_back( buf, strnlen( buf, UINT16_MAX ) );
+      }
+
+      void push_back( const string& buf ); // Copies
+
+      void push_back( void* buf, size_t len ); // Copies
+
+      void push_back( const void* buf, size_t len )
+      {
+        struct iovec iov;
+        iov.iov_base = const_cast<void*>( buf );
+        iov.iov_len = len;
+        push_back( iov );
+      }
+
+      void push_back( const struct iovec& iov )
+      {
+        vector<struct iovec>::push_back( iov );
+      }
+
+      inline uint32_t size() const
+      {
+        return static_cast<uint32_t>( vector<struct iovec>::size() );
       }
 
       // Object
       Buffers& inc_ref() { return Object::inc_ref( *this ); }
 
     private:
-      vector<Buffer*> buffers;
-      vector<struct iovec> iovecs;
+      inline Buffer* get_Buffer( size_t iov_i ) const
+      {
+        const struct iovec& iov = at( iov_i );
+        if ( iov.iov_len == static_cast<size_t>( -1 ) )
+          return static_cast<Buffer*>( iov.iov_base );
+        else
+          return NULL;
+      }
+
+      inline char* get_iov_base( size_t iov_i ) const
+      {
+        Buffer* buffer = get_Buffer( iov_i );
+        if ( buffer != NULL )
+          return static_cast<char*>( *buffer );
+        else
+          return static_cast<char*>( at( iov_i ).iov_base );
+      }
+
+      inline size_t get_iov_len( size_t iov_i ) const
+      {
+        Buffer* buffer = get_Buffer( iov_i );
+        if ( buffer != NULL )
+          return buffer->size();
+        else
+          return at( iov_i ).iov_len;
+      }
+
+      void init()
+      {
+        finalized_iov = NULL;
+        joined_buffer = NULL;
+        _position = 0;
+      }
+
+    private:
+      struct iovec* finalized_iov;
+      Buffer* joined_buffer;
+      size_t _position;
     };
 
 
     class FixedBuffer : public Buffer
     {
     public:
+      FixedBuffer( void* buffer, size_t capacity, size_t size )
+        : _capacity( capacity )
+      {
+        iov.iov_base = buffer;
+        iov.iov_len = size;
+      }
+
       bool operator==( const FixedBuffer& other ) const
       {
         return iov.iov_len == other.iov.iov_len &&
@@ -889,25 +1138,25 @@ namespace yidl
       }
 
       // Buffer
-      size_t get( void* into_buffer, size_t into_buffer_len )
+      size_t get( void* buf, size_t len )
       {
-        if ( size() - position() < into_buffer_len )
-          into_buffer_len = size() - position();
+        if ( size() - position() < len )
+          len = size() - position();
 
-        if ( into_buffer != NULL )
+        if ( buf != NULL )
         {
           memcpy_s
           (
-            into_buffer,
-            into_buffer_len,
+            buf,
+            len,
             static_cast<uint8_t*>( iov.iov_base ) + position(),
-            into_buffer_len
+            len
           );
         }
 
-        position( position() + into_buffer_len );
+        position( position() + len );
 
-        return into_buffer_len;
+        return len;
       }
 
       size_t capacity() const { return _capacity; }
@@ -915,11 +1164,11 @@ namespace yidl
       operator struct iovec() const { return iov; }
       operator void*() const { return iov.iov_base; }
 
-      virtual size_t put( const void* from_buffer, size_t from_buffer_len )
+      virtual size_t put( const void* buf, size_t len )
       {
         size_t put_len;
-        if ( capacity() - size() >= from_buffer_len )
-          put_len = from_buffer_len;
+        if ( capacity() - size() >= len )
+          put_len = len;
         else
           put_len = capacity() - size();
 
@@ -927,7 +1176,7 @@ namespace yidl
         (
           static_cast<uint8_t*>( iov.iov_base ) + size(),
           capacity() - size(),
-          from_buffer,
+          buf,
           put_len
         );
 
@@ -936,23 +1185,11 @@ namespace yidl
         return put_len;
       }
 
-      virtual void put( size_t put_len )
-      {
-        iov.iov_len += put_len;
-      }
-
+      void resize( size_t n ) { iov.iov_len = n; }
       size_t size() const { return iov.iov_len; }
 
-    protected:
-      FixedBuffer( size_t capacity )
-        : _capacity( capacity )
-      {
-        iov.iov_len = 0;
-      }
-
-      struct iovec iov;
-
     private:
+      struct iovec iov;
       size_t _capacity;
     };
 
@@ -960,15 +1197,30 @@ namespace yidl
     class HeapBuffer : public FixedBuffer
     {
     public:
-      HeapBuffer( size_t capacity )
-        : FixedBuffer( capacity )
+      HeapBuffer( void* buffer, size_t capacity, size_t size )
+        : FixedBuffer( new uint8_t[capacity], capacity, 0 )
       {
-        iov.iov_base = new uint8_t[capacity];
+        Buffer::put( buffer, size );
+      }
+
+      HeapBuffer( size_t capacity )
+        : FixedBuffer( new uint8_t[capacity], capacity, 0 )
+      { }
+
+      HeapBuffer( Buffer& buffer )
+        : FixedBuffer
+          (
+            new uint8_t[buffer.size() - buffer.position()],
+            buffer.size() - buffer.position(),
+            0
+          )
+      {
+        Buffer::put( buffer );
       }
 
       virtual ~HeapBuffer()
       {
-        delete [] static_cast<uint8_t*>( iov.iov_base );
+        delete [] static_cast<char*>( *this );
       }
 
       // RTTIObject
@@ -976,9 +1228,56 @@ namespace yidl
     };
 
 
+    inline Buffer& Buffers::join()
+    {
+      if ( size() == 1 )
+      {
+        Buffer* buffer = get_Buffer( 0 );
+        if ( buffer != NULL )
+          return buffer->inc_ref();
+      }
+
+      size_t join_size = this->join_size();
+
+      if ( joined_buffer != NULL && joined_buffer->size() == join_size )
+      {
+        char* joined_buffer_p = *joined_buffer;
+
+        uint32_t iov_i;
+        for ( iov_i = 0; iov_i < size(); iov_i++ )
+        {
+          char* iov_base = get_iov_base( iov_i );
+          size_t iov_len = get_iov_len( iov_i );
+          if ( memcmp( joined_buffer_p, iov_base, iov_len ) == 0 )
+            joined_buffer_p += iov_len;
+          else
+            break;
+        }
+
+        if ( iov_i == size() ) // The joined_buffer has not changed
+          return joined_buffer->inc_ref();
+        else
+          Buffer::dec_ref( *joined_buffer );
+      }
+
+      joined_buffer = new HeapBuffer( join_size );
+      char* joined_buffer_p = *joined_buffer;
+
+      for ( uint32_t iov_i = 0; iov_i < size(); iov_i++ )
+      {
+        char* iov_base = get_iov_base( iov_i );
+        size_t iov_len = get_iov_len( iov_i );
+        joined_buffer->put( iov_base, iov_len );
+        joined_buffer_p += iov_len;
+      }
+
+      return joined_buffer->inc_ref();
+    }
+
+
     class Marshaller;
     class Unmarshaller;
-  
+
     class MarshallableObject : public RTTIObject
     {
     public:
@@ -990,7 +1289,7 @@ namespace yidl
     };
 
 
-    class MarshallableObjectFactory : public RTTIObject
+    class MarshallableObjectFactory : public Object
     {
     public:
       virtual MarshallableObject* createMarshallableObject( uint32_t type_id )
@@ -1000,9 +1299,6 @@ namespace yidl
 
       // Object
       MarshallableObjectFactory& inc_ref() { return Object::inc_ref( *this ); }
-
-      // RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( MarshallableObjectFactory, 1 );
     };
 
 
@@ -1013,185 +1309,297 @@ namespace yidl
     };
 
 
+    class MarshallerKeyTypes
+    {
+    public:
+      class Key : public Object
+      {
+      public:
+        Key() : tag( 0 ) { }
+
+        inline uint32_t get_tag() const { return tag; }
+
+        enum Type
+        { 
+          TYPE_ANONYMOUS,
+          TYPE_DOUBLE,
+          TYPE_INT32,
+          TYPE_INT64,
+          TYPE_STRING,
+          TYPE_STRING_LITERAL
+        };
+
+        virtual Type get_type() const { return TYPE_ANONYMOUS; }
+
+      protected:
+        Key( uint32_t tag ) : tag( tag ) { }
+
+      private:
+        uint32_t tag;
+      };
+
+      class StringKey : public Key, public string
+      {
+      public:
+        StringKey() { }
+        StringKey( const string& key ) : string( key ) { }
+
+        StringKey( const char* key, size_t key_len )
+          : string( key, key_len )
+        { }
+
+        StringKey( const string& key, uint32_t tag )
+          : Key( tag ), string( key )
+        { }
+
+        StringKey( const char* key, const char* key_len, uint32_t tag )
+          : Key( tag ), string( key, key_len )
+        { }
+
+        // Key
+        Type get_type() const { return TYPE_STRING; }
+      };
+
+#define YIDL_RUNTIME_KEY_TYPE( ClassPrefix, CPPName, TYPE )\
+      class ClassPrefix ## Key : public Key\
+      {\
+      public:\
+        ClassPrefix ## Key( CPPName key ) : key( key ) { }\
+        ClassPrefix ## Key( CPPName key, uint32_t tag )\
+          : Key( tag ), key( key )\
+        { }\
+        inline operator CPPName() const { return key; }\
+        Type get_type() const { return TYPE_ ## TYPE; }\
+      private:\
+        CPPName key;\
+      };
+
+      YIDL_RUNTIME_KEY_TYPE( Double, double, DOUBLE );
+      YIDL_RUNTIME_KEY_TYPE( Int32, int32_t, INT32 );
+      YIDL_RUNTIME_KEY_TYPE( Int64, int64_t, INT64 );
+      YIDL_RUNTIME_KEY_TYPE( StringLiteral, const char*, STRING_LITERAL );
+    };
+
     class Sequence;
     class Struct;
 
-    class Marshaller : public Object
+    class Marshaller : public Object, public MarshallerKeyTypes
     {
     public:
       virtual ~Marshaller() { }
 
       // bool
-      virtual void write( const char* key, uint32_t tag, bool value ) = 0;
+      void write( const char* key, bool value )
+      {
+        write( StringLiteralKey( key ), value );
+      }
 
+      virtual void write( const Key& key, bool value ) { }
 
       // Buffer
-      virtual void
-      write
-      (
-        const char* key,
-        uint32_t tag,
-        const Buffer& value
-      ) = 0;
+      void write( const char* key, Buffer& value )
+      {
+        write( StringLiteralKey( key ), value );
+      }
 
+      virtual void write( const Key& key, Buffer& value )
+      {
+        write( key, static_cast<char*>( value ), value.size() );
+      }
+
+      // Buffers
+      void write( const char* key, Buffers& value )
+      {
+        write( StringLiteralKey( key ), value );
+      }
+
+      virtual void write( const Key& key, Buffers& value )
+      {
+        auto_Object<Buffer> joined_value = value.join();
+        write( key, *joined_value );
+      }
 
       // float and double
-      virtual void write( const char* key, uint32_t tag, float value )
+      void write( const char* key, float value )
       {
-        write( key, tag, static_cast<double>( value ) );
+        write( StringLiteralKey( key ), value );
       }
 
-      virtual void write( const char* key, uint32_t tag, double value ) = 0;
+      virtual void write( const Key& key, float value )
+      {
+        write( key, static_cast<double>( value ) );
+      }
 
+      void write( const char* key, double value )
+      {
+        write( StringLiteralKey( key ), value );
+      }
+
+      virtual void write( const Key& key, double value ) { }
 
       // Signed integers
-      virtual void write( const char* key, uint32_t tag, int8_t value )
+      void write( const char* key, int8_t value )
       {
-        write( key, tag, static_cast<int16_t>( value ) );
+        write( StringLiteralKey( key ), value );
       }
 
-      virtual void write( const char* key, uint32_t tag, int16_t value )
+      virtual void write( const Key& key, int8_t value )
       {
-        write( key, tag, static_cast<int32_t>( value ) );
+        write( key, static_cast<int16_t>( value ) );
       }
 
-      virtual void write( const char* key, uint32_t tag, int32_t value )
+      void write( const char* key, int16_t value )
       {
-        write( key, tag, static_cast<int64_t>( value ) );
+        write( StringLiteralKey( key ), value );
       }
 
-      virtual void write( const char* key, uint32_t tag, int64_t value ) = 0;
+      virtual void write( const Key& key, int16_t value )
+      {
+        write( key, static_cast<int32_t>( value ) );
+      }
 
+      void write( const char* key, int32_t value )
+      {
+        write( StringLiteralKey( key ), value );
+      }
+
+      virtual void write( const Key& key, int32_t value )
+      {
+        write( key, static_cast<int64_t>( value ) );
+      }
+
+      void write( const char* key, int64_t value )
+      {
+        write( StringLiteralKey( key ), value );
+      }
+
+      virtual void write( const Key& key, int64_t value ) { }
 
       // Map
-      virtual void
-      write
-      (
-        const char* key,
-        uint32_t tag,
-        const Map& value
-      ) = 0;
+      void write( const char* key, const Map& value )
+      {
+        write( StringLiteralKey( key ), value );
+      }
 
+      virtual void write( const Key& key, const Map& value )
+      {
+        write( key, static_cast<const MarshallableObject&>( value ) );
+      }
 
       // MarshallableObject
-      virtual void
-      write
-      (
-        const char* key,
-        uint32_t tag,
-        const MarshallableObject& value
-      ) = 0;
+      void write( const char* key, const MarshallableObject& value )
+      {
+        write( StringLiteralKey( key ), value );
+      }
 
+      virtual void write( const Key& key, const MarshallableObject& value )
+      {
+        value.marshal( *this );
+      }
 
       // Sequence
-      virtual void        
-      write
-      (
-        const char* key,
-        uint32_t tag,
-        const Sequence& value
-      ) = 0;
-
-
-      // Strings
-      void
-      write
-      (
-        const char* key,
-        uint32_t tag,
-        const string& value
-      )
+      void write( const char* key, const Sequence& value )
       {
-        write( key, tag, value.c_str(), value.size() );
+        write( StringLiteralKey( key ), value );
       }
 
-      void
-      write
-      (
-        const char* key,
-        uint32_t tag,
-        const char* value
-      )
+      virtual void write( const Key& key, const Sequence& value )
+      { }
+
+      // strings
+      void write( const char* key, char* value )
       {
-        write( key, tag, value, strnlen( value, UINT16_MAX ) );
+        write( StringLiteralKey( key ), value );
       }
 
-      virtual void
-      write
-      (
-        const char* key,
-        uint32_t tag,
-        const char* value,
-        size_t value_len
-      ) = 0;
+      virtual void write( const Key& key, char* value )
+      {
+        write( key, value, strnlen( value, UINT16_MAX ) );
+      }
 
+      void write( const char* key, const char* value )
+      {
+        write( StringLiteralKey( key ), value );
+      }
+
+      virtual void write( const Key& key, const char* value )
+      {
+        write( key, value, strnlen( value, UINT16_MAX ) );
+      }
+
+      void write( const char* key, const string& value )
+      {
+        write( StringLiteralKey( key ), value );
+      }
+
+      virtual void write( const Key& key, const string& value )
+      {
+        write( key, const_cast<char*>( value.c_str() ), value.size() );
+      }
+
+      void write( const char* key, char* value, size_t value_len )
+      {
+        write( StringLiteralKey( key ), value, value_len );
+      }
+
+      virtual void write( const Key& key, char* value, size_t value_len )
+      {
+        write( key, const_cast<const char*>( value ), value_len );
+      }
+
+      void write( const char* key, const char* value, size_t value_len )
+      {
+        write( StringLiteralKey( key ), value, value_len );
+      }
+
+      virtual void write( const Key& key, const char* value, size_t value_len )
+      { }
 
       // Unsigned integers
-      virtual void write( const char* key, uint32_t tag, uint8_t value )
+      void write( const char* key, uint8_t value )
       {
-        write( key, tag, static_cast<uint16_t>( value ) );
+        write( StringLiteralKey( key ), value );
       }
 
-      virtual void write( const char* key, uint32_t tag, uint16_t value )
+      virtual void write( const Key& key, uint8_t value )
       {
-        write( key, tag, static_cast<uint32_t>( value ) );
+        write( key, static_cast<uint16_t>( value ) );
       }
 
-      virtual void write( const char* key, uint32_t tag, uint32_t value )
+      void write( const char* key, uint16_t value )
       {
-        write( key, tag, static_cast<uint64_t>( value ) );
+        write( StringLiteralKey( key ), value );
       }
 
-      virtual void write( const char* key, uint32_t tag, uint64_t value )
+      virtual void write( const Key& key, uint16_t value )
       {
-        write( key, tag, static_cast<int64_t>( value ) );
+        write( key, static_cast<uint32_t>( value ) );
+      }
+
+      void write( const char* key, uint32_t value )
+      {
+        write( StringLiteralKey( key ), value );
+      }
+
+      virtual void write( const Key& key, uint32_t value )
+      {
+        write( key, static_cast<uint64_t>( value ) );
+      }
+
+      void write( const char* key, uint64_t value )
+      {
+        write( StringLiteralKey( key ), value );
+      }
+
+      virtual void write( const Key& key, uint64_t value )
+      {
+        write( key, static_cast<int64_t>( value ) );
       }
     };
 
-#define YIDL_MARSHALLER_PROTOTYPES \
-    virtual void write( const char* key, uint32_t tag, bool value ); \
-    virtual void \
-    write \
-    ( \
-      const char* key, \
-      uint32_t tag, \
-      const ::yidl::runtime::Buffer& value \
-    ); \
-    virtual void write( const char* key, uint32_t tag, double value ); \
-    virtual void write( const char* key, uint32_t tag, int64_t value ); \
-    virtual void \
-    write \
-    ( \
-      const char* key, \
-      uint32_t tag, \
-      const ::yidl::runtime::Map& value \
-    ); \
-    virtual void \
-    write \
-    ( \
-      const char* key, \
-      uint32_t tag, \
-      const ::yidl::runtime::MarshallableObject& value \
-    ); \
-    virtual void \
-    write \
-    ( \
-      const char* key, \
-      uint32_t tag, \
-      const ::yidl::runtime::Sequence& value \
-    ); \
-    virtual void \
-    write \
-    ( \
-      const char* key, \
-      uint32_t tag, \
-      const char* value, \
-      size_t value_len \
-    );
-
 
     class Sequence : public MarshallableObject
-    { 
+    {
     public:
       virtual size_t get_size() const = 0;
     };
@@ -1202,17 +1610,13 @@ namespace yidl
     {
     public:
       StackBuffer()
-        : FixedBuffer( Capacity )
-      {
-        iov.iov_base = _stack_buffer;
-      }
+        : FixedBuffer( _stack_buffer, Capacity, 0 )
+      { }
 
-      StackBuffer( const void* from_buffer )
-        : FixedBuffer( Capacity )
+      StackBuffer( const void* buf )
+        : FixedBuffer( _stack_buffer, Capacity, Capacity )
       {
-        iov.iov_base = _stack_buffer;
-        memcpy_s( _stack_buffer, Capacity, from_buffer, Capacity );
-        iov.iov_len = Capacity;
+        memcpy_s( _stack_buffer, Capacity, buf, Capacity );
       }
 
       // RTTIObject
@@ -1223,66 +1627,44 @@ namespace yidl
     };
 
 
-    class StringBuffer : public Buffer
+    class StringBuffer : public Buffer, public string
     {
     public:
-      StringBuffer()
-      { }
+      StringBuffer() { }
+      StringBuffer( size_t capacity ) { reserve( capacity ); }
+      StringBuffer( const string& buf ) : string( buf ) { }
+      StringBuffer( const char* buf ) : string( buf ) { }
+      StringBuffer( const char* buf, size_t len ) : string( buf, len ) { }
 
-      StringBuffer( size_t capacity )
+      StringBuffer( Buffer& buf )
+        : string
+          (
+            static_cast<char*>( buf ) + buf.position(),
+            buf.size() - buf.position()
+          )
       {
-        _string.reserve( capacity );
+        buf.position( buf.size() );
       }
-
-      StringBuffer( const string& str )
-        : _string( str )
-      { }
-
-      StringBuffer( const char* str )
-       : _string( str )
-      { }
-
-      StringBuffer( const char* str, size_t str_len )
-        : _string( str, str_len )
-      { }
-
-      operator string&() { return _string; }
-      operator const string&() const { return _string; }
 
       // Buffer
-      operator void*() const { return const_cast<char*>( _string.c_str() ); }
-
-      bool operator==( const StringBuffer& other ) const
-      {
-        return _string == other._string;
-      }
-
-      bool operator==( const char* other ) const
-      {
-        return _string == other;
-      }
+      operator void*() const { return const_cast<char*>( c_str() ); }
 
       // RTTIObject
       YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( StringBuffer, 3 );
 
       // Buffer
-      size_t capacity() const { return _string.capacity(); }
+      size_t capacity() const { return string::capacity(); }
+      bool empty() const { return string::empty(); }
 
-      size_t get( void* into_buffer, size_t into_buffer_len )
+      size_t get( void* buf, size_t len )
       {
         size_t get_len;
-        if ( size() - position() >= into_buffer_len )
-          get_len = into_buffer_len;
+        if ( size() - position() >= len )
+          get_len = len;
         else
           get_len = size() - position();
 
-        memcpy_s
-        (
-          into_buffer,
-          into_buffer_len,
-          _string.c_str() + position(),
-          get_len
-        );
+        memcpy_s( buf, len, c_str() + position(), get_len );
 
         position( position() + get_len );
 
@@ -1291,227 +1673,289 @@ namespace yidl
 
       bool is_fixed() const { return false; }
 
-      size_t put( char from_char, size_t repeat_count )
+      size_t put( char buf, size_t repeat_count )
       {
-        _string.append( repeat_count, from_char );
+        append( repeat_count, buf );
         return repeat_count;
       }
 
-      size_t put( const void* from_buffer, size_t from_buffer_len )
+      size_t put( const void* buf, size_t len )
       {
-        _string.append
-        (
-          static_cast<const char*>( from_buffer ),
-          from_buffer_len
-        );
-
-        return from_buffer_len;
+        append( static_cast<const char*>( buf ), len );
+        return len;
       }
 
-      void put( size_t ) { DebugBreak(); }
-      size_t size() const { return _string.size(); }
-
-    private:
-      string _string;
+      void resize( size_t n ) { string::resize( n ); }
+      size_t size() const { return string::size(); }
     };
 
 
-    class StringLiteralBuffer : public FixedBuffer
+    inline void Buffers::push_back( char* buf )
     {
-    public:
-      StringLiteralBuffer( const char* string_literal )
-        : FixedBuffer( strnlen( string_literal, UINT16_MAX ) )
-      {
-        iov.iov_base = const_cast<char*>( string_literal );
-        iov.iov_len = capacity();
-      }
+      push_back( new StringBuffer( buf ) );
+    }
 
-      StringLiteralBuffer
-      (
-        const char* string_literal,
-        size_t string_literal_len
-      )
-        : FixedBuffer( string_literal_len )
-      {
-        iov.iov_base = const_cast<char*>( string_literal );
-        iov.iov_len = string_literal_len;
-      }
+    inline void Buffers::push_back( const string& buf )
+    {
+      push_back( new StringBuffer( buf ) );
+    }
 
-      StringLiteralBuffer
-      (
-        const void* string_literal,
-        size_t string_literal_len
-      )
-        : FixedBuffer( string_literal_len )
-      {
-        iov.iov_base = const_cast<void*>( string_literal );
-        iov.iov_len = string_literal_len;
-      }
-
-      // RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( StringLiteralBuffer, 4 );
-
-      // Buffer
-      size_t put( const void*, size_t ) { return 0; }
-      void put( size_t ) { DebugBreak(); }
-    };
+    inline void Buffers::push_back( void* buf, size_t len )
+    {
+      push_back( new StringBuffer( static_cast<char*>( buf ), len ) );
+    }
 
 
     class Struct : public MarshallableObject
     { };
 
 
-    class Unmarshaller : public Object
+    class SubBuffer : public FixedBuffer
+    {
+    public:
+      SubBuffer
+      (
+        Buffer& parent_buffer,
+        size_t parent_buffer_offset,
+        size_t capacity,
+        size_t size
+      )
+        : FixedBuffer
+          (
+            static_cast<char*>( parent_buffer ) + parent_buffer_offset,
+            capacity,
+            size
+          ),
+          parent_buffer( parent_buffer.inc_ref() )
+      { }
+
+      ~SubBuffer()
+      {
+        Buffer::dec_ref( parent_buffer );
+      }
+
+      // RTTIObject
+      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( SubBuffer, 5 );
+
+    private:
+      Buffer& parent_buffer;
+    };
+
+
+    class Unmarshaller : public Object, public MarshallerKeyTypes
     {
     public:
       virtual ~Unmarshaller() { }
 
       // bool
-      virtual bool read_bool( const char* key, uint32_t tag ) = 0;
+      bool read_bool( const char* key )
+      {
+        return read_bool( StringLiteralKey( key ) );
+      }
 
+      virtual bool read_bool( const Key& key ) { return false; }
 
       // Buffer
-      virtual void
-      read
-      (
-        const char* key,
-        uint32_t tag,
-        Buffer& value
-      ) = 0;
+      void read( const char* key, Buffer& value )
+      {
+        read( StringLiteralKey( key ), value );
+      }
 
+      virtual void read( const Key& key, Buffer& value ) { }
 
       // float and double
-      virtual float read_float( const char* key, uint32_t tag )
+      float read_float( const char* key )
       {
-        return static_cast<float>( read_double( key, tag ) );
+        return read_float( StringLiteralKey( key ) );
       }
 
-      virtual double read_double( const char* key, uint32_t tag ) = 0;
+      virtual float read_float( const Key& key )
+      {
+        double double_value;
+        read( key, double_value );
+        return static_cast<float>( double_value );
+      }
 
+      void read( const char* key, double& value )
+      {
+        read( StringLiteralKey( key ), value );
+      }
+
+      virtual void read( const Key& key, double& value ) 
+      { 
+        value = 0;
+      }
 
       // Signed integers
-      virtual int8_t read_int8( const char* key, uint32_t tag )
+      int8_t read_int8( const char* key )
       {
-        return static_cast<int8_t>( read_int16( key, tag ) );
+        return read_int8( StringLiteralKey( key ) );
       }
 
-      virtual int16_t read_int16( const char* key, uint32_t tag )
+      virtual int8_t read_int8( const Key& key )
       {
-        return static_cast<int16_t>( read_int32( key, tag ) );
+        return static_cast<int8_t>( read_int16( key ) );
       }
 
-      virtual int32_t read_int32( const char* key, uint32_t tag )
+      int16_t read_int16( const char* key )
       {
-        return static_cast<int32_t>( read_int64( key, tag ) );
+        return read_int16( StringLiteralKey( key ) );
       }
 
-      virtual int64_t read_int64( const char* key, uint32_t tag ) = 0;
+      virtual int16_t read_int16( const Key& key )
+      {
+        return static_cast<int16_t>( read_int32( key ) );
+      }
 
+      int32_t read_int32( const char* key )
+      {
+        return read_int32( StringLiteralKey( key ) );
+      }
+
+      virtual int32_t read_int32( const Key& key )
+      {
+        int64_t int64_value;
+        read( key, int64_value );
+        return static_cast<int32_t>( int64_value );
+      }
+
+      void read( const char* key, int64_t& value )
+      {
+        read( StringLiteralKey( key ), value );
+      }
+
+      virtual void read( const Key& key, int64_t& value ) { value = 0; }
+
+      // Key
+      virtual Key* read( Key::Type ) { return NULL; }
 
       // Map
-      virtual void read( const char* key, uint32_t tag, Map& value ) = 0;
+      void read( const char* key, Map& value )
+      {
+        read( StringLiteralKey( key ), value );
+      }
 
+      virtual void read( const Key& key, Map& value ) { }
 
       // MarshallableObject
-      virtual void
-      read
-      (
-        const char* key,
-        uint32_t tag,
-        MarshallableObject& value
-      ) = 0;
+      void read( const char* key, MarshallableObject& value )
+      {
+        read( StringLiteralKey( key ), value );
+      }
 
+      virtual void read( const Key& key, MarshallableObject& value ) { }
 
       // Sequence
-      virtual void
-      read
-      (
-        const char* key,
-        uint32_t tag,
-        Sequence& value
-      ) = 0;
+      void read( const char* key, Sequence& value )
+      {
+        read( StringLiteralKey( key ), value );
+      }
 
+      virtual void read( const Key& key, Sequence& value ) { }
 
-      // String
-      virtual void
-      read
-      (
-        const char* key,
-        uint32_t tag,
-        string& value
-      ) = 0;
+      // string
+      void read( const char* key, string& value )
+      {
+        read( StringLiteralKey( key ), value );
+      }
 
+      virtual void read( const Key& key, string& value ) { }
 
       // Unsigned integers
-      virtual uint8_t read_uint8( const char* key, uint32_t tag )
+      uint8_t read_uint8( const char* key )
       {
-        return static_cast<uint8_t>( read_int8( key, tag ) );
+        return read_uint8( StringLiteralKey( key ) );
       }
 
-      virtual uint16_t read_uint16( const char* key, uint32_t tag )
+      virtual uint8_t read_uint8( const Key& key )
       {
-        return static_cast<uint16_t>( read_int16( key, tag ) );
+        return read_int8( key );
       }
 
-      virtual uint32_t read_uint32( const char* key, uint32_t tag )
+      uint16_t read_uint16( const char* key )
       {
-        return static_cast<uint32_t>( read_int32( key, tag ) );
+        return read_uint16( StringLiteralKey( key ) );
       }
 
-      virtual uint64_t read_uint64( const char* key, uint32_t tag )
+      virtual uint16_t read_uint16( const Key& key )
       {
-        return static_cast<uint64_t>( read_int64( key, tag ) );
+        return static_cast<uint16_t>( read_int16( key ) );
+      }
+
+      uint32_t read_uint32( const char* key )
+      {
+        return read_uint32( StringLiteralKey( key ) );
+      }
+
+      virtual uint32_t read_uint32( const Key& key )
+      {
+        return static_cast<uint32_t>( read_int32( key ) );
+      }
+
+      void read( const char* key, uint64_t& value )
+      {
+        read( StringLiteralKey( key ), value );
+      }
+
+      virtual void read( const Key& key, uint64_t& value )
+      {
+        read( key, reinterpret_cast<int64_t&>( value ) );
       }
     };
 
-#define YIDL_UNMARSHALLER_PROTOTYPES \
-    virtual bool read_bool( const char* key, uint32_t tag ); \
-    virtual void \
-    read \
-    ( \
-      const char* key, \
-      uint32_t tag, \
-      ::yidl::runtime::Buffer& value \
-    ); \
-    virtual double read_double( const char* key, uint32_t tag ); \
-    virtual int64_t read_int64( const char* key, uint32_t tag ); \
-    virtual void \
-    read \
-    ( \
-      const char* key, \
-      uint32_t tag, \
-      ::yidl::runtime::Map& value \
-    ); \
-    virtual void \
-    read \
-    ( \
-      const char* key, \
-      uint32_t tag, \
-      ::yidl::runtime::MarshallableObject& value \
-    ); \
-    virtual void \
-    read \
-    ( \
-      const char* key, \
-      uint32_t tag, \
-      ::yidl::runtime::Sequence& value \
-    ); \
-    virtual void \
-    read \
-    ( \
-      const char* key, \
-      uint32_t tag, \
-      string& value \
-    );
+
+    class BufferedMarshaller : public Marshaller
+    {
+    public:
+      BufferedMarshaller()
+      {
+        buffers = new Buffers;
+      }
+
+      virtual ~BufferedMarshaller()
+      {
+        Buffers::dec_ref( *buffers );
+      }
+
+      Buffers& get_buffers() const { return *buffers; }
+
+      // Marshaller
+      virtual void write( const Key&, Buffer& value )
+      { 
+        buffers->push_back( value );
+      }
+
+      virtual void write( const Key&, Buffers& value )
+      {
+        buffers->extend( value );
+      }
+
+      virtual void write( const Key&, char* value, size_t value_len )
+      {
+        buffers->push_back( value, value_len );
+      }
+
+      virtual void write( const Key&, const char* value, size_t value_len )
+      {
+        buffers->push_back( value, value_len );
+      }
+
+    private:
+      Buffers* buffers;
+    };
 
 
-    class XDRMarshaller : public yidl::runtime::Marshaller
+    class XDRMarshaller : public BufferedMarshaller
     {
     public:
       XDRMarshaller()
       {
-        buffer = new yidl::runtime::StringBuffer;
+        buffer = new StringBuffer;
       }
+
+      XDRMarshaller( Buffer& buffer )
+        : buffer( &buffer.inc_ref() )
+      { }
 
       virtual ~XDRMarshaller()
       {
@@ -1563,128 +2007,201 @@ namespace yidl
       }
 
       // Marshaller
-      void write( const char* key, uint32_t tag, bool value )
+      void write( const Key& key, bool value )
       {
-        write( key, tag, value ? 1 : 0 );
+        write( key );
+        write( value );
       }
 
-      void write( const char* key, uint32_t tag, const Buffer& value )
+      void write( bool value )
       {
-        write( key, tag, static_cast<int32_t>( value.size() ) );
-
-        buffer->put( static_cast<void*>( value ), value.size() );
-
-        if ( value.size() % 4 != 0 )
-        {
-          static char zeros[] = { 0, 0, 0 };
-          buffer->put
-          ( 
-            static_cast<const void*>( zeros ), 
-            4 - ( value.size() % 4 ) 
-          );
-        }
+        write( value ? 1 : 0 );
       }
 
-      void write( const char* key, uint32_t, double value )
+      void write( const Key& key, Buffer& value )
       {
-        write_key( key );
+        write( key );
+        write( value );
+      }
+
+      void write( Buffer& value )
+      {
+        buffer->put( static_cast<char*>( value ), value.size() );
+      }
+
+      void write( const Key& key, double value )
+      {
+        write( key );
+        write( value );
+      }
+
+      void write( double value )
+      {
         uint64_t uint64_value;
         memcpy_s
-        ( 
-          &uint64_value, 
-          sizeof( uint64_value ), 
-          &value, 
-          sizeof( value ) 
+        (
+          &uint64_value,
+          sizeof( uint64_value ),
+          &value,
+          sizeof( value )
         );
         uint64_value = htonll( uint64_value );
+
         buffer->put( &uint64_value, sizeof( uint64_value ) );
       }
 
-      void write( const char* key, uint32_t, float value )
+      void write( const Key& key, float value )
       {
-        write_key( key );
+        write( key );
+        write( value );
+      }
+
+      void write( float value )
+      {
         uint32_t uint32_value;
         memcpy_s
-        ( 
-          &uint32_value, 
-          sizeof( uint32_value ), 
-          &value, 
-          sizeof( value ) 
+        (
+          &uint32_value,
+          sizeof( uint32_value ),
+          &value,
+          sizeof( value )
         );
         uint32_value = htonl( uint32_value );
+
         buffer->put( &uint32_value, sizeof( uint32_value ) );
       }
 
-      void write( const char* key, uint32_t, int32_t value )
+      void write( const Key& key, int32_t value )
       {
-        write_key( key );
+        write( key );
+        write( value );
+      }
+
+      void write( int32_t value )
+      {
         value = htonl( value );
         buffer->put( &value, sizeof( value ) );
       }
 
-      void write( const char* key, uint32_t, int64_t value )
+      void write( const Key& key, int64_t value )
       {
-        write_key( key );
+        write( key );
+        write( value );
+      }
+
+      void write( int64_t value )
+      {
         value = htonll( value );
         buffer->put( &value, sizeof( value ) );
       }
 
-      void write
-      (
-        const char* key,
-        uint32_t tag,
-        const yidl::runtime::Map& value
-      )
+      void write( const Key& key, const Map& value )
       {
-        write( key, tag, static_cast<int32_t>( value.get_size() ) );
+        write( key );
+        write( value );
+      }
+
+      void write( const Map& value )
+      {
+        write( static_cast<int32_t>( value.get_size() ) );
         in_map_stack.push_back( true );
         value.marshal( *this );
         in_map_stack.pop_back();
       }
 
-      void write( const char* key, uint32_t tag, const Sequence& value )
+      void write( const Key& key, const Sequence& value )
       {
-        write( key, tag, static_cast<int32_t>( value.get_size() ) );
+        write( key );
+        write( value );
+      }
+
+      void write( const Sequence& value )
+      {
+        write( static_cast<int32_t>( value.get_size() ) );
         value.marshal( *this );
       }
 
-      void write( const char* key, uint32_t, const MarshallableObject& value )
+      void write( const Key& key, const MarshallableObject& value )
       {
-        write_key( key );
+        write( key );
+        write( value );
+      }
+
+      void write( const MarshallableObject& value )
+      {
         value.marshal( *this );
       }
 
-      void write
-      (
-        const char* key,
-        uint32_t tag,
-        const char* value,
-        size_t value_len
-      )
+      void write( const Key& key, char* value, size_t value_len )
       {
-        write( key, tag, static_cast<int32_t>( value_len ) );
+        write( key );
+        write( value, value_len );
+      }
+
+      void write( const Key& key, const char* value, size_t value_len )
+      {
+        write( key );
+        write( value, value_len );
+      }
+
+      void write( const char* value, size_t value_len )
+      {
+        write( static_cast<int32_t>( value_len ) );
+
         buffer->put( static_cast<const void*>( value ), value_len );
+
         if ( value_len % 4 != 0 )
         {
           static char zeros[] = { 0, 0, 0 };
           buffer->put
-          ( 
-            static_cast<const void*>( zeros ), 
-            4 - ( value_len % 4 ) 
+          (
+            static_cast<const void*>( zeros ),
+            4 - ( value_len % 4 )
           );
         }
       }
 
-      void write( const char* key, uint32_t tag, uint32_t value )
+      void write( const Key& key, uint32_t value )
       {
-        write( key, tag, static_cast<int32_t>( value ) );
+        write( key );
+        write( value );
       }
-      
-    protected:
-      virtual void write_key( const char* key )
+
+      void write( uint32_t value )
       {
-        if ( !in_map_stack.empty() && in_map_stack.back() && key != NULL )
-          Marshaller::write( NULL, 0, key );
+        write( static_cast<int32_t>( value ) );
+      }
+
+      void write( const Key& key, uint64_t value )
+      {
+        write( key );
+        write( value );
+      }
+
+      void write( uint64_t value )
+      {
+        write( static_cast<int64_t>( value ) );
+      }
+
+    protected:
+      void write( const Key& key )
+      {
+        if ( !in_map_stack.empty() && in_map_stack.back() )
+        {
+          Key::Type key_type = key.get_type();
+          if ( key_type == Key::TYPE_DOUBLE )
+            write( static_cast<const DoubleKey&>( key ) );
+          else if ( key_type == Key::TYPE_INT32 )
+            write( static_cast<const Int32Key&>( key ) );
+          else if ( key_type == Key::TYPE_INT64 )
+            write( static_cast<const Int64Key&>( key ) );
+          else if ( key_type == Key::TYPE_STRING )
+            write( static_cast<const StringKey&>( key ) );
+          else if ( key_type == Key::TYPE_STRING_LITERAL )
+            write( static_cast<const StringLiteralKey&>( key ) );
+          else
+            DebugBreak();
+        }
       }
 
     private:
@@ -1693,7 +2210,7 @@ namespace yidl
     };
 
 
-    class XDRUnmarshaller : public yidl::runtime::Unmarshaller
+    class XDRUnmarshaller : public Unmarshaller
     {
     public:
       XDRUnmarshaller( Buffer& buffer )
@@ -1747,17 +2264,16 @@ namespace yidl
       }
 
       // Unmarshaller
-      bool read_bool( const char* key, uint32_t tag )
-      {
-        return read_int32( key, tag ) == 1;
-      }
+      bool read_bool( const Key& ) { return read_bool(); }
+      bool read_bool() { return read_int32() == 1; }
 
-      void read( const char* key, uint32_t tag, Buffer& value )
+      void read( const Key&, Buffer& value ) { read( value ); }
+      void read( Buffer& value )
       {
-        size_t size = read_int32( key, tag );
+        size_t size = read_int32();
         if ( value.capacity() - value.size() < size ) DebugBreak();
         read( static_cast<void*>( value ), size );
-        value.put( size );
+        value.resize( size );
         if ( size % 4 != 0 )
         {
           char zeros[3];
@@ -1765,23 +2281,24 @@ namespace yidl
         }
       }
 
-      double read_double( const char*, uint32_t )
+      void read( const Key&, double& value ) { read( value ); }
+      double read_double() { double value; read( value ); return value; }
+      void read( double& value )
       {
         uint64_t uint64_value;
         read( &uint64_value, sizeof( uint64_value ) );
         uint64_value = ntohll( uint64_value );
-        double double_value;
         memcpy_s
         (
-          &double_value,
-          sizeof( double_value ),
+          &value,
+          sizeof( value ),
           &uint64_value,
           sizeof( uint64_value )
         );
-        return double_value;
       }
 
-      float read_float( const char*, uint32_t )
+      float read_float( const Key& ) { return read_float(); }
+      float read_float()
       {
         uint32_t uint32_value;
         read( &uint32_value, sizeof( uint32_value ) );
@@ -1797,70 +2314,87 @@ namespace yidl
         return float_value;
       }
 
-      int32_t read_int32( const char*, uint32_t )
+      int32_t read_int32( const Key& ) { return read_int32(); }
+      int32_t read_int32()
       {
         int32_t value;
         read( &value, sizeof( value ) );
         return ntohl( value );
       }
 
-      int64_t read_int64( const char*, uint32_t )
+      void read( const Key&, int64_t& value ) { read( value ); }
+      int64_t read_int64() { int64_t value; read( value ); return value; }
+      void read( int64_t& value )
       {
-        int64_t value;
         read( &value, sizeof( value ) );
-        return ntohll( value );
+        value = ntohll( value );
       }
 
-      void read( const char* key, uint32_t tag, Map& value )
+      Key* read( Key::Type key_type )
       {
-        size_t size = read_int32( key, tag );
+        if ( key_type == Key::TYPE_DOUBLE )
+          return new DoubleKey( read_double() );
+        else if ( key_type == Key::TYPE_INT32 )
+          return new Int32Key( read_int32() );
+        else if ( key_type == Key::TYPE_INT64 )
+          return new Int64Key( read_int64() );
+        else if ( key_type == Key::TYPE_STRING )
+          { StringKey* key = new StringKey; read( *key ); return key; }
+        else
+          { DebugBreak(); return NULL; }
+      }
+
+      void read( const Key&, Map& value ) { read( value ); }
+      void read( Map& value )
+      {
+        size_t size = read_int32();
         for ( size_t i = 0; i < size; i++ )
           value.unmarshal( *this );
       }
 
-      void read( const char*, uint32_t, MarshallableObject& value )
+      void read( const Key&, MarshallableObject& value )
+      {
+        read( value );
+      }
+
+      void read( MarshallableObject& value )
       {
         value.unmarshal( *this );
       }
 
-      void read( const char* key, uint32_t tag, Sequence& value )
+      void read( const Key&, Sequence& value ) { read( value ); }
+      void read( Sequence& value )
       {
-        size_t size = read_int32( key, tag );
+        size_t size = read_int32();
         if ( size <= UINT16_MAX )
-        {
           for ( size_t i = 0; i < size; i++ )
             value.unmarshal( *this );
-        }
       }
 
-      void read( const char* key, uint32_t tag, string& value )
+      void read( const Key&, string& value ) { read( value ); }
+      void read( string& value )
       {
-        size_t str_len = read_int32( key, tag );
-
-        if ( str_len < UINT16_MAX )
+        size_t size = read_int32();
+        if ( size > 0 && size < UINT16_MAX )
         {
-          if ( str_len != 0 )
-          {
-            size_t padded_str_len = str_len % 4;
-            if ( padded_str_len == 0 )
-              padded_str_len = str_len;
-            else
-              padded_str_len = str_len + 4 - padded_str_len;
+          size_t padded_size = size % 4;
+          if ( padded_size == 0 )
+            padded_size = size;
+          else
+            padded_size = size + 4 - padded_size;
 
-            value.resize( padded_str_len );
-            read( const_cast<char*>( value.c_str() ), padded_str_len );
-            value.resize( str_len );
-          }
+          value.resize( padded_size );
+          read( const_cast<char*>( value.c_str() ), padded_size );
+          value.resize( size );
         }
       }
+
+      uint32_t read_uint32() { return static_cast<uint32_t>( read_int32() ); }
+      void read( uint64_t& value ) { read( reinterpret_cast<int64_t&>( value ) ); }
 
     private:
       void read( void* buffer, size_t buffer_len )
       {
-      //#ifdef _DEBUG
-      //  if ( this->buffer->size() - this->buffer->position() < buffer_len )
-      //    DebugBreak();
-      //#endif
         this->buffer.get( buffer, buffer_len );
       }
 
