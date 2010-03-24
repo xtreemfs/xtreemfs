@@ -281,7 +281,7 @@ public class XtreemFSFileSystem extends FileSystem {
         FileStatus[] fslist = new FileStatus[list.length];
         for (int i = 0; i < list.length; i++) {
             final DirectoryEntry e = list[i];
-            final Stat s = e.getStbuf();
+            final Stat s = e.getStbuf().get(0);
             final boolean isDir = (s.getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFDIR) > 0;
             fslist[i] = new FileStatus(s.getSize(), isDir , 1, 1,(long) (s.getMtime_ns() / 1e6),
                     (long) (s.getAtime_ns() / 1e6), new FsPermission((short)s.getMode()),
