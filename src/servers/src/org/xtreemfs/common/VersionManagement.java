@@ -38,7 +38,7 @@ package org.xtreemfs.common;
  */
 public class VersionManagement {
 
-    public static final String  RELEASE_VERSION = "1.2.1 (Luscious Lebkuchen, update 1)";
+    public static final String  RELEASE_VERSION = "1.2.2 (Luscious Lebkuchen, update 1)";
 
     private static final long   mrcDataVersion            = 10;
 
