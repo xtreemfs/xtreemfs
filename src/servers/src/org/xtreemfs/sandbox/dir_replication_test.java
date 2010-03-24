@@ -1,4 +1,4 @@
-/*  Copyright (c) 2009 Barcelona Supercomputing Center - Centro Nacional
+/*  Copyright (c) 2009-2010 Barcelona Supercomputing Center - Centro Nacional
     de Supercomputacion and Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
     This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
@@ -35,7 +35,6 @@ import java.util.UUID;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.dir.ErrorCodes;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
@@ -45,9 +44,6 @@ import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
-import org.xtreemfs.interfaces.StringSet;
-import org.xtreemfs.interfaces.UserCredentials;
-import org.xtreemfs.interfaces.DIRInterface.DIRException;
 import org.xtreemfs.interfaces.DIRInterface.RedirectException;
 
 /**
@@ -58,8 +54,7 @@ import org.xtreemfs.interfaces.DIRInterface.RedirectException;
  * 
  * <p>
  * To use this test, setup some DIRs with replication enabled and 
- * give their addresses to this application. Define which of them should 
- * be the master.
+ * give their addresses to this application. 
  * </p>
  * 
  * @since 09/21/2009
@@ -84,17 +79,13 @@ public class dir_replication_test {
     private static int registeredServices = 0;
     private static int registeredAddressMappings = 0;
     
-    private static Map<String,Service> availableServices = 
+    private static Map<String, Service> availableServices = 
         new HashMap<String, Service>();
     private static Map<String,AddressMapping> availableAddressMappings = 
         new HashMap<String,AddressMapping>();
         
     private static List<DIRClient> participants = 
         new LinkedList<DIRClient>();
-    
-    private static UserCredentials creds = null;
-        
-    private static int masterChanges = 0;
     
     // XXX
     private static long time = 0;
@@ -107,6 +98,8 @@ public class dir_replication_test {
     // 1 - register service
     // 2 - remove addressMapping
     // 3 - deregister service
+    // 4 - lookup mapping
+    // 5 - lookup service
     private static int kind = -1;
     private static String uuid = null;
     
@@ -117,23 +110,19 @@ public class dir_replication_test {
     public static void main(String[] args) throws Exception {
         System.out.println("LONGRUNTEST OF THE DIR master-slave replication");
         
-        Logging.start(Logging.LEVEL_ERROR);
+        Logging.start(Logging.LEVEL_INFO);
         try {
             TimeSync.initializeLocal(60000, 50);
         } catch (Exception ex) {
             ex.printStackTrace();
             System.exit(1);
         }
-                
-        // administrator details
-        StringSet gids = new StringSet();
-        gids.add("");
-        creds = new UserCredentials("", gids, "");
         
         // master connection setup
         RPCNIOSocketClient rpcClient = 
             new RPCNIOSocketClient(null, 2*60*1000, 5*60*1000);
         rpcClient.start();
+        rpcClient.waitForStartup();
         
         // get the parameters
         if (args.length!=1) usage(); 
@@ -141,49 +130,51 @@ public class dir_replication_test {
         if (args[0].indexOf(",") == -1) {
             error("not enough participants to perform the test!");
         } else {
-            for (String adr : args[0].split(",")) {
-                participants.add(new DIRClient(rpcClient, parseAddress(adr)));
+            String[] adrs = args[0].split(",");
+            InetSocketAddress[] servers = new InetSocketAddress[adrs.length];
+            for (int i=0;i<adrs.length;i++){
+                servers[i] = parseAddress(adrs[i]);
+                participants.add(new DIRClient(rpcClient, servers[i]));
             }
+            
+            masterClient = new DIRClient(rpcClient,servers); 
         } 
-
-        setupRandomMasterDIR();
-        
         assert(LOOKUP_PERCENTAGE+DELETE_PERCENTAGE+INSERT_PERCENTAGE == 100);
                 
         long start = System.currentTimeMillis();
         long operationCount = 0;
         long s = start;
         System.out.println( "Test started [00:00:00]");
-        try {
-            while (true) {
+        while (true) {
+            try {
                 // perform a consistency check
                 long now = System.currentTimeMillis();
                 if ((start+CHECK_INTERVAL) < now) {
-                    long diff = (System.currentTimeMillis()-s)/1000;
-                    System.out.println( "Consistency-check ["+(diff-diff%60-((diff-diff%60)/60)%60)/3600+":"+((diff-diff%60)/60)%60+":"+diff%60+"]");
+                    long diff = System.currentTimeMillis()-s;
+                    System.out.println( "Consistency-check " + getTimeStamp(diff));
                     System.out.println("Throughput: "+((double) (operationCount/
                             (CHECK_INTERVAL/1000)))+" operations/second");
                     operationCount = 0;
-                    
-                    System.out.println("The master has changed about '" + 
-                            masterChanges + "' times.");
-                    
-                    masterChanges = 0;
-                    
+                                                            
                     performConsistencyCheck();
+                    diff = System.currentTimeMillis()-s;
+                    System.out.println("Consistency-check finished: " + getTimeStamp(diff));
                     start = System.currentTimeMillis();
-                    setupRandomMasterDIR();
+                // perform an operation on the DIR(s)
                 } else {
                     try {
-                        if (random.nextBoolean())
+                        if (random.nextBoolean()) {
                             performAddressMappingOperation();
-                        else  
+                        } else { 
                             performServiceOperation();
+                        }
                         operationCount++;
                     } catch (RedirectException e) {
-                        System.out.println("... Master failover ...@LSN("+viewID+":"+actSeq+")");
-                        setupRandomMasterDIR();
+                        System.err.println("caught an unexpected redirect exception!" +
+                        		"  ...@LSN("+viewID+":"+actSeq+"): "+
+                        		e.getMessage());
                     } catch (IOException e) {
+                        System.err.println("request failed: "+e.getMessage());
                         if (e.getMessage().equals("request timed out")) {
                             System.err.println("Operation ("+kind+") on UUID: "+uuid+" timed out.");
                             for (DIRClient c : participants) {
@@ -220,37 +211,51 @@ public class dir_replication_test {
                                         System.err.println("But succeeded on "+c.getDefaultServerAddress());
                                     }
                                     break;
-                                default : throw e;
+                                default : assert(false);
                                 }
                             }
                         } else throw e;
                     }
                 }
-            }
-        } catch (FailureException e) {
-            System.err.println("An insert ("+e.kind+"/"+t.get(e.getMessage())+
-                    "/LSN("+(viewID-1)+":"+(t.get(e.getMessage())-(time-lastSeq))+")) was lost @"+time+": "+e.getMessage());
-            String data = (e.kind == 0) ? availableAddressMappings.get(
-                    e.getMessage()).toString() : 
-                availableServices.get(e.getMessage()).toString();
-            System.err.println("Data: "+data);
-            for (DIRClient c : participants) {
+            } catch (FailureException e) {
+                System.err.println(getTimeStamp(System.currentTimeMillis()-s)+
+                        " An insert ("+e.kind+"/"+t.get(e.getMessage())+
+                        "/LSN("+(viewID-1)+":"+(t.get(e.getMessage())-(time-lastSeq))+
+                        ")) was lost @"+time+": "+e.getMessage());
+                
+                String data = (e.kind == 0 || e.kind == 4) ? 
+                    availableAddressMappings.get(e.getMessage()).toString() : 
+                    availableServices.get(e.getMessage()).toString();
+                System.err.println("Data: "+data);
+                System.err.println("retrying ... ");
+                uuid = e.getMessage();
                 try {
                     switch (e.kind) {
                         case 0:
-                            performAddressMappingLookup(e.getMessage(), c);
+                            performAddressMappingInsert(true);
                             break;
                         case 1: 
-                            performServiceLookup(e.getMessage(), c);
+                            performServiceInsert(true);
+                            break;
+                        case 2: 
+                            performAddressMappingDelete(true);
+                            break;
+                        case 3: 
+                            performServiceDelete(true);
+                            break;
+                        case 4:
+                            System.err.println("... failed (addressMappingLookup)");
+                            break;
+                        case 5:
+                            System.err.println("... failed (serviceLookup)");
                             break;
                         default: assert(false);
                     }
-                    System.err.println("But available on: "+c.getDefaultServerAddress());
+                    System.err.println("Successful");
                 } catch (Exception e2) {
-                    System.err.println("And lost on: "+c.getDefaultServerAddress());
+                    System.err.println("Failed");
                 }
             }
-            
         }
     }
     
@@ -261,7 +266,6 @@ public class dir_replication_test {
      * @throws Exception 
      */
     private static void performConsistencyCheck() throws Exception {
-        performConsistencyCheck(masterClient);
         for (DIRClient participant : participants) {
             performConsistencyCheck(participant);
         }
@@ -302,17 +306,17 @@ public class dir_replication_test {
                 break;
                 
             case INSERT_MODE :
-                performAddressMappingInsert();
+                performAddressMappingInsert(false);
                 break;
                 
             case DELETE_MODE :
-                performAddressMappingDelete();
+                performAddressMappingDelete(false);
                 break;
                 
             default : assert (false);
             }
         } else {
-            performAddressMappingInsert();
+            performAddressMappingInsert(false);
         }
     }
     
@@ -328,17 +332,17 @@ public class dir_replication_test {
                 break;
                 
             case INSERT_MODE :
-                performServiceInsert();
+                performServiceInsert(false);
                 break;
                 
             case DELETE_MODE :
-                performServiceDelete();
+                performServiceDelete(false);
                 break;
                 
             default : assert (false);
             }
         } else {
-            performServiceInsert();
+            performServiceInsert(false);
         }
     }
 
@@ -356,11 +360,18 @@ public class dir_replication_test {
             rp = c.xtreemfs_address_mappings_get(null, uuid);
             AddressMappingSet result = rp.get();
         
-            if (result.size() == 0) throw new FailureException(uuid,0);
+            if (result.size() == 0){
+                System.err.println("AddressMappingLookup: result.size() == 0" +
+                		" on client: "+c.getDefaultServerAddress());
+                throw new FailureException(uuid,4);
+            }
             if (result.size() > 1) throw new Exception ("UUID not unique!");
             
-            if (!equals(availableAddressMappings.get(uuid), result.get(0)))
-                throw new FailureException(uuid,0);
+            if (!equals(availableAddressMappings.get(uuid), result.get(0))) {
+                System.err.println("Not the same Services! expected: "+
+                        availableAddressMappings.get(uuid)+" received: "+result.get(0));
+                throw new FailureException(uuid,4);
+            }
         } finally {
             if (rp!=null) rp.freeBuffers();
         }
@@ -380,11 +391,18 @@ public class dir_replication_test {
             rp = c.xtreemfs_service_get_by_uuid(null, uuid);
             ServiceSet result = rp.get();
         
-            if (result.size() == 0) throw new FailureException(uuid,1);
+            if (result.size() == 0) {
+                System.out.println("ServiceGet: result.size() == 0" +
+                		" on client: "+c.getDefaultServerAddress());
+                throw new FailureException(uuid,5);
+            }
             if (result.size() > 1) throw new Exception ("UUID not unique!");
             
-            if (!equals(availableServices.get(uuid), result.get(0)))
-                throw new FailureException(uuid,1);
+            if (!equals(availableServices.get(uuid), result.get(0))) {
+                System.err.println("Not the same Services! expected: "+
+                        availableServices.get(uuid)+" received: "+result.get(0));
+                throw new FailureException(uuid,5);
+            }
         } finally {
             if (rp!=null) rp.freeBuffers();
         }
@@ -393,112 +411,153 @@ public class dir_replication_test {
     /**
      * Performs an AdressMapping insert.
      * @throws Exception 
+     * @param retry
      */
-    private static void performAddressMappingInsert() throws Exception {
-        
+    private static void performAddressMappingInsert(boolean retry) throws Exception {
         AddressMappingSet load = new AddressMappingSet();
-        AddressMapping mapping = randomMapping();        
+        
+        AddressMapping mapping;
+        if (retry) {
+            assert (availableAddressMappings.containsKey(uuid));
+            mapping = availableAddressMappings.get(uuid);
+        } else {
+            do {
+                mapping = randomMapping();
+                kind = 0;
+                uuid = mapping.getUuid();
+            } while (availableAddressMappings.containsKey(uuid));
+        }
         load.add(mapping);
         
-        kind = 0;
-        uuid = mapping.getUuid();
+        if (!retry) {
+            if (availableAddressMappings.size() == MAX_HISTORY_SIZE)
+                availableAddressMappings.remove(randomMappingKey());
+            
+            availableAddressMappings.put(uuid, mapping);
+            registeredAddressMappings++;
+        }
         
         RPCResponse<Long> rp = null;
         try {
             rp = masterClient.xtreemfs_address_mappings_set(null, load);
             long result = rp.get();
-            assert(result == 1) : "A previous entry was modified unexpectedly.";
-            
-            if (availableAddressMappings.size() == MAX_HISTORY_SIZE)
-                availableAddressMappings.remove(randomMappingKey());
-            
-            availableAddressMappings.put(mapping.getUuid(), mapping);
-            registeredAddressMappings++;
+            if(result != 1) {
+                System.err.println("AddressMappingSet: result != 1, result == "+result);
+                throw new FailureException("A previous entry was modified unexpectedly.", kind); 
+            }
         } finally {
             if (rp != null) rp.freeBuffers();
         }
-        t.put(mapping.getUuid(), (int) time);
-        time++;
-        actSeq++;
+        if (!retry) {
+            t.put(mapping.getUuid(), (int) time);
+            time++;
+            actSeq++;
+        }
     }
     
     /**
      * Performs a Service insert.
      * @throws Exception 
+     * @param retry
      */
-    private static void performServiceInsert() throws Exception{
-        Service service = randomService();
-
-        kind = 1;
-        uuid = service.getUuid();
+    private static void performServiceInsert(boolean retry) throws Exception{
+        Service service;
+        if (retry) {
+            assert (availableServices.containsKey(uuid));
+            service = availableServices.get(uuid);
+        } else {
+            do {
+                service = randomService();
+                kind = 1;
+                uuid = service.getUuid();
+            } while (availableServices.containsKey(uuid));
+        }
+        if (!retry) {
+            if (availableServices.size() == MAX_HISTORY_SIZE)
+                availableServices.remove(randomServiceKey());
+            
+            availableServices.put(uuid, service);
+            registeredServices++;
+        }
         
         RPCResponse<Long> rp = null;
         try {
             rp = masterClient.xtreemfs_service_register(null, service);
             long result = rp.get();
-            assert(result == 1) : "A previous entry was modified unexpectedly.("+result+")";
-            
-            if (availableServices.size() == MAX_HISTORY_SIZE)
-                availableServices.remove(randomServiceKey());
-            
-            availableServices.put(service.getUuid(), service);
-            registeredServices++;
+            if(result != 1) {
+                System.err.println("ServiceRegister: result != 1, result == "+result);
+                throw new FailureException("A previous entry was modified unexpectedly.("+result+")", kind); 
+            }
         } finally {
             if (rp != null) rp.freeBuffers();
         }
-        t.put(service.getUuid(), (int) time);
-        time++;
-        actSeq++;
+        if (!retry) {
+            t.put(service.getUuid(), (int) time);
+            time++;
+            actSeq++;
+        }
     }
     
     /**
      * Performs an AddressMapping delete.
      * @throws Exception 
+     * @param retry
      */
-    private static void performAddressMappingDelete() throws Exception{
-        String uuid = new LinkedList<String>(availableAddressMappings.keySet())
-        .get(random.nextInt(availableAddressMappings.size()));
+    private static void performAddressMappingDelete(boolean retry) throws Exception{
+        if (!retry) {
+            uuid = new LinkedList<String>(availableAddressMappings.keySet())
+            .get(random.nextInt(availableAddressMappings.size()));
+            
+            kind = 2;
+        }
         
-        kind = 2;
-        dir_replication_test.uuid = uuid;
+        if (!retry) {
+            availableAddressMappings.remove(uuid);
+            registeredAddressMappings--;
+        }
         
         RPCResponse<?> rp = null;
         try {
             rp = masterClient.xtreemfs_address_mappings_remove(null, uuid);
             rp.get();
-            
-            availableAddressMappings.remove(uuid);
-            registeredAddressMappings--;
         } finally {
             if (rp != null) rp.freeBuffers();
         }
-        time++;
-        actSeq++;
+        if (!retry) {
+            time++;
+            actSeq++;
+        }
     }
     
     /**
      * Performs a Service delete.
      * @throws Exception 
+     * @param retry
      */
-    private static void performServiceDelete() throws Exception{
-        String uuid = new LinkedList<String>(availableServices.keySet())
-        .get(random.nextInt(availableServices.size()));
+    private static void performServiceDelete(boolean retry) throws Exception{
+        if (!retry) {
+            uuid = new LinkedList<String>(availableServices.keySet())
+            .get(random.nextInt(availableServices.size()));
+            
+            kind = 3;
+        }
         
-        kind = 3;
-        dir_replication_test.uuid = uuid;
+        if (!retry) {
+            availableServices.remove(uuid);
+            registeredServices--;
+        }
         
         RPCResponse<?> rp = null;
         try {
             rp = masterClient.xtreemfs_service_deregister(null, uuid);
             rp.get();
-            
-            availableServices.remove(uuid);
-            registeredServices--;
         } finally {
             if (rp != null) rp.freeBuffers();
         }
-        actSeq++;
-        time++;
+        if (!retry) {
+            actSeq++;
+            time++;
+        }
     }
     
     /**
@@ -617,40 +676,11 @@ public class dir_replication_test {
         }      
     }
     
-    /**
-     * Declares a master randomly from the list of participants.
-     * @throws Exception
-     */
-    private static void setupRandomMasterDIR() throws Exception{    
-        int r;
-        do 
-            { r = random.nextInt(participants.size()); } 
-        while (masterClient!=null && masterClient.equals(participants.get(r)));
-
-        masterClient = participants.get(r);
-        System.out.println("to "+masterClient.getDefaultServerAddress().toString());
-        
-        RPCResponse<Object> rp = null;
-        try {
-            rp = masterClient.replication_toMaster(null, creds);
-            rp.get();
-        } catch (DIRException e) {
-            if (e.getError_code() == ErrorCodes.NOT_ENOUGH_PARTICIPANTS)
-                error("There where not enough participants available to" +
-                                " perform this operation.");
-            else if (e.getError_code() == ErrorCodes.AUTH_FAILED)
-                error("You are not authorized to perform this operation.");
-            else throw e;
-        } finally {
-            if (rp!=null) rp.freeBuffers();
-        } 
-        System.out.println("New master: " + 
-                masterClient.getDefaultServerAddress().toString());
-        
-        masterChanges++;
-        viewID++;
-        lastSeq = actSeq;
-        actSeq = 0;
+    private static String getTimeStamp(long utime) {
+        long time = utime/1000;
+        return "["+(time - time % 60 - ((time-time%60)/60)%60)/3600 + ":" + 
+                   ((time - time % 60)/60)%60 + ":" +
+                   time % 60 + "]";
     }
     
     /**

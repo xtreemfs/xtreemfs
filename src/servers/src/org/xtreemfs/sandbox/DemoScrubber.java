@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.xtreemfs.common.TimeServerClient;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
@@ -87,7 +89,7 @@ public class DemoScrubber implements DemoScrubberFileInfo.FileScrubbedListener {
 
     private final RPCNIOSocketClient rpcClient;
 
-    private final DIRClient          dirClient;
+    private final TimeServerClient          dirClient;
 
     private final MRCClient          mrcClient;
 
@@ -117,7 +119,7 @@ public class DemoScrubber implements DemoScrubberFileInfo.FileScrubbedListener {
 
     private String currentDirName = null;
 
-    public DemoScrubber(RPCNIOSocketClient rpcClient, DIRClient dirClient, MRCClient mrcClient,
+    public DemoScrubber(RPCNIOSocketClient rpcClient, TimeServerClient dirClient, MRCClient mrcClient,
             String volume, boolean checkOnly, int numThrs) {
         this.rpcClient = rpcClient;
         this.dirClient = dirClient;
