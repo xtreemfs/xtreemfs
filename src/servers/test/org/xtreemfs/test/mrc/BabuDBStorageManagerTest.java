@@ -110,7 +110,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         FSUtils.delTree(dbDir);
         dbDir.mkdirs();
         database = BabuDBFactory.createBabuDB(new BabuDBConfig(DB_DIRECTORY, DB_DIRECTORY, 2,
-            1024 * 1024 * 16, 5 * 60, SyncMode.FDATASYNC, 300, 1000, false, 16, 1024 * 1024 * 512));
+            1024 * 1024 * 16, 5 * 60, SyncMode.FDATASYNC, 300, 1000, false, 16, 1024 * 1024 * 512),null);
         mngr = new BabuDBStorageManager(database, "volId");
         
         exc = null;
