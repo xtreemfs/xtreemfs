@@ -70,7 +70,6 @@ module org
         void xtreemfs_checkpoint() # 4;
         void xtreemfs_discover_dir( out DirService dir_service) # 5;
         uint64_t xtreemfs_global_time_s_get() # 6;
-        void xtreemfs_replication_to_master() # 7;
         void xtreemfs_service_deregister( string uuid ) # 12;
         void xtreemfs_service_get_by_name( string name, out ServiceSet services ) # 10;
         void xtreemfs_service_get_by_type( ServiceType type, out ServiceSet services ) #8;
