@@ -179,7 +179,7 @@ public:
       catch ( std::exception& exc )
       {
         file->parent_volume->get_log()->
-          getStream( YIELD::platform::Log::LOG_ERR ) << 
+          getStream( YIELD::platform::Log::LOG_INFO ) << 
           "xtreemfs::File: caught exception trying to renew XCap for file " <<
           file->file_credentials.get_xcap().get_file_id() << 
           ": " << exc.what() << ".";
