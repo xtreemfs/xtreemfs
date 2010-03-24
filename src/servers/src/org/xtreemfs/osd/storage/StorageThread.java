@@ -444,10 +444,8 @@ public class StorageThread extends Stage {
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             
             if (fi.getTruncateEpoch() >= epochNumber) {
-                cback.truncateComplete(null, new OSDException(ErrorCodes.EPOCH_OUTDATED,
-                    "invalid truncate epoch for file " + fileId + ": " + epochNumber + ", current one is "
-                        + fi.getTruncateEpoch(), ""));
-                return;
+                cback.truncateComplete(new OSDWriteResponse(), null);
+		return;
             }
             
             // find the offset of the local OSD in the current replica's
