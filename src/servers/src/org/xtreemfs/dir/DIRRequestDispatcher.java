@@ -1,4 +1,4 @@
-/*  Copyright (c) 2009 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+/*  Copyright (c) 2009-2010 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
     This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
     Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -37,11 +37,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBFactory;
+import org.xtreemfs.babudb.StaticInitialization;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.babudb.config.ReplicationConfig;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.lsmdb.DatabaseManager;
 import org.xtreemfs.babudb.replication.ReplicationManager;
+import org.xtreemfs.babudb.snapshots.SnapshotManager;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
@@ -59,7 +61,6 @@ import org.xtreemfs.dir.operations.GetServiceByNameOperation;
 import org.xtreemfs.dir.operations.GetServiceByUuidOperation;
 import org.xtreemfs.dir.operations.GetServicesByTypeOperation;
 import org.xtreemfs.dir.operations.RegisterServiceOperation;
-import org.xtreemfs.dir.operations.ReplicationToMasterOperation;
 import org.xtreemfs.dir.operations.ServiceOfflineOperation;
 import org.xtreemfs.dir.operations.SetAddressMappingOperation;
 import org.xtreemfs.foundation.CrashReporter;
@@ -89,7 +90,7 @@ import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
  * @author bjko
  */
 public class DIRRequestDispatcher extends LifeCycleThread 
-    implements RPCServerRequestListener, LifeCycleListener {
+    implements RPCServerRequestListener, LifeCycleListener, StaticInitialization {
     
     /**
      * index for address mappings, stores uuid -> AddressMappingSet
@@ -116,15 +117,13 @@ public class DIRRequestDispatcher extends LifeCycleThread
     private volatile boolean                   quit;
     
     private final BabuDB                       database;
-    
-    private final DatabaseManager              dbMan;
-    
+        
     private final DiscoveryMsgThread           discoveryThr;
 
     private final MonitoringThread             monThr;
     
     private final DIRConfig                    config;
-        
+            
     public static final String                 DB_NAME           = "dirdb";
     
     public DIRRequestDispatcher(final DIRConfig config, 
@@ -140,15 +139,10 @@ public class DIRRequestDispatcher extends LifeCycleThread
         // start up babudb
         if (dbsConfig instanceof ReplicationConfig)
             database = BabuDBFactory
-                        .createReplicatedBabuDB((ReplicationConfig) dbsConfig);
+                        .createReplicatedBabuDB(
+                                (ReplicationConfig) dbsConfig, this);
         else
-            database = BabuDBFactory.createBabuDB(dbsConfig);
-            
-        dbMan = database.getDatabaseManager();
-        
-        database.disableSlaveCheck();
-        initializeDatabase();
-        database.enableSlaveCheck();
+            database = BabuDBFactory.createBabuDB(dbsConfig, this);
         
         registerOperations();
         
@@ -302,70 +296,6 @@ public class DIRRequestDispatcher extends LifeCycleThread
         this.waitForShutdown();
     }
     
-    private void initializeDatabase() {
-        final byte[] versionKey = "version".getBytes();
-        try {
-            Database db = dbMan.createDatabase("dirdbver", 1);
-            ReusableBuffer rb = null;
-            try {
-                byte[] keyData = new byte[4];
-                rb = ReusableBuffer.wrap(keyData);
-                rb.putInt(DB_VERSION);
-                db.singleInsert(0, versionKey, keyData,null).get();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                System.err.println("cannot initialize database");
-                System.exit(1);
-            } finally {
-                if (rb != null) BufferPool.free(rb);
-            }
-        } catch (BabuDBException ex) {
-            // database exists: check version
-            if (ex.getErrorCode() == BabuDBException.ErrorCode.DB_EXISTS) {
-                ReusableBuffer rb = null;
-                try {
-                    Database db = dbMan.getDatabase("dirdbver");
-                    
-                    byte[] value = db.lookup(0, versionKey,null).get();
-                    int ver = -1;
-                    if ((value != null) && (value.length == 4)) {
-                        rb = ReusableBuffer.wrap(value);
-                        ver = rb.getInt();
-                    }
-                    if (ver != DB_VERSION) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, this, "OUTDATED DATABASE VERSION DETECTED!");
-                        Logging
-                                .logMessage(
-                                    Logging.LEVEL_ERROR,
-                                    this,
-                                    "the database was created contains data with version no %d, this DIR uses version %d.",
-                                    ver, DB_VERSION);
-                        Logging.logMessage(Logging.LEVEL_ERROR, this,
-                            "please start an older version of the DIR or remove the old database");
-                        System.exit(1);
-                    }
-                } catch (Exception ex2) {
-                    ex2.printStackTrace();
-                    System.err.println("cannot initialize database");
-                    System.exit(1);
-                } finally {
-                    if (rb != null) BufferPool.free(rb);
-                }
-            } else {
-                ex.printStackTrace();
-                System.err.println("cannot initialize database");
-                System.exit(1);
-            }
-        }
-        
-        try {
-            dbMan.createDatabase("dirdb", 3);
-        } catch (BabuDBException ex) {
-            // database already created
-        }
-        
-    }
-    
     private void registerOperations() {
         
         DIROperation op;
@@ -397,9 +327,6 @@ public class DIRRequestDispatcher extends LifeCycleThread
         registry.put(op.getProcedureId(), op);
         
         op = new ServiceOfflineOperation(this);
-        registry.put(op.getProcedureId(), op);
-        
-        op = new ReplicationToMasterOperation(this);
         registry.put(op.getProcedureId(), op);
     }
     
@@ -498,5 +425,74 @@ public class DIRRequestDispatcher extends LifeCycleThread
     
     public DIRConfig getConfig() {
         return config;
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.xtreemfs.babudb.StaticInitialization#initialize(org.xtreemfs.babudb.lsmdb.DatabaseManager, org.xtreemfs.babudb.snapshots.SnapshotManager, org.xtreemfs.babudb.replication.ReplicationManager)
+     */
+    @Override
+    public void initialize(DatabaseManager dbMan, SnapshotManager sMan, 
+            ReplicationManager replMan) {
+        final byte[] versionKey = "version".getBytes();
+        try {
+            Database db = dbMan.createDatabase("dirdbver", 1);
+            ReusableBuffer rb = null;
+            try {
+                byte[] keyData = new byte[4];
+                rb = ReusableBuffer.wrap(keyData);
+                rb.putInt(DB_VERSION);
+                db.singleInsert(0, versionKey, keyData,null).get();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                System.err.println("cannot initialize database");
+                System.exit(1);
+            } finally {
+                if (rb != null) BufferPool.free(rb);
+            }
+        } catch (BabuDBException ex) {
+            // database exists: check version
+            if (ex.getErrorCode() == BabuDBException.ErrorCode.DB_EXISTS) {
+                ReusableBuffer rb = null;
+                try {
+                    Database db = dbMan.getDatabase("dirdbver");
+                    
+                    byte[] value = db.lookup(0, versionKey,null).get();
+                    int ver = -1;
+                    if ((value != null) && (value.length == 4)) {
+                        rb = ReusableBuffer.wrap(value);
+                        ver = rb.getInt();
+                    }
+                    if (ver != DB_VERSION) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, "OUTDATED DATABASE VERSION DETECTED!");
+                        Logging
+                                .logMessage(
+                                    Logging.LEVEL_ERROR,
+                                    this,
+                                    "the database was created contains data with version no %d, this DIR uses version %d.",
+                                    ver, DB_VERSION);
+                        Logging.logMessage(Logging.LEVEL_ERROR, this,
+                            "please start an older version of the DIR or remove the old database");
+                        System.exit(1);
+                    }
+                } catch (Exception ex2) {
+                    ex2.printStackTrace();
+                    System.err.println("cannot initialize database");
+                    System.exit(1);
+                } finally {
+                    if (rb != null) BufferPool.free(rb);
+                }
+            } else {
+                ex.printStackTrace();
+                System.err.println("cannot initialize database");
+                System.exit(1);
+            }
+        }
+        
+        try {
+            dbMan.createDatabase("dirdb", 3);
+        } catch (BabuDBException ex) {
+            // database already created
+        }
     }
 }

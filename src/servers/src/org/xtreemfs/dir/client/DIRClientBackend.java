@@ -131,6 +131,7 @@ class DIRClientBackend extends ONCRPCClient {
 
     public RPCResponse<Long> _xtreemfs_service_register(InetSocketAddress server, Object[] args) {
         Service registry = (Service) args[0];
+        assert (registry != null);
         xtreemfs_service_registerRequest rq = new xtreemfs_service_registerRequest(registry);
         
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Long>() {

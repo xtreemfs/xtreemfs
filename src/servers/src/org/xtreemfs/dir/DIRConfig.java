@@ -1,4 +1,4 @@
-/*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+/*  Copyright (c) 2008-2010 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
  This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
  Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -25,9 +25,11 @@
 package org.xtreemfs.dir;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
-import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.config.ServiceConfig;
 
 /**
@@ -49,6 +51,8 @@ public class DIRConfig extends ServiceConfig {
     private int     timeoutSeconds;
 
     private String  sendmailBin;
+    
+    private Map<String, Integer> mirrors;
     
     /** Creates a new instance of OSDConfig */
     public DIRConfig(String filename) throws IOException {
@@ -77,6 +81,23 @@ public class DIRConfig extends ServiceConfig {
         this.timeoutSeconds = this.readOptionalInt("service_timeout_s", 5*60);
 
         this.sendmailBin = this.readOptionalString("monitoring.email.programm", "/usr/sbin/sendmail");
+    
+        this.mirrors = new HashMap<String, Integer>();
+        if (this.address != null) {
+            this.mirrors.put(this.address.getHostAddress(), this.port);
+        }
+        int id = 0;
+        String host;
+        InetSocketAddress addrs;
+        int port;
+        while ((host = this.readOptionalString("babudb.repl.participant." + id,null)) != null) {
+            port = this.readRequiredInt("babudb.repl.participant." + id +
+                                        ".dirPort");
+            addrs = new InetSocketAddress(host, port);
+            this.mirrors.put(addrs.getAddress().getHostAddress(), port);
+            
+            id++;
+        }
     }
 
     /**
@@ -128,4 +149,10 @@ public class DIRConfig extends ServiceConfig {
         return sendmailBin;
     }
     
+    /**
+     * @return the mirror DIRs
+     */
+    public Map<String, Integer> getMirrors() {
+        return mirrors;
+    }  
 }

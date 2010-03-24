@@ -75,8 +75,12 @@ public class RegisterServiceOperation extends DIROperation {
                             currentVersion = dbData.getVersion();
                         }
                         
-                        if (reg.getVersion() != currentVersion)
-                            throw new ConcurrentModificationException();
+                        if (reg.getVersion() != currentVersion) {
+                            throw new ConcurrentModificationException(
+                                    "The requested version number (" + 
+                                    reg.getVersion() + ") did not match the " +
+                                    "expected version ("+currentVersion+")!");
+                        }
                         
                         final long version = ++currentVersion;
                         

@@ -145,7 +145,7 @@ public class Client {
     public ServiceSet getRegistry() throws IOException {
         RPCResponse<ServiceSet> r = null;
         try {
-            r = dirClient._xtreemfs_service_get_by_type(null, new Object[]{ServiceType.SERVICE_TYPE_MIXED});
+            r = dirClient.xtreemfs_service_get_by_type(null, new Object[]{ServiceType.SERVICE_TYPE_MIXED});
             return r.get();
         } catch (ONCRPCException ex) {
             throw new IOException("communication failure", ex);

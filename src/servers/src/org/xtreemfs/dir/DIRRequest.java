@@ -1,4 +1,4 @@
-/*  Copyright (c) 2009 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+/*  Copyright (c) 2009-2010 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
     This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
     Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -23,8 +23,6 @@
  */
 
 package org.xtreemfs.dir;
-
-import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -72,13 +70,7 @@ public class DIRRequest {
         rpcRequest.sendErrorCode(ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR);
     }
     
-    public void sendRedirectException(InetSocketAddress address) {
-        String addr = null;
-        int port = 0;
-        if (address != null) {
-            addr = address.getHostName();
-            port = address.getPort();
-        }
+    public void sendRedirectException(String addr, int port) {
         rpcRequest.sendException(new RedirectException(addr,port));
     }
     

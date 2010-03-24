@@ -24,16 +24,19 @@
 
 package org.xtreemfs.dir.operations;
 
+import java.net.InetSocketAddress;
+
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBRequestListener;
-import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.DIRInterface.InvalidArgumentException;
 import org.xtreemfs.interfaces.DIRInterface.RedirectException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
+import static org.xtreemfs.babudb.BabuDBException.ErrorCode.*;
 
 /**
  * 
@@ -99,15 +102,45 @@ public abstract class DIROperation {
      * @param rq - original {@link DIRRequest}.
      */
     void requestFailed(Exception error, DIRRequest rq) {
-        Logging.logError(Logging.LEVEL_ERROR, this, error);
-        if (error != null && error instanceof BabuDBException && 
-                ((BabuDBException) error).getErrorCode() == ErrorCode.NO_ACCESS && 
-                dbsReplicationManager != null)
-            rq.sendRedirectException(dbsReplicationManager.getMaster());
-        else if (error != null && error instanceof ONCRPCException)
+        InetSocketAddress master = null;
+        if (error != null && 
+            error instanceof BabuDBException && 
+            ((BabuDBException) error).getErrorCode().equals(NO_ACCESS) && 
+            dbsReplicationManager != null &&
+            (master = dbsReplicationManager.getMaster()) != null) {
+            
+            // retrieve the correct port for the DIR mirror
+            String host = master.getAddress().getHostAddress();
+            Integer port = this.master.getConfig().getMirrors().get(host);
+            if (port == null){ 
+                Logging.logMessage(Logging.LEVEL_ERROR, this,  "The port for " +
+                		"the mirror DIR '%s' could not be retrieved.",
+                		host);
+                
+                rq.sendInternalServerError(error);
+            } else {
+                rq.sendRedirectException(host,port);
+            }
+        } else if (error != null && error instanceof ONCRPCException) {
+            Logging.logError(Logging.LEVEL_ERROR, this, error);
             rq.sendException((ONCRPCException) error);
-        else
+        } else if (error != null && 
+                   error instanceof BabuDBException &&
+                  (((BabuDBException)error).getErrorCode().equals(NO_SUCH_DB) ||
+                   ((BabuDBException)error).getErrorCode().equals(DB_EXISTS) ||
+                   ((BabuDBException)error).getErrorCode().equals(NO_SUCH_INDEX) ||
+                   ((BabuDBException)error).getErrorCode().equals(NO_SUCH_SNAPSHOT) ||
+                   ((BabuDBException)error).getErrorCode().equals(SNAP_EXISTS)                   
+                  )) 
+        { // blame the client
+            Logging.logError(Logging.LEVEL_ERROR, this, error);
+            rq.sendException(new InvalidArgumentException(error.getMessage()));
+        } else {
+            if (error != null && !(error instanceof BabuDBException))
+                Logging.logError(Logging.LEVEL_ERROR, this, error);
+            
             rq.sendInternalServerError(error);
+        }
     }
     
     /**

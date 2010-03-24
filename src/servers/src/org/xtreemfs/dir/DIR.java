@@ -59,10 +59,13 @@ public class DIR {
             return;
         }
         
+        Logging.start(config.getDebugLevel(), config.getDebugCategories());
+        
         BabuDBConfig dbsConfig = null;
         try {
             dbsConfig = new ReplicationConfig(configFileName);
         } catch (Throwable e) {
+            Logging.logError(Logging.LEVEL_INFO, null, e);
             try {
                 dbsConfig = new BabuDBConfig(configFileName);
             } catch (IOException ex) {
@@ -71,8 +74,6 @@ public class DIR {
             }
         }
         
-        Logging.start(config.getDebugLevel(), config.getDebugCategories());
-
         if (Logging.isInfo())
             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "JAVA_HOME=%s", System
                     .getProperty("java.home"));
