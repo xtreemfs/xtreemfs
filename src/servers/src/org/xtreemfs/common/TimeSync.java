@@ -37,7 +37,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 
@@ -59,9 +58,9 @@ public final class TimeSync extends LifeCycleThread {
     };
     
     /**
-     * A dir client used to synchronize clocks
+     * A client used to synchronize clocks
      */
-    private DIRClient        dir;
+    private TimeServerClient timeServerClient;
     
     /**
      * interval in ms to wait between to synchronizations.
@@ -113,12 +112,12 @@ public final class TimeSync extends LifeCycleThread {
      * @dir a directory server to use for synchronizing clocks, can be null for
      *      test setups only
      */
-    private TimeSync(extSyncSource source, DIRClient dir, InetSocketAddress gpsd, int timeSyncInterval, int localTimeRenew) {
+    private TimeSync(extSyncSource source, TimeServerClient dir, InetSocketAddress gpsd, int timeSyncInterval, int localTimeRenew) {
         super("TSync Thr");
         setDaemon(true);
         this.localTimeRenew = localTimeRenew;
         this.timeSyncInterval = timeSyncInterval;
-        this.dir = dir;
+        this.timeServerClient = dir;
         this.syncSuccess = false;
         this.syncSource = source;
         this.gpsdAddr = gpsd;
@@ -148,7 +147,7 @@ public final class TimeSync extends LifeCycleThread {
         TimeSync.theInstance = this;
         notifyStarted();
         String tsStatus = " using the local clock (precision is " + this.localTimeRenew + "ms)";
-        if (this.dir != null) {
+        if (this.timeServerClient != null) {
             tsStatus = " and remote sync every " + this.timeSyncInterval + "ms";
         }
         Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "TimeSync is running %s", tsStatus);
@@ -181,7 +180,7 @@ public final class TimeSync extends LifeCycleThread {
      * @param localTimeRenew
      * @param dirAuthStr
      */
-    public static TimeSync initialize(DIRClient dir, int timeSyncInterval, int localTimeRenew)
+    public static TimeSync initialize(TimeServerClient dir, int timeSyncInterval, int localTimeRenew)
             throws Exception {
         
         if (theInstance != null) {
@@ -220,11 +219,11 @@ public final class TimeSync extends LifeCycleThread {
         return s;
     }
     
-    public void enableRemoteSynchronization(DIRClient client) {
-        if (this.dir != null) {
+    public void enableRemoteSynchronization(TimeServerClient client) {
+        if (this.timeServerClient != null) {
             throw new RuntimeException("remote time synchronization is already enabled");
         }
-        this.dir = client;
+        this.timeServerClient = client;
         
         if (Logging.isInfo())
             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this,
@@ -310,7 +309,7 @@ public final class TimeSync extends LifeCycleThread {
                 try {
                     long tStart = System.currentTimeMillis();
                     long oldDrift = currentDrift;
-                    r = dir.xtreemfs_global_time_get(null);
+                    r = timeServerClient.xtreemfs_global_time_get(null);
                     Long globalTime = r.get();
 
                     long tEnd = System.currentTimeMillis();
@@ -425,10 +424,10 @@ public final class TimeSync extends LifeCycleThread {
             ts.waitForStartup();
             
             for (;;) {
-                Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "local time  = %d", ts
-                        .getLocalSystemTime());
-                Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "global time = %d + %d", ts
-                        .getGlobalTime(), ts.getDrift());
+                Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, 
+                        "local time  = %d", TimeSync.getLocalSystemTime());
+                Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, 
+                        "global time = %d + %d", TimeSync.getGlobalTime(), ts.getDrift());
                 Thread.sleep(1000);
             }
             
