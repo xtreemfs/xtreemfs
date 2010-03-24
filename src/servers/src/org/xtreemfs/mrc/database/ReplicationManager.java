@@ -34,12 +34,11 @@ package org.xtreemfs.mrc.database;
 public interface ReplicationManager {
     
     /**
-     * The MRC declares its underlying DB to master in master-slave-replication
-     * context.
-     * Other DBs of the replication-participant-pool will remotely be declared
-     * to slaves.
-     * 
-     * @throws DatabaseException
+     * <p>
+     * Changes the database replication master. Uses this, if
+     * your {@link BabuDBRequestListener} recognizes an failure due
+     * the replication and want to help BabuDB to recognize it.
+     * </p>
      */
-    public void declareToMaster() throws DatabaseException;
+    public void manualFailover();
 }

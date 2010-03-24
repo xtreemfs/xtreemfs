@@ -1,4 +1,4 @@
-/*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+/*  Copyright (c) 2008-2010 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
  This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
  Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -37,12 +37,14 @@ import java.util.Map.Entry;
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBFactory;
+import org.xtreemfs.babudb.StaticInitialization;
 import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.babudb.config.ReplicationConfig;
 import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.lsmdb.DatabaseManager;
+import org.xtreemfs.babudb.snapshots.SnapshotManager;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.logging.Logging;
@@ -65,7 +67,7 @@ import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 
-public class BabuDBVolumeManager implements VolumeManager {
+public class BabuDBVolumeManager implements VolumeManager, StaticInitialization {
     
     private static final String                    VERSION_DB_NAME       = "V";
     
@@ -93,6 +95,8 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     private final BabuDBConfig                     config;
     
+    private DatabaseException                      error;
+    
     public BabuDBVolumeManager(MRCRequestDispatcher master, BabuDBConfig dbconfig) {
         volsById = new HashMap<String, StorageManager>();
         volsByName = new HashMap<String, StorageManager>();
@@ -100,144 +104,25 @@ public class BabuDBVolumeManager implements VolumeManager {
         config = dbconfig;
     }
     
+    /*
+     * (non-Javadoc)
+     * @see org.xtreemfs.mrc.database.VolumeManager#init()
+     */
     @Override
     public void init() throws DatabaseException {
-        
         try {
             
             // try to create a new database
             if (config instanceof ReplicationConfig) {
-                database = BabuDBFactory.createReplicatedBabuDB((ReplicationConfig) config);
+                database = BabuDBFactory.createReplicatedBabuDB(
+                        (ReplicationConfig) config,this);
                 replMan = new BabuDBReplicationManger(database);
             } else
-                database = BabuDBFactory.createBabuDB(config);
+                database = BabuDBFactory.createBabuDB(config,this);
             
+            if (error != null) throw error;
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
-        }
-        
-        // check if the snapshot version DB exists; if not, make sure that it is
-        // created
-        if (snapVersionDB == null)
-            try {
-                snapVersionDB = database.getDatabaseManager().createDatabase(SNAP_VERSIONS_DB_NAME, 1);
-            } catch (BabuDBException exc) {
-                if (exc.getErrorCode() == ErrorCode.DB_EXISTS)
-                    try {
-                        snapVersionDB = database.getDatabaseManager().getDatabase(SNAP_VERSIONS_DB_NAME);
-                    } catch (BabuDBException exc2) {
-                        throw new DatabaseException(exc2);
-                    }
-                else
-                    throw new DatabaseException(exc);
-            }
-        
-        assert (snapVersionDB != null);
-        
-        try {
-            database.disableSlaveCheck();
-            Database volDB = database.getDatabaseManager().createDatabase(VERSION_DB_NAME, 3);
-            
-            // if the creation succeeds, set the version number to the current
-            // MRC DB version
-            byte[] verBytes = ByteBuffer.wrap(new byte[4])
-                    .putInt((int) VersionManagement.getMrcDataVersion()).array();
-            BabuDBInsertGroup ig = volDB.createInsertGroup();
-            ig.addInsert(VERSION_INDEX, VERSION_KEY.getBytes(), verBytes);
-            volDB.insert(ig, null).get();
-            
-        } catch (Exception e) {
-            
-            if (e instanceof BabuDBException && ((BabuDBException) e).getErrorCode() == ErrorCode.DB_EXISTS) {
-                
-                Database volDB = null;
-                try {
-                    volDB = database.getDatabaseManager().getDatabase(VERSION_DB_NAME);
-                } catch (BabuDBException e1) {
-                    throw new DatabaseException(e1);
-                }
-                
-                // database already exists
-                if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this, "database loaded from '%s'",
-                        config.getBaseDir());
-                
-                try {
-                    
-                    // retrieve the database version number
-                    byte[] verBytes = volDB.lookup(VERSION_INDEX, VERSION_KEY.getBytes(), null).get();
-                    int ver = ByteBuffer.wrap(verBytes).getInt();
-                    
-                    // check the database version number
-                    if (ver != VersionManagement.getMrcDataVersion()) {
-                        
-                        String errMsg = "Wrong database version. Expected version = "
-                            + VersionManagement.getMrcDataVersion() + ", version on disk = " + ver;
-                        
-                        Logging.logMessage(Logging.LEVEL_CRIT, this, errMsg);
-                        if (VersionManagement.getMrcDataVersion() > ver)
-                            Logging
-                                    .logMessage(
-                                        Logging.LEVEL_CRIT,
-                                        this,
-                                        "Please create an XML dump with the old MRC version and restore the dump with this MRC, or delete the database if the file system is no longer needed.");
-                        
-                        throw new DatabaseException(errMsg, ExceptionType.WRONG_DB_VERSION);
-                    }
-                    
-                } catch (Exception exc) {
-                    Logging.logMessage(Logging.LEVEL_CRIT, this,
-                        "The MRC database is either corrupted or outdated. The expected database version for this server is "
-                            + VersionManagement.getMrcDataVersion());
-                    throw new DatabaseException(exc);
-                }
-                
-                try {
-                    
-                    // iterate over the list of databases in the db manager
-                    for (Entry<String, Database> dbEntry : database.getDatabaseManager().getDatabases()
-                            .entrySet()) {
-                        
-                        // ignore the volume database
-                        if (dbEntry.getKey().equals(VERSION_DB_NAME)
-                            || dbEntry.getKey().equals(SNAP_VERSIONS_DB_NAME))
-                            continue;
-                        
-                        BabuDBStorageManager sMan = new BabuDBStorageManager(database, dbEntry.getValue());
-                        VolumeInfo vol = sMan.getVolumeInfo();
-                        
-                        volsById.put(vol.getId(), sMan);
-                        volsByName.put(vol.getName(), sMan);
-                        for (String snapName : sMan.getAllSnapshots()) {
-                            String snapVolName = vol.getName() + SNAPSHOT_SEPARATOR + snapName;
-                            
-                            // retrieve the version time stamp from the snap
-                            // version database
-                            byte[] bytes = snapVersionDB.lookup(0, snapVolName.getBytes(), null).get();
-                            if (bytes == null)
-                                Logging
-                                        .logMessage(
-                                            Logging.LEVEL_ERROR,
-                                            Category.db,
-                                            this,
-                                            "no version mapping exists for snapshot %s; file contents may be corrupted",
-                                            snapVolName);
-                            long snaptime = bytes == null ? 0 : ByteBuffer.wrap(bytes).getLong();
-                            
-                            volsByName.put(snapVolName, new BabuDBSnapshotStorageManager(database, vol
-                                    .getName(), vol.getId(), snapName, snaptime));
-                        }
-                        
-                    }
-                    
-                } catch (BabuDBException exc) {
-                    throw new DatabaseException(exc);
-                }
-                
-            } else
-                Logging.logError(Logging.LEVEL_ERROR, this, e);
-        } finally {
-            database.enableSlaveCheck();
         }
     }
     
@@ -401,7 +286,8 @@ public class BabuDBVolumeManager implements VolumeManager {
             
             // create the snapshot
             sMan.createSnapshot(snapName, parentId, dir.getFileName(), recursive);
-            volsByName.put(snapVolName, new BabuDBSnapshotStorageManager(database, sMan.getVolumeInfo()
+            volsByName.put(snapVolName, new BabuDBSnapshotStorageManager(
+                    database.getSnapshotManager(), sMan.getVolumeInfo()
                     .getName(), volumeId, snapName, currentTime));
             
         } catch (DatabaseException exc) {
@@ -461,5 +347,143 @@ public class BabuDBVolumeManager implements VolumeManager {
     @Override
     public ReplicationManager getReplicationManager() {
         return this.replMan;
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.xtreemfs.babudb.StaticInitialization#initialize(org.xtreemfs.babudb.lsmdb.DatabaseManager)
+     */
+    @Override
+    public void initialize(DatabaseManager dbMan, SnapshotManager snapMan,
+            org.xtreemfs.babudb.replication.ReplicationManager replMan) {
+        // check if the snapshot version DB exists; if not, make sure that it is
+        // created
+        if (snapVersionDB == null)
+            try {
+                snapVersionDB = dbMan.createDatabase(SNAP_VERSIONS_DB_NAME, 1);
+            } catch (BabuDBException exc) {
+                if (exc.getErrorCode() == ErrorCode.DB_EXISTS)
+                    try {
+                        snapVersionDB = dbMan.getDatabase(SNAP_VERSIONS_DB_NAME);
+                    } catch (BabuDBException exc2) {
+                        error = new DatabaseException(exc2);
+                        return;
+                    }
+                else {
+                    error = new DatabaseException(exc);
+                    return;
+                }
+            }
+        
+        assert (snapVersionDB != null);
+        
+        try {
+            Database volDB = dbMan.createDatabase(VERSION_DB_NAME, 3);
+            
+            // if the creation succeeds, set the version number to the current
+            // MRC DB version
+            byte[] verBytes = ByteBuffer.wrap(new byte[4])
+                    .putInt((int) VersionManagement.getMrcDataVersion()).array();
+            BabuDBInsertGroup ig = volDB.createInsertGroup();
+            ig.addInsert(VERSION_INDEX, VERSION_KEY.getBytes(), verBytes);
+            volDB.insert(ig, null).get();
+            
+        } catch (Exception e) {
+            
+            if (e instanceof BabuDBException && ((BabuDBException) e).getErrorCode() == ErrorCode.DB_EXISTS) {
+                
+                Database volDB = null;
+                try {
+                    volDB = dbMan.getDatabase(VERSION_DB_NAME);
+                } catch (BabuDBException e1) {
+                    error = new DatabaseException(e1);
+                    return;
+                }
+                
+                // database already exists
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this, "database loaded from '%s'",
+                        config.getBaseDir());
+                
+                try {
+                    
+                    // retrieve the database version number
+                    byte[] verBytes = volDB.lookup(VERSION_INDEX, VERSION_KEY.getBytes(), null).get();
+                    int ver = ByteBuffer.wrap(verBytes).getInt();
+                    
+                    // check the database version number
+                    if (ver != VersionManagement.getMrcDataVersion()) {
+                        
+                        String errMsg = "Wrong database version. Expected version = "
+                            + VersionManagement.getMrcDataVersion() + ", version on disk = " + ver;
+                        
+                        Logging.logMessage(Logging.LEVEL_CRIT, this, errMsg);
+                        if (VersionManagement.getMrcDataVersion() > ver)
+                            Logging
+                                    .logMessage(
+                                        Logging.LEVEL_CRIT,
+                                        this,
+                                        "Please create an XML dump with the old MRC version and restore the dump with this MRC, or delete the database if the file system is no longer needed.");
+                        
+                        throw new DatabaseException(errMsg, ExceptionType.WRONG_DB_VERSION);
+                    }
+                    
+                } catch (Exception exc) {
+                    Logging.logMessage(Logging.LEVEL_CRIT, this,
+                        "The MRC database is either corrupted or outdated. The expected database version for this server is "
+                            + VersionManagement.getMrcDataVersion());
+                    error = new DatabaseException(exc);
+                    return;
+                }
+                
+                try {
+                    
+                    // iterate over the list of databases in the db manager
+                    for (Entry<String, Database> dbEntry : dbMan.getDatabases()
+                            .entrySet()) {
+                        
+                        // ignore the volume database
+                        if (dbEntry.getKey().equals(VERSION_DB_NAME)
+                            || dbEntry.getKey().equals(SNAP_VERSIONS_DB_NAME))
+                            continue;
+                        
+                        BabuDBStorageManager sMan = new BabuDBStorageManager(
+                                dbMan, snapMan, replMan, dbEntry.getValue());
+                        VolumeInfo vol = sMan.getVolumeInfo();
+                        
+                        volsById.put(vol.getId(), sMan);
+                        volsByName.put(vol.getName(), sMan);
+                        for (String snapName : sMan.getAllSnapshots()) {
+                            String snapVolName = vol.getName() + SNAPSHOT_SEPARATOR + snapName;
+                            
+                            // retrieve the version time stamp from the snap
+                            // version database
+                            byte[] bytes = snapVersionDB.lookup(0, snapVolName.getBytes(), null).get();
+                            if (bytes == null)
+                                Logging
+                                        .logMessage(
+                                            Logging.LEVEL_ERROR,
+                                            Category.db,
+                                            this,
+                                            "no version mapping exists for snapshot %s; file contents may be corrupted",
+                                            snapVolName);
+                            long snaptime = bytes == null ? 0 : ByteBuffer.wrap(bytes).getLong();
+                            
+                            volsByName.put(snapVolName, 
+                                    new BabuDBSnapshotStorageManager(snapMan, vol
+                                    .getName(), vol.getId(), snapName, snaptime));
+                        }
+                        
+                    }
+                    
+                } catch (BabuDBException exc) {
+                    error = new DatabaseException(exc);
+                } catch (DatabaseException dbe) {
+                    error = dbe;
+                }
+                
+            } else
+                Logging.logError(Logging.LEVEL_ERROR, this, e);
+        }
     }
 }

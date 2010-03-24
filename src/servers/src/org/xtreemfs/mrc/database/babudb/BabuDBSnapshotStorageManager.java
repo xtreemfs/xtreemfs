@@ -29,9 +29,9 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.lsmdb.DatabaseRO;
+import org.xtreemfs.babudb.snapshots.SnapshotManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
@@ -109,18 +109,18 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     /**
      * Instantiates a storage manager by creating a new database.
      * 
-     * @param dbs
-     *            the database system
+     * @param sMan
+     *            the snapshot manager
      * @param volumeId
      *            the volume ID
      */
-    public BabuDBSnapshotStorageManager(BabuDB dbs, String volumeName, String volumeId, String snapName,
+    public BabuDBSnapshotStorageManager(SnapshotManager sMan, String volumeName, String volumeId, String snapName,
         long timestamp) throws DatabaseException {
         
         this.volumeName = volumeName;
         
         try {
-            database = dbs.getSnapshotManager().getSnapshotDB(volumeId, snapName);
+            database = sMan.getSnapshotDB(volumeId, snapName);
         } catch (BabuDBException e) {
             throw new DatabaseException("could not retrieve database for snapshot '" + snapName + "'", e);
         }

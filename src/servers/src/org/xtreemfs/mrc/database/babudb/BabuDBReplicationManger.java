@@ -25,11 +25,7 @@
 package org.xtreemfs.mrc.database.babudb;
 
 import org.xtreemfs.babudb.BabuDB;
-import org.xtreemfs.babudb.replication.SlavesStates.NotEnoughAvailableSlavesException;
-import org.xtreemfs.include.common.logging.Logging;
-import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.ReplicationManager;
-import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 
 /**
  * 
@@ -45,22 +41,10 @@ public class BabuDBReplicationManger implements ReplicationManager {
     }
     
     /* (non-Javadoc)
-     * @see org.xtreemfs.mrc.database.ReplicationManager#declareToMaster()
+     * @see org.xtreemfs.mrc.database.ReplicationManager#manualFailover()
      */
     @Override
-    public void declareToMaster() throws DatabaseException {
-        try {
-            replMan.declareToMaster();
-        } catch (NotEnoughAvailableSlavesException e) {
-            Logging.logMessage(Logging.LEVEL_WARN, this, "declare to master " +
-            		"could not be proceed: %s", e.getMessage());
-            throw new DatabaseException(ExceptionType.REPLICATION);
-        } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_WARN, this, "declare to master " +
-                    "could not be proceed: %s", e.getMessage());
-            throw new DatabaseException(ExceptionType.INTERNAL_DB_ERROR,
-                    e.getMessage());
-        } 
+    public void manualFailover() {
+        replMan.manualFailover();
     }
-
 }

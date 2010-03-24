@@ -148,6 +148,31 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     /**
+     * Instantiates a storage manager by loading an existing volume database.
+     * 
+     * @param dbMan
+     *            the database manager
+     * @param sMan
+     *            the snapshot manager
+     * @param replMan
+     *            the replication manager
+     * @param db
+     *            the database
+     */
+    public BabuDBStorageManager(DatabaseManager dbMan, SnapshotManager sMan,
+            ReplicationManager replMan, Database db) throws DatabaseException {
+        
+        this.dbMan = dbMan;
+        this.snapMan = sMan;
+        this.replMan = replMan;
+        this.database = db;
+        this.vcListeners = new LinkedList<VolumeChangeListener>();
+        
+        volume = new BabuDBVolumeInfo();
+        volume.init(this);
+    }
+    
+    /**
      * Instantiates a storage manager by creating a new database.
      * 
      * @param dbs
