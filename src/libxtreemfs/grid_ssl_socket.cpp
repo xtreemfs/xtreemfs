@@ -118,18 +118,18 @@ bool GridSSLSocket::shutdown()
   return TCPSocket::shutdown();
 }
 
-bool GridSSLSocket::want_read() const
+bool GridSSLSocket::want_recv() const
 {
   if ( !did_handshake )
     return SSL_get_error( *this, -1 ) == SSL_ERROR_WANT_READ;
   else
-    return TCPSocket::want_read();
+    return TCPSocket::want_recv();
 }
 
-bool GridSSLSocket::want_write() const
+bool GridSSLSocket::want_send() const
 {
   if ( !did_handshake )
     return SSL_get_error( *this, -1 ) == SSL_ERROR_WANT_WRITE;
   else
-    return TCPSocket::want_write();
+    return TCPSocket::want_send();
 }

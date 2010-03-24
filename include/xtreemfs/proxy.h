@@ -48,8 +48,8 @@ namespace xtreemfs
 
   using yield::ipc::ONCRPCClient;
   using yield::ipc::ONCRPCRequest;
-  using yield::ipc::SocketFactory;
   using yield::ipc::SSLContext;
+  using yield::ipc::TCPSocketFactory;
   using yield::ipc::URI;
 
   using yield::platform::iconv;
@@ -68,34 +68,38 @@ namespace xtreemfs
   >
   class Proxy
     : public InterfaceMessageSenderType,
-      public yield::ipc::ONCRPCClient
+      public yield::ipc::TCPONCRPCClient
   {
   protected:
     // Steals all references except for user_credentials_cache
     Proxy
     (
       uint16_t concurrency_level,
+      const Time& connect_timeout,
       Log* error_log,
       IOQueue& io_queue,
-      const Time& operation_timeout,
       SocketAddress& peername,
       uint16_t reconnect_tries_max,
-      SocketFactory& socket_factory,
+      const Time& recv_timeout,
+      const Time& send_timeout,
+      TCPSocketFactory& tcp_socket_factory,
       Log* trace_log,
       UserCredentialsCache* user_credentials_cache
     )
-    : ONCRPCClient
+    : TCPONCRPCClient
       (
         concurrency_level,
+        connect_timeout,
         NULL,
         error_log,
         io_queue,
         *new InterfaceMessageFactoryType,
-        operation_timeout,
         peername,
         0x20000000 + InterfaceType::TAG,
         reconnect_tries_max,
-        socket_factory,
+        recv_timeout,
+        send_timeout,
+        tcp_socket_factory,
         trace_log,
         InterfaceType::TAG
       )
@@ -131,11 +135,11 @@ namespace xtreemfs
           checked_absolute_uri.set_port( InterfaceType::ONCRPC_PORT_DEFAULT );
       }
 
-      return ONCRPCClient::createSocketAddress( checked_absolute_uri );
+      return TCPONCRPCClient::createSocketAddress( checked_absolute_uri );
     }
 
-    static SocketFactory&
-    createSocketFactory
+    static TCPSocketFactory&
+    createTCPSocketFactory
     (
       const URI& absolute_uri,
       SSLContext* ssl_context
@@ -160,8 +164,6 @@ namespace xtreemfs
         return *new GridSSLSocketFactory( *ssl_context );
       else if ( scheme == ONCRPCS_SCHEME  && ssl_context != NULL )
         return *new yield::ipc::SSLSocketFactory( *ssl_context );
-      else if ( scheme == ONCRPCU_SCHEME )
-        return *new yield::ipc::UDPSocketFactory;
       else
         return *new yield::ipc::TCPSocketFactory;
     }

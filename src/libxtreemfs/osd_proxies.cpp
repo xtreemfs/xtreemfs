@@ -44,19 +44,23 @@ OSDProxies::OSDProxies
 (
   DIRProxy& dir_proxy,
   uint16_t concurrency_level,
-  Log* error_log,
-  const Time& operation_timeout,
+  const Time& connect_timeout,
+  Log* error_log,  
   uint8_t reconnect_tries_max,
+  const Time& recv_timeout,
+  const Time& send_timeout,
   SSLContext* ssl_context,
   StageGroup* stage_group,
   Log* trace_log,
   UserCredentialsCache* user_credentials_cache
 )
   : concurrency_level( concurrency_level ),
+    connect_timeout( connect_timeout ),
     dir_proxy( dir_proxy.inc_ref() ),
     error_log( Object::inc_ref( error_log ) ),
-    operation_timeout( operation_timeout ),
     reconnect_tries_max( reconnect_tries_max ),
+    recv_timeout( recv_timeout ),
+    send_timeout( send_timeout ),
     ssl_context( Object::inc_ref( ssl_context ) ),
     stage_group( Object::inc_ref( stage_group ) ),
     trace_log( Object::inc_ref( trace_log ) ),
@@ -186,9 +190,11 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
             (
               ( *address_mapping_i ).get_uri(),
               concurrency_level,
+              connect_timeout,
               error_log,
-              operation_timeout,
               reconnect_tries_max,
+              recv_timeout,
+              send_timeout,
               ssl_context,
               trace_log,
               user_credentials_cache
@@ -206,9 +212,11 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
             (
               ( *address_mapping_i ).get_uri(),
               concurrency_level,
+              connect_timeout,
               error_log,
-              operation_timeout,
               reconnect_tries_max,
+              recv_timeout,
+              send_timeout,
               ssl_context,
               trace_log,
               user_credentials_cache

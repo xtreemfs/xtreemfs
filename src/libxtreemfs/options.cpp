@@ -43,10 +43,9 @@ Options::Options
   Log* error_log,
   const Path& error_log_file_path,
   const Log::Level& error_log_level,
-  const vector<OptionParser::ParsedOption>& parsed_options,
+  const OptionParser::ParsedOptions& parsed_options,
   const vector<string>& positional_arguments,
   SSLContext* ssl_context,
-  const Time& timeout,
   Log* trace_log,
   URI* uri
 )
@@ -55,7 +54,6 @@ Options::Options
     error_log_level( error_log_level ),
     positional_arguments( positional_arguments ),
     ssl_context( ssl_context ),
-    timeout( timeout ),
     trace_log( trace_log ),
     uri( uri )
 {
@@ -68,7 +66,6 @@ Options::Options( const Options& other )
     error_log_level( other.error_log_level ),
     positional_arguments( other.positional_arguments ),
     ssl_context( yidl::runtime::Object::inc_ref( other.ssl_context ) ),
-    timeout( other.timeout ),
     trace_log( yidl::runtime::Object::inc_ref( other.trace_log ) ),
     uri( yidl::runtime::Object::inc_ref( other.uri ) )
 { }
@@ -94,8 +91,6 @@ void Options::add_global_options( OptionParser& option_parser )
       "log level: EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG"
     );
   }
-
-  option_parser.add_option( "-t", "timeout (ms)" );
 
 #ifdef YIELD_IPC_HAVE_OPENSSL  
   option_parser.add_option( "--cert", "PEM certificate file path" );
@@ -131,8 +126,6 @@ Options::parse
   Log::Level error_log_level( Log::LOG_ERR );
   Log* trace_log = NULL;
 
-  uint64_t timeout_ns = ONCRPCClient::OPERATION_TIMEOUT_DEFAULT;
-
 #ifdef YIELD_IPC_HAVE_OPENSSL
   string pem_certificate_file_path,
          pem_private_key_file_path,
@@ -163,12 +156,6 @@ Options::parse
       error_log_file_path = option.get_argument();
     else if ( option == "--log-level" )
       error_log_level = Log::Level( option.get_argument() );
-    else if ( option == "-t" )
-    {
-      double timeout_ms = atof( option.get_argument().c_str() );
-      if ( timeout_ms != 0 )
-        timeout_ns = static_cast<uint64_t>( timeout_ms * Time::NS_IN_MS );
-    }
     else if ( option == "--cert" || option == "--pem_certificate_file_path" )
       pem_certificate_file_path = option.get_argument();
     else if ( option == "--pkey" || option == "--pem-private-key-file-path" )
@@ -252,7 +239,6 @@ Options::parse
                 parsed_options,
                 positional_arguments,
                 ssl_context,
-                timeout_ns,
                 trace_log,
                 uri
               );

@@ -1529,46 +1529,25 @@ namespace yield
       Socket( int domain, int type, int protocol, socket_t socket_ );
       virtual ~Socket();      
 
-      // aio_connect is here and not in TCPSocket even though it's not 
-      // very useful (for e.g. UDPSockets), so that upper layers can
-      // be agnostic of which type of Socket they're connect()'ing
-      class AIOConnectCallback
-      {
-      public:
-        virtual void
-        onConnectCompletion
-        ( 
-          size_t bytes_sent, 
-          void* context
-        ) = 0;
-
-        virtual void onConnectError( uint32_t error_code, void* context ) = 0;
-      };
-
-      virtual void 
-      aio_connect
-      ( 
-        SocketAddress& peername,
-        AIOConnectCallback& callback,
-        void* callback_context = NULL,
-        Buffer* send_buffer = NULL
-      );
+      typedef IStream::AIOReadCallback AIORecvCallback;
 
       virtual void
       aio_recv
       ( 
         Buffer& buffer, // Steals this reference
         int flags,
-        AIOReadCallback& callback,
+        AIORecvCallback& callback,
         void* callback_context = NULL
       );
+
+      typedef OStream::AIOWriteCallback AIOSendCallback;
 
       virtual void 
       aio_send
       (
         Buffer& buffer, // Steals this reference
         int flags,
-        AIOWriteCallback& callback,
+        AIOSendCallback& callback,
         void* callback_context = NULL
       );
 
@@ -1577,7 +1556,7 @@ namespace yield
       (
         Buffers& buffers, // Steals this reference
         int flags,
-        AIOWriteCallback& callback,
+        AIOSendCallback& callback,
         void* callback_context = NULL
       );
 
@@ -1633,9 +1612,8 @@ namespace yield
       virtual bool set_blocking_mode( bool blocking );
       virtual bool setsockopt( Option option, bool onoff );
       virtual bool shutdown( bool shut_rd = true, bool shut_wr = true );
-      virtual bool want_connect() const;
-      virtual bool want_read() const;
-      virtual bool want_write() const;
+      virtual bool want_recv() const;
+      virtual bool want_send() const;
 
       // Object
       Socket& inc_ref() { return Object::inc_ref( *this ); }
@@ -1735,42 +1713,13 @@ namespace yield
       };
 
 
-      class IOConnectCB : public IOCB<AIOConnectCallback>
-      {
-      protected:
-        IOConnectCB
-        ( 
-          AIOConnectCallback& callback, 
-          void* callback_context,
-          SocketAddress& peername, 
-          Buffer* send_buffer,
-          Socket& socket_
-        );
-
-        virtual ~IOConnectCB();
-
-        const SocketAddress& get_peername() const { return peername; }
-        Buffer* get_send_buffer() const { return send_buffer; }
-        Socket& get_socket() const { return socket_; }
-
-        void onConnectCompletion();
-        void onConnectError();
-        void onConnectError( uint32_t error_code );
-
-      private:
-        SocketAddress& peername;
-        Buffer* send_buffer;
-        Socket& socket_;
-      };
-
-
-      class IORecvCB : public IOCB<AIOReadCallback>
+      class IORecvCB : public IOCB<AIORecvCallback>
       {
       protected:
         IORecvCB
         ( 
           Buffer& buffer, 
-          AIOReadCallback& callback, 
+          AIORecvCallback& callback, 
           void* callback_context,
           int flags, 
           Socket& socket_
@@ -1778,13 +1727,14 @@ namespace yield
 
         virtual ~IORecvCB();
 
+        bool execute( bool blocking_mode );
         Buffer& get_buffer() const { return buffer; }
         int get_flags() const { return flags; }
         Socket& get_socket() const { return socket_; }
 
-        void onReadCompletion();
-        void onReadError();
-        void onReadError( uint32_t error_code );
+        void onRecvCompletion();
+        void onRecvError();
+        void onRecvError( uint32_t error_code );
 
       private:
         Buffer& buffer;
@@ -1793,13 +1743,13 @@ namespace yield
       };
 
 
-      class IOSendCB : public IOCB<AIOWriteCallback>
+      class IOSendCB : public IOCB<AIOSendCallback>
       {
       protected:
         IOSendCB
         ( 
           Buffer& buffer,
-          AIOWriteCallback& callback, 
+          AIOSendCallback& callback, 
           void* callback_context,
           int flags, 
           Socket& socket_
@@ -1813,9 +1763,9 @@ namespace yield
         int get_flags() const { return flags; }
         Socket& get_socket() const { return socket_; }
 
-        void onWriteCompletion();
-        void onWriteError();
-        void onWriteError( uint32_t error_code );
+        void onSendCompletion();
+        void onSendError();
+        void onSendError( uint32_t error_code );
 
       private:
         Buffer& buffer;
@@ -1825,13 +1775,13 @@ namespace yield
       };
 
 
-      class IOSendMsgCB : public IOCB<AIOWriteCallback>
+      class IOSendMsgCB : public IOCB<AIOSendCallback>
       {
       protected:
         IOSendMsgCB
         ( 
           Buffers& buffers,
-          AIOWriteCallback& callback,
+          AIOSendCallback& callback,
           void* callback_context,
           int flags, 
           Socket& socket_
@@ -1846,9 +1796,9 @@ namespace yield
         int get_flags() const { return flags; }
         Socket& get_socket() const { return socket_; }
 
-        void onWriteCompletion();
-        void onWriteError();
-        void onWriteError( uint32_t error_code );
+        void onSendMsgCompletion();
+        void onSendMsgError();
+        void onSendMsgError( uint32_t error_code );
 
       private:
         Buffers& buffers;
@@ -2135,13 +2085,19 @@ namespace yield
         // peername on Win32 (position() will be set at 89 on the callback).
       );
 
-      static TCPSocket* create(); // AF_INET6
-      static TCPSocket* create( int domain );
+      class AIOConnectCallback
+      {
+      public:
+        virtual void
+        onConnectCompletion
+        ( 
+          size_t bytes_sent, 
+          void* context
+        ) = 0;
 
-      // Object
-      TCPSocket& inc_ref() { return Object::inc_ref( *this ); }
+        virtual void onConnectError( uint32_t error_code, void* context ) = 0;
+      };
 
-      // Socket
       virtual void 
       aio_connect
       ( 
@@ -2151,12 +2107,19 @@ namespace yield
         Buffer* send_buffer = NULL // Steals this reference
       );
 
+      static TCPSocket* create(); // AF_INET6
+      static TCPSocket* create( int domain );
+
+      // Object
+      TCPSocket& inc_ref() { return Object::inc_ref( *this ); }
+
+      // Socket
       virtual void
       aio_recv
       ( 
         Buffer& buffer, // Steals this reference
         int flags,
-        AIOReadCallback& callback,
+        AIORecvCallback& callback,
         void* callback_context = NULL
       );
 
@@ -2165,7 +2128,7 @@ namespace yield
       (
         Buffer& buffer, // Steals this reference
         int flags,
-        AIOWriteCallback& callback,
+        AIOSendCallback& callback,
         void* callback_context = NULL
       );
 
@@ -2174,13 +2137,14 @@ namespace yield
       (
         Buffers& buffers, // Steals this reference
         int flags,
-        AIOWriteCallback& callback,
+        AIOSendCallback& callback,
         void* callback_context = NULL
       );
 
       virtual bool associate( IOQueue& io_queue );
       virtual bool setsockopt( Option option, bool onoff );
       virtual bool want_accept() const;
+      virtual bool want_connect() const;
 
     protected:
       TCPSocket( int domain, socket_t );      
@@ -2203,6 +2167,7 @@ namespace yield
 
         virtual ~IOAcceptCB();
 
+        TCPSocket* execute( bool blocking_mode );
         TCPSocket& get_listen_tcp_socket() const { return listen_tcp_socket; }
         Buffer* get_recv_buffer() const { return recv_buffer; }
 
@@ -2215,6 +2180,37 @@ namespace yield
         Buffer* recv_buffer;
       };
 
+
+      class IOConnectCB : public IOCB<AIOConnectCallback>
+      {
+      protected:
+        IOConnectCB
+        ( 
+          AIOConnectCallback& callback, 
+          void* callback_context,
+          SocketAddress& peername, 
+          Buffer* send_buffer,
+          TCPSocket& tcp_socket
+        );
+
+        virtual ~IOConnectCB();
+
+        bool execute( bool blocking_mode );
+        const SocketAddress& get_peername() const { return peername; }
+        Buffer* get_send_buffer() const { return send_buffer; }
+        TCPSocket& get_tcp_socket() const { return tcp_socket; }
+
+        void onConnectCompletion();
+        void onConnectError();
+        void onConnectError( uint32_t error_code );
+
+      private:
+        size_t partial_send_len;
+        SocketAddress& peername;
+        Buffer* send_buffer;
+        TCPSocket& tcp_socket;
+      };
+
     private:
 #ifdef _WIN32
       static void *lpfnAcceptEx, *lpfnConnectEx;
@@ -2222,7 +2218,9 @@ namespace yield
 
     private:
       class BIOAcceptCB;
+      class BIOConnectCB;
       class NBIOAcceptCB;
+      class NBIOConnectCB;
 #ifdef _WIN32
       class Win32AIOAcceptCB;
       class Win32AIOConnectCB;

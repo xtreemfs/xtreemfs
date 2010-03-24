@@ -1,5 +1,5 @@
-#ifndef _281384_H_
-#define _281384_H_
+#ifndef _2018174634_H_
+#define _2018174634_H_
 
 
 #include "yidl.h"
@@ -19,6 +19,7 @@ namespace org
       const static char* REPL_UPDATE_PC_RONLY = "ronly";
       const static char* REPL_UPDATE_PC_WARONE = "WaR1";
       const static char* REPL_UPDATE_PC_WARA = "WaRa";
+      const static char* REPL_UPDATE_PC_WQRQ = "WqRq";
       const static uint32_t REPL_FLAG_FULL_REPLICA = 1;
       const static uint32_t REPL_FLAG_IS_COMPLETE = 2;
       const static uint32_t REPL_FLAG_STRATEGY_RANDOM = 4;

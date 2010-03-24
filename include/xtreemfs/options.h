@@ -54,7 +54,6 @@ namespace xtreemfs
     const Log::Level& get_error_log_level() const { return error_log_level; }
     const vector<string>& get_positional_arguments() const;
     SSLContext* get_ssl_context() const { return ssl_context; }
-    const Time& get_timeout() const { return timeout; }
     Log* get_trace_log() const { return trace_log; }
     URI* get_uri() const { return uri; }
 
@@ -82,10 +81,9 @@ namespace xtreemfs
       Log* error_log,
       const Path& error_log_file_path,
       const Log::Level& error_log_level,
-      const vector<OptionParser::ParsedOption>& parsed_options,
+      const OptionParser::ParsedOptions& parsed_options,
       const vector<string>& positional_arguments,
       SSLContext* ssl_context,
-      const Time& timeout,
       Log* trace_log,
       URI* uri
     );
@@ -96,7 +94,6 @@ namespace xtreemfs
     Log* error_log;
     Path error_log_file_path;
     Log::Level error_log_level;
-    Time timeout;
     SSLContext* ssl_context;
     Log* trace_log;
     URI* uri;

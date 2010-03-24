@@ -5783,7 +5783,6 @@ SharedLibrary* SharedLibrary::open( const Path& file_prefix, const char* argv0 )
 #pragma comment( lib, "ws2_32.lib" )
 #pragma warning( pop )
 #define INVALID_SOCKET  (SOCKET)(~0)
-#define ECONNABORTED WSAECONNABORTED
 #else
 #include <arpa/inet.h>
 #include <errno.h>
@@ -5798,56 +5797,15 @@ SharedLibrary* SharedLibrary::open( const Path& file_prefix, const char* argv0 )
 int Socket::DOMAIN_DEFAULT = AF_INET6;
 
 
-Socket::IOConnectCB::IOConnectCB
-(
-  AIOConnectCallback& callback,
-  void* callback_context,
-  SocketAddress& peername,
-  Buffer* send_buffer,
-  Socket& socket_
-)
-  : IOCB<AIOConnectCallback>( callback, callback_context ),
-    peername( peername ),
-    send_buffer( send_buffer ),
-    socket_( socket_ )
-{ }
-
-Socket::IOConnectCB::~IOConnectCB()
-{
-  SocketAddress::dec_ref( peername );
-  Buffers::dec_ref( send_buffer );
-  Socket::dec_ref( socket_ );
-}
-
-void Socket::IOConnectCB::onConnectCompletion()
-{
-  callback.onConnectCompletion
-  (
-    send_buffer != NULL ? send_buffer->size() : 0,
-    callback_context
-  );
-}
-
-void Socket::IOConnectCB::onConnectError()
-{
-  onConnectError( get_last_error() );
-}
-
-void Socket::IOConnectCB::onConnectError( uint32_t error_code )
-{
-  callback.onConnectError( error_code, callback_context );
-}
-
-
 Socket::IORecvCB::IORecvCB
 (
   Buffer& buffer,
-  AIOReadCallback& callback,
+  AIORecvCallback& callback,
   void* callback_context,
   int flags,
   Socket& socket_
 )
-  : IOCB<AIOReadCallback>( callback, callback_context ),
+  : IOCB<AIORecvCallback>( callback, callback_context ),
     buffer( buffer ),
     flags( flags ),
     socket_( socket_ )
@@ -5859,18 +5817,36 @@ Socket::IORecvCB::~IORecvCB()
   Socket::dec_ref( socket_ );
 }
 
-void Socket::IORecvCB::onReadCompletion()
+bool Socket::IORecvCB::execute( bool blocking_mode )
+{
+  if ( get_socket().set_blocking_mode( true ) )
+  {
+    ssize_t recv_ret = get_socket().recv( get_buffer(), get_flags() );
+    if ( recv_ret > 0 )
+      return true;
+    else if ( recv_ret == 0 )
+#ifdef _WIN32
+      WSASetLastError( WSAECONNABORTED );
+#else
+      errno = ECONNABORTED;
+#endif
+  }
+
+  return false;
+}
+
+void Socket::IORecvCB::onRecvCompletion()
 {
   // Assumes buffer->resize( recv_ret ) has already been called
   callback.onReadCompletion( buffer, callback_context );
 }
 
-void Socket::IORecvCB::onReadError()
+void Socket::IORecvCB::onRecvError()
 {
-  onReadError( get_last_error() );
+  onRecvError( get_last_error() );
 }
 
-void Socket::IORecvCB::onReadError( uint32_t error_code )
+void Socket::IORecvCB::onRecvError( uint32_t error_code )
 {
   callback.onReadError( error_code, callback_context );
 }
@@ -5879,12 +5855,12 @@ void Socket::IORecvCB::onReadError( uint32_t error_code )
 Socket::IOSendCB::IOSendCB
 (
   Buffer& buffer,
-  AIOWriteCallback& callback,
+  AIOSendCallback& callback,
   void* callback_context,
   int flags,
   Socket& socket_
 )
-  : IOCB<AIOWriteCallback>( callback, callback_context ),
+  : IOCB<AIOSendCallback>( callback, callback_context ),
     buffer( buffer ),
     flags( flags ),
     socket_( socket_ )
@@ -5928,17 +5904,17 @@ bool Socket::IOSendCB::execute( bool blocking_mode )
     return false;
 }
 
-void Socket::IOSendCB::onWriteCompletion()
+void Socket::IOSendCB::onSendCompletion()
 {
   callback.onWriteCompletion( buffer.size(), callback_context );
 }
 
-void Socket::IOSendCB::onWriteError()
+void Socket::IOSendCB::onSendError()
 {
-  onWriteError( get_last_error() );
+  onSendError( get_last_error() );
 }
 
-void Socket::IOSendCB::onWriteError( uint32_t error_code )
+void Socket::IOSendCB::onSendError( uint32_t error_code )
 {
   callback.onWriteError( error_code, callback_context );
 }
@@ -5947,12 +5923,12 @@ void Socket::IOSendCB::onWriteError( uint32_t error_code )
 Socket::IOSendMsgCB::IOSendMsgCB
 (
   Buffers& buffers,
-  AIOWriteCallback& callback,
+  AIOSendCallback& callback,
   void* callback_context,
   int flags,
   Socket& socket_
 )
-  : IOCB<AIOWriteCallback>( callback, callback_context ),
+  : IOCB<AIOSendCallback>( callback, callback_context ),
     buffers( buffers ),
     flags( flags ),
     socket_( socket_ )
@@ -6053,63 +6029,20 @@ bool Socket::IOSendMsgCB::execute( bool blocking_mode )
     return false;
 }
 
-void Socket::IOSendMsgCB::onWriteCompletion()
+void Socket::IOSendMsgCB::onSendMsgCompletion()
 {
   callback.onWriteCompletion( buffers.join_size(), callback_context );
 }
 
-void Socket::IOSendMsgCB::onWriteError()
+void Socket::IOSendMsgCB::onSendMsgError()
 {
-  onWriteError( get_last_error() );
+  onSendMsgError( get_last_error() );
 }
 
-void Socket::IOSendMsgCB::onWriteError( uint32_t error_code )
+void Socket::IOSendMsgCB::onSendMsgError( uint32_t error_code )
 {
   callback.onWriteError( error_code, callback_context );
 }
-
-
-class Socket::BIOConnectCB : public BIOCB, public IOConnectCB
-{
-public:
-  BIOConnectCB
-  (
-    AIOConnectCallback& callback,
-    void* callback_context,
-    SocketAddress& peername,
-    Buffer* send_buffer,
-    Socket& socket_
-  )
-    : IOConnectCB
-      (
-        callback,
-        callback_context,
-        peername,
-        send_buffer,
-        socket_
-      )
-  { }
-
-  // BIOCB
-  bool execute()
-  {
-    if ( get_socket().set_blocking_mode( true ) )
-    {
-      if ( get_socket().connect( get_peername() ) )
-      {
-        DebugBreak();
-        onConnectCompletion();
-        return true;
-      }
-      else
-        onConnectError();
-    }
-    else
-      onConnectError();
-
-    return false;
-  }
-};
 
 
 class Socket::BIORecvCB : public BIOCB, public IORecvCB
@@ -6118,7 +6051,7 @@ public:
   BIORecvCB
   (
     Buffer& buffer,
-    AIOReadCallback& callback,
+    AIORecvCallback& callback,
     void* callback_context,
     int flags,
     Socket& socket_
@@ -6129,23 +6062,16 @@ public:
   // BIOCB
   bool execute()
   {
-    if ( get_socket().set_blocking_mode( true ) )
+    if ( IORecvCB::execute( true ) )
     {
-      ssize_t recv_ret = get_socket().recv( get_buffer(), get_flags() );
-      if ( recv_ret > 0 )
-      {
-        onReadCompletion();
-        return true;
-      }
-      else if ( recv_ret == 0 )
-        onReadError( ECONNABORTED );
-      else
-        onReadError();
+      onRecvCompletion();
+      return true;
     }
     else
-      onReadError();
-
-    return false;
+    {
+      onRecvError();
+      return false;
+    }
   }
 };
 
@@ -6156,7 +6082,7 @@ public:
   BIOSendCB
   (
     Buffer& buffer,
-    AIOWriteCallback& callback,
+    AIOSendCallback& callback,
     void* callback_context,
     int flags,
     Socket& socket_
@@ -6169,12 +6095,12 @@ public:
   {
     if ( IOSendCB::execute( true ) )
     {
-      onWriteCompletion();
+      onSendCompletion();
       return true;
     }
     else
     {
-      onWriteError();
+      onSendError();
       return false;
     }
   }
@@ -6188,7 +6114,7 @@ public:
   BIOSendMsgCB
   (
     Buffers& buffers,
-    AIOWriteCallback& callback,
+    AIOSendCallback& callback,
     void* callback_context,
     int flags,
     Socket& socket_
@@ -6201,61 +6127,15 @@ public:
   {
     if ( IOSendMsgCB::execute( true ) )
     {
-      onWriteCompletion();
+      onSendMsgCompletion();
       return true;
     }
     else
     {
-      onWriteError();
+      onSendMsgError();
       return false;
     }
   }
-};
-
-
-class Socket::NBIOConnectCB : public NBIOCB, public IOConnectCB
-{
-public:
-  NBIOConnectCB
-  (
-    AIOConnectCallback& callback,
-    void* callback_context,
-    SocketAddress& peername,
-    Buffer* send_buffer,
-    Socket& socket_
-  )
-  : NBIOCB( STATE_WANT_CONNECT ),
-    IOConnectCB( callback, callback_context, peername, send_buffer, socket_ )
-  { }
-
-  // NBIOCB
-  State execute()
-  {
-    if ( get_socket().set_blocking_mode( false ) )
-    {
-      if ( get_socket().connect( get_peername() ) )
-      {
-        set_state( STATE_COMPLETE );
-        onConnectCompletion();
-      }
-      else if ( get_socket().want_connect() )
-        set_state( STATE_WANT_CONNECT );
-      else
-      {
-        set_state( STATE_ERROR );
-        onConnectError();
-      }
-    }
-    else
-    {
-      set_state( STATE_ERROR );
-      onConnectError();
-    }
-
-    return get_state();
-  }
-
-  socket_t get_fd() const { return get_socket(); }
 };
 
 
@@ -6265,7 +6145,7 @@ public:
   NBIORecvCB
   (
     Buffer& buffer,
-    AIOReadCallback& callback,
+    AIORecvCallback& callback,
     void* callback_context,
     int flags,
     Socket& socket_,
@@ -6278,33 +6158,19 @@ public:
   // NBIOCB
   State execute()
   {
-    if ( get_socket().set_blocking_mode( false ) )
+    if ( IORecvCB::execute( false ) )
     {
-      ssize_t recv_ret = get_socket().recv( get_buffer(), get_flags() );
-      if ( recv_ret > 0 )
-      {
-        set_state( STATE_COMPLETE );
-        onReadCompletion();
-      }
-      else if ( recv_ret == 0 )
-      {
-        set_state( STATE_ERROR );
-        onReadError( ECONNABORTED );
-      }
-      else if ( get_socket().want_read() )
-        set_state( STATE_WANT_READ );
-      else if ( get_socket().want_write() )
-        set_state( STATE_WANT_WRITE );
-      else
-      {
-        set_state( STATE_ERROR );
-        onReadError();
-      }
+      set_state( STATE_COMPLETE );
+      onRecvCompletion();
     }
+    else if ( get_socket().want_recv() )
+      set_state( STATE_WANT_READ );
+    else if ( get_socket().want_send() )
+      set_state( STATE_WANT_WRITE );
     else
     {
       set_state( STATE_ERROR );
-      onReadError();
+      onRecvError();
     }
 
     return get_state();
@@ -6320,7 +6186,7 @@ public:
   NBIOSendCB
   (
     Buffer& buffer,
-    AIOWriteCallback& callback,
+    AIOSendCallback& callback,
     void* callback_context,
     int flags,
     Socket& socket_,
@@ -6336,16 +6202,16 @@ public:
     if ( IOSendCB::execute( false ) )
     {
       set_state( STATE_COMPLETE );
-      onWriteCompletion();
+      onSendCompletion();
     }
-    else if ( get_socket().want_write() )
+    else if ( get_socket().want_send() )
       set_state( STATE_WANT_WRITE );
-    else if ( get_socket().want_read() )
+    else if ( get_socket().want_recv() )
       set_state( STATE_WANT_READ );
     else
     {
       set_state( STATE_ERROR );
-      onWriteError();
+      onSendError();
     }
 
     return get_state();
@@ -6361,7 +6227,7 @@ public:
   NBIOSendMsgCB
   (
     Buffers& buffers,
-    AIOWriteCallback& callback,
+    AIOSendCallback& callback,
     void* callback_context,
     int flags,
     Socket& socket_,
@@ -6377,16 +6243,16 @@ public:
     if ( IOSendMsgCB::execute( false ) )
     {
       set_state( STATE_COMPLETE );
-      onWriteCompletion();
+      onSendMsgCompletion();
     }
-    else if ( get_socket().want_write() )
+    else if ( get_socket().want_send() )
       set_state( STATE_WANT_WRITE );
-    else if ( get_socket().want_read() )
+    else if ( get_socket().want_recv() )
       set_state( STATE_WANT_READ );
     else
     {
       set_state( STATE_ERROR );
-      onWriteError();
+      onSendMsgError();
     }
 
     return get_state();
@@ -6411,80 +6277,11 @@ Socket::~Socket()
 }
 
 void
-Socket::aio_connect
-(
-  SocketAddress& peername,
-  AIOConnectCallback& callback,
-  void* callback_context,
-  Buffer* send_buffer
-)
-{
-  // Try a non-blocking connect first (for e.g. localhost)
-  switch
-  (
-    NBIOConnectCB
-    (
-      callback,
-      callback_context,
-      peername,
-      Object::inc_ref( send_buffer ),
-      inc_ref()
-    ).execute()
-  )
-  {
-    case NBIOConnectCB::STATE_COMPLETE:
-    case NBIOConnectCB::STATE_ERROR: Buffer::dec_ref( send_buffer ); return;
-  }
-
-  if ( get_bio_queue() != NULL )
-  {
-    get_bio_queue()->submit
-    (
-      *new BIOConnectCB
-           (
-             callback,
-             callback_context,
-             peername.inc_ref(),
-             send_buffer,
-             inc_ref()
-           )
-    );
-
-    return;
-  }
-  else if ( get_nbio_queue() != NULL )
-  {
-    get_nbio_queue()->submit
-    (
-      *new NBIOConnectCB
-            (
-              callback,
-              callback_context,
-              peername.inc_ref(),
-              send_buffer,
-              inc_ref()
-            )
-    );
-
-    return;
-  }
-
-  BIOConnectCB
-  (
-    callback,
-    callback_context,
-    peername,
-    send_buffer,
-    inc_ref()
-  ).execute();
-}
-
-void
 Socket::aio_recv
 (
   Buffer& buffer,
   int flags,
-  AIOReadCallback& callback,
+  AIORecvCallback& callback,
   void* callback_context
 )
 {
@@ -6534,7 +6331,7 @@ Socket::aio_recv
              callback_context,
              flags,
              inc_ref(),
-             want_read()
+             want_recv()
                ? NBIORecvCB::STATE_WANT_READ
                : NBIORecvCB::STATE_WANT_WRITE
            )
@@ -6553,7 +6350,7 @@ Socket::aio_send
 (
   Buffer& buffer,
   int flags,
-  AIOWriteCallback& callback,
+  AIOSendCallback& callback,
   void* callback_context
 )
 {
@@ -6603,7 +6400,7 @@ Socket::aio_send
               callback_context,
               flags,
               inc_ref(),
-              want_write()
+              want_send()
                 ? NBIOSendCB::STATE_WANT_WRITE
                 : NBIOSendCB::STATE_WANT_READ
             )
@@ -6620,7 +6417,7 @@ void Socket::aio_sendmsg
 (
   Buffers& buffers,
   int flags,
-  AIOWriteCallback& callback,
+  AIOSendCallback& callback,
   void* callback_context
 )
 {
@@ -6670,7 +6467,7 @@ void Socket::aio_sendmsg
              callback_context,
              flags,
              inc_ref(),
-             want_write()
+             want_send()
                ? NBIOSendCB::STATE_WANT_WRITE
                : NBIOSendCB::STATE_WANT_READ
            )
@@ -7385,29 +7182,7 @@ bool Socket::shutdown( bool shut_rd, bool shut_wr )
     return false;
 }
 
-bool Socket::want_connect() const
-{
-#ifdef _WIN32
-  switch ( WSAGetLastError() )
-  {
-    case WSAEALREADY:
-    case WSAEINPROGRESS:
-    case WSAEINVAL:
-    case WSAEWOULDBLOCK: return true;
-    default: return false;
-  }
-#else
-  switch ( errno )
-  {
-    case EALREADY:
-    case EINPROGRESS:
-    case EWOULDBLOCK: return true;
-    default: return false;
-  }
-#endif
-}
-
-bool Socket::want_read() const
+bool Socket::want_recv() const
 {
 #ifdef _WIN32
   return WSAGetLastError() == WSAEWOULDBLOCK;
@@ -7416,7 +7191,7 @@ bool Socket::want_read() const
 #endif
 }
 
-bool Socket::want_write() const
+bool Socket::want_send() const
 {
 #ifdef _WIN32
   return WSAGetLastError() == WSAEWOULDBLOCK;
@@ -7424,7 +7199,6 @@ bool Socket::want_write() const
   return errno == EWOULDBLOCK;
 #endif
 }
-
 
 
 // socket_address.cpp
@@ -8338,14 +8112,12 @@ using yidl::runtime::HeapBuffer;
 
 #if defined(_WIN32)
 #undef INVALID_SOCKET
-#undef WSABUF
 #pragma warning( push )
 #pragma warning( disable: 4365 4995 )
 #include <ws2tcpip.h>
 #include <mswsock.h>
 #pragma warning( pop )
 #define INVALID_SOCKET  (SOCKET)(~0)
-#define ECONNABORTED WSAECONNABORTED
 #else
 #include <netinet/in.h> // For the IPPROTO_* constants
 #include <netinet/tcp.h> // For the TCP_* constants
@@ -8380,6 +8152,45 @@ TCPSocket::IOAcceptCB::~IOAcceptCB()
   Buffer::dec_ref( recv_buffer );
 }
 
+TCPSocket* TCPSocket::IOAcceptCB::execute( bool blocking_mode )
+{
+  if ( get_listen_tcp_socket().set_blocking_mode( blocking_mode ) )
+  {
+    TCPSocket* accepted_tcp_socket = get_listen_tcp_socket().accept();
+    if ( accepted_tcp_socket != NULL )
+    {
+      if ( get_recv_buffer() != NULL )
+      {
+        if ( accepted_tcp_socket->set_blocking_mode( false ) )
+        {
+          ssize_t recv_ret
+            = accepted_tcp_socket->recv( *get_recv_buffer(), 0 );
+
+          if ( recv_ret > 0 )
+            return accepted_tcp_socket;
+          else if ( recv_ret == 0 )
+#ifdef _WIN32
+            WSASetLastError( WSAECONNABORTED );
+#else
+            errno = ECONNABORTED;
+#endif
+          else if
+          (
+            accepted_tcp_socket->want_recv()
+            ||
+            accepted_tcp_socket->want_send()
+          )
+            return accepted_tcp_socket;
+        }
+      }
+
+      TCPSocket::dec_ref( *accepted_tcp_socket );
+    }
+  }
+
+  return NULL;
+}
+
 void
 TCPSocket::IOAcceptCB::onAcceptCompletion
 (
@@ -8405,6 +8216,88 @@ void TCPSocket::IOAcceptCB::onAcceptError( uint32_t error_code )
 }
 
 
+TCPSocket::IOConnectCB::IOConnectCB
+(
+  AIOConnectCallback& callback,
+  void* callback_context,
+  SocketAddress& peername,
+  Buffer* send_buffer,
+  TCPSocket& tcp_socket
+)
+  : IOCB<AIOConnectCallback>( callback, callback_context ),
+    peername( peername ),
+    send_buffer( send_buffer ),
+    tcp_socket( tcp_socket )
+{
+  partial_send_len = 0;
+}
+
+TCPSocket::IOConnectCB::~IOConnectCB()
+{
+  SocketAddress::dec_ref( peername );
+  Buffers::dec_ref( send_buffer );
+  TCPSocket::dec_ref( tcp_socket );
+}
+
+bool TCPSocket::IOConnectCB::execute( bool blocking_mode )
+{
+  if ( get_tcp_socket().set_blocking_mode( blocking_mode ) )
+  {
+    if ( get_tcp_socket().connect( get_peername() ) )
+    {
+      if ( get_send_buffer() != NULL )
+      {
+        for ( ;; ) // Keep trying partial sends
+        {
+          ssize_t send_ret
+            = get_tcp_socket().send
+              (
+                static_cast<const char*>( *get_send_buffer() )
+                  + partial_send_len,
+                get_send_buffer()->size() - partial_send_len,
+                0
+              );
+
+          if ( send_ret >= 0 )
+          {
+            partial_send_len += send_ret;
+            if ( partial_send_len == get_send_buffer()->size() )
+              return true;
+            else
+              continue;
+          }
+          else
+            return false;
+        }
+      }
+      else
+        return true;
+    }
+  }
+
+  return false;
+}
+
+void TCPSocket::IOConnectCB::onConnectCompletion()
+{
+  callback.onConnectCompletion
+  (
+    send_buffer != NULL ? send_buffer->size() : 0,
+    callback_context
+  );
+}
+
+void TCPSocket::IOConnectCB::onConnectError()
+{
+  onConnectError( get_last_error() );
+}
+
+void TCPSocket::IOConnectCB::onConnectError( uint32_t error_code )
+{
+  callback.onConnectError( error_code, callback_context );
+}
+
+
 class TCPSocket::BIOAcceptCB : public BIOCB, public IOAcceptCB
 {
 public:
@@ -8420,47 +8313,55 @@ public:
   // BIOCB
   bool execute()
   {
-    if ( get_listen_tcp_socket().set_blocking_mode( true ) )
+    TCPSocket* accepted_tcp_socket = IOAcceptCB::execute( true );
+    if ( accepted_tcp_socket != NULL )
     {
-      TCPSocket* accepted_tcp_socket = get_listen_tcp_socket().accept();
-      if ( accepted_tcp_socket != NULL )
-      {
-        if ( get_recv_buffer() != NULL )
-        {
-          if ( accepted_tcp_socket->set_blocking_mode( true ) )
-          {
-            ssize_t recv_ret
-              = accepted_tcp_socket->recv( *get_recv_buffer(), 0 );
-
-            if ( recv_ret > 0 )
-            {
-              onAcceptCompletion( *accepted_tcp_socket );
-              return true;
-            }
-            else if ( recv_ret == 0 )
-              onAcceptError( ECONNABORTED );
-            else
-              onAcceptError();
-
-            return false;
-          }
-          else
-            onAcceptCompletion( *accepted_tcp_socket );
-        }
-        else
-          onAcceptCompletion( *accepted_tcp_socket );
-
-        TCPSocket::dec_ref( *accepted_tcp_socket );
-
-        return true;
-      }
-      else
-        onAcceptError();
+      onAcceptCompletion( *accepted_tcp_socket );
+      return true;
     }
     else
+    {
       onAcceptError();
+      return false;
+    }
+  }
+};
 
-    return false;
+
+class TCPSocket::BIOConnectCB : public BIOCB, public IOConnectCB
+{
+public:
+  BIOConnectCB
+  (
+    AIOConnectCallback& callback,
+    void* callback_context,
+    SocketAddress& peername,
+    Buffer* send_buffer,
+    TCPSocket& tcp_socket
+  )
+    : IOConnectCB
+      (
+        callback,
+        callback_context,
+        peername,
+        send_buffer,
+        tcp_socket
+      )
+  { }
+
+  // BIOCB
+  bool execute()
+  {
+    if ( IOConnectCB::execute( true ) )
+    {
+      onConnectCompletion();
+      return true;
+    }
+    else
+    {
+      onConnectError();
+      return false;
+    }
   }
 };
 
@@ -8481,45 +8382,15 @@ public:
   // NBIOCB
   State execute()
   {
-    if ( get_listen_tcp_socket().set_blocking_mode( false ) )
+    TCPSocket* accepted_tcp_socket = IOAcceptCB::execute( false );
+
+    if ( accepted_tcp_socket != NULL )
     {
-      TCPSocket* accepted_tcp_socket = get_listen_tcp_socket().accept();
-      if ( accepted_tcp_socket != NULL )
-      {
-        set_state( STATE_COMPLETE );
-
-        if ( get_recv_buffer() != NULL )
-        {
-          ssize_t recv_ret
-            = accepted_tcp_socket->recv( *get_recv_buffer(), 0 );
-
-          if ( recv_ret > 0 )
-            onAcceptCompletion( *accepted_tcp_socket );
-          else if ( recv_ret == 0 )
-            onAcceptError( ECONNABORTED );
-          else if
-          (
-            accepted_tcp_socket->want_read()
-            ||
-            accepted_tcp_socket->want_write()
-          ) // The recv WOULDBLOCK, just complete without reading
-            onAcceptCompletion( *accepted_tcp_socket );
-          else
-            onAcceptError();
-        }
-        else
-          onAcceptCompletion( *accepted_tcp_socket );
-
-        TCPSocket::dec_ref( *accepted_tcp_socket );
-      }
-      else if ( get_listen_tcp_socket().want_accept() )
-        set_state( STATE_WANT_READ );
-      else
-      {
-        set_state( STATE_ERROR );
-        onAcceptError();
-      }
+      set_state( STATE_COMPLETE );
+      onAcceptCompletion( *accepted_tcp_socket );
     }
+    else if ( get_listen_tcp_socket().want_accept() )
+      set_state( STATE_WANT_READ );
     else
     {
       set_state( STATE_ERROR );
@@ -8530,6 +8401,46 @@ public:
   }
 
   socket_t get_fd() const { return get_listen_tcp_socket(); }
+};
+
+
+class TCPSocket::NBIOConnectCB : public NBIOCB, public IOConnectCB
+{
+public:
+  NBIOConnectCB
+  (
+    AIOConnectCallback& callback,
+    void* callback_context,
+    SocketAddress& peername,
+    Buffer* send_buffer,
+    TCPSocket& tcp_socket
+  )
+  : NBIOCB( STATE_WANT_CONNECT ),
+    IOConnectCB( callback, callback_context, peername, send_buffer, tcp_socket )
+  { }
+
+  // NBIOCB
+  State execute()
+  {
+    if ( IOConnectCB::execute( false ) )
+    {
+      set_state( STATE_COMPLETE );
+      onConnectCompletion();
+    }
+    else if ( get_tcp_socket().want_connect() )
+      set_state( STATE_WANT_CONNECT );
+    else if ( get_tcp_socket().want_send() )
+      set_state( STATE_WANT_WRITE );
+    else
+    {
+      set_state( STATE_ERROR );
+      onConnectError();
+    }
+
+    return get_state();
+  }
+
+  socket_t get_fd() const { return get_tcp_socket(); }
 };
 
 
@@ -8548,13 +8459,22 @@ public:
       accepted_tcp_socket( accepted_tcp_socket )
   { }
 
+  char* get_sockaddrs() { return sockaddrs; }
+
   // Win32AIOCB
   void onCompletion( DWORD dwNumberOfBytesTransferred )
   {
     // dwNumberOfBytesTransferred does not include the sockaddr's
     // The sockaddr's are after any recv'd data in the recv_buffer
     if ( get_recv_buffer() != NULL )
-      get_recv_buffer()->resize( dwNumberOfBytesTransferred );
+    {
+      get_recv_buffer()->resize
+      (
+        get_recv_buffer()->size()
+        +
+        dwNumberOfBytesTransferred
+      );
+    }
 
     onAcceptCompletion( accepted_tcp_socket );
   }
@@ -8566,6 +8486,7 @@ public:
 
 private:
   TCPSocket& accepted_tcp_socket;
+  char sockaddrs[88];
 };
 
 
@@ -8578,14 +8499,14 @@ public:
     void* callback_context,
     SocketAddress& peername,
     Buffer* send_buffer,
-    Socket& socket_
+    TCPSocket& tcp_socket
   ) : IOConnectCB
       (
         callback,
         callback_context,
         peername,
         send_buffer,
-        socket_
+        tcp_socket
       )
   { }
 
@@ -8613,11 +8534,11 @@ public:
   Win32AIORecvCB
   (
     Buffer& buffer,
-    AIOReadCallback& callback,
+    AIORecvCallback& callback,
     void* callback_context,
-    Socket& socket_
+    TCPSocket& tcp_socket
   )
-    : IORecvCB( buffer, callback, callback_context, 0, socket_ )
+    : IORecvCB( buffer, callback, callback_context, 0, tcp_socket )
   { }
 
   // Win32AIOCB
@@ -8626,15 +8547,15 @@ public:
     if ( dwNumberOfBytesTransferred > 0 )
     {
       get_buffer().resize( get_buffer().size() + dwNumberOfBytesTransferred );
-      onReadCompletion();
+      onRecvCompletion();
     }
     else
-      onReadError( ECONNABORTED );
+      onRecvError( WSAECONNABORTED );
   }
 
   void onError( DWORD dwErrorCode )
   {
-    onReadError( static_cast<uint32_t>( dwErrorCode ) );
+    onRecvError( static_cast<uint32_t>( dwErrorCode ) );
   }
 };
 
@@ -8645,11 +8566,11 @@ public:
   Win32AIOSendCB
   (
     Buffer& buffer,
-    AIOWriteCallback& callback,
+    AIOSendCallback& callback,
     void* callback_context,
-    Socket& socket_
+    TCPSocket& tcp_socket
   )
-    : IOSendCB( buffer, callback, callback_context, 0, socket_ )
+    : IOSendCB( buffer, callback, callback_context, 0, tcp_socket )
   { }
 
   // Win32AIOCB
@@ -8660,12 +8581,12 @@ public:
       DebugBreak();
 #endif
 
-    onWriteCompletion();
+    onSendCompletion();
   }
 
   void onError( DWORD dwErrorCode )
   {
-    onWriteError( dwErrorCode );
+    onSendError( dwErrorCode );
   }
 };
 
@@ -8676,11 +8597,11 @@ public:
   Win32AIOSendMsgCB
   (
     Buffers& buffers,
-    AIOWriteCallback& callback,
+    AIOSendCallback& callback,
     void* callback_context,
-    Socket& socket_
+    TCPSocket& tcp_socket
   )
-    : IOSendMsgCB( buffers, callback, callback_context, 0, socket_ )
+    : IOSendMsgCB( buffers, callback, callback_context, 0, tcp_socket )
   { }
 
   // Win32AIOCB
@@ -8691,12 +8612,12 @@ public:
       DebugBreak();
 #endif
 
-    onWriteCompletion();
+    onSendMsgCompletion();
   }
 
   void onError( DWORD dwErrorCode )
   {
-    onWriteError( dwErrorCode );
+    onSendMsgError( dwErrorCode );
   }
 };
 #endif
@@ -8764,40 +8685,6 @@ TCPSocket::aio_accept
     TCPSocket* accepted_tcp_socket = TCPSocket::create( get_domain() );
     if ( accepted_tcp_socket != NULL )
     {
-      size_t sockaddrlen;
-      if ( get_domain() == AF_INET6 )
-        sockaddrlen = sizeof( sockaddr_in6 );
-      else
-        sockaddrlen = sizeof( sockaddr_in );
-
-      DWORD dwReceiveDataLength;
-      if ( recv_buffer != NULL )
-      {
-#ifdef _DEBUG
-        if ( recv_buffer->position() > 0 ) DebugBreak();
-        if ( recv_buffer->size() > 0 ) DebugBreak();
-#endif
-        if ( recv_buffer->capacity() >= ( sockaddrlen + 16 ) * 2 )
-        {
-          dwReceiveDataLength = recv_buffer->capacity()
-                                -
-                                ( sockaddrlen + 16 ) * 2;
-        }
-        else
-        {
-          TCPSocket::dec_ref( *accepted_tcp_socket );
-          callback.onAcceptError( WSAENOBUFS, callback_context );
-          return;
-        }
-      }
-      else
-      {
-        recv_buffer = new HeapBuffer( ( sockaddrlen + 16 ) * 2 );
-        dwReceiveDataLength = 0;
-      }
-
-      DWORD dwBytesReceived;
-
       Win32AIOAcceptCB* aiocb
         = new Win32AIOAcceptCB
               (
@@ -8808,13 +8695,44 @@ TCPSocket::aio_accept
                 recv_buffer
               );
 
+      size_t sockaddrlen;
+      if ( get_domain() == AF_INET6 )
+        sockaddrlen = sizeof( sockaddr_in6 );
+      else
+        sockaddrlen = sizeof( sockaddr_in );
+
+      PVOID lpOutputBuffer;
+      DWORD dwReceiveDataLength;
+      if ( recv_buffer != NULL )
+      {
+        size_t recv_buffer_left = recv_buffer->capacity() - recv_buffer->size();
+        if ( recv_buffer_left >= ( sockaddrlen + 16 ) * 2 )
+        {
+          lpOutputBuffer = static_cast<char*>( *recv_buffer ) + recv_buffer->size();
+          dwReceiveDataLength = recv_buffer_left - ( sockaddrlen + 16 ) * 2;
+        }
+        else
+        {
+          TCPSocket::dec_ref( *accepted_tcp_socket );
+          callback.onAcceptError( WSAENOBUFS, callback_context );
+          return;
+        }
+      }
+      else
+      {
+        lpOutputBuffer = aiocb->get_sockaddrs();
+        dwReceiveDataLength = 0;
+      }
+
+      DWORD dwBytesReceived;
+
       if
       (
         static_cast<LPFN_ACCEPTEX>( lpfnAcceptEx )
         (
           *this,
           *accepted_tcp_socket,
-          *recv_buffer,
+          lpOutputBuffer,
           dwReceiveDataLength,
           sockaddrlen + 16,
           sockaddrlen + 16,
@@ -8996,14 +8914,71 @@ TCPSocket::aio_connect
   }
 #endif
 
-  Socket::aio_connect( peername, callback, callback_context );
+  // Try a non-blocking connect (for e.g. localhost)
+  switch
+  (
+    NBIOConnectCB
+    (
+      callback,
+      callback_context,
+      peername,
+      Object::inc_ref( send_buffer ),
+      inc_ref()
+    ).execute()
+  )
+  {
+    case NBIOConnectCB::STATE_COMPLETE:
+    case NBIOConnectCB::STATE_ERROR: Buffer::dec_ref( send_buffer ); return;
+  }
+
+  if ( get_bio_queue() != NULL )
+  {
+    get_bio_queue()->submit
+    (
+      *new BIOConnectCB
+           (
+             callback,
+             callback_context,
+             peername.inc_ref(),
+             send_buffer,
+             inc_ref()
+           )
+    );
+
+    return;
+  }
+  else if ( get_nbio_queue() != NULL )
+  {
+    get_nbio_queue()->submit
+    (
+      *new NBIOConnectCB
+            (
+              callback,
+              callback_context,
+              peername.inc_ref(),
+              send_buffer,
+              inc_ref()
+            )
+    );
+
+    return;
+  }
+
+  BIOConnectCB
+  (
+    callback,
+    callback_context,
+    peername,
+    send_buffer,
+    inc_ref()
+  ).execute();
 }
 
 void TCPSocket::aio_recv
 (
   Buffer& buffer,
   int flags,
-  AIOReadCallback& callback,
+  AIORecvCallback& callback,
   void* callback_context
 )
 {
@@ -9064,7 +9039,7 @@ TCPSocket::aio_send
 (
   Buffer& buffer,
   int flags,
-  AIOWriteCallback& callback,
+  AIOSendCallback& callback,
   void* callback_context
 )
 {
@@ -9129,7 +9104,7 @@ TCPSocket::aio_sendmsg
 (
   Buffers& buffers,
   int flags,
-  AIOWriteCallback& callback,
+  AIOSendCallback& callback,
   void* callback_context
 )
 {
@@ -9241,15 +9216,6 @@ socket_t TCPSocket::create( int* domain )
   return Socket::create( domain, TYPE, PROTOCOL );
 }
 
-bool TCPSocket::want_accept() const
-{
-#ifdef _WIN32
-  return WSAGetLastError() == WSAEWOULDBLOCK;
-#else
-  return errno == EWOULDBLOCK;
-#endif
-}
-
 bool TCPSocket::setsockopt( Option option, bool onoff )
 {
   if ( option == OPTION_TCP_NODELAY )
@@ -9266,6 +9232,37 @@ bool TCPSocket::setsockopt( Option option, bool onoff )
   }
   else
     return Socket::setsockopt( option, onoff );
+}
+
+bool TCPSocket::want_accept() const
+{
+#ifdef _WIN32
+  return WSAGetLastError() == WSAEWOULDBLOCK;
+#else
+  return errno == EWOULDBLOCK;
+#endif
+}
+
+bool TCPSocket::want_connect() const
+{
+#ifdef _WIN32
+  switch ( WSAGetLastError() )
+  {
+    case WSAEALREADY:
+    case WSAEINPROGRESS:
+    case WSAEINVAL:
+    case WSAEWOULDBLOCK: return true;
+    default: return false;
+  }
+#else
+  switch ( errno )
+  {
+    case EALREADY:
+    case EINPROGRESS:
+    case EWOULDBLOCK: return true;
+    default: return false;
+  }
+#endif
 }
 
 
@@ -10404,7 +10401,7 @@ public:
         set_state( STATE_COMPLETE );
         onRecvFromCompletion( peername );
       }
-      else if ( get_udp_socket().want_read() )
+      else if ( get_udp_socket().want_recv() )
         set_state( STATE_WANT_READ );
       else
       {

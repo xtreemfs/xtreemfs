@@ -52,8 +52,8 @@ namespace xtreemfs
     ssize_t send( const void* buf, size_t buflen, int );
     ssize_t sendmsg( const struct iovec* buffers, uint32_t buffers_count, int );
     bool shutdown();
-    bool want_read() const;
-    bool want_write() const;
+    bool want_recv() const;
+    bool want_send() const;
 
   private:
     GridSSLSocket( int domain, yield::platform::socket_t, SSL*, SSLContext& );
@@ -64,7 +64,7 @@ namespace xtreemfs
   };
 
 
-  class GridSSLSocketFactory : public yield::ipc::SocketFactory
+  class GridSSLSocketFactory : public yield::ipc::TCPSocketFactory
   {
   public:
     GridSSLSocketFactory( SSLContext& ssl_context )
@@ -76,8 +76,8 @@ namespace xtreemfs
       SSLContext::dec_ref( ssl_context );
     }
 
-    // SocketFactory
-    yield::ipc::Socket* createSocket()
+    // TCPSocketFactory
+    yield::platform::TCPSocket* createSocket()
     {
       return GridSSLSocket::create( ssl_context );
     }

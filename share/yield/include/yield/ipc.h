@@ -67,7 +67,6 @@ namespace yield
     class ONCRPCRecordFragment;
     class ONCRPCRequest;
     class ONCRPCResponse;
-    class SocketFactory;
     class SSLContext;
     class TCPSocketFactory;
     class URI;
@@ -257,92 +256,37 @@ namespace yield
       SocketPeer
       (
         Log* error_log,
-        IOQueue& io_queue, // Steals this reference
         Log* trace_log
       );
 
-      // Two helpers for subclass factory methods
-      static IOQueue& createIOQueue();
       static SocketAddress& createSocketAddress( const URI& absolute_uri );      
 
       Log* get_error_log() const { return error_log; }
-      IOQueue& get_io_queue() const { return io_queue; }
       Log* get_trace_log() const { return trace_log; }
 
     private:
       Log* error_log;
-      IOQueue& io_queue;
       Log* trace_log;
     };
 
 
-    class SocketClient : public RequestHandler, public SocketPeer
+    class SocketClient : public SocketPeer
     {
     public:
-      const static uint16_t CONCURRENCY_LEVEL_DEFAULT = 4;
-      const static uint64_t OPERATION_TIMEOUT_DEFAULT = 5 * Time::NS_IN_S;
-      const static uint16_t RECONNECT_TRIES_MAX_DEFAULT = 2;
-
-      virtual ~SocketClient();
-
       SocketAddress& get_peername() const { return peername; }
-      const Time& get_operation_timeout() const { return operation_timeout; }
-      uint16_t get_reconnect_tries_max() const { return reconnect_tries_max; }
-
-      // Object
-      SocketClient& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
       SocketClient
       (
         Log* error_log,
-        IOQueue& io_queue,
-        const Time& operation_timeout,
         SocketAddress& peername, // Steals this reference
-        uint16_t reconnect_tries_max,
         Log* trace_log
       );
 
-    protected:
-      class Connection
-        : public RequestHandler,
-          public Socket::AIOConnectCallback,
-          public Socket::AIOReadCallback,
-          public Socket::AIOWriteCallback
-      {
-      public:
-        // EventHandler
-        const char* get_name() const { return "SocketClient::Connection"; }
-
-      protected:
-        Connection( Socket&, SocketClient& );
-        virtual ~Connection();
-
-        SocketAddress& get_peername() const;
-        Socket& get_socket() const { return socket_; }
-
-        // Socket::AIOConnectCallback
-        virtual void onConnectCompletion( size_t bytes_written, void* );
-        virtual void onConnectError( uint32_t error_code, void* context );
-
-        // Socket::AIOReadCallback
-        virtual void onReadCompletion( Buffer& buffer, void* context );
-        virtual void onReadError( uint32_t error_code, void* context );
-
-        // Socket::AIOWriteCallback
-        virtual void onWriteCompletion( size_t bytes_written, void* context );
-        virtual void onWriteError( uint32_t error_code, void* context );
-
-      private:
-        uint16_t reconnect_tries;
-        Socket& socket_;
-        SocketClient& socket_client;
-      };
+      virtual ~SocketClient();
 
     private:
-      Time operation_timeout;
       SocketAddress& peername;
-      uint16_t reconnect_tries_max;
     };
 
 
@@ -360,28 +304,98 @@ namespace yield
       SocketServer
       ( 
         Log* error_log,
-        IOQueue& io_queue, // Steals this reference
         EventTarget& request_target, // Steals this reference
         Log* trace_log
       );
 
+    private:
+      EventTarget& request_target;
+    };
+
+
+    class TCPSocketClient : public SocketClient
+    {
+    public:
+      const static uint16_t CONCURRENCY_LEVEL_DEFAULT = 4;
+      const static uint64_t CONNECT_TIMEOUT_DEFAULT = 5 * Time::NS_IN_S;
+      const static uint16_t RECONNECT_TRIES_MAX_DEFAULT = 2;
+      const static uint64_t RECV_TIMEOUT_DEFAULT = 5 * Time::NS_IN_S;
+      const static uint64_t SEND_TIMEOUT_DEFAULT = 5 * Time::NS_IN_S;
+
+    public:
+      virtual ~TCPSocketClient();
+
+      const Time& get_connect_timeout() const { return connect_timeout; }
+      uint16_t get_reconnect_tries_max() const { return reconnect_tries_max; }
+      const Time& get_recv_timeout() const { return recv_timeout; }
+      const Time& get_send_timeout() const { return send_timeout; }
+
     protected:
-      class Connection : public ResponseTarget
-      { 
+      TCPSocketClient
+      (
+        const Time& connect_timeout,
+        Log* error_log,
+        IOQueue& io_queue, // Steals this reference
+        SocketAddress& peername, // Steals this reference
+        uint16_t reconnect_tries_max,
+        const Time& recv_timeout,
+        const Time& send_timeout,
+        Log* trace_log
+      );
+
+      IOQueue& get_io_queue() const { return io_queue; }
+
+    protected:
+      class Connection
+        : public TCPSocket::AIOConnectCallback,
+          public TCPSocket::AIORecvCallback,
+          public TCPSocket::AIOSendCallback
+      {
+      public:
+        // EventHandler
+        const char* get_name() const { return "TCPSocketClient::Connection"; }
+
       protected:
-        Connection( Socket& socket_, SocketServer& socket_server );
+        Connection
+        ( 
+          Log* error_log, 
+          SocketAddress& peername,
+          TCPSocket& tcp_socket, // Steals this reference
+          Log* trace_log
+        );
         virtual ~Connection();
 
-        Socket& get_socket() const { return socket_; }
-        SocketServer& get_socket_server() const { return socket_server; }
+        Log* get_error_log() const { return error_log; }
+        SocketAddress& get_peername() const { return peername; }
+        TCPSocket& get_tcp_socket() const { return tcp_socket; }
+        Log* get_trace_log() const { return trace_log; }
+
+        // Socket::AIOConnectCallback
+        virtual void onConnectCompletion( size_t bytes_written, void* );
+        virtual void onConnectError( uint32_t error_code, void* context );
+
+        // Socket::AIORecvCallback
+        virtual void onReadCompletion( Buffer& buffer, void* context );
+        virtual void onReadError( uint32_t error_code, void* context );
+
+        // Socket::AIOSendCallback
+        virtual void onWriteCompletion( size_t bytes_written, void* context );
+        virtual void onWriteError( uint32_t error_code, void* context );
 
       private:
-        Socket& socket_;
-        SocketServer& socket_server;
+        Log* error_log;
+        uint16_t reconnect_tries;
+        SocketAddress& peername;
+        TCPSocket& tcp_socket;
+        Log* trace_log;
       };
 
     private:
-      EventTarget& request_target;
+      Time connect_timeout;
+      IOQueue& io_queue;
+      uint16_t reconnect_tries_max;
+      Time recv_timeout;
+      Time send_timeout;
     };
 
 
@@ -412,57 +426,97 @@ namespace yield
         Log* trace_log = NULL
       );
 
+      IOQueue& get_io_queue() const { return io_queue; }
       TCPSocket& get_listen_tcp_socket() const { return listen_tcp_socket; }
 
-      virtual void
-      onAcceptCompletion
-      ( 
-        TCPSocket& accepted_tcp_socket, 
-        void* context, 
-        Buffer* recv_buffer 
-      );
-
       // TCPSocket::AIOAcceptCallback
+      virtual void onAcceptCompletion( TCPSocket&, void*, Buffer* );
       virtual void onAcceptError( uint32_t error_code, void* );
 
     protected:
       class Connection 
-        : public SocketServer::Connection,
-          public TCPSocket::AIOReadCallback,          
-          public TCPSocket::AIOWriteCallback
+        : public ResponseTarget,
+          public TCPSocket::AIORecvCallback,          
+          public TCPSocket::AIOSendCallback
       {
-      protected:
-        Connection
-        ( 
-          TCPSocket& accepted_tcp_socket, 
-          TCPSocketServer& tcp_socket_server 
-        );
+      public:
+        TCPSocket& get_tcp_socket() const { return tcp_socket; }
 
-        void onReadError();
-
-        // TCPSocket::AIOReadCallback
-        virtual void onReadCompletion( Buffer& buffer, void* context );
+        // TCPSocket::AIORecvCallback
         virtual void onReadError( uint32_t error_code, void* context );
 
-        // TCPSocket::AIOWriteCallback
-        virtual void onWriteCompletion( size_t bytes_written, void* context );
+        // TCPSocket::AIOSendCallback
         virtual void onWriteError( uint32_t error_code, void* context );
+
+      protected:
+        Connection( TCPSocket&, TCPSocketServer& );
+        virtual ~Connection();
+
+      private:
+        TCPSocket& tcp_socket;
+        TCPSocketServer& tcp_socket_server;
       };
 
     private:
+      void onReadError( Connection&, uint32_t error_code );
+      void onWriteError( Connection&, uint32_t error_code );
+
+    private:
+      IOQueue& io_queue;
       TCPSocket& listen_tcp_socket;
+    };
+
+
+    class UDPSocketClient 
+      : public SocketClient,
+        public UDPSocket::AIORecvCallback
+    {
+    public:
+      const static uint64_t RECV_TIMEOUT_DEFAULT = 5 * Time::NS_IN_S;
+
+    public:
+      const Time& get_recv_timeout() const { return recv_timeout; }
+
+      // EventHandler
+      const char* get_name() const { return "UDPONCRPCClient"; }
+
+    protected:
+      UDPSocketClient
+      (
+        Log* error_log,
+        SocketAddress& peername, // Steals this reference
+        const Time& recv_timeout,
+        Log* trace_log,
+        UDPSocket& udp_socket // Steals this reference
+      );
+
+      static UDPSocket&
+      createUDPSocket
+      ( 
+        const URI& absolute_uri,
+        Log* trace_log
+      );
+
+      UDPSocket& get_udp_socket() const { return udp_socket; }
+
+      // UDPSocket::AIORecvCallback
+      virtual void onReadCompletion( Buffer& buffer, void* context );
+      virtual void onReadError( uint32_t error_code, void* context );
+
+    private:
+      Time recv_timeout;
+      UDPSocket& udp_socket;
     };
 
 
     class UDPSocketServer 
       : public SocketServer,
-        public UDPSocket::AIORecvFromCallback
+        public UDPSocket::AIORecvFromCallback        
     {
     protected:
       UDPSocketServer
       ( 
         Log* error_log, 
-        IOQueue& io_queue, // Steals this reference
         EventTarget& request_target, // Steals this reference
         Log* trace_log,
         UDPSocket& udp_socket // Steals this reference
@@ -470,34 +524,27 @@ namespace yield
 
       virtual ~UDPSocketServer();
 
-      static UDPSocket& 
-      createUDPSocket
+      static UDPSocket& createUDPSocket
       ( 
         const URI& absolute_uri,
-        IOQueue& io_queue,        
         Log* trace_log = NULL
       );
 
       UDPSocket& get_udp_socket() const { return udp_socket; }
 
     protected:
-      class Connection : public SocketServer::Connection
+      class ResponseTarget : public yield::concurrency::ResponseTarget
       {
       protected:
-        Connection
-        ( 
-          SocketAddress& peername, 
-          UDPSocket& udp_socket, 
-          UDPSocketServer& udp_socket_server
-        );
-
-        virtual ~Connection();
+        ResponseTarget( SocketAddress& peername, UDPSocket& udp_socket );
+        virtual ~ResponseTarget();
 
         const SocketAddress& get_peername() const { return peername; }
-        UDPSocket& get_udp_socket() const;
+        UDPSocket& get_udp_socket() const { return udp_socket; }
 
       private:
         SocketAddress& peername;
+        UDPSocket& udp_socket;
       };
 
     private:
@@ -764,7 +811,7 @@ namespace yield
     };
 
 
-    class HTTPClient : public SocketClient
+    class HTTPClient : public HTTPRequestHandler, public TCPSocketClient
     {
     public:
       virtual ~HTTPClient() { }
@@ -774,9 +821,11 @@ namespace yield
       (
         const URI& absolute_uri,
         uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
+        const Time& connect_timeout = CONNECT_TIMEOUT_DEFAULT,
         Log* error_log = NULL,
-        const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT,
         uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
+        const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
+        const Time& send_timeout = SEND_TIMEOUT_DEFAULT,
         SSLContext* ssl_context = NULL, // Steals this reference, to allow *new
         Log* trace_log = NULL
       );
@@ -805,46 +854,55 @@ namespace yield
       // EventHandler
       const char* get_name() const { return "HTTPClient"; }
 
-      // RequestHandler
-      virtual void handleRequest( Request& request );
-
     protected:
       HTTPClient
       (
         uint16_t concurrency_level,
+        const Time& connect_timeout,
         Log* error_log,
         IOQueue& io_queue,
-        const Time& operation_timeout,
         SocketAddress& peername,
         uint16_t reconnect_tries_max,
+        const Time& recv_timeout,
+        const Time& send_timeout,
         TCPSocketFactory& tcp_socket_factory,
         Log* trace_log
       );
 
+      // HTTPRequestHandler
+      virtual void handleHTTPRequest( HTTPRequest& http_request );
+
     protected:
       class Connection 
-        : public SocketClient::Connection,
+        : public TCPSocketClient::Connection,
+          public HTTPRequestHandler,
           private HTTPResponseParser
       {
       public:
-        Connection( HTTPClient& http_client, TCPSocket& tcp_socket );
+        Connection
+        (
+          Log* error_log,
+          SocketAddress& peername,
+          TCPSocket& tcp_socket,
+          Log* trace_log
+        );
 
         // EventHandler
         const char* get_name() const { return "HTTPClient::Connection"; }
 
-        // RequestHandler
-        virtual void handleRequest( Request& request );
+        // HTTPRequestHandler
+        virtual void handleHTTPRequest( HTTPRequest& http_request );
 
       protected:
         // Socket::AIOConnectCallback
         void onConnectCompletion( size_t bytes_written, void* context );
         void onConnectError( uint32_t error_code, void* context );
 
-        // Socket::AIOReadCallback
+        // Socket::AIORecvCallback
         void onReadCompletion( Buffer& buffer, void* context );
         void onReadError( uint32_t error_code, void* context );
 
-        // Socket::AIOWriteCallback
+        // Socket::AIOSendCallback
         void onWriteCompletion( size_t bytes_written, void* context );
         void onWriteError( uint32_t error_code, void* context );
 
@@ -973,22 +1031,20 @@ namespace yield
           private HTTPRequestParser
       {
       public:
-        Connection
-        ( 
-          TCPSocket& accepted_tcp_socket,
-          HTTPServer& http_server
-        );
+        Connection( HTTPServer& http_server, TCPSocket& tcp_socket );
 
-        // TCPSocket::AIOReadCallback
+        // TCPSocket::AIORecvCallback
         virtual void onReadCompletion( Buffer& buffer, void* context );
 
-      protected:
+        // TCPSocket::AIOSendCallback
+        virtual void onWriteCompletion( size_t bytes_written, void* context );
+        virtual void onWriteError( uint32_t error_code, void* context );
+
         // ResponseTarget
         virtual void send( Response& response );
 
-        // TCPSocket::AIOWriteCallback
-        virtual void onWriteCompletion( size_t bytes_written, void* context );
-        virtual void onWriteError( uint32_t error_code, void* context );
+      private:
+        HTTPServer& http_server;
       };
 
     private:
@@ -1147,69 +1203,7 @@ namespace yield
       size_t next_json_value_i;
     };
 
-
-    class ONCRPCClient 
-      : public SocketClient, 
-        private RPCClient<ONCRPCRequest, ONCRPCResponse>
-    {
-    public:
-      virtual ~ONCRPCClient();
-
-      static ONCRPCClient&
-      create
-      (
-        const URI& absolute_uri,
-        MessageFactory& message_factory, // Steals this reference *new
-        uint32_t prog,
-        uint32_t vers,
-        uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
-        MarshallableObject* cred = NULL,
-        Log* error_log = NULL,
-        const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT,
-        uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
-        SSLContext* ssl_context = NULL, // Steals this reference
-        Log* trace_log = NULL
-      );
-
-      // Object
-      ONCRPCClient& inc_ref() { return Object::inc_ref( *this ); }
-
-      // EventHandler
-      const char* get_name() const { return "ONCRPCClient"; }
-
-      // RequestHandler
-      virtual void handleRequest( Request& request );
-
-    protected:
-      ONCRPCClient
-      (
-        uint16_t concurrency_level,
-        MarshallableObject* cred,
-        Log* error_log,
-        IOQueue& io_queue,
-        MessageFactory& message_factory,
-        const Time& operation_timeout,
-        SocketAddress& peername,
-        uint32_t prog,
-        uint16_t reconnect_tries_max,
-        SocketFactory& socket_factory,
-        Log* trace_log,
-        uint32_t vers
-      );
-
-      virtual MarshallableObject* get_cred() { return cred; }
-      uint32_t get_prog() const { return prog; }
-      uint32_t get_vers() const { return vers; }
-    
-    private:
-      class Connection;
-
-    private:
-      SynchronizedSTLQueue<Connection*> connections;
-      MarshallableObject* cred;
-      uint32_t prog, vers;
-    };
-   
+  
     
     YIELD_IPC_ONCRPC_ERROR( ProgramUnavailable, 1, "program unavailable" );
     YIELD_IPC_ONCRPC_ERROR( ProgramMismatch, 2, "program mismatch" );
@@ -1309,6 +1303,22 @@ namespace yield
       MarshallableObject* cred;
       uint32_t prog, proc;
       uint32_t vers;
+    };
+
+
+    class ONCRPCRequestHandler : public RequestHandler
+    {
+    public:
+      virtual void handleONCRPCRequest( ONCRPCRequest& onc_rpc_request ) = 0;
+
+      // RequestHandler
+      void handleRequest( Request& request )
+      {
+        if ( request.get_type_id() == ONCRPCRequest::TYPE_ID )
+          handleONCRPCRequest( static_cast<ONCRPCRequest&>( request ) );
+        else
+          Request::dec_ref( request );
+      }
     };
 
 
@@ -1436,41 +1446,38 @@ namespace yield
     };
 
 
-    class ONCRPCServer : public RPCServer<ONCRPCRequest, ONCRPCResponse>
+    class ONCRPCClient 
+      : public RequestHandler,
+        public RPCClient<ONCRPCRequest, ONCRPCResponse>
     {
     public:
-      virtual ~ONCRPCServer() { }
-
-      static SocketServer&
-      create
-      (
-        const URI& absolute_uri,
-        MessageFactory& message_factory, // Steals this
-        EventTarget& request_target, // Steals this reference, to allow *new
-        Log* error_log = NULL,
-        bool send_oncrpc_requests = false, // false = send only bodies
-        SSLContext* ssl_context = NULL, // Steals this reference, to allow *new
-        Log* trace_log = NULL
-      );
+      virtual ~ONCRPCClient();
 
     protected:
-      ONCRPCServer
-      ( 
+      ONCRPCClient
+      (
+        MarshallableObject* cred,
         MessageFactory& message_factory,
-        EventTarget& request_target,
-        bool send_oncrpc_requests
+        uint32_t prog,
+        uint32_t vers
       );
+
+      virtual MarshallableObject* get_cred() { return cred; }
+      uint32_t get_prog() const { return prog; }
+      uint32_t get_vers() const { return vers; }
+
+      virtual void handleONCRPCRequest( ONCRPCRequest& onc_rpc_request ) = 0;
+
+      // RequestHandler
+      void handleRequest( Request& request );
+    
+    private:
+      MarshallableObject* cred;
+      uint32_t prog, vers;
     };
 
 
-    class SocketFactory : public Object
-    {
-    public:
-      virtual Socket* createSocket() = 0;
-
-      // Object
-      SocketFactory& inc_ref() { return Object::inc_ref( *this ); }
-    };
+    typedef RPCServer<ONCRPCRequest, ONCRPCResponse> ONCRPCServer;
 
 
     class SSLContext : public Object
@@ -1567,15 +1574,9 @@ namespace yield
       bool connect( const SocketAddress& peername );
       virtual ssize_t recv( void* buf, size_t buflen, int );
       virtual ssize_t send( const void* buf, size_t buflen, int );
-
-      // Delegates to send, since OpenSSL has no gather I/O
       virtual ssize_t sendmsg( const struct iovec* iov, uint32_t iovlen, int );
-
-      // IStream
-      virtual bool want_read() const;
-
-      // OStream
-      virtual bool want_write() const;
+      virtual bool want_send() const;
+      virtual bool want_recv() const;
       
       // TCPSocket
       virtual TCPSocket* accept();
@@ -1590,13 +1591,13 @@ namespace yield
     };
 
 
-    class TCPSocketFactory : public SocketFactory
+    class TCPSocketFactory : public Object
     {
     public:
       virtual TCPSocket* createTCPSocket() { return TCPSocket::create(); }
 
-      // SocketFactory
-      Socket* createSocket() { return createTCPSocket(); }
+      // Object
+      TCPSocketFactory& inc_ref() { return Object::inc_ref( *this ); }
     };
 
 
@@ -1621,6 +1622,119 @@ namespace yield
 #endif
 
 
+    class TCPONCRPCClient : public TCPSocketClient, public ONCRPCClient
+    {
+    public:
+      virtual ~TCPONCRPCClient();
+
+      static TCPONCRPCClient&
+      create
+      (
+        const URI& absolute_uri,
+        MessageFactory& message_factory, // Steals this reference
+        uint32_t prog,
+        uint32_t vers,
+        uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
+        const Time& connect_timeout = CONNECT_TIMEOUT_DEFAULT,
+        MarshallableObject* cred = NULL,
+        Log* error_log = NULL,        
+        uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
+        const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
+        const Time& send_timeout = SEND_TIMEOUT_DEFAULT,
+        SSLContext* ssl_context = NULL, // Steals this reference
+        Log* trace_log = NULL
+      );
+
+      // Object
+      TCPONCRPCClient& inc_ref() { return Object::inc_ref( *this ); }
+
+      // EventHandler
+      const char* get_name() const { return "TCPONCRPCClient"; }
+
+    protected:
+      TCPONCRPCClient
+      (
+        uint16_t concurrency_level,
+        const Time& connect_timeout,
+        MarshallableObject* cred,
+        Log* error_log,
+        IOQueue& io_queue,
+        MessageFactory& message_factory,
+        SocketAddress& peername,
+        uint32_t prog,
+        uint16_t reconnect_tries_max,
+        const Time& recv_timeout,
+        const Time& send_timeout,
+        TCPSocketFactory& tcp_socket_factory,
+        Log* trace_log,
+        uint32_t vers
+      );
+
+      // ONCRPCClient
+      virtual void handleONCRPCRequest( ONCRPCRequest& onc_rpc_request );
+    
+    private:
+      class Connection;
+      SynchronizedSTLQueue<Connection*> connections;
+    };
+
+
+    class TCPONCRPCServer : public TCPSocketServer, private ONCRPCServer
+    {
+    public:
+      static TCPONCRPCServer&
+      create
+      (
+        const URI& absolute_uri,
+        MessageFactory& message_factory,
+        EventTarget& onc_rpc_request_target,
+        Log* error_log = NULL,
+        bool send_onc_rpc_requests = false,
+        SSLContext* ssl_context = NULL,
+        Log* trace_log = NULL
+      );
+
+      // EventHandler
+      const char* get_name() const { return "TCPONCRPCServer"; }
+
+    private:
+      TCPONCRPCServer
+      ( 
+        Log* error_log,
+        IOQueue& io_queue,
+        TCPSocket& listen_tcp_socket,
+        MessageFactory& message_factory,
+        EventTarget& onc_rpc_request_target,
+        bool send_onc_rpc_requests,
+        Log* trace_log
+      );
+
+      // TCPSocket::AIOAcceptCallback
+      void onAcceptCompletion( TCPSocket&, void*, Buffer* );
+
+    private:
+      class Connection 
+        : public TCPSocketServer::Connection,
+          private ONCRPCRequestParser
+      {
+      public:
+        Connection( TCPSocket& tcp_socket, TCPONCRPCServer& tcp_onc_rpc_server );
+
+      private:
+        // TCPSocket::AIORecvCallback
+        void onReadCompletion( Buffer& buffer, void* context );
+
+        // TCPSocket::AIOSendCallback
+        void onWriteCompletion( size_t bytes_written, void* context );
+
+        // ResponseTarget
+        void send( Response& response );
+
+      private:
+        TCPONCRPCServer& tcp_onc_rpc_server;
+      };
+    };
+
 
     // The underlying_X pattern doesn't work as well with Sockets as it does
     // with Files, since Sockets have more state (like blocking mode, 
@@ -1639,12 +1753,12 @@ namespace yield
       ssize_t recv( void* buf, size_t buflen, int );
       ssize_t send( const void* buf, size_t buflen, int );
       ssize_t sendmsg( const struct iovec* iov, uint32_t iovlen, int );
-      bool want_connect() const;
-      bool want_read() const;
-      bool want_write() const;
 
       // TCPSocket
       TCPSocket* accept();
+      bool want_connect() const;
+      bool want_recv() const;
+      bool want_send() const;
 
     private:
       TracingTCPSocket( int domain, Log& log, socket_t );
@@ -1674,11 +1788,88 @@ namespace yield
     };
 
 
-    class UDPSocketFactory : public SocketFactory
+    class UDPONCRPCClient 
+      : public UDPSocketClient,
+        public ONCRPCClient,
+        private ONCRPCResponseParser
     {
     public:
-      // SocketFactory
-      Socket* createSocket() { return UDPSocket::create(); }
+      static UDPONCRPCClient&
+      create
+      (
+        const URI& absolute_uri,
+        MessageFactory& message_factory, // Steals this reference
+        uint32_t prog,
+        uint32_t vers,
+        MarshallableObject* cred = NULL,
+        Log* error_log = NULL,        
+        const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
+        Log* trace_log = NULL
+      );
+
+      // EventHandler
+      const char* get_name() const { return "UDPONCRPCClient"; }
+
+    protected:
+      UDPONCRPCClient
+      (
+        MarshallableObject* cred,
+        Log* error_log,
+        MessageFactory& message_factory,
+        SocketAddress& peername, // Steals this reference
+        uint32_t prog,
+        const Time& recv_timeout,
+        Log* trace_log,
+        UDPSocket& udp_socket, // Steals this reference
+        uint32_t vers
+      );
+
+      // UDPSocket::AIORecvCallback
+      void onReadCompletion( Buffer& buffer, void* context );
+      void onReadError( uint32_t error_code, void* context );
+
+      // ONCRPCClient
+      virtual void handleONCRPCRequest( ONCRPCRequest& onc_rpc_request );
+    };
+
+
+    class UDPONCRPCServer 
+      : public UDPSocketServer,
+        private ONCRPCServer,
+        private ONCRPCRequestParser
+    {
+    public:
+      static UDPONCRPCServer&
+      create
+      (
+        const URI& absolute_uri,
+        MessageFactory& message_factory,
+        EventTarget& onc_rpc_request_target,
+        Log* error_log = NULL,
+        bool send_onc_rpc_requests = false,
+        Log* trace_log = NULL
+      );
+
+      // EventHandler
+      const char* get_name() const { return "UDPONCRPCServer"; }
+
+    private:
+      UDPONCRPCServer
+      ( 
+        Log* error_log,
+        MessageFactory& message_factory,
+        EventTarget& request_target,
+        bool send_onc_rpc_requests,
+        Log* trace_log,
+        UDPSocket& udp_socket
+      );
+
+      // UDPSocket::AIORecvFromCallback
+      void onRecvFromCompletion( Buffer&, SocketAddress& peername, void* );
+      void onRecvFromError( uint32_t error_code, void* context );
+
+    private:
+      class ResponseTarget;
     };
 
 

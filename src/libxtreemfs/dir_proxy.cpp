@@ -64,12 +64,14 @@ private:
 DIRProxy::DIRProxy
 (
   uint16_t concurrency_level,
+  const Time& connect_timeout,
   Log* error_log,
   IOQueue& io_queue,
-  const Time& operation_timeout,
   SocketAddress& peername,
   uint16_t reconnect_tries_max,
-  SocketFactory& socket_factory,
+  const Time& recv_timeout,
+  const Time& send_timeout,
+  TCPSocketFactory& tcp_socket_factory,
   Log* trace_log,
   UserCredentialsCache* user_credentials_cache
 )
@@ -81,12 +83,14 @@ DIRProxy::DIRProxy
   >
   (
     concurrency_level,
+    connect_timeout,
     error_log,
     io_queue,
-    operation_timeout,
     peername,
     reconnect_tries_max,
-    socket_factory,
+    recv_timeout,
+    send_timeout,
+    tcp_socket_factory,
     trace_log,
     user_credentials_cache
   )
@@ -116,10 +120,12 @@ DIRProxy::create
     return create
            (
              *options.get_uri(),
-             DIRProxy::CONCURRENCY_LEVEL_DEFAULT,
+             CONCURRENCY_LEVEL_DEFAULT,
+             CONNECT_TIMEOUT_DEFAULT,
              options.get_error_log(),
-             options.get_timeout(),
-             DIRProxy::RECONNECT_TRIES_MAX_DEFAULT,
+             RECONNECT_TRIES_MAX_DEFAULT,
+             RECV_TIMEOUT_DEFAULT,
+             SEND_TIMEOUT_DEFAULT,
              options.get_ssl_context(),
              options.get_trace_log(),
              user_credentials_cache
@@ -134,9 +140,11 @@ DIRProxy::create
 (
   const URI& absolute_uri,
   uint16_t concurrency_level,
+  const Time& connect_timeout,
   Log* error_log,
-  const Time& operation_timeout,
   uint16_t reconnect_tries_max,
+  const Time& recv_timeout,
+  const Time& send_timeout,
   SSLContext* ssl_context,
   Log* trace_log,
   UserCredentialsCache* user_credentials_cache
@@ -145,12 +153,14 @@ DIRProxy::create
   return *new DIRProxy
               (
                 concurrency_level,
+                connect_timeout,
                 error_log,
                 yield::platform::NBIOQueue::create(),
-                operation_timeout,
                 createSocketAddress( absolute_uri ),
                 reconnect_tries_max,
-                createSocketFactory( absolute_uri, ssl_context ),
+                recv_timeout,
+                send_timeout,
+                createTCPSocketFactory( absolute_uri, ssl_context ),
                 trace_log,
                 user_credentials_cache
               );
