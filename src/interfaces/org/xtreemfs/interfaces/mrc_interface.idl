@@ -114,14 +114,13 @@ module org
         void xtreemfs_lsvol( out StatVFSSet volumes ) # 35;
         void xtreemfs_mkvol( StatVFS volume ) # 36;
         void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 37;
-        void xtreemfs_replication_to_master() # 38;
-        void xtreemfs_replica_add( string file_id, Replica new_replica ) # 39;
-        void xtreemfs_replica_list( string file_id, out ReplicaSet replicas ) # 40;
-        void xtreemfs_replica_remove( string file_id, string osd_uuid, out XCap delete_xcap ) # 41;
-        void xtreemfs_restore_database( string dump_file ) # 42;
-        void xtreemfs_restore_file( string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size ) # 43;
-        void xtreemfs_rmvol( string volume_name ) # 44;
-        void xtreemfs_shutdown() # 45;
+        void xtreemfs_replica_add( string file_id, Replica new_replica ) # 38;
+        void xtreemfs_replica_list( string file_id, out ReplicaSet replicas ) # 39;
+        void xtreemfs_replica_remove( string file_id, string osd_uuid, out XCap delete_xcap ) # 40;
+        void xtreemfs_restore_database( string dump_file ) # 41;
+        void xtreemfs_restore_file( string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size ) # 42;
+        void xtreemfs_rmvol( string volume_name ) # 43;
+        void xtreemfs_shutdown() # 44;
 
         // Exceptions
         exception ConcurrentModificationException # 50 { string stack_trace; };
