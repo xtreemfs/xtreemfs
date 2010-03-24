@@ -246,10 +246,6 @@ namespace yield
     class SocketPeer
     {
     public:
-      const static uint32_t FLAG_TRACE_NETWORK_IO = 1;
-      const static uint32_t FLAG_TRACE_OPERATIONS = 2;
-      const static uint32_t FLAGS_DEFAULT = 0;
-
       virtual ~SocketPeer();
 
     protected:
@@ -316,30 +312,60 @@ namespace yield
     class TCPSocketClient : public SocketClient
     {
     public:
-      const static uint16_t CONCURRENCY_LEVEL_DEFAULT = 4;
-      const static uint64_t CONNECT_TIMEOUT_DEFAULT = 5 * Time::NS_IN_S;
-      const static uint16_t RECONNECT_TRIES_MAX_DEFAULT = 2;
-      const static uint64_t RECV_TIMEOUT_DEFAULT = 5 * Time::NS_IN_S;
-      const static uint64_t SEND_TIMEOUT_DEFAULT = 5 * Time::NS_IN_S;
+      class Configuration : public Object
+      {
+      public:
+        const static uint16_t CONCURRENCY_LEVEL_DEFAULT = 4;
+        const static uint64_t CONNECT_TIMEOUT_DEFAULT = 5 * Time::NS_IN_S;
+        const static uint16_t RECONNECT_TRIES_MAX_DEFAULT = 2;
+        const static uint64_t RECV_TIMEOUT_DEFAULT = 5 * Time::NS_IN_S;
+        const static uint64_t SEND_TIMEOUT_DEFAULT = 5 * Time::NS_IN_S;
+
+      public:
+        Configuration
+        (
+          uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
+          const Time& connect_timeout = CONNECT_TIMEOUT_DEFAULT,
+          uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
+          const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
+          const Time& send_timeout = SEND_TIMEOUT_DEFAULT
+        )
+          : concurrency_level( concurrency_level ),
+            connect_timeout( connect_timeout ),
+            reconnect_tries_max( reconnect_tries_max ),
+            recv_timeout( recv_timeout ),
+            send_timeout( send_timeout )
+        { }
+
+        uint16_t get_concurrency_level() const { return concurrency_level; }
+        const Time& get_connect_timeout() const { return connect_timeout; }
+        uint16_t get_reconnect_tries_max() const { return reconnect_tries_max; }
+        const Time& get_recv_timeout() const { return recv_timeout; }
+        const Time& get_send_timeout() const { return send_timeout; }
+
+        // Object
+        Configuration& inc_ref() { return Object::inc_ref( *this ); }
+
+      private:
+        uint16_t concurrency_level;
+        Time connect_timeout;
+        uint16_t reconnect_tries_max;
+        Time recv_timeout;
+        Time send_timeout;
+      };
 
     public:
       virtual ~TCPSocketClient();
 
-      const Time& get_connect_timeout() const { return connect_timeout; }
-      uint16_t get_reconnect_tries_max() const { return reconnect_tries_max; }
-      const Time& get_recv_timeout() const { return recv_timeout; }
-      const Time& get_send_timeout() const { return send_timeout; }
+      Configuration& get_configuration() const { return configuration; }
 
     protected:
       TCPSocketClient
       (
-        const Time& connect_timeout,
+        Configuration& configuration, // Steals this reference
         Log* error_log,
         IOQueue& io_queue, // Steals this reference
         SocketAddress& peername, // Steals this reference
-        uint16_t reconnect_tries_max,
-        const Time& recv_timeout,
-        const Time& send_timeout,
         Log* trace_log
       );
 
@@ -391,11 +417,8 @@ namespace yield
       };
 
     private:
-      Time connect_timeout;
+      Configuration& configuration;
       IOQueue& io_queue;
-      uint16_t reconnect_tries_max;
-      Time recv_timeout;
-      Time send_timeout;
     };
 
 
@@ -820,13 +843,9 @@ namespace yield
       create
       (
         const URI& absolute_uri,
-        uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
-        const Time& connect_timeout = CONNECT_TIMEOUT_DEFAULT,
+        Configuration* configuration = NULL, // Steals this reference
         Log* error_log = NULL,
-        uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
-        const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
-        const Time& send_timeout = SEND_TIMEOUT_DEFAULT,
-        SSLContext* ssl_context = NULL, // Steals this reference, to allow *new
+        SSLContext* ssl_context = NULL, // Steals this reference
         Log* trace_log = NULL
       );
 
@@ -857,14 +876,10 @@ namespace yield
     protected:
       HTTPClient
       (
-        uint16_t concurrency_level,
-        const Time& connect_timeout,
+        Configuration& configuration,
         Log* error_log,
         IOQueue& io_queue,
         SocketAddress& peername,
-        uint16_t reconnect_tries_max,
-        const Time& recv_timeout,
-        const Time& send_timeout,
         TCPSocketFactory& tcp_socket_factory,
         Log* trace_log
       );
@@ -1634,13 +1649,9 @@ namespace yield
         MessageFactory& message_factory, // Steals this reference
         uint32_t prog,
         uint32_t vers,
-        uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
-        const Time& connect_timeout = CONNECT_TIMEOUT_DEFAULT,
+        Configuration* configuration = NULL, // Steals this reference
         MarshallableObject* cred = NULL,
         Log* error_log = NULL,        
-        uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
-        const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
-        const Time& send_timeout = SEND_TIMEOUT_DEFAULT,
         SSLContext* ssl_context = NULL, // Steals this reference
         Log* trace_log = NULL
       );
@@ -1654,17 +1665,13 @@ namespace yield
     protected:
       TCPONCRPCClient
       (
-        uint16_t concurrency_level,
-        const Time& connect_timeout,
+        Configuration& configuration,
         MarshallableObject* cred,
         Log* error_log,
         IOQueue& io_queue,
         MessageFactory& message_factory,
         SocketAddress& peername,
         uint32_t prog,
-        uint16_t reconnect_tries_max,
-        const Time& recv_timeout,
-        const Time& send_timeout,
         TCPSocketFactory& tcp_socket_factory,
         Log* trace_log,
         uint32_t vers

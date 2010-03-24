@@ -176,7 +176,6 @@ Volume::create
            name_utf8,
            options.get_error_log(),
            flags,
-           DIRProxy::RECONNECT_TRIES_MAX_DEFAULT,
            options.get_ssl_context(),
            options.get_trace_log(),
            vivaldi_coordinates_file_path           
@@ -190,7 +189,6 @@ Volume::create
   const string& name_utf8,
   Log* error_log,
   uint32_t flags,
-  uint8_t proxy_reconnect_tries_max,
   SSLContext* proxy_ssl_context,
   Log* trace_log,
   const Path& vivaldi_coordinates_file_path
@@ -202,12 +200,8 @@ Volume::create
     = DIRProxy::create
       (
         dir_uri,
-        DIRProxy::CONCURRENCY_LEVEL_DEFAULT,
-        DIRProxy::CONNECT_TIMEOUT_DEFAULT,
+        NULL,
         error_log,
-        proxy_reconnect_tries_max,
-        DIRProxy::RECV_TIMEOUT_DEFAULT,
-        DIRProxy::SEND_TIMEOUT_DEFAULT,
         proxy_ssl_context,
         trace_log,
         user_credentials_cache
@@ -224,12 +218,8 @@ Volume::create
     = MRCProxy::create
       (
         mrc_uri,
-        MRCProxy::CONCURRENCY_LEVEL_DEFAULT,
-        MRCProxy::CONNECT_TIMEOUT_DEFAULT,
+        NULL,
         error_log,
-        proxy_reconnect_tries_max,
-        MRCProxy::RECV_TIMEOUT_DEFAULT,
-        MRCProxy::SEND_TIMEOUT_DEFAULT,
         proxy_ssl_context,
         trace_log,
         user_credentials_cache
@@ -246,12 +236,8 @@ Volume::create
     = new OSDProxies
           (
             dir_proxy,
-            OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
-            OSDProxy::CONNECT_TIMEOUT_DEFAULT,
             error_log,
-            proxy_reconnect_tries_max,
-            OSDProxy::RECV_TIMEOUT_DEFAULT,
-            OSDProxy::SEND_TIMEOUT_DEFAULT,
+            NULL,
             proxy_ssl_context,
             stage_group,
             trace_log,

@@ -51,12 +51,8 @@ namespace xtreemfs
     create
     (
       const URI& absolute_uri,
-      uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
-      const Time& connect_timeout = CONNECT_TIMEOUT_DEFAULT,
+      Configuration* configuration = NULL,
       Log* error_log = NULL,
-      uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
-      const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
-      const Time& send_timeout = SEND_TIMEOUT_DEFAULT,
       SSLContext* ssl_context = NULL, // Steals this reference
       Log* trace_log = NULL,
       UserCredentialsCache* user_credentials_cache = NULL
@@ -68,14 +64,10 @@ namespace xtreemfs
   private:
     OSDProxy
     (
-      uint16_t concurrency_level,
-      const Time& connect_timeout,
+      Configuration& configuration,
       Log* error_log,
       IOQueue& io_queue,
       SocketAddress& peername,
-      uint16_t reconnect_tries_max,
-      const Time& recv_timeout,
-      const Time& send_timeout,
       TCPSocketFactory& tcp_socket_factory,
       Log* trace_log,
       UserCredentialsCache* user_credentials_cache

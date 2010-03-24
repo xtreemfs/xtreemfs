@@ -53,14 +53,10 @@ namespace xtreemfs
   private:
     NettestProxy
     (
-      uint16_t concurrency_level,
-      const Time& connect_timeout,
+      Configuration& configuration,
       Log* error_log,
       IOQueue& io_queue,      
       SocketAddress& peername,
-      uint16_t reconnect_tries_max,
-      const Time& recv_timeout,
-      const Time& send_timeout,
       TCPSocketFactory& tcp_socket_factory,
       Log* trace_log,
       UserCredentialsCache* user_credentials_cache

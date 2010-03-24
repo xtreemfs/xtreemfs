@@ -74,31 +74,23 @@ namespace xtreemfs
     // Steals all references except for user_credentials_cache
     Proxy
     (
-      uint16_t concurrency_level,
-      const Time& connect_timeout,
+      Configuration& configuration,
       Log* error_log,
       IOQueue& io_queue,
       SocketAddress& peername,
-      uint16_t reconnect_tries_max,
-      const Time& recv_timeout,
-      const Time& send_timeout,
       TCPSocketFactory& tcp_socket_factory,
       Log* trace_log,
       UserCredentialsCache* user_credentials_cache
     )
     : TCPONCRPCClient
       (
-        concurrency_level,
-        connect_timeout,
-        NULL,
+        configuration,
+        NULL, // cred
         error_log,
         io_queue,
         *new InterfaceMessageFactoryType,
         peername,
         0x20000000 + InterfaceType::TAG,
-        reconnect_tries_max,
-        recv_timeout,
-        send_timeout,
         tcp_socket_factory,
         trace_log,
         InterfaceType::TAG

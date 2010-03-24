@@ -79,8 +79,6 @@ namespace xtreemfs
       const std::string& name_utf8,
       Log* error_log = NULL,
       uint32_t flags = FLAGS_DEFAULT,
-      uint8_t proxy_reconnect_tries_max
-        = DIRProxy::RECONNECT_TRIES_MAX_DEFAULT,
       SSLContext* proxy_ssl_context = NULL,
       Log* trace_log = NULL,
       const Path& vivaldi_coordinates_file_path = Path()

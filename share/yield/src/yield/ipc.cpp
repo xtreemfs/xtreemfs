@@ -1,3 +1,5 @@
+// Revision: 2138
+
 #include "yield/ipc.h"
 using namespace yield::ipc;
 
@@ -8819,31 +8821,28 @@ using yield::platform::Win32AIOQueue;
 
 HTTPClient::HTTPClient
 (
-  uint16_t concurrency_level,
-  const Time& connect_timeout,
+  Configuration& configuration,
   Log* error_log,
   IOQueue& io_queue,
   SocketAddress& peername,
-  uint16_t reconnect_tries_max,
-  const Time& recv_timeout,
-  const Time& send_timeout,
   TCPSocketFactory& tcp_socket_factory,
   Log* trace_log
 )
   : TCPSocketClient
     (
-      connect_timeout,
+      configuration,
       error_log,
       io_queue,
       peername,
-      reconnect_tries_max,
-      recv_timeout,
-      send_timeout,
       trace_log
     )
 {
   uint16_t connection_i = 0;
-  for ( ; connection_i < concurrency_level; connection_i++ )
+  for
+  (
+    ; connection_i < configuration.get_concurrency_level();
+    connection_i++
+  )
   {
     TCPSocket* tcp_socket = tcp_socket_factory.createTCPSocket();
     if ( tcp_socket != NULL )
@@ -8881,12 +8880,8 @@ HTTPClient&
 HTTPClient::create
 (
   const URI& absolute_uri,
-  uint16_t concurrency_level,
-  const Time& connect_timeout,
+  Configuration* configuration,
   Log* error_log,
-  uint16_t reconnect_tries_max,
-  const Time& recv_timeout,
-  const Time& send_timeout,
   SSLContext* ssl_context,
   Log* trace_log
 )
@@ -8901,6 +8896,9 @@ HTTPClient::create
   }
 
   SocketAddress& peername = createSocketAddress( checked_absolute_uri );
+
+  if ( configuration == NULL )
+    configuration = new Configuration;
 
   IOQueue* io_queue;
   TCPSocketFactory* tcp_socket_factory;
@@ -8929,14 +8927,10 @@ HTTPClient::create
 
   return *new HTTPClient
               (
-                concurrency_level,
-                connect_timeout,
+                *configuration,
                 error_log,
                 *io_queue,
                 peername,
-                reconnect_tries_max,
-                recv_timeout,
-                send_timeout,
                 *tcp_socket_factory,
                 trace_log
               );
@@ -13669,9 +13663,12 @@ public:
       tcp_onc_rpc_client.get_trace_log()
     ),
     ONCRPCResponseParser( tcp_onc_rpc_client.get_message_factory() ),
-    connect_timeout( tcp_onc_rpc_client.get_connect_timeout() ),
-    recv_timeout( tcp_onc_rpc_client.get_recv_timeout() ),
-    send_timeout( tcp_onc_rpc_client.get_send_timeout() ),
+    connect_timeout
+    (
+      tcp_onc_rpc_client.get_configuration().get_connect_timeout()
+    ),
+    recv_timeout( tcp_onc_rpc_client.get_configuration().get_recv_timeout() ),
+    send_timeout( tcp_onc_rpc_client.get_configuration().get_send_timeout() ),
     tcp_onc_rpc_client( tcp_onc_rpc_client )
   { }
 
@@ -13827,36 +13824,33 @@ private:
 
 TCPONCRPCClient::TCPONCRPCClient
 (
-  uint16_t concurrency_level,
-  const Time& connect_timeout,
+  Configuration& configuration,
   MarshallableObject* cred,
   Log* error_log,
   IOQueue& io_queue,
   MessageFactory& message_factory,
   SocketAddress& peername,
   uint32_t prog,
-  uint16_t reconnect_tries_max,
-  const Time& recv_timeout,
-  const Time& send_timeout,
   TCPSocketFactory& tcp_socket_factory,
   Log* trace_log,
   uint32_t vers
 )
   : TCPSocketClient
   (
-    connect_timeout,
+    configuration,
     error_log,
     io_queue,
     peername,
-    reconnect_tries_max,
-    recv_timeout,
-    send_timeout,
     trace_log
   ),
   ONCRPCClient( cred, message_factory, prog, vers )
 {
   uint16_t connection_i = 0;
-  for ( ; connection_i < concurrency_level; connection_i++ )
+  for
+  (
+    ; connection_i < configuration.get_concurrency_level();
+    connection_i++
+  )
   {
     TCPSocket* tcp_socket = tcp_socket_factory.createTCPSocket();
     if ( tcp_socket != NULL )
@@ -13896,18 +13890,17 @@ TCPONCRPCClient::create
   MessageFactory& message_factory,
   uint32_t prog,
   uint32_t vers,
-  uint16_t concurrency_level,
-  const Time& connect_timeout,
+  Configuration* configuration,
   MarshallableObject* cred,
   Log* error_log,
-  uint16_t reconnect_tries_max,
-  const Time& recv_timeout,
-  const Time& send_timeout,
   SSLContext* ssl_context,
   Log* trace_log
 )
 {
   SocketAddress& peername = createSocketAddress( absolute_uri );
+
+  if ( configuration == NULL )
+    configuration = new Configuration;
 
   IOQueue* io_queue;
   TCPSocketFactory* tcp_socket_factory;
@@ -13936,17 +13929,13 @@ TCPONCRPCClient::create
 
   return *new TCPONCRPCClient
               (
-                concurrency_level,
-                connect_timeout,
+                *configuration,
                 cred,
                 error_log,
                 *io_queue,
                 message_factory,
                 peername,
                 prog,
-                reconnect_tries_max,
-                recv_timeout,
-                send_timeout,
                 *tcp_socket_factory,
                 trace_log,
                 vers
@@ -14142,20 +14131,14 @@ void TCPONCRPCServer::Connection::send( Response& response )
 // tcp_socket_client.cpp
 TCPSocketClient::TCPSocketClient
 (
-  const Time& connect_timeout,
+  Configuration& configuration,
   Log* error_log,
   IOQueue& io_queue,
   SocketAddress& peername,
-  uint16_t reconnect_tries_max,
-  const Time& recv_timeout,
-  const Time& send_timeout,
   Log* trace_log
 ) : SocketClient( error_log, peername, trace_log ),
-    connect_timeout( connect_timeout ),
-    io_queue( io_queue ),
-    reconnect_tries_max( reconnect_tries_max ),
-    recv_timeout( recv_timeout ),
-    send_timeout( send_timeout )
+    configuration( configuration ),
+    io_queue( io_queue )
 { }
 
 TCPSocketClient::~TCPSocketClient()

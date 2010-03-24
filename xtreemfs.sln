@@ -5,12 +5,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "google-breakpad", "proj\goo
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxtreemfs", "proj\libxtreemfs\libxtreemfs.vcproj", "{FFA69254-B8BC-4E99-B60C-F4B96511124A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_vivaldi", "proj\xtfs_vivaldi\xtfs_vivaldi.vcproj", "{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}"
-	ProjectSection(ProjectDependencies) = postProject
-		{AF7AE548-AC85-424F-87CD-417ECBC12291} = {AF7AE548-AC85-424F-87CD-417ECBC12291}
-		{FFA69254-B8BC-4E99-B60C-F4B96511124A} = {FFA69254-B8BC-4E99-B60C-F4B96511124A}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lsfs.xtreemfs", "proj\lsfs.xtreemfs\lsfs.xtreemfs.vcproj", "{02C4D457-D09C-4097-B3B4-13F1086EA10F}"
 	ProjectSection(ProjectDependencies) = postProject
 		{AF7AE548-AC85-424F-87CD-417ECBC12291} = {AF7AE548-AC85-424F-87CD-417ECBC12291}
@@ -55,10 +49,6 @@ Global
 		{FFA69254-B8BC-4E99-B60C-F4B96511124A}.Debug|Win32.Build.0 = Debug|Win32
 		{FFA69254-B8BC-4E99-B60C-F4B96511124A}.Release|Win32.ActiveCfg = Release|Win32
 		{FFA69254-B8BC-4E99-B60C-F4B96511124A}.Release|Win32.Build.0 = Release|Win32
-		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Debug|Win32.ActiveCfg = Debug|Win32
-		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Debug|Win32.Build.0 = Debug|Win32
-		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Release|Win32.ActiveCfg = Release|Win32
-		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Release|Win32.Build.0 = Release|Win32
 		{02C4D457-D09C-4097-B3B4-13F1086EA10F}.Debug|Win32.ActiveCfg = Debug|Win32
 		{02C4D457-D09C-4097-B3B4-13F1086EA10F}.Debug|Win32.Build.0 = Debug|Win32
 		{02C4D457-D09C-4097-B3B4-13F1086EA10F}.Release|Win32.ActiveCfg = Release|Win32

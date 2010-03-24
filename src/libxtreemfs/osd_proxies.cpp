@@ -43,29 +43,25 @@ using yield::platform::Exception;
 OSDProxies::OSDProxies
 (
   DIRProxy& dir_proxy,
-  uint16_t concurrency_level,
-  const Time& connect_timeout,
   Log* error_log,  
-  uint8_t reconnect_tries_max,
-  const Time& recv_timeout,
-  const Time& send_timeout,
-  SSLContext* ssl_context,
-  StageGroup* stage_group,
+  OSDProxy::Configuration* osd_proxy_configuration,
+  SSLContext* osd_proxy_ssl_context,
+  StageGroup* osd_proxy_stage_group,
   Log* trace_log,
   UserCredentialsCache* user_credentials_cache
 )
-  : concurrency_level( concurrency_level ),
-    connect_timeout( connect_timeout ),
-    dir_proxy( dir_proxy.inc_ref() ),
+  : dir_proxy( dir_proxy.inc_ref() ),
     error_log( Object::inc_ref( error_log ) ),
-    reconnect_tries_max( reconnect_tries_max ),
-    recv_timeout( recv_timeout ),
-    send_timeout( send_timeout ),
-    ssl_context( Object::inc_ref( ssl_context ) ),
-    stage_group( Object::inc_ref( stage_group ) ),
+    osd_proxy_ssl_context( Object::inc_ref( osd_proxy_ssl_context ) ),
+    osd_proxy_stage_group( Object::inc_ref( osd_proxy_stage_group ) ),
     trace_log( Object::inc_ref( trace_log ) ),
     user_credentials_cache( Object::inc_ref( user_credentials_cache ) )
-{ }
+{
+  if ( osd_proxy_configuration != NULL )
+    this->osd_proxy_configuration = osd_proxy_configuration;
+  else
+    this->osd_proxy_configuration = new OSDProxy::Configuration;
+}
 
 OSDProxies::~OSDProxies()
 {
@@ -74,8 +70,9 @@ OSDProxies::~OSDProxies()
 
   DIRProxy::dec_ref( dir_proxy );
   Log::dec_ref( error_log );
-  SSLContext::dec_ref( ssl_context );
-  StageGroup::dec_ref( stage_group );
+  OSDProxy::Configuration::dec_ref( *osd_proxy_configuration );
+  SSLContext::dec_ref( osd_proxy_ssl_context );
+  StageGroup::dec_ref( osd_proxy_stage_group );
   Log::dec_ref( trace_log );
   UserCredentialsCache::dec_ref( user_credentials_cache );
 }
@@ -178,30 +175,30 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
     )
     {
 #ifdef YIELD_IPC_HAVE_OPENSSL
-      if ( ssl_context != NULL &&
-           (
-             ( *address_mapping_i ).get_protocol() == ONCRPCS_SCHEME ||
-             ( *address_mapping_i ).get_protocol() == ONCRPCG_SCHEME
-           )
-         )
+      if
+      ( 
+        osd_proxy_ssl_context != NULL 
+        &&
+        (
+          ( *address_mapping_i ).get_protocol() == ONCRPCS_SCHEME 
+          ||
+          ( *address_mapping_i ).get_protocol() == ONCRPCG_SCHEME
+        )
+      )
       {
         osd_proxy
           = &OSDProxy::create
             (
               ( *address_mapping_i ).get_uri(),
-              concurrency_level,
-              connect_timeout,
+              &osd_proxy_configuration->inc_ref(),
               error_log,
-              reconnect_tries_max,
-              recv_timeout,
-              send_timeout,
-              ssl_context,
+              osd_proxy_ssl_context,
               trace_log,
               user_credentials_cache
             );
 
-        if ( stage_group != NULL )
-          stage_group->createStage( osd_proxy->inc_ref() );
+        if ( osd_proxy_stage_group != NULL )
+          osd_proxy_stage_group->createStage( osd_proxy->inc_ref() );
       }
       else
 #endif
@@ -211,18 +208,15 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
           = &OSDProxy::create
             (
               ( *address_mapping_i ).get_uri(),
-              concurrency_level,
-              connect_timeout,
+              &osd_proxy_configuration->inc_ref(),
               error_log,
-              reconnect_tries_max,
-              recv_timeout,
-              send_timeout,
-              ssl_context,
+              osd_proxy_ssl_context,
               trace_log,
               user_credentials_cache
             );
 
-        stage_group->createStage( osd_proxy->inc_ref() );
+        if ( osd_proxy_stage_group != NULL )
+          osd_proxy_stage_group->createStage( osd_proxy->inc_ref() );
       }
     }
 

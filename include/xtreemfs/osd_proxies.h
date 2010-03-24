@@ -48,14 +48,10 @@ namespace xtreemfs
     OSDProxies
     (
       DIRProxy& dir_proxy,
-      uint16_t concurrency_level = OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
-      const Time& connect_timeout = OSDProxy::CONNECT_TIMEOUT_DEFAULT,
       Log* error_log = NULL,      
-      uint8_t reconnect_tries_max = OSDProxy::RECONNECT_TRIES_MAX_DEFAULT,
-      const Time& recv_timeout = OSDProxy::RECV_TIMEOUT_DEFAULT,
-      const Time& send_timeout = OSDProxy::SEND_TIMEOUT_DEFAULT,
-      SSLContext* ssl_context = NULL,
-      StageGroup* stage_group = NULL,
+      OSDProxy::Configuration* osd_proxy_configuration = NULL,
+      SSLContext* osd_proxy_ssl_context = NULL,
+      StageGroup* osd_proxy_stage_group = NULL,
       Log* trace_log = NULL,
       UserCredentialsCache* user_credentials_cache = NULL
     );
@@ -75,16 +71,12 @@ namespace xtreemfs
     OSDProxy& get_osd_proxy( const string& osd_uuid );
 
   private:
-    uint16_t concurrency_level;
-    Time connect_timeout;
     DIRProxy& dir_proxy;
     Log* error_log;
     yield::platform::Mutex lock;
-    uint8_t reconnect_tries_max;
-    Time recv_timeout;
-    Time send_timeout;
-    SSLContext* ssl_context;
-    StageGroup* stage_group;
+    OSDProxy::Configuration* osd_proxy_configuration;
+    SSLContext* osd_proxy_ssl_context;
+    StageGroup* osd_proxy_stage_group;
     Log* trace_log;
     UserCredentialsCache* user_credentials_cache;
   };

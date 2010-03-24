@@ -33,14 +33,10 @@ using namespace xtreemfs;
 
 OSDProxy::OSDProxy
 (
-  uint16_t concurrency_level,
-  const Time& connect_timeout,
+  Configuration& configuration,
   Log* error_log,
   IOQueue& io_queue,
   SocketAddress& peername,
-  uint16_t reconnect_tries_max,
-  const Time& recv_timeout,
-  const Time& send_timeout,
   TCPSocketFactory& tcp_socket_factory,
   Log* trace_log,
   UserCredentialsCache* user_credentials_cache
@@ -52,14 +48,10 @@ OSDProxy::OSDProxy
     org::xtreemfs::interfaces::OSDInterfaceMessageSender
   >
   (
-    concurrency_level,
-    connect_timeout,
+    configuration,
     error_log,
     io_queue,
     peername,
-    reconnect_tries_max,
-    recv_timeout,
-    send_timeout,
     tcp_socket_factory,
     trace_log,
     user_credentials_cache
@@ -70,12 +62,8 @@ OSDProxy&
 OSDProxy::create
 (
   const URI& absolute_uri,
-  uint16_t concurrency_level,
-  const Time& connect_timeout,
+  Configuration* configuration,
   Log* error_log,
-  uint16_t reconnect_tries_max,
-  const Time& recv_timeout,
-  const Time& send_timeout,
   SSLContext* ssl_context,
   Log* trace_log,
   UserCredentialsCache* user_credentials_cache
@@ -83,14 +71,10 @@ OSDProxy::create
 {
   return *new OSDProxy
               (
-                concurrency_level,
-                connect_timeout,
+                configuration != NULL ? *configuration : *new Configuration,
                 error_log,
                 yield::platform::NBIOQueue::create(),
                 createSocketAddress( absolute_uri ),
-                reconnect_tries_max,
-                recv_timeout,
-                send_timeout,
                 createTCPSocketFactory( absolute_uri, ssl_context ),
                 trace_log,
                 user_credentials_cache
