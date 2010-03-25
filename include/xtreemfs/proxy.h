@@ -33,7 +33,6 @@
 #include "xtreemfs/grid_ssl_socket.h"
 #include "xtreemfs/interfaces/constants.h"
 #include "xtreemfs/interfaces/types.h"
-#include "xtreemfs/user_credentials_cache.h"
 
 
 namespace xtreemfs
@@ -64,10 +63,10 @@ namespace xtreemfs
   <
     class InterfaceType,
     class InterfaceMessageFactoryType,
-    class InterfaceMessageSenderType
+    class InterfaceRequestSenderType
   >
   class Proxy
-    : public InterfaceMessageSenderType,
+    : public InterfaceRequestSenderType,
       public yield::ipc::TCPONCRPCClient
   {
   protected:
@@ -79,8 +78,7 @@ namespace xtreemfs
       IOQueue& io_queue,
       SocketAddress& peername,
       TCPSocketFactory& tcp_socket_factory,
-      Log* trace_log,
-      UserCredentialsCache* user_credentials_cache
+      Log* trace_log
     )
     : TCPONCRPCClient
       (
@@ -96,18 +94,10 @@ namespace xtreemfs
         InterfaceType::TAG
       )
     {
-      InterfaceMessageSenderType::set_event_target( *this );
-
-      if ( user_credentials_cache != NULL )
-        this->user_credentials_cache = Object::inc_ref( user_credentials_cache );
-      else
-        this->user_credentials_cache = new UserCredentialsCache;
+      InterfaceRequestSenderType::set_event_target( *this );
     }
 
-    virtual ~Proxy()
-    {
-      UserCredentialsCache::dec_ref( *user_credentials_cache );
-    }
+    virtual ~Proxy() { }
 
     // Helper methods for subclasses
     static SocketAddress& createSocketAddress( const URI& absolute_uri )
@@ -159,14 +149,6 @@ namespace xtreemfs
       else
         return *new yield::ipc::TCPSocketFactory;
     }
-
-    UserCredentialsCache* get_user_credentials_cache() const
-    {
-      return user_credentials_cache;
-    }
-
-  private:
-    UserCredentialsCache* user_credentials_cache;
   };
 };
 

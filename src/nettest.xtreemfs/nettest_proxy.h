@@ -42,7 +42,7 @@ namespace xtreemfs
              <
                org::xtreemfs::interfaces::NettestInterface,
                org::xtreemfs::interfaces::NettestInterfaceMessageFactory,
-               org::xtreemfs::interfaces::NettestInterfaceMessageSender
+               org::xtreemfs::interfaces::NettestInterfaceRequestSender
              >
   {
   public:
@@ -58,8 +58,7 @@ namespace xtreemfs
       IOQueue& io_queue,      
       SocketAddress& peername,
       TCPSocketFactory& tcp_socket_factory,
-      Log* trace_log,
-      UserCredentialsCache* user_credentials_cache
+      Log* trace_log
     );
   };
 

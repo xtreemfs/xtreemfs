@@ -68,14 +68,13 @@ DIRProxy::DIRProxy
   IOQueue& io_queue,
   SocketAddress& peername,
   TCPSocketFactory& tcp_socket_factory,
-  Log* trace_log,
-  UserCredentialsCache* user_credentials_cache
+  Log* trace_log
 )
 : Proxy
   <
     org::xtreemfs::interfaces::DIRInterface,
     org::xtreemfs::interfaces::DIRInterfaceMessageFactory,
-    org::xtreemfs::interfaces::DIRInterfaceMessageSender
+    org::xtreemfs::interfaces::DIRInterfaceRequestSender
   >
   (
     configuration,
@@ -83,8 +82,7 @@ DIRProxy::DIRProxy
     io_queue,
     peername,
     tcp_socket_factory,
-    trace_log,
-    user_credentials_cache
+    trace_log
   )
 { }
 
@@ -100,12 +98,7 @@ DIRProxy::~DIRProxy()
     CachedAddressMappings::dec_ref( *uuid_to_address_mappings_i->second );
 }
 
-DIRProxy& 
-DIRProxy::create
-( 
-  const Options& options,
-  UserCredentialsCache* user_credentials_cache
-)
+DIRProxy& DIRProxy::create( const Options& options )
 {
   if ( options.get_uri() != NULL )    
   {
@@ -115,8 +108,7 @@ DIRProxy::create
              NULL,
              options.get_error_log(),
              options.get_ssl_context(),
-             options.get_trace_log(),
-             user_credentials_cache
+             options.get_trace_log()
            );
   }
   else
@@ -130,8 +122,7 @@ DIRProxy::create
   Configuration* configuration,
   Log* error_log,
   SSLContext* ssl_context,
-  Log* trace_log,
-  UserCredentialsCache* user_credentials_cache
+  Log* trace_log
 )
 {
   return *new DIRProxy
@@ -141,8 +132,7 @@ DIRProxy::create
                 yield::platform::NBIOQueue::create(),
                 createSocketAddress( absolute_uri ),
                 createTCPSocketFactory( absolute_uri, ssl_context ),
-                trace_log,
-                user_credentials_cache
+                trace_log
               );
 }
 

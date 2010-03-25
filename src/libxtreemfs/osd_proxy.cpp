@@ -38,14 +38,13 @@ OSDProxy::OSDProxy
   IOQueue& io_queue,
   SocketAddress& peername,
   TCPSocketFactory& tcp_socket_factory,
-  Log* trace_log,
-  UserCredentialsCache* user_credentials_cache
+  Log* trace_log
 )
 : Proxy
   <
     org::xtreemfs::interfaces::OSDInterface,
     org::xtreemfs::interfaces::OSDInterfaceMessageFactory,
-    org::xtreemfs::interfaces::OSDInterfaceMessageSender
+    org::xtreemfs::interfaces::OSDInterfaceRequestSender
   >
   (
     configuration,
@@ -53,8 +52,7 @@ OSDProxy::OSDProxy
     io_queue,
     peername,
     tcp_socket_factory,
-    trace_log,
-    user_credentials_cache
+    trace_log
   )
 { }
 
@@ -65,8 +63,7 @@ OSDProxy::create
   Configuration* configuration,
   Log* error_log,
   SSLContext* ssl_context,
-  Log* trace_log,
-  UserCredentialsCache* user_credentials_cache
+  Log* trace_log
 )
 {
   return *new OSDProxy
@@ -76,8 +73,7 @@ OSDProxy::create
                 yield::platform::NBIOQueue::create(),
                 createSocketAddress( absolute_uri ),
                 createTCPSocketFactory( absolute_uri, ssl_context ),
-                trace_log,
-                user_credentials_cache
+                trace_log
               );
 }
 

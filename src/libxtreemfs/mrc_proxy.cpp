@@ -50,7 +50,7 @@ MRCProxy::MRCProxy
   <
     org::xtreemfs::interfaces::MRCInterface,
     org::xtreemfs::interfaces::MRCInterfaceMessageFactory,
-    org::xtreemfs::interfaces::MRCInterfaceMessageSender
+    org::xtreemfs::interfaces::MRCInterfaceRequestSender
   >
   (
     configuration,
@@ -58,11 +58,20 @@ MRCProxy::MRCProxy
     io_queue,    
     peername,
     tcp_socket_factory,
-    trace_log,
-    user_credentials_cache
+    trace_log
   ),
   password( password )
-{ }
+{
+  if ( user_credentials_cache != NULL )
+    this->user_credentials_cache = Object::inc_ref( user_credentials_cache );
+  else
+    this->user_credentials_cache = new UserCredentialsCache;
+}
+
+MRCProxy::~MRCProxy()
+{
+  UserCredentialsCache::dec_ref( *user_credentials_cache );
+}
 
 MRCProxy& 
 MRCProxy::create
@@ -111,17 +120,11 @@ MRCProxy::create
 
 MarshallableObject* MRCProxy::get_cred()
 {
-  UserCredentials* user_credentials;
-  if ( get_user_credentials_cache() != NULL )
-  {
-    user_credentials
-      = get_user_credentials_cache()->getCurrentUserCredentials();
+  UserCredentials* user_credentials
+    = user_credentials_cache->getCurrentUserCredentials();
 
-    if ( user_credentials != NULL )
-      user_credentials->set_password( password );
+  if ( user_credentials != NULL )
+    user_credentials->set_password( password );
 
-    return user_credentials;
-  }
-  else
-    return NULL;
+  return user_credentials;
 }

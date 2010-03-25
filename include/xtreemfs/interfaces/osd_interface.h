@@ -1,5 +1,5 @@
-#ifndef _186512954_H_
-#define _186512954_H_
+#ifndef _1710291875_H_
+#define _1710291875_H_
 
 
 #include "constants.h"
@@ -5340,15 +5340,15 @@ namespace org
       virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& __request );
 
 
-      class OSDInterfaceMessageSender : public OSDInterface, private OSDInterfaceMessages
+      class OSDInterfaceRequestSender : public OSDInterface, private OSDInterfaceMessages
       {
       public:
-        OSDInterfaceMessageSender() // Used when the event_target is a subclass
-          : __event_target( NULL )
+        OSDInterfaceRequestSender() // Used when the request_target is a subclass
+          : __request_target( NULL )
         { }
 
-        OSDInterfaceMessageSender( ::yield::concurrency::EventTarget& event_target )
-          : __event_target( &event_target )
+        OSDInterfaceRequestSender( ::yield::concurrency::EventTarget& request_target )
+          : __request_target( &request_target )
         { }
 
 
@@ -5370,7 +5370,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<readResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<readResponse> __response = __response_queue->dequeue();
           object_data = __response->get_object_data();
@@ -5391,7 +5391,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<truncateResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<truncateResponse> __response = __response_queue->dequeue();
           osd_write_response = __response->get_osd_write_response();
@@ -5410,7 +5410,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<unlinkResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<unlinkResponse> __response = __response_queue->dequeue();
         }
@@ -5434,7 +5434,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<writeResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<writeResponse> __response = __response_queue->dequeue();
           osd_write_response = __response->get_osd_write_response();
@@ -5455,7 +5455,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_broadcast_gmaxResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_broadcast_gmaxResponse> __response = __response_queue->dequeue();
         }
@@ -5475,7 +5475,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_check_objectResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_check_objectResponse> __response = __response_queue->dequeue();
           org::xtreemfs::interfaces::ObjectData _return_value = __response->get__return_value();return _return_value;
@@ -5493,7 +5493,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_get_resultsResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_cleanup_get_resultsResponse> __response = __response_queue->dequeue();
           results = __response->get_results();
@@ -5507,7 +5507,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_is_runningResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_cleanup_is_runningResponse> __response = __response_queue->dequeue();
           is_running = __response->get_is_running();
@@ -5527,7 +5527,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_startResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_cleanup_startResponse> __response = __response_queue->dequeue();
         }
@@ -5540,7 +5540,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_statusResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_cleanup_statusResponse> __response = __response_queue->dequeue();
           status = __response->get_status();
@@ -5554,7 +5554,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_stopResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_cleanup_stopResponse> __response = __response_queue->dequeue();
         }
@@ -5575,7 +5575,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_rwr_fetchResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_rwr_fetchResponse> __response = __response_queue->dequeue();
           object_data = __response->get_object_data();
@@ -5595,7 +5595,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_rwr_flease_msgResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_rwr_flease_msgResponse> __response = __response_queue->dequeue();
         }
@@ -5613,7 +5613,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_rwr_notifyResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_rwr_notifyResponse> __response = __response_queue->dequeue();
         }
@@ -5633,7 +5633,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_rwr_statusResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_rwr_statusResponse> __response = __response_queue->dequeue();
           local_state = __response->get_local_state();
@@ -5654,7 +5654,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_rwr_truncateResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_rwr_truncateResponse> __response = __response_queue->dequeue();
         }
@@ -5676,7 +5676,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_rwr_updateResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_rwr_updateResponse> __response = __response_queue->dequeue();
         }
@@ -5694,7 +5694,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_internal_get_gmaxResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_internal_get_gmaxResponse> __response = __response_queue->dequeue();
           org::xtreemfs::interfaces::InternalGmax _return_value = __response->get__return_value();return _return_value;
@@ -5715,7 +5715,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_internal_truncateResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_internal_truncateResponse> __response = __response_queue->dequeue();
           osd_write_response = __response->get_osd_write_response();
@@ -5734,7 +5734,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_internal_get_file_sizeResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_internal_get_file_sizeResponse> __response = __response_queue->dequeue();
           uint64_t _return_value = __response->get__return_value();return _return_value;
@@ -5759,7 +5759,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_internal_read_localResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_internal_read_localResponse> __response = __response_queue->dequeue();
           org::xtreemfs::interfaces::InternalReadLocalResponse _return_value = __response->get__return_value();return _return_value;
@@ -5778,7 +5778,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_internal_get_object_setResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_internal_get_object_setResponse> __response = __response_queue->dequeue();
           org::xtreemfs::interfaces::ObjectList _return_value = __response->get__return_value();return _return_value;
@@ -5802,7 +5802,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_lock_acquireResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_lock_acquireResponse> __response = __response_queue->dequeue();
           org::xtreemfs::interfaces::Lock _return_value = __response->get__return_value();return _return_value;
@@ -5826,7 +5826,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_lock_checkResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_lock_checkResponse> __response = __response_queue->dequeue();
           org::xtreemfs::interfaces::Lock _return_value = __response->get__return_value();return _return_value;
@@ -5846,7 +5846,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_lock_releaseResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_lock_releaseResponse> __response = __response_queue->dequeue();
         }
@@ -5864,7 +5864,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_pingResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_pingResponse> __response = __response_queue->dequeue();
           remote_coordinates = __response->get_remote_coordinates();
@@ -5878,20 +5878,20 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_shutdownResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_shutdownResponse> __response = __response_queue->dequeue();
         }
 
-        void set_event_target( ::yield::concurrency::EventTarget& event_target )
+        void set_request_target( ::yield::concurrency::EventTarget& request_target )
         {
-          this->__event_target = &event_target;
+          this->__request_target = &request_target;
         }
 
       private:
-        // __event_target is not a counted reference, since that would create
-        // a reference cycle when __event_target is a subclass of OSDInterfaceMessageSender
-        ::yield::concurrency::EventTarget* __event_target;
+        // __request_target is not a counted reference, since that would create
+        // a reference cycle when __request_target is a subclass of OSDInterfaceRequestSender
+        ::yield::concurrency::EventTarget* __request_target;
       };
     };
   };

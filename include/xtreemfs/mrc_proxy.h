@@ -32,6 +32,7 @@
 
 #include "xtreemfs/interfaces/mrc_interface.h"
 #include "xtreemfs/proxy.h"
+#include "xtreemfs/user_credentials_cache.h"
 
 
 namespace xtreemfs
@@ -44,11 +45,11 @@ namespace xtreemfs
              <
                org::xtreemfs::interfaces::MRCInterface,
                org::xtreemfs::interfaces::MRCInterfaceMessageFactory,
-               org::xtreemfs::interfaces::MRCInterfaceMessageSender
+               org::xtreemfs::interfaces::MRCInterfaceRequestSender
              >
   {
   public:
-    virtual ~MRCProxy() { }
+    virtual ~MRCProxy();
 
     static MRCProxy&
     create
@@ -90,6 +91,7 @@ namespace xtreemfs
 
   private:
     string password;
+    UserCredentialsCache* user_credentials_cache;
   };
 };
 

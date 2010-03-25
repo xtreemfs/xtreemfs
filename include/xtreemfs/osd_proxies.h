@@ -52,8 +52,7 @@ namespace xtreemfs
       OSDProxy::Configuration* osd_proxy_configuration = NULL,
       SSLContext* osd_proxy_ssl_context = NULL,
       StageGroup* osd_proxy_stage_group = NULL,
-      Log* trace_log = NULL,
-      UserCredentialsCache* user_credentials_cache = NULL
+      Log* trace_log = NULL
     );
 
     ~OSDProxies();
@@ -78,7 +77,6 @@ namespace xtreemfs
     SSLContext* osd_proxy_ssl_context;
     StageGroup* osd_proxy_stage_group;
     Log* trace_log;
-    UserCredentialsCache* user_credentials_cache;
   };
 };
 

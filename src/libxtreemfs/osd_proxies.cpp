@@ -47,15 +47,13 @@ OSDProxies::OSDProxies
   OSDProxy::Configuration* osd_proxy_configuration,
   SSLContext* osd_proxy_ssl_context,
   StageGroup* osd_proxy_stage_group,
-  Log* trace_log,
-  UserCredentialsCache* user_credentials_cache
+  Log* trace_log
 )
   : dir_proxy( dir_proxy.inc_ref() ),
     error_log( Object::inc_ref( error_log ) ),
     osd_proxy_ssl_context( Object::inc_ref( osd_proxy_ssl_context ) ),
     osd_proxy_stage_group( Object::inc_ref( osd_proxy_stage_group ) ),
-    trace_log( Object::inc_ref( trace_log ) ),
-    user_credentials_cache( Object::inc_ref( user_credentials_cache ) )
+    trace_log( Object::inc_ref( trace_log ) )
 {
   if ( osd_proxy_configuration != NULL )
     this->osd_proxy_configuration = osd_proxy_configuration;
@@ -74,7 +72,6 @@ OSDProxies::~OSDProxies()
   SSLContext::dec_ref( osd_proxy_ssl_context );
   StageGroup::dec_ref( osd_proxy_stage_group );
   Log::dec_ref( trace_log );
-  UserCredentialsCache::dec_ref( user_credentials_cache );
 }
 
 OSDProxy&
@@ -193,8 +190,7 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
               &osd_proxy_configuration->inc_ref(),
               error_log,
               osd_proxy_ssl_context,
-              trace_log,
-              user_credentials_cache
+              trace_log
             );
 
         if ( osd_proxy_stage_group != NULL )
@@ -211,8 +207,7 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
               &osd_proxy_configuration->inc_ref(),
               error_log,
               osd_proxy_ssl_context,
-              trace_log,
-              user_credentials_cache
+              trace_log
             );
 
         if ( osd_proxy_stage_group != NULL )

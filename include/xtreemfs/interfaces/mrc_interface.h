@@ -1,5 +1,5 @@
-#ifndef _323732076_H_
-#define _323732076_H_
+#ifndef _698190716_H_
+#define _698190716_H_
 
 
 #include "constants.h"
@@ -719,8 +719,6 @@ namespace org
         )
         { }
 
-        virtual void xtreemfs_replication_to_master() { }
-
         virtual void
         xtreemfs_replica_add
         (
@@ -932,7 +930,6 @@ namespace org
         const org::xtreemfs::interfaces::XCap& old_xcap,\
         org::xtreemfs::interfaces::XCap& renewed_xcap\
       );\
-      virtual void xtreemfs_replication_to_master();\
       virtual void\
       xtreemfs_replica_add\
       (\
@@ -3526,51 +3523,6 @@ namespace org
         };
 
 
-        class xtreemfs_replication_to_masterRequest : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS
-        {
-        public:
-          xtreemfs_replication_to_masterRequest() { }
-          virtual ~xtreemfs_replication_to_masterRequest() {  }
-
-
-          virtual void respond()
-          {
-            respond( *new xtreemfs_replication_to_masterResponse() );
-          }
-
-          virtual void respond( ::yield::concurrency::Response& response )
-          {
-            Request::respond( response );
-          }
-
-          bool operator==( const xtreemfs_replication_to_masterRequest& ) const { return true; }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replication_to_masterRequest, 2010031154 );
-
-          // yidl::runtime::MarshallableObject
-          void marshal( ::yidl::runtime::Marshaller& ) const { }
-          void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
-        };
-
-
-        class xtreemfs_replication_to_masterResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
-        {
-        public:
-          xtreemfs_replication_to_masterResponse() { }
-          virtual ~xtreemfs_replication_to_masterResponse() {  }
-
-          bool operator==( const xtreemfs_replication_to_masterResponse& ) const { return true; }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replication_to_masterResponse, 2010031154 );
-
-          // yidl::runtime::MarshallableObject
-          void marshal( ::yidl::runtime::Marshaller& ) const { }
-          void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
-        };
-
-
         class xtreemfs_replica_addRequest : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
@@ -3610,7 +3562,7 @@ namespace org
           }
 
           // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replica_addRequest, 2010031155 );
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replica_addRequest, 2010031154 );
 
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
@@ -3640,7 +3592,7 @@ namespace org
           bool operator==( const xtreemfs_replica_addResponse& ) const { return true; }
 
           // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replica_addResponse, 2010031155 );
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replica_addResponse, 2010031154 );
 
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& ) const { }
@@ -3679,7 +3631,7 @@ namespace org
           }
 
           // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replica_listRequest, 2010031156 );
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replica_listRequest, 2010031155 );
 
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
@@ -3720,7 +3672,7 @@ namespace org
           }
 
           // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replica_listResponse, 2010031156 );
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replica_listResponse, 2010031155 );
 
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
@@ -3773,7 +3725,7 @@ namespace org
           }
 
           // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replica_removeRequest, 2010031157 );
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replica_removeRequest, 2010031156 );
 
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
@@ -3817,7 +3769,7 @@ namespace org
           }
 
           // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replica_removeResponse, 2010031157 );
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replica_removeResponse, 2010031156 );
 
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
@@ -3866,7 +3818,7 @@ namespace org
           }
 
           // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_restore_databaseRequest, 2010031158 );
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_restore_databaseRequest, 2010031157 );
 
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
@@ -3893,7 +3845,7 @@ namespace org
           bool operator==( const xtreemfs_restore_databaseResponse& ) const { return true; }
 
           // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_restore_databaseResponse, 2010031158 );
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_restore_databaseResponse, 2010031157 );
 
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& ) const { }
@@ -3961,7 +3913,7 @@ namespace org
           }
 
           // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_restore_fileRequest, 2010031159 );
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_restore_fileRequest, 2010031158 );
 
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
@@ -4000,7 +3952,7 @@ namespace org
           bool operator==( const xtreemfs_restore_fileResponse& ) const { return true; }
 
           // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_restore_fileResponse, 2010031159 );
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_restore_fileResponse, 2010031158 );
 
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& ) const { }
@@ -4039,7 +3991,7 @@ namespace org
           }
 
           // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rmvolRequest, 2010031160 );
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rmvolRequest, 2010031159 );
 
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
@@ -4066,7 +4018,7 @@ namespace org
           bool operator==( const xtreemfs_rmvolResponse& ) const { return true; }
 
           // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rmvolResponse, 2010031160 );
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rmvolResponse, 2010031159 );
 
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& ) const { }
@@ -4094,7 +4046,7 @@ namespace org
           bool operator==( const xtreemfs_shutdownRequest& ) const { return true; }
 
           // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 2010031161 );
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 2010031160 );
 
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& ) const { }
@@ -4111,7 +4063,7 @@ namespace org
           bool operator==( const xtreemfs_shutdownResponse& ) const { return true; }
 
           // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 2010031161 );
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 2010031160 );
 
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& ) const { }
@@ -4551,14 +4503,13 @@ namespace org
             case 2010031151: return new xtreemfs_lsvolRequest;
             case 2010031152: return new xtreemfs_mkvolRequest;
             case 2010031153: return new xtreemfs_renew_capabilityRequest;
-            case 2010031154: return new xtreemfs_replication_to_masterRequest;
-            case 2010031155: return new xtreemfs_replica_addRequest;
-            case 2010031156: return new xtreemfs_replica_listRequest;
-            case 2010031157: return new xtreemfs_replica_removeRequest;
-            case 2010031158: return new xtreemfs_restore_databaseRequest;
-            case 2010031159: return new xtreemfs_restore_fileRequest;
-            case 2010031160: return new xtreemfs_rmvolRequest;
-            case 2010031161: return new xtreemfs_shutdownRequest;
+            case 2010031154: return new xtreemfs_replica_addRequest;
+            case 2010031155: return new xtreemfs_replica_listRequest;
+            case 2010031156: return new xtreemfs_replica_removeRequest;
+            case 2010031157: return new xtreemfs_restore_databaseRequest;
+            case 2010031158: return new xtreemfs_restore_fileRequest;
+            case 2010031159: return new xtreemfs_rmvolRequest;
+            case 2010031160: return new xtreemfs_shutdownRequest;
             default: return NULL;
           }
         }
@@ -4592,7 +4543,6 @@ namespace org
           else if ( strcmp( type_name, "xtreemfs_lsvolRequest" ) == 0 ) return new xtreemfs_lsvolRequest;
           else if ( strcmp( type_name, "xtreemfs_mkvolRequest" ) == 0 ) return new xtreemfs_mkvolRequest;
           else if ( strcmp( type_name, "xtreemfs_renew_capabilityRequest" ) == 0 ) return new xtreemfs_renew_capabilityRequest;
-          else if ( strcmp( type_name, "xtreemfs_replication_to_masterRequest" ) == 0 ) return new xtreemfs_replication_to_masterRequest;
           else if ( strcmp( type_name, "xtreemfs_replica_addRequest" ) == 0 ) return new xtreemfs_replica_addRequest;
           else if ( strcmp( type_name, "xtreemfs_replica_listRequest" ) == 0 ) return new xtreemfs_replica_listRequest;
           else if ( strcmp( type_name, "xtreemfs_replica_removeRequest" ) == 0 ) return new xtreemfs_replica_removeRequest;
@@ -4634,14 +4584,13 @@ namespace org
             case 2010031151: return new xtreemfs_lsvolResponse;
             case 2010031152: return new xtreemfs_mkvolResponse;
             case 2010031153: return new xtreemfs_renew_capabilityResponse;
-            case 2010031154: return new xtreemfs_replication_to_masterResponse;
-            case 2010031155: return new xtreemfs_replica_addResponse;
-            case 2010031156: return new xtreemfs_replica_listResponse;
-            case 2010031157: return new xtreemfs_replica_removeResponse;
-            case 2010031158: return new xtreemfs_restore_databaseResponse;
-            case 2010031159: return new xtreemfs_restore_fileResponse;
-            case 2010031160: return new xtreemfs_rmvolResponse;
-            case 2010031161: return new xtreemfs_shutdownResponse;
+            case 2010031154: return new xtreemfs_replica_addResponse;
+            case 2010031155: return new xtreemfs_replica_listResponse;
+            case 2010031156: return new xtreemfs_replica_removeResponse;
+            case 2010031157: return new xtreemfs_restore_databaseResponse;
+            case 2010031158: return new xtreemfs_restore_fileResponse;
+            case 2010031159: return new xtreemfs_rmvolResponse;
+            case 2010031160: return new xtreemfs_shutdownResponse;
             default: return NULL;
           }
         }
@@ -4675,7 +4624,6 @@ namespace org
           else if ( strcmp( type_name, "xtreemfs_lsvolResponse" ) == 0 ) return new xtreemfs_lsvolResponse;
           else if ( strcmp( type_name, "xtreemfs_mkvolResponse" ) == 0 ) return new xtreemfs_mkvolResponse;
           else if ( strcmp( type_name, "xtreemfs_renew_capabilityResponse" ) == 0 ) return new xtreemfs_renew_capabilityResponse;
-          else if ( strcmp( type_name, "xtreemfs_replication_to_masterResponse" ) == 0 ) return new xtreemfs_replication_to_masterResponse;
           else if ( strcmp( type_name, "xtreemfs_replica_addResponse" ) == 0 ) return new xtreemfs_replica_addResponse;
           else if ( strcmp( type_name, "xtreemfs_replica_listResponse" ) == 0 ) return new xtreemfs_replica_listResponse;
           else if ( strcmp( type_name, "xtreemfs_replica_removeResponse" ) == 0 ) return new xtreemfs_replica_removeResponse;
@@ -4748,14 +4696,13 @@ namespace org
             case 2010031151UL: handlextreemfs_lsvolRequest( static_cast<xtreemfs_lsvolRequest&>( request ) ); return;
             case 2010031152UL: handlextreemfs_mkvolRequest( static_cast<xtreemfs_mkvolRequest&>( request ) ); return;
             case 2010031153UL: handlextreemfs_renew_capabilityRequest( static_cast<xtreemfs_renew_capabilityRequest&>( request ) ); return;
-            case 2010031154UL: handlextreemfs_replication_to_masterRequest( static_cast<xtreemfs_replication_to_masterRequest&>( request ) ); return;
-            case 2010031155UL: handlextreemfs_replica_addRequest( static_cast<xtreemfs_replica_addRequest&>( request ) ); return;
-            case 2010031156UL: handlextreemfs_replica_listRequest( static_cast<xtreemfs_replica_listRequest&>( request ) ); return;
-            case 2010031157UL: handlextreemfs_replica_removeRequest( static_cast<xtreemfs_replica_removeRequest&>( request ) ); return;
-            case 2010031158UL: handlextreemfs_restore_databaseRequest( static_cast<xtreemfs_restore_databaseRequest&>( request ) ); return;
-            case 2010031159UL: handlextreemfs_restore_fileRequest( static_cast<xtreemfs_restore_fileRequest&>( request ) ); return;
-            case 2010031160UL: handlextreemfs_rmvolRequest( static_cast<xtreemfs_rmvolRequest&>( request ) ); return;
-            case 2010031161UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( request ) ); return;
+            case 2010031154UL: handlextreemfs_replica_addRequest( static_cast<xtreemfs_replica_addRequest&>( request ) ); return;
+            case 2010031155UL: handlextreemfs_replica_listRequest( static_cast<xtreemfs_replica_listRequest&>( request ) ); return;
+            case 2010031156UL: handlextreemfs_replica_removeRequest( static_cast<xtreemfs_replica_removeRequest&>( request ) ); return;
+            case 2010031157UL: handlextreemfs_restore_databaseRequest( static_cast<xtreemfs_restore_databaseRequest&>( request ) ); return;
+            case 2010031158UL: handlextreemfs_restore_fileRequest( static_cast<xtreemfs_restore_fileRequest&>( request ) ); return;
+            case 2010031159UL: handlextreemfs_rmvolRequest( static_cast<xtreemfs_rmvolRequest&>( request ) ); return;
+            case 2010031160UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( request ) ); return;
             default: ::yield::concurrency::Request::dec_ref( request ); return;
           }
         }
@@ -5609,31 +5556,6 @@ namespace org
           xtreemfs_renew_capabilityRequest::dec_ref( __request );
         }
 
-        virtual void handlextreemfs_replication_to_masterRequest( xtreemfs_replication_to_masterRequest& __request )
-        {
-          if ( _interface != NULL )
-          {
-            try
-            {
-              _interface->xtreemfs_replication_to_master();
-            }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
-            {
-              __request.respond( *exception_response );
-            }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
-            {
-              __request.respond( *exception_response.clone() );
-            }
-            catch ( ::yield::platform::Exception& exception )
-            {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
-            }
-          }
-
-          xtreemfs_replication_to_masterRequest::dec_ref( __request );
-        }
-
         virtual void handlextreemfs_replica_addRequest( xtreemfs_replica_addRequest& __request )
         {
           if ( _interface != NULL )
@@ -5865,7 +5787,6 @@ namespace org
       virtual void handlextreemfs_lsvolRequest( xtreemfs_lsvolRequest& __request );\
       virtual void handlextreemfs_mkvolRequest( xtreemfs_mkvolRequest& __request );\
       virtual void handlextreemfs_renew_capabilityRequest( xtreemfs_renew_capabilityRequest& __request );\
-      virtual void handlextreemfs_replication_to_masterRequest( xtreemfs_replication_to_masterRequest& __request );\
       virtual void handlextreemfs_replica_addRequest( xtreemfs_replica_addRequest& __request );\
       virtual void handlextreemfs_replica_listRequest( xtreemfs_replica_listRequest& __request );\
       virtual void handlextreemfs_replica_removeRequest( xtreemfs_replica_removeRequest& __request );\
@@ -5875,15 +5796,15 @@ namespace org
       virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& __request );
 
 
-      class MRCInterfaceMessageSender : public MRCInterface, private MRCInterfaceMessages
+      class MRCInterfaceRequestSender : public MRCInterface, private MRCInterfaceMessages
       {
       public:
-        MRCInterfaceMessageSender() // Used when the event_target is a subclass
-          : __event_target( NULL )
+        MRCInterfaceRequestSender() // Used when the request_target is a subclass
+          : __request_target( NULL )
         { }
 
-        MRCInterfaceMessageSender( ::yield::concurrency::EventTarget& event_target )
-          : __event_target( &event_target )
+        MRCInterfaceRequestSender( ::yield::concurrency::EventTarget& request_target )
+          : __request_target( &request_target )
         { }
 
 
@@ -5900,7 +5821,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<closeResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<closeResponse> __response = __response_queue->dequeue();
         }
@@ -5919,7 +5840,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<fsetattrResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<fsetattrResponse> __response = __response_queue->dequeue();
         }
@@ -5937,7 +5858,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<ftruncateResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<ftruncateResponse> __response = __response_queue->dequeue();
           truncate_xcap = __response->get_truncate_xcap();
@@ -5958,7 +5879,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<getattrResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<getattrResponse> __response = __response_queue->dequeue();
           stbuf = __response->get_stbuf();
@@ -5979,7 +5900,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<getxattrResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<getxattrResponse> __response = __response_queue->dequeue();
           value = __response->get_value();
@@ -5999,7 +5920,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<linkResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<linkResponse> __response = __response_queue->dequeue();
         }
@@ -6018,7 +5939,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<listxattrResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<listxattrResponse> __response = __response_queue->dequeue();
           names = __response->get_names();
@@ -6038,7 +5959,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<mkdirResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<mkdirResponse> __response = __response_queue->dequeue();
         }
@@ -6061,7 +5982,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<openResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<openResponse> __response = __response_queue->dequeue();
           file_credentials = __response->get_file_credentials();
@@ -6085,7 +6006,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<readdirResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<readdirResponse> __response = __response_queue->dequeue();
           directory_entries = __response->get_directory_entries();
@@ -6105,7 +6026,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<readlinkResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<readlinkResponse> __response = __response_queue->dequeue();
           link_target_path = __response->get_link_target_path();
@@ -6125,7 +6046,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<removexattrResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<removexattrResponse> __response = __response_queue->dequeue();
         }
@@ -6145,7 +6066,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<renameResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<renameResponse> __response = __response_queue->dequeue();
           file_credentials = __response->get_file_credentials();
@@ -6159,7 +6080,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<rmdirResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<rmdirResponse> __response = __response_queue->dequeue();
         }
@@ -6179,7 +6100,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<setattrResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<setattrResponse> __response = __response_queue->dequeue();
         }
@@ -6200,7 +6121,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<setxattrResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<setxattrResponse> __response = __response_queue->dequeue();
         }
@@ -6219,7 +6140,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<statvfsResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<statvfsResponse> __response = __response_queue->dequeue();
           stbuf = __response->get_stbuf();
@@ -6239,7 +6160,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<symlinkResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<symlinkResponse> __response = __response_queue->dequeue();
         }
@@ -6258,7 +6179,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<unlinkResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<unlinkResponse> __response = __response_queue->dequeue();
           file_credentials = __response->get_file_credentials();
@@ -6272,7 +6193,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_checkpointResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_checkpointResponse> __response = __response_queue->dequeue();
         }
@@ -6292,7 +6213,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_check_file_existsResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_check_file_existsResponse> __response = __response_queue->dequeue();
           bitmap = __response->get_bitmap();
@@ -6306,7 +6227,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_dump_databaseResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_dump_databaseResponse> __response = __response_queue->dequeue();
         }
@@ -6325,7 +6246,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_get_suitable_osdsResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_get_suitable_osdsResponse> __response = __response_queue->dequeue();
           osd_uuids = __response->get_osd_uuids();
@@ -6339,7 +6260,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_internal_debugResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_internal_debugResponse> __response = __response_queue->dequeue();
           result = __response->get_result();
@@ -6353,7 +6274,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_lsvolResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_lsvolResponse> __response = __response_queue->dequeue();
           volumes = __response->get_volumes();
@@ -6367,7 +6288,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_mkvolResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_mkvolResponse> __response = __response_queue->dequeue();
         }
@@ -6385,23 +6306,10 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_renew_capabilityResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_renew_capabilityResponse> __response = __response_queue->dequeue();
           renewed_xcap = __response->get_renewed_xcap();
-        }
-
-        virtual void xtreemfs_replication_to_master()
-        {
-          xtreemfs_replication_to_masterRequest* __request = new xtreemfs_replication_to_masterRequest;
-
-          ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_replication_to_masterResponse> >
-            __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_replication_to_masterResponse> );
-          __request->set_response_target( &__response_queue.get() );
-
-          __event_target->send( *__request );
-
-          ::yidl::runtime::auto_Object<xtreemfs_replication_to_masterResponse> __response = __response_queue->dequeue();
         }
 
         virtual void
@@ -6417,7 +6325,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_replica_addResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_replica_addResponse> __response = __response_queue->dequeue();
         }
@@ -6435,7 +6343,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_replica_listResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_replica_listResponse> __response = __response_queue->dequeue();
           replicas = __response->get_replicas();
@@ -6455,7 +6363,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_replica_removeResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_replica_removeResponse> __response = __response_queue->dequeue();
           delete_xcap = __response->get_delete_xcap();
@@ -6469,7 +6377,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_restore_databaseResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_restore_databaseResponse> __response = __response_queue->dequeue();
         }
@@ -6490,7 +6398,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_restore_fileResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_restore_fileResponse> __response = __response_queue->dequeue();
         }
@@ -6503,7 +6411,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_rmvolResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_rmvolResponse> __response = __response_queue->dequeue();
         }
@@ -6516,20 +6424,20 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_shutdownResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_shutdownResponse> __response = __response_queue->dequeue();
         }
 
-        void set_event_target( ::yield::concurrency::EventTarget& event_target )
+        void set_request_target( ::yield::concurrency::EventTarget& request_target )
         {
-          this->__event_target = &event_target;
+          this->__request_target = &request_target;
         }
 
       private:
-        // __event_target is not a counted reference, since that would create
-        // a reference cycle when __event_target is a subclass of MRCInterfaceMessageSender
-        ::yield::concurrency::EventTarget* __event_target;
+        // __request_target is not a counted reference, since that would create
+        // a reference cycle when __request_target is a subclass of MRCInterfaceRequestSender
+        ::yield::concurrency::EventTarget* __request_target;
       };
     };
   };

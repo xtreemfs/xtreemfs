@@ -45,18 +45,13 @@ namespace xtreemfs
              <
                org::xtreemfs::interfaces::DIRInterface,
                org::xtreemfs::interfaces::DIRInterfaceMessageFactory,
-               org::xtreemfs::interfaces::DIRInterfaceMessageSender
+               org::xtreemfs::interfaces::DIRInterfaceRequestSender
              >
   {
   public:
     virtual ~DIRProxy();
 
-    static DIRProxy& 
-    create
-    ( 
-      const Options& options,
-      UserCredentialsCache* user_credentials_cache = NULL
-    );
+    static DIRProxy& create( const Options& options );
 
     static DIRProxy&
     create
@@ -65,8 +60,7 @@ namespace xtreemfs
       Configuration* configuration = NULL,
       Log* error_log = NULL,
       SSLContext* ssl_context = NULL, // Steals this reference
-      Log* trace_log = NULL,
-      UserCredentialsCache* user_credentials_cache = NULL
+      Log* trace_log = NULL
     );
 
     AddressMappingSet& getAddressMappingsFromUUID( const string& uuid );
@@ -83,8 +77,7 @@ namespace xtreemfs
       IOQueue& io_queue,
       SocketAddress& peername,
       TCPSocketFactory& tcp_socket_factory,
-      Log* trace_log,
-      UserCredentialsCache* user_credentials_cache
+      Log* trace_log
     );
 
   private:

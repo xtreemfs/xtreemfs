@@ -12,14 +12,13 @@ NettestProxy::NettestProxy
   IOQueue& io_queue,
   SocketAddress& peername,
   TCPSocketFactory& tcp_socket_factory,
-  Log* trace_log,
-  UserCredentialsCache* user_credentials_cache
+  Log* trace_log
 )
 : Proxy
   <
     org::xtreemfs::interfaces::NettestInterface,
     org::xtreemfs::interfaces::NettestInterfaceMessageFactory,
-    org::xtreemfs::interfaces::NettestInterfaceMessageSender
+    org::xtreemfs::interfaces::NettestInterfaceRequestSender
   >
   (
     configuration,
@@ -27,8 +26,7 @@ NettestProxy::NettestProxy
     io_queue,
     peername,
     tcp_socket_factory,
-    trace_log,
-    user_credentials_cache
+    trace_log
   )
 { }
 
@@ -49,8 +47,7 @@ NettestProxy& NettestProxy::create( const Options& options )
                       *options.get_uri(), 
                       options.get_ssl_context() 
                     ),
-                    options.get_trace_log(),
-                    NULL
+                    options.get_trace_log()
                   );
     }
     else

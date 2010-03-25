@@ -41,7 +41,7 @@ namespace xtreemfs
              <
                org::xtreemfs::interfaces::OSDInterface,
                org::xtreemfs::interfaces::OSDInterfaceMessageFactory,
-               org::xtreemfs::interfaces::OSDInterfaceMessageSender
+               org::xtreemfs::interfaces::OSDInterfaceRequestSender
              >
   {
   public:
@@ -54,8 +54,7 @@ namespace xtreemfs
       Configuration* configuration = NULL,
       Log* error_log = NULL,
       SSLContext* ssl_context = NULL, // Steals this reference
-      Log* trace_log = NULL,
-      UserCredentialsCache* user_credentials_cache = NULL
+      Log* trace_log = NULL
     );
 
     // yidl::runtime::Object
@@ -69,8 +68,7 @@ namespace xtreemfs
       IOQueue& io_queue,
       SocketAddress& peername,
       TCPSocketFactory& tcp_socket_factory,
-      Log* trace_log,
-      UserCredentialsCache* user_credentials_cache
+      Log* trace_log
     );
   };
 };

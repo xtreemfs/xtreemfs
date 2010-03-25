@@ -1,5 +1,5 @@
-#ifndef _671339613_H_
-#define _671339613_H_
+#ifndef _934437741_H_
+#define _934437741_H_
 
 
 #include "constants.h"
@@ -433,8 +433,6 @@ namespace org
           return 0;
         }
 
-        virtual void xtreemfs_replication_to_master() { }
-
         virtual void xtreemfs_service_deregister( const string& uuid ) { }
 
         virtual void
@@ -496,7 +494,6 @@ namespace org
         org::xtreemfs::interfaces::DirService& dir_service\
       );\
       virtual uint64_t xtreemfs_global_time_s_get();\
-      virtual void xtreemfs_replication_to_master();\
       virtual void xtreemfs_service_deregister( const string& uuid );\
       virtual void\
       xtreemfs_service_get_by_name\
@@ -1011,51 +1008,6 @@ namespace org
 
         protected:
           uint64_t _return_value;
-        };
-
-
-        class xtreemfs_replication_to_masterRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
-        {
-        public:
-          xtreemfs_replication_to_masterRequest() { }
-          virtual ~xtreemfs_replication_to_masterRequest() {  }
-
-
-          virtual void respond()
-          {
-            respond( *new xtreemfs_replication_to_masterResponse() );
-          }
-
-          virtual void respond( ::yield::concurrency::Response& response )
-          {
-            Request::respond( response );
-          }
-
-          bool operator==( const xtreemfs_replication_to_masterRequest& ) const { return true; }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replication_to_masterRequest, 2010031023 );
-
-          // yidl::runtime::MarshallableObject
-          void marshal( ::yidl::runtime::Marshaller& ) const { }
-          void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
-        };
-
-
-        class xtreemfs_replication_to_masterResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
-        {
-        public:
-          xtreemfs_replication_to_masterResponse() { }
-          virtual ~xtreemfs_replication_to_masterResponse() {  }
-
-          bool operator==( const xtreemfs_replication_to_masterResponse& ) const { return true; }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_replication_to_masterResponse, 2010031023 );
-
-          // yidl::runtime::MarshallableObject
-          void marshal( ::yidl::runtime::Marshaller& ) const { }
-          void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
 
 
@@ -1919,7 +1871,6 @@ namespace org
             case 2010031020: return new xtreemfs_checkpointRequest;
             case 2010031021: return new xtreemfs_discover_dirRequest;
             case 2010031022: return new xtreemfs_global_time_s_getRequest;
-            case 2010031023: return new xtreemfs_replication_to_masterRequest;
             case 2010031028: return new xtreemfs_service_deregisterRequest;
             case 2010031026: return new xtreemfs_service_get_by_nameRequest;
             case 2010031024: return new xtreemfs_service_get_by_typeRequest;
@@ -1939,7 +1890,6 @@ namespace org
           else if ( strcmp( type_name, "xtreemfs_checkpointRequest" ) == 0 ) return new xtreemfs_checkpointRequest;
           else if ( strcmp( type_name, "xtreemfs_discover_dirRequest" ) == 0 ) return new xtreemfs_discover_dirRequest;
           else if ( strcmp( type_name, "xtreemfs_global_time_s_getRequest" ) == 0 ) return new xtreemfs_global_time_s_getRequest;
-          else if ( strcmp( type_name, "xtreemfs_replication_to_masterRequest" ) == 0 ) return new xtreemfs_replication_to_masterRequest;
           else if ( strcmp( type_name, "xtreemfs_service_deregisterRequest" ) == 0 ) return new xtreemfs_service_deregisterRequest;
           else if ( strcmp( type_name, "xtreemfs_service_get_by_nameRequest" ) == 0 ) return new xtreemfs_service_get_by_nameRequest;
           else if ( strcmp( type_name, "xtreemfs_service_get_by_typeRequest" ) == 0 ) return new xtreemfs_service_get_by_typeRequest;
@@ -1960,7 +1910,6 @@ namespace org
             case 2010031020: return new xtreemfs_checkpointResponse;
             case 2010031021: return new xtreemfs_discover_dirResponse;
             case 2010031022: return new xtreemfs_global_time_s_getResponse;
-            case 2010031023: return new xtreemfs_replication_to_masterResponse;
             case 2010031028: return new xtreemfs_service_deregisterResponse;
             case 2010031026: return new xtreemfs_service_get_by_nameResponse;
             case 2010031024: return new xtreemfs_service_get_by_typeResponse;
@@ -1980,7 +1929,6 @@ namespace org
           else if ( strcmp( type_name, "xtreemfs_checkpointResponse" ) == 0 ) return new xtreemfs_checkpointResponse;
           else if ( strcmp( type_name, "xtreemfs_discover_dirResponse" ) == 0 ) return new xtreemfs_discover_dirResponse;
           else if ( strcmp( type_name, "xtreemfs_global_time_s_getResponse" ) == 0 ) return new xtreemfs_global_time_s_getResponse;
-          else if ( strcmp( type_name, "xtreemfs_replication_to_masterResponse" ) == 0 ) return new xtreemfs_replication_to_masterResponse;
           else if ( strcmp( type_name, "xtreemfs_service_deregisterResponse" ) == 0 ) return new xtreemfs_service_deregisterResponse;
           else if ( strcmp( type_name, "xtreemfs_service_get_by_nameResponse" ) == 0 ) return new xtreemfs_service_get_by_nameResponse;
           else if ( strcmp( type_name, "xtreemfs_service_get_by_typeResponse" ) == 0 ) return new xtreemfs_service_get_by_typeResponse;
@@ -2032,7 +1980,6 @@ namespace org
             case 2010031020UL: handlextreemfs_checkpointRequest( static_cast<xtreemfs_checkpointRequest&>( request ) ); return;
             case 2010031021UL: handlextreemfs_discover_dirRequest( static_cast<xtreemfs_discover_dirRequest&>( request ) ); return;
             case 2010031022UL: handlextreemfs_global_time_s_getRequest( static_cast<xtreemfs_global_time_s_getRequest&>( request ) ); return;
-            case 2010031023UL: handlextreemfs_replication_to_masterRequest( static_cast<xtreemfs_replication_to_masterRequest&>( request ) ); return;
             case 2010031028UL: handlextreemfs_service_deregisterRequest( static_cast<xtreemfs_service_deregisterRequest&>( request ) ); return;
             case 2010031026UL: handlextreemfs_service_get_by_nameRequest( static_cast<xtreemfs_service_get_by_nameRequest&>( request ) ); return;
             case 2010031024UL: handlextreemfs_service_get_by_typeRequest( static_cast<xtreemfs_service_get_by_typeRequest&>( request ) ); return;
@@ -2216,31 +2163,6 @@ namespace org
           }
 
           xtreemfs_global_time_s_getRequest::dec_ref( __request );
-        }
-
-        virtual void handlextreemfs_replication_to_masterRequest( xtreemfs_replication_to_masterRequest& __request )
-        {
-          if ( _interface != NULL )
-          {
-            try
-            {
-              _interface->xtreemfs_replication_to_master();
-            }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
-            {
-              __request.respond( *exception_response );
-            }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
-            {
-              __request.respond( *exception_response.clone() );
-            }
-            catch ( ::yield::platform::Exception& exception )
-            {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
-            }
-          }
-
-          xtreemfs_replication_to_masterRequest::dec_ref( __request );
         }
 
         virtual void handlextreemfs_service_deregisterRequest( xtreemfs_service_deregisterRequest& __request )
@@ -2457,7 +2379,6 @@ namespace org
       virtual void handlextreemfs_checkpointRequest( xtreemfs_checkpointRequest& __request );\
       virtual void handlextreemfs_discover_dirRequest( xtreemfs_discover_dirRequest& __request );\
       virtual void handlextreemfs_global_time_s_getRequest( xtreemfs_global_time_s_getRequest& __request );\
-      virtual void handlextreemfs_replication_to_masterRequest( xtreemfs_replication_to_masterRequest& __request );\
       virtual void handlextreemfs_service_deregisterRequest( xtreemfs_service_deregisterRequest& __request );\
       virtual void handlextreemfs_service_get_by_nameRequest( xtreemfs_service_get_by_nameRequest& __request );\
       virtual void handlextreemfs_service_get_by_typeRequest( xtreemfs_service_get_by_typeRequest& __request );\
@@ -2467,15 +2388,15 @@ namespace org
       virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& __request );
 
 
-      class DIRInterfaceMessageSender : public DIRInterface, private DIRInterfaceMessages
+      class DIRInterfaceRequestSender : public DIRInterface, private DIRInterfaceMessages
       {
       public:
-        DIRInterfaceMessageSender() // Used when the event_target is a subclass
-          : __event_target( NULL )
+        DIRInterfaceRequestSender() // Used when the request_target is a subclass
+          : __request_target( NULL )
         { }
 
-        DIRInterfaceMessageSender( ::yield::concurrency::EventTarget& event_target )
-          : __event_target( &event_target )
+        DIRInterfaceRequestSender( ::yield::concurrency::EventTarget& request_target )
+          : __request_target( &request_target )
         { }
 
 
@@ -2492,7 +2413,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_getResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_address_mappings_getResponse> __response = __response_queue->dequeue();
           address_mappings = __response->get_address_mappings();
@@ -2506,7 +2427,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_removeResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_address_mappings_removeResponse> __response = __response_queue->dequeue();
         }
@@ -2523,7 +2444,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_setResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_address_mappings_setResponse> __response = __response_queue->dequeue();
           uint64_t _return_value = __response->get__return_value();return _return_value;
@@ -2537,7 +2458,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_checkpointResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_checkpointResponse> __response = __response_queue->dequeue();
         }
@@ -2554,7 +2475,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_discover_dirResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_discover_dirResponse> __response = __response_queue->dequeue();
           dir_service = __response->get_dir_service();
@@ -2568,23 +2489,10 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_global_time_s_getResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_global_time_s_getResponse> __response = __response_queue->dequeue();
           uint64_t _return_value = __response->get__return_value();return _return_value;
-        }
-
-        virtual void xtreemfs_replication_to_master()
-        {
-          xtreemfs_replication_to_masterRequest* __request = new xtreemfs_replication_to_masterRequest;
-
-          ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_replication_to_masterResponse> >
-            __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_replication_to_masterResponse> );
-          __request->set_response_target( &__response_queue.get() );
-
-          __event_target->send( *__request );
-
-          ::yidl::runtime::auto_Object<xtreemfs_replication_to_masterResponse> __response = __response_queue->dequeue();
         }
 
         virtual void xtreemfs_service_deregister( const string& uuid )
@@ -2595,7 +2503,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_deregisterResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_deregisterResponse> __response = __response_queue->dequeue();
         }
@@ -2613,7 +2521,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_nameResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_get_by_nameResponse> __response = __response_queue->dequeue();
           services = __response->get_services();
@@ -2632,7 +2540,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_typeResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_get_by_typeResponse> __response = __response_queue->dequeue();
           services = __response->get_services();
@@ -2651,7 +2559,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_uuidResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_get_by_uuidResponse> __response = __response_queue->dequeue();
           services = __response->get_services();
@@ -2665,7 +2573,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_offlineResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_offlineResponse> __response = __response_queue->dequeue();
         }
@@ -2682,7 +2590,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_registerResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_registerResponse> __response = __response_queue->dequeue();
           uint64_t _return_value = __response->get__return_value();return _return_value;
@@ -2696,20 +2604,20 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_shutdownResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_shutdownResponse> __response = __response_queue->dequeue();
         }
 
-        void set_event_target( ::yield::concurrency::EventTarget& event_target )
+        void set_request_target( ::yield::concurrency::EventTarget& request_target )
         {
-          this->__event_target = &event_target;
+          this->__request_target = &request_target;
         }
 
       private:
-        // __event_target is not a counted reference, since that would create
-        // a reference cycle when __event_target is a subclass of DIRInterfaceMessageSender
-        ::yield::concurrency::EventTarget* __event_target;
+        // __request_target is not a counted reference, since that would create
+        // a reference cycle when __request_target is a subclass of DIRInterfaceRequestSender
+        ::yield::concurrency::EventTarget* __request_target;
       };
     };
   };

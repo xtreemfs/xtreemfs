@@ -1,5 +1,5 @@
-#ifndef _1130839580_H_
-#define _1130839580_H_
+#ifndef _1624936007_H_
+#define _1624936007_H_
 
 
 #include "yield/concurrency.h"
@@ -468,15 +468,15 @@ namespace org
       virtual void handlerecv_bufferRequest( recv_bufferRequest& __request );
 
 
-      class NettestInterfaceMessageSender : public NettestInterface, private NettestInterfaceMessages
+      class NettestInterfaceRequestSender : public NettestInterface, private NettestInterfaceMessages
       {
       public:
-        NettestInterfaceMessageSender() // Used when the event_target is a subclass
-          : __event_target( NULL )
+        NettestInterfaceRequestSender() // Used when the request_target is a subclass
+          : __request_target( NULL )
         { }
 
-        NettestInterfaceMessageSender( ::yield::concurrency::EventTarget& event_target )
-          : __event_target( &event_target )
+        NettestInterfaceRequestSender( ::yield::concurrency::EventTarget& request_target )
+          : __request_target( &request_target )
         { }
 
 
@@ -488,7 +488,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<nopResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<nopResponse> __response = __response_queue->dequeue();
         }
@@ -501,7 +501,7 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<send_bufferResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<send_bufferResponse> __response = __response_queue->dequeue();
         }
@@ -514,21 +514,21 @@ namespace org
             __response_queue( new ::yield::concurrency::ResponseQueue<recv_bufferResponse> );
           __request->set_response_target( &__response_queue.get() );
 
-          __event_target->send( *__request );
+          __request_target->send( *__request );
 
           ::yidl::runtime::auto_Object<recv_bufferResponse> __response = __response_queue->dequeue();
           data = __response->get_data();
         }
 
-        void set_event_target( ::yield::concurrency::EventTarget& event_target )
+        void set_request_target( ::yield::concurrency::EventTarget& request_target )
         {
-          this->__event_target = &event_target;
+          this->__request_target = &request_target;
         }
 
       private:
-        // __event_target is not a counted reference, since that would create
-        // a reference cycle when __event_target is a subclass of NettestInterfaceMessageSender
-        ::yield::concurrency::EventTarget* __event_target;
+        // __request_target is not a counted reference, since that would create
+        // a reference cycle when __request_target is a subclass of NettestInterfaceRequestSender
+        ::yield::concurrency::EventTarget* __request_target;
       };
     };
   };

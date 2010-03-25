@@ -203,8 +203,7 @@ Volume::create
         NULL,
         error_log,
         proxy_ssl_context,
-        trace_log,
-        user_credentials_cache
+        trace_log
       );
 
   URI mrc_uri;
@@ -240,8 +239,7 @@ Volume::create
             NULL,
             proxy_ssl_context,
             stage_group,
-            trace_log,
-            user_credentials_cache
+            trace_log
           );
 
   return *new Volume
