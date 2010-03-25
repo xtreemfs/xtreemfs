@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_replica_addRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010031155;
+    public static final int TAG = 2010031154;
 
     public xtreemfs_replica_addRequest() { new_replica = new Replica();  }
     public xtreemfs_replica_addRequest( String file_id, Replica new_replica ) { this.file_id = file_id; this.new_replica = new_replica; }
@@ -40,10 +40,10 @@ public class xtreemfs_replica_addRequest extends org.xtreemfs.interfaces.utils.R
     public Response createDefaultResponse() { return new xtreemfs_replica_addResponse(); }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010031155;
+    public static final long serialVersionUID = 2010031154;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010031155; }
+    public int getTag() { return 2010031154; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addRequest"; }
 
     public int getXDRSize()

@@ -44,7 +44,6 @@ public class DIRInterface
             case 2010031020: return new xtreemfs_checkpointRequest();
             case 2010031021: return new xtreemfs_discover_dirRequest();
             case 2010031022: return new xtreemfs_global_time_s_getRequest();
-            case 2010031023: return new xtreemfs_replication_to_masterRequest();
             case 2010031028: return new xtreemfs_service_deregisterRequest();
             case 2010031026: return new xtreemfs_service_get_by_nameRequest();
             case 2010031024: return new xtreemfs_service_get_by_typeRequest();
@@ -66,7 +65,6 @@ public class DIRInterface
             case 2010031020: return new xtreemfs_checkpointResponse();
             case 2010031021: return new xtreemfs_discover_dirResponse();
             case 2010031022: return new xtreemfs_global_time_s_getResponse();
-            case 2010031023: return new xtreemfs_replication_to_masterResponse();
             case 2010031028: return new xtreemfs_service_deregisterResponse();
             case 2010031026: return new xtreemfs_service_get_by_nameResponse();
             case 2010031024: return new xtreemfs_service_get_by_typeResponse();

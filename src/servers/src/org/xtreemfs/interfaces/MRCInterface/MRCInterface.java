@@ -75,14 +75,13 @@ public class MRCInterface
             case 2010031151: return new xtreemfs_lsvolRequest();
             case 2010031152: return new xtreemfs_mkvolRequest();
             case 2010031153: return new xtreemfs_renew_capabilityRequest();
-            case 2010031154: return new xtreemfs_replication_to_masterRequest();
-            case 2010031155: return new xtreemfs_replica_addRequest();
-            case 2010031156: return new xtreemfs_replica_listRequest();
-            case 2010031157: return new xtreemfs_replica_removeRequest();
-            case 2010031158: return new xtreemfs_restore_databaseRequest();
-            case 2010031159: return new xtreemfs_restore_fileRequest();
-            case 2010031160: return new xtreemfs_rmvolRequest();
-            case 2010031161: return new xtreemfs_shutdownRequest();
+            case 2010031154: return new xtreemfs_replica_addRequest();
+            case 2010031155: return new xtreemfs_replica_listRequest();
+            case 2010031156: return new xtreemfs_replica_removeRequest();
+            case 2010031157: return new xtreemfs_restore_databaseRequest();
+            case 2010031158: return new xtreemfs_restore_fileRequest();
+            case 2010031159: return new xtreemfs_rmvolRequest();
+            case 2010031160: return new xtreemfs_shutdownRequest();
             default: throw new Exception( "unknown request tag " + Integer.toString( header.getProcedure() ) );
         }
     }
@@ -118,14 +117,13 @@ public class MRCInterface
             case 2010031151: return new xtreemfs_lsvolResponse();
             case 2010031152: return new xtreemfs_mkvolResponse();
             case 2010031153: return new xtreemfs_renew_capabilityResponse();
-            case 2010031154: return new xtreemfs_replication_to_masterResponse();
-            case 2010031155: return new xtreemfs_replica_addResponse();
-            case 2010031156: return new xtreemfs_replica_listResponse();
-            case 2010031157: return new xtreemfs_replica_removeResponse();
-            case 2010031158: return new xtreemfs_restore_databaseResponse();
-            case 2010031159: return new xtreemfs_restore_fileResponse();
-            case 2010031160: return new xtreemfs_rmvolResponse();
-            case 2010031161: return new xtreemfs_shutdownResponse();
+            case 2010031154: return new xtreemfs_replica_addResponse();
+            case 2010031155: return new xtreemfs_replica_listResponse();
+            case 2010031156: return new xtreemfs_replica_removeResponse();
+            case 2010031157: return new xtreemfs_restore_databaseResponse();
+            case 2010031158: return new xtreemfs_restore_fileResponse();
+            case 2010031159: return new xtreemfs_rmvolResponse();
+            case 2010031160: return new xtreemfs_shutdownResponse();
             default: throw new Exception( "unknown response XID " + Integer.toString( header.getXID() ) );
         }
     }
