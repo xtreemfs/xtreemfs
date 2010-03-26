@@ -72,29 +72,33 @@ public class TortureXtreemFS {
             options.put("tpass", new CliOption(CliOption.OPTIONTYPE.STRING));
             options.put("mkvol", new CliOption(CliOption.OPTIONTYPE.SWITCH));
             options.put("r", new CliOption(CliOption.OPTIONTYPE.SWITCH));
+            options.put("replicas", new CliOption(CliOption.OPTIONTYPE.NUMBER));
             
             CLIParser.parseCLI(args, options, arguments);
             
             Logging.start(Logging.LEVEL_WARN);
-            TimeSync.initialize(null, 10000, 50);
+            TimeSync.initializeLocal(10000, 50);
             
             if (arguments.size() != 2) {
                 usage();
                 return;
             }
             
-            final ONCRPCServiceURL mrcURL = new ONCRPCServiceURL(arguments.get(1),Constants.ONCRPC_SCHEME,MRCInterface.ONCRPC_PORT_DEFAULT);
+            final ONCRPCServiceURL mrcURL = new ONCRPCServiceURL(arguments.get(1),Constants.ONCRPC_SCHEME,MRCInterface.ONC_RPC_PORT_DEFAULT);
             
             final String path = (options.get("p").stringValue != null) ? options.get("p").stringValue
                 : "/torture.data";
             final String volname = (options.get("v").stringValue != null) ? options.get("v").stringValue
                 : "test";
             
-            final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,DIRInterface.ONCRPC_PORT_DEFAULT);
+            final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,DIRInterface.ONC_RPC_PORT_DEFAULT);
             
             boolean useSSL = false;
             
             final SSLOptions sslOptions;
+
+            final int replicas = (int)(options.get("replicas").numValue != null ? options.get("replicas").numValue
+                : 1l);
             
             if (dirURL.getProtocol().equalsIgnoreCase("oncrpcs")) {
                 // require credentials!

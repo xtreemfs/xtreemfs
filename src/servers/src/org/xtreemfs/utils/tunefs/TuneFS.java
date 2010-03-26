@@ -56,7 +56,7 @@ public class TuneFS {
         parser.addOption(optDebug);
 
         optDIR = new CLOption.URLValue(null, "dir", "specify a directory service to use",
-                Constants.ONCRPC_SCHEME, Integer.valueOf(DIRInterface.ONCRPC_PORT_DEFAULT));
+                Constants.ONCRPC_SCHEME, Integer.valueOf(DIRInterface.ONC_RPC_PORT_DEFAULT));
         parser.addOption(optDIR);
 
         optPKCS12file = new CLOption.StringValue(null, "pkcs12-file-path", "a PKCS#12 file with the credentials (required for oncrpcg/s)");

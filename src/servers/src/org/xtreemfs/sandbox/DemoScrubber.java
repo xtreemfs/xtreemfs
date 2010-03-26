@@ -259,7 +259,7 @@ public class DemoScrubber implements DemoScrubberFileInfo.FileScrubbedListener {
         List<String> arguments = new ArrayList<String>(1);
         options.put("h", new CliOption(CliOption.OPTIONTYPE.SWITCH));
         CliOption oDir = new CliOption(CliOption.OPTIONTYPE.URL);
-        oDir.urlDefaultPort = DIRInterface.ONCRPC_PORT_DEFAULT;
+        oDir.urlDefaultPort = DIRInterface.ONC_RPC_PORT_DEFAULT;
         oDir.urlDefaultProtocol = Constants.ONCRPC_SCHEME;
         options.put("dir", oDir);
         options.put("chk", new CliOption(CliOption.OPTIONTYPE.SWITCH));

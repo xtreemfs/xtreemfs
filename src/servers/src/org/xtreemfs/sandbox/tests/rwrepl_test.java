@@ -76,7 +76,7 @@ public class rwrepl_test {
             f.createFile();
 
             if (!mode.contains("x"))
-                addReplicas(f,numReplicas);
+                addReplicas(f,numReplicas,false);
 
             RandomAccessFile io = f.open("rw", 0444);
             long datacnt = 0;
@@ -124,7 +124,7 @@ public class rwrepl_test {
 
 
             if (mode.contains("x"))
-                addReplicas(f,numReplicas);
+                addReplicas(f,numReplicas,false);
 
             io = f.open("rw", 0444);
 
@@ -167,9 +167,12 @@ public class rwrepl_test {
         }
     }
 
-    private static void addReplicas(File f, int numReplicas) throws Exception {
+    private static void addReplicas(File f, int numReplicas, boolean quorum) throws Exception {
         System.out.println("adding "+numReplicas+" replicas");
-        f.setReplicaUpdatePolicy(Constants.REPL_UPDATE_PC_WARONE);
+        if (quorum)
+            f.setReplicaUpdatePolicy(Constants.REPL_UPDATE_PC_WQRQ);
+        else
+            f.setReplicaUpdatePolicy(Constants.REPL_UPDATE_PC_WARONE);
         for (int i = 0; i < numReplicas; i++) {
             String[] suitableOSDs = f.getSuitableOSDs(1);
             System.out.println("suitable OSDs: "+suitableOSDs);
