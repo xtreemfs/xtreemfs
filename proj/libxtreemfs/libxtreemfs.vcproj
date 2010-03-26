@@ -28,7 +28,7 @@
                 Name="VCCLCompilerTool"
                 Optimization="0"
                 AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yieldfs\include;$(ProjectDir)..\..\share\google-breakpad\src"
-                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_IPC_HAVE_OPENSSL"
+                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_PLATFORM_HAVE_OPENSSL"
                 BasicRuntimeChecks="3"
                 RuntimeLibrary="3"
                 RuntimeTypeInfo="false"
@@ -74,7 +74,7 @@
             <Tool
                 Name="VCCLCompilerTool"
                 AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yieldfs\include;$(ProjectDir)..\..\share\google-breakpad\src"
-                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_IPC_HAVE_OPENSSL"
+                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_PLATFORM_HAVE_OPENSSL"
                 StringPooling="false"
                 RuntimeLibrary="2"
                 EnableFunctionLevelLinking="true"
@@ -119,7 +119,7 @@
             <Tool
                 Name="VCCLCompilerTool"
                 AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yieldfs\include;$(ProjectDir)..\..\share\google-breakpad\src"
-                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_IPC_HAVE_OPENSSL"
+                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_PLATFORM_HAVE_OPENSSL"
                 StringPooling="false"
                 RuntimeLibrary="2"
                 EnableFunctionLevelLinking="true"
@@ -162,15 +162,16 @@
             UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
             >
             <File
+    RelativePath="..\..\include\xtreemfs.h"
+    >
+</File>
+<Filter Name="xtreemfs">
+<File
     RelativePath="..\..\include\xtreemfs\crash_reporter.h"
     >
 </File>
 <File
     RelativePath="..\..\include\xtreemfs\dir_proxy.h"
-    >
-</File>
-<File
-    RelativePath="..\..\include\xtreemfs\grid_ssl_socket.h"
     >
 </File>
 <File
@@ -195,10 +196,6 @@
 </File>
 <File
     RelativePath="..\..\include\xtreemfs\proxy.h"
-    >
-</File>
-<File
-    RelativePath="..\..\include\xtreemfs\user_credentials_cache.h"
     >
 </File>
 <File
@@ -231,7 +228,31 @@
     >
 </File>
 </Filter>
+</Filter>
 <Filter Name="share">
+<File
+    RelativePath="..\..\share\yield\include\yield.h"
+    >
+</File>
+<Filter Name="yield">
+<File
+    RelativePath="..\..\share\yield\include\yield\concurrency.h"
+    >
+</File>
+<File
+    RelativePath="..\..\share\yield\include\yield\ipc.h"
+    >
+</File>
+<File
+    RelativePath="..\..\share\yield\include\yield\main.h"
+    >
+</File>
+<File
+    RelativePath="..\..\share\yield\include\yield\platform.h"
+    >
+</File>
+</Filter>
+<Filter Name="src">
 <File
     RelativePath="..\..\share\yield\src\yield\platform\directory_test.h"
     >
@@ -244,6 +265,13 @@
     RelativePath="..\..\share\yield\src\yield\platform\volume_test.h"
     >
 </File>
+</Filter>
+<Filter Name="yieldfs">
+<File
+    RelativePath="..\..\share\yieldfs\include\yieldfs.h"
+    >
+</File>
+</Filter>
 </Filter>
 
         </Filter>
@@ -400,6 +428,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\src\libxtreemfs\grid_ssl_socket.h"
+    >
+</File>
+<File
     RelativePath="..\..\src\libxtreemfs\mrc_proxy.cpp"
     >
 </File>
@@ -424,6 +456,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\src\libxtreemfs\proxy.cpp"
+    >
+</File>
+<File
     RelativePath="..\..\src\libxtreemfs\stat.cpp"
     >
 </File>
@@ -441,6 +477,10 @@
 </File>
 <File
     RelativePath="..\..\src\libxtreemfs\user_credentials_cache.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\libxtreemfs\user_credentials_cache.h"
     >
 </File>
 <File

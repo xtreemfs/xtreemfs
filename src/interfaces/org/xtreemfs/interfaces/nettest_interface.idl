@@ -6,12 +6,6 @@ module org
     {
       interface NettestInterface # 400
       {
-        // Constants
-        const uint32_t ONCRPC_PORT_DEFAULT = 32638;
-        const uint32_t ONCRPCG_PORT_DEFAULT = 32638;
-        const uint32_t ONCRPCS_PORT_DEFAULT = 32638;
-        const uint32_t ONCRPCU_PORT_DEFAULT = 32638;
-
         // Operations
         void nop() # 1;
         void send_buffer( buffer data ) # 2;

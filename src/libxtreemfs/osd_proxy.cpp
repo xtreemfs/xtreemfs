@@ -19,7 +19,7 @@
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 // DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// OSDECT, INOSDECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 // LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -31,29 +31,8 @@
 using namespace xtreemfs;
 
 
-OSDProxy::OSDProxy
-(
-  Configuration& configuration,
-  Log* error_log,
-  IOQueue& io_queue,
-  SocketAddress& peername,
-  TCPSocketFactory& tcp_socket_factory,
-  Log* trace_log
-)
-: Proxy
-  <
-    org::xtreemfs::interfaces::OSDInterface,
-    org::xtreemfs::interfaces::OSDInterfaceMessageFactory,
-    org::xtreemfs::interfaces::OSDInterfaceRequestSender
-  >
-  (
-    configuration,
-    error_log,
-    io_queue,
-    peername,
-    tcp_socket_factory,
-    trace_log
-  )
+OSDProxy::OSDProxy( EventHandler& request_handler )
+  : OSDInterfaceProxy( request_handler )
 { }
 
 OSDProxy&
@@ -62,18 +41,28 @@ OSDProxy::create
   const URI& absolute_uri,
   Configuration* configuration,
   Log* error_log,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
   SSLContext* ssl_context,
+#endif
   Log* trace_log
 )
 {
   return *new OSDProxy
               (
-                configuration != NULL ? *configuration : *new Configuration,
-                error_log,
-                yield::platform::NBIOQueue::create(),
-                createSocketAddress( absolute_uri ),
-                createTCPSocketFactory( absolute_uri, ssl_context ),
-                trace_log
+                createONCRPCClient
+                (
+                  absolute_uri,
+                  *new org::xtreemfs::interfaces::OSDInterfaceMessageFactory,
+                  ONC_RPC_PORT_DEFAULT,
+                  0x20000000 + TAG,
+                  TAG,
+                  configuration,
+                  error_log,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+                  ssl_context,
+#endif
+                  trace_log
+                )
               );
 }
 

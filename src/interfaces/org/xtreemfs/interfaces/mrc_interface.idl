@@ -70,10 +70,8 @@ module org
       {
         // Constants
         const uint32_t HTTP_PORT_DEFAULT = 30636;
-        const uint32_t ONCRPC_PORT_DEFAULT = 32636;
-        const uint32_t ONCRPCG_PORT_DEFAULT = 32636;
-        const uint32_t ONCRPCS_PORT_DEFAULT = 32636;
-        const uint32_t ONCRPCU_PORT_DEFAULT = 32636;
+        const uint32_t ONC_RPC_PORT_DEFAULT = 32636;
+
         // Flags passed in setattr's to_set
         const uint32_t SETATTR_MODE = 1;
         const uint32_t SETATTR_UID = 2;

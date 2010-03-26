@@ -28,7 +28,6 @@
 
 
 #include "stat.h"
-#include "xtreemfs/user_credentials_cache.h"
 using namespace xtreemfs;
 
 #ifdef _WIN32

@@ -58,10 +58,7 @@ module org
       {
         // Constants
         const uint32_t HTTP_PORT_DEFAULT = 30638; 
-        const uint32_t ONCRPC_PORT_DEFAULT = 32638;
-        const uint32_t ONCRPCG_PORT_DEFAULT = 32638;
-        const uint32_t ONCRPCS_PORT_DEFAULT = 32638;
-        const uint32_t ONCRPCU_PORT_DEFAULT = 32638;
+        const uint32_t ONC_RPC_PORT_DEFAULT = 32638;
          
         // Operations
         void xtreemfs_address_mappings_get( string uuid, out AddressMappingSet address_mappings ) # 1;

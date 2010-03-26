@@ -40,6 +40,7 @@ using namespace xtreemfs;
 
 #include "yield.h"
 using yield::concurrency::ResponseQueue;
+using yield::platform::Time;
 using yield::platform::TimerQueue;
 
 #include "yieldfs.h"
@@ -328,9 +329,9 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
           static_cast<uint32_t>( object_size ),
           ObjectData( 0, 0, 0, new Buffer( rbuf_p, object_size ) )
         );
-      read_request->set_response_target( &read_response_queue );
+      read_request->set_response_handler( &read_response_queue );
 
-      osd_proxy->send( *read_request );
+      osd_proxy->get_request_handler().handle( *read_request );
       expected_read_response_count++;
 
       rbuf_p += object_size;
@@ -537,7 +538,7 @@ bool File::truncate( uint64_t new_size )
     );
 
   ResponseQueue<OSDInterfaceMessages::truncateResponse> truncate_response_queue;
-  truncate_request.set_response_target( &truncate_response_queue );
+  truncate_request.set_response_handler( &truncate_response_queue );
 
   for
   (
@@ -550,7 +551,7 @@ bool File::truncate( uint64_t new_size )
       = parent_volume.get_osd_proxies().
           get_osd_proxy( ( *replica_i ).get_osd_uuids()[0] );
 
-    osd_proxy.send( truncate_request.inc_ref() );  
+    osd_proxy.get_request_handler().handle( truncate_request.inc_ref() );  
 
     OSDProxy::dec_ref( osd_proxy );
   }
@@ -683,7 +684,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
           object_data
         );
 
-      write_request->set_response_target( &write_response_queue );
+      write_request->set_response_handler( &write_response_queue );
 
 #ifdef _DEBUG
       if ( parent_volume.get_trace_log() != NULL )
@@ -700,7 +701,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
       }
 #endif
 
-      osd_proxy->send( *write_request );
+      osd_proxy->get_request_handler().handle( *write_request );
       expected_write_response_count++;
 
       wbuf_p += object_size;
@@ -792,11 +793,11 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 //  const ReplicaSet&
 //    replicas = req.get_file_credentials().get_xlocs().get_replicas();
 //
-//  if ( req.get_response_target() != NULL )
+//  if ( req.get_response_handler() != NULL )
 //  {
-//    req.set_response_target
+//    req.set_response_handler
 //    (
-//      new TruncateResponseTarget( replicas.size(), *req.get_response_target() )
+//      new TruncateResponseTarget( replicas.size(), *req.get_response_handler() )
 //    );
 //  }
 //

@@ -1,5 +1,5 @@
-#ifndef _934437741_H_
-#define _934437741_H_
+#ifndef _1319198355_H_
+#define _1319198355_H_
 
 
 #include "constants.h"
@@ -390,11 +390,8 @@ namespace org
       class DIRInterface
       {
       public:
-          const static uint32_t HTTP_PORT_DEFAULT = 30638;
-        const static uint32_t ONCRPC_PORT_DEFAULT = 32638;
-        const static uint32_t ONCRPCG_PORT_DEFAULT = 32638;
-        const static uint32_t ONCRPCS_PORT_DEFAULT = 32638;
-        const static uint32_t ONCRPCU_PORT_DEFAULT = 32638;const static uint32_t TAG = 2010031016;
+        const static uint32_t HTTP_PORT_DEFAULT = 30638;
+        const static uint32_t ONC_RPC_PORT_DEFAULT = 32638;const static uint32_t TAG = 2010031016;
 
         virtual ~DIRInterface() { }
 
@@ -522,15 +519,15 @@ namespace org
       virtual void xtreemfs_shutdown();\
 
 
-      #ifndef ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
-      #if defined( ORG_XTREEMFS_INTERFACES_EXCEPTION_RESPONSE_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ORG_XTREEMFS_INTERFACES_EXCEPTION_RESPONSE_PARENT_CLASS
-      #elif defined( ORG_XTREEMFS_EXCEPTION_RESPONSE_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ORG_XTREEMFS_EXCEPTION_RESPONSE_PARENT_CLASS
-      #elif defined( ORG_EXCEPTION_RESPONSE_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ORG_EXCEPTION_RESPONSE_PARENT_CLASS
+      #ifndef ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS
+      #if defined( ORG_XTREEMFS_INTERFACES_EXCEPTION_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS ORG_XTREEMFS_INTERFACES_EXCEPTION_PARENT_CLASS
+      #elif defined( ORG_XTREEMFS_EXCEPTION_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS ORG_XTREEMFS_EXCEPTION_PARENT_CLASS
+      #elif defined( ORG_EXCEPTION_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS ORG_EXCEPTION_PARENT_CLASS
       #else
-      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ::yield::concurrency::ExceptionResponse
+      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS ::yield::concurrency::Exception
       #endif
       #endif
       #ifndef ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
@@ -1555,7 +1552,7 @@ namespace org
         };
 
 
-        class ConcurrentModificationException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
+        class ConcurrentModificationException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS
         {
         public:
           ConcurrentModificationException() { }
@@ -1564,7 +1561,7 @@ namespace org
             : stack_trace( stack_trace )
           { }
 
-          ConcurrentModificationException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
+          ConcurrentModificationException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS( what ) { }
           virtual ~ConcurrentModificationException() throw() { ; }
 
           const string& get_stack_trace() const { return stack_trace; }
@@ -1584,10 +1581,10 @@ namespace org
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
           }
 
-          // yield::concurrency::ExceptionResponse
-          virtual ::yield::concurrency::ExceptionResponse* clone() const
+          // yield::concurrency::Exception
+          virtual ::yield::concurrency::Exception& clone() const
           {
-            return new ConcurrentModificationException( stack_trace );
+            return *new ConcurrentModificationException( stack_trace );
           }
 
           virtual void throwStackClone() const
@@ -1600,7 +1597,7 @@ namespace org
         };
 
 
-        class DIRException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
+        class DIRException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS
         {
         public:
           DIRException()
@@ -1618,7 +1615,7 @@ namespace org
               stack_trace( stack_trace )
           { }
 
-          DIRException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
+          DIRException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS( what ) { }
           virtual ~DIRException() throw() { ; }
 
           uint32_t get_error_code() const { return error_code; }
@@ -1646,10 +1643,10 @@ namespace org
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
           }
 
-          // yield::concurrency::ExceptionResponse
-          virtual ::yield::concurrency::ExceptionResponse* clone() const
+          // yield::concurrency::Exception
+          virtual ::yield::concurrency::Exception& clone() const
           {
-            return new DIRException( error_code, error_message, stack_trace );
+            return *new DIRException( error_code, error_message, stack_trace );
           }
 
           virtual void throwStackClone() const
@@ -1664,7 +1661,7 @@ namespace org
         };
 
 
-        class InvalidArgumentException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
+        class InvalidArgumentException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS
         {
         public:
           InvalidArgumentException() { }
@@ -1673,7 +1670,7 @@ namespace org
             : error_message( error_message )
           { }
 
-          InvalidArgumentException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
+          InvalidArgumentException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS( what ) { }
           virtual ~InvalidArgumentException() throw() { ; }
 
           const string& get_error_message() const { return error_message; }
@@ -1693,10 +1690,10 @@ namespace org
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_message", 0 ), error_message );
           }
 
-          // yield::concurrency::ExceptionResponse
-          virtual ::yield::concurrency::ExceptionResponse* clone() const
+          // yield::concurrency::Exception
+          virtual ::yield::concurrency::Exception& clone() const
           {
-            return new InvalidArgumentException( error_message );
+            return *new InvalidArgumentException( error_message );
           }
 
           virtual void throwStackClone() const
@@ -1709,7 +1706,7 @@ namespace org
         };
 
 
-        class ProtocolException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
+        class ProtocolException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS
         {
         public:
           ProtocolException()
@@ -1725,7 +1722,7 @@ namespace org
             : accept_stat( accept_stat ), error_code( error_code ), stack_trace( stack_trace )
           { }
 
-          ProtocolException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
+          ProtocolException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS( what ) { }
           virtual ~ProtocolException() throw() { ; }
 
           uint32_t get_accept_stat() const { return accept_stat; }
@@ -1753,10 +1750,10 @@ namespace org
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
           }
 
-          // yield::concurrency::ExceptionResponse
-          virtual ::yield::concurrency::ExceptionResponse* clone() const
+          // yield::concurrency::Exception
+          virtual ::yield::concurrency::Exception& clone() const
           {
-            return new ProtocolException( accept_stat, error_code, stack_trace );
+            return *new ProtocolException( accept_stat, error_code, stack_trace );
           }
 
           virtual void throwStackClone() const
@@ -1771,7 +1768,7 @@ namespace org
         };
 
 
-        class RedirectException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
+        class RedirectException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS
         {
         public:
           RedirectException()
@@ -1782,7 +1779,7 @@ namespace org
             : address( address ), port( port )
           { }
 
-          RedirectException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
+          RedirectException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS( what ) { }
           virtual ~RedirectException() throw() { ; }
 
           const string& get_address() const { return address; }
@@ -1806,10 +1803,10 @@ namespace org
             port = unmarshaller.read_uint16( ::yidl::runtime::Unmarshaller::StringLiteralKey( "port", 0 ) );
           }
 
-          // yield::concurrency::ExceptionResponse
-          virtual ::yield::concurrency::ExceptionResponse* clone() const
+          // yield::concurrency::Exception
+          virtual ::yield::concurrency::Exception& clone() const
           {
-            return new RedirectException( address, port );
+            return *new RedirectException( address, port );
           }
 
           virtual void throwStackClone() const
@@ -1830,11 +1827,7 @@ namespace org
       {
       public:
         // yield::concurrency::MessageFactory
-        virtual ::yield::concurrency::ExceptionResponse*
-        createExceptionResponse
-        (
-          uint32_t type_id
-        )
+        virtual ::yield::concurrency::Exception* createException( uint32_t type_id )
         {
           switch ( type_id )
           {
@@ -1847,8 +1840,8 @@ namespace org
           }
         }
 
-        virtual ::yield::concurrency::ExceptionResponse*
-        createExceptionResponse
+        virtual ::yield::concurrency::Exception*
+        createException
         (
           const char* type_name
         )
@@ -1961,15 +1954,14 @@ namespace org
           delete _interface;
         }
 
-        // yield::concurrency::EventHandler
-        virtual const char* get_name() const
+        // yidl::runtime::RTTIObject
+        virtual const char* get_type_name() const
         {
           return "DIRInterface";
         }
 
         // yield::concurrency::RequestHandler
-
-        virtual void handleRequest( ::yield::concurrency::Request& request )
+        virtual void handle( ::yield::concurrency::Request& request )
         {
           // Switch on the request types that this interface handles, unwrap the corresponding requests and delegate to _interface
           switch ( request.get_type_id() )
@@ -1987,11 +1979,11 @@ namespace org
             case 2010031029UL: handlextreemfs_service_offlineRequest( static_cast<xtreemfs_service_offlineRequest&>( request ) ); return;
             case 2010031027UL: handlextreemfs_service_registerRequest( static_cast<xtreemfs_service_registerRequest&>( request ) ); return;
             case 2010031030UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( request ) ); return;
-            default: ::yield::concurrency::Request::dec_ref( request ); return;
           }
         }
 
       protected:
+
         virtual void handlextreemfs_address_mappings_getRequest( xtreemfs_address_mappings_getRequest& __request )
         {
           if ( _interface != NULL )
@@ -2008,21 +2000,19 @@ namespace org
 
               __request.respond( address_mappings );
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          xtreemfs_address_mappings_getRequest::dec_ref( __request );
         }
 
         virtual void handlextreemfs_address_mappings_removeRequest( xtreemfs_address_mappings_removeRequest& __request )
@@ -2033,21 +2023,19 @@ namespace org
             {
               _interface->xtreemfs_address_mappings_remove( __request.get_uuid() );
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          xtreemfs_address_mappings_removeRequest::dec_ref( __request );
         }
 
         virtual void handlextreemfs_address_mappings_setRequest( xtreemfs_address_mappings_setRequest& __request )
@@ -2065,21 +2053,19 @@ namespace org
 
               __request.respond( _return_value );
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          xtreemfs_address_mappings_setRequest::dec_ref( __request );
         }
 
         virtual void handlextreemfs_checkpointRequest( xtreemfs_checkpointRequest& __request )
@@ -2090,21 +2076,19 @@ namespace org
             {
               _interface->xtreemfs_checkpoint();
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          xtreemfs_checkpointRequest::dec_ref( __request );
         }
 
         virtual void handlextreemfs_discover_dirRequest( xtreemfs_discover_dirRequest& __request )
@@ -2119,21 +2103,19 @@ namespace org
 
               __request.respond( dir_service );
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          xtreemfs_discover_dirRequest::dec_ref( __request );
         }
 
         virtual void handlextreemfs_global_time_s_getRequest( xtreemfs_global_time_s_getRequest& __request )
@@ -2148,21 +2130,19 @@ namespace org
 
               __request.respond( _return_value );
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          xtreemfs_global_time_s_getRequest::dec_ref( __request );
         }
 
         virtual void handlextreemfs_service_deregisterRequest( xtreemfs_service_deregisterRequest& __request )
@@ -2173,21 +2153,19 @@ namespace org
             {
               _interface->xtreemfs_service_deregister( __request.get_uuid() );
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          xtreemfs_service_deregisterRequest::dec_ref( __request );
         }
 
         virtual void handlextreemfs_service_get_by_nameRequest( xtreemfs_service_get_by_nameRequest& __request )
@@ -2206,21 +2184,19 @@ namespace org
 
               __request.respond( services );
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          xtreemfs_service_get_by_nameRequest::dec_ref( __request );
         }
 
         virtual void handlextreemfs_service_get_by_typeRequest( xtreemfs_service_get_by_typeRequest& __request )
@@ -2239,21 +2215,19 @@ namespace org
 
               __request.respond( services );
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          xtreemfs_service_get_by_typeRequest::dec_ref( __request );
         }
 
         virtual void handlextreemfs_service_get_by_uuidRequest( xtreemfs_service_get_by_uuidRequest& __request )
@@ -2272,21 +2246,19 @@ namespace org
 
               __request.respond( services );
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          xtreemfs_service_get_by_uuidRequest::dec_ref( __request );
         }
 
         virtual void handlextreemfs_service_offlineRequest( xtreemfs_service_offlineRequest& __request )
@@ -2297,21 +2269,19 @@ namespace org
             {
               _interface->xtreemfs_service_offline( __request.get_uuid() );
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          xtreemfs_service_offlineRequest::dec_ref( __request );
         }
 
         virtual void handlextreemfs_service_registerRequest( xtreemfs_service_registerRequest& __request )
@@ -2326,21 +2296,19 @@ namespace org
 
               __request.respond( _return_value );
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          xtreemfs_service_registerRequest::dec_ref( __request );
         }
 
         virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& __request )
@@ -2351,28 +2319,26 @@ namespace org
             {
               _interface->xtreemfs_shutdown();
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          xtreemfs_shutdownRequest::dec_ref( __request );
         }
 
       private:
         DIRInterface* _interface;
       };
 
-      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EVENT_HANDLER_PROTOTYPES \
+      #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_HANDLER_PROTOTYPES \
       virtual void handlextreemfs_address_mappings_getRequest( xtreemfs_address_mappings_getRequest& __request );\
       virtual void handlextreemfs_address_mappings_removeRequest( xtreemfs_address_mappings_removeRequest& __request );\
       virtual void handlextreemfs_address_mappings_setRequest( xtreemfs_address_mappings_setRequest& __request );\
@@ -2388,16 +2354,24 @@ namespace org
       virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& __request );
 
 
-      class DIRInterfaceRequestSender : public DIRInterface, private DIRInterfaceMessages
+      class DIRInterfaceProxy
+        : public DIRInterface,
+          private DIRInterfaceMessages
       {
       public:
-        DIRInterfaceRequestSender() // Used when the request_target is a subclass
-          : __request_target( NULL )
+        DIRInterfaceProxy( ::yield::concurrency::EventHandler& request_handler )
+          : __request_handler( request_handler )
         { }
 
-        DIRInterfaceRequestSender( ::yield::concurrency::EventTarget& request_target )
-          : __request_target( &request_target )
-        { }
+        ~DIRInterfaceProxy()
+        {
+          ::yield::concurrency::EventHandler::dec_ref( __request_handler );
+        }
+
+        ::yield::concurrency::EventHandler& get_request_handler() const
+        {
+          return __request_handler;
+        }
 
 
         virtual void
@@ -2411,9 +2385,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_getResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_getResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_address_mappings_getResponse> __response = __response_queue->dequeue();
           address_mappings = __response->get_address_mappings();
@@ -2425,9 +2399,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_removeResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_removeResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_address_mappings_removeResponse> __response = __response_queue->dequeue();
         }
@@ -2442,9 +2416,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_setResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_setResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_address_mappings_setResponse> __response = __response_queue->dequeue();
           uint64_t _return_value = __response->get__return_value();return _return_value;
@@ -2456,9 +2430,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_checkpointResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_checkpointResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_checkpointResponse> __response = __response_queue->dequeue();
         }
@@ -2473,9 +2447,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_discover_dirResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_discover_dirResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_discover_dirResponse> __response = __response_queue->dequeue();
           dir_service = __response->get_dir_service();
@@ -2487,9 +2461,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_global_time_s_getResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_global_time_s_getResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_global_time_s_getResponse> __response = __response_queue->dequeue();
           uint64_t _return_value = __response->get__return_value();return _return_value;
@@ -2501,9 +2475,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_deregisterResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_deregisterResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_deregisterResponse> __response = __response_queue->dequeue();
         }
@@ -2519,9 +2493,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_nameResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_nameResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_get_by_nameResponse> __response = __response_queue->dequeue();
           services = __response->get_services();
@@ -2538,9 +2512,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_typeResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_typeResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_get_by_typeResponse> __response = __response_queue->dequeue();
           services = __response->get_services();
@@ -2557,9 +2531,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_uuidResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_uuidResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_get_by_uuidResponse> __response = __response_queue->dequeue();
           services = __response->get_services();
@@ -2571,9 +2545,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_offlineResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_offlineResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_offlineResponse> __response = __response_queue->dequeue();
         }
@@ -2588,9 +2562,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_registerResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_registerResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_registerResponse> __response = __response_queue->dequeue();
           uint64_t _return_value = __response->get__return_value();return _return_value;
@@ -2602,24 +2576,18 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_shutdownResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_shutdownResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_shutdownResponse> __response = __response_queue->dequeue();
         }
 
-        void set_request_target( ::yield::concurrency::EventTarget& request_target )
-        {
-          this->__request_target = &request_target;
-        }
-
       private:
-        // __request_target is not a counted reference, since that would create
-        // a reference cycle when __request_target is a subclass of DIRInterfaceRequestSender
-        ::yield::concurrency::EventTarget* __request_target;
-      };
-    };
+        // __request_handler is not a counted reference, since that would create
+        // a reference cycle when __request_handler is a subclass of DIRInterfaceProxy
+        ::yield::concurrency::EventHandler& __request_handler;
+      };};
   };
 };
 #endif

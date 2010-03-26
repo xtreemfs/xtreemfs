@@ -40,15 +40,12 @@ namespace xtreemfs
   using org::xtreemfs::interfaces::AddressMappingSet;
 
 
-  class DIRProxy
-    : public Proxy
-             <
-               org::xtreemfs::interfaces::DIRInterface,
-               org::xtreemfs::interfaces::DIRInterfaceMessageFactory,
-               org::xtreemfs::interfaces::DIRInterfaceRequestSender
-             >
+  class DIRProxy 
+    : public org::xtreemfs::interfaces::DIRInterfaceProxy,
+      public Proxy
   {
   public:
+    DIRProxy( EventHandler& request_handler ); // Steals this reference
     virtual ~DIRProxy();
 
     static DIRProxy& create( const Options& options );
@@ -59,7 +56,9 @@ namespace xtreemfs
       const URI& absolute_uri,
       Configuration* configuration = NULL,
       Log* error_log = NULL,
-      SSLContext* ssl_context = NULL, // Steals this reference
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+      SSLContext* ssl_context = NULL,
+#endif
       Log* trace_log = NULL
     );
 
@@ -70,20 +69,8 @@ namespace xtreemfs
     DIRProxy& inc_ref() { return Object::inc_ref( *this ); }
 
   private:
-    DIRProxy
-    (
-      Configuration& configuration,
-      Log* error_log,
-      IOQueue& io_queue,
-      SocketAddress& peername,
-      TCPSocketFactory& tcp_socket_factory,
-      Log* trace_log
-    );
-
-  private:
     class CachedAddressMappings;
-    map<string, CachedAddressMappings*>
-      uuid_to_address_mappings_cache;
+    map<string, CachedAddressMappings*> uuid_to_address_mappings_cache;
     yield::platform::Mutex uuid_to_address_mappings_cache_lock;
   };
 };

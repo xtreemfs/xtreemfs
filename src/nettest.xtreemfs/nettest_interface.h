@@ -1,5 +1,5 @@
-#ifndef _1624936007_H_
-#define _1624936007_H_
+#ifndef _604542875_H_
+#define _604542875_H_
 
 
 #include "yield/concurrency.h"
@@ -15,10 +15,7 @@ namespace org
       class NettestInterface
       {
       public:
-          const static uint32_t ONCRPC_PORT_DEFAULT = 32638;
-        const static uint32_t ONCRPCG_PORT_DEFAULT = 32638;
-        const static uint32_t ONCRPCS_PORT_DEFAULT = 32638;
-        const static uint32_t ONCRPCU_PORT_DEFAULT = 32638;const static uint32_t TAG = 2010031316;
+      const static uint32_t TAG = 2010031316;
 
         virtual ~NettestInterface() { }
 
@@ -41,15 +38,15 @@ namespace org
       virtual void recv_buffer( uint32_t size, ::yidl::runtime::Buffer* data );\
 
 
-      #ifndef ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
-      #if defined( ORG_XTREEMFS_INTERFACES_EXCEPTION_RESPONSE_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ORG_XTREEMFS_INTERFACES_EXCEPTION_RESPONSE_PARENT_CLASS
-      #elif defined( ORG_XTREEMFS_EXCEPTION_RESPONSE_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ORG_XTREEMFS_EXCEPTION_RESPONSE_PARENT_CLASS
-      #elif defined( ORG_EXCEPTION_RESPONSE_PARENT_CLASS )
-      #define ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ORG_EXCEPTION_RESPONSE_PARENT_CLASS
+      #ifndef ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_EXCEPTION_PARENT_CLASS
+      #if defined( ORG_XTREEMFS_INTERFACES_EXCEPTION_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_EXCEPTION_PARENT_CLASS ORG_XTREEMFS_INTERFACES_EXCEPTION_PARENT_CLASS
+      #elif defined( ORG_XTREEMFS_EXCEPTION_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_EXCEPTION_PARENT_CLASS ORG_XTREEMFS_EXCEPTION_PARENT_CLASS
+      #elif defined( ORG_EXCEPTION_PARENT_CLASS )
+      #define ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_EXCEPTION_PARENT_CLASS ORG_EXCEPTION_PARENT_CLASS
       #else
-      #define ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ::yield::concurrency::ExceptionResponse
+      #define ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_EXCEPTION_PARENT_CLASS ::yield::concurrency::Exception
       #endif
       #endif
       #ifndef ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_REQUEST_PARENT_CLASS
@@ -358,15 +355,14 @@ namespace org
           delete _interface;
         }
 
-        // yield::concurrency::EventHandler
-        virtual const char* get_name() const
+        // yidl::runtime::RTTIObject
+        virtual const char* get_type_name() const
         {
           return "NettestInterface";
         }
 
         // yield::concurrency::RequestHandler
-
-        virtual void handleRequest( ::yield::concurrency::Request& request )
+        virtual void handle( ::yield::concurrency::Request& request )
         {
           // Switch on the request types that this interface handles, unwrap the corresponding requests and delegate to _interface
           switch ( request.get_type_id() )
@@ -374,11 +370,11 @@ namespace org
             case 2010031317UL: handlenopRequest( static_cast<nopRequest&>( request ) ); return;
             case 2010031318UL: handlesend_bufferRequest( static_cast<send_bufferRequest&>( request ) ); return;
             case 2010031319UL: handlerecv_bufferRequest( static_cast<recv_bufferRequest&>( request ) ); return;
-            default: ::yield::concurrency::Request::dec_ref( request ); return;
           }
         }
 
       protected:
+
         virtual void handlenopRequest( nopRequest& __request )
         {
           if ( _interface != NULL )
@@ -387,21 +383,19 @@ namespace org
             {
               _interface->nop();
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          nopRequest::dec_ref( __request );
         }
 
         virtual void handlesend_bufferRequest( send_bufferRequest& __request )
@@ -412,21 +406,19 @@ namespace org
             {
               _interface->send_buffer( __request.get_data() );
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          send_bufferRequest::dec_ref( __request );
         }
 
         virtual void handlerecv_bufferRequest( recv_bufferRequest& __request )
@@ -441,54 +433,60 @@ namespace org
 
               __request.respond( data );
             }
-            catch( ::yield::concurrency::ExceptionResponse* exception_response )
+            catch( ::yield::concurrency::Exception* exception )
             {
-              __request.respond( *exception_response );
+              __request.respond( *exception );
             }
-            catch ( ::yield::concurrency::ExceptionResponse& exception_response )
+            catch ( ::yield::concurrency::Exception& exception )
             {
-              __request.respond( *exception_response.clone() );
+              __request.respond( exception.clone() );
             }
             catch ( ::yield::platform::Exception& exception )
             {
-              __request.respond( *( new ::yield::concurrency::ExceptionResponse( exception ) ) );
+              __request.respond( *( new ::yield::concurrency::Exception( exception ) ) );
             }
           }
-
-          recv_bufferRequest::dec_ref( __request );
         }
 
       private:
         NettestInterface* _interface;
       };
 
-      #define ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_EVENT_HANDLER_PROTOTYPES \
+      #define ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_REQUEST_HANDLER_PROTOTYPES \
       virtual void handlenopRequest( nopRequest& __request );\
       virtual void handlesend_bufferRequest( send_bufferRequest& __request );\
       virtual void handlerecv_bufferRequest( recv_bufferRequest& __request );
 
 
-      class NettestInterfaceRequestSender : public NettestInterface, private NettestInterfaceMessages
+      class NettestInterfaceProxy
+        : public NettestInterface,
+          private NettestInterfaceMessages
       {
       public:
-        NettestInterfaceRequestSender() // Used when the request_target is a subclass
-          : __request_target( NULL )
+        NettestInterfaceProxy( ::yield::concurrency::EventHandler& request_handler )
+          : __request_handler( request_handler )
         { }
 
-        NettestInterfaceRequestSender( ::yield::concurrency::EventTarget& request_target )
-          : __request_target( &request_target )
-        { }
+        ~NettestInterfaceProxy()
+        {
+          ::yield::concurrency::EventHandler::dec_ref( __request_handler );
+        }
 
+        ::yield::concurrency::EventHandler& get_request_handler() const
+        {
+          return __request_handler;
+        }
 
+        // NettestInterface
         virtual void nop()
         {
           nopRequest* __request = new nopRequest;
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<nopResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<nopResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<nopResponse> __response = __response_queue->dequeue();
         }
@@ -499,9 +497,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<send_bufferResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<send_bufferResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<send_bufferResponse> __response = __response_queue->dequeue();
         }
@@ -512,25 +510,19 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<recv_bufferResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<recv_bufferResponse> );
-          __request->set_response_target( &__response_queue.get() );
+          __request->set_response_handler( &__response_queue.get() );
 
-          __request_target->send( *__request );
+          __request_handler.handle( *__request );
 
           ::yidl::runtime::auto_Object<recv_bufferResponse> __response = __response_queue->dequeue();
           data = __response->get_data();
         }
 
-        void set_request_target( ::yield::concurrency::EventTarget& request_target )
-        {
-          this->__request_target = &request_target;
-        }
-
       private:
-        // __request_target is not a counted reference, since that would create
-        // a reference cycle when __request_target is a subclass of NettestInterfaceRequestSender
-        ::yield::concurrency::EventTarget* __request_target;
-      };
-    };
+        // __request_handler is not a counted reference, since that would create
+        // a reference cycle when __request_handler is a subclass of NettestInterfaceProxy
+        ::yield::concurrency::EventHandler& __request_handler;
+      };};
   };
 };
 #endif

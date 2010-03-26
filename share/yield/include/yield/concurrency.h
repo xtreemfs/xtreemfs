@@ -47,7 +47,7 @@ namespace yield
 {
   namespace concurrency
   {
-    class ExceptionResponse;
+    class Exception;
     class Request;
     class Response;
     class Stage;
@@ -58,9 +58,9 @@ namespace yield
     using yidl::runtime::MarshallableObjectFactory;
     using yidl::runtime::Marshaller;
     using yidl::runtime::Object;
+    using yidl::runtime::RTTIObject;
     using yidl::runtime::Unmarshaller;
 
-    using yield::platform::Exception;
     using yield::platform::Mutex;
     using yield::platform::NOPLock;
     using yield::platform::ProcessorSet;
@@ -80,76 +80,57 @@ namespace yield
     };
 
 
-    class EventTarget : public Object
-    {
-    public:
-      virtual ~EventTarget() { }
-
-      // send( Event& ) always steals a reference to the Event
-      virtual void send( Event& ) = 0;
-
-      // Object
-      EventTarget& inc_ref() { return Object::inc_ref( *this ); }
-
-    protected:
-      EventTarget() { }
-    };
-
-
-    class EventHandler : public EventTarget
+    class EventHandler : public RTTIObject
     {
     public:
       virtual ~EventHandler() { }
 
-      virtual const char* get_name() const = 0;
-      virtual void handleEvent( Event& ) = 0;
+      virtual void handle( Event& event ) = 0;
 
       // Object
       EventHandler& inc_ref() { return Object::inc_ref( *this ); }
 
-      // EventTarget
-      void send( Event& event )
-      {
-        // EventHandler = a pass-through EventTarget
-        // handleEvent must do its own locking if necessary!
-        handleEvent( event );
-      }
-
-    protected:
-      EventHandler() { }      
+      // RTTIObject
+      virtual uint32_t get_type_id() const { return 0; }
     };
 
 
-    class EventQueue : public EventTarget
+    class EventQueue : public EventHandler
     {
     public:
       virtual ~EventQueue() { }
 
       virtual Event* dequeue() = 0;
       virtual Event* dequeue( const Time& timeout ) = 0;
-      virtual bool enqueue( Event& ) = 0;      
+      virtual bool enqueue( Event& ) = 0;
       virtual Event* try_dequeue() = 0;
 
-      // EventTarget      
-      void send( Event& event ) { enqueue( event ); }
+      // RTTIObject
+      const char* get_type_name() const { return "EventQueue"; }
+
+      // EventHandler
+      void handle( Event& event ) { enqueue( event ); }
     };
 
 
-    class EventTargetMux : public EventTarget
+    class EventHandlerMux : public EventHandler
     {
     public:
-      EventTargetMux();
-      ~EventTargetMux();
+      EventHandlerMux();
+      ~EventHandlerMux();
 
-      void addEventTarget( EventTarget& event_target );
+      void add( EventHandler& event_handler );
 
-      // EventTarget
-      void send( Event& );
+      // RTTIObject
+      const char* get_type_name() const { return "EventHandlerMux"; }
+
+      // EventHandler
+      void handle( Event& event );
 
     private:
-      EventTarget** event_targets;
-      size_t event_targets_len;
-      size_t next_event_target_i;
+      EventHandler** event_handlers;
+      size_t event_handlers_len;
+      size_t next_event_handler_i;
     };
 
 
@@ -173,39 +154,12 @@ namespace yield
     public:
       virtual ~MessageFactory() { }
 
-      virtual ExceptionResponse* createExceptionResponse( uint32_t type_id )
-      {
-        return NULL;
-      }
-
-      virtual ExceptionResponse*
-      createExceptionResponse
-      ( 
-        const char* type_name
-      )
-      {
-        return NULL;
-      }
-
-      virtual Request* createRequest( uint32_t type_id )
-      {
-        return NULL;
-      }
-
-      virtual Request* createRequest( const char* type_name )
-      {
-        return NULL;
-      }
-
-      virtual Response* createResponse( uint32_t type_id )
-      {
-        return NULL;
-      }
-
-      virtual Response* createResponse( const char* type_name )
-      {
-        return NULL;
-      }
+      virtual Exception* createException( uint32_t ) { return NULL; }
+      virtual Exception* createException( const char* ) { return NULL; }
+      virtual Request* createRequest( uint32_t type_id ) { return NULL; }
+      virtual Request* createRequest( const char* type_name ) { return NULL; }
+      virtual Response* createResponse( uint32_t type_id ) { return NULL; }
+      virtual Response* createResponse( const char* type_name ) { return NULL; }
       
       // Object
       MessageFactory& inc_ref() { return Object::inc_ref( *this ); }
@@ -215,16 +169,10 @@ namespace yield
     class MessageHandler : public EventHandler
     {
     public:
-      virtual void handleMessage( Message& message ) = 0;
+      virtual void handle( Message& message ) = 0;
 
       // EventHandler
-      virtual void handleEvent( Event& event )
-      {
-        if ( event.is_message() )
-          handleMessage( static_cast<Message&>( event ) );
-        else
-          Event::dec_ref( event );
-      }
+      virtual void handle( Event& event );
     };
 
 
@@ -519,9 +467,9 @@ namespace yield
       Request();
       virtual ~Request();
 
-      EventTarget* get_response_target() const;
+      EventHandler* get_response_handler() const;
       virtual void respond( Response& response );
-      void set_response_target( EventTarget* response_target );
+      void set_response_handler( EventHandler* response_handler );
 
       // Object
       Request& inc_ref() { return Object::inc_ref( *this ); }
@@ -530,33 +478,27 @@ namespace yield
       bool is_request() const { return true; }
 
     private:
-      EventTarget* response_target;
+      EventHandler* response_handler;
     };
 
 
     class RequestHandler : public MessageHandler
     {
     public:
-      virtual void handleRequest( Request& request ) = 0;
+      virtual void handle( Request& request ) = 0;
 
       // MessageHandler
-      virtual void handleMessage( Message& message )
-      {
-        if ( message.is_request() )
-          handleRequest( static_cast<Request&>( message ) );
-        else
-          Message::dec_ref( message );
-      }
+      virtual void handle( Message& message );
     };
 
-
+    
     class Response : public Message
     {
     public:
       Response() { }
       virtual ~Response() { }
 
-      virtual bool is_exception_response() const { return false; }
+      virtual bool is_exception() const { return false; }
 
       // Object
       Response& inc_ref() { return Object::inc_ref( *this ); }
@@ -566,62 +508,65 @@ namespace yield
     };
 
 
-    class ExceptionResponse : public Response, public Exception
+    class Exception : public Response, public yield::platform::Exception
     {
     public:
-      ExceptionResponse()
+      Exception()
       { }
 
-      ExceptionResponse( uint32_t error_code )
-        : Exception( error_code )
+      Exception( uint32_t error_code )
+        : yield::platform::Exception( error_code )
       { }
 
-      ExceptionResponse( const char* error_message )
-        : Exception( error_message )
+      Exception( const char* error_message )
+        : yield::platform::Exception( error_message )
       { }
 
-      ExceptionResponse( const string& error_message )
-        : Exception( error_message )
+      Exception( const string& error_message )
+        : yield::platform::Exception( error_message )
       { }
 
-      ExceptionResponse( uint32_t error_code, const char* error_message )
-        : Exception( error_code, error_message )
+      Exception( uint32_t error_code, const char* error_message )
+        : yield::platform::Exception( error_code, error_message )
       { }
 
-      ExceptionResponse( uint32_t error_code, const string& error_message )
-        : Exception( error_code, error_message )
+      Exception( uint32_t error_code, const string& error_message )
+        : yield::platform::Exception( error_code, error_message )
       { }
 
-      ExceptionResponse( const Exception& other )
-        : Exception( other )
+      Exception( const Exception& other )
+        : yield::platform::Exception( other )
       { }
 
-      virtual ~ExceptionResponse() throw()
+      virtual ~Exception() throw() 
       { }
 
-      virtual ExceptionResponse* clone() const
-      {
-        return new ExceptionResponse( *this );
-      }
-
-      virtual void throwStackClone() const
-      {
-        throw ExceptionResponse( *this );
-      }
+      virtual Exception& clone() const { return *new Exception( *this ); }
+      virtual void throwStackClone() const { throw Exception( *this ); }
 
       // Object
-      ExceptionResponse& inc_ref() { return Object::inc_ref( *this ); }
+      Exception& inc_ref() { return Object::inc_ref( *this ); }
 
       // RTTIObject
       virtual uint32_t get_type_id() const { return 0; }
-      virtual const char* get_type_name() const { return "ExceptionResponse"; }
+      virtual const char* get_type_name() const { return "Exception"; }
 
       // MarshallableObject
       virtual void marshal( Marshaller& ) const { }
       virtual void unmarshal( Unmarshaller& ) { }
 
       // Response
-      bool is_exception_response() const { return true; }
+      bool is_exception() const { return true; }
+    };
+
+
+    class ResponseHandler : public MessageHandler
+    {
+    public:
+      virtual void handle( Response& response ) = 0;
+
+      // MessageHandler
+      void handle( Message& message );
     };
 
 
@@ -766,31 +711,9 @@ namespace yield
     };
 
 
-    class ResponseTarget : public EventTarget
-    {
-    public:
-      virtual void send( Response& response ) = 0;
-
-      // EventTarget
-      void send( Event& event ) 
-      {
-        if ( event.is_message() )
-        {
-          if ( !static_cast<Message&>( event ).is_request() )
-          {
-            send( static_cast<Response&>( event ) );
-            return;
-          }
-        }
-
-        Event::dec_ref( event );
-      }
-    };
-
-
     template <class ResponseType>
     class ResponseQueue
-      : public ResponseTarget,
+      : public ResponseHandler,
         private SynchronizedSTLQueue<Response*>
     {
     public:
@@ -800,17 +723,17 @@ namespace yield
 
         if ( response->get_type_id() == ResponseType::TYPE_ID )
           return static_cast<ResponseType&>( *response );
-        else if ( response->is_exception_response() )
+        else if ( response->is_exception() )
         {
           try
           {
-            static_cast<ExceptionResponse*>( response )->throwStackClone();
+            static_cast<Exception*>( response )->throwStackClone();
             // Eliminate compiler warnings about control paths
             return static_cast<ResponseType&>( *response );
           }
-          catch ( ExceptionResponse& )
+          catch ( Exception& )
           {
-            Event::dec_ref( *response );
+            Response::dec_ref( *response );
             throw;
           }
         }
@@ -827,17 +750,17 @@ namespace yield
         {
           if ( response->get_type_id() == ResponseType::TYPE_ID )
             return static_cast<ResponseType&>( *response );
-          else if ( response->is_exception_response() )
+          else if ( response->is_exception() )
           {
             try
             {
-              static_cast<ExceptionResponse*>( response )->throwStackClone();
+              static_cast<Exception*>( response )->throwStackClone();
               // Eliminate compiler warnings about control paths
               return static_cast<ResponseType&>( *response );
             }
-            catch ( ExceptionResponse& )
+            catch ( Exception& )
             {
-              Event::dec_ref( *response );
+              Response::dec_ref( *response );
               throw;
             }
           }
@@ -848,8 +771,11 @@ namespace yield
           throw Exception( "ResponseQueue::dequeue: timed out" );
       }
 
-      // ResponseTarget
-      void send( Response& response )
+      // RTTIObject
+      virtual const char* get_type_name() const { return "ResponseQueue"; }
+
+      // ResponseHandler
+      void handle( Response& response )
       {
         SynchronizedSTLQueue<Response*>::enqueue( &response );
       }
@@ -986,7 +912,7 @@ namespace yield
     };
 
 
-    class Stage : public EventTarget
+    class Stage : public EventHandler
     {
     public:
       class StartupEvent : public Event
@@ -1033,7 +959,6 @@ namespace yield
       double get_rho() const { return rho; }
       double get_service_rate_s() const { return service_rate_s; }
       uint8_t get_stage_id() const { return id; }
-      const char* get_name() const { return name; }
       virtual EventHandler& get_event_handler() = 0;
       virtual bool visit() = 0;
       virtual bool visit( const Time& timeout ) = 0;
@@ -1043,7 +968,7 @@ namespace yield
       Stage& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
-      Stage( const char* name );      
+      Stage();
 
       Sampler<uint64_t, 1024, Mutex> event_processing_time_sampler;
       uint32_t event_queue_length, event_queue_arrival_count;
@@ -1055,7 +980,6 @@ namespace yield
     private:
       class StatisticsTimer;
 
-      const char* name;
       uint8_t id;
       double arrival_rate_s, rho, service_rate_s;
 
@@ -1073,8 +997,7 @@ namespace yield
         EventHandlerType& event_handler,
         EventQueueType& event_queue
       )
-        : Stage( event_handler.get_name() ),
-          event_handler( event_handler ),
+        : event_handler( event_handler ),
           event_queue( event_queue )
       { }
       
@@ -1084,28 +1007,11 @@ namespace yield
         EventQueueType::dec_ref( event_queue );
       }
 
-      // EventTarget
-      void send( Event& event )
+      const char* get_type_name() const { return "StageImpl"; }
+
+      // EventHandler
+      void handle( Event& event )
       {
-      /*
-        Stage* running_stage = static_cast<Stage*>
-          ( Thread::getTLS( running_stage_tls_key ) );
-        if ( running_stage != NULL )
-        {
-          running_stage->send_counters_lock.acquire();
-          map<const char*, uint64_t>::iterator send_counter_i
-            = running_stage->send_counters.find( this->get_name() );
-          if ( send_counter_i != running_stage->send_counters.end() )
-            send_counter_i->second++;
-          else
-            running_stage->send_counters.insert
-              ( make_pair( this->get_name(), 1 ) );
-          running_stage->send_counters_lock.release();
-        }
-        */
-
-        // event.set_next_stage( this );
-
         ++event_queue_length;
         ++event_queue_arrival_count;
 
@@ -1113,15 +1019,10 @@ namespace yield
           return;
         else
         {
-          cerr << get_name() << ": event queue full, stopping.";
+          cerr << event_handler.get_type_name() << 
+            ": event queue full, stopping.";
           DebugBreak();
         }
-      }
-
-      // Stage
-      const char* get_name() const
-      {
-        return event_handler.get_name();
       }
 
       EventHandler& get_event_handler() { return event_handler; }
@@ -1133,7 +1034,7 @@ namespace yield
         Event* event = event_queue.dequeue();
 
         --event_queue_length;
-        handleEvent( *event );
+        _handle( *event );
 
         for ( ;; )
         {
@@ -1141,7 +1042,7 @@ namespace yield
           if ( event != NULL )
           {
             --event_queue_length;
-            handleEvent( *event );
+            handle( *event );
           }
           else
             break;
@@ -1160,7 +1061,7 @@ namespace yield
           if ( event != NULL )
           {
             --event_queue_length;
-            handleEvent( *event );
+            _handle( *event );
 
             for ( ;; )
             {
@@ -1168,7 +1069,7 @@ namespace yield
               if ( event != NULL )
               {
                 --event_queue_length;
-                handleEvent( *event );
+                _handle( *event );
               }
               else
                 break;
@@ -1192,7 +1093,7 @@ namespace yield
       {
         --event_queue_length;
         lock.acquire();
-        handleEvent( event );
+        _handle( event );
         lock.release();
       }
 
@@ -1202,7 +1103,7 @@ namespace yield
 
       LockType lock;
 
-      void handleEvent( Event& event )
+      void _handle( Event& event )
       {
         Time start_time;
 
@@ -1210,7 +1111,7 @@ namespace yield
         performance_counters->startCounting();
   #endif
 
-        event_handler.handleEvent( event );
+        event_handler.handle( event );
 
   #ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
         uint64_t performance_counter_counts[2];
@@ -1360,7 +1261,7 @@ namespace yield
         }
 
         // TODO: check flags before sending this
-        //event_handler->handleEvent( *new Stage::StartupEvent( stage ) );
+        //event_handler->handle( *new Stage::StartupEvent( stage ) );
 
         this->addStage( stage );
 
@@ -1454,7 +1355,7 @@ namespace yield
         }
 
         // TODO: check flags before sending this
-        //event_handler->handleEvent( *new Stage::StartupEvent( stage ) );
+        //event_handler->handle( *new Stage::StartupEvent( stage ) );
 
         this->addStage( stage );
 
@@ -1661,7 +1562,7 @@ namespace yield
         }
 
         // TODO: check flags before sending this
-        //event_handler->handleEvent( *new Stage::StartupEvent( stage ) );
+        //event_handler->handle( *new Stage::StartupEvent( stage ) );
 
         this->addStage( stage );
 

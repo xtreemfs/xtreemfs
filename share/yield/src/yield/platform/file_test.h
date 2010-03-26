@@ -335,7 +335,7 @@ namespace yield
           0
         )
       )
-        throw yield::platform::Exception();
+        throw Exception();
 
       if ( !get_file().sync() )
         throw Exception();

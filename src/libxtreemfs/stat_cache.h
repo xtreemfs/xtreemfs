@@ -30,20 +30,29 @@
 #ifndef _LIBXTREEMFS_STAT_CACHE_H_
 #define _LIBXTREEMFS_STAT_CACHE_H_
 
-#include <map>
-using std::map;
+#include "yield.h"
 
-#include "stat.h"
-
-#include "xtreemfs/mrc_proxy.h"
-#include "xtreemfs/user_credentials_cache.h"
+namespace org
+{
+  namespace xtreemfs
+  {
+    namespace interfaces
+    {
+      class XCap;
+    };
+  };
+};
 
 
 namespace xtreemfs
 {
+  class MRCProxy;
+  class Stat;
+  class UserCredentialsCache;
   using org::xtreemfs::interfaces::XCap;
   using yield::platform::Path;
-
+  using yield::platform::Time;
+  
 
   class StatCache
   {

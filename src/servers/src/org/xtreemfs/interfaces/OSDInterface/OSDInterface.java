@@ -13,10 +13,7 @@ import yidl.runtime.PrettyPrinter;
 public class OSDInterface
 {
     public static final int HTTP_PORT_DEFAULT = 30640;
-    public static final int ONCRPC_PORT_DEFAULT = 32640;
-    public static final int ONCRPCG_PORT_DEFAULT = 32640;
-    public static final int ONCRPCS_PORT_DEFAULT = 32640;
-    public static final int ONCRPCU_PORT_DEFAULT = 32640;
+    public static final int ONC_RPC_PORT_DEFAULT = 32640;
 
     public static long getProg() { return 2546902128l; }
     public static int getVersion() { return 2010031216; }

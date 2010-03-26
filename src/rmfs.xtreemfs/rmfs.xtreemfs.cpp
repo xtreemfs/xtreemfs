@@ -72,7 +72,7 @@ int main( int argc, char** argv )
     auto_Object<DIRProxy> dir_proxy = DIRProxy::create( options );
     URI mrc_uri = dir_proxy->getVolumeURIFromVolumeName( volume_name );
     auto_Object<MRCProxy> mrc_proxy 
-      = MRCProxy::create( mrc_uri, options, mrc_password );
+      = MRCProxy::create( mrc_uri, options, mrc_password.c_str() );
     mrc_proxy->xtreemfs_rmvol( volume_name );
 
     return 0;

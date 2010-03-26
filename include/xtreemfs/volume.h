@@ -44,8 +44,9 @@ namespace xtreemfs
   class StatCache;
   using org::xtreemfs::interfaces::VivaldiCoordinates;
   using org::xtreemfs::interfaces::XCap;
+
   using yield::concurrency::StageGroup;
-  using yield::platform::Exception;
+  using yield::platform::Path;
 
 
   class Volume : public yield::platform::Volume
@@ -79,7 +80,9 @@ namespace xtreemfs
       const std::string& name_utf8,
       Log* error_log = NULL,
       uint32_t flags = FLAGS_DEFAULT,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
       SSLContext* proxy_ssl_context = NULL,
+#endif
       Log* trace_log = NULL,
       const Path& vivaldi_coordinates_file_path = Path()
     );

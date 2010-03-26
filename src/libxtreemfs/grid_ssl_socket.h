@@ -27,16 +27,17 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#ifndef _XTREEMFS_GRID_SSL_SOCKET_H_
-#define _XTREEMFS_GRID_SSL_SOCKET_H_
+#ifndef _LIBXTREEMFS_GRID_SSL_SOCKET_H_
+#define _LIBXTREEMFS_GRID_SSL_SOCKET_H_
 
 #include "yield.h"
 
 
 namespace xtreemfs
 {
-  using yield::ipc::SSLContext;
-  using yield::ipc::SSLSocket;
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+  using yield::platform::SSLContext;
+  using yield::platform::SSLSocket;
 
 
   class GridSSLSocket : public SSLSocket
@@ -62,29 +63,7 @@ namespace xtreemfs
     bool did_handshake;
     bool check_handshake();
   };
-
-
-  class GridSSLSocketFactory : public yield::ipc::TCPSocketFactory
-  {
-  public:
-    GridSSLSocketFactory( SSLContext& ssl_context )
-      : ssl_context( ssl_context.inc_ref() )
-    { }
-
-    ~GridSSLSocketFactory()
-    {
-      SSLContext::dec_ref( ssl_context );
-    }
-
-    // TCPSocketFactory
-    yield::platform::TCPSocket* createSocket()
-    {
-      return GridSSLSocket::create( ssl_context );
-    }
-
-  private:
-    SSLContext& ssl_context;
-  };
+#endif
 };
 
 #endif

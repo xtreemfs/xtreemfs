@@ -80,6 +80,10 @@ using std::wstring;
 //#endif
 #endif
 
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+#include <openssl/ssl.h>
+#endif
+
 #include <exception> // for std::exception
 
 #include <fcntl.h> // For O_RDONLY, O_RDWR
@@ -477,20 +481,6 @@ namespace yield
     {
     public:
       virtual ~IOStream() { }
-
-    protected:
-      // Helper methods
-      static bool close( fd_t fd );
-#ifdef _WIN32
-      static bool close( socket_t socket_ );
-#endif
-
-      // Helper methods
-#ifdef _WIN32
-      static bool set_blocking_mode( bool blocking, socket_t socket_ );
-#else
-      static bool set_blocking_mode( bool blocking, fd_t fd );
-#endif
     };
 
 
@@ -632,6 +622,7 @@ namespace yield
       virtual ~File() { close(); }
 
       YIELD_PLATFORM_FILE_PROTOTYPES;
+      static bool close( fd_t fd );
       virtual size_t getpagesize();
       inline operator fd_t() const { return fd; }
       virtual bool seek( uint64_t offset ); // SEEK_SET
@@ -1563,8 +1554,8 @@ namespace yield
       virtual bool associate( IOQueue& io_queue );
       virtual bool bind( const SocketAddress& to_sockaddr );
       virtual bool close();
+      static bool close( socket_t );
       virtual bool connect( const SocketAddress& peername );
-      static Socket* create( int type, int protocol );
       static Socket* create( int domain, int type, int protocol );
       virtual bool get_blocking_mode() const;
       int get_domain() const { return domain; }
@@ -1574,42 +1565,18 @@ namespace yield
       int get_protocol() const { return protocol; }
       SocketAddress* getsockname() const;
       int get_type() const { return type; }
-      bool is_closed() const;
-      inline bool is_connected() const { return connected; }
-      virtual bool listen();
       bool operator==( const Socket& other ) const;
       inline operator socket_t() const { return socket_; }
       bool recreate();
       bool recreate( int domain );
-
       ssize_t recv( Buffer& buffer, int flags = 0 );
-
-      // The real recv method, can be overridden by subclasses
       virtual ssize_t recv( void* buf, size_t buflen, int flags = 0 );
-
-      ssize_t send( const Buffer& buffer, int flags = 0 )
-      {
-        return send( buffer, buffer.size(), flags );
-      }
-
-      // The real send method, can be overridden by subclasses
+      ssize_t send( const Buffer& buffer, int flags = 0 );
       virtual ssize_t send( const void* buf, size_t len, int flags = 0 );
-
-      ssize_t sendmsg( Buffers& buffers, int flags = 0 )
-      {
-        return sendmsg( buffers, buffers.size(), flags );
-      }
-
-      // The real sendmsg method, can be overridden by subclasses
-      virtual ssize_t
-      sendmsg
-      ( 
-        const struct iovec* iov,
-        uint32_t iovlen,
-        int flags = 0
-      );
-
+      ssize_t sendmsg( Buffers& buffers, int flags = 0 );
+      virtual ssize_t sendmsg( const struct iovec*, uint32_t, int flags = 0 );
       virtual bool set_blocking_mode( bool blocking );
+      static bool set_blocking_mode( bool blocking, socket_t );
       virtual bool setsockopt( Option option, bool onoff );
       virtual bool shutdown( bool shut_rd = true, bool shut_wr = true );
       virtual bool want_recv() const;
@@ -1619,69 +1586,17 @@ namespace yield
       Socket& inc_ref() { return Object::inc_ref( *this ); }
 
       // IStream
-      void
-      aio_read
-      ( 
-        Buffer& buffer, // Steals this reference
-        AIOReadCallback& callback,
-        void* callback_context = NULL
-      )
-      {
-        aio_recv( buffer, 0, callback, callback_context );
-      }
-
-      ssize_t read( Buffer& buffer )
-      {
-        return IStream::read( buffer );
-      }
-
-      ssize_t read( void* buf, size_t buflen )
-      {
-        return recv( buf, buflen, 0 );
-      }
+      void aio_read( Buffer&, AIOReadCallback&, void* = NULL );
+      ssize_t read( Buffer& buffer );
+      ssize_t read( void* buf, size_t buflen );
 
       // OStream
-      void
-      aio_write
-      ( 
-        Buffer& buffer, // Steals this reference
-        AIOWriteCallback& callback,
-        void* callback_context = NULL
-      )
-      {
-        aio_send( buffer, 0, callback, callback_context );
-      }
-
-      void 
-      aio_writev
-      ( 
-        Buffers& buffers, // Steals this reference
-        AIOWriteCallback& callback,
-        void* callback_context = NULL
-      )
-      {
-        aio_sendmsg( buffers, 0, callback, callback_context );
-      }
-
-      ssize_t write( const Buffer& buffer )
-      {
-        return OStream::write( buffer );
-      }
-
-      ssize_t write( const void* buf, size_t buflen )
-      {
-        return send( buf, buflen, 0 );
-      }
-
-      ssize_t writev( Buffers& buffers )
-      {
-        return OStream::writev( buffers );
-      }
-
-      ssize_t writev( const struct iovec* iov, uint32_t iovlen )
-      {
-        return sendmsg( iov, iovlen, 0 );
-      }
+      void aio_write( Buffer&, AIOWriteCallback&, void* = NULL );
+      void aio_writev( Buffers&, AIOWriteCallback&, void* = NULL );
+      ssize_t write( const Buffer& buffer );
+      ssize_t write( const void* buf, size_t buflen );
+      ssize_t writev( Buffers& buffers );
+      ssize_t writev( const struct iovec* iov, uint32_t iovlen );
 
     protected:
       static socket_t create( int* domain, int type, int protocol );
@@ -1815,15 +1730,13 @@ namespace yield
       int domain, type, protocol;
       socket_t socket_;
 
-      bool blocking_mode, connected;
+      bool blocking_mode;
       IOQueue* io_queue;
 
     private:
-      class BIOConnectCB;
       class BIORecvCB;
       class BIOSendCB;
       class BIOSendMsgCB;
-      class NBIOConnectCB;
       class NBIORecvCB;
       class NBIOSendCB;
       class NBIOSendMsgCB;
@@ -1833,11 +1746,12 @@ namespace yield
     class SocketAddress : public Object // immutable
     {
     public:
+      SocketAddress(); // INADDR_ANY
+      SocketAddress( uint16_t port ); // INADDR_ANY, port
       SocketAddress( struct addrinfo& ); // Takes ownership
       SocketAddress( const struct sockaddr_storage& ); // Copies
       ~SocketAddress();
 
-      static SocketAddress* create(); // INADDR_ANY
       static SocketAddress* create( const char* hostname );
       static SocketAddress* create( const char* hostname, uint16_t port );
 
@@ -1919,6 +1833,202 @@ namespace yield
     };
 
 
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+    class SSLContext : public Object
+    {
+    public:
+      ~SSLContext();
+
+      static SSLContext&
+      create
+      (
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method = SSLv23_client_method()
+      );
+
+      static SSLContext&
+      create
+      (
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method,
+        const Path& pem_certificate_file_path,
+        const Path& pem_private_key_file_path,
+        const string& pem_private_key_passphrase
+      );
+
+      static SSLContext&
+      create
+      (
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method,
+        const string& pem_certificate_str,
+        const string& pem_private_key_str,
+        const string& pem_private_key_passphrase
+      );
+
+      static SSLContext&
+      create
+      (
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method,
+        const Path& pkcs12_file_path,
+        const string& pkcs12_passphrase
+      );
+
+      operator SSL_CTX*() const { return ctx; }
+
+      // Object
+      SSLContext& inc_ref() { return Object::inc_ref( *this ); }
+
+  private:
+      SSLContext( SSL_CTX* ctx );
+
+      static SSL_CTX* createSSL_CTX
+      (
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method
+      );
+
+      SSL_CTX* ctx;
+    };
+#endif
+
+
+    class StreamSocket : public Socket
+    {
+    public:
+      static int TYPE; // SOCK_STREAM
+
+    public:
+      StreamSocket* accept();
+
+      class AIOAcceptCallback
+      {
+      public:
+        // accepted_stream_socket is not a new reference; 
+        // callees should inc_ref() their own references as necessary
+        virtual void 
+        onAcceptCompletion
+        ( 
+          StreamSocket& accepted_stream_socket,
+          void* context,
+          Buffer* recv_buffer
+        ) = 0;
+
+        virtual void onAcceptError( uint32_t error_code, void* context ) = 0;
+      };
+
+      virtual void 
+      aio_accept
+      ( 
+        AIOAcceptCallback& callback,
+        void* callback_context = NULL,
+        Buffer* recv_buffer = NULL // Steals this reference
+        // recv_buffer must be at least 88 bytes long if it's not NULL
+        // ( sizeof( sockaddr_in6 ) + 16 ) * 2 = 88 to store the 
+        // peername on Win32 (position() will be set at 89 on the callback).
+      );
+
+      class AIOConnectCallback
+      {
+      public:
+        virtual void
+        onConnectCompletion
+        ( 
+          size_t bytes_sent, 
+          void* context
+        ) = 0;
+
+        virtual void onConnectError( uint32_t error_code, void* context ) = 0;
+      };
+
+      virtual void 
+      aio_connect
+      ( 
+        SocketAddress& peername,
+        AIOConnectCallback& callback,
+        void* callback_context = NULL,
+        Buffer* send_buffer = NULL // Steals this reference
+      );
+
+      static StreamSocket* create( int domain, int protocol );
+
+      virtual StreamSocket* dup();
+      virtual bool listen();
+      virtual bool want_accept() const;
+      virtual bool want_connect() const;
+
+      // Object
+      StreamSocket& inc_ref() { return Object::inc_ref( *this ); }
+
+      // Socket
+      virtual void
+      aio_recv
+      ( 
+        Buffer& buffer, // Steals this reference
+        int flags,
+        AIORecvCallback& callback,
+        void* callback_context = NULL
+      );
+
+      virtual void 
+      aio_send
+      (
+        Buffer& buffer, // Steals this reference
+        int flags,
+        AIOSendCallback& callback,
+        void* callback_context = NULL
+      );
+
+      virtual void
+      aio_sendmsg
+      (
+        Buffers& buffers, // Steals this reference
+        int flags,
+        AIOSendCallback& callback,
+        void* callback_context = NULL
+      );
+
+      virtual bool associate( IOQueue& io_queue );
+
+    protected:
+      StreamSocket( int domain, int protocol, socket_t socket_ );
+
+      virtual StreamSocket* dup2( socket_t ); // Called by accept
+      StreamSocket* dup2( StreamSocket* ); // Called by dup2 in subclasses
+
+    private:
+#ifdef _WIN32
+      static void *lpfnAcceptEx, *lpfnConnectEx;
+#endif
+
+    private:
+      class BIOAcceptCB;
+      class BIOConnectCB;
+      class IOAcceptCB;
+      class IOConnectCB;
+      class NBIOAcceptCB;
+      class NBIOConnectCB;
+#ifdef _WIN32
+      class Win32AIOAcceptCB;
+      class Win32AIOConnectCB;
+      class Win32AIORecvCB;
+      class Win32AIOSendCB;
+      class Win32AIOSendMsgCB;
+#endif
+    };
+
+
     class Time
     {
     public:
@@ -1958,7 +2068,7 @@ namespace yield
       SYSTEMTIME as_utc_SYSTEMTIME() const;
 #else
       struct tm as_local_struct_tm() const;
-      struct tm as_utc_struct_time() const;
+      struct tm as_utc_struct_tm() const;
 #endif
 
       inline double as_unix_time_ms() const
@@ -2046,189 +2156,72 @@ namespace yield
     }
 
 
-    class TCPSocket : public Socket
+    class TCPSocket : public StreamSocket
     {
     public:
-      const static int OPTION_TCP_NODELAY = 4;
+      static int DOMAIN_DEFAULT; // AF_INET6
+      const static Option OPTION_TCP_NODELAY = 4;
       static int PROTOCOL; // IPPROTO_TCP
-      static int TYPE; // SOCK_STREAM
 
     public:
       virtual ~TCPSocket() { }
 
-      virtual TCPSocket* accept();
-
-      class AIOAcceptCallback
-      {
-      public:
-        // accepted_tcp_socket is not a new reference; 
-        // callees should inc_ref() their own references as necessary
-        virtual void 
-        onAcceptCompletion
-        ( 
-          TCPSocket& accepted_tcp_socket,
-          void* context,
-          Buffer* recv_buffer
-        ) = 0;
-
-        virtual void onAcceptError( uint32_t error_code, void* context ) = 0;
-      };
-
-      virtual void 
-      aio_accept
-      ( 
-        AIOAcceptCallback& callback,
-        void* callback_context = NULL,
-        Buffer* recv_buffer = NULL // Steals this reference
-        // recv_buffer must be at least 88 bytes long if it's not NULL
-        // ( sizeof( sockaddr_in6 ) + 16 ) * 2 = 88 to store the 
-        // peername on Win32 (position() will be set at 89 on the callback).
-      );
-
-      class AIOConnectCallback
-      {
-      public:
-        virtual void
-        onConnectCompletion
-        ( 
-          size_t bytes_sent, 
-          void* context
-        ) = 0;
-
-        virtual void onConnectError( uint32_t error_code, void* context ) = 0;
-      };
-
-      virtual void 
-      aio_connect
-      ( 
-        SocketAddress& peername,
-        AIOConnectCallback& callback,
-        void* callback_context = NULL,
-        Buffer* send_buffer = NULL // Steals this reference
-      );
-
-      static TCPSocket* create(); // AF_INET6
-      static TCPSocket* create( int domain );
+      static TCPSocket* create( int domain = DOMAIN_DEFAULT );
 
       // Object
       TCPSocket& inc_ref() { return Object::inc_ref( *this ); }
 
       // Socket
-      virtual void
-      aio_recv
-      ( 
-        Buffer& buffer, // Steals this reference
-        int flags,
-        AIORecvCallback& callback,
-        void* callback_context = NULL
-      );
-
-      virtual void 
-      aio_send
-      (
-        Buffer& buffer, // Steals this reference
-        int flags,
-        AIOSendCallback& callback,
-        void* callback_context = NULL
-      );
-
-      virtual void
-      aio_sendmsg
-      (
-        Buffers& buffers, // Steals this reference
-        int flags,
-        AIOSendCallback& callback,
-        void* callback_context = NULL
-      );
-
-      virtual bool associate( IOQueue& io_queue );
       virtual bool setsockopt( Option option, bool onoff );
-      virtual bool want_accept() const;
-      virtual bool want_connect() const;
+
+      // StreamSocket
+      virtual StreamSocket* dup();
 
     protected:
-      TCPSocket( int domain, socket_t );      
+      TCPSocket( int domain, socket_t );
 
-      // _accept -> socket method used by subclasses (e.g. SSLSocket)
-      socket_t _accept();
-      static socket_t create( int* domain );
-
-    protected:
-      class IOAcceptCB : public IOCB<AIOAcceptCallback>
-      {
-      protected:
-        IOAcceptCB
-        ( 
-          AIOAcceptCallback& callback,
-          void* callback_context,
-          TCPSocket& listen_tcp_socket,
-          Buffer* recv_buffer
-        );
-
-        virtual ~IOAcceptCB();
-
-        TCPSocket* execute( bool blocking_mode );
-        TCPSocket& get_listen_tcp_socket() const { return listen_tcp_socket; }
-        Buffer* get_recv_buffer() const { return recv_buffer; }
-
-        void onAcceptCompletion( TCPSocket& accepted_tcp_socket );
-        void onAcceptError();
-        void onAcceptError( uint32_t error_code );
-
-      private:
-        TCPSocket& listen_tcp_socket;
-        Buffer* recv_buffer;
-      };
-
-
-      class IOConnectCB : public IOCB<AIOConnectCallback>
-      {
-      protected:
-        IOConnectCB
-        ( 
-          AIOConnectCallback& callback, 
-          void* callback_context,
-          SocketAddress& peername, 
-          Buffer* send_buffer,
-          TCPSocket& tcp_socket
-        );
-
-        virtual ~IOConnectCB();
-
-        bool execute( bool blocking_mode );
-        const SocketAddress& get_peername() const { return peername; }
-        Buffer* get_send_buffer() const { return send_buffer; }
-        TCPSocket& get_tcp_socket() const { return tcp_socket; }
-
-        void onConnectCompletion();
-        void onConnectError();
-        void onConnectError( uint32_t error_code );
-
-      private:
-        size_t partial_send_len;
-        SocketAddress& peername;
-        Buffer* send_buffer;
-        TCPSocket& tcp_socket;
-      };
-
-    private:
-#ifdef _WIN32
-      static void *lpfnAcceptEx, *lpfnConnectEx;
-#endif
-
-    private:
-      class BIOAcceptCB;
-      class BIOConnectCB;
-      class NBIOAcceptCB;
-      class NBIOConnectCB;
-#ifdef _WIN32
-      class Win32AIOAcceptCB;
-      class Win32AIOConnectCB;
-      class Win32AIORecvCB;
-      class Win32AIOSendCB;
-      class Win32AIOSendMsgCB;
-#endif
+      // StreamSocket
+      virtual StreamSocket* dup2( socket_t );
     };
+
+
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+    class SSLSocket : public TCPSocket
+    {
+    public:
+      virtual ~SSLSocket();
+
+      static SSLSocket* create( SSLContext& ); // Steals this ref
+      static SSLSocket* create( int domain, SSLContext& ); // Steals this ref
+
+      operator SSL*() const { return ssl; }
+
+      // Socket
+      // Will only associate with BIO or NBIO queues
+      virtual bool associate( IOQueue& io_queue );
+      virtual bool connect( const SocketAddress& peername );
+      virtual ssize_t recv( void* buf, size_t buflen, int );
+      virtual ssize_t send( const void* buf, size_t buflen, int );
+      virtual ssize_t sendmsg( const struct iovec* iov, uint32_t iovlen, int );
+      virtual bool want_send() const;
+      virtual bool want_recv() const;
+      
+      // StreamSocket
+      virtual StreamSocket* dup();
+      virtual bool listen(); 
+      virtual bool shutdown();
+
+    protected:
+      SSLSocket( int domain, socket_t, SSL*, SSLContext& );
+
+      // StreamSocket
+      virtual StreamSocket* dup2( socket_t );
+
+    private:
+      SSL* ssl;
+      SSLContext& ssl_context;
+    };
+#endif
 
 
     class Thread : public Object
@@ -2336,6 +2329,7 @@ namespace yield
     class UDPSocket : public Socket
     {
     public:
+      static int DOMAIN_DEFAULT; // AF_INET6
       static int PROTOCOL; // IPPROTO_UDP
       static int TYPE; // SOCK_DGRAM
 
@@ -2383,7 +2377,7 @@ namespace yield
         void* callback_context = NULL
       );
 
-      static UDPSocket* create();
+      static UDPSocket* create( int domain = DOMAIN_DEFAULT );
 
       ssize_t
       recvfrom
@@ -2496,6 +2490,29 @@ namespace yield
       class NBIORecvFromCB;
 #ifdef _WIN32
       class Win32AIORecvFromCB;
+#endif
+    };
+
+
+    class UUID : public Object
+    {
+    public:
+      UUID();
+      UUID( const string& uuid_from_string );
+      ~UUID();
+
+      bool operator==( const UUID& ) const;
+      operator string() const;
+
+    private:
+#if defined(_WIN32)
+      void* win32_uuid;
+#elif defined(YIELD_PLATFORM_HAVE_LINUX_LIBUUID)
+      void* linux_libuuid_uuid;
+#elif defined(__sun)
+      void* sun_uuid;
+#else
+      char generic_uuid[256];
 #endif
     };
 

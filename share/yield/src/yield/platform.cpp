@@ -350,8 +350,8 @@ void Exception::set_error_message( const char* error_message )
 #include <ws2tcpip.h>
 #pragma warning( pop )
 #pragma warning( push )
-#define INVALID_SOCKET  (SOCKET)(~0)
 #pragma warning( disable: 4127 4389 ) // Warnings in the FD_* macros
+#define INVALID_SOCKET  (SOCKET)(~0)
 #else
 #include <unistd.h>
 #include <sys/poll.h>
@@ -1376,13 +1376,32 @@ File::File( const File& other )
 
 bool File::close()
 {
-  if ( IOStream::close( fd ) )
+  if ( close( *this ) )
   {
     fd = INVALID_FD;
     return true;
   }
   else
     return false;
+}
+
+bool File::close( fd_t fd )
+{
+  if ( fd != INVALID_FD )
+#ifdef _WIN32
+    return CloseHandle( fd ) == TRUE;
+#else
+    return ::close( fd ) != -1;
+#endif
+  else
+  {
+#ifdef _WIN32
+    SetLastError( ERROR_INVALID_HANDLE );
+#else
+    errno = EBADF;
+#endif
+    return false;
+  }
 }
 
 bool File::datasync()
@@ -2131,77 +2150,6 @@ bool iconv::reset()
 #endif
 }
 #endif
-
-
-// iostream.cpp
-#ifdef _WIN32
-#undef INVALID_SOCKET
-#pragma warning( push )
-#pragma warning( disable: 4365 4995 )
-#include <ws2tcpip.h>
-#pragma warning( pop )
-#define INVALID_SOCKET  (SOCKET)(~0)
-#endif
-
-
-bool IOStream::close( fd_t fd )
-{
-  if ( fd != INVALID_FD )
-#ifdef _WIN32
-    return CloseHandle( fd ) == TRUE;
-#else
-    return ::close( fd ) != -1;
-#endif
-  else
-  {
-#ifdef _WIN32
-    SetLastError( ERROR_INVALID_HANDLE );
-#else
-    errno = EBADF;
-#endif
-    return false;
-  }
-}
-
-#ifdef _WIN32
-bool IOStream::close( socket_t socket_ )
-{
-  if ( socket_ != INVALID_SOCKET )
-    return ::closesocket( socket_ ) != -1;
-  else
-  {
-#ifdef _WIN32
-    WSASetLastError( WSAENOTSOCK );
-#else
-    errno = EBADF;
-#endif
-    return false;
-  }
-}
-#endif
-
-#ifdef _WIN32
-bool IOStream::set_blocking_mode( bool blocking, socket_t socket_ )
-{
-  unsigned long val = blocking ? 0UL : 1UL;
-  return ::ioctlsocket( socket_, FIONBIO, &val ) != SOCKET_ERROR;
-}
-#else
-bool IOStream::set_blocking_mode( bool blocking, fd_t fd )
-{
-  int current_fcntl_flags = fcntl( fd, F_GETFL, 0 );
-  if ( blocking )
-  {
-    if ( ( current_fcntl_flags & O_NONBLOCK ) == O_NONBLOCK )
-      return fcntl( fd, F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1;
-    else
-      return true;
-  }
-  else
-    return fcntl( fd, F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1;
-}
-#endif
-
 
 
 // istream.cpp
@@ -4310,7 +4258,7 @@ OptionParser::Option::Option
   const string& help,
   bool require_argument
 )
-  : option( option ), help( help ), require_argument( require_argument )
+  : help( help ), option( option ), require_argument( require_argument )
 { }
 
 bool OptionParser::Option::operator==( const string& option ) const
@@ -4937,7 +4885,7 @@ Pipe::~Pipe()
 
 bool Pipe::close()
 {
-  if ( IOStream::close( ends[0] ) && IOStream::close( ends[1] ) )
+  if ( File::close( ends[0] ) && File::close( ends[1] ) )
   {
     ends[0] = INVALID_FD;
     ends[1] = INVALID_FD;
@@ -5005,7 +4953,7 @@ bool Pipe::set_read_blocking_mode( bool blocking )
 #ifdef _WIN32
   return false;
 #else
-  return IOStream::set_blocking_mode( blocking, ends[0] );
+  return Socket::set_blocking_mode( blocking, ends[0] );
 #endif
 }
 
@@ -5014,7 +4962,7 @@ bool Pipe::set_write_blocking_mode( bool blocking )
 #ifdef _WIN32
   return false;
 #else
-  return IOStream::set_blocking_mode( blocking, ends[1] );
+  return Socket::set_blocking_mode( blocking, ends[1] );
 #endif
 }
 
@@ -6266,7 +6214,6 @@ Socket::Socket( int domain, int type, int protocol, socket_t socket_ )
   : domain( domain ), type( type ), protocol( protocol ), socket_( socket_ )
 {
   blocking_mode = true;
-  connected = false;
   io_queue = NULL;
 }
 
@@ -6274,6 +6221,17 @@ Socket::~Socket()
 {
   close();
   IOQueue::dec_ref( io_queue );
+}
+
+void
+Socket::aio_read
+(
+  Buffer& buffer,
+  AIOReadCallback& callback,
+  void* callback_context
+)
+{
+  aio_recv( buffer, 0, callback, callback_context );
 }
 
 void
@@ -6301,6 +6259,7 @@ Socket::aio_recv
   {
     case NBIORecvCB::STATE_COMPLETE:
     case NBIORecvCB::STATE_ERROR: Buffer::dec_ref( buffer ); return;
+    default: break; // To appease gcc
   }
 
   // Next try to offload the recv to an IOQueue
@@ -6370,6 +6329,7 @@ Socket::aio_send
   {
     case NBIOSendCB::STATE_COMPLETE:
     case NBIOSendCB::STATE_ERROR: Buffer::dec_ref( buffer ); return;
+    default: break; // To appease gcc
   }
 
   // Next try to offload the send to an IOQueue
@@ -6437,6 +6397,7 @@ void Socket::aio_sendmsg
   {
     case NBIOSendMsgCB::STATE_COMPLETE:
     case NBIOSendMsgCB::STATE_ERROR: Buffers::dec_ref( buffers ); return;
+    default: break; // To appease gcc
   }
 
   // Next try to offload the sendmsg to an IOQueue
@@ -6485,6 +6446,28 @@ void Socket::aio_sendmsg
     flags,
     inc_ref()
   ).execute();
+}
+
+void
+Socket::aio_write
+(
+  Buffer& buffer,
+  AIOWriteCallback& callback,
+  void* callback_context
+)
+{
+  aio_send( buffer, 0, callback, callback_context );
+}
+
+void
+Socket::aio_writev
+(
+  Buffers& buffers,
+  AIOWriteCallback& callback,
+  void* callback_context
+)
+{
+  aio_sendmsg( buffers, 0, callback, callback_context );
 }
 
 bool Socket::associate( IOQueue& io_queue )
@@ -6542,9 +6525,8 @@ bool Socket::bind( const SocketAddress& to_sockaddr )
 
 bool Socket::close()
 {
-  if ( IOStream::close( socket_ ) )
+  if ( close( *this ) )
   {
-    connected = false;
     // socket_ = INVALID_SOCKET;
     // Don't set socket_ to INVALID socket_ so it can be dissociated from an
     // event queue after it's close()'d
@@ -6554,66 +6536,74 @@ bool Socket::close()
     return false;
 }
 
-bool Socket::connect( const SocketAddress& peername )
+bool Socket::close( socket_t socket_ )
 {
-  if ( !connected )
+  if ( socket_ != INVALID_SOCKET )
   {
-    for ( ;; )
-    {
-      struct sockaddr* name; socklen_t namelen;
-      if ( peername.as_struct_sockaddr( domain, name, namelen ) )
-      {
-        if ( ::connect( *this, name, namelen ) != -1 )
-        {
-          connected = true;
-          return true;
-        }
-        else
-        {
 #ifdef _WIN32
-          switch ( WSAGetLastError() )
-          {
-            case WSAEISCONN: connected = true; return true;
-            case WSAEAFNOSUPPORT:
+    return ::closesocket( socket_ ) != -1;
 #else
-          switch ( errno )
-          {
-            case EISCONN: connected = true; return true;
-            case EAFNOSUPPORT:
+    return ::close( socket_ ) != -1;
 #endif
-            {
-              if
-              (
-                domain == AF_INET6 &&
-                recreate( AF_INET )
-              )
-                continue;
-              else
-                return false;
-            }
-            break;
-
-            default: return false;
-          }
-        }
-      }
-      else if
-      (
-        domain == AF_INET6 &&
-        recreate( AF_INET )
-      )
-        continue;
-      else
-        return false;
-    }
   }
   else
-    return true;
+  {
+#ifdef _WIN32
+    WSASetLastError( WSAENOTSOCK );
+#else
+    errno = EBADF;
+#endif
+    return false;
+  }
 }
 
-Socket* Socket::create( int type, int protocol )
+bool Socket::connect( const SocketAddress& peername )
 {
-  return create( DOMAIN_DEFAULT, type, protocol );
+  for ( ;; )
+  {
+    struct sockaddr* name; socklen_t namelen;
+    if ( peername.as_struct_sockaddr( domain, name, namelen ) )
+    {
+      if ( ::connect( *this, name, namelen ) != -1 )
+        return true;
+      else
+      {
+#ifdef _WIN32
+        switch ( WSAGetLastError() )
+        {
+          case WSAEISCONN: return true;
+          case WSAEAFNOSUPPORT:
+#else
+        switch ( errno )
+        {
+          case EISCONN: return true;
+          case EAFNOSUPPORT:
+#endif
+          {
+            if
+            (
+              domain == AF_INET6 &&
+              recreate( AF_INET )
+            )
+              continue;
+            else
+              return false;
+          }
+          break;
+
+          default: return false;
+        }
+      }
+    }
+    else if
+    (
+      domain == AF_INET6 &&
+      recreate( AF_INET )
+    )
+      continue;
+    else
+      return false;
+  }
 }
 
 Socket* Socket::create( int domain, int type, int protocol )
@@ -6920,11 +6910,6 @@ SocketAddress* Socket::getsockname() const
     return NULL;
 }
 
-bool Socket::is_closed() const
-{
-  return socket_ == -1;
-}
-
 #ifdef _WIN64
 void
 Socket::iovecs_to_wsabufs
@@ -6941,14 +6926,19 @@ Socket::iovecs_to_wsabufs
 }
 #endif
 
-bool Socket::listen()
-{
-  return ::listen( *this, SOMAXCONN ) != -1;
-}
-
 bool Socket::operator==( const Socket& other ) const
 {
   return socket_ == other.socket_;
+}
+
+ssize_t Socket::read( Buffer& buffer )
+{
+  return IStream::read( buffer );
+}
+
+ssize_t Socket::read( void* buf, size_t buflen )
+{
+  return recv( buf, buflen, 0 );
 }
 
 bool Socket::recreate()
@@ -7004,6 +6994,11 @@ ssize_t Socket::recv( void* buf, size_t buflen, int flags )
 #endif
 }
 
+ssize_t Socket::send( const Buffer& buffer, int flags )
+{
+  return send( buffer, buffer.size(), flags );
+}
+
 ssize_t Socket::send( const void* buf, size_t buflen, int flags )
 {
   flags = get_platform_send_flags( flags );
@@ -7033,6 +7028,11 @@ ssize_t Socket::send( const void* buf, size_t buflen, int flags )
 #else
   return ::send( *this, buf, buflen, flags );
 #endif
+}
+
+ssize_t Socket::sendmsg( Buffers& buffers, int flags )
+{
+  return sendmsg( buffers, buffers.size(), flags );
 }
 
 ssize_t Socket::sendmsg( const struct iovec* iov, uint32_t iovlen, int flags )
@@ -7077,42 +7077,31 @@ ssize_t Socket::sendmsg( const struct iovec* iov, uint32_t iovlen, int flags )
 
 bool Socket::set_blocking_mode( bool blocking )
 {
-#ifdef _WIN32
-  unsigned long val = blocking ? 0UL : 1UL;
-  if ( ioctlsocket( *this, FIONBIO, &val ) != SOCKET_ERROR )
+  if ( set_blocking_mode( blocking, *this ) )
   {
     this->blocking_mode = blocking;
     return true;
   }
   else
     return false;
+}
+
+bool Socket::set_blocking_mode( bool blocking, socket_t socket_ )
+{
+#ifdef _WIN32
+  unsigned long val = blocking ? 0UL : 1UL;
+  return ::ioctlsocket( socket_, FIONBIO, &val ) != SOCKET_ERROR;
 #else
-  int current_fcntl_flags = fcntl( *this, F_GETFL, 0 );
+  int current_fcntl_flags = fcntl( socket_, F_GETFL, 0 );
   if ( blocking )
   {
     if ( ( current_fcntl_flags & O_NONBLOCK ) == O_NONBLOCK )
-    {
-      if ( fcntl( *this, F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1 )
-      {
-        this->blocking_mode = true;
-        return true;
-      }
-      else
-        return false;
-    }
+      return fcntl( socket_, F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1;
     else
       return true;
   }
   else
-  {
-    if ( fcntl( *this, F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1 )
-    {
-      this->blocking_mode = false;
-      return true;
-    }
-    else
-      return false;
-  }
+    return fcntl( socket_, F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1;
 #endif
 }
 
@@ -7165,21 +7154,15 @@ bool Socket::shutdown( bool shut_rd, bool shut_wr )
   else if ( shut_wr ) how = SD_SEND;
   else return false;
 
-  if ( ::shutdown( *this, how ) == 0 )
+  return ::shutdown( *this, how ) == 0;
 #else
   if ( shut_rd && shut_wr ) how = SHUT_RDWR;
   else if ( shut_rd ) how = SHUT_RD;
   else if ( shut_wr ) how = SHUT_WR;
   else return false;
 
-  if ( ::shutdown( *this, how ) != -1 )
+  return ::shutdown( *this, how ) != -1;
 #endif
-  {
-    connected = false;
-    return true;
-  }
-  else
-    return false;
 }
 
 bool Socket::want_recv() const
@@ -7200,6 +7183,26 @@ bool Socket::want_send() const
 #endif
 }
 
+ssize_t Socket::write( const Buffer& buffer )
+{
+  return OStream::write( buffer );
+}
+
+ssize_t Socket::write( const void* buf, size_t buflen )
+{
+  return send( buf, buflen, 0 );
+}
+
+ssize_t Socket::writev( Buffers& buffers )
+{
+  return OStream::writev( buffers );
+}
+
+ssize_t Socket::writev( const struct iovec* iov, uint32_t iovlen )
+{
+  return sendmsg( iov, iovlen, 0 );
+}
+
 
 // socket_address.cpp
 #ifdef _WIN32
@@ -7216,6 +7219,22 @@ bool Socket::want_send() const
 #include <sys/socket.h>
 #endif
 
+
+SocketAddress::SocketAddress()
+{
+  addrinfo_list = getaddrinfo( NULL, 0 );
+#ifdef _DEBUG
+  if ( addrinfo_list == NULL ) DebugBreak();
+#endif
+}
+
+SocketAddress::SocketAddress( uint16_t port )
+{
+  addrinfo_list = getaddrinfo( NULL, port );
+#ifdef _DEBUG
+  if ( addrinfo_list == NULL ) DebugBreak();
+#endif
+}
 
 SocketAddress::SocketAddress( struct addrinfo& addrinfo_list )
   : addrinfo_list( &addrinfo_list ), _sockaddr_storage( NULL )
@@ -7245,11 +7264,6 @@ SocketAddress::SocketAddress
   );
 }
 
-SocketAddress* SocketAddress::create()
-{
-  return create( NULL );
-}
-
 SocketAddress* SocketAddress::create( const char* hostname )
 {
   return create( hostname, 0 );
@@ -7257,9 +7271,6 @@ SocketAddress* SocketAddress::create( const char* hostname )
 
 SocketAddress* SocketAddress::create( const char* hostname, uint16_t port )
 {
-  if ( hostname != NULL && strcmp( hostname, "*" ) == 0 )
-    hostname = NULL;
-
   struct addrinfo* addrinfo_list = getaddrinfo( hostname, port );
   if ( addrinfo_list != NULL )
     return new SocketAddress( *addrinfo_list );
@@ -7674,6 +7685,491 @@ SocketPair& SocketPair::create()
 #endif
 }
 
+
+
+// ssl_context.cpp
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+
+#include <openssl/err.h>
+#include <openssl/pem.h>
+#include <openssl/pkcs12.h>
+#include <openssl/rsa.h>
+#include <openssl/ssl.h>
+#include <openssl/x509.h>
+
+#ifdef _WIN32
+#pragma comment( lib, "libeay32.lib" )
+#pragma comment( lib, "ssleay32.lib" )
+#endif
+
+
+namespace yield
+{
+  namespace platform
+  {
+    class SSLException : public Exception
+    {
+    public:
+      SSLException()
+        : Exception( ERR_peek_error() )
+      {
+        SSL_load_error_strings();
+
+        char error_message[256];
+        ERR_error_string_n( ERR_peek_error(), error_message, 256 );
+        set_error_message( error_message );
+      }
+    };
+  };
+};
+
+
+static int pem_password_callback( char *buf, int size, int, void *userdata )
+{
+  const string* pem_password
+    = static_cast<const string*>( userdata );
+  if ( size > static_cast<int>( pem_password->size() ) )
+    size = static_cast<int>( pem_password->size() );
+  memcpy_s( buf, size, pem_password->c_str(), size );
+  return size;
+}
+
+
+SSLContext::SSLContext( SSL_CTX* ctx )
+  : ctx( ctx )
+{ }
+
+SSLContext&
+SSLContext::create
+(
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const
+#endif
+  SSL_METHOD* method
+)
+{
+  return *new SSLContext( createSSL_CTX( method ) );
+}
+
+SSLContext&
+SSLContext::create
+(
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const
+#endif
+  SSL_METHOD* method,
+#ifdef _WIN32
+  const Path& _pem_certificate_file_path,
+  const Path& _pem_private_key_file_path,
+#else
+  const Path& pem_certificate_file_path,
+  const Path& pem_private_key_file_path,
+#endif
+  const string& pem_private_key_passphrase
+)
+{
+  SSL_CTX* ctx = createSSL_CTX( method );
+
+#ifdef _WIN32
+  // Need to get a string on Windows, because SSL doesn't support wide paths
+  string pem_certificate_file_path( _pem_certificate_file_path );
+  string pem_private_key_file_path( _pem_private_key_file_path );
+#endif
+
+  if
+  (
+    SSL_CTX_use_certificate_file
+    (
+      ctx,
+#ifdef _WIN32
+      pem_certificate_file_path.c_str(),
+#else
+      pem_certificate_file_path,
+#endif
+      SSL_FILETYPE_PEM
+    ) > 0
+  )
+  {
+    if ( !pem_private_key_passphrase.empty() )
+    {
+      SSL_CTX_set_default_passwd_cb( ctx, pem_password_callback );
+      SSL_CTX_set_default_passwd_cb_userdata
+      (
+        ctx,
+        const_cast<string*>( &pem_private_key_passphrase )
+      );
+    }
+
+    if
+    (
+      SSL_CTX_use_PrivateKey_file
+      (
+        ctx,
+#ifdef _WIN32
+        pem_private_key_file_path.c_str(),
+#else
+        pem_private_key_file_path,
+#endif
+        SSL_FILETYPE_PEM
+      ) > 0
+    )
+      return *new SSLContext( ctx );
+  }
+
+  throw SSLException();
+}
+
+SSLContext&
+SSLContext::create
+(
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const
+#endif
+  SSL_METHOD* method,
+  const string& pem_certificate_str,
+  const string& pem_private_key_str,
+  const string& pem_private_key_passphrase
+)
+{
+  SSL_CTX* ctx = createSSL_CTX( method );
+
+  BIO* pem_certificate_bio
+    = BIO_new_mem_buf
+      (
+        reinterpret_cast<void*>
+        (
+          const_cast<char*>( pem_certificate_str.c_str() )
+        ),
+        static_cast<int>( pem_certificate_str.size() )
+      );
+
+  if ( pem_certificate_bio != NULL )
+  {
+    X509* cert
+      = PEM_read_bio_X509
+        (
+          pem_certificate_bio,
+          NULL,
+          pem_password_callback,
+          const_cast<string*>( &pem_private_key_passphrase )
+        );
+
+    if ( cert != NULL )
+    {
+      SSL_CTX_use_certificate( ctx, cert );
+
+      BIO* pem_private_key_bio
+        = BIO_new_mem_buf
+          (
+            reinterpret_cast<void*>
+            (
+              const_cast<char*>( pem_private_key_str.c_str() )
+            ),
+            static_cast<int>( pem_private_key_str.size() )
+          );
+
+      if ( pem_private_key_bio != NULL )
+      {
+        EVP_PKEY* pkey
+          = PEM_read_bio_PrivateKey
+            (
+              pem_private_key_bio,
+              NULL,
+              pem_password_callback,
+              const_cast<string*>( &pem_private_key_passphrase )
+            );
+
+        if ( pkey != NULL )
+        {
+          SSL_CTX_use_PrivateKey( ctx, pkey );
+
+          BIO_free( pem_certificate_bio );
+          BIO_free( pem_private_key_bio );
+
+          return *new SSLContext( ctx );
+        }
+
+        BIO_free( pem_private_key_bio );
+      }
+    }
+
+    BIO_free( pem_certificate_bio );
+  }
+
+  throw SSLException();
+}
+
+SSLContext&
+SSLContext::create
+(
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const
+#endif
+  SSL_METHOD* method,
+#ifdef _WIN32
+  const Path& _pkcs12_file_path,
+#else
+  const Path& pkcs12_file_path,
+#endif
+  const string& pkcs12_passphrase
+)
+{
+  SSL_CTX* ctx = createSSL_CTX( method );
+
+#ifdef _WIN32
+  // See note in the PEM create above re: the rationale for this
+  string pkcs12_file_path( _pkcs12_file_path );
+#endif
+
+#ifdef _WIN32
+  BIO* bio = BIO_new_file( pkcs12_file_path.c_str(), "rb" );
+#else
+  BIO* bio = BIO_new_file( pkcs12_file_path, "rb" );
+#endif
+  if ( bio != NULL )
+  {
+    PKCS12* p12 = d2i_PKCS12_bio( bio, NULL );
+    if ( p12 != NULL )
+    {
+      EVP_PKEY* pkey = NULL;
+      X509* cert = NULL;
+      STACK_OF( X509 )* ca = NULL;
+      if ( PKCS12_parse( p12, pkcs12_passphrase.c_str(), &pkey, &cert, &ca ) )
+      {
+        if ( pkey != NULL && cert != NULL && ca != NULL )
+        {
+          SSL_CTX_use_certificate( ctx, cert );
+          SSL_CTX_use_PrivateKey( ctx, pkey );
+
+          X509_STORE* store = SSL_CTX_get_cert_store( ctx );
+          for ( int i = 0; i < sk_X509_num( ca ); i++ )
+          {
+            X509* store_cert = sk_X509_value( ca, i );
+            X509_STORE_add_cert( store, store_cert );
+          }
+
+          BIO_free( bio );
+
+          return *new SSLContext( ctx );
+        }
+      }
+    }
+
+    BIO_free( bio );
+  }
+
+  throw SSLException();
+}
+
+SSLContext::~SSLContext()
+{
+  SSL_CTX_free( ctx );
+}
+
+SSL_CTX*
+SSLContext::createSSL_CTX
+(
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const
+#endif
+  SSL_METHOD* method
+)
+{
+  SSL_library_init();
+  OpenSSL_add_all_algorithms();
+
+  SSL_CTX* ctx = SSL_CTX_new( method );
+  if ( ctx != NULL )
+  {
+#ifdef SSL_OP_NO_TICKET
+    SSL_CTX_set_options( ctx, SSL_OP_ALL|SSL_OP_NO_TICKET );
+#else
+    SSL_CTX_set_options( ctx, SSL_OP_ALL );
+#endif
+    SSL_CTX_set_verify( ctx, SSL_VERIFY_NONE, NULL );
+    return ctx;
+  }
+  else
+    throw SSLException();
+}
+
+#endif
+
+
+// ssl_socket.cpp
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+
+SSLSocket::SSLSocket
+(
+  int domain,
+  socket_t socket_,
+  SSL* ssl,
+  SSLContext& ssl_context
+)
+  : TCPSocket( domain, socket_ ),
+    ssl( ssl ),
+    ssl_context( ssl_context.inc_ref() )
+{
+  SSL_set_fd( ssl, socket_ );
+}
+
+SSLSocket::~SSLSocket()
+{
+  SSL_free( ssl );
+  SSLContext::dec_ref( ssl_context );
+}
+
+bool SSLSocket::associate( IOQueue& io_queue )
+{
+  if ( get_io_queue() == NULL )
+  {
+    switch ( io_queue.get_type_id() )
+    {
+      case yield::platform::BIOQueue::TYPE_ID:
+      case yield::platform::NBIOQueue::TYPE_ID:
+      {
+        set_io_queue( io_queue );
+        return true;
+      }
+      break;
+
+      default: return false;
+    }
+  }
+  else
+    return false;
+}
+
+bool SSLSocket::connect( const SocketAddress& peername )
+{
+  if ( TCPSocket::connect( peername ) )
+  {
+    SSL_set_connect_state( ssl );
+    return true;
+  }
+  else
+    return false;
+}
+
+SSLSocket* SSLSocket::create( SSLContext& ssl_context )
+{
+  return create( DOMAIN_DEFAULT, ssl_context );
+}
+
+SSLSocket* SSLSocket::create( int domain, SSLContext& ssl_context )
+{
+  SSL* ssl = SSL_new( ssl_context );
+  if ( ssl != NULL )
+  {
+    socket_t socket_ = Socket::create( &domain, TYPE, PROTOCOL );
+    if ( socket_ != -1 )
+      return new SSLSocket( domain, socket_, ssl, ssl_context );
+    else
+    {
+      SSL_free( ssl );
+      return NULL;
+    }
+  }
+  else
+    return NULL;
+}
+
+StreamSocket* SSLSocket::dup()
+{
+  return StreamSocket::dup2( create( get_domain(), ssl_context ) );
+}
+
+StreamSocket* SSLSocket::dup2( socket_t socket_ )
+{
+  SSL* ssl = SSL_new( ssl_context );
+  if ( ssl != NULL )
+  {
+    return StreamSocket::dup2
+           (
+             new SSLSocket( get_domain(), socket_, ssl, ssl_context )
+           );
+  }
+  else
+    return NULL;
+}
+
+bool SSLSocket::listen()
+{
+  SSL_set_accept_state( ssl );
+  return TCPSocket::listen();
+}
+
+/*
+void SSLSocket::info_callback( const SSL* ssl, int where, int ret )
+{
+  ostringstream info;
+
+  int w = where & ~SSL_ST_MASK;
+  if ( ( w & SSL_ST_CONNECT ) == SSL_ST_CONNECT ) info << "SSL_connect:";
+  else if ( ( w & SSL_ST_ACCEPT ) == SSL_ST_ACCEPT ) info << "SSL_accept:";
+  else info << "undefined:";
+
+  if ( ( where & SSL_CB_LOOP ) == SSL_CB_LOOP )
+    info << SSL_state_string_long( ssl );
+  else if ( ( where & SSL_CB_ALERT ) == SSL_CB_ALERT )
+  {
+    if ( ( where & SSL_CB_READ ) == SSL_CB_READ )
+      info << "read:";
+    else
+      info << "write:";
+    info << "SSL3 alert" << SSL_alert_type_string_long( ret ) << ":" <<
+            SSL_alert_desc_string_long( ret );
+  }
+  else if ( ( where & SSL_CB_EXIT ) == SSL_CB_EXIT )
+  {
+    if ( ret == 0 )
+      info << "failed in " << SSL_state_string_long( ssl );
+    else
+      info << "error in " << SSL_state_string_long( ssl );
+  }
+  else
+    return;
+
+  reinterpret_cast<SSLSocket*>( SSL_get_app_data( const_cast<SSL*>( ssl ) ) )
+    ->log->get_stream( Log::LOG_NOTICE ) << "SSLSocket: " << info.str();
+}
+*/
+
+ssize_t SSLSocket::recv( void* buf, size_t buflen, int )
+{
+  return SSL_read( ssl, buf, static_cast<int>( buflen ) );
+}
+
+ssize_t SSLSocket::send( const void* buf, size_t buflen, int )
+{
+  return SSL_write( ssl, buf, static_cast<int>( buflen ) );
+}
+
+ssize_t SSLSocket::sendmsg( const struct iovec* iov, uint32_t iovlen, int )
+{
+  // Concatenate the buffers
+  return OStream::writev( iov, iovlen );
+}
+
+bool SSLSocket::shutdown()
+{
+  if ( SSL_shutdown( ssl ) != -1 )
+    return TCPSocket::shutdown();
+  else
+    return false;
+}
+
+bool SSLSocket::want_recv() const
+{
+  return SSL_want_read( ssl ) == 1;
+}
+
+bool SSLSocket::want_send() const
+{
+  return SSL_want_write( ssl ) == 1;
+}
+
+#endif
 
 
 // stat.cpp
@@ -8107,9 +8603,7 @@ void Stat::set_blocks( blkcnt_t blocks )
 #endif
 
 
-// tcp_socket.cpp
-using yidl::runtime::HeapBuffer;
-
+// stream_socket.cpp
 #if defined(_WIN32)
 #undef INVALID_SOCKET
 #pragma warning( push )
@@ -8119,204 +8613,226 @@ using yidl::runtime::HeapBuffer;
 #pragma warning( pop )
 #define INVALID_SOCKET  (SOCKET)(~0)
 #else
-#include <netinet/in.h> // For the IPPROTO_* constants
-#include <netinet/tcp.h> // For the TCP_* constants
 #include <sys/socket.h>
 #endif
 
 
-int TCPSocket::PROTOCOL = IPPROTO_TCP;
-int TCPSocket::TYPE = SOCK_STREAM;
+int StreamSocket::TYPE = SOCK_STREAM;
 
 #ifdef _WIN32
-void* TCPSocket::lpfnAcceptEx = NULL;
-void* TCPSocket::lpfnConnectEx = NULL;
+void* StreamSocket::lpfnAcceptEx = NULL;
+void* StreamSocket::lpfnConnectEx = NULL;
 #endif
 
 
-TCPSocket::IOAcceptCB::IOAcceptCB
-(
-  AIOAcceptCallback& callback,
-  void* callback_context,
-  TCPSocket& listen_tcp_socket,
-  Buffer* recv_buffer
-)
-  : IOCB<AIOAcceptCallback>( callback, callback_context ),
-    listen_tcp_socket( listen_tcp_socket ),
-    recv_buffer( recv_buffer )
-{ }
-
-TCPSocket::IOAcceptCB::~IOAcceptCB()
+class StreamSocket::IOAcceptCB : public IOCB<AIOAcceptCallback>
 {
-  TCPSocket::dec_ref( listen_tcp_socket );
-  Buffer::dec_ref( recv_buffer );
-}
+protected:
+  IOAcceptCB
+  (
+    AIOAcceptCallback& callback,
+    void* callback_context,
+    StreamSocket& listen_stream_socket,
+    Buffer* recv_buffer
+  )
+    : IOCB<AIOAcceptCallback>( callback, callback_context ),
+      listen_stream_socket( listen_stream_socket ),
+      recv_buffer( recv_buffer )
+  { }
 
-TCPSocket* TCPSocket::IOAcceptCB::execute( bool blocking_mode )
-{
-  if ( get_listen_tcp_socket().set_blocking_mode( blocking_mode ) )
+  virtual ~IOAcceptCB()
   {
-    TCPSocket* accepted_tcp_socket = get_listen_tcp_socket().accept();
-    if ( accepted_tcp_socket != NULL )
-    {
-      if ( get_recv_buffer() != NULL )
-      {
-        if ( accepted_tcp_socket->set_blocking_mode( false ) )
-        {
-          ssize_t recv_ret
-            = accepted_tcp_socket->recv( *get_recv_buffer(), 0 );
-
-          if ( recv_ret > 0 )
-            return accepted_tcp_socket;
-          else if ( recv_ret == 0 )
-#ifdef _WIN32
-            WSASetLastError( WSAECONNABORTED );
-#else
-            errno = ECONNABORTED;
-#endif
-          else if
-          (
-            accepted_tcp_socket->want_recv()
-            ||
-            accepted_tcp_socket->want_send()
-          )
-            return accepted_tcp_socket;
-        }
-      }
-
-      TCPSocket::dec_ref( *accepted_tcp_socket );
-    }
+    StreamSocket::dec_ref( listen_stream_socket );
+    Buffer::dec_ref( recv_buffer );
   }
 
-  return NULL;
-}
-
-void
-TCPSocket::IOAcceptCB::onAcceptCompletion
-(
-  TCPSocket& accepted_tcp_socket
-)
-{
-  callback.onAcceptCompletion
-  (
-    accepted_tcp_socket,
-    callback_context,
-    recv_buffer
-  );
-}
-
-void TCPSocket::IOAcceptCB::onAcceptError()
-{
-  onAcceptError( get_last_error() );
-}
-
-void TCPSocket::IOAcceptCB::onAcceptError( uint32_t error_code )
-{
-  callback.onAcceptError( error_code, callback_context );
-}
-
-
-TCPSocket::IOConnectCB::IOConnectCB
-(
-  AIOConnectCallback& callback,
-  void* callback_context,
-  SocketAddress& peername,
-  Buffer* send_buffer,
-  TCPSocket& tcp_socket
-)
-  : IOCB<AIOConnectCallback>( callback, callback_context ),
-    peername( peername ),
-    send_buffer( send_buffer ),
-    tcp_socket( tcp_socket )
-{
-  partial_send_len = 0;
-}
-
-TCPSocket::IOConnectCB::~IOConnectCB()
-{
-  SocketAddress::dec_ref( peername );
-  Buffers::dec_ref( send_buffer );
-  TCPSocket::dec_ref( tcp_socket );
-}
-
-bool TCPSocket::IOConnectCB::execute( bool blocking_mode )
-{
-  if ( get_tcp_socket().set_blocking_mode( blocking_mode ) )
+  StreamSocket* execute( bool blocking_mode )
   {
-    if ( get_tcp_socket().connect( get_peername() ) )
+    if ( get_listen_stream_socket().set_blocking_mode( blocking_mode ) )
     {
-      if ( get_send_buffer() != NULL )
-      {
-        for ( ;; ) // Keep trying partial sends
-        {
-          ssize_t send_ret
-            = get_tcp_socket().send
-              (
-                static_cast<const char*>( *get_send_buffer() )
-                  + partial_send_len,
-                get_send_buffer()->size() - partial_send_len,
-                0
-              );
+      StreamSocket* accepted_stream_socket
+        = get_listen_stream_socket().accept();
 
-          if ( send_ret >= 0 )
+      if ( accepted_stream_socket != NULL )
+      {
+        if ( get_recv_buffer() != NULL )
+        {
+          if ( accepted_stream_socket->set_blocking_mode( false ) )
           {
-            partial_send_len += send_ret;
-            if ( partial_send_len == get_send_buffer()->size() )
-              return true;
-            else
-              continue;
+            ssize_t recv_ret
+              = accepted_stream_socket->recv( *get_recv_buffer(), 0 );
+
+            if ( recv_ret > 0 )
+              return accepted_stream_socket;
+            else if ( recv_ret == 0 )
+#ifdef _WIN32
+              WSASetLastError( WSAECONNABORTED );
+#else
+              errno = ECONNABORTED;
+#endif
+            else if
+            (
+              accepted_stream_socket->want_recv()
+              ||
+              accepted_stream_socket->want_send()
+            )
+              return accepted_stream_socket;
           }
-          else
-            return false;
         }
+        else // get_recv_buffer() == NULL
+          return accepted_stream_socket;
+
+        StreamSocket::dec_ref( *accepted_stream_socket );
       }
-      else
-        return true;
     }
+
+    return NULL;
   }
 
-  return false;
-}
+  StreamSocket& get_listen_stream_socket() const { return listen_stream_socket; }
+  Buffer* get_recv_buffer() const { return recv_buffer; }
 
-void TCPSocket::IOConnectCB::onConnectCompletion()
+  void onAcceptCompletion( StreamSocket& accepted_stream_socket )
+  {
+    callback.onAcceptCompletion
+    (
+      accepted_stream_socket,
+      callback_context,
+      recv_buffer
+    );
+  }
+
+  void onAcceptError()
+  {
+    onAcceptError( get_last_error() );
+  }
+
+  void onAcceptError( uint32_t error_code )
+  {
+    callback.onAcceptError( error_code, callback_context );
+  }
+
+private:
+  StreamSocket& listen_stream_socket;
+  Buffer* recv_buffer;
+};
+
+
+class StreamSocket::IOConnectCB : public IOCB<AIOConnectCallback>
 {
-  callback.onConnectCompletion
+protected:
+  IOConnectCB
   (
-    send_buffer != NULL ? send_buffer->size() : 0,
-    callback_context
-  );
-}
+    AIOConnectCallback& callback,
+    void* callback_context,
+    SocketAddress& peername,
+    Buffer* send_buffer,
+    StreamSocket& stream_socket
+  )
+    : IOCB<AIOConnectCallback>( callback, callback_context ),
+      peername( peername ),
+      send_buffer( send_buffer ),
+      stream_socket( stream_socket )
+  {
+    partial_send_len = 0;
+  }
 
-void TCPSocket::IOConnectCB::onConnectError()
-{
-  onConnectError( get_last_error() );
-}
+  virtual ~IOConnectCB()
+  {
+    SocketAddress::dec_ref( peername );
+    Buffers::dec_ref( send_buffer );
+    StreamSocket::dec_ref( stream_socket );
+  }
 
-void TCPSocket::IOConnectCB::onConnectError( uint32_t error_code )
-{
-  callback.onConnectError( error_code, callback_context );
-}
+  bool execute( bool blocking_mode )
+  {
+    if ( get_stream_socket().set_blocking_mode( blocking_mode ) )
+    {
+      if ( get_stream_socket().connect( get_peername() ) )
+      {
+        if ( get_send_buffer() != NULL )
+        {
+          for ( ;; ) // Keep trying partial sends
+          {
+            ssize_t send_ret
+              = get_stream_socket().send
+                (
+                  static_cast<const char*>( *get_send_buffer() )
+                    + partial_send_len,
+                  get_send_buffer()->size() - partial_send_len,
+                  0
+                );
+
+            if ( send_ret >= 0 )
+            {
+              partial_send_len += send_ret;
+              if ( partial_send_len == get_send_buffer()->size() )
+                return true;
+              else
+                continue;
+            }
+            else
+              return false;
+          }
+        }
+        else
+          return true;
+      }
+    }
+
+    return false;
+  }
+
+  const SocketAddress& get_peername() const { return peername; }
+  Buffer* get_send_buffer() const { return send_buffer; }
+  StreamSocket& get_stream_socket() const { return stream_socket; }
+
+  void onConnectCompletion()
+  {
+    callback.onConnectCompletion
+    (
+      send_buffer != NULL ? send_buffer->size() : 0,
+      callback_context
+    );
+  }
+
+  void onConnectError()
+  {
+    onConnectError( get_last_error() );
+  }
+
+  void onConnectError( uint32_t error_code )
+  {
+    callback.onConnectError( error_code, callback_context );
+  }
+
+private:
+  size_t partial_send_len;
+  SocketAddress& peername;
+  Buffer* send_buffer;
+  StreamSocket& stream_socket;
+};
 
 
-class TCPSocket::BIOAcceptCB : public BIOCB, public IOAcceptCB
+class StreamSocket::BIOAcceptCB : public BIOCB, public IOAcceptCB
 {
 public:
   BIOAcceptCB
   (
     AIOAcceptCallback& callback,
     void* callback_context,
-    TCPSocket& listen_tcp_socket,
+    StreamSocket& listen_stream_socket,
     Buffer* recv_buffer
-  ) : IOAcceptCB( callback, callback_context, listen_tcp_socket, recv_buffer )
+  ) : IOAcceptCB( callback, callback_context, listen_stream_socket, recv_buffer )
   { }
 
   // BIOCB
   bool execute()
   {
-    TCPSocket* accepted_tcp_socket = IOAcceptCB::execute( true );
-    if ( accepted_tcp_socket != NULL )
+    StreamSocket* accepted_stream_socket = IOAcceptCB::execute( true );
+    if ( accepted_stream_socket != NULL )
     {
-      onAcceptCompletion( *accepted_tcp_socket );
+      onAcceptCompletion( *accepted_stream_socket );
       return true;
     }
     else
@@ -8328,7 +8844,7 @@ public:
 };
 
 
-class TCPSocket::BIOConnectCB : public BIOCB, public IOConnectCB
+class StreamSocket::BIOConnectCB : public BIOCB, public IOConnectCB
 {
 public:
   BIOConnectCB
@@ -8337,7 +8853,7 @@ public:
     void* callback_context,
     SocketAddress& peername,
     Buffer* send_buffer,
-    TCPSocket& tcp_socket
+    StreamSocket& stream_socket
   )
     : IOConnectCB
       (
@@ -8345,7 +8861,7 @@ public:
         callback_context,
         peername,
         send_buffer,
-        tcp_socket
+        stream_socket
       )
   { }
 
@@ -8366,30 +8882,30 @@ public:
 };
 
 
-class TCPSocket::NBIOAcceptCB : public NBIOCB, public IOAcceptCB
+class StreamSocket::NBIOAcceptCB : public NBIOCB, public IOAcceptCB
 {
 public:
   NBIOAcceptCB
   (
     AIOAcceptCallback& callback,
     void* callback_context,
-    TCPSocket& listen_tcp_socket,
+    StreamSocket& listen_stream_socket,
     Buffer* recv_buffer
   ) : NBIOCB( STATE_WANT_READ ),
-      IOAcceptCB( callback, callback_context, listen_tcp_socket, recv_buffer )
+      IOAcceptCB( callback, callback_context, listen_stream_socket, recv_buffer )
   { }
 
   // NBIOCB
   State execute()
   {
-    TCPSocket* accepted_tcp_socket = IOAcceptCB::execute( false );
+    StreamSocket* accepted_stream_socket = IOAcceptCB::execute( false );
 
-    if ( accepted_tcp_socket != NULL )
+    if ( accepted_stream_socket != NULL )
     {
       set_state( STATE_COMPLETE );
-      onAcceptCompletion( *accepted_tcp_socket );
+      onAcceptCompletion( *accepted_stream_socket );
     }
-    else if ( get_listen_tcp_socket().want_accept() )
+    else if ( get_listen_stream_socket().want_accept() )
       set_state( STATE_WANT_READ );
     else
     {
@@ -8400,11 +8916,11 @@ public:
     return get_state();
   }
 
-  socket_t get_fd() const { return get_listen_tcp_socket(); }
+  socket_t get_fd() const { return get_listen_stream_socket(); }
 };
 
 
-class TCPSocket::NBIOConnectCB : public NBIOCB, public IOConnectCB
+class StreamSocket::NBIOConnectCB : public NBIOCB, public IOConnectCB
 {
 public:
   NBIOConnectCB
@@ -8413,10 +8929,10 @@ public:
     void* callback_context,
     SocketAddress& peername,
     Buffer* send_buffer,
-    TCPSocket& tcp_socket
+    StreamSocket& stream_socket
   )
   : NBIOCB( STATE_WANT_CONNECT ),
-    IOConnectCB( callback, callback_context, peername, send_buffer, tcp_socket )
+    IOConnectCB( callback, callback_context, peername, send_buffer, stream_socket )
   { }
 
   // NBIOCB
@@ -8427,9 +8943,9 @@ public:
       set_state( STATE_COMPLETE );
       onConnectCompletion();
     }
-    else if ( get_tcp_socket().want_connect() )
+    else if ( get_stream_socket().want_connect() )
       set_state( STATE_WANT_CONNECT );
-    else if ( get_tcp_socket().want_send() )
+    else if ( get_stream_socket().want_send() )
       set_state( STATE_WANT_WRITE );
     else
     {
@@ -8440,23 +8956,23 @@ public:
     return get_state();
   }
 
-  socket_t get_fd() const { return get_tcp_socket(); }
+  socket_t get_fd() const { return get_stream_socket(); }
 };
 
 
 #ifdef _WIN32
-class TCPSocket::Win32AIOAcceptCB : public Win32AIOCB, public IOAcceptCB
+class StreamSocket::Win32AIOAcceptCB : public Win32AIOCB, public IOAcceptCB
 {
 public:
   Win32AIOAcceptCB
   (
-    TCPSocket& accepted_tcp_socket,
+    StreamSocket& accepted_stream_socket,
     AIOAcceptCallback& callback,
     void* callback_context,
-    TCPSocket& listen_tcp_socket,
+    StreamSocket& listen_stream_socket,
     Buffer* recv_buffer
-  ) : IOAcceptCB( callback, callback_context, listen_tcp_socket, recv_buffer ),
-      accepted_tcp_socket( accepted_tcp_socket )
+  ) : IOAcceptCB( callback, callback_context, listen_stream_socket, recv_buffer ),
+      accepted_stream_socket( accepted_stream_socket )
   { }
 
   char* get_sockaddrs() { return sockaddrs; }
@@ -8476,7 +8992,7 @@ public:
       );
     }
 
-    onAcceptCompletion( accepted_tcp_socket );
+    onAcceptCompletion( accepted_stream_socket );
   }
 
   void onError( DWORD dwErrorCode )
@@ -8485,12 +9001,12 @@ public:
   }
 
 private:
-  TCPSocket& accepted_tcp_socket;
+  StreamSocket& accepted_stream_socket;
   char sockaddrs[88];
 };
 
 
-class TCPSocket::Win32AIOConnectCB : public Win32AIOCB, IOConnectCB
+class StreamSocket::Win32AIOConnectCB : public Win32AIOCB, IOConnectCB
 {
 public:
   Win32AIOConnectCB
@@ -8499,14 +9015,14 @@ public:
     void* callback_context,
     SocketAddress& peername,
     Buffer* send_buffer,
-    TCPSocket& tcp_socket
+    StreamSocket& stream_socket
   ) : IOConnectCB
       (
         callback,
         callback_context,
         peername,
         send_buffer,
-        tcp_socket
+        stream_socket
       )
   { }
 
@@ -8528,7 +9044,7 @@ public:
   }
 };
 
-class TCPSocket::Win32AIORecvCB : public Win32AIOCB, public IORecvCB
+class StreamSocket::Win32AIORecvCB : public Win32AIOCB, public IORecvCB
 {
 public:
   Win32AIORecvCB
@@ -8536,9 +9052,9 @@ public:
     Buffer& buffer,
     AIORecvCallback& callback,
     void* callback_context,
-    TCPSocket& tcp_socket
+    StreamSocket& stream_socket
   )
-    : IORecvCB( buffer, callback, callback_context, 0, tcp_socket )
+    : IORecvCB( buffer, callback, callback_context, 0, stream_socket )
   { }
 
   // Win32AIOCB
@@ -8560,7 +9076,7 @@ public:
 };
 
 
-class TCPSocket::Win32AIOSendCB : public Win32AIOCB, public IOSendCB
+class StreamSocket::Win32AIOSendCB : public Win32AIOCB, public IOSendCB
 {
 public:
   Win32AIOSendCB
@@ -8568,9 +9084,9 @@ public:
     Buffer& buffer,
     AIOSendCallback& callback,
     void* callback_context,
-    TCPSocket& tcp_socket
+    StreamSocket& stream_socket
   )
-    : IOSendCB( buffer, callback, callback_context, 0, tcp_socket )
+    : IOSendCB( buffer, callback, callback_context, 0, stream_socket )
   { }
 
   // Win32AIOCB
@@ -8591,7 +9107,7 @@ public:
 };
 
 
-class TCPSocket::Win32AIOSendMsgCB : public Win32AIOCB, public IOSendMsgCB
+class StreamSocket::Win32AIOSendMsgCB : public Win32AIOCB, public IOSendMsgCB
 {
 public:
   Win32AIOSendMsgCB
@@ -8599,9 +9115,9 @@ public:
     Buffers& buffers,
     AIOSendCallback& callback,
     void* callback_context,
-    TCPSocket& tcp_socket
+    StreamSocket& stream_socket
   )
-    : IOSendMsgCB( buffers, callback, callback_context, 0, tcp_socket )
+    : IOSendMsgCB( buffers, callback, callback_context, 0, stream_socket )
   { }
 
   // Win32AIOCB
@@ -8623,33 +9139,30 @@ public:
 #endif
 
 
-TCPSocket::TCPSocket( int domain, socket_t socket_ )
-  : Socket( domain, TYPE, PROTOCOL, socket_ )
+StreamSocket::StreamSocket( int domain, int protocol, socket_t socket_ )
+  : Socket( domain, TYPE, protocol, socket_ )
 { }
 
-TCPSocket* TCPSocket::accept()
+StreamSocket* StreamSocket::accept()
 {
-  socket_t peer_socket = _accept();
-  if ( peer_socket != -1 )
-    return new TCPSocket( get_domain(), peer_socket );
+  sockaddr_storage peername;
+  socklen_t peername_len = sizeof( peername );
+  socket_t peer_socket
+    = ::accept
+      (
+        *this,
+        reinterpret_cast<struct sockaddr*>( &peername ),
+        &peername_len
+      );
+
+  if ( peer_socket != INVALID_SOCKET )
+    return dup2( peer_socket );
   else
     return NULL;
 }
 
-socket_t TCPSocket::_accept()
-{
-  sockaddr_storage peername;
-  socklen_t peername_len = sizeof( peername );
-  return ::accept
-         (
-           *this,
-           reinterpret_cast<struct sockaddr*>( &peername ),
-           &peername_len
-         );
-}
-
 void
-TCPSocket::aio_accept
+StreamSocket::aio_accept
 (
   AIOAcceptCallback& callback,
   void* callback_context,
@@ -8682,13 +9195,13 @@ TCPSocket::aio_accept
       );
     }
 
-    TCPSocket* accepted_tcp_socket = TCPSocket::create( get_domain() );
-    if ( accepted_tcp_socket != NULL )
+    StreamSocket* accepted_stream_socket = dup();
+    if ( accepted_stream_socket != NULL )
     {
       Win32AIOAcceptCB* aiocb
         = new Win32AIOAcceptCB
               (
-                *accepted_tcp_socket,
+                *accepted_stream_socket,
                 callback,
                 callback_context,
                 inc_ref(),
@@ -8713,7 +9226,7 @@ TCPSocket::aio_accept
         }
         else
         {
-          TCPSocket::dec_ref( *accepted_tcp_socket );
+          StreamSocket::dec_ref( *accepted_stream_socket );
           callback.onAcceptError( WSAENOBUFS, callback_context );
           return;
         }
@@ -8731,7 +9244,7 @@ TCPSocket::aio_accept
         static_cast<LPFN_ACCEPTEX>( lpfnAcceptEx )
         (
           *this,
-          *accepted_tcp_socket,
+          *accepted_stream_socket,
           lpOutputBuffer,
           dwReceiveDataLength,
           sockaddrlen + 16,
@@ -8746,7 +9259,7 @@ TCPSocket::aio_accept
       else
         delete aiocb;
     }
-    // else the TCPSocket::create failed
+    // else the StreamSocket::create failed
 
     callback.onAcceptError( get_last_error(), callback_context );
 
@@ -8768,6 +9281,7 @@ TCPSocket::aio_accept
   {
     case NBIOAcceptCB::STATE_COMPLETE:
     case NBIOAcceptCB::STATE_ERROR: Buffer::dec_ref( recv_buffer ); return;
+    default: break; // To appease gcc
   }
 
   // Next try to offload the accept to an IOQueue
@@ -8795,7 +9309,7 @@ TCPSocket::aio_accept
 }
 
 void
-TCPSocket::aio_connect
+StreamSocket::aio_connect
 (
   SocketAddress& peername,
   AIOConnectCallback& callback,
@@ -8834,62 +9348,52 @@ TCPSocket::aio_connect
       struct sockaddr* name; socklen_t namelen;
       if ( peername.as_struct_sockaddr( get_domain(), name, namelen ) )
       {
-        SocketAddress* ephemeral_sockname = SocketAddress::create();
-
-        if ( ephemeral_sockname != NULL )
+        if ( bind( SocketAddress() ) )
         {
-          if ( bind( *ephemeral_sockname ) )
+          PVOID lpSendBuffer;
+          DWORD dwSendDataLength;
+          if ( send_buffer != NULL )
           {
-            PVOID lpSendBuffer;
-            DWORD dwSendDataLength;
-            if ( send_buffer != NULL )
-            {
-              lpSendBuffer = *send_buffer;
-              dwSendDataLength = send_buffer->size();
-            }
-            else
-            {
-              lpSendBuffer = NULL;
-              dwSendDataLength = 0;
-            }
-
-            DWORD dwBytesSent;
-
-            Win32AIOConnectCB* aiocb
-              = new Win32AIOConnectCB
-                    (
-                      callback,
-                      callback_context,
-                      peername.inc_ref(),
-                      send_buffer,
-                      inc_ref()
-                    );
-
-            if
-            (
-              static_cast<LPFN_CONNECTEX>( lpfnConnectEx )
-              (
-                *this,
-                name,
-                namelen,
-                lpSendBuffer,
-                dwSendDataLength,
-                &dwBytesSent,
-                *aiocb
-              )
-              ||
-              WSAGetLastError() == WSA_IO_PENDING
-            )
-              return;
-            else
-            {
-              delete aiocb;
-              break;
-            }
+            lpSendBuffer = *send_buffer;
+            dwSendDataLength = send_buffer->size();
           }
           else
           {
-            SocketAddress::dec_ref( *ephemeral_sockname );
+            lpSendBuffer = NULL;
+            dwSendDataLength = 0;
+          }
+
+          DWORD dwBytesSent;
+
+          Win32AIOConnectCB* aiocb
+            = new Win32AIOConnectCB
+                  (
+                    callback,
+                    callback_context,
+                    peername.inc_ref(),
+                    send_buffer,
+                    inc_ref()
+                  );
+
+          if
+          (
+            static_cast<LPFN_CONNECTEX>( lpfnConnectEx )
+            (
+              *this,
+              name,
+              namelen,
+              lpSendBuffer,
+              dwSendDataLength,
+              &dwBytesSent,
+              *aiocb
+            )
+            ||
+            WSAGetLastError() == WSA_IO_PENDING
+          )
+            return;
+          else
+          {
+            delete aiocb;
             break;
           }
         }
@@ -8929,6 +9433,7 @@ TCPSocket::aio_connect
   {
     case NBIOConnectCB::STATE_COMPLETE:
     case NBIOConnectCB::STATE_ERROR: Buffer::dec_ref( send_buffer ); return;
+    default: break; // To appease gcc
   }
 
   if ( get_bio_queue() != NULL )
@@ -8974,7 +9479,7 @@ TCPSocket::aio_connect
   ).execute();
 }
 
-void TCPSocket::aio_recv
+void StreamSocket::aio_recv
 (
   Buffer& buffer,
   int flags,
@@ -9035,7 +9540,7 @@ void TCPSocket::aio_recv
 }
 
 void
-TCPSocket::aio_send
+StreamSocket::aio_send
 (
   Buffer& buffer,
   int flags,
@@ -9100,7 +9605,7 @@ TCPSocket::aio_send
 }
 
 void
-TCPSocket::aio_sendmsg
+StreamSocket::aio_sendmsg
 (
   Buffers& buffers,
   int flags,
@@ -9167,7 +9672,7 @@ TCPSocket::aio_sendmsg
   Socket::aio_sendmsg( buffers, flags, callback, callback_context );
 }
 
-bool TCPSocket::associate( IOQueue& io_queue )
+bool StreamSocket::associate( IOQueue& io_queue )
 {
   if ( get_io_queue() == NULL )
   {
@@ -9197,44 +9702,52 @@ bool TCPSocket::associate( IOQueue& io_queue )
     return false;
 }
 
-TCPSocket* TCPSocket::create()
+StreamSocket* StreamSocket::create( int domain, int protocol )
 {
-  return create( DOMAIN_DEFAULT );
-}
-
-TCPSocket* TCPSocket::create( int domain )
-{
-  socket_t socket_ = create( &domain );
-  if ( socket_ != -1 )
-    return new TCPSocket( domain, socket_ );
+  socket_t socket_ = Socket::create( &domain, TYPE, protocol );
+  if ( socket_ != INVALID_SOCKET )
+    return new StreamSocket( domain, protocol, socket_ );
   else
     return NULL;
 }
 
-socket_t TCPSocket::create( int* domain )
+StreamSocket* StreamSocket::dup()
 {
-  return Socket::create( domain, TYPE, PROTOCOL );
+  return dup2( create( get_domain(), get_protocol() ) );
 }
 
-bool TCPSocket::setsockopt( Option option, bool onoff )
+StreamSocket* StreamSocket::dup2( socket_t socket_ )
 {
-  if ( option == OPTION_TCP_NODELAY )
+  return dup2( new StreamSocket( get_domain(), get_protocol(), socket_ ) );
+}
+
+StreamSocket* StreamSocket::dup2( StreamSocket* stream_socket )
+{
+  if ( stream_socket != NULL )
   {
-    int optval = onoff ? 1 : 0;
-    return ::setsockopt
-           (
-             *this,
-             IPPROTO_TCP,
-             TCP_NODELAY,
-             reinterpret_cast<char*>( &optval ),
-             static_cast<int>( sizeof( optval ) )
-           ) == 0;
+    if ( get_io_queue() != NULL )
+    {
+      if ( stream_socket->associate( *get_io_queue() ) )
+        return stream_socket;
+      else
+      {
+        StreamSocket::dec_ref( *stream_socket );
+        return NULL;
+      }
+    }
+    else
+      return stream_socket;
   }
   else
-    return Socket::setsockopt( option, onoff );
+    return NULL;
 }
 
-bool TCPSocket::want_accept() const
+bool StreamSocket::listen()
+{
+  return ::listen( *this, SOMAXCONN ) != -1;
+}
+
+bool StreamSocket::want_accept() const
 {
 #ifdef _WIN32
   return WSAGetLastError() == WSAEWOULDBLOCK;
@@ -9243,7 +9756,7 @@ bool TCPSocket::want_accept() const
 #endif
 }
 
-bool TCPSocket::want_connect() const
+bool StreamSocket::want_connect() const
 {
 #ifdef _WIN32
   switch ( WSAGetLastError() )
@@ -9264,6 +9777,69 @@ bool TCPSocket::want_connect() const
   }
 #endif
 }
+
+
+// tcp_socket.cpp
+#if defined(_WIN32)
+#undef INVALID_SOCKET
+#pragma warning( push )
+#pragma warning( disable: 4365 4995 )
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#pragma warning( pop )
+#define INVALID_SOCKET  (SOCKET)(~0)
+#else
+#include <netinet/in.h> // For the IPPROTO_* constants
+#include <netinet/tcp.h> // For the TCP_* constants
+#include <sys/socket.h>
+#endif
+
+
+int TCPSocket::DOMAIN_DEFAULT = AF_INET6;
+int TCPSocket::PROTOCOL = IPPROTO_TCP;
+
+
+TCPSocket::TCPSocket( int domain, socket_t socket_ )
+  : StreamSocket( domain, PROTOCOL, socket_ )
+{ }
+
+TCPSocket* TCPSocket::create( int domain )
+{
+  socket_t socket_ = Socket::create( &domain, TYPE, PROTOCOL );
+  if ( socket_ != -1 )
+    return new TCPSocket( domain, socket_ );
+  else
+    return NULL;
+}
+
+StreamSocket* TCPSocket::dup()
+{
+  return StreamSocket::dup2( create( get_domain() ) );
+}
+
+StreamSocket* TCPSocket::dup2( socket_t socket_ )
+{
+  return StreamSocket::dup2( new TCPSocket( get_domain(), socket_ ) );
+}
+
+bool TCPSocket::setsockopt( Option option, bool onoff )
+{
+  if ( option == OPTION_TCP_NODELAY )
+  {
+    int optval = onoff ? 1 : 0;
+    return ::setsockopt
+           (
+             *this,
+             IPPROTO_TCP,
+             TCP_NODELAY,
+             reinterpret_cast<char*>( &optval ),
+             static_cast<int>( sizeof( optval ) )
+           ) == 0;
+  }
+  else
+    return Socket::setsockopt( option, onoff );
+}
+
 
 
 // thread.cpp
@@ -9571,9 +10147,10 @@ Time::Time( const struct timespec& ts )
   unix_time_ns = ts.tv_sec * NS_IN_S + ts.tv_nsec;
 }
 
-Time::Time( const struct tm& unix_tm, bool local )
+Time::Time( const struct tm& tm_, bool local )
 {
-  init( unix_tm, local );
+  struct tm tm_copy( tm_ );
+  init( tm_copy, local );
 }
 #endif
 
@@ -9600,17 +10177,17 @@ Time::Time
   system_time.wYear = static_cast<WORD>( 1900 + tm_year );
   init( system_time, local );
 #else
-  struct tm unix_tm;
-  unix_tm.tm_sec = tm_sec;
-  unix_tm.tm_min = 0;
-  unix_tm.tm_hour = hour;
-  unix_tm.tm_day = tm_mday;
-  unix_tm.tm_mon = tm_mon;
-  unix_tm.tm_year = tm_year;
-  unix_tm.tm_wday = 0; // Will be filled in by mktime
-  unix_tm.tm_yday = 0; // Will be filled in by mktime
-  mktime( &unix_tm );
-  init( unix_tm, local );
+  struct tm tm_;
+  tm_.tm_sec = tm_sec;
+  tm_.tm_min = tm_min;
+  tm_.tm_hour = tm_hour;
+  tm_.tm_mday = tm_mday;
+  tm_.tm_mon = tm_mon;
+  tm_.tm_year = tm_year;
+  tm_.tm_wday = 0; // Will be filled in by mktime
+  tm_.tm_yday = 0; // Will be filled in by mktime
+  mktime( &tm_ );
+  init( tm_, local );
 #endif
 }
 
@@ -9642,17 +10219,17 @@ SYSTEMTIME Time::as_utc_SYSTEMTIME() const
 struct tm Time::as_local_struct_tm() const
 {
   time_t unix_time_s = static_cast<time_t>( as_unix_time_s() );
-  struct tm unix_tm;
-  localtime_r( &unix_time_s, &unix_tm );
-  return unix_tm;
+  struct tm tm_;
+  localtime_r( &unix_time_s, &tm_ );
+  return tm_;
 }
 
 struct tm Time::as_utc_struct_tm() const
 {
   time_t unix_time_s = static_cast<time_t>( as_unix_time_s() );
-  struct tm unix_tm;
-  gmtime_r( &unix_time_s, &unix_tm );
-  return unix_tm;
+  struct tm tm_;
+  gmtime_r( &unix_time_s, &tm_ );
+  return tm_;
 }
 #endif
 
@@ -9692,14 +10269,14 @@ void Time::init( const SYSTEMTIME& system_time, bool local )
   init( file_time );
 }
 #else
-void Time::init( const struct tm& unix_tm, bool local )
+void Time::init( struct tm& tm_, bool local )
 {
   time_t unix_time_s;
 
   if ( local )
-    unix_time_s = mktime( &unix_tm );
-  els
-    unix_time_s = timegm( &unix_tm );
+    unix_time_s = mktime( &tm_ );
+  else
+    unix_time_s = timegm( &tm_ );
 
   if ( unix_time_s != static_cast<time_t>( -1 ) )
     unix_time_ns = unix_time_s * NS_IN_S;
@@ -9748,7 +10325,7 @@ Time::operator struct timespec() const
   return ts;
 }
 
-operator Time::struct tm() const
+Time::operator struct tm() const
 {
   return as_local_struct_tm();
 }
@@ -10272,6 +10849,7 @@ VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
 #endif
 
 
+int UDPSocket::DOMAIN_DEFAULT = AF_INET6;
 int UDPSocket::PROTOCOL = IPPROTO_UDP;
 int UDPSocket::TYPE = SOCK_DGRAM;
 
@@ -10535,6 +11113,7 @@ UDPSocket::aio_recvfrom
   {
     case NBIORecvFromCB::STATE_COMPLETE:
     case NBIORecvFromCB::STATE_ERROR: Buffer::dec_ref( buffer ); return;
+    default: break; // To appease gcc
   }
 
   // Next try to offload the recvfrom to an IOQueue
@@ -10576,9 +11155,8 @@ UDPSocket::aio_recvfrom
   Buffer::dec_ref( buffer );
 }
 
-UDPSocket* UDPSocket::create()
+UDPSocket* UDPSocket::create( int domain )
 {
-  int domain = AF_INET6;
   socket_t socket_ = Socket::create( &domain, TYPE, PROTOCOL );
   if ( socket_ != -1 )
     return new UDPSocket( domain, socket_ );
@@ -10711,6 +11289,154 @@ UDPSocket::sendto
   }
   else
     return -1;
+}
+
+
+// uuid.cpp
+#if defined(_WIN32)
+namespace win32_Rpc_h
+{
+  #define RPC_NO_WINDOWS_H
+  #include <Rpc.h>
+};
+#pragma comment( lib, "Rpcrt4.lib" )
+#elif defined(YIELD_PLATFORM_HAVE_LINUX_LIBUUID)
+#include <uuid/uuid.h>
+#elif defined(__sun)
+#include <uuid/uuid.h>
+#elif defined(YIELD_PLATFORM_HAVE_OPENSSL)
+#include <openssl/sha.h>
+#endif
+
+#ifndef _WIN32
+#include <cstring>
+#endif
+
+
+UUID::UUID()
+{
+#if defined(_WIN32)
+  win32_uuid = new win32_Rpc_h::UUID;
+  win32_Rpc_h::UuidCreate( static_cast<win32_Rpc_h::UUID*>( win32_uuid ) );
+#elif defined(YIELD_PLATFORM_HAVE_LINUX_LIBUUID)
+  linux_libuuid_uuid = new uuid_t;
+  uuid_generate( *static_cast<uuid_t*>( linux_libuuid_uuid ) );
+#elif defined(__sun)
+  sun_uuid = new uuid_t;
+  uuid_generate( *static_cast<uuid_t*>( sun_uuid ) );
+#else
+  strncpy( generic_uuid, Socket::getfqdn().c_str(), 256 );
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+  SHA_CTX ctx; SHA1_Init( &ctx );
+  SHA1_Update( &ctx, generic_uuid, strlen( generic_uuid ) );
+  memset( generic_uuid, 0, sizeof( generic_uuid ) );
+  unsigned char sha1sum[SHA_DIGEST_LENGTH]; SHA1_Final( sha1sum, &ctx );
+  static char hex_array[]
+    =
+    {
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+        'A', 'B', 'C', 'D', 'E', 'F'
+    };
+  unsigned int sha1sum_i = 0, generic_uuid_i = 0;
+  for ( ; sha1sum_i < SHA_DIGEST_LENGTH; sha1sum_i++, generic_uuid_i += 2 )
+  {
+   generic_uuid[generic_uuid_i]
+     = hex_array[( sha1sum[sha1sum_i] & 0xf0 ) >> 4];
+
+   generic_uuid[generic_uuid_i+1]
+     = hex_array[( sha1sum[sha1sum_i] & 0x0f )];
+  }
+  generic_uuid[generic_uuid_i] = 0;
+#endif
+#endif
+}
+
+UUID::UUID( const string& from_string )
+{
+#if defined(_WIN32)
+  win32_uuid = new win32_Rpc_h::UUID;
+  win32_Rpc_h::UuidFromStringA
+  (
+    reinterpret_cast<win32_Rpc_h::RPC_CSTR>
+    (
+      const_cast<char*>( from_string.c_str() )
+    ),
+    static_cast<win32_Rpc_h::UUID*>( win32_uuid )
+  );
+#elif defined(YIELD_PLATFORM_HAVE_LINUX_LIBUUID)
+  uuid_parse
+  (
+    from_string.c_str(),
+    *static_cast<uuid_t*>( linux_libuuid_uuid )
+  );
+#elif defined(__sun)
+  uuid_parse
+  (
+    const_cast<char*>( from_string.c_str() ),
+    *static_cast<uuid_t*>( sun_uuid )
+  );
+#else
+  strncpy( generic_uuid, from_string.c_str(), 256 );
+#endif
+}
+
+UUID::~UUID()
+{
+#if defined(_WIN32)
+  delete static_cast<win32_Rpc_h::UUID*>( win32_uuid );
+#elif defined(YIELD_PLATFORM_HAVE_LINUX_LIBUUID)
+  delete static_cast<uuid_t*>( linux_libuuid_uuid );
+#elif defined(__sun)
+  delete static_cast<uuid_t*>( sun_uuid );
+#endif
+}
+
+bool UUID::operator==( const UUID& other ) const
+{
+#ifdef _WIN32
+  return memcmp
+         (
+           win32_uuid,
+           other.win32_uuid,
+           sizeof( win32_Rpc_h::UUID )
+         ) == 0;
+#elif defined(YIELD_PLATFORM_HAVE_LINUX_LIBUUID)
+  return uuid_compare
+         (
+           *static_cast<uuid_t*>( linux_libuuid_uuid ),
+           *static_cast<uuid_t*>( other.linux_libuuid_uuid )
+         ) == 0;
+#elif defined(__sun)
+  return uuid_compare
+         (
+           *static_cast<uuid_t*>( sun_uuid ),
+           *static_cast<uuid_t*>( other.sun_uuid )
+         ) == 0;
+#else
+  return strncmp( generic_uuid, other.generic_uuid, 256 );
+#endif
+}
+
+UUID::operator string() const
+{
+#if defined(_WIN32)
+  win32_Rpc_h::RPC_CSTR temp_to_string;
+  win32_Rpc_h::UuidToStringA
+  (
+    static_cast<win32_Rpc_h::UUID*>( win32_uuid ),
+    &temp_to_string
+  );
+  string to_string( reinterpret_cast<char*>( temp_to_string ) );
+  win32_Rpc_h::RpcStringFreeA( &temp_to_string );
+  return to_string;
+#elif defined(YIELD_PLATFORM_HAVE_LINUX_LIBUUID)
+  char out[37];
+  uuid_unparse( *static_cast<uuid_t*>( linux_libuuid_uuid ), out );
+  return out;
+#elif defined(__sun)
+#else
+  return generic_uuid;
+#endif
 }
 
 

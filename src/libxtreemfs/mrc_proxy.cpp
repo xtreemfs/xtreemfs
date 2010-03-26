@@ -29,38 +29,18 @@
 
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/options.h"
+#include "user_credentials_cache.h"
 using namespace xtreemfs;
 
-#include "yield.h"
-using yield::platform::Exception;
 
 
 MRCProxy::MRCProxy
 (
-  Configuration& configuration,
-  Log* error_log,
-  IOQueue& io_queue,
-  const string& password,
-  SocketAddress& peername,
-  TCPSocketFactory& tcp_socket_factory,
-  Log* trace_log,
+  EventHandler& request_handler,
+  const char* password,
   UserCredentialsCache* user_credentials_cache
-)
-: Proxy
-  <
-    org::xtreemfs::interfaces::MRCInterface,
-    org::xtreemfs::interfaces::MRCInterfaceMessageFactory,
-    org::xtreemfs::interfaces::MRCInterfaceRequestSender
-  >
-  (
-    configuration,
-    error_log,
-    io_queue,    
-    peername,
-    tcp_socket_factory,
-    trace_log
-  ),
-  password( password )
+) : MRCInterfaceProxy( request_handler ),
+    password( password )
 {
   if ( user_credentials_cache != NULL )
     this->user_credentials_cache = Object::inc_ref( user_credentials_cache );
@@ -78,20 +58,20 @@ MRCProxy::create
 ( 
   const URI& absolute_uri,
   const Options& options,
-  const string& password
+  const char* password
 )
 {
-  return *new MRCProxy
-              (
-                *new Configuration,
-                options.get_error_log(),
-                yield::platform::NBIOQueue::create(),                
-                password,
-                createSocketAddress( absolute_uri ),
-                createTCPSocketFactory( absolute_uri, options.get_ssl_context() ),
-                options.get_trace_log(),
-                NULL
-              );
+  return create
+         ( 
+           absolute_uri,
+           NULL,
+           options.get_error_log(),
+           password,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+           options.get_ssl_context(),
+#endif
+           options.get_trace_log()
+         );
 }
 
 MRCProxy&
@@ -100,25 +80,36 @@ MRCProxy::create
   const URI& absolute_uri,
   Configuration* configuration,
   Log* error_log,
+  const char* password,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
   SSLContext* ssl_context,
+#endif
   Log* trace_log,
   UserCredentialsCache* user_credentials_cache
 )
 {
   return *new MRCProxy
               (
-                configuration != NULL ? *configuration : *new Configuration,
-                error_log,
-                yield::platform::NBIOQueue::create(),
-                "",
-                createSocketAddress( absolute_uri ),
-                createTCPSocketFactory( absolute_uri, ssl_context ),
-                trace_log,
+                createONCRPCClient
+                (
+                  absolute_uri,
+                  *new org::xtreemfs::interfaces::MRCInterfaceMessageFactory,
+                  ONC_RPC_PORT_DEFAULT,
+                  0x20000000 + TAG,
+                  TAG,
+                  configuration,
+                  error_log,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+                  ssl_context,
+#endif
+                  trace_log
+                ),
+                password,  
                 user_credentials_cache
               );
 }
 
-MarshallableObject* MRCProxy::get_cred()
+yidl::runtime::MarshallableObject* MRCProxy::get_cred()
 {
   UserCredentials* user_credentials
     = user_credentials_cache->getCurrentUserCredentials();

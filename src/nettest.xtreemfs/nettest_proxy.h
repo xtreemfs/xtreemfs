@@ -38,28 +38,14 @@
 namespace xtreemfs
 {
   class NettestProxy
-    : public Proxy
-             <
-               org::xtreemfs::interfaces::NettestInterface,
-               org::xtreemfs::interfaces::NettestInterfaceMessageFactory,
-               org::xtreemfs::interfaces::NettestInterfaceRequestSender
-             >
+    : public org::xtreemfs::interfaces::NettestInterfaceProxy,
+      public Proxy
   {
   public:
+    NettestProxy( EventHandler& request_handler );
     virtual ~NettestProxy() { }
 
     static NettestProxy& create( const Options& options );
-
-  private:
-    NettestProxy
-    (
-      Configuration& configuration,
-      Log* error_log,
-      IOQueue& io_queue,      
-      SocketAddress& peername,
-      TCPSocketFactory& tcp_socket_factory,
-      Log* trace_log
-    );
   };
 
   typedef yidl::runtime::auto_Object<NettestProxy> auto_NettestProxy;

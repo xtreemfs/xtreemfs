@@ -37,14 +37,11 @@
 namespace xtreemfs
 {
   class OSDProxy
-    : public Proxy
-             <
-               org::xtreemfs::interfaces::OSDInterface,
-               org::xtreemfs::interfaces::OSDInterfaceMessageFactory,
-               org::xtreemfs::interfaces::OSDInterfaceRequestSender
-             >
+    : public org::xtreemfs::interfaces::OSDInterfaceProxy,
+      public Proxy
   {
   public:
+    OSDProxy( EventHandler& request_handler ); // Steals this reference
     virtual ~OSDProxy() { }
 
     static OSDProxy&
@@ -53,23 +50,14 @@ namespace xtreemfs
       const URI& absolute_uri,
       Configuration* configuration = NULL,
       Log* error_log = NULL,
-      SSLContext* ssl_context = NULL, // Steals this reference
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+      SSLContext* ssl_context = NULL,
+#endif
       Log* trace_log = NULL
     );
 
     // yidl::runtime::Object
     OSDProxy& inc_ref() { return yidl::runtime::Object::inc_ref( *this ); }
-
-  private:
-    OSDProxy
-    (
-      Configuration& configuration,
-      Log* error_log,
-      IOQueue& io_queue,
-      SocketAddress& peername,
-      TCPSocketFactory& tcp_socket_factory,
-      Log* trace_log
-    );
   };
 };
 

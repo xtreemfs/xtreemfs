@@ -110,50 +110,63 @@ ColorStageGroup::~ColorStageGroup()
 }
 
 
-// event_target_mux.cpp
-EventTargetMux::EventTargetMux()
+// event_handler_mux.cpp
+EventHandlerMux::EventHandlerMux()
 {
-  event_targets = NULL;
-  event_targets_len = 0;
+  event_handlers = NULL;
+  event_handlers_len = 0;
 }
 
-EventTargetMux::~EventTargetMux()
+EventHandlerMux::~EventHandlerMux()
 {
   for
   (
-    size_t event_target_i = 0;
-    event_target_i < event_targets_len;
-    event_target_i++
+    size_t event_handler_i = 0;
+    event_handler_i < event_handlers_len;
+    event_handler_i++
   )
-    EventTarget::dec_ref( *event_targets[event_target_i] );
+    EventHandler::dec_ref( *event_handlers[event_handler_i] );
 
-  delete [] event_targets;
+  delete [] event_handlers;
 }
 
-void EventTargetMux::addEventTarget( EventTarget& event_target )
+void EventHandlerMux::add( EventHandler& event_handler )
 {
-  EventTarget** new_event_targets = new EventTarget*[event_targets_len+1];
-  if ( event_targets != NULL )
+  EventHandler** new_event_handlers = new EventHandler*[event_handlers_len+1];
+  if ( event_handlers != NULL )
   {
     memcpy_s
     (
-      new_event_targets,
-      ( event_targets_len + 1 ) * sizeof( EventTarget* ),
-      event_targets,
-      event_targets_len * sizeof( EventTarget* )
+      new_event_handlers,
+      ( event_handlers_len + 1 ) * sizeof( EventHandler* ),
+      event_handlers,
+      event_handlers_len * sizeof( EventHandler* )
     );
 
-    delete [] event_targets;
+    delete [] event_handlers;
   }
-  event_targets = new_event_targets;
-  event_targets[event_targets_len] = &event_target.inc_ref();
-  event_targets_len++;
+  event_handlers = new_event_handlers;
+  event_handlers[event_handlers_len] = &event_handler.inc_ref();
+  event_handlers_len++;
 }
 
-void EventTargetMux::send( Event& event )
+void EventHandlerMux::handle( Event& event )
 {
-  next_event_target_i = ( next_event_target_i + 1 ) % event_targets_len;
-  event_targets[next_event_target_i]->send( event );
+  next_event_handler_i = ( next_event_handler_i + 1 ) % event_handlers_len;
+  event_handlers[next_event_handler_i]->handle( event );
+}
+
+
+// message_handler.cpp
+void MessageHandler::handle( Event& event )
+{
+  if ( event.is_message() )
+    handle( static_cast<Message&>( event ) );
+  else
+  {
+    cerr << get_type_name() << ": received non-Message event: " <<
+            event.get_type_name() << "." << endl;
+  }
 }
 
 
@@ -372,7 +385,7 @@ public:
       cerr << "yield::concurrency::PollingStageGroup::Thread: " <<
                    "error on set_processor_affinity( " <<
                    logical_processor_i << " ): " <<
-                   yield::platform::Exception() <<
+                   Exception() <<
                    "." << endl;
     }
 
@@ -474,31 +487,60 @@ template class PollingStageGroup<WavefrontVisitPolicy>;
 // request.cpp
 Request::Request()
 {
-  response_target = NULL;
+  response_handler = NULL;
 }
 
 Request::~Request()
 {
-  EventTarget::dec_ref( response_target );
+  EventHandler::dec_ref( response_handler );
 }
 
-EventTarget* Request::get_response_target() const
+EventHandler* Request::get_response_handler() const
 {
-  return response_target;
+  return response_handler;
 }
 
 void Request::respond( Response& response )
 {
-  if ( response_target != NULL )
-    response_target->send( response );
+  if ( response_handler != NULL )
+    response_handler->handle( response );
   else
     Response::dec_ref( response );
 }
 
-void Request::set_response_target( EventTarget* response_target )
+void Request::set_response_handler( EventHandler* response_handler )
 {
-  EventTarget::dec_ref( this->response_target );
-  this->response_target = &response_target->inc_ref();
+  EventHandler::dec_ref( this->response_handler );
+  this->response_handler = &response_handler->inc_ref();
+}
+
+
+// request_handler.cpp
+void RequestHandler::handle( Message& message )
+{
+  if ( message.is_request() )
+    handle( static_cast<Request&>( message ) );
+  else
+  {
+    cerr << get_type_name() << ": received non-Request message: " <<
+            message.get_type_name() << "." << endl;
+  }
+}
+
+
+// response_handler.cpp
+void ResponseHandler::handle( Message& message )
+{
+  if ( !message.is_request() )
+  {
+    handle( static_cast<Response&>( message ) );
+    return;
+  }
+  else
+  {
+    cerr << "ResponseHandler: received non-Response message: " <<
+            message.get_type_name() << "." << endl;
+  }
 }
 
 
@@ -518,7 +560,7 @@ public:
   {
     should_run = false;
 
-    stage.send( *new Stage::ShutdownEvent );
+    stage.handle( *new Stage::ShutdownEvent );
 
     join();
   }
@@ -526,7 +568,7 @@ public:
   // Thread
   void run()
   {
-    Thread::set_name( stage.get_name() );
+    Thread::set_name( stage.get_event_handler().get_type_name() );
 
     while ( should_run )
       stage.visit();
@@ -621,8 +663,7 @@ private:
 };
 
 
-Stage::Stage( const char* name )
-  : name( name )
+Stage::Stage()
 {
   // event_processing_time_ns_total = 0;
 
@@ -646,13 +687,15 @@ Stage::Stage( const char* name )
 Stage::~Stage()
 {
 #ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
-  cout << get_name() << ": L1 data cache misses: " <<
-    performance_counter_totals[0] <<
-    endl;
+  cout << get_event_handler().get_type_name() <<
+          ": L1 data cache misses: " <<
+          performance_counter_totals[0] <<
+          endl;
 
-  cout << get_name() << ": L2 instruction cache misses: " <<
-    performance_counter_totals[1] <<
-    endl;
+  cout << get_event_handler().get_type_name() <<
+          ": L2 instruction cache misses: " <<
+          performance_counter_totals[1] <<
+          endl;
 #endif
 }
 

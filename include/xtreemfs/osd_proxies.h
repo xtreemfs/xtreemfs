@@ -50,7 +50,9 @@ namespace xtreemfs
       DIRProxy& dir_proxy,
       Log* error_log = NULL,      
       OSDProxy::Configuration* osd_proxy_configuration = NULL,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
       SSLContext* osd_proxy_ssl_context = NULL,
+#endif
       StageGroup* osd_proxy_stage_group = NULL,
       Log* trace_log = NULL
     );
@@ -74,7 +76,9 @@ namespace xtreemfs
     Log* error_log;
     yield::platform::Mutex lock;
     OSDProxy::Configuration* osd_proxy_configuration;
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
     SSLContext* osd_proxy_ssl_context;
+#endif
     StageGroup* osd_proxy_stage_group;
     Log* trace_log;
   };

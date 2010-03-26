@@ -32,23 +32,26 @@
 
 #include "xtreemfs/interfaces/mrc_interface.h"
 #include "xtreemfs/proxy.h"
-#include "xtreemfs/user_credentials_cache.h"
 
 
 namespace xtreemfs
 {
   class Options;
+  class UserCredentialsCache;
 
 
   class MRCProxy
-    : public Proxy
-             <
-               org::xtreemfs::interfaces::MRCInterface,
-               org::xtreemfs::interfaces::MRCInterfaceMessageFactory,
-               org::xtreemfs::interfaces::MRCInterfaceRequestSender
-             >
+    : public org::xtreemfs::interfaces::MRCInterfaceProxy,
+      public Proxy
   {
   public:
+   MRCProxy
+    (
+      EventHandler& request_handler, // Steals this reference
+      const char* password = NULL,
+      UserCredentialsCache* user_credentials_cache = NULL
+    );
+
     virtual ~MRCProxy();
 
     static MRCProxy&
@@ -56,7 +59,7 @@ namespace xtreemfs
     ( 
       const URI& absolute_uri,
       const Options& options,
-      const string& password
+      const char* password = ""
     );
 
     static MRCProxy&
@@ -65,7 +68,10 @@ namespace xtreemfs
       const URI& absolute_uri,
       Configuration* configuration = NULL,
       Log* error_log = NULL,
-      SSLContext* ssl_context = NULL, // Steals this reference
+      const char* password = "",
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+      SSLContext* ssl_context = NULL,
+#endif
       Log* trace_log = NULL,
       UserCredentialsCache* user_credentials_cache = NULL
     );
@@ -74,20 +80,8 @@ namespace xtreemfs
     MRCProxy& inc_ref() { return Object::inc_ref( *this ); }
 
   private:
-    MRCProxy
-    (
-      Configuration& configuration,
-      Log* error_log,
-      IOQueue& io_queue,
-      const string& password,
-      SocketAddress& peername,
-      TCPSocketFactory& tcp_socket_factory,
-      Log* trace_log,
-      UserCredentialsCache* user_credentials_cache
-    );
-
     // yield::ipc::ONCRPCClient
-    MarshallableObject* get_cred();
+    yidl::runtime::MarshallableObject* get_cred();
 
   private:
     string password;

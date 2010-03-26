@@ -144,35 +144,8 @@ int main( int argc, char** argv )
 
     // Check if the URI passed on the command line has a port that's
     // the same as an MRC default port
-    if
-    (
-      dir_or_mrc_uri->get_port() != 0
-      &&
-      (
-        (
-          dir_or_mrc_uri->get_scheme() == ONCRPC_SCHEME &&
-          dir_or_mrc_uri->get_port() == MRCInterface::ONCRPC_PORT_DEFAULT
-        )
-        ||
-        (
-          dir_or_mrc_uri->get_scheme() == ONCRPCS_SCHEME &&
-          dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCS_PORT_DEFAULT
-        )
-        ||
-        (
-          dir_or_mrc_uri->get_scheme() == ONCRPCG_SCHEME &&
-          dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCG_PORT_DEFAULT
-        )
-        ||
-        (
-          dir_or_mrc_uri->get_scheme() == ONCRPCU_SCHEME &&
-          dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCU_PORT_DEFAULT
-        )
-      )
-    )
-    {
+    if ( dir_or_mrc_uri->get_port() == MRCInterface::ONC_RPC_PORT_DEFAULT )
       mrc_uri = dir_or_mrc_uri;
-    }
     else
     {
       // Assume dir_or_mrc_uri is a DIR URI
@@ -259,7 +232,7 @@ int main( int argc, char** argv )
     }
 
     auto_Object<MRCProxy> mrc_proxy 
-      = MRCProxy::create( *mrc_uri, options, mrc_password );
+      = MRCProxy::create( *mrc_uri, options, mrc_password.c_str() );
 
     mrc_proxy->xtreemfs_mkvol( fs );
 

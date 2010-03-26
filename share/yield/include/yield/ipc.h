@@ -33,10 +33,6 @@
 
 #include "yield/concurrency.h"
 
-#ifdef YIELD_IPC_HAVE_OPENSSL
-#include <openssl/ssl.h>
-#endif
-
 #include <deque>
 #include <stack>
 
@@ -48,12 +44,12 @@ typedef struct yajl_handle_t* yajl_handle;
 
 
 #define YIELD_IPC_ONCRPC_ERROR( ClassName, ErrorCode, ErrorMessage ) \
-    class ONCRPC ## ClassName ## Error : public ExceptionResponse\
+    class ONCRPC ## ClassName ## Error : public Exception\
     {\
     public: \
       const static uint32_t ERROR_CODE = ErrorCode;\
       ONCRPC ## ClassName ## Error()\
-        : ExceptionResponse( ERROR_CODE, "ONC-RPC:" # ErrorMessage )\
+        : Exception( ERROR_CODE, "ONC-RPC:" # ErrorMessage )\
       { }\
     };\
 
@@ -67,8 +63,6 @@ namespace yield
     class ONCRPCRecordFragment;
     class ONCRPCRequest;
     class ONCRPCResponse;
-    class SSLContext;
-    class TCPSocketFactory;
     class URI;
 
     using std::multimap;
@@ -87,15 +81,14 @@ namespace yield
 
     using yield::concurrency::Message;
     using yield::concurrency::MessageFactory;
-    using yield::concurrency::EventTarget;
-    using yield::concurrency::ExceptionResponse;
+    using yield::concurrency::EventHandler;
+    using yield::concurrency::Exception;
     using yield::concurrency::Request;
     using yield::concurrency::RequestHandler;
     using yield::concurrency::Response;
-    using yield::concurrency::ResponseTarget;
+    using yield::concurrency::ResponseHandler;
     using yield::concurrency::SynchronizedSTLQueue;
 
-    using yield::platform::Exception;
     using yield::platform::IOQueue;
     using yield::platform::IStream;
     using yield::platform::Log;
@@ -104,10 +97,14 @@ namespace yield
     using yield::platform::Socket;
     using yield::platform::SocketAddress;
     using yield::platform::socket_t;
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+    using yield::platform::SSLContext;
+    using yield::platform::SSLSocket;
+#endif
+    using yield::platform::StreamSocket;
     using yield::platform::TCPSocket;
     using yield::platform::UDPSocket;
     using yield::platform::Time;
-
 
     
     class RPCPeer
@@ -138,34 +135,35 @@ namespace yield
       { }
 
     protected:
-      class RPCResponseTarget : public ResponseTarget
+      class RPCResponseHandler : public ResponseHandler
       {
       public:
-        RPCResponseTarget( Request& request )
+        RPCResponseHandler( Request& request )
           : request( request.inc_ref() )            
         { }
 
-        ~RPCResponseTarget()
+        ~RPCResponseHandler()
         {
           Request::dec_ref( request );
         }
 
-        // ResponseTarget
-        void send( Response& response )
+        // RTTIObject
+        const char* get_type_name() const { return "RPCResponseHandler"; }
+
+        // ResponseHandler
+        void handle( Response& response )
         {
           if ( response.get_type_id() == RPCResponseType::TYPE_ID )
           {
-            RPCResponseType& rpc_response 
-              = static_cast<RPCResponseType&>( response );
-
             request.respond
             ( 
-              static_cast<Response&>( rpc_response.get_body() ).inc_ref()
+              static_cast<Response&>
+              ( 
+                static_cast<RPCResponseType&>( response ).get_body() 
+              ).inc_ref()
             );
-
-            RPCResponseType::dec_ref( rpc_response );
           }
-          else if ( response.is_exception_response() )
+          else if ( response.is_exception() )
             request.respond( response );
           else
             DebugBreak();
@@ -184,49 +182,52 @@ namespace yield
       RPCServer
       ( 
         MessageFactory& message_factory,
-        EventTarget& request_target,
+        EventHandler& request_handler,
         bool send_rpc_requests = false
       )
         : RPCPeer( message_factory ),
-          request_target( request_target.inc_ref() ),
+          request_handler( request_handler.inc_ref() ),
           send_rpc_requests( send_rpc_requests )
       { }
 
       virtual ~RPCServer()
       {
-        EventTarget::dec_ref( request_target );
+        EventHandler::dec_ref( request_handler );
       }
 
       void sendRPCRequest( RPCRequestType& rpc_request )
       {
         if ( send_rpc_requests )
-          request_target.send( rpc_request );
+          request_handler.handle( rpc_request );
         else
         {
-          ResponseTarget* response_target 
-              = new RPCResponseTarget( rpc_request );
-          rpc_request.get_body().set_response_target( response_target );
-          ResponseTarget::dec_ref( *response_target );
+          ResponseHandler* response_handler 
+              = new RPCResponseHandler( rpc_request );
+          rpc_request.get_body().set_response_handler( response_handler );
+          ResponseHandler::dec_ref( *response_handler );
 
-          request_target.send( rpc_request.get_body().inc_ref() );
+          request_handler.handle( rpc_request.get_body().inc_ref() );
         }
       }
 
     private:
-      class RPCResponseTarget : public ResponseTarget
+      class RPCResponseHandler : public ResponseHandler
       {
       public:
-        RPCResponseTarget( RPCRequestType& rpc_request )
+        RPCResponseHandler( RPCRequestType& rpc_request )
           : rpc_request( &rpc_request )
         { }
 
-        ~RPCResponseTarget()
+        ~RPCResponseHandler()
         {
           RPCRequestType::dec_ref( rpc_request );
         }
 
-        // ResponseTarget
-        void send( Response& response )
+        // RTTIObject
+        const char* get_type_name() const { return "RPCResponseHandler"; }
+
+        // ResponseHandler
+        void handle( Response& response )
         {
           rpc_request->respond( response );
           RPCRequestType::dec_ref( rpc_request ); // Have to do this to avoid
@@ -238,24 +239,16 @@ namespace yield
       };
 
     private:
-      EventTarget& request_target;
+      EventHandler& request_handler;
       bool send_rpc_requests;
     };
 
     
     class SocketPeer
     {
-    public:
-      virtual ~SocketPeer();
-
     protected:
-      SocketPeer
-      (
-        Log* error_log,
-        Log* trace_log
-      );
-
-      static SocketAddress& createSocketAddress( const URI& absolute_uri );      
+      SocketPeer( Log* error_log = NULL, Log* trace_log = NULL );
+      virtual ~SocketPeer();
 
       Log* get_error_log() const { return error_log; }
       Log* get_trace_log() const { return trace_log; }
@@ -274,12 +267,14 @@ namespace yield
     protected:
       SocketClient
       (
-        Log* error_log,
         SocketAddress& peername, // Steals this reference
-        Log* trace_log
+        Log* error_log = NULL,
+        Log* trace_log = NULL
       );
 
       virtual ~SocketClient();
+
+      static SocketAddress& createSocketAddress( const URI& absolute_uri );
 
     private:
       SocketAddress& peername;
@@ -291,7 +286,7 @@ namespace yield
     public:
       virtual ~SocketServer();
 
-      EventTarget& get_request_target() const { return request_target; }
+      EventHandler& get_request_handler() const { return request_handler; }
 
       // Object
       SocketServer& inc_ref() { return Object::inc_ref( *this ); }
@@ -299,17 +294,17 @@ namespace yield
     protected:
       SocketServer
       ( 
-        Log* error_log,
-        EventTarget& request_target, // Steals this reference
-        Log* trace_log
+        EventHandler& request_handler, // Steals this reference
+        Log* error_log = NULL,
+        Log* trace_log = NULL
       );
 
     private:
-      EventTarget& request_target;
+      EventHandler& request_handler;
     };
 
 
-    class TCPSocketClient : public SocketClient
+    class StreamSocketClient : public SocketClient
     {
     public:
       class Configuration : public Object
@@ -355,45 +350,38 @@ namespace yield
       };
 
     public:
-      virtual ~TCPSocketClient();
-
-      Configuration& get_configuration() const { return configuration; }
+      Configuration& get_configuration() const { return *configuration; }
 
     protected:
-      TCPSocketClient
+      StreamSocketClient
       (
-        Configuration& configuration, // Steals this reference
-        Log* error_log,
-        IOQueue& io_queue, // Steals this reference
         SocketAddress& peername, // Steals this reference
-        Log* trace_log
+        Configuration* configuration = NULL, // Steals this reference
+        Log* error_log = NULL,
+        Log* trace_log = NULL
       );
 
-      IOQueue& get_io_queue() const { return io_queue; }
+      virtual ~StreamSocketClient();
 
     protected:
       class Connection
-        : public TCPSocket::AIOConnectCallback,
-          public TCPSocket::AIORecvCallback,
-          public TCPSocket::AIOSendCallback
+        : public StreamSocket::AIOConnectCallback,
+          public StreamSocket::AIORecvCallback,
+          public StreamSocket::AIOSendCallback
       {
-      public:
-        // EventHandler
-        const char* get_name() const { return "TCPSocketClient::Connection"; }
-
       protected:
         Connection
         ( 
-          Log* error_log, 
           SocketAddress& peername,
-          TCPSocket& tcp_socket, // Steals this reference
-          Log* trace_log
+          StreamSocket& stream_socket, // Steals this reference
+          Log* error_log = NULL, 
+          Log* trace_log = NULL
         );
         virtual ~Connection();
 
         Log* get_error_log() const { return error_log; }
         SocketAddress& get_peername() const { return peername; }
-        TCPSocket& get_tcp_socket() const { return tcp_socket; }
+        StreamSocket& get_stream_socket() const { return stream_socket; }
         Log* get_trace_log() const { return trace_log; }
 
         // Socket::AIOConnectCallback
@@ -410,74 +398,62 @@ namespace yield
 
       private:
         Log* error_log;
-        uint16_t reconnect_tries;
         SocketAddress& peername;
-        TCPSocket& tcp_socket;
+        uint16_t reconnect_tries;
+        StreamSocket& stream_socket;
         Log* trace_log;
       };
 
     private:
-      Configuration& configuration;
-      IOQueue& io_queue;
+      Configuration* configuration;
     };
 
 
-    class TCPSocketServer 
+    class StreamSocketServer 
       : public SocketServer,
-        public TCPSocket::AIOAcceptCallback
+        public StreamSocket::AIOAcceptCallback
     {
     protected:
-      TCPSocketServer
+      StreamSocketServer
       ( 
-        Log* error_log, 
-        IOQueue& io_queue, // Steals this reference
-        TCPSocket& listen_tcp_socket, // Steals this reference
-        EventTarget& request_target, // Steals this reference
-        Log* trace_log
-      );
-
-      virtual ~TCPSocketServer();
-
-      static IOQueue& createIOQueue( bool for_ssl );
-
-      static TCPSocket& 
-      createListenTCPSocket
-      ( 
-        const URI& absolute_uri,
-        IOQueue& io_queue,        
-        SSLContext* ssl_context = NULL,
+        StreamSocket& listen_stream_socket, // Steals this reference
+        EventHandler& request_handler, // Steals this reference
+        Log* error_log = NULL,
         Log* trace_log = NULL
       );
 
-      IOQueue& get_io_queue() const { return io_queue; }
-      TCPSocket& get_listen_tcp_socket() const { return listen_tcp_socket; }
+      virtual ~StreamSocketServer();
 
-      // TCPSocket::AIOAcceptCallback
-      virtual void onAcceptCompletion( TCPSocket&, void*, Buffer* );
+      StreamSocket& get_listen_stream_socket() const
+      { 
+        return listen_stream_socket;
+      }
+
+      // StreamSocket::AIOAcceptCallback
       virtual void onAcceptError( uint32_t error_code, void* );
 
     protected:
       class Connection 
-        : public ResponseTarget,
-          public TCPSocket::AIORecvCallback,          
-          public TCPSocket::AIOSendCallback
+        : public ResponseHandler,
+          public StreamSocket::AIORecvCallback,          
+          public StreamSocket::AIOSendCallback
       {
       public:
-        TCPSocket& get_tcp_socket() const { return tcp_socket; }
+        StreamSocket& get_stream_socket() const { return stream_socket; }
 
-        // TCPSocket::AIORecvCallback
+        // StreamSocket::AIORecvCallback
         virtual void onReadError( uint32_t error_code, void* context );
 
-        // TCPSocket::AIOSendCallback
+        // StreamSocket::AIOSendCallback
         virtual void onWriteError( uint32_t error_code, void* context );
 
       protected:
-        Connection( TCPSocket&, TCPSocketServer& );
+        Connection( StreamSocket&, StreamSocketServer& );
         virtual ~Connection();
 
       private:
-        TCPSocket& tcp_socket;
-        TCPSocketServer& tcp_socket_server;
+        StreamSocket& stream_socket;
+        StreamSocketServer& stream_socket_server;
       };
 
     private:
@@ -485,9 +461,103 @@ namespace yield
       void onWriteError( Connection&, uint32_t error_code );
 
     private:
-      IOQueue& io_queue;
-      TCPSocket& listen_tcp_socket;
+      StreamSocket& listen_stream_socket;
     };
+
+
+    class TCPSocketClient : public StreamSocketClient
+    {
+    protected:
+      TCPSocketClient
+      (
+        SocketAddress& peername, // Steals this reference
+        Configuration* configuration = NULL, // Steals this reference
+        Log* error_log = NULL,
+        Log* trace_log = NULL
+      );
+
+      virtual ~TCPSocketClient() { }
+
+    protected:
+      class Connection : public StreamSocketClient::Connection
+      {
+      protected:
+        Connection
+        ( 
+          SocketAddress& peername,
+          TCPSocket& tcp_socket, // Steals this reference
+          Log* error_log = NULL,
+          Log* trace_log = NULL
+        );
+
+        virtual ~Connection() { }
+
+        TCPSocket& get_tcp_socket() const;
+      };
+    };
+
+
+    class TCPSocketServer : public StreamSocketServer
+    {
+    public:
+      static TCPSocket&
+      createListenTCPSocket
+      (
+        const SocketAddress& sockname,
+        Log* trace_log = NULL
+      );
+
+    protected:
+      TCPSocketServer
+      ( 
+        TCPSocket& listen_tcp_socket, // Steals this reference
+        EventHandler& request_handler, // Steals this reference
+        Log* error_log = NULL,
+        Log* trace_log = NULL
+      );
+
+      virtual ~TCPSocketServer() { }
+
+      TCPSocket& get_listen_tcp_socket()
+      {
+        return static_cast<TCPSocket&>( get_listen_stream_socket() );
+      }
+
+    protected:
+      class Connection : public StreamSocketServer::Connection
+      {
+      public:
+        TCPSocket& get_tcp_socket() const;
+
+      protected:
+        Connection( TCPSocket&, TCPSocketServer& );
+        virtual ~Connection() { }
+      };
+    };
+
+
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+    class SSLSocketServer : public TCPSocketServer
+    {
+    public:
+      static SSLSocket&
+      createListenSSLSocket
+      (
+        const SocketAddress& sockname,
+        SSLContext& ssl_context,
+        Log* trace_log = NULL
+      );
+
+    protected:
+      SSLSocketServer
+      ( 
+        SSLSocket& listen_ssl_socket, // Steals this reference
+        EventHandler& request_handler, // Steals this reference
+        Log* error_log = NULL,
+        Log* trace_log = NULL
+      );
+    };
+#endif
 
 
     class UDPSocketClient 
@@ -500,21 +570,17 @@ namespace yield
     public:
       const Time& get_recv_timeout() const { return recv_timeout; }
 
-      // EventHandler
-      const char* get_name() const { return "UDPONCRPCClient"; }
-
     protected:
       UDPSocketClient
       (
-        Log* error_log,
         SocketAddress& peername, // Steals this reference
-        const Time& recv_timeout,
-        Log* trace_log,
-        UDPSocket& udp_socket // Steals this reference
+        UDPSocket& udp_socket, // Steals this reference
+        Log* error_log = NULL,
+        const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
+        Log* trace_log = NULL
       );
 
-      static UDPSocket&
-      createUDPSocket
+      static UDPSocket& createUDPSocket
       ( 
         const URI& absolute_uri,
         Log* trace_log
@@ -539,28 +605,28 @@ namespace yield
     protected:
       UDPSocketServer
       ( 
-        Log* error_log, 
-        EventTarget& request_target, // Steals this reference
-        Log* trace_log,
-        UDPSocket& udp_socket // Steals this reference
+        EventHandler& request_handler, // Steals this reference
+        UDPSocket& udp_socket, // Steals this reference
+        Log* error_log,
+        Log* trace_log
       );
 
       virtual ~UDPSocketServer();
 
       static UDPSocket& createUDPSocket
       ( 
-        const URI& absolute_uri,
+        const SocketAddress& sockname,
         Log* trace_log = NULL
       );
 
       UDPSocket& get_udp_socket() const { return udp_socket; }
 
     protected:
-      class ResponseTarget : public yield::concurrency::ResponseTarget
+      class ResponseHandler : public yield::concurrency::ResponseHandler
       {
       protected:
-        ResponseTarget( SocketAddress& peername, UDPSocket& udp_socket );
-        virtual ~ResponseTarget();
+        ResponseHandler( SocketAddress& peername, UDPSocket& udp_socket );
+        virtual ~ResponseHandler();
 
         const SocketAddress& get_peername() const { return peername; }
         UDPSocket& get_udp_socket() const { return udp_socket; }
@@ -692,7 +758,7 @@ namespace yield
       void respond( HTTPResponse& http_response ); // Steals this reference
       void respond( uint16_t status_code );
       void respond( uint16_t status_code, Buffer& body ); // Steals this ref
-      void respond( ExceptionResponse& exception_response ); // Steals this ref
+      void respond( Exception& exception ); // Steals this ref
 
       // Object
       HTTPRequest& inc_ref() { return Object::inc_ref( *this ); }
@@ -731,16 +797,10 @@ namespace yield
     class HTTPRequestHandler : public RequestHandler
     {
     public:
-      virtual void handleHTTPRequest( HTTPRequest& http_requesT ) = 0;
+      virtual void handle( HTTPRequest& http_request ) = 0;
 
       // RequestHandler
-      virtual void handleRequest( Request& request )
-      {
-        if ( request.get_type_id() == HTTPRequest::TYPE_ID )
-          handleHTTPRequest( static_cast<HTTPRequest&>( request ) );
-        else
-          Request::dec_ref( request );
-      }
+      virtual void handle( Request& request );
     };
 
 
@@ -837,6 +897,15 @@ namespace yield
     class HTTPClient : public HTTPRequestHandler, public TCPSocketClient
     {
     public:
+      HTTPClient
+      (
+        SocketAddress& peername, // Steals this reference
+        TCPSocket& tcp_socket, // Steals this reference
+        Configuration* configuration = NULL, // Steals this reference
+        Log* error_log = NULL,
+        Log* trace_log = NULL
+      );
+
       virtual ~HTTPClient() { }
 
       static HTTPClient&
@@ -845,7 +914,6 @@ namespace yield
         const URI& absolute_uri,
         Configuration* configuration = NULL, // Steals this reference
         Log* error_log = NULL,
-        SSLContext* ssl_context = NULL, // Steals this reference
         Log* trace_log = NULL
       );
 
@@ -870,22 +938,11 @@ namespace yield
       // Object
       HTTPClient& inc_ref() { return Object::inc_ref( *this ); }
 
-      // EventHandler
-      const char* get_name() const { return "HTTPClient"; }
-
-    protected:
-      HTTPClient
-      (
-        Configuration& configuration,
-        Log* error_log,
-        IOQueue& io_queue,
-        SocketAddress& peername,
-        TCPSocketFactory& tcp_socket_factory,
-        Log* trace_log
-      );
+      // RTTIObject
+      const char* get_type_name() const { return "HTTPClient"; }
 
       // HTTPRequestHandler
-      virtual void handleHTTPRequest( HTTPRequest& http_request );
+      virtual void handle( HTTPRequest& http_request );
 
     protected:
       class Connection 
@@ -896,17 +953,17 @@ namespace yield
       public:
         Connection
         (
-          Log* error_log,
           SocketAddress& peername,
           TCPSocket& tcp_socket,
-          Log* trace_log
+          Log* error_log = NULL,
+          Log* trace_log = NULL
         );
 
-        // EventHandler
-        const char* get_name() const { return "HTTPClient::Connection"; }
+        // RTTIObject
+        const char* get_type_name() const { return "HTTPClient::Connection"; }
 
         // HTTPRequestHandler
-        virtual void handleHTTPRequest( HTTPRequest& http_request );
+        virtual void handle( HTTPRequest& http_request );
 
       protected:
         // Socket::AIOConnectCallback
@@ -924,16 +981,6 @@ namespace yield
       private:
         std::deque<HTTPRequest*> outstanding_http_requests;
       };
-
-    private:
-      static
-      HTTPResponse&
-      sendHTTPRequest
-      (
-        const char* method,
-        const URI& uri,
-        Buffer* body
-      );
 
     private:
       SynchronizedSTLQueue<Connection*> connections;
@@ -1004,16 +1051,24 @@ namespace yield
       };
 
     public:
+      HTTPServer
+      (
+        EventHandler& http_request_handler, // Steals this reference
+        TCPSocket& listen_tcp_socket,
+        AccessLog* access_log = NULL,
+        Log* error_log = NULL,
+        Log* trace_log = NULL
+      );
+
       virtual ~HTTPServer() { }
 
       static HTTPServer&
       create
       (
-        const URI& absolute_uri,
-        EventTarget& http_request_target, // Steals this reference
+        EventHandler& http_request_handler, // Steals this reference
+        const SocketAddress& sockname,
         AccessLog* access_log = NULL,
         Log* error_log = NULL,
-        SSLContext* ssl_context = NULL, // Steals this reference, to allow *new
         Log* trace_log = NULL
       );
 
@@ -1021,21 +1076,11 @@ namespace yield
       HTTPServer& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
-      HTTPServer
-      (
-        AccessLog* access_log,
-        Log* error_log,
-        EventTarget& http_request_target,
-        IOQueue& io_queue,
-        TCPSocket& listen_tcp_socket,
-        Log* trace_log
-      );
-
       // TCPSocket::AIOAcceptCallback
       virtual void
       onAcceptCompletion
       ( 
-        TCPSocket& accepted_tcp_socket, 
+        StreamSocket& accepted_stream_socket, 
         void* context, 
         Buffer* recv_buffer 
       );
@@ -1048,6 +1093,12 @@ namespace yield
       public:
         Connection( HTTPServer& http_server, TCPSocket& tcp_socket );
 
+        // RTTIObject
+        virtual const char* get_type_name() const
+        { 
+          return "HTTPServer::Connection"; 
+        }
+
         // TCPSocket::AIORecvCallback
         virtual void onReadCompletion( Buffer& buffer, void* context );
 
@@ -1055,8 +1106,8 @@ namespace yield
         virtual void onWriteCompletion( size_t bytes_written, void* context );
         virtual void onWriteError( uint32_t error_code, void* context );
 
-        // ResponseTarget
-        virtual void send( Response& response );
+        // ResponseHandler
+        virtual void handle( Response& response );
 
       private:
         HTTPServer& http_server;
@@ -1067,6 +1118,33 @@ namespace yield
       class ostreamAccessLog;
       AccessLog* access_log;
     };
+
+
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+    class HTTPSServer : public HTTPServer
+    {
+    public:
+      HTTPSServer
+      (
+        EventHandler& http_request_handler, // Steals this reference
+        SSLSocket& listen_ssl_socket,
+        AccessLog* access_log = NULL,
+        Log* error_log = NULL,
+        Log* trace_log = NULL
+      );
+
+      static HTTPSServer&
+      create
+      (
+        EventHandler& http_request_handler, // Steals this reference
+        const SocketAddress& sockname,
+        SSLContext& ssl_context,
+        AccessLog* access_log = NULL,
+        Log* error_log = NULL,
+        Log* trace_log = NULL
+      );
+    };
+#endif
 
 
     class JSONMarshaller : public Marshaller
@@ -1301,7 +1379,7 @@ namespace yield
       uint32_t get_vers() const { return vers; }
       void respond( ONCRPCResponse& response ); // Steals this reference
       void respond( Response& response ); // Steals this reference
-      void respond( ExceptionResponse& response ); // Steals this reference
+      void respond( Exception& response ); // Steals this reference
 
       // Object
       ONCRPCRequest& inc_ref() { return Object::inc_ref( *this ); }
@@ -1316,24 +1394,17 @@ namespace yield
     private:      
       Request& body;
       MarshallableObject* cred;
-      uint32_t prog, proc;
-      uint32_t vers;
+      uint32_t proc, prog, vers;
     };
 
 
     class ONCRPCRequestHandler : public RequestHandler
     {
     public:
-      virtual void handleONCRPCRequest( ONCRPCRequest& onc_rpc_request ) = 0;
+      virtual void handle( ONCRPCRequest& onc_rpc_request ) = 0;
 
       // RequestHandler
-      void handleRequest( Request& request )
-      {
-        if ( request.get_type_id() == ONCRPCRequest::TYPE_ID )
-          handleONCRPCRequest( static_cast<ONCRPCRequest&>( request ) );
-        else
-          Request::dec_ref( request );
-      }
+      virtual void handle( Request& request );
     };
 
 
@@ -1371,11 +1442,11 @@ namespace yield
          AUTH_FAILED       = 7
       };
 
-       typedef struct
-       {
-         uint32_t low;
-         uint32_t high;
-       } mismatch_info;
+      struct mismatch_info
+      {
+        uint32_t low;
+        uint32_t high;
+      };
 
       enum reject_stat { RPC_MISMATCH = 0, AUTH_ERROR = 1 };
       enum reply_stat { MSG_ACCEPTED = 0, MSG_DENIED = 1 };
@@ -1392,7 +1463,7 @@ namespace yield
       // Accepted reply (MSG_ACCEPTED) - other accept_stat = body.get_type_id()
       ONCRPCResponse
       (
-        ExceptionResponse& body, // Steals this reference
+        Exception& body, // Steals this reference
         uint32_t xid,
         MarshallableObject* verf = NULL // = AUTH_NONE, steals this reference
       );
@@ -1419,8 +1490,8 @@ namespace yield
 
     private:
       uint32_t accept_stat_;
-      Response& body;
       auth_stat auth_stat_;
+      Response& body;
       struct mismatch_info mismatch_info_;
       reject_stat reject_stat_;
       reply_stat reply_stat_;
@@ -1444,13 +1515,13 @@ namespace yield
     };
 
 
-    class ONCRPCAuthError : public ExceptionResponse
+    class ONCRPCAuthError : public Exception
     {
     public:
       const static uint32_t ERROR_CODE = 7;
 
       ONCRPCAuthError( ONCRPCResponse::auth_stat auth_stat_ ) 
-        : ExceptionResponse( ERROR_CODE, "ONC-RPC: auth error" ),
+        : Exception( ERROR_CODE, "ONC-RPC: auth error" ),
           auth_stat_( auth_stat_ )
       { }
 
@@ -1462,11 +1533,17 @@ namespace yield
 
 
     class ONCRPCClient 
-      : public RequestHandler,
+      : public ONCRPCRequestHandler,
         public RPCClient<ONCRPCRequest, ONCRPCResponse>
     {
     public:
       virtual ~ONCRPCClient();
+
+      // RequestHandler
+      virtual void handle( Request& request );
+
+      // ONCRPCRequestHandler
+      virtual void handle( ONCRPCRequest& onc_rpc_request ) = 0;
 
     protected:
       ONCRPCClient
@@ -1480,11 +1557,6 @@ namespace yield
       virtual MarshallableObject* get_cred() { return cred; }
       uint32_t get_prog() const { return prog; }
       uint32_t get_vers() const { return vers; }
-
-      virtual void handleONCRPCRequest( ONCRPCRequest& onc_rpc_request ) = 0;
-
-      // RequestHandler
-      void handleRequest( Request& request );
     
     private:
       MarshallableObject* cred;
@@ -1495,190 +1567,35 @@ namespace yield
     typedef RPCServer<ONCRPCRequest, ONCRPCResponse> ONCRPCServer;
 
 
-    class SSLContext : public Object
+    class ONCRPCStreamSocketClient 
+      : public ONCRPCClient,
+        public StreamSocketClient
     {
     public:
-      ~SSLContext();
-
-#ifdef YIELD_IPC_HAVE_OPENSSL
-      static SSLContext&
-      create
+      ONCRPCStreamSocketClient
       (
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
-        const
-#endif
-        SSL_METHOD* method = SSLv23_client_method()
-      );
-
-      static SSLContext&
-      create
-      (
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
-        const
-#endif
-        SSL_METHOD* method,
-        const Path& pem_certificate_file_path,
-        const Path& pem_private_key_file_path,
-        const string& pem_private_key_passphrase
-      );
-
-      static SSLContext&
-      create
-      (
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
-        const
-#endif
-        SSL_METHOD* method,
-        const string& pem_certificate_str,
-        const string& pem_private_key_str,
-        const string& pem_private_key_passphrase
-      );
-
-      static SSLContext&
-      create
-      (
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
-        const
-#endif
-        SSL_METHOD* method,
-        const Path& pkcs12_file_path,
-        const string& pkcs12_passphrase
-      );
-
-      operator SSL_CTX*() const { return ctx; }
-#endif
-
-      // Object
-      SSLContext& inc_ref() { return Object::inc_ref( *this ); }
-
-  private:
-#ifdef YIELD_IPC_HAVE_OPENSSL
-      SSLContext( SSL_CTX* ctx );
-#else
-      SSLContext() { }
-#endif      
-
-#ifdef YIELD_IPC_HAVE_OPENSSL
-      static SSL_CTX* createSSL_CTX
-      (
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
-        const
-#endif
-        SSL_METHOD* method
-      );
-
-      SSL_CTX* ctx;
-#endif
-    };
-
-
-#ifdef YIELD_IPC_HAVE_OPENSSL
-    class SSLSocket : public TCPSocket
-    {
-    public:
-      virtual ~SSLSocket();
-
-      static SSLSocket* create( SSLContext& ssl_context );
-      static SSLSocket* create( int domain, SSLContext& ssl_context );
-
-      operator SSL*() const { return ssl; }
-
-      // Socket
-      // Will only associate with BIO or NBIO queues
-      bool associate( IOQueue& io_queue );
-      bool connect( const SocketAddress& peername );
-      virtual ssize_t recv( void* buf, size_t buflen, int );
-      virtual ssize_t send( const void* buf, size_t buflen, int );
-      virtual ssize_t sendmsg( const struct iovec* iov, uint32_t iovlen, int );
-      virtual bool want_send() const;
-      virtual bool want_recv() const;
-      
-      // TCPSocket
-      virtual TCPSocket* accept();
-      virtual bool shutdown();
-
-    protected:
-      SSLSocket( int, socket_t, SSL*, SSLContext& );
-
-    private:
-      SSL* ssl;
-      SSLContext& ssl_context;
-    };
-
-
-    class TCPSocketFactory : public Object
-    {
-    public:
-      virtual TCPSocket* createTCPSocket() { return TCPSocket::create(); }
-
-      // Object
-      TCPSocketFactory& inc_ref() { return Object::inc_ref( *this ); }
-    };
-
-
-    class SSLSocketFactory : public TCPSocketFactory
-    {
-    public:
-      SSLSocketFactory( SSLContext& ssl_context )
-        : ssl_context( ssl_context.inc_ref() )
-      { }
-
-      ~SSLSocketFactory()
-      {
-        SSLContext::dec_ref( ssl_context );
-      }
-
-      // TCPSocketFactory
-      TCPSocket* createTCPSocket() { return SSLSocket::create( ssl_context ); }
-
-    private:
-      SSLContext& ssl_context;
-    };
-#endif
-
-
-    class TCPONCRPCClient : public TCPSocketClient, public ONCRPCClient
-    {
-    public:
-      virtual ~TCPONCRPCClient();
-
-      static TCPONCRPCClient&
-      create
-      (
-        const URI& absolute_uri,
         MessageFactory& message_factory, // Steals this reference
+        SocketAddress& peername, // Steals this reference
         uint32_t prog,
+        StreamSocket& stream_socket, // Steals this reference
         uint32_t vers,
         Configuration* configuration = NULL, // Steals this reference
-        MarshallableObject* cred = NULL,
-        Log* error_log = NULL,        
-        SSLContext* ssl_context = NULL, // Steals this reference
+        MarshallableObject* cred = NULL, // Steals this reference
+        Log* error_log = NULL,
         Log* trace_log = NULL
       );
 
-      // Object
-      TCPONCRPCClient& inc_ref() { return Object::inc_ref( *this ); }
+      virtual ~ONCRPCStreamSocketClient();
 
-      // EventHandler
-      const char* get_name() const { return "TCPONCRPCClient"; }
+      // RTTIObject
+      virtual const char* get_type_name() const
+      { 
+        return "ONCRPCStreamSocketClient"; 
+      }
 
     protected:
-      TCPONCRPCClient
-      (
-        Configuration& configuration,
-        MarshallableObject* cred,
-        Log* error_log,
-        IOQueue& io_queue,
-        MessageFactory& message_factory,
-        SocketAddress& peername,
-        uint32_t prog,
-        TCPSocketFactory& tcp_socket_factory,
-        Log* trace_log,
-        uint32_t vers
-      );
-
       // ONCRPCClient
-      virtual void handleONCRPCRequest( ONCRPCRequest& onc_rpc_request );
+      virtual void handle( ONCRPCRequest& onc_rpc_request );
     
     private:
       class Connection;
@@ -1686,60 +1603,291 @@ namespace yield
     };
 
 
-    class TCPONCRPCServer : public TCPSocketServer, private ONCRPCServer
+    class ONCRPCStreamSocketServer 
+      : public ONCRPCServer, 
+        public StreamSocketServer
     {
     public:
-      static TCPONCRPCServer&
-      create
-      (
-        const URI& absolute_uri,
-        MessageFactory& message_factory,
-        EventTarget& onc_rpc_request_target,
+      ONCRPCStreamSocketServer
+      ( 
+        StreamSocket& listen_stream_socket, // Steals this reference
+        MessageFactory& message_factory, // Steals this reference
+        EventHandler& onc_rpc_request_handler, // Steals this reference
         Log* error_log = NULL,
         bool send_onc_rpc_requests = false,
-        SSLContext* ssl_context = NULL,
         Log* trace_log = NULL
       );
 
-      // EventHandler
-      const char* get_name() const { return "TCPONCRPCServer"; }
+      virtual ~ONCRPCStreamSocketServer() { }
+
+      // RTTIObject
+      virtual const char* get_type_name() const
+      { 
+        return "ONCRPCStreamSocketServer"; 
+      }
 
     private:
-      TCPONCRPCServer
-      ( 
-        Log* error_log,
-        IOQueue& io_queue,
-        TCPSocket& listen_tcp_socket,
-        MessageFactory& message_factory,
-        EventTarget& onc_rpc_request_target,
-        bool send_onc_rpc_requests,
-        Log* trace_log
-      );
-
-      // TCPSocket::AIOAcceptCallback
-      void onAcceptCompletion( TCPSocket&, void*, Buffer* );
+      // StreamSocket::AIOAcceptCallback
+      void onAcceptCompletion( StreamSocket&, void*, Buffer* );
 
     private:
       class Connection 
-        : public TCPSocketServer::Connection,
+        : public StreamSocketServer::Connection,
           private ONCRPCRequestParser
       {
       public:
-        Connection( TCPSocket& tcp_socket, TCPONCRPCServer& tcp_onc_rpc_server );
+        Connection( ONCRPCStreamSocketServer&, StreamSocket& );
+
+        // RTTIObject
+        virtual const char* get_type_name() const
+        {
+          return "ONCRPCStreamSocketServer::Connection";
+        }
 
       private:
-        // TCPSocket::AIORecvCallback
+        // StreamSocket::AIORecvCallback
         void onReadCompletion( Buffer& buffer, void* context );
 
-        // TCPSocket::AIOSendCallback
+        // StreamSocket::AIOSendCallback
         void onWriteCompletion( size_t bytes_written, void* context );
 
-        // ResponseTarget
-        void send( Response& response );
+        // ResponseHandler
+        void handle( Response& response );
 
       private:
-        TCPONCRPCServer& tcp_onc_rpc_server;
+        ONCRPCStreamSocketServer& onc_rpc_stream_socket_server;
       };
+    };
+
+
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+    class ONCRPCSSLSocketClient : public ONCRPCStreamSocketClient
+    {
+    public:
+      ONCRPCSSLSocketClient
+      (
+        MessageFactory& message_factory, // Steals this reference
+        SocketAddress& peername, // Steals this reference
+        uint32_t prog,
+        SSLSocket& ssl_socket, // Steals this reference
+        uint32_t vers,
+        Configuration* configuration = NULL, // Steals this reference
+        MarshallableObject* cred = NULL, // Steals this reference
+        Log* error_log = NULL,
+        Log* trace_log = NULL
+      );
+
+      virtual ~ONCRPCSSLSocketClient() { }
+
+      static ONCRPCSSLSocketClient&
+      create
+      (
+        const URI& absolute_uri,
+        MessageFactory& message_factory, // Steals this reference
+        SSLContext& ssl_context,
+        uint32_t prog,
+        uint32_t vers,
+        Configuration* configuration = NULL, // Steals this reference
+        MarshallableObject* cred = NULL, // Steals this reference
+        Log* error_log = NULL,
+        Log* trace_log = NULL
+      );
+
+      // RTTIObject
+      virtual const char* get_type_name() const
+      { 
+        return "ONCRPCSSLSocketClient"; 
+      }    
+    };
+
+
+    class ONCRPCSSLSocketServer : public ONCRPCStreamSocketServer
+    {
+    public:
+      ONCRPCSSLSocketServer
+      ( 
+        SSLSocket& listen_ssl_socket, // Steals this reference
+        MessageFactory& message_factory, // Steals this reference
+        EventHandler& onc_rpc_request_handler, // Steals this reference
+        Log* error_log = NULL,
+        bool send_onc_rpc_requests = false,
+        Log* trace_log = NULL
+      );
+
+      static ONCRPCSSLSocketServer&
+      create
+      (        
+        MessageFactory& message_factory,
+        EventHandler& onc_rpc_request_handler,
+        const SocketAddress& sockname,
+        SSLContext& ssl_context,
+        Log* error_log = NULL,
+        bool send_onc_rpc_requests = false,
+        Log* trace_log = NULL
+      );
+
+      // RTTIObject
+      virtual const char* get_type_name() const
+      { 
+        return "ONCRPCSSLSocketServer"; 
+      }
+    };
+#endif
+
+
+    class ONCRPCTCPSocketClient : public ONCRPCStreamSocketClient
+    {
+    public:
+      ONCRPCTCPSocketClient
+      (
+        MessageFactory& message_factory, // Steals this reference
+        SocketAddress& peername, // Steals this reference
+        uint32_t prog,
+        TCPSocket& tcp_socket, // Steals this reference
+        uint32_t vers,
+        Configuration* configuration = NULL, // Steals this reference
+        MarshallableObject* cred = NULL, // Steals this reference
+        Log* error_log = NULL,
+        Log* trace_log = NULL
+      );
+
+      virtual ~ONCRPCTCPSocketClient() { }
+
+      static ONCRPCTCPSocketClient&
+      create
+      (
+        const URI& absolute_uri,
+        MessageFactory& message_factory, // Steals this reference
+        uint32_t prog,
+        uint32_t vers,
+        Configuration* configuration = NULL, // Steals this reference
+        MarshallableObject* cred = NULL, // Steals this reference
+        Log* error_log = NULL,
+        Log* trace_log = NULL
+      );
+
+      // RTTIObject
+      virtual const char* get_type_name() const
+      { 
+        return "ONCRPCTCPSocketClient"; 
+      }    
+    };
+
+
+    class ONCRPCTCPSocketServer : public ONCRPCStreamSocketServer
+    {
+    public:
+      ONCRPCTCPSocketServer
+      ( 
+        TCPSocket& listen_tcp_socket, // Steals this reference
+        MessageFactory& message_factory, // Steals this reference
+        EventHandler& onc_rpc_request_handler, // Steals this reference
+        Log* error_log = NULL,
+        bool send_onc_rpc_requests = false,
+        Log* trace_log = NULL
+      );
+
+      static ONCRPCTCPSocketServer&
+      create
+      (
+        MessageFactory& message_factory,
+        EventHandler& onc_rpc_request_handler,
+        const SocketAddress& sockname,
+        Log* error_log = NULL,
+        bool send_onc_rpc_requests = false,
+        Log* trace_log = NULL
+      );
+
+      // RTTIObject
+      virtual const char* get_type_name() const
+      { 
+        return "ONCRPCTCPSocketServer"; 
+      }
+    };
+
+
+    class ONCRPCUDPSocketClient 
+      : public ONCRPCClient,
+        public UDPSocketClient,        
+        private ONCRPCResponseParser
+    {
+    public:
+      ONCRPCUDPSocketClient
+      (
+        MessageFactory& message_factory, // Steals this reference
+        SocketAddress& peername, // Steals this reference
+        uint32_t prog,
+        UDPSocket& udp_socket, // Steals this reference
+        uint32_t vers,
+        MarshallableObject* cred = NULL,
+        Log* error_log = NULL,
+        const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
+        Log* trace_log = NULL
+      );
+
+      static ONCRPCUDPSocketClient&
+      create
+      (
+        const URI& absolute_uri,
+        MessageFactory& message_factory, // Steals this reference
+        uint32_t prog,
+        uint32_t vers,
+        MarshallableObject* cred = NULL,
+        Log* error_log = NULL,        
+        const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
+        Log* trace_log = NULL
+      );
+
+      // RTTIObject
+      const char* get_type_name() const { return "ONCRPCUDPSocketClient"; }
+
+    protected:
+      // ONCRPCClient
+      virtual void handle( ONCRPCRequest& onc_rpc_request );
+
+      // UDPSocket::AIORecvCallback
+      void onReadCompletion( Buffer& buffer, void* context );
+      void onReadError( uint32_t error_code, void* context );
+    };
+
+
+    class ONCRPCUDPSocketServer 
+      : public ONCRPCServer,
+        public UDPSocketServer,
+        private ONCRPCRequestParser
+    {
+    public:
+      ONCRPCUDPSocketServer
+      ( 
+        MessageFactory& message_factory,
+        EventHandler& onc_rpc_request_handler,
+        UDPSocket& udp_socket,
+        Log* error_log = NULL,
+        bool send_onc_rpc_requests = false,
+        Log* trace_log = NULL
+      );
+
+      static ONCRPCUDPSocketServer&
+      create
+      (
+        MessageFactory& message_factory,
+        EventHandler& onc_rpc_request_handler,
+        const SocketAddress& sockname,
+        Log* error_log = NULL,
+        bool send_onc_rpc_requests = false,
+        Log* trace_log = NULL
+      );
+
+      // RTTIObject
+      const char* get_type_name() const { return "ONCRPCUDPSocketServer"; }
+
+    private:
+      // UDPSocket::AIORecvFromCallback
+      void onRecvFromCompletion( Buffer&, SocketAddress& peername, void* );
+      void onRecvFromError( uint32_t error_code, void* context );
+
+    private:
+      class ResponseHandler;
     };
 
 
@@ -1761,8 +1909,8 @@ namespace yield
       ssize_t send( const void* buf, size_t buflen, int );
       ssize_t sendmsg( const struct iovec* iov, uint32_t iovlen, int );
 
-      // TCPSocket
-      TCPSocket* accept();
+      // StreamSocket
+      StreamSocket* dup();
       bool want_connect() const;
       bool want_recv() const;
       bool want_send() const;
@@ -1770,113 +1918,11 @@ namespace yield
     private:
       TracingTCPSocket( int domain, Log& log, socket_t );
 
-    private:
-      Log& log;
-    };
-
-
-    class TracingTCPSocketFactory : public TCPSocketFactory
-    {
-    public:
-      TracingTCPSocketFactory( Log& log )
-        : log( log.inc_ref() )
-      { }
-
-      ~TracingTCPSocketFactory()
-      {
-        Log::dec_ref( log );
-      }
-
-      // TCPSocketFactory
-      TCPSocket* createTCPSocket() { return TracingTCPSocket::create( log ); }
+      // StreamSocket
+      StreamSocket* dup2( socket_t );
 
     private:
       Log& log;
-    };
-
-
-    class UDPONCRPCClient 
-      : public UDPSocketClient,
-        public ONCRPCClient,
-        private ONCRPCResponseParser
-    {
-    public:
-      static UDPONCRPCClient&
-      create
-      (
-        const URI& absolute_uri,
-        MessageFactory& message_factory, // Steals this reference
-        uint32_t prog,
-        uint32_t vers,
-        MarshallableObject* cred = NULL,
-        Log* error_log = NULL,        
-        const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
-        Log* trace_log = NULL
-      );
-
-      // EventHandler
-      const char* get_name() const { return "UDPONCRPCClient"; }
-
-    protected:
-      UDPONCRPCClient
-      (
-        MarshallableObject* cred,
-        Log* error_log,
-        MessageFactory& message_factory,
-        SocketAddress& peername, // Steals this reference
-        uint32_t prog,
-        const Time& recv_timeout,
-        Log* trace_log,
-        UDPSocket& udp_socket, // Steals this reference
-        uint32_t vers
-      );
-
-      // UDPSocket::AIORecvCallback
-      void onReadCompletion( Buffer& buffer, void* context );
-      void onReadError( uint32_t error_code, void* context );
-
-      // ONCRPCClient
-      virtual void handleONCRPCRequest( ONCRPCRequest& onc_rpc_request );
-    };
-
-
-    class UDPONCRPCServer 
-      : public UDPSocketServer,
-        private ONCRPCServer,
-        private ONCRPCRequestParser
-    {
-    public:
-      static UDPONCRPCServer&
-      create
-      (
-        const URI& absolute_uri,
-        MessageFactory& message_factory,
-        EventTarget& onc_rpc_request_target,
-        Log* error_log = NULL,
-        bool send_onc_rpc_requests = false,
-        Log* trace_log = NULL
-      );
-
-      // EventHandler
-      const char* get_name() const { return "UDPONCRPCServer"; }
-
-    private:
-      UDPONCRPCServer
-      ( 
-        Log* error_log,
-        MessageFactory& message_factory,
-        EventTarget& request_target,
-        bool send_onc_rpc_requests,
-        Log* trace_log,
-        UDPSocket& udp_socket
-      );
-
-      // UDPSocket::AIORecvFromCallback
-      void onRecvFromCompletion( Buffer&, SocketAddress& peername, void* );
-      void onRecvFromError( uint32_t error_code, void* context );
-
-    private:
-      class ResponseTarget;
     };
 
 
@@ -1938,29 +1984,6 @@ namespace yield
       unsigned short port;
       string resource;
       multimap<string, string> query;
-    };
-
-
-    class UUID : public Object
-    {
-    public:
-      UUID();
-      UUID( const string& uuid_from_string );
-      ~UUID();
-
-      bool operator==( const UUID& ) const;
-      operator string() const;
-
-    private:
-#if defined(_WIN32)
-      void* win32_uuid;
-#elif defined(YIELD_IPC_HAVE_LINUX_LIBUUID)
-      void* linux_libuuid_uuid;
-#elif defined(__sun)
-      void* sun_uuid;
-#else
-      char generic_uuid[256];
-#endif
     };
   };
 };

@@ -59,7 +59,7 @@ except:
 
     Export( "build_env", "build_conf" )
 
-defines = ["YIELD_IPC_HAVE_OPENSSL"]
+defines = ["YIELD_PLATFORM_HAVE_OPENSSL"]
 if sys.platform.startswith( "win" ): defines.extend( [] )
 else: defines.extend( [] )
 for define in defines:
@@ -105,6 +105,7 @@ build_env.Library( "../../lib/xtreemfs", (
     r"../../src/libxtreemfs/options.cpp",
     r"../../src/libxtreemfs/osd_proxies.cpp",
     r"../../src/libxtreemfs/osd_proxy.cpp",
+    r"../../src/libxtreemfs/proxy.cpp",
     r"../../src/libxtreemfs/stat.cpp",
     r"../../src/libxtreemfs/stat_cache.cpp",
     r"../../src/libxtreemfs/user_credentials_cache.cpp",

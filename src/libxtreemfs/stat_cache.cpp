@@ -28,9 +28,15 @@
 
 
 #include "stat_cache.h"
+#include "stat.h"
+#include "user_credentials_cache.h"
+#include "xtreemfs/mrc_proxy.h"
 using org::xtreemfs::interfaces::MRCInterfaceMessages;
 using org::xtreemfs::interfaces::StatSet;
 using namespace xtreemfs;
+
+#include "yield.h"
+using yield::platform::iconv;
 using yield::platform::Volume;
 
 

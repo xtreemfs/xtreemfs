@@ -29,12 +29,13 @@
 
 #include "xtreemfs/dir_proxy.h"
 #include "xtreemfs/options.h"
+using org::xtreemfs::interfaces::ONCRPC_SCHEME;
+using org::xtreemfs::interfaces::ONCRPCG_SCHEME;
+using org::xtreemfs::interfaces::ONCRPCS_SCHEME;
+using org::xtreemfs::interfaces::ONCRPCU_SCHEME;
 using org::xtreemfs::interfaces::ServiceSet;
 using org::xtreemfs::interfaces::ServiceDataMap;
 using namespace xtreemfs;
-
-#include "yield.h"
-using yield::platform::Exception;
 
 
 class DIRProxy::CachedAddressMappings : public AddressMappingSet
@@ -61,29 +62,8 @@ private:
 };
 
 
-DIRProxy::DIRProxy
-(
-  Configuration& configuration,
-  Log* error_log,
-  IOQueue& io_queue,
-  SocketAddress& peername,
-  TCPSocketFactory& tcp_socket_factory,
-  Log* trace_log
-)
-: Proxy
-  <
-    org::xtreemfs::interfaces::DIRInterface,
-    org::xtreemfs::interfaces::DIRInterfaceMessageFactory,
-    org::xtreemfs::interfaces::DIRInterfaceRequestSender
-  >
-  (
-    configuration,
-    error_log,
-    io_queue,
-    peername,
-    tcp_socket_factory,
-    trace_log
-  )
+DIRProxy::DIRProxy( EventHandler& request_handler )
+  : DIRInterfaceProxy( request_handler )
 { }
 
 DIRProxy::~DIRProxy()
@@ -107,7 +87,9 @@ DIRProxy& DIRProxy::create( const Options& options )
              *options.get_uri(),
              NULL,
              options.get_error_log(),
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
              options.get_ssl_context(),
+#endif
              options.get_trace_log()
            );
   }
@@ -121,18 +103,28 @@ DIRProxy::create
   const URI& absolute_uri,
   Configuration* configuration,
   Log* error_log,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
   SSLContext* ssl_context,
+#endif
   Log* trace_log
 )
 {
   return *new DIRProxy
               (
-                configuration != NULL ? *configuration : *new Configuration,
-                error_log,
-                yield::platform::NBIOQueue::create(),
-                createSocketAddress( absolute_uri ),
-                createTCPSocketFactory( absolute_uri, ssl_context ),
-                trace_log
+                createONCRPCClient
+                (
+                  absolute_uri,
+                  *new org::xtreemfs::interfaces::DIRInterfaceMessageFactory,
+                  ONC_RPC_PORT_DEFAULT,
+                  0x20000000 + TAG,
+                  TAG,
+                  configuration,
+                  error_log,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+                  ssl_context,
+#endif
+                  trace_log
+                )
               );
 }
 

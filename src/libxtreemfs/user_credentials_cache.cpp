@@ -27,11 +27,13 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#include "xtreemfs/user_credentials_cache.h"
+#include "user_credentials_cache.h"
+using namespace xtreemfs;
+
+#include "yield.h"
 using yield::platform::iconv;
 using yield::platform::Path;
 using yield::platform::SharedLibrary;
-using namespace xtreemfs;
 
 #ifdef _WIN32
 #include <windows.h>

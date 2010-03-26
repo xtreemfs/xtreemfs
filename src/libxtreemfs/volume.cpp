@@ -33,6 +33,7 @@
 #include "open_file_table.h"
 #include "stat.h"
 #include "stat_cache.h"
+#include "user_credentials_cache.h"
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/options.h"
 #include "xtreemfs/osd_proxy.h"
@@ -46,7 +47,8 @@ using org::xtreemfs::interfaces::StringSet;
 
 #include "yield.h"
 using yield::concurrency::StageGroup;
-using yield::platform::Exception;
+using yield::platform::iconv;
+using yield::platform::UUID;
 
 #include <errno.h>
 #ifdef _WIN32
@@ -137,7 +139,7 @@ Volume::Volume
             stat_cache_write_back_attrs
           );
 
-  uuid = yield::ipc::UUID();
+  uuid = UUID();
 }
 
 Volume::~Volume()
@@ -176,7 +178,9 @@ Volume::create
            name_utf8,
            options.get_error_log(),
            flags,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
            options.get_ssl_context(),
+#endif
            options.get_trace_log(),
            vivaldi_coordinates_file_path           
          );
@@ -189,7 +193,9 @@ Volume::create
   const string& name_utf8,
   Log* error_log,
   uint32_t flags,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
   SSLContext* proxy_ssl_context,
+#endif
   Log* trace_log,
   const Path& vivaldi_coordinates_file_path
 )
@@ -202,7 +208,9 @@ Volume::create
         dir_uri,
         NULL,
         error_log,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
         proxy_ssl_context,
+#endif
         trace_log
       );
 
@@ -219,7 +227,10 @@ Volume::create
         mrc_uri,
         NULL,
         error_log,
+        "",
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
         proxy_ssl_context,
+#endif
         trace_log,
         user_credentials_cache
       );
@@ -228,8 +239,8 @@ Volume::create
   mrc_proxy.getattr( name_utf8, "/", 0, stbuf );
 
   StageGroup* stage_group = new yield::concurrency::SEDAStageGroup;
-  stage_group->createStage( dir_proxy );
-  stage_group->createStage( mrc_proxy );
+  //stage_group->createStage( dir_proxy );
+  //stage_group->createStage( mrc_proxy );
 
   OSDProxies* osd_proxies
     = new OSDProxies
@@ -237,7 +248,9 @@ Volume::create
             dir_proxy,
             error_log,
             NULL,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
             proxy_ssl_context,
+#endif
             stage_group,
             trace_log
           );

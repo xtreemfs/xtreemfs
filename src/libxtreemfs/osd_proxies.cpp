@@ -30,14 +30,16 @@
 #include "xtreemfs/osd_proxies.h"
 #include "xtreemfs/dir_proxy.h"
 using org::xtreemfs::interfaces::AddressMappingSet;
+using org::xtreemfs::interfaces::ONCRPC_SCHEME;
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+using org::xtreemfs::interfaces::ONCRPCG_SCHEME;
+using org::xtreemfs::interfaces::ONCRPCS_SCHEME;
+#endif
 using org::xtreemfs::interfaces::Replica;
 using org::xtreemfs::interfaces::ReplicaSet;
 using org::xtreemfs::interfaces::StripingPolicy;
 using org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
 using namespace xtreemfs;
-
-#include "yield.h"
-using yield::platform::Exception;
 
 
 OSDProxies::OSDProxies
@@ -45,13 +47,17 @@ OSDProxies::OSDProxies
   DIRProxy& dir_proxy,
   Log* error_log,  
   OSDProxy::Configuration* osd_proxy_configuration,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
   SSLContext* osd_proxy_ssl_context,
+#endif
   StageGroup* osd_proxy_stage_group,
   Log* trace_log
 )
   : dir_proxy( dir_proxy.inc_ref() ),
     error_log( Object::inc_ref( error_log ) ),
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
     osd_proxy_ssl_context( Object::inc_ref( osd_proxy_ssl_context ) ),
+#endif
     osd_proxy_stage_group( Object::inc_ref( osd_proxy_stage_group ) ),
     trace_log( Object::inc_ref( trace_log ) )
 {
@@ -69,7 +75,9 @@ OSDProxies::~OSDProxies()
   DIRProxy::dec_ref( dir_proxy );
   Log::dec_ref( error_log );
   OSDProxy::Configuration::dec_ref( *osd_proxy_configuration );
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
   SSLContext::dec_ref( osd_proxy_ssl_context );
+#endif
   StageGroup::dec_ref( osd_proxy_stage_group );
   Log::dec_ref( trace_log );
 }
@@ -171,7 +179,7 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
       address_mapping_i++
     )
     {
-#ifdef YIELD_IPC_HAVE_OPENSSL
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
       if
       ( 
         osd_proxy_ssl_context != NULL 
@@ -193,8 +201,8 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
               trace_log
             );
 
-        if ( osd_proxy_stage_group != NULL )
-          osd_proxy_stage_group->createStage( osd_proxy->inc_ref() );
+        //if ( osd_proxy_stage_group != NULL )
+        //  osd_proxy_stage_group->createStage( osd_proxy->inc_ref() );
       }
       else
 #endif
@@ -206,12 +214,14 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
               ( *address_mapping_i ).get_uri(),
               &osd_proxy_configuration->inc_ref(),
               error_log,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
               osd_proxy_ssl_context,
+#endif
               trace_log
             );
 
-        if ( osd_proxy_stage_group != NULL )
-          osd_proxy_stage_group->createStage( osd_proxy->inc_ref() );
+        //if ( osd_proxy_stage_group != NULL )
+        //  osd_proxy_stage_group->createStage( osd_proxy->inc_ref() );
       }
     }
 

@@ -33,6 +33,9 @@
 using namespace xtreemfs;
 using org::xtreemfs::interfaces::DirectoryEntry;
 
+#include "yield.h"
+using yield::platform::iconv;
+
 
 Directory::Directory
 (

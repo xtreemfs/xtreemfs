@@ -45,7 +45,9 @@ Options::Options
   const Log::Level& error_log_level,
   const OptionParser::ParsedOptions& parsed_options,
   const vector<string>& positional_arguments,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
   SSLContext* ssl_context,
+#endif
   Log* trace_log,
   URI* uri
 )
@@ -53,7 +55,9 @@ Options::Options
     error_log_file_path( error_log_file_path ),
     error_log_level( error_log_level ),
     positional_arguments( positional_arguments ),
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
     ssl_context( ssl_context ),
+#endif
     trace_log( trace_log ),
     uri( uri )
 {
@@ -65,7 +69,9 @@ Options::Options( const Options& other )
     error_log_file_path( other.error_log_file_path ),
     error_log_level( other.error_log_level ),
     positional_arguments( other.positional_arguments ),
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
     ssl_context( yidl::runtime::Object::inc_ref( other.ssl_context ) ),
+#endif
     trace_log( yidl::runtime::Object::inc_ref( other.trace_log ) ),
     uri( yidl::runtime::Object::inc_ref( other.uri ) )
 { }
@@ -73,7 +79,9 @@ Options::Options( const Options& other )
 Options::~Options()
 {
   Log::dec_ref( error_log );
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
   SSLContext::dec_ref( ssl_context );
+#endif
   Log::dec_ref( trace_log );
   URI::dec_ref( uri );
 }
@@ -92,7 +100,7 @@ void Options::add_global_options( OptionParser& option_parser )
     );
   }
 
-#ifdef YIELD_IPC_HAVE_OPENSSL  
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
   option_parser.add_option( "--cert", "PEM certificate file path" );
   option_parser.add_option( "--pem-certificate-file-path" );
   option_parser.add_option( "--pkey", "PEM private key file path" );
@@ -126,12 +134,10 @@ Options::parse
   Log::Level error_log_level( Log::LOG_ERR );
   Log* trace_log = NULL;
 
-#ifdef YIELD_IPC_HAVE_OPENSSL
   string pem_certificate_file_path,
          pem_private_key_file_path,
          pem_private_key_passphrase;
   string pkcs12_file_path, pkcs12_passphrase;
-#endif
 
   OptionParser option_parser;
   add_global_options( option_parser );
@@ -177,8 +183,8 @@ Options::parse
   Log* error_log = &Log::open( error_log_file_path, error_log_level );
   
 
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
   SSLContext* ssl_context;
-#ifdef YIELD_IPC_HAVE_OPENSSL
   if ( !pkcs12_file_path.empty() )
   {
     ssl_context =
@@ -206,8 +212,8 @@ Options::parse
       );
   }
   else
-#endif
     ssl_context = NULL;
+#endif
 
 
   URI* uri;
@@ -216,9 +222,11 @@ Options::parse
     string uri_string( positional_arguments[0] );
     if ( uri_string.find( "://" ) == string::npos )
     {
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
       if ( ssl_context != NULL )
         uri_string = ONCRPCS_SCHEME + string( "://" ) + uri_string;
       else
+#endif
         uri_string = ONCRPC_SCHEME + string( "://" ) + uri_string;
     }
 
@@ -238,7 +246,9 @@ Options::parse
                 error_log_level,
                 parsed_options,
                 positional_arguments,
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
                 ssl_context,
+#endif
                 trace_log,
                 uri
               );

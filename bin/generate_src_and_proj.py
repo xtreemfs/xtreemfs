@@ -47,7 +47,7 @@ YIELDFS_DIR_PATH = abspath( join( MY_DIR_PATH, "..", "..", "yieldfs" ) )
 XTREEMFS_DIR_PATH = abspath( join( MY_DIR_PATH, ".." ) )
 
 
-DEFINES = ( "YIELD_IPC_HAVE_OPENSSL", )
+DEFINES = ( "YIELD_PLATFORM_HAVE_OPENSSL", )
 
 INCLUDE_DIR_PATHS = \
 (
@@ -163,11 +163,10 @@ generate_proj(
     libs_unix=( "crypto", "fuse", "ssl", ),
     output_file_path=join( XTREEMFS_DIR_PATH, "lib", "xtreemfs" ),
     src_paths=(
-        join( XTREEMFS_DIR_PATH, "include", "xtreemfs" ),
-        join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces" ),
-        join( XTREEMFS_DIR_PATH, "share", "yield", "src", "yield" ),
-        join( XTREEMFS_DIR_PATH, "share", "yieldfs", "src" ),
-        join( XTREEMFS_DIR_PATH, "src", "interfaces", "org", "xtreemfs", "interfaces" ),
+        join( XTREEMFS_DIR_PATH, "include" ),
+        join( XTREEMFS_DIR_PATH, "share", "yield" ),
+        join( XTREEMFS_DIR_PATH, "share", "yieldfs" ),
+        join( XTREEMFS_DIR_PATH, "src", "interfaces" ),
         join( XTREEMFS_DIR_PATH, "src", "libxtreemfs" ),
     )
 )

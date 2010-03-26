@@ -27,9 +27,11 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#include "xtreemfs/grid_ssl_socket.h"
+#include "grid_ssl_socket.h"
 using namespace xtreemfs;
 
+
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
 
 GridSSLSocket::GridSSLSocket
 (
@@ -133,3 +135,5 @@ bool GridSSLSocket::want_send() const
   else
     return TCPSocket::want_send();
 }
+
+#endif

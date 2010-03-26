@@ -13,10 +13,7 @@ import yidl.runtime.PrettyPrinter;
 public class MRCInterface
 {
     public static final int HTTP_PORT_DEFAULT = 30636;
-    public static final int ONCRPC_PORT_DEFAULT = 32636;
-    public static final int ONCRPCG_PORT_DEFAULT = 32636;
-    public static final int ONCRPCS_PORT_DEFAULT = 32636;
-    public static final int ONCRPCU_PORT_DEFAULT = 32636;
+    public static final int ONC_RPC_PORT_DEFAULT = 32636;
     public static final int SETATTR_MODE = 1;
     public static final int SETATTR_UID = 2;
     public static final int SETATTR_GID = 4;

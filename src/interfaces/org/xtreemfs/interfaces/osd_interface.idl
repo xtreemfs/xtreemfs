@@ -71,10 +71,7 @@ module org
       {
         // Constants
         const uint32_t HTTP_PORT_DEFAULT = 30640; 
-        const uint32_t ONCRPC_PORT_DEFAULT = 32640;
-      	const uint32_t ONCRPCG_PORT_DEFAULT = 32640;
-        const uint32_t ONCRPCS_PORT_DEFAULT = 32640;
-        const uint32_t ONCRPCU_PORT_DEFAULT = 32640;
+        const uint32_t ONC_RPC_PORT_DEFAULT = 32640;
 
         // FUSE/POSIX operations
         void read( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, inout ObjectData object_data ) # 10;
