@@ -1597,8 +1597,46 @@ namespace yield
       // ONCRPCClient
       virtual void handle( ONCRPCRequest& onc_rpc_request );
     
-    private:
-      class Connection;
+    protected:
+      class Connection
+        : public StreamSocketClient::Connection,
+          public ONCRPCRequestHandler,
+          private ONCRPCResponseParser
+      {
+      public:
+        Connection( ONCRPCStreamSocketClient&, StreamSocket& );
+
+        // RTTIObject
+        const char* get_type_name() const
+        { 
+          return "ONCRPCStreamSocketClient::Connection"; 
+        }
+
+        // ONCRPCRequestHandler
+        void handle( ONCRPCRequest& onc_rpc_request );
+
+      protected:
+        // StreamSocket::AIOConnectCallback
+        void onConnectCompletion( size_t bytes_written, void* context );
+        void onConnectError( uint32_t error_code, void* context );
+
+        // StreamSocket::AIORecvCallback
+        void onReadCompletion( Buffer& buffer, void* context );
+        void onReadError( uint32_t error_code, void* context );
+
+        // StreamSocket::AIOSendCallback
+        void onWriteCompletion( size_t bytes_written, void* context );
+        void onWriteError( uint32_t error_code, void* context );
+
+      private:
+        Time connect_timeout;
+        map<uint32_t, ONCRPCRequest*> outstanding_onc_rpc_requests;
+        Time recv_timeout;
+        Time send_timeout;
+        ONCRPCStreamSocketClient& onc_rpc_stream_socket_client;
+      };
+
+    private:    
       SynchronizedSTLQueue<Connection*> connections;
     };
 

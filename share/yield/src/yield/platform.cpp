@@ -6507,9 +6507,9 @@ bool Socket::bind( const SocketAddress& to_sockaddr )
       domain == AF_INET6
       &&
 #ifdef _WIN32
-        WSAGetLastError() == WSAEAFNOSUPPORT
+      WSAGetLastError() == WSAEAFNOSUPPORT
 #else
-        errno == EAFNOSUPPORT
+      errno == EAFNOSUPPORT
 #endif
     )
     {
@@ -6582,7 +6582,8 @@ bool Socket::connect( const SocketAddress& peername )
           {
             if
             (
-              domain == AF_INET6 &&
+              domain == AF_INET6
+              &&
               recreate( AF_INET )
             )
               continue;
@@ -6910,6 +6911,16 @@ SocketAddress* Socket::getsockname() const
     return NULL;
 }
 
+#ifdef _WIN32
+Win32AIOQueue* Socket::get_win32_aio_queue() const
+{
+  if ( io_queue != NULL && io_queue->get_type_id() == Win32AIOQueue::TYPE_ID )
+    return static_cast<Win32AIOQueue*>( io_queue );
+  else
+    return NULL;
+}
+#endif
+
 #ifdef _WIN64
 void
 Socket::iovecs_to_wsabufs
@@ -6954,7 +6965,14 @@ bool Socket::recreate( int domain )
   {
     if ( !blocking_mode )
       set_blocking_mode( false );
+
     this->domain = domain;
+
+#ifdef _WIN32
+    if ( get_win32_aio_queue() != NULL )
+      get_win32_aio_queue()->associate( *this );
+#endif
+
     return true;
   }
   else
@@ -9170,12 +9188,7 @@ StreamSocket::aio_accept
 )
 {
 #ifdef _WIN32
-  if
-  (
-    get_io_queue() != NULL
-    &&
-    get_io_queue()->get_type_id() == Win32AIOQueue::TYPE_ID
-  )
+  if ( get_win32_aio_queue() != NULL )
   {
     if ( lpfnAcceptEx == NULL )
     {
@@ -9318,12 +9331,7 @@ StreamSocket::aio_connect
 )
 {
 #ifdef _WIN32
-  if
-  (
-    get_io_queue() != NULL
-    &&
-    get_io_queue()->get_type_id() == Win32AIOQueue::TYPE_ID
-  )
+  if ( get_win32_aio_queue() != NULL )
   {
     if ( lpfnConnectEx == NULL )
     {
@@ -9488,12 +9496,7 @@ void StreamSocket::aio_recv
 )
 {
 #ifdef _WIN32
-  if
-  (
-    get_io_queue() != NULL
-    &&
-    get_io_queue()->get_type_id() == Win32AIOQueue::TYPE_ID
-  )
+  if ( get_win32_aio_queue() != NULL )
   {
     WSABUF wsabuf[1];
     wsabuf[0].buf = static_cast<char*>( buffer ) + buffer.size();
@@ -9552,12 +9555,7 @@ StreamSocket::aio_send
   // on the ->send call (except on Win32)
 
 #ifdef _WIN32
-  if
-  (
-    get_io_queue() != NULL
-    &&
-    get_io_queue()->get_type_id() == Win32AIOQueue::TYPE_ID
-  )
+  if ( get_win32_aio_queue() != NULL )
   {
 #ifdef _WIN32
     struct iovec wsabuf = buffer;
@@ -9617,12 +9615,7 @@ StreamSocket::aio_sendmsg
   // on the ->sendmsg call (except on Win32)
 
 #ifdef _WIN32
-  if
-  (
-    get_io_queue() != NULL
-    &&
-    get_io_queue()->get_type_id() == Win32AIOQueue::TYPE_ID
-  )
+  if ( get_win32_aio_queue() != NULL )
   {
     DWORD dwNumberOfBytesSent;
 

@@ -31,32 +31,35 @@ Proxy::createONCRPCClient
 {
   const string& scheme = absolute_uri.get_scheme();
 
-  const string& host = absolute_uri.get_host();
-  uint16_t port;
-  if ( absolute_uri.get_port() != 0 )
-    port = absolute_uri.get_port();
-  else
-    port = port_default;
+  URI absolute_uri_with_port( absolute_uri );
+  if ( absolute_uri_with_port.get_port() == 0 )
+    absolute_uri_with_port.set_port( port_default );
 
-  SocketAddress* peername = SocketAddress::create( host.c_str(), port );
-  if ( peername != NULL )
+  if ( scheme == ONCRPCU_SCHEME )
   {
-    if ( scheme == ONCRPCU_SCHEME )
-    {
-      return ONCRPCUDPSocketClient::create
-             (
-               absolute_uri,
-               message_factory,
-               prog,
-               vers,
-               NULL,
-               error_log,
-               ONCRPCUDPSocketClient::RECV_TIMEOUT_DEFAULT,
-               trace_log
-             );
-    }
+    return ONCRPCUDPSocketClient::create
+           (
+             absolute_uri_with_port,
+             message_factory,
+             prog,
+             vers,
+             NULL,
+             error_log,
+             ONCRPCUDPSocketClient::RECV_TIMEOUT_DEFAULT,
+             trace_log
+           );
+  }
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
-    else if ( scheme == ONCRPCG_SCHEME && ssl_context != NULL )
+  else if ( scheme == ONCRPCG_SCHEME && ssl_context != NULL )
+  {
+    SocketAddress* peername = 
+      SocketAddress::create
+      ( 
+        absolute_uri_with_port.get_host().c_str(),
+        absolute_uri_with_port.get_port() 
+      );
+
+    if ( peername != NULL )
     {
       GridSSLSocket* grid_ssl_socket = GridSSLSocket::create( *ssl_context );
       if ( grid_ssl_socket != NULL )
@@ -87,37 +90,37 @@ Proxy::createONCRPCClient
       else
         throw Exception();
     }
-    else if ( scheme == ONCRPCS_SCHEME && ssl_context != NULL )
-    {
-      return ONCRPCSSLSocketClient::create
-             (
-               absolute_uri,
-               message_factory,
-               *ssl_context,
-               prog,
-               vers,
-               configuration,
-               NULL,
-               error_log,
-               trace_log
-             );
-    }
-#endif
     else
-    {
-      return ONCRPCTCPSocketClient::create
-             (
-               absolute_uri,
-               message_factory,
-               prog,
-               vers,
-               configuration,
-               NULL,
-               error_log,
-               trace_log
-             );
-    }
+      throw Exception();
   }
+  else if ( scheme == ONCRPCS_SCHEME && ssl_context != NULL )
+  {
+    return ONCRPCSSLSocketClient::create
+           (
+             absolute_uri_with_port,
+             message_factory,
+             *ssl_context,
+             prog,
+             vers,
+             configuration,
+             NULL,
+             error_log,
+             trace_log
+           );
+  }
+#endif
   else
-    throw Exception();
+  {
+    return ONCRPCTCPSocketClient::create
+           (
+             absolute_uri_with_port,
+             message_factory,
+             prog,
+             vers,
+             configuration,
+             NULL,
+             error_log,
+             trace_log
+           );
+  }
 }

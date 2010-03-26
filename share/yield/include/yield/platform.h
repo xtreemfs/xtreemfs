@@ -361,6 +361,9 @@ namespace yield
     class SocketAddress;
     class Stat;
     class Time;
+#ifdef _WIN32
+    class Win32AIOQueue;
+#endif
     using yidl::runtime::Buffer;
     using yidl::runtime::Buffers;
     using yidl::runtime::Object;
@@ -1567,8 +1570,6 @@ namespace yield
       int get_type() const { return type; }
       bool operator==( const Socket& other ) const;
       inline operator socket_t() const { return socket_; }
-      bool recreate();
-      bool recreate( int domain );
       ssize_t recv( Buffer& buffer, int flags = 0 );
       virtual ssize_t recv( void* buf, size_t buflen, int flags = 0 );
       ssize_t send( const Buffer& buffer, int flags = 0 );
@@ -1607,11 +1608,14 @@ namespace yield
       NBIOQueue* get_nbio_queue() const; // Tries to cast, can return NULL
       static int get_platform_recv_flags( int flags );
       static int get_platform_send_flags( int flags );
-
+#ifdef _WIN32
+      Win32AIOQueue* get_win32_aio_queue() const;
+#endif
 #ifdef _WIN64
       void iovecs_to_wsabufs( const iovec*, vector<iovec64>& );
 #endif
-
+      bool recreate();
+      bool recreate( int domain );
       void set_io_queue( IOQueue& io_queue );
 
     protected:

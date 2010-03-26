@@ -13249,181 +13249,6 @@ ONCRPCSSLSocketServer::create
 using yidl::runtime::StackBuffer;
 
 
-class ONCRPCStreamSocketClient::Connection
-  : public StreamSocketClient::Connection,
-    public RequestHandler,
-    private ONCRPCResponseParser
-{
-public:
-  Connection
-  (
-    ONCRPCStreamSocketClient& onc_rpc_stream_socket_client,
-    StreamSocket& stream_socket
-  )
-  : StreamSocketClient::Connection
-    (
-      onc_rpc_stream_socket_client.get_peername(),
-      stream_socket,
-      onc_rpc_stream_socket_client.get_error_log(),
-      onc_rpc_stream_socket_client.get_trace_log()
-    ),
-    ONCRPCResponseParser( onc_rpc_stream_socket_client.get_message_factory() ),
-    connect_timeout
-    (
-      onc_rpc_stream_socket_client.get_configuration().get_connect_timeout()
-    ),
-    recv_timeout( onc_rpc_stream_socket_client.get_configuration().get_recv_timeout() ),
-    send_timeout( onc_rpc_stream_socket_client.get_configuration().get_send_timeout() ),
-    onc_rpc_stream_socket_client( onc_rpc_stream_socket_client )
-  { }
-
-  // RTTIObject
-  const char* get_type_name() const
-  {
-    return "ONCRPCStreamSocketClient::Connection";
-  }
-
-  // RequestHandler
-  void handle( Request& request )
-  {
-    if ( request.get_type_id() == ONCRPCRequest::TYPE_ID )
-    {
-      ONCRPCRequest& onc_rpc_request = static_cast<ONCRPCRequest&>( request );
-
-      XDRMarshaller xdr_marshaller;
-      onc_rpc_request.marshal( xdr_marshaller );
-      ONCRPCRecordFragment* record_fragment
-        = new ONCRPCRecordFragment( xdr_marshaller.get_buffer() );
-
-      get_stream_socket().aio_connect
-      (
-        get_peername(),
-        *this,
-        &onc_rpc_request,
-        record_fragment
-      );
-    }
-    else
-      DebugBreak();
-  }
-
-private:
-  // StreamSocket::AIOConnectCallback
-  void onConnectCompletion( size_t bytes_written, void* context )
-  {
-    StreamSocketClient::Connection::onConnectCompletion( bytes_written, context );
-
-    onWriteCompletion( bytes_written, context );
-  }
-
-  void onConnectError( uint32_t error_code, void* context )
-  {
-    StreamSocketClient::Connection::onConnectError( error_code, context );
-
-    ONCRPCRequest::dec_ref( static_cast<ONCRPCRequest*>( context ) );
-  }
-
-  // StreamSocket::AIORecvCallback
-  void onReadCompletion( Buffer& buffer, void* context )
-  {
-    StreamSocketClient::Connection::onReadCompletion( buffer, context );
-
-    if ( buffer.size() == buffer.capacity() )
-    {
-      ONCRPCRequest* onc_rpc_request = static_cast<ONCRPCRequest*>( context );
-
-      if ( onc_rpc_request == NULL )
-      {
-        uint32_t nbo_record_fragment_marker, nbo_xid;
-        buffer.get( &nbo_record_fragment_marker, sizeof( uint32_t ) );
-        buffer.get( &nbo_xid, sizeof( nbo_xid ) );
-#ifdef __MACH__
-        uint32_t hbo_xid = ntohl( nbo_xid );
-#else
-        uint32_t hbo_xid = XDRUnmarshaller::ntohl( nbo_xid );
-#endif
-
-        map<uint32_t, ONCRPCRequest*>::iterator onc_rpc_request_i
-          = outstanding_onc_rpc_requests.find( hbo_xid );
-
-        if ( onc_rpc_request_i != outstanding_onc_rpc_requests.end() )
-        {
-          onc_rpc_request = onc_rpc_request_i->second;
-          outstanding_onc_rpc_requests.erase( onc_rpc_request_i );
-
-          ONCRPCRecordFragment* record_fragment
-            = new ONCRPCRecordFragment( nbo_record_fragment_marker );
-
-          record_fragment->put( &nbo_xid, sizeof( nbo_xid ) );
-          record_fragment->position
-          (
-            record_fragment->position() + sizeof( nbo_xid )
-          );
-
-          get_stream_socket().aio_read( *record_fragment, *this, onc_rpc_request );
-        }
-        else
-          DebugBreak();
-      }
-      else
-      {
-        ONCRPCResponse* onc_rpc_response
-          = ONCRPCResponseParser::parse
-            (
-              static_cast<ONCRPCRecordFragment&>( buffer ),
-              *onc_rpc_request
-            );
-
-        if ( onc_rpc_response != NULL )
-        {
-          onc_rpc_request->respond( *onc_rpc_response );
-          ONCRPCRequest::dec_ref( *onc_rpc_request );
-
-          get_stream_socket().aio_recv( *new StackBuffer<8>, 0, *this, NULL );
-        }
-        else
-          DebugBreak();
-      }
-    }
-    else // buffer.size() < buffer.capacity()
-      get_stream_socket().aio_recv( buffer, 0, *this, context );
-
-  }
-
-  void onReadError( uint32_t error_code, void* context )
-  {
-    StreamSocketClient::Connection::onReadError( error_code, context );
-
-    ONCRPCRequest::dec_ref( static_cast<ONCRPCRequest*>( context ) );
-  }
-
-  // StreamSocket::AIOSendCallback
-  void onWriteCompletion( size_t bytes_written, void* context )
-  {
-    StreamSocketClient::Connection::onWriteCompletion( bytes_written, context );
-
-    ONCRPCRequest* onc_rpc_request = static_cast<ONCRPCRequest*>( context );
-    outstanding_onc_rpc_requests[onc_rpc_request->get_xid()] = onc_rpc_request;
-
-    get_stream_socket().aio_recv( *new StackBuffer<8>, 0, *this, NULL );
-  }
-
-  void onWriteError( uint32_t error_code, void* context )
-  {
-    StreamSocketClient::Connection::onWriteError( error_code, context );
-
-    ONCRPCRequest::dec_ref( static_cast<ONCRPCRequest*>( context ) );
-  }
-
-private:
-  Time connect_timeout;
-  map<uint32_t, ONCRPCRequest*> outstanding_onc_rpc_requests;
-  Time recv_timeout;
-  Time send_timeout;
-  ONCRPCStreamSocketClient& onc_rpc_stream_socket_client;
-};
-
-
 ONCRPCStreamSocketClient::ONCRPCStreamSocketClient
 (
   MessageFactory& message_factory,
@@ -13463,6 +13288,189 @@ void ONCRPCStreamSocketClient::handle( ONCRPCRequest& onc_rpc_request )
 {
   Connection* connection = connections.dequeue();
   connection->handle( onc_rpc_request );
+}
+
+
+ONCRPCStreamSocketClient::Connection::Connection
+(
+  ONCRPCStreamSocketClient& onc_rpc_stream_socket_client,
+  StreamSocket& stream_socket
+)
+: StreamSocketClient::Connection
+  (
+    onc_rpc_stream_socket_client.get_peername(),
+    stream_socket,
+    onc_rpc_stream_socket_client.get_error_log(),
+    onc_rpc_stream_socket_client.get_trace_log()
+  ),
+  ONCRPCResponseParser( onc_rpc_stream_socket_client.get_message_factory() ),
+  connect_timeout
+  (
+    onc_rpc_stream_socket_client.get_configuration().get_connect_timeout()
+  ),
+  recv_timeout( onc_rpc_stream_socket_client.get_configuration().get_recv_timeout() ),
+  send_timeout( onc_rpc_stream_socket_client.get_configuration().get_send_timeout() ),
+  onc_rpc_stream_socket_client( onc_rpc_stream_socket_client )
+{ }
+
+void
+ONCRPCStreamSocketClient::Connection::handle
+(
+  ONCRPCRequest& onc_rpc_request
+)
+{
+  XDRMarshaller xdr_marshaller;
+  onc_rpc_request.marshal( xdr_marshaller );
+  ONCRPCRecordFragment* record_fragment
+    = new ONCRPCRecordFragment( xdr_marshaller.get_buffer() );
+
+  get_stream_socket().aio_connect
+  (
+    get_peername(),
+    *this,
+    &onc_rpc_request,
+    record_fragment
+  );
+}
+
+void
+ONCRPCStreamSocketClient::Connection::onConnectCompletion
+(
+  size_t bytes_written,
+  void* context
+)
+{
+  StreamSocketClient::Connection::onConnectCompletion( bytes_written, context );
+
+  onWriteCompletion( bytes_written, context );
+}
+
+void
+ONCRPCStreamSocketClient::Connection::onConnectError
+(
+  uint32_t error_code,
+  void* context
+)
+{
+  StreamSocketClient::Connection::onConnectError( error_code, context );
+
+  ONCRPCRequest* onc_rpc_request = static_cast<ONCRPCRequest*>( context );
+  onc_rpc_request->respond( *new Exception( error_code ) );
+  ONCRPCRequest::dec_ref( onc_rpc_request );
+}
+
+void
+ONCRPCStreamSocketClient::Connection::onReadCompletion
+(
+  Buffer& buffer,
+  void* context
+)
+{
+  StreamSocketClient::Connection::onReadCompletion( buffer, context );
+
+  if ( buffer.size() == buffer.capacity() )
+  {
+    ONCRPCRequest* onc_rpc_request = static_cast<ONCRPCRequest*>( context );
+
+    if ( onc_rpc_request == NULL )
+    {
+      uint32_t nbo_record_fragment_marker, nbo_xid;
+      buffer.get( &nbo_record_fragment_marker, sizeof( uint32_t ) );
+      buffer.get( &nbo_xid, sizeof( nbo_xid ) );
+#ifdef __MACH__
+      uint32_t hbo_xid = ntohl( nbo_xid );
+#else
+      uint32_t hbo_xid = XDRUnmarshaller::ntohl( nbo_xid );
+#endif
+
+      map<uint32_t, ONCRPCRequest*>::iterator onc_rpc_request_i
+        = outstanding_onc_rpc_requests.find( hbo_xid );
+
+      if ( onc_rpc_request_i != outstanding_onc_rpc_requests.end() )
+      {
+        onc_rpc_request = onc_rpc_request_i->second;
+        outstanding_onc_rpc_requests.erase( onc_rpc_request_i );
+
+        ONCRPCRecordFragment* record_fragment
+          = new ONCRPCRecordFragment( nbo_record_fragment_marker );
+
+        record_fragment->put( &nbo_xid, sizeof( nbo_xid ) );
+        record_fragment->position
+        (
+          record_fragment->position() + sizeof( nbo_xid )
+        );
+
+        get_stream_socket().aio_read( *record_fragment, *this, onc_rpc_request );
+      }
+      else
+        DebugBreak();
+    }
+    else
+    {
+      ONCRPCResponse* onc_rpc_response
+        = ONCRPCResponseParser::parse
+          (
+            static_cast<ONCRPCRecordFragment&>( buffer ),
+            *onc_rpc_request
+          );
+
+      if ( onc_rpc_response != NULL )
+      {
+        onc_rpc_request->respond( *onc_rpc_response );
+        ONCRPCRequest::dec_ref( *onc_rpc_request );
+
+        get_stream_socket().aio_recv( *new StackBuffer<8>, 0, *this, NULL );
+      }
+      else
+        DebugBreak();
+    }
+  }
+  else // buffer.size() < buffer.capacity()
+    get_stream_socket().aio_recv( buffer, 0, *this, context );
+
+}
+
+void
+ONCRPCStreamSocketClient::Connection::onReadError
+(
+  uint32_t error_code,
+  void* context
+)
+{
+  StreamSocketClient::Connection::onReadError( error_code, context );
+
+  ONCRPCRequest* onc_rpc_request = static_cast<ONCRPCRequest*>( context );
+  onc_rpc_request->respond( *new Exception( error_code ) );
+  ONCRPCRequest::dec_ref( onc_rpc_request );
+}
+
+void
+ONCRPCStreamSocketClient::Connection::onWriteCompletion
+(
+  size_t bytes_written,
+  void* context
+)
+{
+  StreamSocketClient::Connection::onWriteCompletion( bytes_written, context );
+
+  ONCRPCRequest* onc_rpc_request = static_cast<ONCRPCRequest*>( context );
+  outstanding_onc_rpc_requests[onc_rpc_request->get_xid()] = onc_rpc_request;
+
+  get_stream_socket().aio_recv( *new StackBuffer<8>, 0, *this, NULL );
+}
+
+void
+ONCRPCStreamSocketClient::Connection::onWriteError
+(
+  uint32_t error_code,
+  void* context
+)
+{
+  StreamSocketClient::Connection::onWriteError( error_code, context );
+
+  ONCRPCRequest* onc_rpc_request = static_cast<ONCRPCRequest*>( context );
+  onc_rpc_request->respond( *new Exception( error_code ) );
+  ONCRPCRequest::dec_ref( onc_rpc_request );
 }
 
 
