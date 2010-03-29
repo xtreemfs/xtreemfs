@@ -25,6 +25,7 @@
 
 package org.xtreemfs.osd.storage;
 
+import java.io.RandomAccessFile;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +56,10 @@ public class FileMetadata {
     private final StripingPolicyImpl   stripingPolicy;
     
     private VersionTable               versionTable;
+
+    private RandomAccessFile[]       handles;
+
+    private long                     mdFileLength;
     
     /** Creates a new instance of FileInfo */
     public FileMetadata(StripingPolicyImpl sp) {
@@ -186,6 +191,34 @@ public class FileMetadata {
     
     public VersionTable getVersionTable() {
         return versionTable;
+    }
+
+    /**
+     * @return the handles
+     */
+    public RandomAccessFile[] getHandles() {
+        return handles;
+    }
+
+    /**
+     * @param handles the handles to set
+     */
+    public void setHandles(RandomAccessFile[] handles) {
+        this.handles = handles;
+    }
+
+    /**
+     * @return the mdFileLength
+     */
+    public long getMdFileLength() {
+        return mdFileLength;
+    }
+
+    /**
+     * @param mdFileLength the mdFileLength to set
+     */
+    public void setMdFileLength(long mdFileLength) {
+        this.mdFileLength = mdFileLength;
     }
     
 }

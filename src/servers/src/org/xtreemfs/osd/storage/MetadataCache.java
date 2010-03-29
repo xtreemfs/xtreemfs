@@ -49,8 +49,8 @@ public class MetadataCache {
         metadataMap.put(fileId, info);
     }
 
-    public void removeFileInfo(String fileId) {
-        metadataMap.remove(fileId);
+    public FileMetadata removeFileInfo(String fileId) {
+        return metadataMap.remove(fileId);
     }
 
 }

@@ -1,4 +1,4 @@
-/*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin,
+/*  Copyright (c) 2008-2010 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin,
  Barcelona Supercomputing Center - Centro Nacional de Supercomputacion and
  Consiglio Nazionale delle Ricerche.
 
@@ -52,6 +52,7 @@ import org.xtreemfs.osd.storage.FileMetadata;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.ObjectInformation;
+import org.xtreemfs.osd.storage.SingleFileStorageLayout;
 import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.test.SetupUtils;
 
@@ -77,11 +78,11 @@ public class StorageLayoutTest extends TestCase {
     protected void tearDown() throws Exception {
     }
 
-    /*public void testHashStorageLayoutBasics() throws Exception {
+    public void testHashStorageLayoutBasics() throws Exception {
 
         HashStorageLayout layout = new HashStorageLayout(config, new MetadataCache());
         basicTests(layout);
-    }*/
+    }
 
     public void testHashStorageLayoutWithChecksumsBasics() throws Exception {
 
@@ -94,12 +95,29 @@ public class StorageLayoutTest extends TestCase {
         basicTests(layout);
     }
 
-    /*public void testSingleFileLayout() throws Exception {
+    public void testSingleFileLayout() throws Exception {
         SingleFileStorageLayout layout = new SingleFileStorageLayout(config, new MetadataCache());
         basicTests(layout);
-    }*/
+    }
+
+    public void testSingleFileStorageLayoutWithChecksumsBasics() throws Exception {
+
+        JavaChecksumProvider j = new JavaChecksumProvider();
+        ChecksumFactory.getInstance().addProvider(j);
+        SetupUtils.CHECKSUMS_ON = true;
+        OSDConfig configCSUM = SetupUtils.createOSD1Config();
+        SetupUtils.CHECKSUMS_ON = false;
+        SingleFileStorageLayout layout = new SingleFileStorageLayout(configCSUM, new MetadataCache());
+        basicTests(layout);
+    }
 
     public void testHashStorageLayoutGetObjectList() throws Exception {
+
+        HashStorageLayout layout = new HashStorageLayout(config, new MetadataCache());
+        getObjectListTest(layout);
+    }
+
+    public void testSingleFileStorageLayoutGetObjectList() throws Exception {
 
         HashStorageLayout layout = new HashStorageLayout(config, new MetadataCache());
         getObjectListTest(layout);
@@ -114,10 +132,13 @@ public class StorageLayoutTest extends TestCase {
 
         StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1)),0);//new RAID0(64, 1);
 
-        FileMetadata md = new FileMetadata(sp);
+        /*FileMetadata md = new FileMetadata(sp);
         md.initLatestObjectVersions(new HashMap<Long, Long>());
         md.initLargestObjectVersions(new HashMap<Long, Long>());
-        md.initObjectChecksums(new HashMap<Long, Map<Long, Long>>());
+        md.initObjectChecksums(new HashMap<String, Long>());*/
+
+        FileMetadata md = layout.getFileMetadata(sp, fileId);
+        assertNotNull(md);
         
         assertFalse(layout.fileExists(fileId));
 
@@ -125,7 +146,7 @@ public class StorageLayoutTest extends TestCase {
         for (int i = 0; i < 64; i++) {
             data.put((byte) (48 + i));
         }
-                
+        data.flip();
         //write 64 bytes
         layout.writeObject(fileId, md, data, 0l, 0, 1l, false, false);
 
@@ -167,7 +188,7 @@ public class StorageLayoutTest extends TestCase {
         //truncate to 32 byte
         layout.truncateObject(fileId, md, 0l, 32, 1, false);
         oinfo = layout.readObject(fileId,md, 0l, 32, 64, 1l);
-        assertEquals(0, oinfo.getData().capacity());
+        assertTrue(((oinfo.getData() == null) || (oinfo.getData().capacity() == 0)));
         BufferPool.free(oinfo.getData());
 
         //read (non-existent) data from offset 32
@@ -197,6 +218,7 @@ public class StorageLayoutTest extends TestCase {
         for (int i = 0; i < 32; i++) {
             data.put((byte) (48 + i));
         }
+        data.flip();
         //write 64 bytes
         layout.writeObject(fileId, md, data, 2l, 0, 1l, false, false);
 
@@ -204,11 +226,12 @@ public class StorageLayoutTest extends TestCase {
         for (int i = 0; i < 64; i++) {
             data.put((byte) (48 + i));
         }
+        data.flip();
         //write 64 bytes
         layout.writeObject(fileId, md, data, 3l, 0, 1l, false, false);
 
         //read object 1... should be all zeros or zero padding
-        oinfo = layout.readObject(fileId,md, 1l, 0, 32, 1l);
+        oinfo = layout.readObject(fileId,md, 1l, 0, sp.getStripeSizeForObject(1), 1l);
         if (oinfo.getStatus() == ObjectInformation.ObjectStatus.PADDING_OBJECT) {
             //fine
         } else if (oinfo.getStatus() == ObjectInformation.ObjectStatus.DOES_NOT_EXIST) {
@@ -232,13 +255,11 @@ public class StorageLayoutTest extends TestCase {
         StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(new Replica(new StringSet(), 0, new StripingPolicy(
                 StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1)),0);// new RAID0(64, 1);
 
-        assertFalse(layout.fileExists(fileId));
-        assertEquals(0, layout.getObjectSet(fileId).size());
+        FileMetadata md = layout.getFileMetadata(sp, fileId);
+        assertNotNull(md);
 
-        FileMetadata md = new FileMetadata(sp);
-        md.initLatestObjectVersions(new HashMap<Long, Long>());
-        md.initLargestObjectVersions(new HashMap<Long, Long>());
-        md.initObjectChecksums(new HashMap<Long, Map<Long, Long>>());
+        assertFalse(layout.fileExists(fileId));
+        assertEquals(0, layout.getObjectSet(fileId,md).size());
 
         ReusableBuffer data = BufferPool.allocate(64);
         for (int i = 0; i < 64; i++) {
@@ -254,7 +275,7 @@ public class StorageLayoutTest extends TestCase {
         }
         BufferPool.free(data);
 
-        ObjectSet objectList = layout.getObjectSet(fileId);
+        ObjectSet objectList = layout.getObjectSet(fileId,md);
         // check
         ObjectSet objectNosList = new ObjectSet(1, 0, objectNos.length);
         for (long object : objectNos)

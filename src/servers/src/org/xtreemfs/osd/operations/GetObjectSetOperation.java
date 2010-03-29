@@ -71,7 +71,7 @@ public class GetObjectSetOperation extends OSDOperation {
 
 //        System.out.println("rq: " + args);
 
-        master.getStorageStage().getObjectSet(args.getFile_id(), rq,
+        master.getStorageStage().getObjectSet(args.getFile_id(), rq.getLocationList().getLocalReplica().getStripingPolicy(), rq,
                 new GetObjectListCallback() {
                     @Override
                     public void getObjectSetComplete(ObjectSet result, Exception error) {

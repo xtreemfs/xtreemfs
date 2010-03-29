@@ -35,6 +35,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
+import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.interfaces.Lock;
@@ -96,7 +97,7 @@ public class PreprocStage extends Stage {
     /**
      * X-Location cache
      */
-    private final LocationsCache                            xLocCache;
+    private final LRUCache<String,XLocations>               xLocCache;
     
     private final MetadataCache                             metadataCache;
     
@@ -113,7 +114,7 @@ public class PreprocStage extends Stage {
         
         capCache = new HashMap();
         oft = new OpenFileTable();
-        xLocCache = new LocationsCache(10000);
+        xLocCache = new LRUCache<String, XLocations>(10000);
         this.master = master;
         this.metadataCache = metadataCache;
         this.ignoreCaps = master.getConfig().isIgnoreCaps();

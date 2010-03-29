@@ -293,6 +293,11 @@ public class HashStorageLayout extends StorageLayout {
         
         String relPath = generateRelativeFilePath(fileId);
         new File(this.storageDir + relPath).mkdirs();
+
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this, "writing object %s-%d to disk: %s",
+                fileId, objNo,relPath);
+        }
         
         try {
             
@@ -333,6 +338,9 @@ public class HashStorageLayout extends StorageLayout {
         }
         final String newFilename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, newVersion,
             newChecksum);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "writing to file (COW): %s", newFilename);
+        }
         File file = new File(newFilename);
         String mode = sync ? "rwd" : "rw";
         RandomAccessFile f = new RandomAccessFile(file, mode);
@@ -790,7 +798,7 @@ public class HashStorageLayout extends StorageLayout {
     }
     
     @Override
-    public ObjectSet getObjectSet(String fileId) {
+    public ObjectSet getObjectSet(String fileId, FileMetadata md) {
         ObjectSet objectSet;
         
         File fileDir = new File(generateAbsoluteFilePath(fileId));

@@ -314,9 +314,9 @@ public class StripingTestCOW extends TestCase {
         
     }
     
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
         TestRunner.run(StripingTestCOW.class);
-    }
+    }*/
     
     /**
      * Checks whether the data array received with the response is equal to the

@@ -231,7 +231,9 @@ public class StorageThread extends Stage {
         final CachesFlushedCallback cback = (CachesFlushedCallback) rq.getCallback();
         try {
             final String fileId = (String) rq.getArgs()[0];
-            cache.removeFileInfo(fileId);
+            FileMetadata md = cache.removeFileInfo(fileId);
+            if (md != null)
+                layout.closeFile(null);
             
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
@@ -478,7 +480,7 @@ public class StorageThread extends Stage {
             layout.writeObject(fileId, fi, data, objNo, offset, newVersion, syncWrite, isCow);
             
             // update the "latest versions" file
-            if (cow.cowEnabled())
+            if (cow.cowEnabled() || (newVersionArg != null))
                 layout.updateCurrentObjVersion(fileId, objNo, newVersion);
             
             if (isCow)
@@ -569,9 +571,10 @@ public class StorageThread extends Stage {
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             
             if (fi.getTruncateEpoch() >= epochNumber) {
-                cback.truncateComplete(null, new OSDException(ErrorCodes.EPOCH_OUTDATED,
+                cback.truncateComplete(new OSDWriteResponse(), null);
+                /*cback.truncateComplete(null, new OSDException(ErrorCodes.EPOCH_OUTDATED,
                     "invalid truncate epoch for file " + fileId + ": " + epochNumber + ", current one is "
-                        + fi.getTruncateEpoch(), ""));
+                        + fi.getTruncateEpoch(), ""));*/
                 return;
             }
             
@@ -670,10 +673,15 @@ public class StorageThread extends Stage {
     private void processGetObjectSet(StageRequest rq) {
         final GetObjectListCallback cback = (GetObjectListCallback) rq.getCallback();
         final String fileId = (String) rq.getArgs()[0];
+        final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
         
-        ObjectSet objectSet = layout.getObjectSet(fileId);
-        
-        cback.getObjectSetComplete(objectSet, null);
+        try {
+            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
+            ObjectSet objectSet = layout.getObjectSet(fileId,fi);
+            cback.getObjectSetComplete(objectSet, null);
+        } catch (Exception ex) {
+            cback.getObjectSetComplete(null, ex);
+        }
     }
     
     /**

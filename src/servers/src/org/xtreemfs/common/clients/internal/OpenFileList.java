@@ -212,6 +212,11 @@ public class OpenFileList extends Thread {
         }
 
         public void upgradeCap(XCap c, long ts) {
+            //FIXME
+            /*
+             * upgrade: always from R to RW
+             * never from RW to R
+             */
             if ( ((cap.getAccess_mode() & Constants.SYSTEM_V_FCNTL_H_O_RDONLY) > 0)
                  && ((c.getAccess_mode() & Constants.SYSTEM_V_FCNTL_H_O_RDWR) > 0) ) {
                 updateCap(c, ts);

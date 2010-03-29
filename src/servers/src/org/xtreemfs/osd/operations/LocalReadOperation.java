@@ -106,7 +106,7 @@ public final class LocalReadOperation extends OSDOperation {
             }
         } else {
             if (args.getAttach_object_list()) { // object list is requested
-                master.getStorageStage().getObjectSet(args.getFile_id(), rq, new GetObjectListCallback() {
+                master.getStorageStage().getObjectSet(args.getFile_id(), rq.getLocationList().getLocalReplica().getStripingPolicy(),  rq, new GetObjectListCallback() {
                     @Override
                     public void getObjectSetComplete(ObjectSet objectSet, Exception error) {
                         postReadObjectSet(rq, args, result, objectSet, error);

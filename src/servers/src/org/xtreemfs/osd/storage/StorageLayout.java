@@ -170,6 +170,14 @@ public abstract class StorageLayout {
      *             if an error occurred while trying to read the metadata
      */
     protected abstract FileMetadata loadFileMetadata(String fileId, StripingPolicyImpl sp) throws IOException;
+
+    /**
+     * must be called when a file is closed
+     * @param metadata
+     */
+    public void closeFile(FileMetadata metadata) {
+        //do nothing
+    }
     
     /**
      * Reads a complete object from the storage device.
@@ -306,8 +314,9 @@ public abstract class StorageLayout {
         throws IOException {
         ReusableBuffer data;
         final int stripeSize = md.getStripingPolicy().getStripeSizeForObject(objNo);
+        final boolean isLastObj = (md.getLastObjectNumber() == objNo) || ((objNo == 0) && (md.getLastObjectNumber() == -1));
         ObjectInformation obj = readObject(fileId, md, objNo, 0, FULL_OBJECT_LENGTH, oldVersion);
-        ObjectData oldObject = obj.getObjectData(md.getLastObjectNumber() == objNo, 0, stripeSize);
+        ObjectData oldObject = obj.getObjectData(isLastObj, 0, stripeSize);
         if (oldObject.getData() == null) {
             if (oldObject.getZero_padding() > 0) {
                 // create a zero padded object
@@ -338,7 +347,8 @@ public abstract class StorageLayout {
         ReusableBuffer writeData = null;
         final int stripeSize = md.getStripingPolicy().getStripeSizeForObject(objNo);
         ObjectInformation obj = readObject(fileId, md, objNo, 0, FULL_OBJECT_LENGTH, oldVersion);
-        ObjectData oldObject = obj.getObjectData(md.getLastObjectNumber() == objNo, 0, stripeSize);
+        final boolean isLastObj = (md.getLastObjectNumber() == objNo) || ((objNo == 0) && (md.getLastObjectNumber() == -1));
+        ObjectData oldObject = obj.getObjectData(isLastObj, 0, stripeSize);
         if (oldObject.getData() == null) {
             if (oldObject.getZero_padding() > 0) {
                 // create a zero padded object
@@ -416,7 +426,7 @@ public abstract class StorageLayout {
      * @param fileId
      * @return null, if file does not exist, otherwise objectList
      */
-    public abstract ObjectSet getObjectSet(String fileId);
+    public abstract ObjectSet getObjectSet(String fileId, FileMetadata md);
     
     public abstract FileList getFileList(FileList l, int maxNumEntries);
     

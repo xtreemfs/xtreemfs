@@ -170,9 +170,9 @@ public class StorageStage extends Stage {
 
     }
 
-    public void getObjectSet(String fileId, OSDRequest request,
+    public void getObjectSet(String fileId, StripingPolicyImpl sp, OSDRequest request,
             GetObjectListCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_OBJECT_SET, new Object[] { fileId },
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_OBJECT_SET, new Object[] { fileId,sp },
                 request, listener);
     }
     

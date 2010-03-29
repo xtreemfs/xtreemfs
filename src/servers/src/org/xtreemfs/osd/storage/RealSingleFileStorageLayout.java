@@ -48,19 +48,15 @@ import org.xtreemfs.osd.replication.ObjectSet;
  *
  * @author bjko
  */
-public class SingleFileStorageLayout extends StorageLayout {
+public class RealSingleFileStorageLayout extends StorageLayout {
 
-    public static final int   SL_TAG = 0x00020001;
-
-    private static final String MD_SUFFIX = ".md";
+    public static final int   SL_TAG = 0x00030001;
 
     private static final String DATA_SUFFIX = ".data";
 
     private static final String TEPOCH_SUFFIX = ".te";
 
     private static final int    MDRECORD_SIZE = Long.SIZE/8 * 2;
-
-    private static final int    MD_HANDLE = 1;
 
     private static final int    DATA_HANDLE = 0;
 
@@ -76,7 +72,7 @@ public class SingleFileStorageLayout extends StorageLayout {
     private static final char[] hexTab = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
 
-    public SingleFileStorageLayout(OSDConfig config, MetadataCache cache) throws IOException {
+    public RealSingleFileStorageLayout(OSDConfig config, MetadataCache cache) throws IOException {
         super(config, cache);
         checksumsEnabled = config.isUseChecksums();
         mdata = ByteBuffer.allocate(MDRECORD_SIZE);
@@ -100,6 +96,14 @@ public class SingleFileStorageLayout extends StorageLayout {
         Logging.logMessage(Logging.LEVEL_ERROR, this,"this storage layout is still under development and should not be used except for testing!");
     }
 
+    private long getOffsetForMetadata(int stripeSize, long row) {
+        return stripeSize*(row+1)+MDRECORD_SIZE*row;
+    }
+
+    private long getOffsetForData(int stripeSize, long row) {
+        return stripeSize*row+MDRECORD_SIZE*row;
+    }
+
     @Override
     protected FileMetadata loadFileMetadata(String fileId, StripingPolicyImpl sp) throws IOException {
         FileMetadata fi = new FileMetadata(sp);
@@ -114,9 +118,6 @@ public class SingleFileStorageLayout extends StorageLayout {
         if (f.exists()) {
             openHandles(fi,fileId);
             RandomAccessFile ofile = fi.getHandles()[DATA_HANDLE];
-            RandomAccessFile mdfile = fi.getHandles()[MD_HANDLE];
-            mdfile.seek(0);
-            FileChannel mdChannel = mdfile.getChannel();
 
             final int stripeSize = sp.getStripeSizeForObject(0);
             final long fileSize = ofile.length();
@@ -125,9 +126,10 @@ public class SingleFileStorageLayout extends StorageLayout {
 
             for (long i = 0; i < numObjs; i++) {
                 long globalON = sp.getGloablObjectNumber(i);
+                ofile.seek(getOffsetForMetadata(stripeSize, i));
 
-                long chkSum = mdfile.readLong();
-                long version = mdfile.readLong();
+                long chkSum = ofile.readLong();
+                long version = ofile.readLong();
                 if (version == 0)
                     continue;
                 if (checksumsEnabled)
@@ -159,8 +161,7 @@ public class SingleFileStorageLayout extends StorageLayout {
                             filename);
             }
             RandomAccessFile ofile = new RandomAccessFile(filename+DATA_SUFFIX, "rw");
-            RandomAccessFile mdfile = new RandomAccessFile(filename+MD_SUFFIX, "rw");
-            RandomAccessFile[] handles = new RandomAccessFile[]{ofile,mdfile};
+            RandomAccessFile[] handles = new RandomAccessFile[]{ofile};
             md.setHandles(handles);
         }
     }
@@ -220,16 +221,21 @@ public class SingleFileStorageLayout extends StorageLayout {
 
         openHandles(md,fileId);
         final RandomAccessFile ofile = md.getHandles()[DATA_HANDLE];
-        final RandomAccessFile mdfile = md.getHandles()[MD_HANDLE];
 
         final StripingPolicyImpl sp = md.getStripingPolicy();
 
         final int stripeSize = sp.getStripeSizeForObject(objNo);
-        final long objFileOffset = sp.getRow(objNo)*stripeSize+offset;
+        final long row = sp.getRow(objNo);
+        final long mdOffset = getOffsetForMetadata(stripeSize, row);
+        final long objFileOffset = getOffsetForData(stripeSize, row)+offset;
+
 
         final FileChannel c = ofile.getChannel();
         ofile.seek(objFileOffset);
         data.position(0);
+
+        final boolean fullObjWrite = data.remaining() == stripeSize;
+
         c.write(data.getBuffer());
 
         //do calc checksum
@@ -238,7 +244,7 @@ public class SingleFileStorageLayout extends StorageLayout {
         if (checksumsEnabled) {
             data.position(0);
             checksumAlgo.reset();
-            if (data.remaining() < stripeSize) {
+            if (!fullObjWrite) {
                 final long objOffset = sp.getRow(objNo)*stripeSize;
                 ReusableBuffer csumData = BufferPool.allocate(stripeSize);
                 ofile.seek(objOffset);
@@ -253,11 +259,15 @@ public class SingleFileStorageLayout extends StorageLayout {
         }
         BufferPool.free(data);
 
-        writeMDRecord(md, mdfile, objNo, newVersion, newChecksum);
+        if (!fullObjWrite) {
+            ofile.seek(mdOffset);
+        }
+        ofile.writeLong(newVersion);
+        ofile.writeLong(newChecksum);
         md.updateObjectVersion(objNo, newVersion);     
     }
 
-    private void writeMDRecord(FileMetadata md, RandomAccessFile mdfile, long objNo, long version, long checksum) throws IOException {
+    /*private void writeMDRecord(RandomAccessFile mdfile, long objNo, long version, long checksum) throws IOException {
         long seekPos = objNo*MDRECORD_SIZE;
         if (md.getMdFileLength() <= seekPos) {
             long newSize = seekPos+4096;
@@ -268,13 +278,11 @@ public class SingleFileStorageLayout extends StorageLayout {
         mdfile.writeLong(checksum);
         mdfile.writeLong(version);
 
-    }
+    }*/
 
     @Override
     public void deleteFile(String fileId, boolean deleteMetadata) throws IOException {
-        File f = new File(getFilePath(fileId)+MD_SUFFIX);
-        f.delete();
-        f = new File(getFilePath(fileId)+DATA_SUFFIX);
+        File f = new File(getFilePath(fileId)+DATA_SUFFIX);
         f.delete();
         if (deleteMetadata) {
             //fixme
@@ -287,25 +295,23 @@ public class SingleFileStorageLayout extends StorageLayout {
 
         openHandles(md,fileId);
         final RandomAccessFile ofile = md.getHandles()[DATA_HANDLE];
-        final RandomAccessFile mdfile = md.getHandles()[MD_HANDLE];
 
         final StripingPolicyImpl sp = md.getStripingPolicy();
 
         final int stripeSize = sp.getStripeSizeForObject(objNo);
-        final long objFileOffset = sp.getRow(objNo)*stripeSize;
+        final long row = sp.getRow(objNo);
+        final long objFileOffset = getOffsetForData(stripeSize, row);
         final long fileSize = ofile.length();
 
-        final int lastObj = (int) Math.ceil((double)fileSize/(double)stripeSize);
+        final long lastObj = md.getLastObjectNumber();
 
         if (fileSize > 0){
             if (lastObj == objNo) {
                 if (sp.getRow(objNo) == 0) {
                     ofile.setLength(0);
-                    mdfile.setLength(0);
                 } else {
-                    ofile.setLength((sp.getRow(objNo)-1)*stripeSize);
-                    mdfile.setLength((lastObj+1)*MDRECORD_SIZE);
-                    md.setMdFileLength((lastObj+1)*MDRECORD_SIZE);
+                    long newLength = getOffsetForMetadata(stripeSize, row-1)+MDRECORD_SIZE;
+                    ofile.setLength(newLength);
                 }
             } else if (objNo < lastObj) {
                 //fill with 0s
@@ -316,7 +322,9 @@ public class SingleFileStorageLayout extends StorageLayout {
                 final FileChannel c = ofile.getChannel();
                 c.position(objFileOffset);
                 c.write(buf.getBuffer());
-
+                ofile.writeLong(version);
+                //fixme: calc chekcsum
+                ofile.writeLong(0l);
             }
             //no else here, if objNo > lastObj, it does not exist
         }
@@ -328,11 +336,11 @@ public class SingleFileStorageLayout extends StorageLayout {
 
         openHandles(md,fileId);
         final RandomAccessFile ofile = md.getHandles()[DATA_HANDLE];
-        final RandomAccessFile mdfile = md.getHandles()[MD_HANDLE];
 
         final StripingPolicyImpl sp = md.getStripingPolicy();
 
-        final int stripeSize = sp.getStripeSizeForObject(objNo);
+        //FIXME:!!!!
+        /*final int stripeSize = sp.getStripeSizeForObject(objNo);
         final long objFileOffset = sp.getRow(objNo)*stripeSize;
         final long fileSize = ofile.length();
 
@@ -340,9 +348,9 @@ public class SingleFileStorageLayout extends StorageLayout {
         if (fileSize < objFileOffset + size) {
            //we need to create the object
             ofile.setLength(objFileOffset + size);
-            mdfile.setLength((objNo+1)*MDRECORD_SIZE);
+            //mdfile.setLength((objNo+1)*MDRECORD_SIZE);
             md.setMdFileLength((objNo+1)*MDRECORD_SIZE);
-        }
+        }*/
 
 
     }
@@ -397,7 +405,7 @@ public class SingleFileStorageLayout extends StorageLayout {
 
         openHandles(md,fileId);
         final RandomAccessFile ofile = md.getHandles()[DATA_HANDLE];
-        final RandomAccessFile mdfile = md.getHandles()[MD_HANDLE];
+        //final RandomAccessFile mdfile = md.getHandles()[MD_HANDLE];
 
         final StripingPolicyImpl sp = md.getStripingPolicy();
 
@@ -423,7 +431,7 @@ public class SingleFileStorageLayout extends StorageLayout {
                 newChecksum = checksumAlgo.getValue();
                 md.updateObjectChecksum(objNo, newVersion, newChecksum);
             }
-            writeMDRecord(md, mdfile, objNo, newVersion, newChecksum);
+            //writeMDRecord(md, mdfile, objNo, newVersion, newChecksum);
         }
 
 
