@@ -352,8 +352,10 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
             throw new IOException("no accepting updates in PRIMARY mode");
         }
 
-        if ((objVersion == 1) && (localObjVersion == -1))
+        if ((objVersion == 1) && (localObjVersion == -1)) {
+            localObjVersion = 1;
             return false;
+        }
 
         if (objVersion > localObjVersion+1) {
             return true;
