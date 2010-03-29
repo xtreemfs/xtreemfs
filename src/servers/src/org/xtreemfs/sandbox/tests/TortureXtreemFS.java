@@ -33,8 +33,17 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.clients.io.RandomAccessFile;
+import org.xtreemfs.common.clients.Client;
+import org.xtreemfs.common.clients.File;
+import org.xtreemfs.common.clients.RandomAccessFile;
+import org.xtreemfs.common.clients.Volume;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.util.CLOption;
+import org.xtreemfs.common.util.CLOption.IntegerValue;
+import org.xtreemfs.common.util.CLOption.StringValue;
+import org.xtreemfs.common.util.CLOption.Switch;
+import org.xtreemfs.common.util.CLOptionParser;
+import org.xtreemfs.common.util.InvalidUsageException;
 import org.xtreemfs.common.util.ONCRPCServiceURL;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.client.DIRClient;
@@ -61,73 +70,55 @@ public class TortureXtreemFS {
     
     public static void main(String[] args) {
         try {
-            
-            Map<String, CliOption> options = new HashMap<String, CliOption>();
-            List<String> arguments = new ArrayList<String>(2);
-            options.put("v", new CliOption(CliOption.OPTIONTYPE.STRING));
-            options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
-            options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));
-            options.put("cpass", new CliOption(CliOption.OPTIONTYPE.STRING));
-            options.put("t", new CliOption(CliOption.OPTIONTYPE.STRING));
-            options.put("tpass", new CliOption(CliOption.OPTIONTYPE.STRING));
-            options.put("mkvol", new CliOption(CliOption.OPTIONTYPE.SWITCH));
-            options.put("r", new CliOption(CliOption.OPTIONTYPE.SWITCH));
-            options.put("replicas", new CliOption(CliOption.OPTIONTYPE.NUMBER));
-            
-            CLIParser.parseCLI(args, options, arguments);
+            CLOptionParser parser = new CLOptionParser("TortureXtreemFS");
+            CLOption.StringValue optVolname = (StringValue) parser.addOption(new CLOption.StringValue("v", "volname", "volume name"));
+            CLOption.StringValue optPath = (StringValue) parser.addOption(new CLOption.StringValue("p", "path", "filename (default is torture.dat)"));
+            CLOption.StringValue optPKCS12file = (CLOption.StringValue) parser.addOption(new CLOption.StringValue(null, "pkcs12-file-path", ""));
+            CLOption.StringValue optPKCS12passphrase = (CLOption.StringValue) parser.addOption(new CLOption.StringValue(null, "pkcs12-passphrase", ""));
+            CLOption.Switch      optRandomOnly = (Switch) parser.addOption(new CLOption.Switch("r", "random", "execute only random test"));
+            CLOption.IntegerValue optReplicas = (IntegerValue) parser.addOption(new CLOption.IntegerValue("n", "num-replicas", "number of replicas to use (default is 1)"));
+
+            parser.parse(args);
+
+            final List<String> arguments = parser.getArguments();
             
             Logging.start(Logging.LEVEL_WARN);
             TimeSync.initializeLocal(10000, 50);
             
-            if (arguments.size() != 2) {
+            if (arguments.size() != 1) {
                 usage();
                 return;
             }
             
-            final ONCRPCServiceURL mrcURL = new ONCRPCServiceURL(arguments.get(1),Constants.ONCRPC_SCHEME,MRCInterface.ONC_RPC_PORT_DEFAULT);
+ 
             
-            final String path = (options.get("p").stringValue != null) ? options.get("p").stringValue
-                : "/torture.data";
-            final String volname = (options.get("v").stringValue != null) ? options.get("v").stringValue
-                : "test";
+            final String path = optPath.isSet() ? optPath.getValue() : "/torture.data";
+            final String volname = optVolname.isSet() ? optVolname.getValue() : "test";
             
             final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,DIRInterface.ONC_RPC_PORT_DEFAULT);
             
-            boolean useSSL = false;
-            
-            final SSLOptions sslOptions;
+            final boolean useSSL = dirURL.getProtocol().equals(Constants.ONCRPCG_SCHEME) || dirURL.getProtocol().equals(Constants.ONCRPCS_SCHEME);
+            final boolean randomOnly = optRandomOnly.isSet();
 
-            final int replicas = (int)(options.get("replicas").numValue != null ? options.get("replicas").numValue
-                : 1l);
+            final int replicas = optReplicas.isSet() ? optReplicas.getValue() : 1;
             
-            if (dirURL.getProtocol().equalsIgnoreCase("oncrpcs")) {
-                // require credentials!
-                String serviceCredsFile = null;
-                String serviceCredsPass = null;
-                String trustedCAsFile = null;
-                String trustedCAsPass = null;
-                
-                useSSL = true;
-                serviceCredsFile = options.get("c").stringValue;
-                serviceCredsPass = options.get("cpass").stringValue;
-                trustedCAsFile = options.get("t").stringValue;
-                trustedCAsPass = options.get("tpass").stringValue;
-                
-                sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPass,
-                    SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile), trustedCAsPass,
-                    SSLOptions.JKS_CONTAINER, false);
-                System.out.println("USING SSL");
-            } else {
-                sslOptions = null;
+            SSLOptions sslOptions = null;
+
+            if (useSSL) {
+                if (!optPKCS12file.isSet())
+                    throw new InvalidUsageException("must specify a PCKS#12 file with credentials for (grid)SSL mode, use "+optPKCS12file.getName());
+                if (!optPKCS12passphrase.isSet())
+                    throw new InvalidUsageException("must specify a PCKS#12 passphrase for (grid)SSL mode, use "+optPKCS12passphrase.getName());
+
+                final boolean gridSSL = dirURL.getProtocol().equals(Constants.ONCRPCG_SCHEME);
+                sslOptions = new SSLOptions(new FileInputStream(optPKCS12file.getValue()),optPKCS12passphrase.getValue(),"PKCS12",
+                        null, null, "none", false, gridSSL);
             }
-            
-            RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
-            rpcClient.start();
-            rpcClient.waitForStartup();
-            
-            DIRClient dir = new DIRClient(rpcClient,
-                new InetSocketAddress(dirURL.getHost(), dirURL.getPort()));
-            UUIDResolver.start(dir, 10000, 9999999);
+
+
+            Client c = new Client(new InetSocketAddress[]{new InetSocketAddress(dirURL.getHost(), dirURL.getPort())},
+                    30*1000, 5*60*1000, sslOptions);
+            c.start();
             System.out.println("file size from 64k to 512MB with record length from 4k to 1M");
             
             final int MIN_FS = 64 * 1024;
@@ -136,29 +127,33 @@ public class TortureXtreemFS {
             final int MIN_REC = 4 * 1024;
             final int MAX_REC = 1024 * 1024;
             
-            InetSocketAddress mrcAddr = new InetSocketAddress(mrcURL.getHost(), mrcURL.getPort());
             
             List<String> grs = new ArrayList(1);
             grs.add("torture");
             final UserCredentials uc = MRCClient.getCredentials("torture", grs);
             
-            if (options.get("mkvol").switchValue) {
-                MRCClient mrcClient = new MRCClient(rpcClient, mrcAddr);
+            try {
                 StripingPolicy sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 1);
-                RPCResponse r = mrcClient.mkvol(mrcAddr, uc, volname, sp,
-                    AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX.intValue(), 0775);
-                r.get();
-                r.freeBuffers();
+                c.createVolume(volname, uc, sp, AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX.intValue(), 0777);
+            } catch (Exception ex) {
+                //ignore
             }
+
+            Volume v = c.getVolume(volname, uc);
+
+            if (replicas > 1) {
+                File f = v.getFile("/");
+                f.setDefaultReplication(Constants.REPL_UPDATE_PC_WARONE, replicas);
+            }
+
+            RandomAccessFile tmp = v.getFile(path + ".tmp").open("rw", 0666);
+
+            //System.out.println("Default striping policy is: " + tmp.getFile().get);
             
-            RandomAccessFile tmp = new RandomAccessFile("rw", mrcAddr, volname + path + ".tmp", rpcClient,
-                "root", grs);
-            System.out.println("Default striping policy is: " + tmp.getStripingPolicyAsString());
-            
-            if (options.get("r").switchValue == false) {
+            if (!randomOnly) {
                 for (int fsize = MIN_FS; fsize <= MAX_FS; fsize = fsize * 2) {
                     for (int recsize = MIN_REC; recsize <= MAX_REC; recsize = recsize * 2) {
-                        if (testSequential(fsize, recsize, mrcAddr, volname, path, rpcClient, grs)) {
+                        if (testSequential(fsize, recsize, path, v)) {
                             continue;
                         }
                     }
@@ -169,15 +164,14 @@ public class TortureXtreemFS {
             
             for (int fsize = MIN_FS; fsize <= MAX_FS; fsize = fsize * 2) {
                 for (int recsize = MIN_REC; recsize <= MAX_REC; recsize = recsize * 2) {
-                    if (testRandom(fsize, recsize, mrcAddr, volname, path, rpcClient, grs)) {
+                    if (testRandom(fsize, recsize, path, v)) {
                         continue;
                     }
                 }
             }
             
             System.out.println("finished");
-            rpcClient.shutdown();
-            UUIDResolver.shutdown();
+            c.stop();
         } catch (Exception ex) {
             ex.printStackTrace();
             System.exit(1);
@@ -185,8 +179,7 @@ public class TortureXtreemFS {
         
     }
     
-    private static boolean testSequential(int fsize, int recsize, InetSocketAddress mrcAddr,
-        final String volname, final String path, RPCNIOSocketClient rpcClient, List<String> grs)
+    private static boolean testSequential(int fsize, int recsize, final String path, Volume v)
         throws ONCRPCException, InterruptedException, Exception, IOException {
         final int numRecs = fsize / recsize;
         if (numRecs == 0) {
@@ -197,7 +190,8 @@ public class TortureXtreemFS {
             sendBuffer[i] = (byte) ((i % 26) + 65);
         }
         long tStart = System.currentTimeMillis();
-        RandomAccessFile raf = new RandomAccessFile("rw", mrcAddr, volname + path, rpcClient, "root", grs);
+        File f = v.getFile(path);
+        RandomAccessFile raf = f.open("rw", 0666);
         long tOpen = System.currentTimeMillis();
         long bytesWritten = 0;
         // do writes
@@ -234,7 +228,8 @@ public class TortureXtreemFS {
             }
         }
         
-        raf.delete();
+        raf.close();
+        f.delete();
         final long tDelete = System.currentTimeMillis();
         double writeRate = ((double) fsize) / 1024.0 / (((double) (tWrite)) / 1000.0);
         double readRate = ((double) fsize) / 1024.0 / (((double) (tRead)) / 1000.0);
@@ -243,8 +238,7 @@ public class TortureXtreemFS {
         return false;
     }
     
-    private static boolean testRandom(int fsize, int recsize, InetSocketAddress mrcAddr,
-        final String volname, final String path, RPCNIOSocketClient rpcClient, List<String> grs)
+    private static boolean testRandom(int fsize, int recsize, final String path, Volume v)
         throws ONCRPCException, InterruptedException, Exception, IOException {
         final int numRecs = fsize / recsize;
         int[] skips = new int[numRecs];
@@ -256,7 +250,8 @@ public class TortureXtreemFS {
             sendBuffer[i] = (byte) ((i % 26) + 65);
         }
         long tStart = System.currentTimeMillis();
-        RandomAccessFile raf = new RandomAccessFile("rw", mrcAddr, volname + path, rpcClient, "root", grs);
+        File f = v.getFile(path);
+        RandomAccessFile raf = f.open("rw", 0666);
         long tOpen = System.currentTimeMillis();
         long bytesWritten = 0;
         long tWrite = 0;
@@ -298,7 +293,8 @@ public class TortureXtreemFS {
                 }
             }
         }
-        raf.delete();
+        raf.close();
+        f.delete();
         final long tDelete = System.currentTimeMillis();
         double writeRate = ((double) fsize) / 1024.0 / (((double) (tWrite)) / 1000.0);
         double readRate = ((double) fsize) / 1024.0 / (((double) (tRead)) / 1000.0);

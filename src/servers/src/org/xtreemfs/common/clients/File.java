@@ -44,6 +44,8 @@ public class File {
     
     public static final String XTREEMFSSET_REPL_UPDATE_POLICY_XATTR = "xtreemfs.set_repl_update_policy";
 
+    public static final String XTREEMFS_DEFAULT_RP = "xtreemfs.default_rp";
+
     private final Volume volume;
 
     private final String path;
@@ -212,6 +214,13 @@ public class File {
         } catch (ClassCastException ex) {
             throw new IOException("cannot parse file's location list",ex);
         }
+    }
+
+    public void setDefaultReplication(String policy, int numReplicas) throws IOException {
+        String JSON = "{ \"name\" : \""+policy+"\", \"numRepls\" : "+numReplicas+" }";
+        if (!isDirectory())
+            throw new IOException("only diretories (including root) have a default replication policy");
+        volume.setxattr(path, XTREEMFS_DEFAULT_RP, JSON);
     }
 
     public boolean isReadOnlyReplicated() throws IOException {

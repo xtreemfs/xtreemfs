@@ -654,5 +654,9 @@ public class RandomAccessFile {
         }
     }
 
+    public void flush() throws IOException {
+        fsync();
+    }
+
 
 }
