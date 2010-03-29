@@ -27,6 +27,7 @@ package org.xtreemfs.common.clients.internal;
 import java.util.LinkedList;
 import java.util.List;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.interfaces.StripingPolicy;
 
@@ -68,14 +69,19 @@ public class RAID0ObjectMapper extends ObjectMapper {
         for (long o = firstObj+1; o < lastObj; o++) {
             rq = new ObjectRequest(o, 0, stripeSize,
                     getOSDForObject(replica, o), null);
+            if (Logging.isDebug() && (rq.getLength() == 0)) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"warning: created empty read/write: "+rq);
+            }
             reqs.add(rq);
         }
 
         //last obj
         final int lastSize = ((length+fileOffset)%stripeSize == 0) ? stripeSize : (int) (length+fileOffset)%stripeSize;
-        rq = new ObjectRequest(lastObj, 0, lastSize, getOSDForObject(replica, lastObj),
-                null);
-        reqs.add(rq);
+        if (lastSize > 0) {
+            rq = new ObjectRequest(lastObj, 0, lastSize, getOSDForObject(replica, lastObj),
+                    null);
+            reqs.add(rq);
+        }
         
         return reqs;
     }
