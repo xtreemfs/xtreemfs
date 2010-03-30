@@ -307,16 +307,22 @@ public class StorageThread extends Stage {
             }
 
             ReplicaStatus result = new ReplicaStatus();
-            result.setMax_obj_version(fi.getLastObjectNumber());
+
+            result.setFile_size(fi.getFilesize());
             result.setTruncate_epoch(fi.getTruncateEpoch());
 
             ObjectVersionList ovl = new ObjectVersionList();
 
+            long localMaxObjVer = 0;
             for (Entry<Long,Long> e : fi.getLatestObjectVersions()) {
-                if (e.getValue() > remoteMaxObjVer)
+                if (e.getValue() > remoteMaxObjVer) {
                     ovl.add(new ObjectVersion(e.getKey(), e.getValue()));
+                    if (e.getValue() > localMaxObjVer)
+                        localMaxObjVer = e.getValue();
+                }
             }
             result.setObjectVersions(ovl);
+            result.setMax_obj_version(localMaxObjVer);
 
             cback.getReplicaStateComplete(result, null);
         } catch (IOException ex) {
