@@ -345,7 +345,7 @@ public class DIRClient extends DIRClientBackend implements TimeServerClient {
                 if (otherServers != null && otherServers.size() > 0) {
                     // delay the client request to ensure that a new leaseholder
                     // for the replicated DIR could be found
-                    long delay = (5000 + 1) /
+                    long delay = (ReplicationConfig.LEASE_TIMEOUT + 1) /
                                             otherServers.size();
                     try {
                         Thread.sleep(delay);
