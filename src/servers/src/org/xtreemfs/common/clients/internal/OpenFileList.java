@@ -157,7 +157,7 @@ public class OpenFileList extends Thread {
                 renewCap(cap);
             }
             try {
-                sleep(Constants.XCAP_EXPIRE_TIMEOUT_S_MIN*60*1000);
+                sleep(Constants.XCAP_EXPIRE_TIMEOUT_S_MIN*60*1000/2);
             } catch (InterruptedException ex) {
                 break;
             }

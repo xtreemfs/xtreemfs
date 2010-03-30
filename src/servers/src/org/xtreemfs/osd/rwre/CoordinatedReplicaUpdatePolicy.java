@@ -91,7 +91,6 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
         final int numAcksRequired = getNumRequiredAcks(Operation.INTERNAL_UPDATE);
         final int numRequests = remoteOSDs.size();
         final int maxErrors = numRequests-numAcksRequired;
-        System.out.println("max errors: "+maxErrors+", numAcks: "+numAcksRequired+" numRequests: "+numRequests);
 
         final RPCResponse[] responses = new RPCResponse[remoteOSDs.size()];
         for (int i = 0; i < responses.length; i++) {
@@ -119,6 +118,9 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                     assert(osdNum > -1);
                     try {
                         states[osdNum] = (ReplicaStatus)r.get();
+                        if (Logging.isDebug()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"received status response %d: %s",osdNum,states[osdNum]);
+                        }
                         numResponses++;
                     } catch (Exception ex) {
                         numErrors++;

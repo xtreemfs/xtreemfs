@@ -451,7 +451,13 @@ public class RandomAccessFile {
             switchToNextReplica();
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, this,"write failed (%s), switched to replica: %s",cause,currentReplica);
-            
+            try {
+                Thread.sleep(WAIT_MS_BETWEEN_WRITE_SWITCHOVER);
+            } catch (InterruptedException ex) {
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                throw new IOException("operation aborted", ex);
+            }
         } while (numTries < numReplicas);
         throw cause;
     }
