@@ -116,58 +116,12 @@ public final class ReadOperation extends OSDOperation {
                 }
             });
         } else {
-            replicatedFileOpen(rq, args);
+            rwReplicatedRead(rq,args);
         }
     }
 
-    public void replicatedFileOpen(final OSDRequest rq, final readRequest args) {
-
-        if (rq.isFileOpen()) {
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"open rw/ repl file: "+rq.getFileId());
-            //initialize replication state
-
-            //load max obj ver from disk
-            master.getStorageStage().internalGetMaxObjectNo(rq.getFileId(),
-                    rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                    new InternalGetMaxObjectNoCallback() {
-
-                @Override
-                public void maxObjectNoCompleted(long maxObjNo, long filesize, long tepoch, Exception error) {
-                    if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"received max objNo for: "+rq.getFileId()+" maxObj: "+maxObjNo+
-                                " error: "+error);
-                    if (error != null) {
-                        sendError(rq, error);
-                    } else {
-                        //open file in repl stage
-                        master.getRWReplicationStage().openFile(args.getFile_credentials(),
-                                rq.getLocationList(), maxObjNo, false, new RWReplicationStage.RWReplicationCallback() {
-
-                            @Override
-                            public void success(long newObjectVersion) {
-                                rwReplicatedRead(rq,args);
-                            }
-
-                            @Override
-                            public void redirect(RedirectException redirectTo) {
-                                throw new UnsupportedOperationException("Not supported yet.");
-                            }
-
-                            @Override
-                            public void failed(Exception ex) {
-                                sendError(rq, ex);
-                            }
-                        }, rq);
-                    }
-                }
-            });
-        } else
-            rwReplicatedRead(rq, args);
-    }
-
     public void rwReplicatedRead(final OSDRequest rq, final readRequest args) {
-        master.getRWReplicationStage().prepareOperation(args.getFile_credentials(), args.getObject_number(), args.getObject_version(),
+        master.getRWReplicationStage().prepareOperation(args.getFile_credentials(), rq.getLocationList(), args.getObject_number(), args.getObject_version(),
                 RWReplicationStage.Operation.READ, new RWReplicationStage.RWReplicationCallback() {
 
             @Override

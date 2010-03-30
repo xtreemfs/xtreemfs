@@ -113,68 +113,15 @@ public final class WriteOperation extends OSDOperation {
                             }
                         });
             } else {
-                replicatedFileOpen(rq,args,syncWrite);
+                replicatedWrite(rq,args,syncWrite);
             }
         }
-    }
-
-    public void replicatedFileOpen(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {
-
-        if (rq.isFileOpen()) {
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"open rw/ repl file: "+rq.getFileId());
-            //initialize replication state
-
-            //load max obj ver from disk
-            master.getStorageStage().internalGetMaxObjectNo(rq.getFileId(),
-                    rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                    new InternalGetMaxObjectNoCallback() {
-
-                @Override
-                public void maxObjectNoCompleted(long maxObjNo, long filesize, long tepoch, Exception error) {
-                    if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"received max objNo for: "+rq.getFileId()+" maxObj: "+maxObjNo+
-                                " error: "+error);
-                    if (error != null) {
-                        sendResult(rq, null, error);
-                    } else {
-                        //open file in repl stage
-                        master.getRWReplicationStage().openFile(args.getFile_credentials(),
-                                    rq.getLocationList(), maxObjNo, false, new RWReplicationStage.RWReplicationCallback() {
-
-                                    @Override
-                                    public void success(long newObjectVersion) {
-                                        if (Logging.isDebug()) {
-                                            Logging.logMessage(Logging.LEVEL_DEBUG, this, "open success for file: " + rq.getFileId());
-                                        }
-                                        replicatedWrite(rq,args,syncWrite);
-                                    }
-
-                                    @Override
-                                    public void redirect(RedirectException redirectTo) {
-                                        throw new UnsupportedOperationException("Not supported yet.");
-                                    }
-
-                                    @Override
-                                    public void failed(Exception ex) {
-                                        if (Logging.isDebug()) {
-                                            Logging.logMessage(Logging.LEVEL_DEBUG, this, "open failed for file: " + rq.getFileId() + " error: " + ex);
-                                        }
-                                        sendError(rq, ex);
-                                    }
-                                }, rq);
-
-                    }
-                }
-            });
-        } else
-            replicatedWrite(rq, args,syncWrite);
     }
 
     public void replicatedWrite(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {
         //prepareWrite first
 
-        master.getRWReplicationStage().prepareOperation(args.getFile_credentials(), args.getObject_number(),
+        master.getRWReplicationStage().prepareOperation(args.getFile_credentials(), rq.getLocationList(),args.getObject_number(),
                 args.getObject_version(), RWReplicationStage.Operation.WRITE,
                 new RWReplicationStage.RWReplicationCallback() {
 
@@ -239,9 +186,9 @@ public final class WriteOperation extends OSDOperation {
     }
     public void sendUpdates2(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result, final long newObjVersion,
             final ObjectData data) {
-        master.getRWReplicationStage().replicatedWrite(args.getFile_credentials(),
+        master.getRWReplicationStage().replicatedWrite(args.getFile_credentials(),rq.getLocationList(),
                     args.getObject_number(), newObjVersion, data,
-                    rq.getLocationList(),new RWReplicationStage.RWReplicationCallback() {
+                    new RWReplicationStage.RWReplicationCallback() {
 
             @Override
             public void success(long newObjectVersion) {

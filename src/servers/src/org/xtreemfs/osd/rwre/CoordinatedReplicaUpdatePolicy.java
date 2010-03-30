@@ -61,8 +61,8 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
     private final OSDClient client;
 
 
-    public CoordinatedReplicaUpdatePolicy(List<InetSocketAddress> remoteOSDs, String fileId, long maxObjVerOnDisk, OSDClient client) throws IOException, InterruptedException {
-        super(remoteOSDs,new ASCIIString(FILE_CELLID_PREFIX+fileId),maxObjVerOnDisk);
+    public CoordinatedReplicaUpdatePolicy(List<InetSocketAddress> remoteOSDs, String fileId, OSDClient client) throws IOException {
+        super(remoteOSDs,new ASCIIString(FILE_CELLID_PREFIX+fileId));
         this.client = client;
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, this,"created %s for %s",this.getClass().getSimpleName(),cellId);
@@ -294,8 +294,8 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                             Logging.logMessage(Logging.LEVEL_INFO, this,"replicated %s FAILED for %s",operation,fileId);
                             callback.failed(ex);
                         }
-                        return;
                     }
+                    return;
                 } finally {
                     r.freeBuffers();
                 }
@@ -358,6 +358,9 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
         }
 
         if (objVersion > localObjVersion+1) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"require reset for %s due to version GAP (local=%d, remote=%d)",
+                        cellId,localObjVersion,objVersion);
             return true;
         }
 

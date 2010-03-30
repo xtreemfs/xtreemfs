@@ -480,7 +480,7 @@ public class StorageThread extends Stage {
             layout.writeObject(fileId, fi, data, objNo, offset, newVersion, syncWrite, isCow);
             
             // update the "latest versions" file
-            if (cow.cowEnabled() || (newVersionArg != null))
+            if (cow.cowEnabled())
                 layout.updateCurrentObjVersion(fileId, objNo, newVersion);
             
             if (isCow)

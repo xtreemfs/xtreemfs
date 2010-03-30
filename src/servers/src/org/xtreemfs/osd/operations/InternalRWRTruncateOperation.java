@@ -74,7 +74,7 @@ public final class InternalRWRTruncateOperation extends OSDOperation {
                     args.getObject_version());
         }
 
-       replicatedFileOpen(rq, args);
+       prepareLocalTruncate(rq,args);
     }
     
     public void localTruncate(final OSDRequest rq, final xtreemfs_rwr_truncateRequest args) {
@@ -97,7 +97,7 @@ public final class InternalRWRTruncateOperation extends OSDOperation {
     }
 
     public void prepareLocalTruncate(final OSDRequest rq, final xtreemfs_rwr_truncateRequest args) {
-        master.getRWReplicationStage().prepareOperation(args.getFile_credentials(), 0, args.getObject_version(),
+        master.getRWReplicationStage().prepareOperation(args.getFile_credentials(), rq.getLocationList(), 0, args.getObject_version(),
                 RWReplicationStage.Operation.INTERNAL_TRUNCATE, new RWReplicationStage.RWReplicationCallback() {
 
             @Override
@@ -116,59 +116,6 @@ public final class InternalRWRTruncateOperation extends OSDOperation {
             }
         }, rq);
     }
-
-    public void replicatedFileOpen(final OSDRequest rq, final xtreemfs_rwr_truncateRequest args) {
-
-        if (rq.isFileOpen()) {
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"open rw/ repl file: "+rq.getFileId());
-            //initialize replication state
-
-            //load max obj ver from disk
-            master.getStorageStage().internalGetMaxObjectNo(rq.getFileId(),
-                    rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                    new InternalGetMaxObjectNoCallback() {
-
-                @Override
-                public void maxObjectNoCompleted(long maxObjNo, long filesize, long tepoch, Exception error) {
-                    if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"received max objNo for: "+rq.getFileId()+" maxObj: "+maxObjNo+
-                                " error: "+error);
-                    if (error != null) {
-                        sendResult(rq, error);
-                    } else {
-                        //open file in repl stage
-                        master.getRWReplicationStage().openFile(args.getFile_credentials(),
-                                rq.getLocationList(), maxObjNo, false, new RWReplicationStage.RWReplicationCallback() {
-
-                                @Override
-                                public void success(long newObjectVersion) {
-                                    if (Logging.isDebug()) {
-                                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "open success for file: " + rq.getFileId());
-                                    }
-                                    prepareLocalTruncate(rq,args);
-                                }
-
-                                @Override
-                                public void redirect(RedirectException redirectTo) {
-                                    throw new UnsupportedOperationException("Not supported yet.");
-                                }
-
-                                @Override
-                                public void failed(Exception ex) {
-                                    if (Logging.isDebug()) {
-                                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "open failed for file: " + rq.getFileId() + " error: " + ex);
-                                    }
-                                    sendResult(rq, ex);
-                                }
-                            }, rq);
-                    }
-                }
-            });
-        } else
-            prepareLocalTruncate(rq, args);
-    }
-
 
 
     public void sendResult(final OSDRequest rq, Exception error) {

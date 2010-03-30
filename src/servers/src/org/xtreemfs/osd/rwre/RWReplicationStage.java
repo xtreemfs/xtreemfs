@@ -61,6 +61,7 @@ import org.xtreemfs.osd.operations.EventTruncate;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
 import org.xtreemfs.osd.stages.Stage;
+import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
 import org.xtreemfs.osd.storage.CowPolicy;
 
@@ -73,7 +74,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     public static final int STAGEOP_REPLICATED_WRITE = 1;
     public static final int STAGEOP_CLOSE = 2;
     public static final int STAGEOP_PROCESS_FLEASE_MSG = 3;
-    public static final int STAGEOP_OPEN = 4;
     public static final int STAGEOP_PREPAREOP = 5;
     public static final int STAGEOP_TRUNCATE = 6;
     public static final int STAGEOP_GETSTATUS = 7;
@@ -85,6 +85,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     public static final int STAGEOP_INTERNAL_FSAVAIL = 14;
     public static final int STAGEOP_INTERNAL_TRUNCED = 15;
     public static final int STAGEOP_FORCE_RESET = 16;
+    public static final int STAGEOP_INTERNAL_MAXOBJ_AVAIL = 17;
 
     public  static enum Operation {
         READ,
@@ -190,6 +191,10 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
          this.enqueueOperation(STAGEOP_INTERNAL_FSAVAIL, new Object[]{fileId,filesize,truncateEpoch,updateObjVer,error}, null, null);
     }
 
+    public void eventForceReset(FileCredentials credentials, XLocations xloc) {
+         this.enqueueOperation(STAGEOP_FORCE_RESET, new Object[]{credentials, xloc}, null, null);
+    }
+
     public void eventTruncateComplete(String fileId, Exception error) {
          this.enqueueOperation(STAGEOP_INTERNAL_TRUNCED, new Object[]{fileId,error}, null, null);
     }
@@ -198,12 +203,17 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
          this.enqueueOperation(STAGEOP_INTERNAL_OBJFETCHED, new Object[]{fileId,object,data,error}, null, null);
     }
 
+
     void eventFetchObjects(String fileId, Queue<ObjectFetchRecord> objectsToFetch, Exception error) {
         this.enqueueOperation(STAGEOP_INTERNAL_GETOBJECTS, new Object[]{fileId,objectsToFetch,error}, null, null);
     }
 
     void eventLeaseStateChanged(ASCIIString cellId, Flease lease, Exception error) {
         this.enqueueOperation(STAGEOP_LEASE_STATE_CHANGED, new Object[]{cellId,lease,error}, null, null);
+    }
+
+    void eventMaxObjAvail(String fileId, long maxObjVer, long fileSize, long truncateEpoch, Exception error) {
+        this.enqueueOperation(STAGEOP_INTERNAL_MAXOBJ_AVAIL, new Object[]{fileId,maxObjVer,error}, null, null);
     }
 
     private void processLeaseStateChanged(StageRequest method) {
@@ -424,6 +434,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 Logging.logMessage(Logging.LEVEL_DEBUG, this,"file %s is already in RESET",file.getFileId());
             return;
         }
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,"replica state changed for %s from %s to %s",file.getFileId(),file.getState(),ReplicaState.RESET);
+        }
         file.setState(ReplicaState.RESET);
         Logging.logMessage(Logging.LEVEL_INFO, this,"replica RESET started: %s (update objVer=%d)",file.getFileId(),updateObjVer);
 
@@ -464,6 +477,24 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         }
                     });
                 }
+            }
+
+        } catch (Exception ex) {
+            Logging.logError(Logging.LEVEL_ERROR, this,ex);
+        }
+    }
+
+    private void processForceReset(StageRequest method) {
+        try {
+            final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
+            final XLocations loc = (XLocations) method.getArgs()[1];
+
+            ReplicatedFileState state = getState(credentials, loc, true);
+            if (!state.isForceReset()) {
+                if ( (state.getState() == ReplicaState.OPEN) || (state.getState() == ReplicaState.BACKUP) )
+                    doReset(state, ReplicaUpdatePolicy.UNLIMITED_RESET);
+                else if (state.getState() == ReplicaState.INITIALIZING)
+                    state.setForceReset(true);
             }
 
         } catch (Exception ex) {
@@ -569,26 +600,24 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         public void failed(Exception ex);
     }
 
-    public void openFile(FileCredentials credentials, XLocations locations, long maxObjVersion, boolean forceReset,
+    /*public void openFile(FileCredentials credentials, XLocations locations, boolean forceReset,
             RWReplicationCallback callback, OSDRequest request) {
-        this.enqueueOperation(STAGEOP_OPEN, new Object[]{credentials,locations,maxObjVersion,forceReset}, request, callback);
-    }
+        this.enqueueOperation(STAGEOP_OPEN, new Object[]{credentials,locations,forceReset}, request, callback);
+    }*/
 
-    public void prepareOperation(FileCredentials credentials, long objNo, long objVersion, Operation op, RWReplicationCallback callback,
+    public void prepareOperation(FileCredentials credentials, XLocations xloc, long objNo, long objVersion, Operation op, RWReplicationCallback callback,
             OSDRequest request) {
-        this.enqueueOperation(STAGEOP_PREPAREOP, new Object[]{credentials,objNo,objVersion,op}, request, callback);
+        this.enqueueOperation(STAGEOP_PREPAREOP, new Object[]{credentials,xloc,objNo,objVersion,op}, request, callback);
     }
     
-    public void replicatedWrite(FileCredentials credentials, long objNo, long objVersion, ObjectData data,
-            XLocations locations,
+    public void replicatedWrite(FileCredentials credentials, XLocations xloc, long objNo, long objVersion, ObjectData data,
             RWReplicationCallback callback, OSDRequest request) {
-        this.enqueueOperation(STAGEOP_REPLICATED_WRITE, new Object[]{credentials,objNo,objVersion,data,locations}, request, callback);
+        this.enqueueOperation(STAGEOP_REPLICATED_WRITE, new Object[]{credentials,xloc,objNo,objVersion,data}, request, callback);
     }
 
-    public void replicateTruncate(FileCredentials credentials, long newFileSize, long newObjectVersion,
-            XLocations locations,
+    public void replicateTruncate(FileCredentials credentials, XLocations xloc, long newFileSize, long newObjectVersion,
             RWReplicationCallback callback, OSDRequest request) {
-        this.enqueueOperation(STAGEOP_TRUNCATE, new Object[]{credentials,newFileSize,newObjectVersion,locations}, request, callback);
+        this.enqueueOperation(STAGEOP_TRUNCATE, new Object[]{credentials,xloc,newFileSize,newObjectVersion}, request, callback);
     }
 
     public void fileClosed(String fileId) {
@@ -624,12 +653,13 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             case STAGEOP_CLOSE : processFileClosed(method); break;
             case STAGEOP_PROCESS_FLEASE_MSG : processFleaseMessage(method); break;
             case STAGEOP_PREPAREOP : processPrepareOp(method); break;
-            case STAGEOP_OPEN : processFileOpen(method); break;
             case STAGEOP_INTERNAL_GETOBJECTS : processFetchObjects(method); break;
             case STAGEOP_LEASE_STATE_CHANGED : processLeaseStateChanged(method); break;
             case STAGEOP_INTERNAL_OBJFETCHED : processObjectFetched(method); break;
             case STAGEOP_INTERNAL_FSAVAIL : processFSAvailExecReset(method); break;
             case STAGEOP_INTERNAL_TRUNCED : processTruncateComplete(method); break;
+            case STAGEOP_INTERNAL_MAXOBJ_AVAIL : processMaxObjAvail(method); break;
+            case STAGEOP_FORCE_RESET : processForceReset(method); break;
             case STAGEOP_GETSTATUS : processGetStatus(method); break;
             default : throw new IllegalArgumentException("no such stageop");
         }
@@ -669,41 +699,62 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
     }
 
-    private void processFileOpen(StageRequest method) {
-        final RWReplicationCallback callback = (RWReplicationCallback) method.getCallback();
+    private ReplicatedFileState getState(FileCredentials credentials, XLocations loc, boolean forceReset) throws IOException {
 
-        try {
-            final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
-            final XLocations loc = (XLocations) method.getArgs()[1];
-            final Long maxObjVersion = (Long) method.getArgs()[2];
-            final Boolean forceReset = (Boolean) method.getArgs()[3];
+        final String fileId = credentials.getXcap().getFile_id();
 
-            final String fileId = credentials.getXcap().getFile_id();
-
+        ReplicatedFileState state = files.get(fileId);
+        if (state == null) {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, this,"open file: "+fileId);
+            //"open" file
+            state = new ReplicatedFileState(fileId,loc, master.getConfig().getUUID(), fstage, osdClient);
+            files.put(fileId,state);
+            state.setCredentials(credentials);
+            state.setForceReset(forceReset);
+            cellToFileId.put(state.getPolicy().getCellId(),fileId);
+            assert(state.getState() == ReplicaState.INITIALIZING);
+
+            master.getStorageStage().internalGetMaxObjectNo(fileId, loc.getLocalReplica().getStripingPolicy(), new InternalGetMaxObjectNoCallback() {
+
+                @Override
+                public void maxObjectNoCompleted(long maxObjNo, long fileSize, long truncateEpoch, Exception error) {
+                    eventMaxObjAvail(fileId, maxObjNo, fileSize, truncateEpoch, error);
+                }
+            });
+        }
+        return state;
+    }
+
+    private void processMaxObjAvail(StageRequest method) {
+        try {
+            final String fileId = (String) method.getArgs()[0];
+            final Long maxObjVersion = (Long) method.getArgs()[1];
+            final Exception error = (Exception) method.getArgs()[2];
+
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"max obj avail for file: "+fileId+" max="+maxObjVersion);
 
 
             ReplicatedFileState state = files.get(fileId);
             if (state == null) {
-                //"open" file
-                state = new ReplicatedFileState(fileId,loc, master.getConfig().getUUID(), fstage, osdClient, maxObjVersion);
-                files.put(fileId,state);
-                state.setCredentials(credentials);
-                cellToFileId.put(state.getPolicy().getCellId(),fileId);
-                assert(state.getState() == ReplicaState.OPEN);
-                if (forceReset == true) {
-                    state.setPrimaryReset(false);
-                    doReset(state, ReplicaUpdatePolicy.UNLIMITED_RESET);
-                }
-                callback.success(0);
-            } else {
-                callback.failed(new IOException("file was already opened!"));
+                Logging.logMessage(Logging.LEVEL_ERROR, this,"received maxObjAvail event for unknow file: %s",fileId);
+                return;
             }
+
+            assert(state.getState() == ReplicaState.INITIALIZING);
+            state.getPolicy().setLocalObjectVersion(maxObjVersion);
+
+            if (state.isForceReset()) {
+                state.setPrimaryReset(false);
+                doReset(state, ReplicaUpdatePolicy.UNLIMITED_RESET);
+            } else {
+                doOpen(state);
+            }
+
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            callback.failed(ex);
         }
     }
 
@@ -711,14 +762,13 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         final RWReplicationCallback callback = (RWReplicationCallback) method.getCallback();
         try {
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
-            final Long objNo = (Long) method.getArgs()[1];
-            final Long objVersion = (Long) method.getArgs()[2];
-            final ObjectData objData  = (ObjectData) method.getArgs()[3];
-            final XLocations loc = (XLocations) method.getArgs()[4];
-
+            final XLocations loc = (XLocations) method.getArgs()[1];
+            final Long objNo = (Long) method.getArgs()[2];
+            final Long objVersion = (Long) method.getArgs()[3];
+            final ObjectData objData  = (ObjectData) method.getArgs()[4];
+            
 
             final String fileId = credentials.getXcap().getFile_id();
-
 
             ReplicatedFileState state = files.get(fileId);
             if (state == null) {
@@ -749,13 +799,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         final RWReplicationCallback callback = (RWReplicationCallback) method.getCallback();
         try {
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
-            final Long newFileSize = (Long) method.getArgs()[1];
-            final Long newObjVersion = (Long) method.getArgs()[2];
-            final XLocations loc = (XLocations) method.getArgs()[3];
-
-
+            final XLocations loc = (XLocations) method.getArgs()[1];
+            final Long newFileSize = (Long) method.getArgs()[2];
+            final Long newObjVersion = (Long) method.getArgs()[3];
+            
             final String fileId = credentials.getXcap().getFile_id();
-
 
             ReplicatedFileState state = files.get(fileId);
             if (state == null) {
@@ -786,20 +834,18 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         final RWReplicationCallback callback = (RWReplicationCallback)method.getCallback();
         try {
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
-            final Long objVersion = (Long) method.getArgs()[2];
-            final Operation op = (Operation) method.getArgs()[3];
+            final XLocations loc = (XLocations) method.getArgs()[1];
+            final Long objVersion = (Long) method.getArgs()[3];
+            final Operation op = (Operation) method.getArgs()[4];
 
             final String fileId = credentials.getXcap().getFile_id();
 
-            ReplicatedFileState state = files.get(fileId);
-            if (state == null) {
-                callback.failed(new IllegalArgumentException("file "+fileId+" is not open!"));
-                return;
-            }
+            ReplicatedFileState state = getState(credentials, loc, false);
 
             if ((op == Operation.INTERNAL_UPDATE) || (op == Operation.INTERNAL_TRUNCATE)) {
                 switch (state.getState()) {
                     case WAITING_FOR_LEASE:
+                    case INITIALIZING:
                     case RESET : {
                         if (Logging.isDebug()) {
                             Logging.logMessage(Logging.LEVEL_DEBUG, this,"enqeue update for %s (state is %s)",fileId,state.getState());
@@ -826,6 +872,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 state.setCredentials(credentials);
                 switch (state.getState()) {
                     case WAITING_FOR_LEASE:
+                    case INITIALIZING:
                     case RESET : {
                         state.getPendingRequests().add(method);
                         return;

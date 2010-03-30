@@ -126,7 +126,22 @@ public class ReplicatedFileState {
         return loc.getLocalReplica();
     }
 
+    /**
+     * @return the forceReset
+     */
+    public boolean isForceReset() {
+        return forceReset;
+    }
+
+    /**
+     * @param forceReset the forceReset to set
+     */
+    public void setForceReset(boolean forceReset) {
+        this.forceReset = forceReset;
+    }
+
     public enum ReplicaState {
+        INITIALIZING,
         OPEN,
         RESET,
         WAITING_FOR_LEASE,
@@ -160,19 +175,21 @@ public class ReplicatedFileState {
 
     private boolean                 primaryReset;
 
+    private boolean                 forceReset;
+
     private XLocations              loc;
 
 
 
-    public ReplicatedFileState(String fileId, XLocations locations, ServiceUUID localUUID, FleaseStage fstage, OSDClient client,
-            long maxObjVer) throws UnknownUUIDException, IOException, InterruptedException {
+    public ReplicatedFileState(String fileId, XLocations locations, ServiceUUID localUUID, FleaseStage fstage, OSDClient client) throws UnknownUUIDException, IOException {
         queuedData = new AtomicInteger();
         pendingRequests = new LinkedList();
         this.fileId = fileId;
-        this.state = ReplicaState.OPEN;
+        this.state = ReplicaState.INITIALIZING;
         this.primaryReset = false;
         this.loc = locations;
         this.lease = Flease.EMPTY_LEASE;
+        this.forceReset = false;
         
         remoteOSDs = new ArrayList(locations.getNumReplicas()-1);
         for (Replica r : locations.getReplicas()) {
@@ -184,11 +201,11 @@ public class ReplicatedFileState {
 
         if (locations.getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_WARONE)) {
             //FIXME: instantiate the right policy
-            policy = new WaR1UpdatePolicy(remoteOSDs, fileId, maxObjVer, client);
+            policy = new WaR1UpdatePolicy(remoteOSDs, fileId, client);
         } else if (locations.getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_WARA)) {
-            policy = new WaRaUpdatePolicy(remoteOSDs, fileId, maxObjVer, client);
+            policy = new WaRaUpdatePolicy(remoteOSDs, fileId, client);
         } else if (locations.getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_WQRQ)) {
-            policy = new WqRqUpdatePolicy(remoteOSDs, fileId, maxObjVer, client);
+            policy = new WqRqUpdatePolicy(remoteOSDs, fileId, client);
         } else {
             throw new IllegalArgumentException("unsupported replica update mode: "+locations.getReplicaUpdatePolicy());
         }

@@ -52,10 +52,10 @@ public abstract class ReplicaUpdatePolicy {
 
     protected long localObjVersion;
     
-    public ReplicaUpdatePolicy(List<InetSocketAddress> remoteOSDs, ASCIIString cellId, long maxObjVerOnDisk) {
+    public ReplicaUpdatePolicy(List<InetSocketAddress> remoteOSDs, ASCIIString cellId) {
         this.remoteOSDs = remoteOSDs;
         this.cellId = cellId;
-        this.localObjVersion = maxObjVerOnDisk;
+        localObjVersion = -1;
     }
 
     public List<InetSocketAddress> getRemoteOSDs() {
@@ -69,6 +69,10 @@ public abstract class ReplicaUpdatePolicy {
     public void objectFetched(long objVersion) {
         if (objVersion > localObjVersion)
             localObjVersion = objVersion;
+    }
+
+    public void setLocalObjectVersion(long localMaxObjVer) {
+        localObjVersion = localMaxObjVer;
     }
 
     /**

@@ -69,9 +69,6 @@ public class RAID0ObjectMapper extends ObjectMapper {
         for (long o = firstObj+1; o < lastObj; o++) {
             rq = new ObjectRequest(o, 0, stripeSize,
                     getOSDForObject(replica, o), null);
-            if (Logging.isDebug() && (rq.getLength() == 0)) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"warning: created empty read/write: "+rq);
-            }
             reqs.add(rq);
         }
 

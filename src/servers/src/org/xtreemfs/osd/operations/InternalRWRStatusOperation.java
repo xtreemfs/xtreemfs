@@ -72,7 +72,7 @@ public final class InternalRWRStatusOperation extends OSDOperation {
             Logging.logMessage(Logging.LEVEL_DEBUG, this,"RWR status request for file %s",args.getFile_id());
         }
 
-        replicatedFileOpen(rq, args);
+        getState(rq,args);
 
     }
     
@@ -86,60 +86,6 @@ public final class InternalRWRStatusOperation extends OSDOperation {
             }
         });
     }
-
-    public void replicatedFileOpen(final OSDRequest rq, final xtreemfs_rwr_statusRequest args) {
-
-        if (rq.isFileOpen()) {
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"open rw/ repl file: "+rq.getFileId());
-            //initialize replication state
-
-            //load max obj ver from disk
-            master.getStorageStage().internalGetMaxObjectNo(rq.getFileId(),
-                    rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                    new InternalGetMaxObjectNoCallback() {
-
-                @Override
-                public void maxObjectNoCompleted(long maxObjNo, long filesize, long tepoch, Exception error) {
-                    if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"received max objNo for: "+rq.getFileId()+" maxObj: "+maxObjNo+
-                                " error: "+error);
-                    if (error != null) {
-                        sendResult(rq, null, error);
-                    } else {
-                        //open file in repl stage
-                        master.getRWReplicationStage().openFile(args.getFile_credentials(),
-                                rq.getLocationList(), maxObjNo, false, new RWReplicationStage.RWReplicationCallback() {
-
-                                @Override
-                                public void success(long newObjectVersion) {
-                                    if (Logging.isDebug()) {
-                                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "open success for file: " + rq.getFileId());
-                                    }
-                                    getState(rq,args);
-                                }
-
-                                @Override
-                                public void redirect(RedirectException redirectTo) {
-                                    throw new UnsupportedOperationException("Not supported yet.");
-                                }
-
-                                @Override
-                                public void failed(Exception ex) {
-                                    if (Logging.isDebug()) {
-                                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "open failed for file: " + rq.getFileId() + " error: " + ex);
-                                    }
-                                    sendResult(rq, null, ex);
-                                }
-                            }, rq);
-                    }
-                }
-            });
-        } else
-            getState(rq, args);
-    }
-
-
 
     public void sendResult(final OSDRequest rq, xtreemfs_rwr_statusResponse response, Exception error) {
 

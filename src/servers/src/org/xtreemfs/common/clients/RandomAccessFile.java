@@ -358,6 +358,10 @@ public class RandomAccessFile {
             throw new IllegalStateException("file was closed");
         }
 
+        if (data.remaining() == 0) {
+            return 0;
+        }
+
         List<ObjectRequest> ors = oMapper.writeRequest(data, position, currentReplica);
 
         if (ors.size() == 0) {
@@ -394,6 +398,7 @@ public class RandomAccessFile {
                 setXCap();
                 for (int i = 0; i < ors.size(); i++) {
                     ObjectRequest or = ors.get(i);
+                    or.getData().position(0);
                     bytesWritten += or.getData().capacity();
                     ServiceUUID osd = new ServiceUUID(or.getOsdUUID(), parentVolume.uuidResolver);
                     RPCResponse<OSDWriteResponse> r = osdClient.write(osd.getAddress(),
@@ -435,13 +440,18 @@ public class RandomAccessFile {
                 forceReplica(ex.getTo_uuid());
                 continue;
             } catch (ONCRPCException ex) {
-                cause = new IOException("communication failure", ex);
+                cause = new IOException("communication failure: "+ex, ex);
             } finally {
-                for (RPCResponse r : resps)
-                    r.freeBuffers();
+                for (RPCResponse r : resps) {
+                    if (r != null)
+                        r.freeBuffers();
+                }
             }
             numTries++;
             switchToNextReplica();
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"write failed (%s), switched to replica: %s",cause,currentReplica);
+            
         } while (numTries < numReplicas);
         throw cause;
     }

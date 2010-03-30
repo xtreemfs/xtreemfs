@@ -19,8 +19,8 @@ public class WaR1UpdatePolicy extends CoordinatedReplicaUpdatePolicy {
 
     final int numResponses;
 
-    public WaR1UpdatePolicy(List<InetSocketAddress> remoteOSDs, String fileId, long maxObjVerOnDisk, OSDClient client) throws IOException, InterruptedException {
-        super(remoteOSDs, fileId, maxObjVerOnDisk, client);
+    public WaR1UpdatePolicy(List<InetSocketAddress> remoteOSDs, String fileId, OSDClient client) throws IOException {
+        super(remoteOSDs, fileId, client);
         this.numResponses = remoteOSDs.size();
     }
 

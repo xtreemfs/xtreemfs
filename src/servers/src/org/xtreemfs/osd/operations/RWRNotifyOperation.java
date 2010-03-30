@@ -84,53 +84,8 @@ public final class RWRNotifyOperation extends OSDOperation {
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this,"RWR notify for file %s: FORCE RESET",args.getFile_id());
             }
-            if (rq.isFileOpen()) {
-                if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"open rw/ repl file with FORCED RESET: "+rq.getFileId());
-                //initialize replication state
-
-                //load max obj ver from disk
-                master.getStorageStage().internalGetMaxObjectNo(rq.getFileId(),
-                        rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                        new InternalGetMaxObjectNoCallback() {
-
-                    @Override
-                    public void maxObjectNoCompleted(long maxObjNo, long filesize, long tepoch, Exception error) {
-                        if (Logging.isDebug())
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"received max objNo for: "+rq.getFileId()+" maxObj: "+maxObjNo+
-                                    " error: "+error);
-                        if (error != null) {
-                            sendResult(rq, error);
-                        } else {
-                            //open file in repl stage
-                            master.getRWReplicationStage().openFile(args.getFile_credentials(),
-                                    rq.getLocationList(), maxObjNo, true, new RWReplicationStage.RWReplicationCallback() {
-
-                                    @Override
-                                    public void success(long newObjectVersion) {
-                                        if (Logging.isDebug()) {
-                                            Logging.logMessage(Logging.LEVEL_DEBUG, this, "open success for file: " + rq.getFileId());
-                                        }
-                                        sendResult(rq, null);
-                                    }
-
-                                    @Override
-                                    public void redirect(RedirectException redirectTo) {
-                                        throw new UnsupportedOperationException("Not supported yet.");
-                                    }
-
-                                    @Override
-                                    public void failed(Exception ex) {
-                                        if (Logging.isDebug()) {
-                                            Logging.logMessage(Logging.LEVEL_DEBUG, this, "open failed for file: " + rq.getFileId() + " error: " + ex);
-                                        }
-                                        sendResult(rq, ex);
-                                    }
-                                }, rq);
-                        }
-                    }
-                });
-            }
+            master.getRWReplicationStage().eventForceReset(args.getFile_credentials(), rq.getLocationList());
+            sendResult(rq, null);
         }
     }
     
