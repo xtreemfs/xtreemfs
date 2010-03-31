@@ -6,8 +6,8 @@
 package org.xtreemfs.osd.operations;
 
 import java.net.InetSocketAddress;
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_flease_msgRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_flease_msgResponse;

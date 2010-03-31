@@ -26,32 +26,18 @@
 package org.xtreemfs.sandbox.tests;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.util.ONCRPCServiceURL;
-import org.xtreemfs.common.uuids.UUIDResolver;
-import org.xtreemfs.dir.client.DIRClient;
-import org.xtreemfs.foundation.SSLOptions;
-import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.AccessControlPolicyType;
-import org.xtreemfs.interfaces.OSDSelectionPolicyType;
-import org.xtreemfs.interfaces.StripingPolicy;
-import org.xtreemfs.interfaces.StripingPolicyType;
-import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.util.CLIParser;
+import org.xtreemfs.foundation.util.CLIParser.CliOption;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
-import org.xtreemfs.mrc.client.MRCClient;
-import org.xtreemfs.utils.CLIParser;
-import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
  *

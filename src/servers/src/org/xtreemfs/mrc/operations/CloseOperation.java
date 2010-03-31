@@ -30,11 +30,11 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.XLocSet;

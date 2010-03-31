@@ -32,17 +32,15 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
 import java.util.Map.Entry;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.xtreemfs.common.config.ServiceConfig;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
+
 import org.xtreemfs.common.util.NetUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
+import org.xtreemfs.foundation.config.ServiceConfig;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
@@ -51,6 +49,7 @@ import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 
 /**
  * A thread that regularly sends a heartbeat signal with fresh service data to
@@ -109,12 +108,12 @@ public class HeartbeatThread extends LifeCycleThread {
         this.config = config;
         this.advertiseUDPEndpoints = advertiseUDPEndpoints;
         if (!config.isUsingSSL()) {
-            proto = Constants.ONCRPC_SCHEME;
+            proto = XDRUtils.ONCRPC_SCHEME;
         } else {
             if (config.isGRIDSSLmode()) {
-                proto = Constants.ONCRPCG_SCHEME;
+                proto = XDRUtils.ONCRPCG_SCHEME;
             } else {
-                proto = Constants.ONCRPCS_SCHEME;
+                proto = XDRUtils.ONCRPCS_SCHEME;
             }
         }
     }
@@ -170,7 +169,7 @@ public class HeartbeatThread extends LifeCycleThread {
 
                 if (advertiseUDPEndpoints) {
                     endpoints.addAll(NetUtils.getReachableEndpoints(config.getPort(),
-                            Constants.ONCRPCU_SCHEME));
+                            XDRUtils.ONCRPCU_SCHEME));
                 }
 
                 for (AddressMapping endpoint : endpoints) {
@@ -204,8 +203,8 @@ public class HeartbeatThread extends LifeCycleThread {
                 advertisedHostName = host;
 
                 if (advertiseUDPEndpoints) {
-                    endpoints.add(new AddressMapping(uuid.toString(), 0, Constants.ONCRPCU_SCHEME, host,
-                            config.getPort(), "*", 3600, Constants.ONCRPCU_SCHEME + "://" + host + ":" + config.getPort()));
+                    endpoints.add(new AddressMapping(uuid.toString(), 0, XDRUtils.ONCRPCU_SCHEME, host,
+                            config.getPort(), "*", 3600, XDRUtils.ONCRPCU_SCHEME + "://" + host + ":" + config.getPort()));
                 }
 
             }

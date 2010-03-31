@@ -10,7 +10,8 @@ import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.util.ArrayList;
 import java.util.List;
-import org.xtreemfs.common.buffer.ReusableBuffer;
+
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 

@@ -26,8 +26,8 @@ package org.xtreemfs.common.clients.io;
 
 import java.io.IOException;
 
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 
 class ByteMapperRAID0 implements ByteMapper {
 

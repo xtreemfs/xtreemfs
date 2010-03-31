@@ -33,18 +33,18 @@ import java.util.Random;
 
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.Client;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.osd.OSDConfig;
 
@@ -308,18 +308,18 @@ public class SetupUtils {
     }
     
     static void localResolver() {
-        UUIDResolver.addLocalMapping(getMRC1UUID(), 33636, SSL_ON ? Constants.ONCRPCS_SCHEME
-            : Constants.ONCRPC_SCHEME);
-        UUIDResolver.addLocalMapping(getMRC2UUID(), 33639, SSL_ON ? Constants.ONCRPCS_SCHEME
-            : Constants.ONCRPC_SCHEME);
-        UUIDResolver.addLocalMapping(getOSD1UUID(), 33637, SSL_ON ? Constants.ONCRPCS_SCHEME
-            : Constants.ONCRPC_SCHEME);
-        UUIDResolver.addLocalMapping(getOSD2UUID(), 33640, SSL_ON ? Constants.ONCRPCS_SCHEME
-            : Constants.ONCRPC_SCHEME);
-        UUIDResolver.addLocalMapping(getOSD3UUID(), 33641, SSL_ON ? Constants.ONCRPCS_SCHEME
-            : Constants.ONCRPC_SCHEME);
-        UUIDResolver.addLocalMapping(getOSD4UUID(), 33642, SSL_ON ? Constants.ONCRPCS_SCHEME
-            : Constants.ONCRPC_SCHEME);
+        UUIDResolver.addLocalMapping(getMRC1UUID(), 33636, SSL_ON ? XDRUtils.ONCRPCS_SCHEME
+            : XDRUtils.ONCRPC_SCHEME);
+        UUIDResolver.addLocalMapping(getMRC2UUID(), 33639, SSL_ON ? XDRUtils.ONCRPCS_SCHEME
+            : XDRUtils.ONCRPC_SCHEME);
+        UUIDResolver.addLocalMapping(getOSD1UUID(), 33637, SSL_ON ? XDRUtils.ONCRPCS_SCHEME
+            : XDRUtils.ONCRPC_SCHEME);
+        UUIDResolver.addLocalMapping(getOSD2UUID(), 33640, SSL_ON ? XDRUtils.ONCRPCS_SCHEME
+            : XDRUtils.ONCRPC_SCHEME);
+        UUIDResolver.addLocalMapping(getOSD3UUID(), 33641, SSL_ON ? XDRUtils.ONCRPCS_SCHEME
+            : XDRUtils.ONCRPC_SCHEME);
+        UUIDResolver.addLocalMapping(getOSD4UUID(), 33642, SSL_ON ? XDRUtils.ONCRPCS_SCHEME
+            : XDRUtils.ONCRPC_SCHEME);
     }
     
     private static ServiceUUID getUUID(String listenAddress, int port) {

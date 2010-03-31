@@ -30,11 +30,11 @@ import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.Lock;
 import org.xtreemfs.interfaces.Replica;

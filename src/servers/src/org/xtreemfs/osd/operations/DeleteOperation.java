@@ -26,11 +26,11 @@ package org.xtreemfs.osd.operations;
 import java.util.List;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.Constants;

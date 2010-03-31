@@ -25,8 +25,8 @@
 package org.xtreemfs.osd;
 
 import java.util.Map;
-import org.xtreemfs.common.LRUCache;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.LRUCache;
 
 /**
  *  This class implements a cache for Locations

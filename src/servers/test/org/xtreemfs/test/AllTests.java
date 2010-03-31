@@ -35,7 +35,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
 
-import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging;
 
 
 /**

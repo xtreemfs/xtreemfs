@@ -25,10 +25,10 @@
 package org.xtreemfs.dir.operations;
 
 import org.xtreemfs.babudb.lsmdb.Database;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.AddressMappingRecords;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.DIRInterface.ConcurrentModificationException;

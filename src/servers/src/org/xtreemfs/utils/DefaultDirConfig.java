@@ -28,8 +28,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Properties;
 
-import org.xtreemfs.common.config.Config;
 import org.xtreemfs.dir.DIRConfig;
+import org.xtreemfs.foundation.config.Config;
 
 /**
  * @deprecated use {@link DIRConfig} instead!

@@ -14,7 +14,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_broadcast_gmaxRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingRequest;

@@ -35,16 +35,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.Service;
@@ -142,7 +142,7 @@ public class MRCHelper {
         try {
             volSize = String.valueOf(sMan.getVolumeInfo().getVolumeSize());
         } catch (DatabaseException e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.db, null, OutputUtils.stackTraceToString(e),
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, null, OutputUtils.stackTraceToString(e),
                 new Object[0]);
         }
         

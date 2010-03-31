@@ -5,9 +5,9 @@
 
 package org.xtreemfs.common.util;
 
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.DIRInterface.ProtocolException;

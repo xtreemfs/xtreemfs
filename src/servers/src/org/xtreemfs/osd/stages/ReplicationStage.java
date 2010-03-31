@@ -26,10 +26,10 @@ package org.xtreemfs.osd.stages;
 import java.io.IOException;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.include.foundation.json.JSONException;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.ObjectList;

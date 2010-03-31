@@ -6,11 +6,11 @@ package org.xtreemfs.sandbox;
 
 import java.io.IOException;
 import java.util.Properties;
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;

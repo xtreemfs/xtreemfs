@@ -27,8 +27,8 @@ import java.io.IOException;
 
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.babudb.config.ReplicationConfig;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 
 /**
  * This class can be used to start a new instance of the Directory Service.

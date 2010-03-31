@@ -31,9 +31,9 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.Properties;
 
-import org.xtreemfs.common.LRUCache;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.foundation.LRUCache;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 
 /**
  * Base class for policies that use datacenter maps.

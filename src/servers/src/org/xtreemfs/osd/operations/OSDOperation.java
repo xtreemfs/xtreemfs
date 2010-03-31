@@ -25,7 +25,8 @@
 package org.xtreemfs.osd.operations;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import org.xtreemfs.common.buffer.ReusableBuffer;
+
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.utils.ONCRPCException;

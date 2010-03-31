@@ -28,8 +28,8 @@ import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;

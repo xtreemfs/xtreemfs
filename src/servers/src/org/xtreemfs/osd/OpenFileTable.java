@@ -26,7 +26,6 @@
 
 package org.xtreemfs.osd;
 
-import org.xtreemfs.common.ClientLease;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -35,8 +34,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.PriorityQueue;
 
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.foundation.ClientLease;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.osd.storage.CowPolicy;
 
 /**

@@ -8,13 +8,13 @@ package org.xtreemfs.utils.tunefs;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.xtreemfs.common.util.CLOption;
-import org.xtreemfs.common.util.CLOption.IntegerValue;
-import org.xtreemfs.common.util.CLOption.Switch;
-import org.xtreemfs.common.util.CLOptionParser;
-import org.xtreemfs.common.util.InvalidUsageException;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.ReplicationFlags;
+import org.xtreemfs.foundation.util.CLOption;
+import org.xtreemfs.foundation.util.CLOptionParser;
+import org.xtreemfs.foundation.util.InvalidUsageException;
+import org.xtreemfs.foundation.util.CLOption.IntegerValue;
+import org.xtreemfs.foundation.util.CLOption.Switch;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.utils.xtfs_repl;
 

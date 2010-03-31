@@ -27,10 +27,10 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.io.ByteMapper;
 import org.xtreemfs.common.clients.io.ByteMapperFactory;
 import org.xtreemfs.common.clients.io.ObjectStore;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.StripingPolicyType;
 
 public class ByteMapperTest extends TestCase{

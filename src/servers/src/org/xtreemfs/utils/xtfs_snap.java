@@ -32,7 +32,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.foundation.ErrNo;
-import org.xtreemfs.utils.CLIParser.CliOption;
+import org.xtreemfs.foundation.util.CLIParser;
+import org.xtreemfs.foundation.util.CLIParser.CliOption;
 
 /**
  * A tool to manage your Replicas. File can be marked as read-only, replicas can

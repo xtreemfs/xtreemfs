@@ -41,25 +41,26 @@ import org.xtreemfs.common.clients.File;
 import org.xtreemfs.common.clients.RandomAccessFile;
 import org.xtreemfs.common.clients.Replica;
 import org.xtreemfs.common.clients.Volume;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.foundation.util.OutputUtils;
+import org.xtreemfs.foundation.util.CLIParser;
+import org.xtreemfs.foundation.util.CLIParser.CliOption;
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 import org.xtreemfs.mrc.utils.Converter;
-import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
  * A tool to manage your Replicas. File can be marked as read-only, replicas can
@@ -782,7 +783,7 @@ public class xtfs_repl {
                 && (options.get(OPTION_SSL_TRUSTED_CA_FILE).stringValue != null)
                 && (options.get(OPTION_SSL_TRUSTED_CA_PASSWORD).stringValue != null)) { // SSL
                 // set
-                final boolean gridSSL = url.startsWith(Constants.ONCRPCG_SCHEME);
+                final boolean gridSSL = url.startsWith(XDRUtils.ONCRPCG_SCHEME);
                 sslOptions = new SSLOptions(new FileInputStream(
                     options.get(OPTION_SSL_CREDS_FILE).stringValue),
                     options.get(OPTION_SSL_CREDS_PASSWORD).stringValue, new FileInputStream(options

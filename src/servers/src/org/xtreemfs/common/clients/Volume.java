@@ -28,11 +28,11 @@ package org.xtreemfs.common.clients;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import org.xtreemfs.common.LRUCache;
 import org.xtreemfs.common.clients.internal.OpenFileList;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.LRUCache;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.DirectoryEntry;

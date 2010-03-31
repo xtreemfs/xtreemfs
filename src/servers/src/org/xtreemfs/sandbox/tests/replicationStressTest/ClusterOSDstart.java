@@ -34,11 +34,11 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.Map.Entry;
 
+import org.xtreemfs.foundation.util.CLIParser;
+import org.xtreemfs.foundation.util.CLIParser.CliOption;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
-import org.xtreemfs.utils.CLIParser;
 import org.xtreemfs.utils.xtfs_repl;
-import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
  *

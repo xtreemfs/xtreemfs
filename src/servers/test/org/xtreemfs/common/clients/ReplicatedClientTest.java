@@ -13,7 +13,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.Constants;

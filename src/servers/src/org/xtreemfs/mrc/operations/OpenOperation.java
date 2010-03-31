@@ -28,10 +28,10 @@ import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.Replica;

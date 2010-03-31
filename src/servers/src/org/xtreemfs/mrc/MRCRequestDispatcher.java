@@ -38,14 +38,10 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.HeartbeatThread;
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.auth.AuthenticationProvider;
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.common.clients.Client;
+import org.xtreemfs.common.util.Nettest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -55,11 +51,16 @@ import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.VersionManagement;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
-import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.interfaces.DirService;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
@@ -69,8 +70,10 @@ import org.xtreemfs.interfaces.MRCInterface.MRCException;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.MRCInterface.ProtocolException;
 import org.xtreemfs.interfaces.MRCInterface.errnoException;
+import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
@@ -95,9 +98,6 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.xtreemfs.common.clients.Client;
-import org.xtreemfs.common.util.Nettest;
-import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 
 /**
  * 
@@ -312,7 +312,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             
             UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
             UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(),
-                config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME);
+                config.isUsingSSL() ? XDRUtils.ONCRPCS_SCHEME : XDRUtils.ONCRPC_SCHEME);
             
             heartbeatThread.initialize();
             heartbeatThread.start();

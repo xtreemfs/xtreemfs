@@ -28,8 +28,8 @@ import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.buffer.ASCIIString;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.buffer.ASCIIString;
 
 /**
  * Encapsules the UUID and InetSocketAddress for a service.

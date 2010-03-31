@@ -30,8 +30,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.foundation.config.ServiceConfig;
 
 /**
  * 

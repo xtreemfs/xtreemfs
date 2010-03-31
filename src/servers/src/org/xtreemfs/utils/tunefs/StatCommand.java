@@ -23,7 +23,6 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 package org.xtreemfs.utils.tunefs;
 
-import org.xtreemfs.common.util.CLOptionParser;
 import org.xtreemfs.utils.*;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -33,11 +32,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.xtreemfs.common.util.InvalidUsageException;
-import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
+import org.xtreemfs.foundation.util.CLOptionParser;
+import org.xtreemfs.foundation.util.InvalidUsageException;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.mrc.utils.MRCHelper;
 
 /**

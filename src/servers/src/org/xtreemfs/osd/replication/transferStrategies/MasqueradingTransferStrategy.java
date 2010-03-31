@@ -30,11 +30,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.ServiceAvailability;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.osd.replication.ObjectSet;
 
 /**

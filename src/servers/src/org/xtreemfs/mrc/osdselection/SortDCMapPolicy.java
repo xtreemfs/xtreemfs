@@ -30,11 +30,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Properties;
 
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;

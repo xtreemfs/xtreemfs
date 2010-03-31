@@ -17,7 +17,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
-import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.StringSet;

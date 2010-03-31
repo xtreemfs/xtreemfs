@@ -25,10 +25,10 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
 package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.OSDInterface.RedirectException;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_fetchRequest;

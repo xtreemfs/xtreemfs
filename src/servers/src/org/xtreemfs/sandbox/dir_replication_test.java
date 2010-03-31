@@ -33,10 +33,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.clients.Client;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AddressMapping;

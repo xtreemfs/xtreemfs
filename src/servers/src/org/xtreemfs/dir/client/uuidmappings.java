@@ -9,19 +9,19 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.xtreemfs.common.TimeSync;
+
 import org.xtreemfs.common.clients.Client;
-import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.util.CLIParser;
+import org.xtreemfs.foundation.util.CLIParser.CliOption;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
-import org.xtreemfs.utils.CLIParser;
-import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
  *

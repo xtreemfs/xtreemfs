@@ -24,9 +24,9 @@
 package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.LRUCache;
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.LRUCache;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;

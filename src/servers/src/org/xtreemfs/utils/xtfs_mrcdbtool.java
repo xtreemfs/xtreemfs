@@ -31,21 +31,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.clients.Client;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.foundation.util.CLIParser;
+import org.xtreemfs.foundation.util.CLIParser.CliOption;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.MRCInterface.MRCException;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.MRCInterface.errnoException;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 import org.xtreemfs.mrc.client.MRCClient;
-import org.xtreemfs.utils.CLIParser.CliOption;
 
 public class xtfs_mrcdbtool {
     
@@ -66,7 +67,7 @@ public class xtfs_mrcdbtool {
         List<String> arguments = new ArrayList<String>(3);
         CliOption oMrc = new CliOption(CliOption.OPTIONTYPE.URL);
         oMrc.urlDefaultPort = MRCInterface.ONC_RPC_PORT_DEFAULT;
-        oMrc.urlDefaultProtocol = Constants.ONCRPC_SCHEME;
+        oMrc.urlDefaultProtocol = XDRUtils.ONCRPC_SCHEME;
         options.put("mrc", oMrc);
         options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("cpass", new CliOption(CliOption.OPTIONTYPE.STRING));

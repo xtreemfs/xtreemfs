@@ -27,8 +27,9 @@ package org.xtreemfs.common;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.XCap;
 

@@ -10,13 +10,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Date;
 
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.VersionManagement;
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.VersionManagement;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 
 /**

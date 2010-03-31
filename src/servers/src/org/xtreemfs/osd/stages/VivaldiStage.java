@@ -25,34 +25,31 @@
 package org.xtreemfs.osd.stages;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.uuids.Mapping;
+import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.ServiceType;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingResponse;
-import org.xtreemfs.interfaces.VivaldiCoordinates;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.striping.UDPMessage;
-
-
-import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
-import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.Service;
-import org.xtreemfs.interfaces.ServiceType;
-import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.common.uuids.UnknownUUIDException;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.uuids.Mapping;
-
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.LinkedList;
-
 import org.xtreemfs.osd.vivaldi.ZipfGenerator;
 
 
@@ -720,7 +717,7 @@ public class VivaldiStage extends Stage {
 
           while( (osdAddr == null) && (mapIt < serviceMappings.length) ){
 
-            if( serviceMappings[mapIt].protocol.equals( org.xtreemfs.interfaces.Constants.ONCRPC_SCHEME ) ){
+            if( serviceMappings[mapIt].protocol.equals( XDRUtils.ONCRPC_SCHEME ) ){
 
               osdAddr = serviceMappings[mapIt].resolvedAddr;
 

@@ -32,21 +32,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.clients.Client;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.util.ONCRPCServiceURL;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
+import org.xtreemfs.foundation.util.ONCRPCServiceURL;
+import org.xtreemfs.foundation.util.CLIParser;
+import org.xtreemfs.foundation.util.CLIParser.CliOption;
 import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 import org.xtreemfs.osd.client.OSDClient;
-import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
  * Console-tool for the cleanUp-functionality of the XtreemFS OSD.
@@ -91,7 +92,7 @@ public class xtfs_cleanup_osd {
             options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
             CliOption oDir = new CliOption(CliOption.OPTIONTYPE.URL);
             oDir.urlDefaultPort = DIRInterface.ONC_RPC_PORT_DEFAULT;
-            oDir.urlDefaultProtocol = Constants.ONCRPC_SCHEME;
+            oDir.urlDefaultProtocol = XDRUtils.ONCRPC_SCHEME;
             options.put("dir", oDir);
             // SSL options
             options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));
@@ -130,13 +131,13 @@ public class xtfs_cleanup_osd {
             }
             
             // parse security info if protocol is 'https'
-            if (dirURL != null && (Constants.ONCRPCS_SCHEME.equals(dirURL.getProtocol()) || Constants.ONCRPCG_SCHEME.equals(dirURL.getProtocol())) ) {
+            if (dirURL != null && (XDRUtils.ONCRPCS_SCHEME.equals(dirURL.getProtocol()) || XDRUtils.ONCRPCG_SCHEME.equals(dirURL.getProtocol())) ) {
                 useSSL = true;
                 serviceCredsFile = options.get("c").stringValue;
                 serviceCredsPass = options.get("cpass").stringValue;
                 trustedCAsFile = options.get("t").stringValue;
                 trustedCAsPass = options.get("tpass").stringValue;
-                if (Constants.ONCRPCG_SCHEME.equals(dirURL.getProtocol())) {
+                if (XDRUtils.ONCRPCG_SCHEME.equals(dirURL.getProtocol())) {
                     gridSSL = true;
                 }
             }

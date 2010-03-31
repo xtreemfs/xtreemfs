@@ -8,12 +8,12 @@ package org.xtreemfs.sandbox;
 import java.net.InetSocketAddress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.File;
 import org.xtreemfs.common.clients.Volume;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 

@@ -11,18 +11,18 @@ import java.net.InetSocketAddress;
 import junit.framework.TestCase;
 
 import org.xtreemfs.babudb.config.BabuDBConfig;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.util.NetUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.interfaces.AddressMappingSet;
-import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -71,7 +71,7 @@ public class UUIDResolverTest extends TestCase {
         testEnv = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_CLIENT,
                     TestEnvironment.Services.TIME_SYNC,TestEnvironment.Services.UUID_RESOLVER});
         testEnv.start();
-        UUIDResolver.addLocalMapping("localhost", 32636, Constants.ONCRPC_SCHEME);
+        UUIDResolver.addLocalMapping("localhost", 32636, XDRUtils.ONCRPC_SCHEME);
 
         
     }

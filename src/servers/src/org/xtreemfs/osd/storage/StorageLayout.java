@@ -32,9 +32,9 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Stack;
 
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;

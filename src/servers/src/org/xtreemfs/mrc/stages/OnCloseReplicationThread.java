@@ -28,14 +28,14 @@ import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.LifeCycleThread;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.Replica;

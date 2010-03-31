@@ -10,13 +10,13 @@
 //import java.util.Properties;
 //
 //import org.xtreemfs.common.Capability;
-//import org.xtreemfs.common.buffer.BufferPool;
-//import org.xtreemfs.common.buffer.ReusableBuffer;
+//import org.xtreemfs.foundation.buffer.BufferPool;
+//import org.xtreemfs.foundation.buffer.ReusableBuffer;
 //import org.xtreemfs.common.clients.HttpErrorException;
 //import org.xtreemfs.common.clients.RPCResponse;
 //import org.xtreemfs.common.clients.RPCResponseListener;
 //import org.xtreemfs.common.clients.osd.OSDClient;
-//import org.xtreemfs.common.logging.Logging;
+//import org.xtreemfs.foundation.logging.Logging;
 //import org.xtreemfs.common.striping.Location;
 //import org.xtreemfs.common.striping.Locations;
 //import org.xtreemfs.common.striping.RAID0;

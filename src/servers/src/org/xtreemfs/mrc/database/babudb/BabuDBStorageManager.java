@@ -43,8 +43,8 @@ import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.babudb.snapshots.DefaultSnapshotConfig;
 import org.xtreemfs.babudb.snapshots.SnapshotConfig;
 import org.xtreemfs.babudb.snapshots.SnapshotManager;
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
@@ -132,7 +132,7 @@ public class BabuDBStorageManager implements StorageManager {
      * 
      * @param dbs
      *            the database system
-     * @param db
+     * @param storage
      *            the database
      */
     public BabuDBStorageManager(BabuDB dbs, Database db) throws DatabaseException {
@@ -156,7 +156,7 @@ public class BabuDBStorageManager implements StorageManager {
      *            the snapshot manager
      * @param replMan
      *            the replication manager
-     * @param db
+     * @param storage
      *            the database
      */
     public BabuDBStorageManager(DatabaseManager dbMan, SnapshotManager sMan,

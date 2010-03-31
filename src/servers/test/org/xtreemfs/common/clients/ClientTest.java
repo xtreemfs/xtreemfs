@@ -31,7 +31,7 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.StripingPolicy;

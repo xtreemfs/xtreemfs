@@ -9,13 +9,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.xtreemfs.common.util.CLOption;
-import org.xtreemfs.common.util.CLOption.IntegerValue;
-import org.xtreemfs.common.util.CLOption.StringValue;
-import org.xtreemfs.common.util.CLOptionParser;
-import org.xtreemfs.common.util.InvalidUsageException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
+import org.xtreemfs.foundation.util.CLOption;
+import org.xtreemfs.foundation.util.CLOptionParser;
+import org.xtreemfs.foundation.util.InvalidUsageException;
+import org.xtreemfs.foundation.util.CLOption.IntegerValue;
+import org.xtreemfs.foundation.util.CLOption.StringValue;
 import org.xtreemfs.utils.utils;
 
 /**

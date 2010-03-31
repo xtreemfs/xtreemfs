@@ -10,12 +10,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import org.xtreemfs.common.util.CLOption;
-import org.xtreemfs.common.util.CLOptionParser;
-import org.xtreemfs.common.util.InvalidUsageException;
+
 import org.xtreemfs.foundation.ErrNo;
-import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.foundation.util.CLOption;
+import org.xtreemfs.foundation.util.CLOptionParser;
+import org.xtreemfs.foundation.util.InvalidUsageException;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 
 /**
  *
@@ -56,7 +57,7 @@ public class TuneFS {
         parser.addOption(optDebug);
 
         optDIR = new CLOption.URLValue(null, "dir", "specify a directory service to use",
-                Constants.ONCRPC_SCHEME, Integer.valueOf(DIRInterface.ONC_RPC_PORT_DEFAULT));
+                XDRUtils.ONCRPC_SCHEME, Integer.valueOf(DIRInterface.ONC_RPC_PORT_DEFAULT));
         parser.addOption(optDIR);
 
         optPKCS12file = new CLOption.StringValue(null, "pkcs12-file-path", "a PKCS#12 file with the credentials (required for oncrpcg/s)");

@@ -7,7 +7,8 @@ package org.xtreemfs.utils.tunefs;
 
 import java.util.List;
 import java.util.Map;
-import org.xtreemfs.common.util.CLOptionParser;
+
+import org.xtreemfs.foundation.util.CLOptionParser;
 
 /**
  *

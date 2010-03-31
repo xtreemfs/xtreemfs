@@ -24,8 +24,8 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.interfaces.MRCInterface.mkdirRequest;
 import org.xtreemfs.interfaces.MRCInterface.mkdirResponse;
 import org.xtreemfs.mrc.MRCRequest;

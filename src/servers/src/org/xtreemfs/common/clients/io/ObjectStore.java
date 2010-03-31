@@ -26,7 +26,7 @@ package org.xtreemfs.common.clients.io;
 
 import java.io.IOException;
 
-import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 
 public interface ObjectStore {

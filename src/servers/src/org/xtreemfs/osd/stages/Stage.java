@@ -29,8 +29,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.LifeCycleThread;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.osd.OSDRequest;
 
 public abstract class Stage extends LifeCycleThread {

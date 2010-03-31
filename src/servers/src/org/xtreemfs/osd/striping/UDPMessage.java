@@ -25,7 +25,8 @@
 package org.xtreemfs.osd.striping;
 
 import java.net.InetSocketAddress;
-import org.xtreemfs.common.buffer.ReusableBuffer;
+
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;

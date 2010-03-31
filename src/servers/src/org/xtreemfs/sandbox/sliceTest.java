@@ -5,8 +5,8 @@
 
 package org.xtreemfs.sandbox;
 
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 
 /**
  *

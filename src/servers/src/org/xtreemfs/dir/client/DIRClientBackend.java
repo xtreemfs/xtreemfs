@@ -26,7 +26,7 @@ package org.xtreemfs.dir.client;
 
 import java.net.InetSocketAddress;
 
-import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.client.ONCRPCClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;

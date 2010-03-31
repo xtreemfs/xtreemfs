@@ -27,8 +27,8 @@ package org.xtreemfs.mrc.operations;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
 import org.xtreemfs.interfaces.SnapConfig;

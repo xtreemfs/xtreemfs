@@ -28,10 +28,10 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.lsmdb.Database;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_nameRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_nameResponse;

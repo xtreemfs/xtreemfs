@@ -5,7 +5,7 @@
 
 package org.xtreemfs.common.clients;
 
-import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.foundation.TimeSync;
 
 /**
  *

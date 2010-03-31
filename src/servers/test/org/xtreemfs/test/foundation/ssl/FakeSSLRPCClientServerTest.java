@@ -14,11 +14,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import junit.framework.TestCase;
 
 import org.junit.Test;
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.Client;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseListener;

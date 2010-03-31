@@ -35,9 +35,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.xtreemfs.babudb.config.ReplicationConfig;
-import org.xtreemfs.common.TimeServerClient;
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.TimeServerClient;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
@@ -201,7 +201,7 @@ public class DIRClient extends DIRClientBackend implements TimeServerClient {
         
         /*
          * (non-Javadoc)
-         * @see org.xtreemfs.foundation.oncrpc.client.RPCResponseDecoder#getResult(org.xtreemfs.common.buffer.ReusableBuffer)
+         * @see org.xtreemfs.foundation.oncrpc.client.RPCResponseDecoder#getResult(org.xtreemfs.foundation.buffer.ReusableBuffer)
          */
         @Override
         public T getResult(ReusableBuffer data) {

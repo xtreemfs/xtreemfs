@@ -32,21 +32,15 @@ import java.lang.management.OperatingSystemMXBean;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.ServiceAvailability;
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.checksums.ChecksumFactory;
-import org.xtreemfs.common.checksums.provider.JavaChecksumProvider;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.common.util.FSUtils;
-import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.common.clients.Client;
+import org.xtreemfs.common.util.Nettest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -54,25 +48,41 @@ import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.dir.discovery.DiscoveryUtils;
 import org.xtreemfs.foundation.CrashReporter;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.VersionManagement;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.checksums.ChecksumFactory;
+import org.xtreemfs.foundation.checksums.provider.JavaChecksumProvider;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
+import org.xtreemfs.foundation.oncrpc.client.RemoteExceptionParser;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
-import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.foundation.util.FSUtils;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.interfaces.DirService;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
+import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
+import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
 import org.xtreemfs.interfaces.OSDInterface.errnoException;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_broadcast_gmaxRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
+import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.interfaces.utils.XDRUtils;
+import org.xtreemfs.mrc.UserCredentialsAuthFlavorProvider;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.osd.operations.CheckObjectOperation;
@@ -83,22 +93,31 @@ import org.xtreemfs.osd.operations.CleanupStartOperation;
 import org.xtreemfs.osd.operations.CleanupStopOperation;
 import org.xtreemfs.osd.operations.DeleteOperation;
 import org.xtreemfs.osd.operations.EventCloseFile;
-import org.xtreemfs.osd.operations.EventWriteObject;
+import org.xtreemfs.osd.operations.EventGetFileSize;
 import org.xtreemfs.osd.operations.EventInsertPaddingObject;
+import org.xtreemfs.osd.operations.EventTruncate;
+import org.xtreemfs.osd.operations.EventWriteObject;
+import org.xtreemfs.osd.operations.FleaseMessageOperation;
 import org.xtreemfs.osd.operations.GetObjectSetOperation;
 import org.xtreemfs.osd.operations.InternalGetFileSizeOperation;
 import org.xtreemfs.osd.operations.InternalGetGmaxOperation;
+import org.xtreemfs.osd.operations.InternalRWRFetchOperation;
+import org.xtreemfs.osd.operations.InternalRWRStatusOperation;
+import org.xtreemfs.osd.operations.InternalRWRTruncateOperation;
+import org.xtreemfs.osd.operations.InternalRWRUpdateOperation;
 import org.xtreemfs.osd.operations.InternalTruncateOperation;
 import org.xtreemfs.osd.operations.LocalReadOperation;
 import org.xtreemfs.osd.operations.LockAcquireOperation;
 import org.xtreemfs.osd.operations.LockCheckOperation;
 import org.xtreemfs.osd.operations.LockReleaseOperation;
 import org.xtreemfs.osd.operations.OSDOperation;
+import org.xtreemfs.osd.operations.RWRNotifyOperation;
 import org.xtreemfs.osd.operations.ReadOperation;
 import org.xtreemfs.osd.operations.ShutdownOperation;
 import org.xtreemfs.osd.operations.TruncateOperation;
 import org.xtreemfs.osd.operations.VivaldiPingOperation;
 import org.xtreemfs.osd.operations.WriteOperation;
+import org.xtreemfs.osd.rwre.RWReplicationStage;
 import org.xtreemfs.osd.stages.DeletionStage;
 import org.xtreemfs.osd.stages.PreprocStage;
 import org.xtreemfs.osd.stages.ReplicationStage;
@@ -118,32 +137,13 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import java.util.Map.Entry;
-import org.xtreemfs.common.clients.Client;
-import org.xtreemfs.common.util.Nettest;
-import org.xtreemfs.foundation.ErrNo;
-import org.xtreemfs.foundation.oncrpc.client.RemoteExceptionParser;
-import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
-import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
-import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
-import org.xtreemfs.mrc.UserCredentialsAuthFlavorProvider;
-import org.xtreemfs.osd.operations.EventGetFileSize;
-import org.xtreemfs.osd.operations.EventTruncate;
-import org.xtreemfs.osd.operations.FleaseMessageOperation;
-import org.xtreemfs.osd.operations.InternalRWRFetchOperation;
-import org.xtreemfs.osd.operations.InternalRWRStatusOperation;
-import org.xtreemfs.osd.operations.InternalRWRTruncateOperation;
-import org.xtreemfs.osd.operations.InternalRWRUpdateOperation;
-import org.xtreemfs.osd.operations.RWRNotifyOperation;
-import org.xtreemfs.osd.rwre.RWReplicationStage;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     UDPReceiverInterface {
     
     protected final Map<Integer, OSDOperation>          operations;
     
-    protected final Map<Class, OSDOperation>            internalEvents;
+    protected final Map<Class<?>, OSDOperation>            internalEvents;
     
     protected final HeartbeatThread                     heartbeatThread;
     
@@ -235,8 +235,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         // IMPORTANT: the order of operations defined in
         // 'RequestDispatcher.Operations' has to be preserved!
-        operations = new HashMap();
-        internalEvents = new HashMap<Class, OSDOperation>();
+        operations = new HashMap<Integer, OSDOperation>();
+        internalEvents = new HashMap<Class<?>, OSDOperation>();
         initializeOperations();
         
         // -------------------------------
@@ -314,9 +314,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew());
         UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
         UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(),
-            config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME);
+            config.isUsingSSL() ? XDRUtils.ONCRPCS_SCHEME : XDRUtils.ONCRPC_SCHEME);
         UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(),
-            config.isUsingSSL() ? Constants.ONCRPCU_SCHEME : Constants.ONCRPC_SCHEME);
+            config.isUsingSSL() ? XDRUtils.ONCRPCU_SCHEME : XDRUtils.ONCRPC_SCHEME);
         
         myCoordinates = new AtomicReference<VivaldiCoordinates>();
         
@@ -389,7 +389,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                         content = OutputUtils.getThreadDump().getBytes("ascii");
                     } else if (httpExchange.getRequestURI().getPath().contains("rft")) {
                         final StringBuffer sb = new StringBuffer();
-                        final AtomicReference<Map<String,Map<String,String>>> result = new AtomicReference();
+                        final AtomicReference<Map<String,Map<String,String>>> result = 
+                            new AtomicReference<Map<String, Map<String, String>>>();
                         sb.append("<HTML><HEAD><TITLE>Replicated File Status List</TITLE></HEAD><BODY>");
                         sb.append("<TABLE border=\"1\">");
                         sb.append("<TR><TD><B>File ID</B></TD><TD><B>Status</B></TD></TR>");
@@ -594,7 +595,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         return operations.get(procId);
     }
     
-    public OSDOperation getInternalEvent(Class clazz) {
+    public OSDOperation getInternalEvent(Class<?> clazz) {
         return internalEvents.get(clazz);
     }
     

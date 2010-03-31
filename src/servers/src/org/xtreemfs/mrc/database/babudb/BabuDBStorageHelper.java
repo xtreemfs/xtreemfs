@@ -31,8 +31,8 @@ import java.util.Map.Entry;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.lsmdb.DatabaseRO;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedFileMetadata;
@@ -132,7 +132,7 @@ public class BabuDBStorageHelper {
                     md = BabuDBStorageHelper.resolveLink(database, tmpVals[FileMetadata.RC_METADATA],
                         prevFileName);
                 } catch (BabuDBException exc) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, Category.db, this, "could not resolve hard link");
+                    Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "could not resolve hard link");
                 }
             
             else
@@ -497,7 +497,7 @@ public class BabuDBStorageHelper {
             int type = getType(curr.getKey(), BabuDBStorageManager.FILE_ID_INDEX);
             if (type == 3) {
                 long fileId = ByteBuffer.wrap(fileIdBytes).getLong();
-                Logging.logMessage(Logging.LEVEL_WARN, Category.db, (Object) null,
+                Logging.logMessage(Logging.LEVEL_WARN, Category.storage, (Object) null,
                     "MRC database contains redundant data for file %d", fileId);
                 continue;
             }

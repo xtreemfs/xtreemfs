@@ -26,9 +26,9 @@ package org.xtreemfs.common.clients.internal;
 
 import java.util.LinkedList;
 import java.util.List;
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.xloc.Replica;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.interfaces.StripingPolicy;
 
 /**

@@ -28,39 +28,31 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.File;
 import org.xtreemfs.common.clients.RandomAccessFile;
 import org.xtreemfs.common.clients.Volume;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.util.CLOption;
-import org.xtreemfs.common.util.CLOption.IntegerValue;
-import org.xtreemfs.common.util.CLOption.StringValue;
-import org.xtreemfs.common.util.CLOption.Switch;
-import org.xtreemfs.common.util.CLOptionParser;
-import org.xtreemfs.common.util.InvalidUsageException;
-import org.xtreemfs.common.util.ONCRPCServiceURL;
-import org.xtreemfs.common.uuids.UUIDResolver;
-import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
-import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.util.CLOption;
+import org.xtreemfs.foundation.util.CLOptionParser;
+import org.xtreemfs.foundation.util.InvalidUsageException;
+import org.xtreemfs.foundation.util.ONCRPCServiceURL;
+import org.xtreemfs.foundation.util.CLOption.IntegerValue;
+import org.xtreemfs.foundation.util.CLOption.StringValue;
+import org.xtreemfs.foundation.util.CLOption.Switch;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
-import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 import org.xtreemfs.mrc.client.MRCClient;
-import org.xtreemfs.utils.CLIParser;
-import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
  * 
@@ -96,9 +88,9 @@ public class ReplicatedTortureXtreemFS {
             final String path = optPath.isSet() ? optPath.getValue() : "/torture.data";
             final String volname = optVolname.isSet() ? optVolname.getValue() : "test";
             
-            final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,DIRInterface.ONC_RPC_PORT_DEFAULT);
+            final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0),XDRUtils.ONCRPC_SCHEME,DIRInterface.ONC_RPC_PORT_DEFAULT);
             
-            final boolean useSSL = dirURL.getProtocol().equals(Constants.ONCRPCG_SCHEME) || dirURL.getProtocol().equals(Constants.ONCRPCS_SCHEME);
+            final boolean useSSL = dirURL.getProtocol().equals(XDRUtils.ONCRPCG_SCHEME) || dirURL.getProtocol().equals(XDRUtils.ONCRPCS_SCHEME);
             final boolean randomOnly = optRandomOnly.isSet();
 
             final int replicas = optReplicas.isSet() ? optReplicas.getValue() : 1;
@@ -111,7 +103,7 @@ public class ReplicatedTortureXtreemFS {
                 if (!optPKCS12passphrase.isSet())
                     throw new InvalidUsageException("must specify a PCKS#12 passphrase for (grid)SSL mode, use "+optPKCS12passphrase.getName());
 
-                final boolean gridSSL = dirURL.getProtocol().equals(Constants.ONCRPCG_SCHEME);
+                final boolean gridSSL = dirURL.getProtocol().equals(XDRUtils.ONCRPCG_SCHEME);
                 sslOptions = new SSLOptions(new FileInputStream(optPKCS12file.getValue()),optPKCS12passphrase.getValue(),"PKCS12",
                         null, null, "none", false, gridSSL);
             }

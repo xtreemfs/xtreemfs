@@ -44,11 +44,7 @@ import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.lsmdb.DatabaseManager;
 import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.babudb.snapshots.SnapshotManager;
-import org.xtreemfs.common.VersionManagement;
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.util.Nettest;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.dir.data.ServiceRecords;
 import org.xtreemfs.dir.discovery.DiscoveryMsgThread;
@@ -68,24 +64,27 @@ import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.VersionManagement;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.oncrpc.server.NullAuthFlavorProvider;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
-import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.foundation.util.OutputUtils;
+import org.xtreemfs.interfaces.DIRInterface.DIRException;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
+import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 
 import com.sun.net.httpserver.BasicAuthenticator;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.xtreemfs.common.util.Nettest;
-import org.xtreemfs.common.util.OutputUtils;
-import org.xtreemfs.foundation.oncrpc.server.NullAuthFlavorProvider;
-import org.xtreemfs.interfaces.DIRInterface.DIRException;
-import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 
 /**
  * 
@@ -165,11 +164,11 @@ public class DIRRequestDispatcher extends LifeCycleThread
         
         if (config.isAutodiscoverEnabled()) {
             
-            String scheme = Constants.ONCRPC_SCHEME;
+            String scheme = XDRUtils.ONCRPC_SCHEME;
             if (config.isGRIDSSLmode())
-                scheme = Constants.ONCRPCG_SCHEME;
+                scheme = XDRUtils.ONCRPCG_SCHEME;
             else if (config.isUsingSSL())
-                scheme = Constants.ONCRPCS_SCHEME;
+                scheme = XDRUtils.ONCRPCS_SCHEME;
 
             discoveryThr = new DiscoveryMsgThread(InetAddress.getLocalHost().getCanonicalHostName(), config
                     .getPort(), scheme);

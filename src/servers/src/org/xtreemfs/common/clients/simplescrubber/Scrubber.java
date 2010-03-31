@@ -29,7 +29,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.EmptyStackException;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,37 +37,30 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import java.util.concurrent.atomic.AtomicLong;
 import org.xtreemfs.common.HeartbeatThread;
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.File;
-import org.xtreemfs.common.clients.Volume;
 import org.xtreemfs.common.clients.RandomAccessFile;
+import org.xtreemfs.common.clients.Volume;
 import org.xtreemfs.common.clients.simplescrubber.FileInfo.ReturnStatus;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.util.ONCRPCServiceURL;
-import org.xtreemfs.common.util.OutputUtils;
-import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.common.uuids.UUIDResolver;
-import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
-import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.VersionManagement;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.util.CLIParser;
+import org.xtreemfs.foundation.util.ONCRPCServiceURL;
+import org.xtreemfs.foundation.util.OutputUtils;
+import org.xtreemfs.foundation.util.CLIParser.CliOption;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.DirectoryEntry;
-import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
-import org.xtreemfs.mrc.client.MRCClient;
-import org.xtreemfs.utils.CLIParser;
+import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 import org.xtreemfs.utils.DefaultDirConfig;
-import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
  *
@@ -332,7 +324,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         options.put("h", new CliOption(CliOption.OPTIONTYPE.SWITCH));
         CliOption oDir = new CliOption(CliOption.OPTIONTYPE.URL);
         oDir.urlDefaultPort = DIRInterface.ONC_RPC_PORT_DEFAULT;
-        oDir.urlDefaultProtocol = Constants.ONCRPC_SCHEME;
+        oDir.urlDefaultProtocol = XDRUtils.ONCRPC_SCHEME;
         options.put("dir", oDir);
         options.put("repair", new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put("delete", new CliOption(CliOption.OPTIONTYPE.SWITCH));
@@ -362,13 +354,13 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         ONCRPCServiceURL dirURL = options.get("dir").urlValue;
 
         // parse security info if protocol is 'https'
-        if (dirURL != null && (Constants.ONCRPCS_SCHEME.equals(dirURL.getProtocol()) || Constants.ONCRPCG_SCHEME.equals(dirURL.getProtocol()))) {
+        if (dirURL != null && (XDRUtils.ONCRPCS_SCHEME.equals(dirURL.getProtocol()) || XDRUtils.ONCRPCG_SCHEME.equals(dirURL.getProtocol()))) {
             useSSL = true;
             serviceCredsFile = options.get("c").stringValue;
             serviceCredsPass = options.get("cpass").stringValue;
             trustedCAsFile = options.get("t").stringValue;
             trustedCAsPass = options.get("tpass").stringValue;
-            if (Constants.ONCRPCG_SCHEME.equals(dirURL.getProtocol())) {
+            if (XDRUtils.ONCRPCG_SCHEME.equals(dirURL.getProtocol())) {
                 gridSSL = true;
             }
         }

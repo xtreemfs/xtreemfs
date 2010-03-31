@@ -45,8 +45,8 @@ import java.util.Map.Entry;
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.DirectoryEntry;

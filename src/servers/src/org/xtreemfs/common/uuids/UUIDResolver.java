@@ -33,15 +33,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.NetUtils;
 import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
-import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 
 /**
  * Resolves UUID to InetSocketAddress+Protocol mappings.
@@ -280,7 +280,7 @@ public final class UUIDResolver extends Thread {
     public static void addTestMapping(String uuid, String hostname, int port, boolean useSSL) {
         assert (theInstance != null);
         
-        final String protocol = useSSL ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME;
+        final String protocol = useSSL ? XDRUtils.ONCRPCS_SCHEME : XDRUtils.ONCRPC_SCHEME;
         
         UUIDCacheEntry e = theInstance.cache.get(uuid);
         if (e == null)

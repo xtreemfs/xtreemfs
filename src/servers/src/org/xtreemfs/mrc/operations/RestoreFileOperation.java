@@ -24,8 +24,8 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileRequest;

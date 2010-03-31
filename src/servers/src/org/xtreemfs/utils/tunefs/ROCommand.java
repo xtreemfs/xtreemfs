@@ -7,10 +7,11 @@ package org.xtreemfs.utils.tunefs;
 
 import java.util.List;
 import java.util.Map;
-import org.xtreemfs.common.util.CLOption;
-import org.xtreemfs.common.util.CLOption.Switch;
-import org.xtreemfs.common.util.CLOptionParser;
-import org.xtreemfs.common.util.InvalidUsageException;
+
+import org.xtreemfs.foundation.util.CLOption;
+import org.xtreemfs.foundation.util.CLOptionParser;
+import org.xtreemfs.foundation.util.InvalidUsageException;
+import org.xtreemfs.foundation.util.CLOption.Switch;
 import org.xtreemfs.utils.xtfs_repl;
 
 /**

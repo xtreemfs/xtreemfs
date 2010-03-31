@@ -43,10 +43,10 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import org.xtreemfs.common.auth.AuthenticationProvider;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.common.util.FSUtils;
-import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.util.FSUtils;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.mrc.ac.FileAccessPolicy;
 import org.xtreemfs.mrc.ac.POSIXFileAccessPolicy;
 import org.xtreemfs.mrc.ac.VolumeACLFileAccessPolicy;

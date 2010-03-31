@@ -33,10 +33,10 @@ import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
 import org.junit.Test;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;

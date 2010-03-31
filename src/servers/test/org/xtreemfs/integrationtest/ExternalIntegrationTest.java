@@ -33,7 +33,7 @@ import java.io.RandomAccessFile;
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
-import org.xtreemfs.common.util.FSUtils;
+import org.xtreemfs.foundation.util.FSUtils;
 
 /**
  * This test case externally tests the integration of all XtreemFS components at

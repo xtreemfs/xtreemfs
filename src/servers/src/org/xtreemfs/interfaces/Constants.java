@@ -3,11 +3,7 @@ package org.xtreemfs.interfaces;
 
 public interface Constants
 {
-    public static final String ONCRPC_SCHEME = "oncrpc";
-    public static final String ONCRPCG_SCHEME = "oncrpcg";
-    public static final String ONCRPCS_SCHEME = "oncrpcs";
-    public static final String ONCRPCU_SCHEME = "oncrpcu";
-    public static final String REPL_UPDATE_PC_NONE = "";
+        public static final String REPL_UPDATE_PC_NONE = "";
     public static final String REPL_UPDATE_PC_RONLY = "ronly";
     public static final String REPL_UPDATE_PC_WARONE = "WaR1";
     public static final String REPL_UPDATE_PC_WARA = "WaRa";

@@ -29,15 +29,15 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import java.util.concurrent.atomic.AtomicReference;
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.internal.ObjectMapper;
 import org.xtreemfs.common.clients.internal.ObjectMapper.ObjectRequest;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.Constants;

@@ -27,8 +27,8 @@ package org.xtreemfs.mrc.operations;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.MRCInterface.ftruncateRequest;
 import org.xtreemfs.interfaces.MRCInterface.ftruncateResponse;

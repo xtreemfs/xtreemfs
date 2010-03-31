@@ -29,7 +29,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Map;
 
-import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 

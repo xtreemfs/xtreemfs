@@ -30,9 +30,9 @@ import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.xtreemfs.common.clients.Client;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.common.monitoring.NumberMonitoring;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.monitoring.NumberMonitoring;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 
 /**

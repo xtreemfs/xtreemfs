@@ -12,9 +12,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.LifeCycleThread;
+import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.StringSet;

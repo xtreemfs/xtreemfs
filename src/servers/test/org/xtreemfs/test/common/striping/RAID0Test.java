@@ -31,8 +31,8 @@ import java.util.Iterator;
 
 import junit.framework.TestCase;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;

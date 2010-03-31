@@ -31,7 +31,7 @@ import java.util.List;
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
-import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedFileMetadata;
 import org.xtreemfs.mrc.metadata.BufferBackedStripingPolicy;

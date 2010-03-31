@@ -28,8 +28,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Properties;
 
-import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.foundation.config.ServiceConfig;
 import org.xtreemfs.interfaces.Constants;
 
 /**

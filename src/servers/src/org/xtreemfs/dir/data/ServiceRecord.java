@@ -9,7 +9,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.xtreemfs.common.buffer.ReusableBuffer;
+
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceType;

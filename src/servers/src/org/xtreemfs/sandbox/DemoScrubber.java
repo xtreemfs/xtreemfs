@@ -26,7 +26,6 @@ package org.xtreemfs.sandbox;
 
 import java.io.FileInputStream;
 import java.net.InetSocketAddress;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.EmptyStackException;
 import java.util.HashMap;
@@ -37,34 +36,33 @@ import java.util.Stack;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.xtreemfs.common.TimeServerClient;
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.util.ONCRPCServiceURL;
-import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.TimeServerClient;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.VersionManagement;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.util.CLIParser;
+import org.xtreemfs.foundation.util.ONCRPCServiceURL;
+import org.xtreemfs.foundation.util.CLIParser.CliOption;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.Stat;
-import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 import org.xtreemfs.mrc.client.MRCClient;
-import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.utils.CLIParser;
-import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
  *
@@ -261,7 +259,7 @@ public class DemoScrubber implements DemoScrubberFileInfo.FileScrubbedListener {
         options.put("h", new CliOption(CliOption.OPTIONTYPE.SWITCH));
         CliOption oDir = new CliOption(CliOption.OPTIONTYPE.URL);
         oDir.urlDefaultPort = DIRInterface.ONC_RPC_PORT_DEFAULT;
-        oDir.urlDefaultProtocol = Constants.ONCRPC_SCHEME;
+        oDir.urlDefaultProtocol = XDRUtils.ONCRPC_SCHEME;
         options.put("dir", oDir);
         options.put("chk", new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put("thrs", new CliOption(CliOption.OPTIONTYPE.NUMBER));

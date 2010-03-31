@@ -30,9 +30,9 @@ import java.util.Map;
 
 import org.xtreemfs.common.auth.AuthenticationException;
 import org.xtreemfs.common.auth.UserCredentials;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.interfaces.MRCInterface.closeRequest;
 import org.xtreemfs.interfaces.MRCInterface.fsetattrRequest;

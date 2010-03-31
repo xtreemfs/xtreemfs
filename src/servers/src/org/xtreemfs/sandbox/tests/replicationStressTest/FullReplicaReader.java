@@ -30,12 +30,12 @@ import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.xtreemfs.common.clients.io.RandomAccessFile;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.common.monitoring.NumberMonitoring;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.monitoring.NumberMonitoring;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.osd.client.OSDClient;

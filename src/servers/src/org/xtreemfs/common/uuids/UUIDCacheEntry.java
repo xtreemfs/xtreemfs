@@ -24,7 +24,7 @@
 package org.xtreemfs.common.uuids;
 
 
-import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.foundation.TimeSync;
 
 /**
  * Cache entry for the UUIDResolver.

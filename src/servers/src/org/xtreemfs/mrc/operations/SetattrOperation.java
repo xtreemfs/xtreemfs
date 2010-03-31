@@ -24,10 +24,10 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.MRCInterface.setattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.setattrResponse;

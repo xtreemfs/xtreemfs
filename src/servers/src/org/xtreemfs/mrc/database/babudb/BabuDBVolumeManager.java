@@ -45,11 +45,11 @@ import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.lsmdb.DatabaseManager;
 import org.xtreemfs.babudb.snapshots.SnapshotManager;
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.VersionManagement;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.VersionManagement;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -402,7 +402,7 @@ public class BabuDBVolumeManager implements VolumeManager, StaticInitialization 
                 
                 // database already exists
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this, "database loaded from '%s'",
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "database loaded from '%s'",
                         config.getBaseDir());
                 
                 try {
@@ -438,7 +438,7 @@ public class BabuDBVolumeManager implements VolumeManager, StaticInitialization 
                 
                 try {
                     
-                    // iterate over the list of databases in the db manager
+                    // iterate over the list of databases in the storage manager
                     for (Entry<String, Database> dbEntry : dbMan.getDatabases()
                             .entrySet()) {
                         
@@ -463,7 +463,7 @@ public class BabuDBVolumeManager implements VolumeManager, StaticInitialization 
                                 Logging
                                         .logMessage(
                                             Logging.LEVEL_ERROR,
-                                            Category.db,
+                                            Category.storage,
                                             this,
                                             "no version mapping exists for snapshot %s; file contents may be corrupted",
                                             snapVolName);

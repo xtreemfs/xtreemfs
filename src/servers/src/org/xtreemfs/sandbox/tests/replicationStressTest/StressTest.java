@@ -35,29 +35,29 @@ import java.util.Random;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.clients.Client;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.common.monitoring.Monitoring;
-import org.xtreemfs.common.util.ONCRPCServiceURL;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.monitoring.Monitoring;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.util.CLIParser;
+import org.xtreemfs.foundation.util.ONCRPCServiceURL;
+import org.xtreemfs.foundation.util.CLIParser.CliOption;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
-import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
+import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 import org.xtreemfs.mrc.client.MRCClient;
-import org.xtreemfs.utils.CLIParser;
-import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
  * A not ending long-run stress test which creates replicas and read the data with x clients. <br>
@@ -258,7 +258,7 @@ public class StressTest {
         }
 
         // parse dir-address
-        final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,DIRInterface.ONC_RPC_PORT_DEFAULT);
+        final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0),XDRUtils.ONCRPC_SCHEME,DIRInterface.ONC_RPC_PORT_DEFAULT);
         final InetSocketAddress dirAddress = new InetSocketAddress(dirURL.getHost(), dirURL.getPort());
 
         // parse tmp-dir

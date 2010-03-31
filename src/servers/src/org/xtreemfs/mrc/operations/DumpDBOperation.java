@@ -30,9 +30,9 @@ import java.io.FileWriter;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.xtreemfs.common.VersionManagement;
-import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.VersionManagement;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.include.common.logging.Logging;
 import org.xtreemfs.include.common.logging.Logging.Category;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseRequest;

@@ -23,9 +23,9 @@
  */
 package org.xtreemfs.osd.operations;
 
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;

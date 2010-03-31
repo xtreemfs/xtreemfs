@@ -25,8 +25,8 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_renew_capabilityRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_renew_capabilityResponse;
 import org.xtreemfs.mrc.MRCRequest;

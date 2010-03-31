@@ -25,13 +25,13 @@
 package org.xtreemfs.osd;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
 import org.xtreemfs.interfaces.OSDInterface.errnoException;

@@ -24,7 +24,7 @@
 
 package org.xtreemfs.mrc.metadata;
 
-import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.foundation.util.OutputUtils;
 
 public abstract class BufferBackedIndexMetadata {
     

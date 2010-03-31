@@ -39,15 +39,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
-import org.xtreemfs.common.LRUCache;
-import org.xtreemfs.common.buffer.BufferPool;
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.checksums.ChecksumAlgorithm;
-import org.xtreemfs.common.checksums.ChecksumFactory;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.foundation.LRUCache;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.checksums.ChecksumAlgorithm;
+import org.xtreemfs.foundation.checksums.ChecksumFactory;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
 
@@ -146,9 +146,9 @@ public class HashStorageLayout extends StorageLayout {
                 if (checksumAlgo == null)
                     throw new NoSuchAlgorithmException("algo is null");
             } catch (NoSuchAlgorithmException e) {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.db, this,
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
                     "could not instantiate checksum algorithm '%s'", config.getChecksumProvider());
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.db, this,
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
                     "OSD checksums will be switched off");
             }
         }
@@ -181,7 +181,7 @@ public class HashStorageLayout extends StorageLayout {
         
         final int stripeSize = md.getStripingPolicy().getStripeSizeForObject(objNo);
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this, "fetching object %s-%d from disk",
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "fetching object %s-%d from disk",
                 fileId, objNo);
         }
         
@@ -195,7 +195,7 @@ public class HashStorageLayout extends StorageLayout {
         if (version == 0) {
             // object does not exist
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this,
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
                     "object does not exist (according to md cache)");
             }
             return new ObjectInformation(ObjectInformation.ObjectStatus.DOES_NOT_EXIST, null, stripeSize);
@@ -206,7 +206,7 @@ public class HashStorageLayout extends StorageLayout {
         
         if (Logging.isDebug()) {
             Logging
-                    .logMessage(Logging.LEVEL_DEBUG, Category.db, this, "path to object on disk: %s",
+                    .logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "path to object on disk: %s",
                         fileName);
         }
         
@@ -222,7 +222,7 @@ public class HashStorageLayout extends StorageLayout {
                 if (flength == 0) {
                     
                     if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this,
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
                             "object %d is a padding object", objNo);
                     }
                     
@@ -234,7 +234,7 @@ public class HashStorageLayout extends StorageLayout {
                     bbuf = BufferPool.allocate(0);
                     
                     if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this,
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
                             "object %d is read at an offset beyond its size", objNo);
                     }
                     
@@ -257,7 +257,7 @@ public class HashStorageLayout extends StorageLayout {
                     f.getChannel().read(bbuf.getBuffer());
                     
                     if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this,
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
                             "object %d is read at offset %d, %d bytes read", objNo, offset, bbuf.limit());
                     }
                     
@@ -274,7 +274,7 @@ public class HashStorageLayout extends StorageLayout {
         } else {
             
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this, "object %d does not exist", objNo);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "object %d does not exist", objNo);
             }
             
             return new ObjectInformation(ObjectInformation.ObjectStatus.DOES_NOT_EXIST, null, stripeSize);
@@ -295,7 +295,7 @@ public class HashStorageLayout extends StorageLayout {
         new File(this.storageDir + relPath).mkdirs();
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this, "writing object %s-%d to disk: %s",
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "writing object %s-%d to disk: %s",
                 fileId, objNo,relPath);
         }
         
@@ -501,7 +501,7 @@ public class HashStorageLayout extends StorageLayout {
             if (!cow) {
                 oldFile.delete();
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this,
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
                         "truncate object %d, delete old version %d: %s", objNo, oldVersion, oldFileName);
                 }
             }
@@ -512,7 +512,7 @@ public class HashStorageLayout extends StorageLayout {
             raf.close();
             BufferPool.free(oldData);
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this,
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
                     "truncate object %d, wrote new version %d: %s", objNo, newVersion, newFilename);
             }
             
@@ -530,7 +530,7 @@ public class HashStorageLayout extends StorageLayout {
                 oldFile.renameTo(new File(newFilename));
                 md.updateObjectVersion(objNo, newVersion);
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this,
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
                         "truncate object %d, renamed file for new version %d: %s", objNo, newVersion,
                         newFilename);
                 }
@@ -1037,7 +1037,7 @@ public class HashStorageLayout extends StorageLayout {
                                 objectSize = (objectSize >= ch.length()) ? objectSize : ch.length();
                             }
                         } catch (NumberFormatException ne) {
-                            Logging.logMessage(Logging.LEVEL_ERROR, Category.db, this,
+                            Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
                                 "CleanUp: an illegal file was discovered and ignored.");
                         }
                     }

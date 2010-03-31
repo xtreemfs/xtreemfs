@@ -24,7 +24,7 @@
 
 package org.xtreemfs.osd.operations;
 
-import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_statusRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_statusResponse;

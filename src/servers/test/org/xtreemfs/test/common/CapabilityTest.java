@@ -28,7 +28,7 @@ import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.test.SetupUtils;

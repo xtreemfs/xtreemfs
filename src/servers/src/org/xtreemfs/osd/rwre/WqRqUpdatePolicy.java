@@ -8,7 +8,8 @@ package org.xtreemfs.osd.rwre;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
-import org.xtreemfs.common.logging.Logging;
+
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.osd.rwre.RWReplicationStage.Operation;
 

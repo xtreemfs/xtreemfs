@@ -26,8 +26,8 @@ package org.xtreemfs.mrc.operations;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_internal_debugRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_internal_debugResponse;
 import org.xtreemfs.mrc.MRCRequest;

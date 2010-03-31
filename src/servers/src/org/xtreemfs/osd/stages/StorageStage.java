@@ -27,10 +27,10 @@ package org.xtreemfs.osd.stages;
 
 import java.io.IOException;
 
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ReplicaStatus;

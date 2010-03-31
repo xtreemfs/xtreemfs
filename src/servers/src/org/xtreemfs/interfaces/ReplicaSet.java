@@ -3,7 +3,7 @@ package org.xtreemfs.interfaces;
 import java.io.StringWriter;
 import java.util.Iterator;
 import org.xtreemfs.*;
-import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.runtime.Marshaller;
 import yidl.runtime.PrettyPrinter;

@@ -24,9 +24,9 @@
 package org.xtreemfs.common.clients.internal;
 
 import java.util.List;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
 

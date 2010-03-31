@@ -6,7 +6,8 @@
 package org.xtreemfs.dir.data;
 
 import java.io.IOException;
-import org.xtreemfs.common.buffer.ReusableBuffer;
+
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.AddressMapping;
 
 /**

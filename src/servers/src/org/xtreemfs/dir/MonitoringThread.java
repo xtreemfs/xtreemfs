@@ -13,11 +13,11 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.dir.data.ServiceRecords;
 import org.xtreemfs.foundation.LifeCycleThread;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.interfaces.ServiceType;
 
 /**

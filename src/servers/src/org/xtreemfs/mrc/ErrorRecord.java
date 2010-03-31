@@ -24,7 +24,7 @@
 
 package org.xtreemfs.mrc;
 
-import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.foundation.util.OutputUtils;
 
 /**
  * Encapsuls all types of errors.

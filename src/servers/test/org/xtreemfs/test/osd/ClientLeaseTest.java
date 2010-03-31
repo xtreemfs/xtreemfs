@@ -36,16 +36,16 @@
 //
 //import org.xtreemfs.common.Capability;
 //import org.xtreemfs.common.ClientLease;
-//import org.xtreemfs.common.buffer.ReusableBuffer;
+//import org.xtreemfs.foundation.buffer.ReusableBuffer;
 //import org.xtreemfs.common.clients.HttpErrorException;
 //import org.xtreemfs.common.clients.RPCResponse;
 //import org.xtreemfs.common.clients.osd.OSDClient;
-//import org.xtreemfs.common.logging.Logging;
+//import org.xtreemfs.foundation.logging.Logging;
 //import org.xtreemfs.common.striping.Location;
 //import org.xtreemfs.common.striping.Locations;
 //import org.xtreemfs.common.striping.RAID0;
 //import org.xtreemfs.common.striping.StripingPolicy;
-//import org.xtreemfs.common.util.FSUtils;
+//import org.xtreemfs.test.foundation.util.FSUtils;
 //import org.xtreemfs.common.uuids.ServiceUUID;
 //import org.xtreemfs.dir.DIRConfig;
 //import org.xtreemfs.dir.client.DIRClient;

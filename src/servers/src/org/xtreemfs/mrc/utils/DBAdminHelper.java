@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.xml.sax.Attributes;
-import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.include.foundation.json.JSONException;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.mrc.MRCException;

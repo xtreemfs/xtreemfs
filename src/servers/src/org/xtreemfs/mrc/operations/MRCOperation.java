@@ -24,9 +24,9 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;

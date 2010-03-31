@@ -27,9 +27,9 @@ package org.xtreemfs.common;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 
 /**
  * It manages the availability for all services. If a service could not accessed it is marked as not available

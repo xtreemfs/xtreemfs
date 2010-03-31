@@ -12,20 +12,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
+import org.xtreemfs.interfaces.utils.XDRUtils;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.osd.OSDConfig;
@@ -172,7 +172,7 @@ public class TestEnvironment {
             response.get();
             response.freeBuffers();
             
-            UUIDResolver.addLocalMapping("mockUpOSD", 11111, Constants.ONCRPC_SCHEME);
+            UUIDResolver.addLocalMapping("mockUpOSD", 11111, XDRUtils.ONCRPC_SCHEME);
         }
         
         if (enabledServs.contains(Services.MOCKUP_OSD2)) {
@@ -188,7 +188,7 @@ public class TestEnvironment {
             response.get();
             response.freeBuffers();
             
-            UUIDResolver.addLocalMapping("mockUpOSD2", 11111, Constants.ONCRPC_SCHEME);
+            UUIDResolver.addLocalMapping("mockUpOSD2", 11111, XDRUtils.ONCRPC_SCHEME);
         }
         
         if (enabledServs.contains(Services.MOCKUP_OSD3)) {
@@ -204,7 +204,7 @@ public class TestEnvironment {
             response.get();
             response.freeBuffers();
             
-            UUIDResolver.addLocalMapping("mockUpOSD3", 11111, Constants.ONCRPC_SCHEME);
+            UUIDResolver.addLocalMapping("mockUpOSD3", 11111, XDRUtils.ONCRPC_SCHEME);
         }
         
         if (enabledServs.contains(Services.OSD)) {
