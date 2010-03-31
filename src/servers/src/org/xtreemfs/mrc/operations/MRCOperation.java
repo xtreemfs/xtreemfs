@@ -103,7 +103,7 @@ public abstract class MRCOperation {
      * @return the context, or <code>null</code>, if not available
      */
     public UserCredentials getUserCredentials(MRCRequest rq) {
-        UserCredentials cred = rq.getRPCRequest().getUserCredentials();
+        UserCredentials cred = (UserCredentials)rq.getRPCRequest().getUserCredentials();
         return cred;
     }
     

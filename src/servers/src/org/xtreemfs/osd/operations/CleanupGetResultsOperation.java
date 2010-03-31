@@ -50,7 +50,7 @@ public final class CleanupGetResultsOperation extends OSDOperation {
     @Override
     public void startRequest(final OSDRequest rq) {
 
-        UserCredentials uc = rq.getRPCRequest().getUserCredentials();
+        UserCredentials uc = (UserCredentials)rq.getRPCRequest().getUserCredentials();
         if ((uc == null) || (!uc.getPassword().equals(master.getConfig().getAdminPassword()))) {
             rq.sendOSDException(ErrorCodes.AUTH_FAILED, "this operation requires an admin password");
             return;

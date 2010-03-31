@@ -33,11 +33,12 @@ import yidl.runtime.Unmarshaller;
 
 public class ONCRPCRequestHeader implements yidl.runtime.Object {
 
-    public ONCRPCRequestHeader() {
+    public ONCRPCRequestHeader(yidl.runtime.Object cred) {
         xid = prog = vers = proc = 0;
+        user_credentials = cred;
     }
 
-    public ONCRPCRequestHeader(int xid, int prog, int vers, int proc, UserCredentials cred) {
+    public ONCRPCRequestHeader(int xid, int prog, int vers, int proc, yidl.runtime.Object cred) {
         this.xid = xid;
         this.prog = prog;
         this.vers = vers;
@@ -117,12 +118,20 @@ public class ONCRPCRequestHeader implements yidl.runtime.Object {
         proc = um.readInt32(null);
 //        System.out.println( "proc " + Integer.toString( proc ) );        
         auth_flavor = um.readInt32(null); // cred_auth_flavor
-        if (getAuth_flavor() == UserCredentials.TAG) {
-            int size = um.readInt32(null);
-            user_credentials = new UserCredentials();
-            user_credentials.unmarshal(um);
+        int auth_size = um.readInt32(null);
+        if (auth_flavor != 0) {
+            if (user_credentials != null) {
+                if (auth_flavor != user_credentials.getTag())
+                    throw new IllegalArgumentException("user_credentials has invalid type: "+user_credentials.getTag());
+                user_credentials.unmarshal(um);
+            } else {
+                user_credentials = null;
+                //skip
+                for (int i = 0; i < auth_size; i++)
+                    um.readInt8(null);
+            }
         } else {
-            um.readInt32(null); // cred auth opaque data
+            user_credentials = null;
         }
         um.readInt32(null); // verf_auth_flavor
         um.readInt32(null); // verf auth opaque data
@@ -146,7 +155,7 @@ public class ONCRPCRequestHeader implements yidl.runtime.Object {
 
     private int auth_flavor;
 
-    private UserCredentials user_credentials;
+    private yidl.runtime.Object user_credentials;
 
     /**
      * @return the auth_flavor
@@ -158,7 +167,7 @@ public class ONCRPCRequestHeader implements yidl.runtime.Object {
     /**
      * @return the user_credentials
      */
-    public UserCredentials getUser_credentials() {
+    public yidl.runtime.Object getUser_credentials() {
         return user_credentials;
     }
 

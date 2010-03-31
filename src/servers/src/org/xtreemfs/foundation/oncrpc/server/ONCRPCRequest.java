@@ -51,10 +51,10 @@ public class ONCRPCRequest {
 
     private ONCRPCResponseHeader      responseHeader;
 
-    public ONCRPCRequest(ONCRPCRecord record) {
+    public ONCRPCRequest(ONCRPCRecord record, yidl.runtime.Object user_credentials) {
         this.record = record;
 
-        requestHeader = new ONCRPCRequestHeader();
+        requestHeader = new ONCRPCRequestHeader(user_credentials);
 
         final ReusableBuffer firstFragment = record.getRequestFragments().get(0);
         firstFragment.position(0);
@@ -199,7 +199,7 @@ public class ONCRPCRequest {
         return this.requestHeader;
     }
 
-    public UserCredentials getUserCredentials() {
+    public yidl.runtime.Object getUserCredentials() {
         return requestHeader.getUser_credentials();
     }
 

@@ -22,6 +22,7 @@ import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseListener;
+import org.xtreemfs.foundation.oncrpc.server.NullAuthFlavorProvider;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
@@ -106,7 +107,7 @@ public class SSLRPCClientServerTest extends TestCase {
             }
 
         };
-        server = new RPCNIOSocketServer(TEST_PORT, null, listener, srvSSL);
+        server = new RPCNIOSocketServer(TEST_PORT, null, listener, srvSSL, new NullAuthFlavorProvider());
         server.start();
         server.waitForStartup();
 
@@ -187,7 +188,7 @@ public class SSLRPCClientServerTest extends TestCase {
 
             }
         };
-        server = new RPCNIOSocketServer(TEST_PORT, null, listener, srvSSL);
+        server = new RPCNIOSocketServer(TEST_PORT, null, listener, srvSSL, new NullAuthFlavorProvider());
         server.start();
         server.waitForStartup();
 
@@ -267,7 +268,7 @@ public class SSLRPCClientServerTest extends TestCase {
 
             }
         };
-        server = new RPCNIOSocketServer(TEST_PORT, null, listener, srvSSL);
+        server = new RPCNIOSocketServer(TEST_PORT, null, listener, srvSSL,new NullAuthFlavorProvider());
         server.start();
         server.waitForStartup();
 
@@ -349,7 +350,7 @@ public class SSLRPCClientServerTest extends TestCase {
             }
 
         };
-        server = new RPCNIOSocketServer(TEST_PORT, null, listener, srvSSL);
+        server = new RPCNIOSocketServer(TEST_PORT, null, listener, srvSSL, new NullAuthFlavorProvider());
         server.start();
         server.waitForStartup();
 

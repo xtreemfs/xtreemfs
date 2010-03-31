@@ -62,7 +62,7 @@ public class DiscoveryMsgThread extends LifeCycleThread {
 
                 try {
                     data.position(Integer.SIZE / 8);
-                    ONCRPCRequestHeader hdr = new ONCRPCRequestHeader();
+                    ONCRPCRequestHeader hdr = new ONCRPCRequestHeader(null);
                     hdr.unmarshal(new XDRUnmarshaller(data));
                     xtreemfs_discover_dirRequest rq = new xtreemfs_discover_dirRequest();
                     rq.unmarshal(new XDRUnmarshaller(data));

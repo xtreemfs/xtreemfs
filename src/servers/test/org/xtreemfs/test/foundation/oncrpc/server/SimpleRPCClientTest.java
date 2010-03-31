@@ -16,6 +16,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseListener;
+import org.xtreemfs.foundation.oncrpc.server.NullAuthFlavorProvider;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
@@ -28,6 +29,7 @@ import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRespons
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.mrc.UserCredentialsAuthFlavorProvider;
 import org.xtreemfs.test.TestEnvironment;
 
 /**
@@ -88,7 +90,7 @@ public class SimpleRPCClientTest extends TestCase {
             }
 
         };
-        server = new RPCNIOSocketServer(TEST_PORT, null, listener, null);
+        server = new RPCNIOSocketServer(TEST_PORT, null, listener, null, new NullAuthFlavorProvider());
         server.start();
         server.waitForStartup();
 
@@ -158,7 +160,7 @@ public class SimpleRPCClientTest extends TestCase {
                 try {
                     ReusableBuffer buf = rq.getRequestFragment();
 
-                    UserCredentials uc = rq.getUserCredentials();
+                    UserCredentials uc = (UserCredentials)rq.getUserCredentials();
                     assertNotNull(uc);
                     assertEquals("username",uc.getUser_id());
                     assertEquals(1,uc.getGroup_ids().size());
@@ -181,7 +183,7 @@ public class SimpleRPCClientTest extends TestCase {
             }
 
         };
-        server = new RPCNIOSocketServer(TEST_PORT, null, listener, null);
+        server = new RPCNIOSocketServer(TEST_PORT, null, listener, null, new UserCredentialsAuthFlavorProvider());
         server.start();
         server.waitForStartup();
 
@@ -263,7 +265,7 @@ public class SimpleRPCClientTest extends TestCase {
 
             }
         };
-        server = new RPCNIOSocketServer(TEST_PORT, null, listener, null);
+        server = new RPCNIOSocketServer(TEST_PORT, null, listener, null, new NullAuthFlavorProvider());
         server.start();
         server.waitForStartup();
 
@@ -343,7 +345,7 @@ public class SimpleRPCClientTest extends TestCase {
 
             }
         };
-        server = new RPCNIOSocketServer(TEST_PORT, null, listener, null);
+        server = new RPCNIOSocketServer(TEST_PORT, null, listener, null, new NullAuthFlavorProvider());
         server.start();
         server.waitForStartup();
 

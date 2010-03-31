@@ -105,7 +105,7 @@ public class UDPMessage {
         payload.position(Integer.SIZE/8);
         XDRUnmarshaller um = new XDRUnmarshaller(payload);
         if (callType == XDRUtils.TYPE_CALL) {
-            requestHeader = new ONCRPCRequestHeader();
+            requestHeader = new ONCRPCRequestHeader(null);
             requestHeader.unmarshal(um);
             responseHeader = null;
 

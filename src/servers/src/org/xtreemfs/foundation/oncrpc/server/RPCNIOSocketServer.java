@@ -124,9 +124,11 @@ public class RPCNIOSocketServer extends LifeCycleThread {
      * reading from the client again. This is to prevent it from oscillating
      */
     public static int                      CLIENT_Q_THR      = 5000;
+
+    private final AuthFlavorProvider       authProvider;
     
     public RPCNIOSocketServer(int bindPort, InetAddress bindAddr, RPCServerRequestListener rl,
-        SSLOptions sslOptions) throws IOException {
+        SSLOptions sslOptions, AuthFlavorProvider authProvider) throws IOException {
         super("ONCRPCSrv@" + bindPort);
         
         // open server socket
@@ -151,7 +153,8 @@ public class RPCNIOSocketServer extends LifeCycleThread {
         this.numConnections = new AtomicInteger(0);
         
         this.connections = new LinkedList();
-        
+
+        this.authProvider = authProvider;
     }
     
     /**
@@ -656,7 +659,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
      */
     private boolean receiveRequest(SelectionKey key, ONCRPCRecord record, ClientConnection con) {
         try {
-            ONCRPCRequest rq = new ONCRPCRequest(record);
+            ONCRPCRequest rq = new ONCRPCRequest(record,authProvider.getNewAuthObject());
             
             final ONCRPCRequestHeader hdr = rq.getRequestHeader();
 

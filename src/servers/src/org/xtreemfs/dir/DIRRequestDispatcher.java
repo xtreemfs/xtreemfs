@@ -83,6 +83,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.xtreemfs.common.util.Nettest;
 import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.foundation.oncrpc.server.NullAuthFlavorProvider;
 import org.xtreemfs.interfaces.DIRInterface.DIRException;
 import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 
@@ -160,7 +161,7 @@ public class DIRRequestDispatcher extends LifeCycleThread
         queue = new LinkedBlockingQueue<ONCRPCRequest>();
         quit = false;
         
-        server = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
+        server = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions, new NullAuthFlavorProvider());
         
         if (config.isAutodiscoverEnabled()) {
             

@@ -11,6 +11,7 @@ import java.util.Iterator;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.oncrpc.server.NullAuthFlavorProvider;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
@@ -64,7 +65,7 @@ public class DummyONCRPCServer {
 
                     }
                 };
-                RPCNIOSocketServer server = new RPCNIOSocketServer(12345, null, listener, null);
+                RPCNIOSocketServer server = new RPCNIOSocketServer(12345, null, listener, null,new NullAuthFlavorProvider());
                 server.start();
                 server.waitForStartup();
             } else {

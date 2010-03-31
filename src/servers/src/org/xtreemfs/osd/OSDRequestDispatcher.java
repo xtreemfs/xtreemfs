@@ -127,6 +127,7 @@ import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.mrc.UserCredentialsAuthFlavorProvider;
 import org.xtreemfs.osd.operations.EventGetFileSize;
 import org.xtreemfs.osd.operations.EventTruncate;
 import org.xtreemfs.osd.operations.FleaseMessageOperation;
@@ -247,7 +248,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config.isGRIDSSLmode()) : null;
         
-        rpcServer = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, serverSSLopts);
+        rpcServer = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, serverSSLopts, new UserCredentialsAuthFlavorProvider());
         rpcServer.setLifeCycleListener(this);
         
         final SSLOptions clientSSLopts = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config

@@ -39,7 +39,7 @@ public class ShutdownOperation extends OSDOperation {
         //check password
         xtreemfs_shutdownRequest args = (xtreemfs_shutdownRequest)rq.getRequestArgs();
 
-        UserCredentials uc = rq.getRPCRequest().getUserCredentials();
+        UserCredentials uc = (UserCredentials)rq.getRPCRequest().getUserCredentials();
 
         if (uc.getPassword().equals(master.getConfig().getAdminPassword())) {
             //shutdown

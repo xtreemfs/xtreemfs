@@ -15,6 +15,7 @@ import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseListener;
+import org.xtreemfs.foundation.oncrpc.server.NullAuthFlavorProvider;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
@@ -136,7 +137,7 @@ public class RPCPingPong {
                 org.xtreemfs.interfaces.OSDInterface.writeRequest data = new writeRequest(new FileCredentials(), "file", 1, 1, 1, 1, new ObjectData(0, true, 0, rb));
                 rq.sendResponse(data);
             }
-        }, null);
+        }, null, new NullAuthFlavorProvider());
         srv.start();
         srv.waitForStartup();
 

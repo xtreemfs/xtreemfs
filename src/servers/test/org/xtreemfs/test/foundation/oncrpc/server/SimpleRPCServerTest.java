@@ -16,6 +16,7 @@ import org.junit.Test;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.oncrpc.server.NullAuthFlavorProvider;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
@@ -81,7 +82,7 @@ public class SimpleRPCServerTest extends TestCase {
                 rq.sendResponse(resp);
             }
         };
-        server = new RPCNIOSocketServer(TEST_PORT, null, listener, null);
+        server = new RPCNIOSocketServer(TEST_PORT, null, listener, null, new NullAuthFlavorProvider());
         server.start();
         server.waitForStartup();
 
@@ -178,7 +179,7 @@ public class SimpleRPCServerTest extends TestCase {
 
             }
         };
-        server = new RPCNIOSocketServer(TEST_PORT, null, listener, null);
+        server = new RPCNIOSocketServer(TEST_PORT, null, listener, null, new NullAuthFlavorProvider());
         server.start();
         server.waitForStartup();
 
