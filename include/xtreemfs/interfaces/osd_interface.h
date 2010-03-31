@@ -1,5 +1,5 @@
-#ifndef _1297240638_H_
-#define _1297240638_H_
+#ifndef _1523145150_H_
+#define _1523145150_H_
 
 
 #include "constants.h"
@@ -4206,15 +4206,16 @@ namespace org
         virtual ::yield::concurrency::Exception*
         createException
         (
-          const char* type_name
+          const char* type_name,
+          size_t type_name_len
         )
         {
-          if ( strcmp( type_name, "ConcurrentModificationException" ) == 0 ) return new ConcurrentModificationException;
-          else if ( strcmp( type_name, "errnoException" ) == 0 ) return new errnoException;
-          else if ( strcmp( type_name, "InvalidArgumentException" ) == 0 ) return new InvalidArgumentException;
-          else if ( strcmp( type_name, "OSDException" ) == 0 ) return new OSDException;
-          else if ( strcmp( type_name, "ProtocolException" ) == 0 ) return new ProtocolException;
-          else if ( strcmp( type_name, "RedirectException" ) == 0 ) return new RedirectException;
+          if ( type_name_len == 31 && strncmp( type_name, "ConcurrentModificationException", 31 ) == 0 ) return new ConcurrentModificationException;
+          else if ( type_name_len == 14 && strncmp( type_name, "errnoException", 14 ) == 0 ) return new errnoException;
+          else if ( type_name_len == 24 && strncmp( type_name, "InvalidArgumentException", 24 ) == 0 ) return new InvalidArgumentException;
+          else if ( type_name_len == 12 && strncmp( type_name, "OSDException", 12 ) == 0 ) return new OSDException;
+          else if ( type_name_len == 17 && strncmp( type_name, "ProtocolException", 17 ) == 0 ) return new ProtocolException;
+          else if ( type_name_len == 17 && strncmp( type_name, "RedirectException", 17 ) == 0 ) return new RedirectException;
           else return NULL;
         }
 
@@ -4253,35 +4254,40 @@ namespace org
           }
         }
 
-        virtual ::yield::concurrency::Request* createRequest( const char* type_name )
+        virtual ::yield::concurrency::Request*
+        createRequest
+        (
+          const char* type_name,
+          size_t type_name_len
+        )
         {
-          if ( strcmp( type_name, "readRequest" ) == 0 ) return new readRequest;
-          else if ( strcmp( type_name, "truncateRequest" ) == 0 ) return new truncateRequest;
-          else if ( strcmp( type_name, "unlinkRequest" ) == 0 ) return new unlinkRequest;
-          else if ( strcmp( type_name, "writeRequest" ) == 0 ) return new writeRequest;
-          else if ( strcmp( type_name, "xtreemfs_broadcast_gmaxRequest" ) == 0 ) return new xtreemfs_broadcast_gmaxRequest;
-          else if ( strcmp( type_name, "xtreemfs_check_objectRequest" ) == 0 ) return new xtreemfs_check_objectRequest;
-          else if ( strcmp( type_name, "xtreemfs_cleanup_get_resultsRequest" ) == 0 ) return new xtreemfs_cleanup_get_resultsRequest;
-          else if ( strcmp( type_name, "xtreemfs_cleanup_is_runningRequest" ) == 0 ) return new xtreemfs_cleanup_is_runningRequest;
-          else if ( strcmp( type_name, "xtreemfs_cleanup_startRequest" ) == 0 ) return new xtreemfs_cleanup_startRequest;
-          else if ( strcmp( type_name, "xtreemfs_cleanup_statusRequest" ) == 0 ) return new xtreemfs_cleanup_statusRequest;
-          else if ( strcmp( type_name, "xtreemfs_cleanup_stopRequest" ) == 0 ) return new xtreemfs_cleanup_stopRequest;
-          else if ( strcmp( type_name, "xtreemfs_rwr_fetchRequest" ) == 0 ) return new xtreemfs_rwr_fetchRequest;
-          else if ( strcmp( type_name, "xtreemfs_rwr_flease_msgRequest" ) == 0 ) return new xtreemfs_rwr_flease_msgRequest;
-          else if ( strcmp( type_name, "xtreemfs_rwr_notifyRequest" ) == 0 ) return new xtreemfs_rwr_notifyRequest;
-          else if ( strcmp( type_name, "xtreemfs_rwr_statusRequest" ) == 0 ) return new xtreemfs_rwr_statusRequest;
-          else if ( strcmp( type_name, "xtreemfs_rwr_truncateRequest" ) == 0 ) return new xtreemfs_rwr_truncateRequest;
-          else if ( strcmp( type_name, "xtreemfs_rwr_updateRequest" ) == 0 ) return new xtreemfs_rwr_updateRequest;
-          else if ( strcmp( type_name, "xtreemfs_internal_get_gmaxRequest" ) == 0 ) return new xtreemfs_internal_get_gmaxRequest;
-          else if ( strcmp( type_name, "xtreemfs_internal_truncateRequest" ) == 0 ) return new xtreemfs_internal_truncateRequest;
-          else if ( strcmp( type_name, "xtreemfs_internal_get_file_sizeRequest" ) == 0 ) return new xtreemfs_internal_get_file_sizeRequest;
-          else if ( strcmp( type_name, "xtreemfs_internal_read_localRequest" ) == 0 ) return new xtreemfs_internal_read_localRequest;
-          else if ( strcmp( type_name, "xtreemfs_internal_get_object_setRequest" ) == 0 ) return new xtreemfs_internal_get_object_setRequest;
-          else if ( strcmp( type_name, "xtreemfs_lock_acquireRequest" ) == 0 ) return new xtreemfs_lock_acquireRequest;
-          else if ( strcmp( type_name, "xtreemfs_lock_checkRequest" ) == 0 ) return new xtreemfs_lock_checkRequest;
-          else if ( strcmp( type_name, "xtreemfs_lock_releaseRequest" ) == 0 ) return new xtreemfs_lock_releaseRequest;
-          else if ( strcmp( type_name, "xtreemfs_pingRequest" ) == 0 ) return new xtreemfs_pingRequest;
-          else if ( strcmp( type_name, "xtreemfs_shutdownRequest" ) == 0 ) return new xtreemfs_shutdownRequest;
+          if ( type_name_len == 11 && strncmp( type_name, "readRequest", 11 ) == 0 ) return new readRequest;
+          else if ( type_name_len == 15 && strncmp( type_name, "truncateRequest", 15 ) == 0 ) return new truncateRequest;
+          else if ( type_name_len == 13 && strncmp( type_name, "unlinkRequest", 13 ) == 0 ) return new unlinkRequest;
+          else if ( type_name_len == 12 && strncmp( type_name, "writeRequest", 12 ) == 0 ) return new writeRequest;
+          else if ( type_name_len == 30 && strncmp( type_name, "xtreemfs_broadcast_gmaxRequest", 30 ) == 0 ) return new xtreemfs_broadcast_gmaxRequest;
+          else if ( type_name_len == 28 && strncmp( type_name, "xtreemfs_check_objectRequest", 28 ) == 0 ) return new xtreemfs_check_objectRequest;
+          else if ( type_name_len == 35 && strncmp( type_name, "xtreemfs_cleanup_get_resultsRequest", 35 ) == 0 ) return new xtreemfs_cleanup_get_resultsRequest;
+          else if ( type_name_len == 34 && strncmp( type_name, "xtreemfs_cleanup_is_runningRequest", 34 ) == 0 ) return new xtreemfs_cleanup_is_runningRequest;
+          else if ( type_name_len == 29 && strncmp( type_name, "xtreemfs_cleanup_startRequest", 29 ) == 0 ) return new xtreemfs_cleanup_startRequest;
+          else if ( type_name_len == 30 && strncmp( type_name, "xtreemfs_cleanup_statusRequest", 30 ) == 0 ) return new xtreemfs_cleanup_statusRequest;
+          else if ( type_name_len == 28 && strncmp( type_name, "xtreemfs_cleanup_stopRequest", 28 ) == 0 ) return new xtreemfs_cleanup_stopRequest;
+          else if ( type_name_len == 25 && strncmp( type_name, "xtreemfs_rwr_fetchRequest", 25 ) == 0 ) return new xtreemfs_rwr_fetchRequest;
+          else if ( type_name_len == 30 && strncmp( type_name, "xtreemfs_rwr_flease_msgRequest", 30 ) == 0 ) return new xtreemfs_rwr_flease_msgRequest;
+          else if ( type_name_len == 26 && strncmp( type_name, "xtreemfs_rwr_notifyRequest", 26 ) == 0 ) return new xtreemfs_rwr_notifyRequest;
+          else if ( type_name_len == 26 && strncmp( type_name, "xtreemfs_rwr_statusRequest", 26 ) == 0 ) return new xtreemfs_rwr_statusRequest;
+          else if ( type_name_len == 28 && strncmp( type_name, "xtreemfs_rwr_truncateRequest", 28 ) == 0 ) return new xtreemfs_rwr_truncateRequest;
+          else if ( type_name_len == 26 && strncmp( type_name, "xtreemfs_rwr_updateRequest", 26 ) == 0 ) return new xtreemfs_rwr_updateRequest;
+          else if ( type_name_len == 33 && strncmp( type_name, "xtreemfs_internal_get_gmaxRequest", 33 ) == 0 ) return new xtreemfs_internal_get_gmaxRequest;
+          else if ( type_name_len == 33 && strncmp( type_name, "xtreemfs_internal_truncateRequest", 33 ) == 0 ) return new xtreemfs_internal_truncateRequest;
+          else if ( type_name_len == 38 && strncmp( type_name, "xtreemfs_internal_get_file_sizeRequest", 38 ) == 0 ) return new xtreemfs_internal_get_file_sizeRequest;
+          else if ( type_name_len == 35 && strncmp( type_name, "xtreemfs_internal_read_localRequest", 35 ) == 0 ) return new xtreemfs_internal_read_localRequest;
+          else if ( type_name_len == 39 && strncmp( type_name, "xtreemfs_internal_get_object_setRequest", 39 ) == 0 ) return new xtreemfs_internal_get_object_setRequest;
+          else if ( type_name_len == 28 && strncmp( type_name, "xtreemfs_lock_acquireRequest", 28 ) == 0 ) return new xtreemfs_lock_acquireRequest;
+          else if ( type_name_len == 26 && strncmp( type_name, "xtreemfs_lock_checkRequest", 26 ) == 0 ) return new xtreemfs_lock_checkRequest;
+          else if ( type_name_len == 28 && strncmp( type_name, "xtreemfs_lock_releaseRequest", 28 ) == 0 ) return new xtreemfs_lock_releaseRequest;
+          else if ( type_name_len == 20 && strncmp( type_name, "xtreemfs_pingRequest", 20 ) == 0 ) return new xtreemfs_pingRequest;
+          else if ( type_name_len == 24 && strncmp( type_name, "xtreemfs_shutdownRequest", 24 ) == 0 ) return new xtreemfs_shutdownRequest;
           else return NULL;
         }
 
@@ -4320,35 +4326,40 @@ namespace org
           }
         }
 
-        virtual ::yield::concurrency::Response* createResponse( const char* type_name )
+        virtual ::yield::concurrency::Response*
+        createResponse
+        (
+          const char* type_name,
+          size_t type_name_len
+        )
         {
-          if ( strcmp( type_name, "readResponse" ) == 0 ) return new readResponse;
-          else if ( strcmp( type_name, "truncateResponse" ) == 0 ) return new truncateResponse;
-          else if ( strcmp( type_name, "unlinkResponse" ) == 0 ) return new unlinkResponse;
-          else if ( strcmp( type_name, "writeResponse" ) == 0 ) return new writeResponse;
-          else if ( strcmp( type_name, "xtreemfs_broadcast_gmaxResponse" ) == 0 ) return new xtreemfs_broadcast_gmaxResponse;
-          else if ( strcmp( type_name, "xtreemfs_check_objectResponse" ) == 0 ) return new xtreemfs_check_objectResponse;
-          else if ( strcmp( type_name, "xtreemfs_cleanup_get_resultsResponse" ) == 0 ) return new xtreemfs_cleanup_get_resultsResponse;
-          else if ( strcmp( type_name, "xtreemfs_cleanup_is_runningResponse" ) == 0 ) return new xtreemfs_cleanup_is_runningResponse;
-          else if ( strcmp( type_name, "xtreemfs_cleanup_startResponse" ) == 0 ) return new xtreemfs_cleanup_startResponse;
-          else if ( strcmp( type_name, "xtreemfs_cleanup_statusResponse" ) == 0 ) return new xtreemfs_cleanup_statusResponse;
-          else if ( strcmp( type_name, "xtreemfs_cleanup_stopResponse" ) == 0 ) return new xtreemfs_cleanup_stopResponse;
-          else if ( strcmp( type_name, "xtreemfs_rwr_fetchResponse" ) == 0 ) return new xtreemfs_rwr_fetchResponse;
-          else if ( strcmp( type_name, "xtreemfs_rwr_flease_msgResponse" ) == 0 ) return new xtreemfs_rwr_flease_msgResponse;
-          else if ( strcmp( type_name, "xtreemfs_rwr_notifyResponse" ) == 0 ) return new xtreemfs_rwr_notifyResponse;
-          else if ( strcmp( type_name, "xtreemfs_rwr_statusResponse" ) == 0 ) return new xtreemfs_rwr_statusResponse;
-          else if ( strcmp( type_name, "xtreemfs_rwr_truncateResponse" ) == 0 ) return new xtreemfs_rwr_truncateResponse;
-          else if ( strcmp( type_name, "xtreemfs_rwr_updateResponse" ) == 0 ) return new xtreemfs_rwr_updateResponse;
-          else if ( strcmp( type_name, "xtreemfs_internal_get_gmaxResponse" ) == 0 ) return new xtreemfs_internal_get_gmaxResponse;
-          else if ( strcmp( type_name, "xtreemfs_internal_truncateResponse" ) == 0 ) return new xtreemfs_internal_truncateResponse;
-          else if ( strcmp( type_name, "xtreemfs_internal_get_file_sizeResponse" ) == 0 ) return new xtreemfs_internal_get_file_sizeResponse;
-          else if ( strcmp( type_name, "xtreemfs_internal_read_localResponse" ) == 0 ) return new xtreemfs_internal_read_localResponse;
-          else if ( strcmp( type_name, "xtreemfs_internal_get_object_setResponse" ) == 0 ) return new xtreemfs_internal_get_object_setResponse;
-          else if ( strcmp( type_name, "xtreemfs_lock_acquireResponse" ) == 0 ) return new xtreemfs_lock_acquireResponse;
-          else if ( strcmp( type_name, "xtreemfs_lock_checkResponse" ) == 0 ) return new xtreemfs_lock_checkResponse;
-          else if ( strcmp( type_name, "xtreemfs_lock_releaseResponse" ) == 0 ) return new xtreemfs_lock_releaseResponse;
-          else if ( strcmp( type_name, "xtreemfs_pingResponse" ) == 0 ) return new xtreemfs_pingResponse;
-          else if ( strcmp( type_name, "xtreemfs_shutdownResponse" ) == 0 ) return new xtreemfs_shutdownResponse;
+          if ( type_name_len == 12 && strncmp( type_name, "readResponse", 12 ) == 0 ) return new readResponse;
+          else if ( type_name_len == 16 && strncmp( type_name, "truncateResponse", 16 ) == 0 ) return new truncateResponse;
+          else if ( type_name_len == 14 && strncmp( type_name, "unlinkResponse", 14 ) == 0 ) return new unlinkResponse;
+          else if ( type_name_len == 13 && strncmp( type_name, "writeResponse", 13 ) == 0 ) return new writeResponse;
+          else if ( type_name_len == 31 && strncmp( type_name, "xtreemfs_broadcast_gmaxResponse", 31 ) == 0 ) return new xtreemfs_broadcast_gmaxResponse;
+          else if ( type_name_len == 29 && strncmp( type_name, "xtreemfs_check_objectResponse", 29 ) == 0 ) return new xtreemfs_check_objectResponse;
+          else if ( type_name_len == 36 && strncmp( type_name, "xtreemfs_cleanup_get_resultsResponse", 36 ) == 0 ) return new xtreemfs_cleanup_get_resultsResponse;
+          else if ( type_name_len == 35 && strncmp( type_name, "xtreemfs_cleanup_is_runningResponse", 35 ) == 0 ) return new xtreemfs_cleanup_is_runningResponse;
+          else if ( type_name_len == 30 && strncmp( type_name, "xtreemfs_cleanup_startResponse", 30 ) == 0 ) return new xtreemfs_cleanup_startResponse;
+          else if ( type_name_len == 31 && strncmp( type_name, "xtreemfs_cleanup_statusResponse", 31 ) == 0 ) return new xtreemfs_cleanup_statusResponse;
+          else if ( type_name_len == 29 && strncmp( type_name, "xtreemfs_cleanup_stopResponse", 29 ) == 0 ) return new xtreemfs_cleanup_stopResponse;
+          else if ( type_name_len == 26 && strncmp( type_name, "xtreemfs_rwr_fetchResponse", 26 ) == 0 ) return new xtreemfs_rwr_fetchResponse;
+          else if ( type_name_len == 31 && strncmp( type_name, "xtreemfs_rwr_flease_msgResponse", 31 ) == 0 ) return new xtreemfs_rwr_flease_msgResponse;
+          else if ( type_name_len == 27 && strncmp( type_name, "xtreemfs_rwr_notifyResponse", 27 ) == 0 ) return new xtreemfs_rwr_notifyResponse;
+          else if ( type_name_len == 27 && strncmp( type_name, "xtreemfs_rwr_statusResponse", 27 ) == 0 ) return new xtreemfs_rwr_statusResponse;
+          else if ( type_name_len == 29 && strncmp( type_name, "xtreemfs_rwr_truncateResponse", 29 ) == 0 ) return new xtreemfs_rwr_truncateResponse;
+          else if ( type_name_len == 27 && strncmp( type_name, "xtreemfs_rwr_updateResponse", 27 ) == 0 ) return new xtreemfs_rwr_updateResponse;
+          else if ( type_name_len == 34 && strncmp( type_name, "xtreemfs_internal_get_gmaxResponse", 34 ) == 0 ) return new xtreemfs_internal_get_gmaxResponse;
+          else if ( type_name_len == 34 && strncmp( type_name, "xtreemfs_internal_truncateResponse", 34 ) == 0 ) return new xtreemfs_internal_truncateResponse;
+          else if ( type_name_len == 39 && strncmp( type_name, "xtreemfs_internal_get_file_sizeResponse", 39 ) == 0 ) return new xtreemfs_internal_get_file_sizeResponse;
+          else if ( type_name_len == 36 && strncmp( type_name, "xtreemfs_internal_read_localResponse", 36 ) == 0 ) return new xtreemfs_internal_read_localResponse;
+          else if ( type_name_len == 40 && strncmp( type_name, "xtreemfs_internal_get_object_setResponse", 40 ) == 0 ) return new xtreemfs_internal_get_object_setResponse;
+          else if ( type_name_len == 29 && strncmp( type_name, "xtreemfs_lock_acquireResponse", 29 ) == 0 ) return new xtreemfs_lock_acquireResponse;
+          else if ( type_name_len == 27 && strncmp( type_name, "xtreemfs_lock_checkResponse", 27 ) == 0 ) return new xtreemfs_lock_checkResponse;
+          else if ( type_name_len == 29 && strncmp( type_name, "xtreemfs_lock_releaseResponse", 29 ) == 0 ) return new xtreemfs_lock_releaseResponse;
+          else if ( type_name_len == 21 && strncmp( type_name, "xtreemfs_pingResponse", 21 ) == 0 ) return new xtreemfs_pingResponse;
+          else if ( type_name_len == 25 && strncmp( type_name, "xtreemfs_shutdownResponse", 25 ) == 0 ) return new xtreemfs_shutdownResponse;
           else return NULL;
         }
 
@@ -5297,7 +5308,7 @@ namespace org
           return __request_handler;
         }
 
-
+        // OSDInterface
         virtual void
         read
         (

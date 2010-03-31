@@ -1,5 +1,5 @@
-#ifndef _47250820_H_
-#define _47250820_H_
+#ifndef _1500444172_H_
+#define _1500444172_H_
 
 
 #include "constants.h"
@@ -4452,16 +4452,17 @@ namespace org
         virtual ::yield::concurrency::Exception*
         createException
         (
-          const char* type_name
+          const char* type_name,
+          size_t type_name_len
         )
         {
-          if ( strcmp( type_name, "ConcurrentModificationException" ) == 0 ) return new ConcurrentModificationException;
-          else if ( strcmp( type_name, "errnoException" ) == 0 ) return new errnoException;
-          else if ( strcmp( type_name, "InvalidArgumentException" ) == 0 ) return new InvalidArgumentException;
-          else if ( strcmp( type_name, "MRCException" ) == 0 ) return new MRCException;
-          else if ( strcmp( type_name, "ProtocolException" ) == 0 ) return new ProtocolException;
-          else if ( strcmp( type_name, "RedirectException" ) == 0 ) return new RedirectException;
-          else if ( strcmp( type_name, "StaleETagException" ) == 0 ) return new StaleETagException;
+          if ( type_name_len == 31 && strncmp( type_name, "ConcurrentModificationException", 31 ) == 0 ) return new ConcurrentModificationException;
+          else if ( type_name_len == 14 && strncmp( type_name, "errnoException", 14 ) == 0 ) return new errnoException;
+          else if ( type_name_len == 24 && strncmp( type_name, "InvalidArgumentException", 24 ) == 0 ) return new InvalidArgumentException;
+          else if ( type_name_len == 12 && strncmp( type_name, "MRCException", 12 ) == 0 ) return new MRCException;
+          else if ( type_name_len == 17 && strncmp( type_name, "ProtocolException", 17 ) == 0 ) return new ProtocolException;
+          else if ( type_name_len == 17 && strncmp( type_name, "RedirectException", 17 ) == 0 ) return new RedirectException;
+          else if ( type_name_len == 18 && strncmp( type_name, "StaleETagException", 18 ) == 0 ) return new StaleETagException;
           else return NULL;
         }
 
@@ -4507,42 +4508,47 @@ namespace org
           }
         }
 
-        virtual ::yield::concurrency::Request* createRequest( const char* type_name )
+        virtual ::yield::concurrency::Request*
+        createRequest
+        (
+          const char* type_name,
+          size_t type_name_len
+        )
         {
-          if ( strcmp( type_name, "closeRequest" ) == 0 ) return new closeRequest;
-          else if ( strcmp( type_name, "fsetattrRequest" ) == 0 ) return new fsetattrRequest;
-          else if ( strcmp( type_name, "ftruncateRequest" ) == 0 ) return new ftruncateRequest;
-          else if ( strcmp( type_name, "getattrRequest" ) == 0 ) return new getattrRequest;
-          else if ( strcmp( type_name, "getxattrRequest" ) == 0 ) return new getxattrRequest;
-          else if ( strcmp( type_name, "linkRequest" ) == 0 ) return new linkRequest;
-          else if ( strcmp( type_name, "listxattrRequest" ) == 0 ) return new listxattrRequest;
-          else if ( strcmp( type_name, "mkdirRequest" ) == 0 ) return new mkdirRequest;
-          else if ( strcmp( type_name, "openRequest" ) == 0 ) return new openRequest;
-          else if ( strcmp( type_name, "readdirRequest" ) == 0 ) return new readdirRequest;
-          else if ( strcmp( type_name, "readlinkRequest" ) == 0 ) return new readlinkRequest;
-          else if ( strcmp( type_name, "removexattrRequest" ) == 0 ) return new removexattrRequest;
-          else if ( strcmp( type_name, "renameRequest" ) == 0 ) return new renameRequest;
-          else if ( strcmp( type_name, "rmdirRequest" ) == 0 ) return new rmdirRequest;
-          else if ( strcmp( type_name, "setattrRequest" ) == 0 ) return new setattrRequest;
-          else if ( strcmp( type_name, "setxattrRequest" ) == 0 ) return new setxattrRequest;
-          else if ( strcmp( type_name, "statvfsRequest" ) == 0 ) return new statvfsRequest;
-          else if ( strcmp( type_name, "symlinkRequest" ) == 0 ) return new symlinkRequest;
-          else if ( strcmp( type_name, "unlinkRequest" ) == 0 ) return new unlinkRequest;
-          else if ( strcmp( type_name, "xtreemfs_checkpointRequest" ) == 0 ) return new xtreemfs_checkpointRequest;
-          else if ( strcmp( type_name, "xtreemfs_check_file_existsRequest" ) == 0 ) return new xtreemfs_check_file_existsRequest;
-          else if ( strcmp( type_name, "xtreemfs_dump_databaseRequest" ) == 0 ) return new xtreemfs_dump_databaseRequest;
-          else if ( strcmp( type_name, "xtreemfs_get_suitable_osdsRequest" ) == 0 ) return new xtreemfs_get_suitable_osdsRequest;
-          else if ( strcmp( type_name, "xtreemfs_internal_debugRequest" ) == 0 ) return new xtreemfs_internal_debugRequest;
-          else if ( strcmp( type_name, "xtreemfs_lsvolRequest" ) == 0 ) return new xtreemfs_lsvolRequest;
-          else if ( strcmp( type_name, "xtreemfs_mkvolRequest" ) == 0 ) return new xtreemfs_mkvolRequest;
-          else if ( strcmp( type_name, "xtreemfs_renew_capabilityRequest" ) == 0 ) return new xtreemfs_renew_capabilityRequest;
-          else if ( strcmp( type_name, "xtreemfs_replica_addRequest" ) == 0 ) return new xtreemfs_replica_addRequest;
-          else if ( strcmp( type_name, "xtreemfs_replica_listRequest" ) == 0 ) return new xtreemfs_replica_listRequest;
-          else if ( strcmp( type_name, "xtreemfs_replica_removeRequest" ) == 0 ) return new xtreemfs_replica_removeRequest;
-          else if ( strcmp( type_name, "xtreemfs_restore_databaseRequest" ) == 0 ) return new xtreemfs_restore_databaseRequest;
-          else if ( strcmp( type_name, "xtreemfs_restore_fileRequest" ) == 0 ) return new xtreemfs_restore_fileRequest;
-          else if ( strcmp( type_name, "xtreemfs_rmvolRequest" ) == 0 ) return new xtreemfs_rmvolRequest;
-          else if ( strcmp( type_name, "xtreemfs_shutdownRequest" ) == 0 ) return new xtreemfs_shutdownRequest;
+          if ( type_name_len == 12 && strncmp( type_name, "closeRequest", 12 ) == 0 ) return new closeRequest;
+          else if ( type_name_len == 15 && strncmp( type_name, "fsetattrRequest", 15 ) == 0 ) return new fsetattrRequest;
+          else if ( type_name_len == 16 && strncmp( type_name, "ftruncateRequest", 16 ) == 0 ) return new ftruncateRequest;
+          else if ( type_name_len == 14 && strncmp( type_name, "getattrRequest", 14 ) == 0 ) return new getattrRequest;
+          else if ( type_name_len == 15 && strncmp( type_name, "getxattrRequest", 15 ) == 0 ) return new getxattrRequest;
+          else if ( type_name_len == 11 && strncmp( type_name, "linkRequest", 11 ) == 0 ) return new linkRequest;
+          else if ( type_name_len == 16 && strncmp( type_name, "listxattrRequest", 16 ) == 0 ) return new listxattrRequest;
+          else if ( type_name_len == 12 && strncmp( type_name, "mkdirRequest", 12 ) == 0 ) return new mkdirRequest;
+          else if ( type_name_len == 11 && strncmp( type_name, "openRequest", 11 ) == 0 ) return new openRequest;
+          else if ( type_name_len == 14 && strncmp( type_name, "readdirRequest", 14 ) == 0 ) return new readdirRequest;
+          else if ( type_name_len == 15 && strncmp( type_name, "readlinkRequest", 15 ) == 0 ) return new readlinkRequest;
+          else if ( type_name_len == 18 && strncmp( type_name, "removexattrRequest", 18 ) == 0 ) return new removexattrRequest;
+          else if ( type_name_len == 13 && strncmp( type_name, "renameRequest", 13 ) == 0 ) return new renameRequest;
+          else if ( type_name_len == 12 && strncmp( type_name, "rmdirRequest", 12 ) == 0 ) return new rmdirRequest;
+          else if ( type_name_len == 14 && strncmp( type_name, "setattrRequest", 14 ) == 0 ) return new setattrRequest;
+          else if ( type_name_len == 15 && strncmp( type_name, "setxattrRequest", 15 ) == 0 ) return new setxattrRequest;
+          else if ( type_name_len == 14 && strncmp( type_name, "statvfsRequest", 14 ) == 0 ) return new statvfsRequest;
+          else if ( type_name_len == 14 && strncmp( type_name, "symlinkRequest", 14 ) == 0 ) return new symlinkRequest;
+          else if ( type_name_len == 13 && strncmp( type_name, "unlinkRequest", 13 ) == 0 ) return new unlinkRequest;
+          else if ( type_name_len == 26 && strncmp( type_name, "xtreemfs_checkpointRequest", 26 ) == 0 ) return new xtreemfs_checkpointRequest;
+          else if ( type_name_len == 33 && strncmp( type_name, "xtreemfs_check_file_existsRequest", 33 ) == 0 ) return new xtreemfs_check_file_existsRequest;
+          else if ( type_name_len == 29 && strncmp( type_name, "xtreemfs_dump_databaseRequest", 29 ) == 0 ) return new xtreemfs_dump_databaseRequest;
+          else if ( type_name_len == 33 && strncmp( type_name, "xtreemfs_get_suitable_osdsRequest", 33 ) == 0 ) return new xtreemfs_get_suitable_osdsRequest;
+          else if ( type_name_len == 30 && strncmp( type_name, "xtreemfs_internal_debugRequest", 30 ) == 0 ) return new xtreemfs_internal_debugRequest;
+          else if ( type_name_len == 21 && strncmp( type_name, "xtreemfs_lsvolRequest", 21 ) == 0 ) return new xtreemfs_lsvolRequest;
+          else if ( type_name_len == 21 && strncmp( type_name, "xtreemfs_mkvolRequest", 21 ) == 0 ) return new xtreemfs_mkvolRequest;
+          else if ( type_name_len == 32 && strncmp( type_name, "xtreemfs_renew_capabilityRequest", 32 ) == 0 ) return new xtreemfs_renew_capabilityRequest;
+          else if ( type_name_len == 27 && strncmp( type_name, "xtreemfs_replica_addRequest", 27 ) == 0 ) return new xtreemfs_replica_addRequest;
+          else if ( type_name_len == 28 && strncmp( type_name, "xtreemfs_replica_listRequest", 28 ) == 0 ) return new xtreemfs_replica_listRequest;
+          else if ( type_name_len == 30 && strncmp( type_name, "xtreemfs_replica_removeRequest", 30 ) == 0 ) return new xtreemfs_replica_removeRequest;
+          else if ( type_name_len == 32 && strncmp( type_name, "xtreemfs_restore_databaseRequest", 32 ) == 0 ) return new xtreemfs_restore_databaseRequest;
+          else if ( type_name_len == 28 && strncmp( type_name, "xtreemfs_restore_fileRequest", 28 ) == 0 ) return new xtreemfs_restore_fileRequest;
+          else if ( type_name_len == 21 && strncmp( type_name, "xtreemfs_rmvolRequest", 21 ) == 0 ) return new xtreemfs_rmvolRequest;
+          else if ( type_name_len == 24 && strncmp( type_name, "xtreemfs_shutdownRequest", 24 ) == 0 ) return new xtreemfs_shutdownRequest;
           else return NULL;
         }
 
@@ -4588,42 +4594,47 @@ namespace org
           }
         }
 
-        virtual ::yield::concurrency::Response* createResponse( const char* type_name )
+        virtual ::yield::concurrency::Response*
+        createResponse
+        (
+          const char* type_name,
+          size_t type_name_len
+        )
         {
-          if ( strcmp( type_name, "closeResponse" ) == 0 ) return new closeResponse;
-          else if ( strcmp( type_name, "fsetattrResponse" ) == 0 ) return new fsetattrResponse;
-          else if ( strcmp( type_name, "ftruncateResponse" ) == 0 ) return new ftruncateResponse;
-          else if ( strcmp( type_name, "getattrResponse" ) == 0 ) return new getattrResponse;
-          else if ( strcmp( type_name, "getxattrResponse" ) == 0 ) return new getxattrResponse;
-          else if ( strcmp( type_name, "linkResponse" ) == 0 ) return new linkResponse;
-          else if ( strcmp( type_name, "listxattrResponse" ) == 0 ) return new listxattrResponse;
-          else if ( strcmp( type_name, "mkdirResponse" ) == 0 ) return new mkdirResponse;
-          else if ( strcmp( type_name, "openResponse" ) == 0 ) return new openResponse;
-          else if ( strcmp( type_name, "readdirResponse" ) == 0 ) return new readdirResponse;
-          else if ( strcmp( type_name, "readlinkResponse" ) == 0 ) return new readlinkResponse;
-          else if ( strcmp( type_name, "removexattrResponse" ) == 0 ) return new removexattrResponse;
-          else if ( strcmp( type_name, "renameResponse" ) == 0 ) return new renameResponse;
-          else if ( strcmp( type_name, "rmdirResponse" ) == 0 ) return new rmdirResponse;
-          else if ( strcmp( type_name, "setattrResponse" ) == 0 ) return new setattrResponse;
-          else if ( strcmp( type_name, "setxattrResponse" ) == 0 ) return new setxattrResponse;
-          else if ( strcmp( type_name, "statvfsResponse" ) == 0 ) return new statvfsResponse;
-          else if ( strcmp( type_name, "symlinkResponse" ) == 0 ) return new symlinkResponse;
-          else if ( strcmp( type_name, "unlinkResponse" ) == 0 ) return new unlinkResponse;
-          else if ( strcmp( type_name, "xtreemfs_checkpointResponse" ) == 0 ) return new xtreemfs_checkpointResponse;
-          else if ( strcmp( type_name, "xtreemfs_check_file_existsResponse" ) == 0 ) return new xtreemfs_check_file_existsResponse;
-          else if ( strcmp( type_name, "xtreemfs_dump_databaseResponse" ) == 0 ) return new xtreemfs_dump_databaseResponse;
-          else if ( strcmp( type_name, "xtreemfs_get_suitable_osdsResponse" ) == 0 ) return new xtreemfs_get_suitable_osdsResponse;
-          else if ( strcmp( type_name, "xtreemfs_internal_debugResponse" ) == 0 ) return new xtreemfs_internal_debugResponse;
-          else if ( strcmp( type_name, "xtreemfs_lsvolResponse" ) == 0 ) return new xtreemfs_lsvolResponse;
-          else if ( strcmp( type_name, "xtreemfs_mkvolResponse" ) == 0 ) return new xtreemfs_mkvolResponse;
-          else if ( strcmp( type_name, "xtreemfs_renew_capabilityResponse" ) == 0 ) return new xtreemfs_renew_capabilityResponse;
-          else if ( strcmp( type_name, "xtreemfs_replica_addResponse" ) == 0 ) return new xtreemfs_replica_addResponse;
-          else if ( strcmp( type_name, "xtreemfs_replica_listResponse" ) == 0 ) return new xtreemfs_replica_listResponse;
-          else if ( strcmp( type_name, "xtreemfs_replica_removeResponse" ) == 0 ) return new xtreemfs_replica_removeResponse;
-          else if ( strcmp( type_name, "xtreemfs_restore_databaseResponse" ) == 0 ) return new xtreemfs_restore_databaseResponse;
-          else if ( strcmp( type_name, "xtreemfs_restore_fileResponse" ) == 0 ) return new xtreemfs_restore_fileResponse;
-          else if ( strcmp( type_name, "xtreemfs_rmvolResponse" ) == 0 ) return new xtreemfs_rmvolResponse;
-          else if ( strcmp( type_name, "xtreemfs_shutdownResponse" ) == 0 ) return new xtreemfs_shutdownResponse;
+          if ( type_name_len == 13 && strncmp( type_name, "closeResponse", 13 ) == 0 ) return new closeResponse;
+          else if ( type_name_len == 16 && strncmp( type_name, "fsetattrResponse", 16 ) == 0 ) return new fsetattrResponse;
+          else if ( type_name_len == 17 && strncmp( type_name, "ftruncateResponse", 17 ) == 0 ) return new ftruncateResponse;
+          else if ( type_name_len == 15 && strncmp( type_name, "getattrResponse", 15 ) == 0 ) return new getattrResponse;
+          else if ( type_name_len == 16 && strncmp( type_name, "getxattrResponse", 16 ) == 0 ) return new getxattrResponse;
+          else if ( type_name_len == 12 && strncmp( type_name, "linkResponse", 12 ) == 0 ) return new linkResponse;
+          else if ( type_name_len == 17 && strncmp( type_name, "listxattrResponse", 17 ) == 0 ) return new listxattrResponse;
+          else if ( type_name_len == 13 && strncmp( type_name, "mkdirResponse", 13 ) == 0 ) return new mkdirResponse;
+          else if ( type_name_len == 12 && strncmp( type_name, "openResponse", 12 ) == 0 ) return new openResponse;
+          else if ( type_name_len == 15 && strncmp( type_name, "readdirResponse", 15 ) == 0 ) return new readdirResponse;
+          else if ( type_name_len == 16 && strncmp( type_name, "readlinkResponse", 16 ) == 0 ) return new readlinkResponse;
+          else if ( type_name_len == 19 && strncmp( type_name, "removexattrResponse", 19 ) == 0 ) return new removexattrResponse;
+          else if ( type_name_len == 14 && strncmp( type_name, "renameResponse", 14 ) == 0 ) return new renameResponse;
+          else if ( type_name_len == 13 && strncmp( type_name, "rmdirResponse", 13 ) == 0 ) return new rmdirResponse;
+          else if ( type_name_len == 15 && strncmp( type_name, "setattrResponse", 15 ) == 0 ) return new setattrResponse;
+          else if ( type_name_len == 16 && strncmp( type_name, "setxattrResponse", 16 ) == 0 ) return new setxattrResponse;
+          else if ( type_name_len == 15 && strncmp( type_name, "statvfsResponse", 15 ) == 0 ) return new statvfsResponse;
+          else if ( type_name_len == 15 && strncmp( type_name, "symlinkResponse", 15 ) == 0 ) return new symlinkResponse;
+          else if ( type_name_len == 14 && strncmp( type_name, "unlinkResponse", 14 ) == 0 ) return new unlinkResponse;
+          else if ( type_name_len == 27 && strncmp( type_name, "xtreemfs_checkpointResponse", 27 ) == 0 ) return new xtreemfs_checkpointResponse;
+          else if ( type_name_len == 34 && strncmp( type_name, "xtreemfs_check_file_existsResponse", 34 ) == 0 ) return new xtreemfs_check_file_existsResponse;
+          else if ( type_name_len == 30 && strncmp( type_name, "xtreemfs_dump_databaseResponse", 30 ) == 0 ) return new xtreemfs_dump_databaseResponse;
+          else if ( type_name_len == 34 && strncmp( type_name, "xtreemfs_get_suitable_osdsResponse", 34 ) == 0 ) return new xtreemfs_get_suitable_osdsResponse;
+          else if ( type_name_len == 31 && strncmp( type_name, "xtreemfs_internal_debugResponse", 31 ) == 0 ) return new xtreemfs_internal_debugResponse;
+          else if ( type_name_len == 22 && strncmp( type_name, "xtreemfs_lsvolResponse", 22 ) == 0 ) return new xtreemfs_lsvolResponse;
+          else if ( type_name_len == 22 && strncmp( type_name, "xtreemfs_mkvolResponse", 22 ) == 0 ) return new xtreemfs_mkvolResponse;
+          else if ( type_name_len == 33 && strncmp( type_name, "xtreemfs_renew_capabilityResponse", 33 ) == 0 ) return new xtreemfs_renew_capabilityResponse;
+          else if ( type_name_len == 28 && strncmp( type_name, "xtreemfs_replica_addResponse", 28 ) == 0 ) return new xtreemfs_replica_addResponse;
+          else if ( type_name_len == 29 && strncmp( type_name, "xtreemfs_replica_listResponse", 29 ) == 0 ) return new xtreemfs_replica_listResponse;
+          else if ( type_name_len == 31 && strncmp( type_name, "xtreemfs_replica_removeResponse", 31 ) == 0 ) return new xtreemfs_replica_removeResponse;
+          else if ( type_name_len == 33 && strncmp( type_name, "xtreemfs_restore_databaseResponse", 33 ) == 0 ) return new xtreemfs_restore_databaseResponse;
+          else if ( type_name_len == 29 && strncmp( type_name, "xtreemfs_restore_fileResponse", 29 ) == 0 ) return new xtreemfs_restore_fileResponse;
+          else if ( type_name_len == 22 && strncmp( type_name, "xtreemfs_rmvolResponse", 22 ) == 0 ) return new xtreemfs_rmvolResponse;
+          else if ( type_name_len == 25 && strncmp( type_name, "xtreemfs_shutdownResponse", 25 ) == 0 ) return new xtreemfs_shutdownResponse;
           else return NULL;
         }
 

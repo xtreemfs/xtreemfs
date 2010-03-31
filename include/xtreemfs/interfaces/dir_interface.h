@@ -1,5 +1,5 @@
-#ifndef _1319198355_H_
-#define _1319198355_H_
+#ifndef _2127724562_H_
+#define _2127724562_H_
 
 
 #include "constants.h"
@@ -158,7 +158,7 @@ namespace org
 
       class ServiceDataMap
           : public ::yidl::runtime::Map,
-            public map<::yidl::runtime::Marshaller::StringKey,string>
+            public map< ::yidl::runtime::Marshaller::StringKey,string >
       {
       public:
         virtual ~ServiceDataMap() { }
@@ -178,7 +178,7 @@ namespace org
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
           ::yidl::runtime::Marshaller::StringKey* key
-            = static_cast<::yidl::runtime::Marshaller::StringKey*>
+            = static_cast< ::yidl::runtime::Marshaller::StringKey* >
               (
                 unmarshaller.read( ::yidl::runtime::Marshaller::Key::TYPE_STRING )
               );
@@ -1843,14 +1843,15 @@ namespace org
         virtual ::yield::concurrency::Exception*
         createException
         (
-          const char* type_name
+          const char* type_name,
+          size_t type_name_len
         )
         {
-          if ( strcmp( type_name, "ConcurrentModificationException" ) == 0 ) return new ConcurrentModificationException;
-          else if ( strcmp( type_name, "DIRException" ) == 0 ) return new DIRException;
-          else if ( strcmp( type_name, "InvalidArgumentException" ) == 0 ) return new InvalidArgumentException;
-          else if ( strcmp( type_name, "ProtocolException" ) == 0 ) return new ProtocolException;
-          else if ( strcmp( type_name, "RedirectException" ) == 0 ) return new RedirectException;
+          if ( type_name_len == 31 && strncmp( type_name, "ConcurrentModificationException", 31 ) == 0 ) return new ConcurrentModificationException;
+          else if ( type_name_len == 12 && strncmp( type_name, "DIRException", 12 ) == 0 ) return new DIRException;
+          else if ( type_name_len == 24 && strncmp( type_name, "InvalidArgumentException", 24 ) == 0 ) return new InvalidArgumentException;
+          else if ( type_name_len == 17 && strncmp( type_name, "ProtocolException", 17 ) == 0 ) return new ProtocolException;
+          else if ( type_name_len == 17 && strncmp( type_name, "RedirectException", 17 ) == 0 ) return new RedirectException;
           else return NULL;
         }
 
@@ -1875,21 +1876,26 @@ namespace org
           }
         }
 
-        virtual ::yield::concurrency::Request* createRequest( const char* type_name )
+        virtual ::yield::concurrency::Request*
+        createRequest
+        (
+          const char* type_name,
+          size_t type_name_len
+        )
         {
-          if ( strcmp( type_name, "xtreemfs_address_mappings_getRequest" ) == 0 ) return new xtreemfs_address_mappings_getRequest;
-          else if ( strcmp( type_name, "xtreemfs_address_mappings_removeRequest" ) == 0 ) return new xtreemfs_address_mappings_removeRequest;
-          else if ( strcmp( type_name, "xtreemfs_address_mappings_setRequest" ) == 0 ) return new xtreemfs_address_mappings_setRequest;
-          else if ( strcmp( type_name, "xtreemfs_checkpointRequest" ) == 0 ) return new xtreemfs_checkpointRequest;
-          else if ( strcmp( type_name, "xtreemfs_discover_dirRequest" ) == 0 ) return new xtreemfs_discover_dirRequest;
-          else if ( strcmp( type_name, "xtreemfs_global_time_s_getRequest" ) == 0 ) return new xtreemfs_global_time_s_getRequest;
-          else if ( strcmp( type_name, "xtreemfs_service_deregisterRequest" ) == 0 ) return new xtreemfs_service_deregisterRequest;
-          else if ( strcmp( type_name, "xtreemfs_service_get_by_nameRequest" ) == 0 ) return new xtreemfs_service_get_by_nameRequest;
-          else if ( strcmp( type_name, "xtreemfs_service_get_by_typeRequest" ) == 0 ) return new xtreemfs_service_get_by_typeRequest;
-          else if ( strcmp( type_name, "xtreemfs_service_get_by_uuidRequest" ) == 0 ) return new xtreemfs_service_get_by_uuidRequest;
-          else if ( strcmp( type_name, "xtreemfs_service_offlineRequest" ) == 0 ) return new xtreemfs_service_offlineRequest;
-          else if ( strcmp( type_name, "xtreemfs_service_registerRequest" ) == 0 ) return new xtreemfs_service_registerRequest;
-          else if ( strcmp( type_name, "xtreemfs_shutdownRequest" ) == 0 ) return new xtreemfs_shutdownRequest;
+          if ( type_name_len == 36 && strncmp( type_name, "xtreemfs_address_mappings_getRequest", 36 ) == 0 ) return new xtreemfs_address_mappings_getRequest;
+          else if ( type_name_len == 39 && strncmp( type_name, "xtreemfs_address_mappings_removeRequest", 39 ) == 0 ) return new xtreemfs_address_mappings_removeRequest;
+          else if ( type_name_len == 36 && strncmp( type_name, "xtreemfs_address_mappings_setRequest", 36 ) == 0 ) return new xtreemfs_address_mappings_setRequest;
+          else if ( type_name_len == 26 && strncmp( type_name, "xtreemfs_checkpointRequest", 26 ) == 0 ) return new xtreemfs_checkpointRequest;
+          else if ( type_name_len == 28 && strncmp( type_name, "xtreemfs_discover_dirRequest", 28 ) == 0 ) return new xtreemfs_discover_dirRequest;
+          else if ( type_name_len == 33 && strncmp( type_name, "xtreemfs_global_time_s_getRequest", 33 ) == 0 ) return new xtreemfs_global_time_s_getRequest;
+          else if ( type_name_len == 34 && strncmp( type_name, "xtreemfs_service_deregisterRequest", 34 ) == 0 ) return new xtreemfs_service_deregisterRequest;
+          else if ( type_name_len == 35 && strncmp( type_name, "xtreemfs_service_get_by_nameRequest", 35 ) == 0 ) return new xtreemfs_service_get_by_nameRequest;
+          else if ( type_name_len == 35 && strncmp( type_name, "xtreemfs_service_get_by_typeRequest", 35 ) == 0 ) return new xtreemfs_service_get_by_typeRequest;
+          else if ( type_name_len == 35 && strncmp( type_name, "xtreemfs_service_get_by_uuidRequest", 35 ) == 0 ) return new xtreemfs_service_get_by_uuidRequest;
+          else if ( type_name_len == 31 && strncmp( type_name, "xtreemfs_service_offlineRequest", 31 ) == 0 ) return new xtreemfs_service_offlineRequest;
+          else if ( type_name_len == 32 && strncmp( type_name, "xtreemfs_service_registerRequest", 32 ) == 0 ) return new xtreemfs_service_registerRequest;
+          else if ( type_name_len == 24 && strncmp( type_name, "xtreemfs_shutdownRequest", 24 ) == 0 ) return new xtreemfs_shutdownRequest;
           else return NULL;
         }
 
@@ -1914,21 +1920,26 @@ namespace org
           }
         }
 
-        virtual ::yield::concurrency::Response* createResponse( const char* type_name )
+        virtual ::yield::concurrency::Response*
+        createResponse
+        (
+          const char* type_name,
+          size_t type_name_len
+        )
         {
-          if ( strcmp( type_name, "xtreemfs_address_mappings_getResponse" ) == 0 ) return new xtreemfs_address_mappings_getResponse;
-          else if ( strcmp( type_name, "xtreemfs_address_mappings_removeResponse" ) == 0 ) return new xtreemfs_address_mappings_removeResponse;
-          else if ( strcmp( type_name, "xtreemfs_address_mappings_setResponse" ) == 0 ) return new xtreemfs_address_mappings_setResponse;
-          else if ( strcmp( type_name, "xtreemfs_checkpointResponse" ) == 0 ) return new xtreemfs_checkpointResponse;
-          else if ( strcmp( type_name, "xtreemfs_discover_dirResponse" ) == 0 ) return new xtreemfs_discover_dirResponse;
-          else if ( strcmp( type_name, "xtreemfs_global_time_s_getResponse" ) == 0 ) return new xtreemfs_global_time_s_getResponse;
-          else if ( strcmp( type_name, "xtreemfs_service_deregisterResponse" ) == 0 ) return new xtreemfs_service_deregisterResponse;
-          else if ( strcmp( type_name, "xtreemfs_service_get_by_nameResponse" ) == 0 ) return new xtreemfs_service_get_by_nameResponse;
-          else if ( strcmp( type_name, "xtreemfs_service_get_by_typeResponse" ) == 0 ) return new xtreemfs_service_get_by_typeResponse;
-          else if ( strcmp( type_name, "xtreemfs_service_get_by_uuidResponse" ) == 0 ) return new xtreemfs_service_get_by_uuidResponse;
-          else if ( strcmp( type_name, "xtreemfs_service_offlineResponse" ) == 0 ) return new xtreemfs_service_offlineResponse;
-          else if ( strcmp( type_name, "xtreemfs_service_registerResponse" ) == 0 ) return new xtreemfs_service_registerResponse;
-          else if ( strcmp( type_name, "xtreemfs_shutdownResponse" ) == 0 ) return new xtreemfs_shutdownResponse;
+          if ( type_name_len == 37 && strncmp( type_name, "xtreemfs_address_mappings_getResponse", 37 ) == 0 ) return new xtreemfs_address_mappings_getResponse;
+          else if ( type_name_len == 40 && strncmp( type_name, "xtreemfs_address_mappings_removeResponse", 40 ) == 0 ) return new xtreemfs_address_mappings_removeResponse;
+          else if ( type_name_len == 37 && strncmp( type_name, "xtreemfs_address_mappings_setResponse", 37 ) == 0 ) return new xtreemfs_address_mappings_setResponse;
+          else if ( type_name_len == 27 && strncmp( type_name, "xtreemfs_checkpointResponse", 27 ) == 0 ) return new xtreemfs_checkpointResponse;
+          else if ( type_name_len == 29 && strncmp( type_name, "xtreemfs_discover_dirResponse", 29 ) == 0 ) return new xtreemfs_discover_dirResponse;
+          else if ( type_name_len == 34 && strncmp( type_name, "xtreemfs_global_time_s_getResponse", 34 ) == 0 ) return new xtreemfs_global_time_s_getResponse;
+          else if ( type_name_len == 35 && strncmp( type_name, "xtreemfs_service_deregisterResponse", 35 ) == 0 ) return new xtreemfs_service_deregisterResponse;
+          else if ( type_name_len == 36 && strncmp( type_name, "xtreemfs_service_get_by_nameResponse", 36 ) == 0 ) return new xtreemfs_service_get_by_nameResponse;
+          else if ( type_name_len == 36 && strncmp( type_name, "xtreemfs_service_get_by_typeResponse", 36 ) == 0 ) return new xtreemfs_service_get_by_typeResponse;
+          else if ( type_name_len == 36 && strncmp( type_name, "xtreemfs_service_get_by_uuidResponse", 36 ) == 0 ) return new xtreemfs_service_get_by_uuidResponse;
+          else if ( type_name_len == 32 && strncmp( type_name, "xtreemfs_service_offlineResponse", 32 ) == 0 ) return new xtreemfs_service_offlineResponse;
+          else if ( type_name_len == 33 && strncmp( type_name, "xtreemfs_service_registerResponse", 33 ) == 0 ) return new xtreemfs_service_registerResponse;
+          else if ( type_name_len == 25 && strncmp( type_name, "xtreemfs_shutdownResponse", 25 ) == 0 ) return new xtreemfs_shutdownResponse;
           else return NULL;
         }
 
@@ -2373,7 +2384,7 @@ namespace org
           return __request_handler;
         }
 
-
+        // DIRInterface
         virtual void
         xtreemfs_address_mappings_get
         (

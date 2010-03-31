@@ -1,5 +1,5 @@
-#ifndef _2018174634_H_
-#define _2018174634_H_
+#ifndef _1379328260_H_
+#define _1379328260_H_
 
 
 #include "yidl.h"
@@ -11,10 +11,6 @@ namespace org
   {
     namespace interfaces
     {
-      const static char* ONCRPC_SCHEME = "oncrpc";
-      const static char* ONCRPCG_SCHEME = "oncrpcg";
-      const static char* ONCRPCS_SCHEME = "oncrpcs";
-      const static char* ONCRPCU_SCHEME = "oncrpcu";
       const static char* REPL_UPDATE_PC_NONE = "";
       const static char* REPL_UPDATE_PC_RONLY = "ronly";
       const static char* REPL_UPDATE_PC_WARONE = "WaR1";
