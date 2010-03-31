@@ -34,6 +34,7 @@ import java.util.Random;
 import java.util.UUID;
 
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
@@ -120,7 +121,7 @@ public class dir_replication_test {
         
         // master connection setup
         RPCNIOSocketClient rpcClient = 
-            new RPCNIOSocketClient(null, 2*60*1000, 5*60*1000);
+            new RPCNIOSocketClient(null, 2*60*1000, 5*60*1000, Client.getExceptionParsers());
         rpcClient.start();
         rpcClient.waitForStartup();
         

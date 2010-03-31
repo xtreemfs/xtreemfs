@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.monitoring.NumberMonitoring;
@@ -58,7 +59,7 @@ abstract class Reader implements Runnable {
         this.random = random;
         this.threadNo = threadNo;
 
-        client = new RPCNIOSocketClient(null, 10000, 5 * 60 * 1000);
+        client = new RPCNIOSocketClient(null, 10000, 5 * 60 * 1000, Client.getExceptionParsers());
         client.start();
         client.waitForStartup();
         

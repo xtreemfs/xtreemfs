@@ -626,12 +626,12 @@ public class RandomAccessFile {
             }
         } catch (UnknownUUIDException e) {
             // ignore; should not happen
-        } catch (IOException e) {
-            throw new IOException("At least one OSD could not be contacted to replicate the file.", e);
         } catch (ONCRPCException ex) {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
             throw new IOException("communication failure", ex);
+        } catch (IOException e) {
+            throw new IOException("At least one OSD could not be contacted to replicate the file.", e);
         } catch (InterruptedException e) {
             // ignore
         }

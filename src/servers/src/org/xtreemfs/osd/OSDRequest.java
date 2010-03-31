@@ -27,7 +27,9 @@ package org.xtreemfs.osd;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
@@ -100,7 +102,7 @@ public final class OSDRequest {
     public void sendInternalServerError(Throwable cause) {
         if (getRpcRequest() != null) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,"internal server error:"+cause);
-            getRpcRequest().sendInternalServerError(cause, new errnoException());
+            getRpcRequest().sendException(new errnoException(ErrNo.EIO, cause.toString(), OutputUtils.stackTraceToString(cause)));
         } else {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "internal server error on internal request: %s",
                 cause.toString());

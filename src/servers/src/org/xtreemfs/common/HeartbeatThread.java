@@ -275,8 +275,6 @@ public class HeartbeatThread extends LifeCycleThread {
 
                     } catch (IOException ex) {
                         Logging.logError(Logging.LEVEL_ERROR, this, ex);
-                    } catch (ONCRPCException ex) {
-                        Logging.logError(Logging.LEVEL_ERROR, this, ex);
                     } catch (InterruptedException ex) {
                         quit = true;
                         break;

@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseListener;
@@ -60,7 +61,7 @@ public class RPCPingPong {
 
         InetSocketAddress srv = new InetSocketAddress(hostname, 32640);
 
-        RPCNIOSocketClient client = new RPCNIOSocketClient(null, 15000, 60000);
+        RPCNIOSocketClient client = new RPCNIOSocketClient(null, 15000, 60000, Client.getExceptionParsers());
 
         client.start();
         client.waitForStartup();

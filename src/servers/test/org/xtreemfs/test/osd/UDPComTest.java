@@ -81,6 +81,7 @@ public class UDPComTest extends TestCase {
         ONCRPCRequestHeader rq = new ONCRPCRequestHeader(1, 1, 1, payload.getTag());
 
         ONCRPCBufferWriter wr = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
+        wr.writeInt32(null, 0);
         rq.marshal(wr);
         payload.marshal(wr);
         wr.flip();
@@ -119,6 +120,7 @@ public class UDPComTest extends TestCase {
                 ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS);
 
         ONCRPCBufferWriter wr = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
+        wr.writeInt32(null, 0);
         rq.marshal(wr);
         payload.marshal(wr);
         wr.flip();

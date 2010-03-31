@@ -11,12 +11,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.ONCRPCServiceURL;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.FileCredentialsSet;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.UserCredentials;
@@ -48,7 +48,7 @@ public class mrc_rm {
             ONCRPCServiceURL mrcUrl = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,MRCInterface.ONC_RPC_PORT_DEFAULT);
             String path = arguments.get(1);
 
-            RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(null, 15*1000, 5*60*1000);
+            RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(null, 15*1000, 5*60*1000, Client.getExceptionParsers());
             rpcClient.start();
             rpcClient.waitForStartup();
 

@@ -232,7 +232,7 @@ public class xtfs_repl {
             this.credentials = new UserCredentials("root", groupIDs, "");
             
             // client
-            resolverClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
+            resolverClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000, Client.getExceptionParsers());
             resolverClient.start();
             resolverClient.waitForStartup();
             resolver = UUIDResolver.startNonSingelton(new DIRClient(resolverClient, dirAddress), 1000,

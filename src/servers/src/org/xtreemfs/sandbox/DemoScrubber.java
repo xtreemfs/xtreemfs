@@ -40,6 +40,7 @@ import java.util.concurrent.Executors;
 import org.xtreemfs.common.TimeServerClient;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.VersionManagement;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.ONCRPCServiceURL;
@@ -317,7 +318,7 @@ public class DemoScrubber implements DemoScrubberFileInfo.FileScrubbedListener {
             trustedCAsPass, SSLOptions.JKS_CONTAINER, false) : null;
 
         // resolve volume MRC
-        RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(sslOptions, 30000, 5*60000);
+        RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(sslOptions, 30000, 5*60000, Client.getExceptionParsers());
         rpcClient.start();
         rpcClient.waitForStartup();
         DIRClient dirClient = new DIRClient(rpcClient,dirAddr);

@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
@@ -52,7 +53,7 @@ public class uuidmappings {
                 System.exit(1);
             }
 
-            final RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(null, 10000, 60000);
+            final RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(null, 10000, 60000, Client.getExceptionParsers());
             rpcClient.start();
             rpcClient.waitForStartup();
 

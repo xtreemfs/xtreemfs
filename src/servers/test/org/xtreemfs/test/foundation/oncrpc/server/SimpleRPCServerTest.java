@@ -168,7 +168,7 @@ public class SimpleRPCServerTest extends TestCase {
                         System.out.println("response size is "+rpcResponse.getXDRSize());
                         rq.sendResponse(rpcResponse);
                     } else {
-                        rq.sendGarbageArgs(null, new ProtocolException());
+                        rq.sendGarbageArgs();
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();

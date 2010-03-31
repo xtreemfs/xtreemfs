@@ -31,7 +31,6 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.UnresolvedAddressException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -41,8 +40,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -57,13 +54,13 @@ import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
-import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCError;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.interfaces.utils.exceptions.ONCRPCProtocolException;
 /**
  * 
  * @author bjko
@@ -101,6 +98,8 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     
     private final ConcurrentLinkedQueue<ServerConnection>  toBeEstablished;
 
+    private final RemoteExceptionParser[]                  interfaces;
+
     /**
      * on some platforms (e.g. FreeBSD 7.2 with openjdk6) Selector.select(int timeout)
      * returns immediately. If this problem is detected, the thread waits 25ms after each
@@ -108,9 +107,10 @@ public class RPCNIOSocketClient extends LifeCycleThread {
      */
     private boolean                                        brokenSelect;
     
-    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout)
+    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout, RemoteExceptionParser[] interfaces)
         throws IOException {
         super("RPC Client");
+        this.interfaces = interfaces;
         if (requestTimeout >= connectionTimeout - TIMEOUT_GRANULARITY * 2) {
             throw new IllegalArgumentException(
                 "request timeout must be smaller than connection timeout less " + TIMEOUT_GRANULARITY * 2
@@ -143,7 +143,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         try {
             sendRequest(server, rec);
         } catch (Throwable e) { // CancelledKeyException, RuntimeException (caused by missing TimeSyncThread)
-            e.printStackTrace();
+            //e.printStackTrace();
             listener.requestFailed(rec, new IOException(e));
         } 
     }
@@ -467,15 +467,31 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             rec.getListener().responseAvailable(rec);
         } else {
 
-            ONCRPCException exception = null;
-
             if (accept_stat <= ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR) {
                 //ONC RPC error message
-                exception = new ONCRPCError(accept_stat);
+                rec.getListener().requestFailed(rec, ONCRPCProtocolException.getException(accept_stat));
             } else {
                 //exception
                 try {
-                    if (accept_stat >= DIRInterface.getVersion() && (accept_stat < DIRInterface.getVersion()+100)) {
+                    ONCRPCException exception = null;
+                    for (RemoteExceptionParser interf : interfaces) {
+                        if (interf.canParseException(accept_stat)) {
+                            exception = interf.parseException(accept_stat, new XDRUnmarshaller(firstFragment));
+                        }
+                    }
+                    if (exception == null) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, this,"received invalid remote exception id %d",accept_stat);
+                        rec.getListener().requestFailed(rec, new IOException("received invalid remote exception with id "+accept_stat));
+                    } else {
+                        rec.getListener().remoteExceptionThrown(rec, exception);
+                    }
+                } catch (IOException ex) {
+                    rec.getListener().requestFailed(rec, ex);
+                } catch (Throwable ex) {
+                    rec.getListener().requestFailed(rec, new IOException("invalid exception data received: "+ex));
+                }
+
+                    /*if (accept_stat >= DIRInterface.getVersion() && (accept_stat < DIRInterface.getVersion()+100)) {
                         exception = DIRInterface.createException(accept_stat);
                     } else if (accept_stat >= MRCInterface.getVersion() && (accept_stat < MRCInterface.getVersion()+100)) {
                         exception = MRCInterface.createException(accept_stat);
@@ -483,20 +499,9 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                         exception = OSDInterface.createException(accept_stat);
                     } else {
                         throw new Exception();
-                    }
-                } catch (Exception ex) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, this,"received invalid remote exception id %d",accept_stat);
-                        exception = new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR, 0, "received invalid remote exception with id "+accept_stat);
-                }
-                assert(exception != null);
-                try {
-                    exception.unmarshal(new XDRUnmarshaller(firstFragment));
-                } catch (Throwable ex) {
-                    rec.getListener().requestFailed(rec, new IOException("invalid exception data received: "+ex));
-                    return;
-                }
+                    }*/
+
             }
-            rec.getListener().remoteExceptionThrown(rec, exception);
         }
     }
     

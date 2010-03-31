@@ -5,17 +5,15 @@
 package org.xtreemfs.sandbox;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.FileCredentials;
-import org.xtreemfs.interfaces.NettestInterface.send_bufferRequest;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
@@ -59,7 +57,7 @@ public class nettest {
 
             InetSocketAddress srv = new InetSocketAddress(hostname, port);
 
-            RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(null, 15000, 60000);
+            RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(null, 15000, 60000, Client.getExceptionParsers());
 
             rpcClient.start();
             rpcClient.waitForStartup();

@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.SSLOptions;
@@ -126,7 +127,7 @@ public class xtfs_mrcdbtool {
             
             SSLOptions sslOptions = protocol.startsWith("https") ? new SSLOptions(new FileInputStream(
                 c.stringValue), cp.stringValue, new FileInputStream(t.stringValue), tp.stringValue) : null;
-            rpcClient = new RPCNIOSocketClient(sslOptions, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE);
+            rpcClient = new RPCNIOSocketClient(sslOptions, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE, Client.getExceptionParsers());
             rpcClient.start();
             MRCClient client = new MRCClient(rpcClient, new InetSocketAddress(host, port));
             

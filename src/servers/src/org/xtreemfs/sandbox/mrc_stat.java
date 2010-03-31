@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.ONCRPCServiceURL;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
@@ -49,7 +50,7 @@ public class mrc_stat {
             ONCRPCServiceURL mrcUrl = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,MRCInterface.ONC_RPC_PORT_DEFAULT);
             String path = arguments.get(1);
 
-            RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(null, 15*1000, 5*60*1000);
+            RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(null, 15*1000, 5*60*1000, Client.getExceptionParsers());
             rpcClient.start();
             rpcClient.waitForStartup();
 

@@ -1,4 +1,4 @@
-/*  Copyright (c) 2009 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+/*  Copyright (c) 2010 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
     This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
     Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -22,27 +22,25 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.interfaces.utils;
+package org.xtreemfs.interfaces.utils.exceptions;
 
-import java.io.IOException;
+import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+
 
 
 /**
  *
  * @author bjko
  */
-public abstract class ONCRPCException extends IOException implements yidl.runtime.Struct {
+public class SystemErrorException extends ONCRPCProtocolException {
 
-    public ONCRPCException() {
-        super();
+    public SystemErrorException() {
+        super("system error (internal server error)");
     }
 
-    public ONCRPCException(String message) {
-        super(message);
-    }
-
-    public ONCRPCException(String message, Throwable cause) {
-        super(message,cause);
+    @Override
+    public int getAcceptStat() {
+        return ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR;
     }
 
 }

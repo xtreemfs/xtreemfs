@@ -43,6 +43,7 @@ import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
+import org.xtreemfs.interfaces.OSDInterface.errnoException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.osd.AdvisoryLock;
@@ -442,7 +443,8 @@ public class PreprocStage extends Stage {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, OutputUtils
                         .stackTraceToString(ex));
-            rpcRq.sendGarbageArgs(ex.toString(), new ProtocolException());
+            rpcRq.sendException(new errnoException(ErrNo.EINVAL, "invalid arguments: "+ex.toString(), OutputUtils
+                        .stackTraceToString(ex)));
             return false;
         }
         if (Logging.isDebug()) {

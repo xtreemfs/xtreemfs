@@ -132,8 +132,9 @@ public class VersionManagementTest extends TestCase {
     }
     
     protected void tearDown() throws Exception {
-        testEnv.shutdown();
         osdServer.shutdown();
+        testEnv.shutdown();
+        
     }
     
     public void testTruncate() throws Exception {

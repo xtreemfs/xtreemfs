@@ -36,6 +36,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.monitoring.Monitoring;
@@ -326,7 +327,7 @@ public class StressTest {
 
         // start important services
         // client
-        client = new RPCNIOSocketClient(null, 10000, 5 * 60 * 1000);
+        client = new RPCNIOSocketClient(null, 10000, 5 * 60 * 1000, Client.getExceptionParsers());
         client.start();
         client.waitForStartup();
         DIRClient dirClient = new DIRClient(client, dirAddress);

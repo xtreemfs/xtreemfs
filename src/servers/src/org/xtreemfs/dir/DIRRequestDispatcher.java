@@ -73,7 +73,6 @@ import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
-import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 
@@ -83,6 +82,8 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.xtreemfs.common.util.Nettest;
+import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.interfaces.DIRInterface.DIRException;
 import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 
 /**
@@ -360,35 +361,25 @@ public class DIRRequestDispatcher extends LifeCycleThread
         }
 
         if (hdr.getInterfaceVersion() != DIRInterface.getVersion()) {
-            rq.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,
-                ErrNo.EINVAL, "invalid version requested (requested: "+hdr.getInterfaceVersion()+" installed: "+
-                 DIRInterface.getVersion()+")"));
+            rq.sendProgMismatch();
             return;
         }
         
         // everything ok, find the right operation
         DIROperation op = registry.get(hdr.getProcedure());
         if (op == null) {
-            rq.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL,
-                ErrNo.EINVAL, "requested operation is not available on this DIR"));
+            rq.sendProcUnavail();
             return;
         }
         
         DIRRequest dirRq = new DIRRequest(rq);
         try {
             op.parseRPCMessage(dirRq);
-        } catch (Throwable ex) {
-            ex.printStackTrace();
-            rq.sendGarbageArgs(ex.toString(), new ProtocolException());
-            return;
-        }
-        
-        try {
             numRequests++;
             op.startRequest(dirRq);
         } catch (Throwable ex) {
             ex.printStackTrace();
-            rq.sendErrorCode(ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR);
+            rq.sendException(new DIRException(ErrNo.EIO, "internal server error: "+ex.toString(), OutputUtils.stackTraceToString(ex)));
             return;
         }
     }

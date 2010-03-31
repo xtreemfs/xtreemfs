@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.ONCRPCServiceURL;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -166,12 +167,12 @@ public class xtfs_cleanup_osd {
             if (remove && restore) error("Zombies cannot be deleted and restored at the same time!");
             
             // connect to the OSD
-            osdClient = new RPCNIOSocketClient(sslOptions, 10000, 5*60*1000);
+            osdClient = new RPCNIOSocketClient(sslOptions, 10000, 5*60*1000, Client.getExceptionParsers());
             osdClient.start();
             osdClient.waitForStartup();
             osd = new OSDClient(osdClient);
             
-            dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5*60*1000);
+            dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5*60*1000, Client.getExceptionParsers());
             dirClient.start();
             dirClient.waitForStartup();
             dir = new DIRClient(dirClient,dirAddr);

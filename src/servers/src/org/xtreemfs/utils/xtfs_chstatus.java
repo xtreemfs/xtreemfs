@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.VersionManagement;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.ONCRPCServiceURL;
 import org.xtreemfs.dir.client.DIRClient;
@@ -108,7 +108,7 @@ public class xtfs_chstatus {
 
             final String newStatus = (arguments.size() == 2) ? arguments.get(1) : null;
 
-            RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(sslOptions, 15*100, 5*60*1000);
+            RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(sslOptions, 15*100, 5*60*1000, Client.getExceptionParsers());
             rpcClient.start();
             rpcClient.waitForStartup();
             DIRClient dc = new DIRClient(rpcClient, dirAddr);

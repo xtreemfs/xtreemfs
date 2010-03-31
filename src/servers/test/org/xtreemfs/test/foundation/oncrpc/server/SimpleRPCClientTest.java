@@ -5,16 +5,13 @@
 
 package org.xtreemfs.test.foundation.oncrpc.server;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicReference;
 import junit.framework.TestCase;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
@@ -32,7 +29,6 @@ import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.test.TestEnvironment;
-import yidl.runtime.Unmarshaller;
 
 /**
  *
@@ -81,7 +77,7 @@ public class SimpleRPCClientTest extends TestCase {
                         System.out.println("response size is "+rpcResponse.getXDRSize());
                         rq.sendResponse(rpcResponse);
                     } else {
-                        rq.sendGarbageArgs(null, new ProtocolException());
+                        rq.sendGarbageArgs();
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -96,7 +92,7 @@ public class SimpleRPCClientTest extends TestCase {
         server.start();
         server.waitForStartup();
 
-        client = new RPCNIOSocketClient(null, 10000, 5*60*1000);
+        client = new RPCNIOSocketClient(null, 10000, 5*60*1000, Client.getExceptionParsers());
         client.start();
         client.waitForStartup();
 
@@ -189,7 +185,7 @@ public class SimpleRPCClientTest extends TestCase {
         server.start();
         server.waitForStartup();
 
-        client = new RPCNIOSocketClient(null, 10000, 5*60*1000);
+        client = new RPCNIOSocketClient(null, 10000, 5*60*1000, Client.getExceptionParsers());
         client.start();
         client.waitForStartup();
 
@@ -271,7 +267,7 @@ public class SimpleRPCClientTest extends TestCase {
         server.start();
         server.waitForStartup();
 
-        client = new RPCNIOSocketClient(null, 10000, 5*60*1000);
+        client = new RPCNIOSocketClient(null, 10000, 5*60*1000, Client.getExceptionParsers());
         client.start();
         client.waitForStartup();
 
@@ -351,7 +347,7 @@ public class SimpleRPCClientTest extends TestCase {
         server.start();
         server.waitForStartup();
 
-        client = new RPCNIOSocketClient(null, MSG_TIMEOUT, 5*60*1000);
+        client = new RPCNIOSocketClient(null, MSG_TIMEOUT, 5*60*1000, Client.getExceptionParsers());
         client.start();
         client.waitForStartup();
 

@@ -76,43 +76,7 @@ public class ONCRPCRequest {
         serializeAndSendRespondse(response);
     }
 
-    public void sendGarbageArgs(String message, org.xtreemfs.interfaces.OSDInterface.ProtocolException ex) {
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                "ProtocolException: GARBAGE ARGS sent to client %s", this.record.getConnection()
-                        .getClientAddress().toString());
-        }
-        ex.setAccept_stat(ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS);
-        ex.setError_code(ErrNo.EINVAL);
-        ex.setStack_trace(message);
-        wrapAndSendException(ex);
-    }
-
-    public void sendGarbageArgs(String message, org.xtreemfs.interfaces.MRCInterface.ProtocolException ex) {
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                "ProtocolException: GARBAGE ARGS sent to client %s", this.record.getConnection()
-                        .getClientAddress().toString());
-        }
-        ex.setAccept_stat(ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS);
-        ex.setError_code(ErrNo.EINVAL);
-        ex.setStack_trace(message);
-        wrapAndSendException(ex);
-    }
-
-    public void sendGarbageArgs(String message, org.xtreemfs.interfaces.DIRInterface.ProtocolException ex) {
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                "ProtocolException: GARBAGE ARGS sent to client %s", this.record.getConnection()
-                        .getClientAddress().toString());
-        }
-        ex.setAccept_stat(ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS);
-        ex.setError_code(ErrNo.EINVAL);
-        ex.setStack_trace(message);
-        wrapAndSendException(ex);
-    }
-    
-    public void sendInternalServerError(Throwable rootCause, org.xtreemfs.interfaces.OSDInterface.errnoException ex) {
+    /*public void sendInternalServerError(Throwable rootCause, org.xtreemfs.interfaces.OSDInterface.errnoException ex) {
         final String strace = OutputUtils.stackTraceToString(rootCause);
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
@@ -136,8 +100,7 @@ public class ONCRPCRequest {
         ex.setError_message("internal server error caused by: "+rootCause);
         ex.setStack_trace(strace);
         wrapAndSendException(ex);
-    }
-
+    }*/
 
     public void sendException(ONCRPCException exception) {
         if (Logging.isDebug()) {
@@ -162,6 +125,14 @@ public class ONCRPCRequest {
         writer.flip();
         record.setResponseBuffers(writer.getBuffers());
         record.sendResponse();
+    }
+
+    public void sendProcUnavail() {
+        sendErrorCode(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL);
+    }
+
+    public void sendProgMismatch() {
+        sendErrorCode(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH);
     }
 
     public void sendErrorCode(int errorCode) {
@@ -242,6 +213,10 @@ public class ONCRPCRequest {
 
     public ChannelIO getChannel() {
         return record.getConnection().getChannel();
+    }
+
+    public void sendGarbageArgs() {
+        sendErrorCode(ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS);
     }
     
 }

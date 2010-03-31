@@ -33,6 +33,7 @@ import java.util.Queue;
 import org.xtreemfs.common.buffer.ASCIIString;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.SSLOptions;
@@ -123,7 +124,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts) throws IOException {
         super("RWReplSt");
         this.master = master;
-        client = new RPCNIOSocketClient(sslOpts, 15000, 60000*5);
+        client = new RPCNIOSocketClient(sslOpts, 15000, 60000*5, Client.getExceptionParsers());
         osdClient = new OSDClient(client);
         files = new HashMap<String, ReplicatedFileState>();
         cellToFileId = new HashMap<ASCIIString,String>();

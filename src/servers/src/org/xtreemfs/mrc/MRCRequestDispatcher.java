@@ -95,6 +95,7 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.util.Nettest;
 import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 
@@ -166,7 +167,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config.isGRIDSSLmode()) : null;
         
-        clientStage = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT);
+        clientStage = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT, Client.getExceptionParsers());
         clientStage.setLifeCycleListener(this);
         
         serverStage = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
@@ -392,7 +393,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 Logging.logMessage(Logging.LEVEL_ERROR, this, "%s / request: %s", error.getErrorMessage(),
                     request.toString());
                 Logging.logError(Logging.LEVEL_ERROR, this, error.getThrowable());
-                rpcRequest.sendInternalServerError(error.getThrowable(), new errnoException());
+                rpcRequest.sendException(new errnoException(ErrNo.EIO, error.getErrorMessage(), error.getStackTrace()));
                 break;
             }
             case USER_EXCEPTION: {
@@ -404,7 +405,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 break;
             }
             case INVALID_ARGS: {
-                rpcRequest.sendGarbageArgs(error.getErrorMessage(), new ProtocolException());
+                rpcRequest.sendException(new errnoException(ErrNo.EINVAL, error.getErrorMessage(), error.getStackTrace()));
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "invalid request arguments");
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, error.getErrorMessage());
@@ -412,8 +413,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 break;
             }
             case UNKNOWN_OPERATION: {
-                rpcRequest.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL,
-                    ErrNo.EINVAL, error.getErrorMessage() + " " + error.getStackTrace()));
+                rpcRequest.sendProcUnavail();
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "unknown operation: %d",
                         request.getRPCRequest().getRequestHeader().getTag());
@@ -423,7 +423,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             default: {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, "some unexpected exception occurred");
                 Logging.logError(Logging.LEVEL_ERROR, this, error.getThrowable());
-                rpcRequest.sendInternalServerError(error.getThrowable(), new errnoException());
+                rpcRequest.sendException(new errnoException(ErrNo.EIO, error.getErrorMessage(), error.getStackTrace()));
                 break;
             }
             }

@@ -34,9 +34,11 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.dir.client.DIRInterfaceExceptionParser;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.oncrpc.client.RemoteExceptionParser;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
@@ -46,7 +48,9 @@ import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.client.MRCClient;
+import org.xtreemfs.mrc.client.MRCInterfaceExceptionParser;
 import org.xtreemfs.osd.client.OSDClient;
+import org.xtreemfs.osd.client.OSDInterfaceExceptionParser;
 
 /**
  *
@@ -66,12 +70,17 @@ public class Client {
 
     public Client(InetSocketAddress[] dirAddresses, int requestTimeout, int connectionTimeout, SSLOptions ssl) throws IOException {
         this.dirAddress = dirAddresses;
-        mdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout);
-        osdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout);
+        RemoteExceptionParser[] rexp = getExceptionParsers();
+        mdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout, rexp);
+        osdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout, rexp);
         dirClient = new DIRClient(mdClient, dirAddress[0]);
         TimeSync.initializeLocal(0,50);
         uuidRes = UUIDResolver.startNonSingelton(dirClient, 3600, 1000);
         volumeMap = new HashMap<String, Volume>();
+    }
+
+    public static RemoteExceptionParser[] getExceptionParsers() {
+        return new RemoteExceptionParser[]{new DIRInterfaceExceptionParser(),new OSDInterfaceExceptionParser(),new MRCInterfaceExceptionParser()};
     }
 
     public Volume getVolume(String volumeName, UserCredentials credentials) throws IOException {

@@ -694,11 +694,8 @@ class ReplicatingFile {
         throws UnknownUUIDException {
         // check capability validity and update capability if necessary
         try {
-            checkCap();
+            checkCap();    
         } catch (IOException e1) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this,
-                "cannot update capability for file %s due to " + e1.getLocalizedMessage(), fileID);
-        } catch (ONCRPCException e1) {
             Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this,
                 "cannot update capability for file %s due to " + e1.getLocalizedMessage(), fileID);
         }

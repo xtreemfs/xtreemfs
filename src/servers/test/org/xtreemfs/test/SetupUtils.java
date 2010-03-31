@@ -35,6 +35,7 @@ import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -337,7 +338,7 @@ public class SetupUtils {
         final SSLOptions sslOptions = SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "Client.p12"),
             "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trusted.jks"),
             "passphrase", SSLOptions.JKS_CONTAINER, false) : null;
-        return new RPCNIOSocketClient(sslOptions, timeout, 5 * 60 * 1000);
+        return new RPCNIOSocketClient(sslOptions, timeout, 5 * 60 * 1000, Client.getExceptionParsers());
     }
     
     static DIRClient createDIRClient(RPCNIOSocketClient client) throws IOException {

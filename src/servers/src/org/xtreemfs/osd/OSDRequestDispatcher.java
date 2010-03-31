@@ -119,8 +119,10 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import java.util.Map.Entry;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.util.Nettest;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.oncrpc.client.RemoteExceptionParser;
 import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
@@ -252,13 +254,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config.isGRIDSSLmode()) : null;
-        
-        rpcClient = new RPCNIOSocketClient(clientSSLopts, 5000, 5 * 60 * 1000);
+
+        RemoteExceptionParser[] rexp = Client.getExceptionParsers();
+        rpcClient = new RPCNIOSocketClient(clientSSLopts, 5000, 5 * 60 * 1000, rexp);
         rpcClient.setLifeCycleListener(this);
 
         // replication uses its own RPCClient with a much higher timeout
         rpcClientForReplication = new RPCNIOSocketClient(clientSSLopts, 30000,
-                5 * 60 * 1000);
+                5 * 60 * 1000, rexp);
         rpcClientForReplication.setLifeCycleListener(this);
 
         // initialize ServiceAvailability
@@ -693,7 +696,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 }
             });
         } catch (Exception ex) {
-            rq.sendInternalServerError(ex, new errnoException());
+            rq.sendException(new errnoException(ErrNo.EIO, "internal server error: "+ex.getMessage(), OutputUtils.stackTraceToString(ex)));
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }

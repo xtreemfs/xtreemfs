@@ -16,6 +16,7 @@ import junit.framework.TestCase;
 import org.junit.Test;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.ONCRPCRequest;
@@ -94,7 +95,7 @@ public class FakeSSLRPCClientServerTest extends TestCase {
                         System.out.println("response size is "+rpcResponse.getXDRSize());
                         rq.sendResponse(rpcResponse);
                     } else {
-                        rq.sendGarbageArgs(null, new ProtocolException());
+                        rq.sendGarbageArgs();
                     }
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -109,7 +110,7 @@ public class FakeSSLRPCClientServerTest extends TestCase {
         server.start();
         server.waitForStartup();
 
-        client = new RPCNIOSocketClient(clientSSL, 10000, 5*60*1000);
+        client = new RPCNIOSocketClient(clientSSL, 10000, 5*60*1000, Client.getExceptionParsers());
         client.start();
         client.waitForStartup();
 
@@ -190,7 +191,7 @@ public class FakeSSLRPCClientServerTest extends TestCase {
         server.start();
         server.waitForStartup();
 
-        client = new RPCNIOSocketClient(clientSSL, 10000, 5*60*1000);
+        client = new RPCNIOSocketClient(clientSSL, 10000, 5*60*1000, Client.getExceptionParsers());
         client.start();
         client.waitForStartup();
 
@@ -270,7 +271,7 @@ public class FakeSSLRPCClientServerTest extends TestCase {
         server.start();
         server.waitForStartup();
 
-        client = new RPCNIOSocketClient(clientSSL, MSG_TIMEOUT, 5*60*1000);
+        client = new RPCNIOSocketClient(clientSSL, MSG_TIMEOUT, 5*60*1000, Client.getExceptionParsers());
         client.start();
         client.waitForStartup();
 
@@ -352,7 +353,7 @@ public class FakeSSLRPCClientServerTest extends TestCase {
         server.start();
         server.waitForStartup();
 
-        client = new RPCNIOSocketClient(clientSSL, 10000, 5*60*1000);
+        client = new RPCNIOSocketClient(clientSSL, 10000, 5*60*1000, Client.getExceptionParsers());
         client.start();
         client.waitForStartup();
 
