@@ -1,5 +1,5 @@
-#ifndef _604542875_H_
-#define _604542875_H_
+#ifndef _1527176303_H_
+#define _1527176303_H_
 
 
 #include "yield/concurrency.h"
@@ -306,11 +306,16 @@ namespace org
           }
         }
 
-        virtual ::yield::concurrency::Request* createRequest( const char* type_name )
+        virtual ::yield::concurrency::Request*
+        createRequest
+        (
+          const char* type_name,
+          size_t type_name_len
+        )
         {
-          if ( strcmp( type_name, "nopRequest" ) == 0 ) return new nopRequest;
-          else if ( strcmp( type_name, "send_bufferRequest" ) == 0 ) return new send_bufferRequest;
-          else if ( strcmp( type_name, "recv_bufferRequest" ) == 0 ) return new recv_bufferRequest;
+          if ( type_name_len == 10 && strncmp( type_name, "nopRequest", 10 ) == 0 ) return new nopRequest;
+          else if ( type_name_len == 18 && strncmp( type_name, "send_bufferRequest", 18 ) == 0 ) return new send_bufferRequest;
+          else if ( type_name_len == 18 && strncmp( type_name, "recv_bufferRequest", 18 ) == 0 ) return new recv_bufferRequest;
           else return NULL;
         }
 
@@ -325,11 +330,16 @@ namespace org
           }
         }
 
-        virtual ::yield::concurrency::Response* createResponse( const char* type_name )
+        virtual ::yield::concurrency::Response*
+        createResponse
+        (
+          const char* type_name,
+          size_t type_name_len
+        )
         {
-          if ( strcmp( type_name, "nopResponse" ) == 0 ) return new nopResponse;
-          else if ( strcmp( type_name, "send_bufferResponse" ) == 0 ) return new send_bufferResponse;
-          else if ( strcmp( type_name, "recv_bufferResponse" ) == 0 ) return new recv_bufferResponse;
+          if ( type_name_len == 11 && strncmp( type_name, "nopResponse", 11 ) == 0 ) return new nopResponse;
+          else if ( type_name_len == 19 && strncmp( type_name, "send_bufferResponse", 19 ) == 0 ) return new send_bufferResponse;
+          else if ( type_name_len == 19 && strncmp( type_name, "recv_bufferResponse", 19 ) == 0 ) return new recv_bufferResponse;
           else return NULL;
         }
 
