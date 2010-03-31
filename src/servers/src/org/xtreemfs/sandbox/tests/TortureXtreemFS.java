@@ -77,6 +77,7 @@ public class TortureXtreemFS {
             CLOption.StringValue optPKCS12passphrase = (CLOption.StringValue) parser.addOption(new CLOption.StringValue(null, "pkcs12-passphrase", ""));
             CLOption.Switch      optRandomOnly = (Switch) parser.addOption(new CLOption.Switch("r", "random", "execute only random test"));
             CLOption.IntegerValue optReplicas = (IntegerValue) parser.addOption(new CLOption.IntegerValue("n", "num-replicas", "number of replicas to use (default is 1)"));
+            CLOption.Switch      optTrunc = (Switch) parser.addOption(new CLOption.Switch("t", "truncae", "truncate to 0 instead of creating a new file"));
 
             parser.parse(args);
 
@@ -99,6 +100,8 @@ public class TortureXtreemFS {
             
             final boolean useSSL = dirURL.getProtocol().equals(Constants.ONCRPCG_SCHEME) || dirURL.getProtocol().equals(Constants.ONCRPCS_SCHEME);
             final boolean randomOnly = optRandomOnly.isSet();
+
+            final boolean truncate = optTrunc.isSet();
 
             final int replicas = optReplicas.isSet() ? optReplicas.getValue() : 1;
             
@@ -153,7 +156,7 @@ public class TortureXtreemFS {
             if (!randomOnly) {
                 for (int fsize = MIN_FS; fsize <= MAX_FS; fsize = fsize * 2) {
                     for (int recsize = MIN_REC; recsize <= MAX_REC; recsize = recsize * 2) {
-                        if (testSequential(fsize, recsize, path, v)) {
+                        if (testSequential(fsize, recsize, path, v, truncate)) {
                             continue;
                         }
                     }
@@ -164,7 +167,7 @@ public class TortureXtreemFS {
             
             for (int fsize = MIN_FS; fsize <= MAX_FS; fsize = fsize * 2) {
                 for (int recsize = MIN_REC; recsize <= MAX_REC; recsize = recsize * 2) {
-                    if (testRandom(fsize, recsize, path, v)) {
+                    if (testRandom(fsize, recsize, path, v, truncate)) {
                         continue;
                     }
                 }
@@ -179,7 +182,7 @@ public class TortureXtreemFS {
         
     }
     
-    private static boolean testSequential(int fsize, int recsize, final String path, Volume v)
+    private static boolean testSequential(int fsize, int recsize, final String path, Volume v, boolean truncate)
         throws ONCRPCException, InterruptedException, Exception, IOException {
         final int numRecs = fsize / recsize;
         if (numRecs == 0) {
@@ -192,6 +195,8 @@ public class TortureXtreemFS {
         long tStart = System.currentTimeMillis();
         File f = v.getFile(path);
         RandomAccessFile raf = f.open("rw", 0666);
+        if (truncate)
+            raf.setLength(0);
         long tOpen = System.currentTimeMillis();
         long bytesWritten = 0;
         // do writes
@@ -229,7 +234,9 @@ public class TortureXtreemFS {
         }
         
         raf.close();
-        f.delete();
+        if (!truncate)
+            f.delete();
+        
         final long tDelete = System.currentTimeMillis();
         double writeRate = ((double) fsize) / 1024.0 / (((double) (tWrite)) / 1000.0);
         double readRate = ((double) fsize) / 1024.0 / (((double) (tRead)) / 1000.0);
@@ -238,7 +245,7 @@ public class TortureXtreemFS {
         return false;
     }
     
-    private static boolean testRandom(int fsize, int recsize, final String path, Volume v)
+    private static boolean testRandom(int fsize, int recsize, final String path, Volume v, boolean truncate)
         throws ONCRPCException, InterruptedException, Exception, IOException {
         final int numRecs = fsize / recsize;
         int[] skips = new int[numRecs];
@@ -252,6 +259,8 @@ public class TortureXtreemFS {
         long tStart = System.currentTimeMillis();
         File f = v.getFile(path);
         RandomAccessFile raf = f.open("rw", 0666);
+        if (truncate)
+            raf.setLength(0);
         long tOpen = System.currentTimeMillis();
         long bytesWritten = 0;
         long tWrite = 0;
@@ -294,7 +303,10 @@ public class TortureXtreemFS {
             }
         }
         raf.close();
-        f.delete();
+
+        if (!truncate)
+            f.delete();
+        
         final long tDelete = System.currentTimeMillis();
         double writeRate = ((double) fsize) / 1024.0 / (((double) (tWrite)) / 1000.0);
         double readRate = ((double) fsize) / 1024.0 / (((double) (tRead)) / 1000.0);
