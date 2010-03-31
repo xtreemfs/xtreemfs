@@ -52,11 +52,6 @@ import org.xtreemfs.foundation.oncrpc.channels.SSLChannelIO;
 import org.xtreemfs.foundation.oncrpc.channels.SSLHandshakeOnlyChannelIO;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
-import org.xtreemfs.interfaces.UserCredentials;
-import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
-import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
-import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
-import org.xtreemfs.interfaces.utils.ONCRPCError;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
@@ -137,7 +132,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     }
     
     public void sendRequest(RPCResponseListener listener, InetSocketAddress server, int programId,
-        int versionId, int procedureId, yidl.runtime.Object message, Object attachment, UserCredentials credentials) {
+        int versionId, int procedureId, yidl.runtime.Object message, Object attachment, yidl.runtime.Object credentials) {
         ONCRPCRequest rec = new ONCRPCRequest(listener, this.transactionId.getAndIncrement(), programId,
             versionId, procedureId, message, attachment, credentials);
         try {

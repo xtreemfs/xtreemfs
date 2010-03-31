@@ -27,7 +27,6 @@ package org.xtreemfs.interfaces.utils;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.UserCredentials;
 import yidl.runtime.Marshaller;
 import yidl.runtime.Unmarshaller;
 
@@ -91,7 +90,7 @@ public class ONCRPCRequestHeader implements yidl.runtime.Object {
         writer.writeInt32(null,vers);
         writer.writeInt32(null,proc);
         if (user_credentials != null) {
-            writer.writeInt32(null,UserCredentials.TAG);
+            writer.writeInt32(null,user_credentials.getTag());
             final int dataLength = user_credentials.getXDRSize();
             writer.writeInt32(null,dataLength);
             user_credentials.marshal(writer);

@@ -25,7 +25,6 @@
 package org.xtreemfs.foundation.oncrpc.client;
 
 import java.net.InetSocketAddress;
-import org.xtreemfs.interfaces.UserCredentials;
 
 /**
  *
@@ -80,7 +79,7 @@ public abstract class ONCRPCClient {
     }
 
     @SuppressWarnings("unchecked")
-    protected RPCResponse sendRequest(InetSocketAddress server, int procId, yidl.runtime.Object request, RPCResponseDecoder decoder, UserCredentials credentials) {
+    protected RPCResponse sendRequest(InetSocketAddress server, int procId, yidl.runtime.Object request, RPCResponseDecoder decoder, yidl.runtime.Object credentials) {
         RPCResponse rpcresp = new RPCResponse(decoder);
         if ((server == null) && (defaultServer == null))
             throw new IllegalArgumentException("must specify a server address if no default server is defined");

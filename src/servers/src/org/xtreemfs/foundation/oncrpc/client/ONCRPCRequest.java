@@ -31,7 +31,6 @@ import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
-import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 
 
@@ -61,7 +60,7 @@ public class ONCRPCRequest {
     long startT, endT;
 
     ONCRPCRequest(RPCResponseListener listener, int xid, int programId, int versionId, int procedureId, yidl.runtime.Object response, Object attachment,
-            UserCredentials credentials) {
+            yidl.runtime.Object credentials) {
         ONCRPCRequestHeader hdr = new ONCRPCRequestHeader(xid, programId, versionId,procedureId,credentials);
         ONCRPCBufferWriter writer = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
         hdr.marshal(writer);
