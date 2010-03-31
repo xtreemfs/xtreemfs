@@ -90,24 +90,31 @@ public abstract class DIROperation {
      * @param rq - original {@link DIRRequest}.
      */
     void requestFailed(Exception error, DIRRequest rq) {
-        InetSocketAddress master = null;
         if (error != null && 
             error instanceof BabuDBException && 
             ((BabuDBException) error).getErrorCode().equals(NO_ACCESS) && 
-            dbsReplicationManager != null &&
-            (master = dbsReplicationManager.getMaster()) != null) {
+            dbsReplicationManager != null) {
             
-            // retrieve the correct port for the DIR mirror
-            String host = master.getAddress().getHostAddress();
-            Integer port = this.master.getConfig().getMirrors().get(host);
-            if (port == null){ 
-                Logging.logMessage(Logging.LEVEL_ERROR, this,  "The port for " +
-                		"the mirror DIR '%s' could not be retrieved.",
-                		host);
-                
-                rq.sendInternalServerError(error);
+            InetSocketAddress altMaster = dbsReplicationManager.getMaster();
+            if (altMaster != null) {
+                // retrieve the correct port for the DIR mirror
+                String host = altMaster.getAddress().getHostAddress();
+                Integer port = this.master.getConfig().getMirrors().get(host);
+                if (port == null){ 
+                    Logging.logMessage(Logging.LEVEL_ERROR, this,  "The port for " +
+                    		"the mirror DIR '%s' could not be retrieved.",
+                    		host);
+                    
+                    rq.sendInternalServerError(error);
+                } else {
+                    rq.sendRedirectException(host,port);
+                }
             } else {
-                rq.sendRedirectException(host,port);
+                // if there is a handover in progress, redirect to the local
+                // server to notify the client about this process
+                rq.sendRedirectException(
+                        this.master.getConfig().getAddress().getHostAddress(), 
+                        this.master.getConfig().getPort());
             }
         } else if (error != null && error instanceof ONCRPCException) {
             Logging.logError(Logging.LEVEL_ERROR, this, error);
@@ -125,6 +132,9 @@ public abstract class DIROperation {
             rq.sendException(new InvalidArgumentException(error.getMessage()));
         } else {
             if (error != null && !(error instanceof BabuDBException))
+                Logging.logError(Logging.LEVEL_ERROR, this, error);
+            
+            if (error != null)
                 Logging.logError(Logging.LEVEL_ERROR, this, error);
             
             rq.sendInternalServerError(error);

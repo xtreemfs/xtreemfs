@@ -37,17 +37,18 @@ import java.util.Set;
 import org.xtreemfs.babudb.config.ReplicationConfig;
 import org.xtreemfs.common.TimeServerClient;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseDecoder;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.DIRInterface.InvalidArgumentException;
 import org.xtreemfs.interfaces.DIRInterface.RedirectException;
+import org.xtreemfs.interfaces.utils.ONCRPCException;
 
 /**
  * <p>
@@ -313,12 +314,15 @@ public class DIRClient extends DIRClientBackend implements TimeServerClient {
                     InetSocketAddress newAddress = new InetSocketAddress(
                             e.getAddress(),e.getPort());
                     
-                    Logging.logMessage(Logging.LEVEL_INFO, root, "redirected to: %s",
-                            newAddress.toString());
+                    if (!newAddress.equals(this.address)) {
+                        redirect(newAddress);
+                    } else {
+                        Logging.logMessage(Logging.LEVEL_INFO, this.root, 
+                                "'%s' seems to perform a handover at the " +
+                                "moment.", this.address.toString());
+                        reconnect();
+                    }
                     
-                    Request nextLevel = new Request(root, otherServers, update, 
-                            (depth+1), method, result, args);
-                    nextLevel.execute(newAddress);
                     if (r != null) r.freeBuffers();
                     return;
                 } else {
@@ -333,31 +337,26 @@ public class DIRClient extends DIRClientBackend implements TimeServerClient {
                 // giving up
                 Logging.logMessage(Logging.LEVEL_ERROR, root, 
                         "Request could not be processed, because: "+e.getMessage());
+                Logging.logError(Logging.LEVEL_INFO, this, e);
+                
+            // an internal server error occurred
+            } catch (ONCRPCException e) {
+                // giving up
+                Logging.logMessage(Logging.LEVEL_ERROR, root, 
+                        "Request could not be processed, because: "+e.getMessage());
+                Logging.logError(Logging.LEVEL_INFO, this, e);
                 
             // could not connect to the given address, try a random one from the
             // servers list, if available
-            } catch (Throwable t) {
+            } catch (Exception e) {
                 Logging.logMessage(Logging.LEVEL_WARN, root, 
-                        "Could not connect to server '%s'.", (
+                        "Could not connect to server '%s', because %s.", (
                                 (address != null) ? address : 
-                                 root.getDefaultServerAddress()));
+                                 root.getDefaultServerAddress()), e.getMessage());
                 
                 if (otherServers != null && otherServers.size() > 0) {
-                    // delay the client request to ensure that a new leaseholder
-                    // for the replicated DIR could be found
-                    long delay = (ReplicationConfig.LEASE_TIMEOUT + 1) /
-                                            otherServers.size();
-                    try {
-                        Thread.sleep(delay);
-                    } catch (InterruptedException e) { /* ignored */ }
+                    reconnect();
                     
-                    InetSocketAddress newAddress = otherServers.get(0);
-                    Logging.logMessage(Logging.LEVEL_INFO, root, "trying next: %s",
-                            newAddress.toString());
-                    
-                    Request next = new Request(root, otherServers, true, 1, 
-                            method, result, args);
-                    next.execute(newAddress);
                     if (r != null) r.freeBuffers();
                     return;
                 } else {
@@ -365,9 +364,39 @@ public class DIRClient extends DIRClientBackend implements TimeServerClient {
                     Logging.logMessage(Logging.LEVEL_ERROR, root, 
                             "Could not connect to the server and no alternative" +
                             " servers are available.");
+                    Logging.logError(Logging.LEVEL_INFO, this, e);
                 }
             } 
             result.fill(r);
+        }
+        
+        private void redirect(InetSocketAddress to) {
+            Logging.logMessage(Logging.LEVEL_INFO, root, "redirected to: %s",
+                    to.toString());
+            
+            Request nextLevel = new Request(root, otherServers, update, 
+                    (depth+1), method, result, args);
+            nextLevel.execute(to);
+        }
+        
+        /**
+         * delay the client request to ensure that a new leaseholder
+         * for the replicated DIR could be found
+         */
+        private void reconnect() {
+            long delay = (ReplicationConfig.LEASE_TIMEOUT + 1) /
+                                    otherServers.size();
+            try {
+                Thread.sleep(delay);
+            } catch (InterruptedException e) { /* ignored */ }
+            
+            InetSocketAddress newAddress = otherServers.get(0);
+            Logging.logMessage(Logging.LEVEL_INFO, root, "trying next: %s",
+                    newAddress.toString());
+            
+            Request next = new Request(root, otherServers, true, 1, 
+                    method, result, args);
+            next.execute(newAddress);
         }
     }
 }
