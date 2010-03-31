@@ -99,7 +99,7 @@ public class RPCNIOSocketServer extends LifeCycleThread {
     /**
      * The receiver that gets all incomming requests.
      */
-    private final RPCServerRequestListener receiver;
+    private volatile RPCServerRequestListener receiver;
     
     /**
      * sslOptions if SSL is enabled, null otherwise
@@ -716,5 +716,14 @@ public class RPCNIOSocketServer extends LifeCycleThread {
     
     public long getPendingRequests() {
         return this.pendingRequests;
+    }
+    
+    /**
+     * Updates the listener. Handle with care.
+     * 
+     * @param rl
+     */
+    public void updateRequestDispatcher(RPCServerRequestListener rl) {
+        this.receiver = rl;
     }
 }
