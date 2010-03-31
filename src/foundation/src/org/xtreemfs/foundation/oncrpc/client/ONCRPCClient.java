@@ -109,4 +109,8 @@ public abstract class ONCRPCClient {
         assert (address != null) : "New address must not be null!";
         this.defaultServer = address;
     }
+    
+    public RPCNIOSocketClient getClient() {
+        return this.client;
+    }
 }
