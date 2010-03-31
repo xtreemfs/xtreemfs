@@ -24,7 +24,7 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
 
 package org.xtreemfs.mrc.database.babudb;
 
-import org.xtreemfs.include.common.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;

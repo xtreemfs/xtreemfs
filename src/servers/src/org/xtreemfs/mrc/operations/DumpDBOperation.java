@@ -32,9 +32,9 @@ import java.util.List;
 
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.VersionManagement;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.util.OutputUtils;
-import org.xtreemfs.include.common.logging.Logging;
-import org.xtreemfs.include.common.logging.Logging.Category;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseResponse;
 import org.xtreemfs.mrc.MRCRequest;
@@ -85,7 +85,7 @@ public class DumpDBOperation extends MRCOperation {
                 df.renameTo(dumpFile);
                 
             } catch (Exception exc) {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.db, this,
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
                     "an error has occurred while dumping the database: %s", OutputUtils
                             .stackTraceToString(exc));
             }
