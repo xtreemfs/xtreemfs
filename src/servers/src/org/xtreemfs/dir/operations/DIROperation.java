@@ -31,6 +31,7 @@ import static org.xtreemfs.babudb.BabuDBException.ErrorCode.NO_SUCH_INDEX;
 import static org.xtreemfs.babudb.BabuDBException.ErrorCode.NO_SUCH_SNAPSHOT;
 import static org.xtreemfs.babudb.BabuDBException.ErrorCode.SNAP_EXISTS;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ConcurrentModificationException;
 
@@ -125,9 +126,15 @@ public abstract class DIROperation {
             } else {
                 // if there is a handover in progress, redirect to the local
                 // server to notify the client about this process
-                rq.sendRedirectException(
-                        this.master.getConfig().getAddress().getHostAddress(), 
-                        this.master.getConfig().getPort());
+                InetAddress host = this.master.getConfig().getAddress();
+                int port = this.master.getConfig().getPort();
+                InetSocketAddress address = 
+                        (host == null) ? 
+                        new InetSocketAddress(port) : 
+                        new InetSocketAddress(host,port);
+                
+                rq.sendRedirectException(address.getAddress().getHostAddress(), 
+                        port);
             }
         // handle errors caused by ServerExceptions
         } else if (error != null && error instanceof ONCRPCException) {
