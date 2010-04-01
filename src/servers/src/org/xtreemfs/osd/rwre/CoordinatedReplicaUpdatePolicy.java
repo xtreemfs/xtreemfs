@@ -176,7 +176,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
 
                             for (ObjectVersion over : state.getObjectVersions()) {
                                 //skip entries which are newer than the update we received
-                                if ((updateObjVer > -1) && (over.getObject_version() >= updateObjVer))
+                                if ((updateObjVer > -1) && (over.getObject_version() > updateObjVer))
                                     continue;
 
                                 ObjectFetchRecord ofr = recs.get(over.getObject_number());
