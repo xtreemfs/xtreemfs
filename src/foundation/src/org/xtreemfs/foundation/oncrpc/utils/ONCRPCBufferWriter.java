@@ -38,7 +38,6 @@ import java.util.List;
 
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.interfaces.utils.XDRUtils;
 
 import yidl.runtime.Map;
 import yidl.runtime.Marshaller;

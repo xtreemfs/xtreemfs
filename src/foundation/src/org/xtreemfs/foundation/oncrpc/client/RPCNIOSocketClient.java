@@ -59,12 +59,12 @@ import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
 import org.xtreemfs.foundation.oncrpc.channels.SSLChannelIO;
 import org.xtreemfs.foundation.oncrpc.channels.SSLHandshakeOnlyChannelIO;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCRecordFragmentHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCResponseHeader;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
+import org.xtreemfs.foundation.oncrpc.utils.exceptions.ONCRPCProtocolException;
 import org.xtreemfs.foundation.util.OutputUtils;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
-import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
-import org.xtreemfs.interfaces.utils.exceptions.ONCRPCProtocolException;
 /**
  * 
  * @author bjko

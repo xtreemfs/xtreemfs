@@ -39,11 +39,11 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCRecordFragmentHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCRequestHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCResponseHeader;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
-import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
-import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 
 /**
  *

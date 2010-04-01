@@ -37,7 +37,7 @@ import java.io.IOException;
 
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
 
 /**
  *

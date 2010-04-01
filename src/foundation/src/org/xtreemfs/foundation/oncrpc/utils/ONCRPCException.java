@@ -31,30 +31,28 @@
  * AUTHORS: Bjoern Kolbeck (ZIB)
  */
 
-package org.xtreemfs.interfaces.utils;
+package org.xtreemfs.foundation.oncrpc.utils;
+
+import java.io.IOException;
 
 
-public class ONCRPCRecordFragmentHeader {
+/**
+ *
+ * @author bjko
+ */
+public abstract class ONCRPCException extends IOException implements yidl.runtime.Struct {
+    private static final long serialVersionUID = 2438623484662640012L;
 
-
-    public static int getFragmentHeaderSize() {
-        return Integer.SIZE/8;
+    public ONCRPCException() {
+        super();
     }
 
-    public static int getFragmentLength(int fragmentHeader) {
-        return fragmentHeader ^ (1 << 31);
+    public ONCRPCException(String message) {
+        super(message);
     }
 
-    public static boolean isLastFragment(int fragmentHeader) {
-        return (fragmentHeader >> 31) != 0;
+    public ONCRPCException(String message, Throwable cause) {
+        super(message,cause);
     }
 
-    public static int getFragmentHeader(int fragmentLength, boolean isLastFragment) {
-        if (isLastFragment) {
-            return fragmentLength | (1 << 31);
-        } else {
-            return fragmentLength;
-        }
-    }
-
-};
+}

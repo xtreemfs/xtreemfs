@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+ * Copyright (c) 2009-2010, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
  * 
  * All rights reserved.
  * 
@@ -31,26 +31,30 @@
  * AUTHORS: Bjoern Kolbeck (ZIB)
  */
 
-package org.xtreemfs.interfaces.utils.exceptions;
-
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+package org.xtreemfs.foundation.oncrpc.utils;
 
 
+public class ONCRPCRecordFragmentHeader {
 
-/**
- *
- * @author bjko
- */
-public class SystemErrorException extends ONCRPCProtocolException {
-    private static final long serialVersionUID = -4286324996028319139L;
 
-    public SystemErrorException() {
-        super("system error (internal server error)");
+    public static int getFragmentHeaderSize() {
+        return Integer.SIZE/8;
     }
 
-    @Override
-    public int getAcceptStat() {
-        return ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR;
+    public static int getFragmentLength(int fragmentHeader) {
+        return fragmentHeader ^ (1 << 31);
     }
 
-}
+    public static boolean isLastFragment(int fragmentHeader) {
+        return (fragmentHeader >> 31) != 0;
+    }
+
+    public static int getFragmentHeader(int fragmentLength, boolean isLastFragment) {
+        if (isLastFragment) {
+            return fragmentLength | (1 << 31);
+        } else {
+            return fragmentLength;
+        }
+    }
+
+};

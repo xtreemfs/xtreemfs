@@ -34,7 +34,6 @@
 package org.xtreemfs.foundation.oncrpc.utils;
 
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.interfaces.utils.XDRUtils;
 
 import yidl.runtime.Map;
 import yidl.runtime.Sequence;

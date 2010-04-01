@@ -31,53 +31,26 @@
  * AUTHORS: Bjoern Kolbeck (ZIB)
  */
 
-package org.xtreemfs.interfaces.utils;
+package org.xtreemfs.foundation.oncrpc.utils.exceptions;
 
-import yidl.runtime.Marshaller;
-import yidl.runtime.Unmarshaller;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCResponseHeader;
+
+
 
 /**
  *
  * @author bjko
  */
-public class ONCRPCError extends ONCRPCException {
-    private static final long serialVersionUID = -2480538525621061770L;
-    
-    final int accept_stat;
-    
-    public ONCRPCError(int accept_stat) {
-        this.accept_stat = accept_stat;
+public class GarbageArgumentsException extends ONCRPCProtocolException {
+    private static final long serialVersionUID = 5621329974522682240L;
+
+    public GarbageArgumentsException() {
+        super("garbage arguments");
     }
 
+    @Override
     public int getAcceptStat() {
-        return accept_stat;
+        return ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS;
     }
-
-    @Override
-    public int getTag() {
-        throw new RuntimeException("this exception must not be serialized");
-    }
-
-    @Override
-    public String getTypeName() {
-        return "ONCRPCError";
-    }
-
-    @Override
-    public void marshal(Marshaller writer) {
-        throw new RuntimeException("this exception must not be serialized");
-    }
-
-    @Override
-    public void unmarshal(Unmarshaller buf) {
-        throw new RuntimeException("this exception must not be serialized");
-    }
-
-    @Override
-    public int getXDRSize() {
-        throw new RuntimeException("this exception must not be serialized");
-    }
-
-
 
 }

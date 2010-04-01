@@ -31,9 +31,9 @@
  * AUTHORS: Bjoern Kolbeck (ZIB)
  */
 
-package org.xtreemfs.interfaces.utils.exceptions;
+package org.xtreemfs.foundation.oncrpc.utils.exceptions;
 
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCResponseHeader;
 
 
 
@@ -41,16 +41,16 @@ import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
  *
  * @author bjko
  */
-public class GarbageArgumentsException extends ONCRPCProtocolException {
-    private static final long serialVersionUID = 5621329974522682240L;
+public class ProcedureUnavailableException extends ONCRPCProtocolException {
+    private static final long serialVersionUID = -2571541686722288604L;
 
-    public GarbageArgumentsException() {
-        super("garbage arguments");
+    public ProcedureUnavailableException() {
+        super("procedure unavailable");
     }
 
     @Override
     public int getAcceptStat() {
-        return ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS;
+        return ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL;
     }
 
 }

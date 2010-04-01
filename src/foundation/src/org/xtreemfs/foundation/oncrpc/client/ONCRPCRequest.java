@@ -39,8 +39,8 @@ import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCRequestHeader;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
-import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 
 
 /**

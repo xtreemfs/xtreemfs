@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2010, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+ * Copyright (c) 2010, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
  * 
  * All rights reserved.
  * 
@@ -31,28 +31,53 @@
  * AUTHORS: Bjoern Kolbeck (ZIB)
  */
 
-package org.xtreemfs.interfaces.utils;
+package org.xtreemfs.foundation.oncrpc.utils;
 
-import java.io.IOException;
-
+import yidl.runtime.Marshaller;
+import yidl.runtime.Unmarshaller;
 
 /**
  *
  * @author bjko
  */
-public abstract class ONCRPCException extends IOException implements yidl.runtime.Struct {
-    private static final long serialVersionUID = 2438623484662640012L;
-
-    public ONCRPCException() {
-        super();
+public class ONCRPCError extends ONCRPCException {
+    private static final long serialVersionUID = -2480538525621061770L;
+    
+    final int accept_stat;
+    
+    public ONCRPCError(int accept_stat) {
+        this.accept_stat = accept_stat;
     }
 
-    public ONCRPCException(String message) {
-        super(message);
+    public int getAcceptStat() {
+        return accept_stat;
     }
 
-    public ONCRPCException(String message, Throwable cause) {
-        super(message,cause);
+    @Override
+    public int getTag() {
+        throw new RuntimeException("this exception must not be serialized");
     }
+
+    @Override
+    public String getTypeName() {
+        return "ONCRPCError";
+    }
+
+    @Override
+    public void marshal(Marshaller writer) {
+        throw new RuntimeException("this exception must not be serialized");
+    }
+
+    @Override
+    public void unmarshal(Unmarshaller buf) {
+        throw new RuntimeException("this exception must not be serialized");
+    }
+
+    @Override
+    public int getXDRSize() {
+        throw new RuntimeException("this exception must not be serialized");
+    }
+
+
 
 }

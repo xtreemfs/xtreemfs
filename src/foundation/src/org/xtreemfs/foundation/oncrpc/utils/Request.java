@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+ * Copyright (c) 2009-2010, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
  * 
  * All rights reserved.
  * 
@@ -28,29 +28,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 /*
- * AUTHORS: Bjoern Kolbeck (ZIB)
+ * AUTHORS: Minor Gordon (NEC)
  */
 
-package org.xtreemfs.interfaces.utils.exceptions;
+package org.xtreemfs.foundation.oncrpc.utils;
 
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import yidl.runtime.Struct;
 
 
+public abstract class Request implements Struct {
+    private static final long serialVersionUID = -7695232148110682562L;
 
-/**
- *
- * @author bjko
- */
-public class ProgramMismatchException extends ONCRPCProtocolException {
-    private static final long serialVersionUID = 7264220236430682573L;
-
-    public ProgramMismatchException() {
-        super("program mismatch");
-    }
-
-    @Override
-    public int getAcceptStat() {
-        return ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH;
-    }
-
-}
+    public abstract Response createDefaultResponse();
+};   

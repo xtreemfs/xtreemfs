@@ -31,37 +31,26 @@
  * AUTHORS: Bjoern Kolbeck (ZIB)
  */
 
-package org.xtreemfs.interfaces.utils.exceptions;
+package org.xtreemfs.foundation.oncrpc.utils.exceptions;
 
-import java.io.IOException;
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCResponseHeader;
+
+
 
 /**
  *
  * @author bjko
  */
-public abstract class ONCRPCProtocolException extends IOException {
-    private static final long serialVersionUID = -4843962183415415948L;
+public class SystemErrorException extends ONCRPCProtocolException {
+    private static final long serialVersionUID = -4286324996028319139L;
 
-    public ONCRPCProtocolException() {
-        super();
+    public SystemErrorException() {
+        super("system error (internal server error)");
     }
 
-    protected ONCRPCProtocolException(String message) {
-        super(message);
-    }
-
-    public abstract int getAcceptStat();
-
-    public static ONCRPCProtocolException getException(int accept_stat) {
-        switch (accept_stat) {
-            case ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS : return new GarbageArgumentsException();
-            case ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL : return new ProcedureUnavailableException();
-            case ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH : return new ProgramMismatchException();
-            case ONCRPCResponseHeader.ACCEPT_STAT_PROG_UNAVAIL : return new ProgramUnavailableException();
-            case ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR : return new SystemErrorException();
-        }
-        throw new RuntimeException("invalid accept_stat code "+accept_stat);
+    @Override
+    public int getAcceptStat() {
+        return ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR;
     }
 
 }

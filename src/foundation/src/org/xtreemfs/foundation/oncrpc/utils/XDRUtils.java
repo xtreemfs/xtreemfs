@@ -31,13 +31,12 @@
  * AUTHORS: Minor Gordon (NEC), Bjoern Kolbeck (ZIB)
  */
 
-package org.xtreemfs.interfaces.utils;
+package org.xtreemfs.foundation.oncrpc.utils;
 
 import java.nio.charset.Charset;
 
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 
 /**
  *

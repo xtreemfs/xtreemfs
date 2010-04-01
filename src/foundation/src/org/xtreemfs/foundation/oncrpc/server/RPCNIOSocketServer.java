@@ -59,10 +59,10 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
 import org.xtreemfs.foundation.oncrpc.channels.SSLChannelIO;
 import org.xtreemfs.foundation.oncrpc.channels.SSLHandshakeOnlyChannelIO;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCRecordFragmentHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCRequestHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCResponseHeader;
 import org.xtreemfs.foundation.util.OutputUtils;
-import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
-import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 
 /**
  * 

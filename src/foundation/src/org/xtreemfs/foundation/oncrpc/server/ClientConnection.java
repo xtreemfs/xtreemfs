@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
-import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCRecordFragmentHeader;
 
 /**
  *

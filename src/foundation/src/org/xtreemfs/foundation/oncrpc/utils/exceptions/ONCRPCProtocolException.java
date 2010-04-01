@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2010, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+ * Copyright (c) 2010, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
  * 
  * All rights reserved.
  * 
@@ -28,16 +28,41 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 /*
- * AUTHORS: Minor Gordon (NEC)
+ * AUTHORS: Bjoern Kolbeck (ZIB)
  */
 
-package org.xtreemfs.interfaces.utils;
+package org.xtreemfs.foundation.oncrpc.utils.exceptions;
 
-import yidl.runtime.Struct;
+import java.io.IOException;
 
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCResponseHeader;
 
-public abstract class Request implements Struct {
-    private static final long serialVersionUID = -7695232148110682562L;
+/**
+ *
+ * @author bjko
+ */
+public abstract class ONCRPCProtocolException extends IOException {
+    private static final long serialVersionUID = -4843962183415415948L;
 
-    public abstract Response createDefaultResponse();
-};   
+    public ONCRPCProtocolException() {
+        super();
+    }
+
+    protected ONCRPCProtocolException(String message) {
+        super(message);
+    }
+
+    public abstract int getAcceptStat();
+
+    public static ONCRPCProtocolException getException(int accept_stat) {
+        switch (accept_stat) {
+            case ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS : return new GarbageArgumentsException();
+            case ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL : return new ProcedureUnavailableException();
+            case ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH : return new ProgramMismatchException();
+            case ONCRPCResponseHeader.ACCEPT_STAT_PROG_UNAVAIL : return new ProgramUnavailableException();
+            case ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR : return new SystemErrorException();
+        }
+        throw new RuntimeException("invalid accept_stat code "+accept_stat);
+    }
+
+}

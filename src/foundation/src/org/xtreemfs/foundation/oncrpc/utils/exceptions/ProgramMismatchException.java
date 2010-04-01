@@ -31,9 +31,9 @@
  * AUTHORS: Bjoern Kolbeck (ZIB)
  */
 
-package org.xtreemfs.interfaces.utils.exceptions;
+package org.xtreemfs.foundation.oncrpc.utils.exceptions;
 
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCResponseHeader;
 
 
 
@@ -41,16 +41,16 @@ import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
  *
  * @author bjko
  */
-public class ProcedureUnavailableException extends ONCRPCProtocolException {
-    private static final long serialVersionUID = -2571541686722288604L;
+public class ProgramMismatchException extends ONCRPCProtocolException {
+    private static final long serialVersionUID = 7264220236430682573L;
 
-    public ProcedureUnavailableException() {
-        super("procedure unavailable");
+    public ProgramMismatchException() {
+        super("program mismatch");
     }
 
     @Override
     public int getAcceptStat() {
-        return ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL;
+        return ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH;
     }
 
 }

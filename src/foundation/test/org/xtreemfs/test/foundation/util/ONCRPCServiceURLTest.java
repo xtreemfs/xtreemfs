@@ -38,8 +38,8 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUtils;
 import org.xtreemfs.foundation.util.ONCRPCServiceURL;
-import org.xtreemfs.interfaces.utils.XDRUtils;
 
 import static org.junit.Assert.*;
 

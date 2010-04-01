@@ -34,8 +34,9 @@
 package org.xtreemfs.foundation.oncrpc.client;
 
 import java.io.IOException;
+
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
 
 /**
  *

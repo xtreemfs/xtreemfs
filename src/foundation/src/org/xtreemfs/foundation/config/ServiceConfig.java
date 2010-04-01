@@ -42,7 +42,7 @@ import java.util.StringTokenizer;
 
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.interfaces.utils.XDRUtils;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUtils;
 
 public class ServiceConfig extends Config {
     

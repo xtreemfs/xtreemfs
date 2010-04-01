@@ -47,7 +47,7 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
-import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCRecordFragmentHeader;
 
 /**
  *

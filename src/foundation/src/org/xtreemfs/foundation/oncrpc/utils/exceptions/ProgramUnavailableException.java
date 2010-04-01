@@ -31,9 +31,9 @@
  * AUTHORS: Bjoern Kolbeck (ZIB)
  */
 
-package org.xtreemfs.interfaces.utils.exceptions;
+package org.xtreemfs.foundation.oncrpc.utils.exceptions;
 
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCResponseHeader;
 
 
 

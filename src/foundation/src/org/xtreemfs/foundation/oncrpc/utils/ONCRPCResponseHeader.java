@@ -31,7 +31,7 @@
  * AUTHORS: Minor Gordon (NEC), Bjoern Kolbeck (ZIB)
  */
 
-package org.xtreemfs.interfaces.utils;
+package org.xtreemfs.foundation.oncrpc.utils;
 
 import yidl.runtime.Marshaller;
 import yidl.runtime.Unmarshaller;

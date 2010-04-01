@@ -31,7 +31,7 @@
  * AUTHORS: Minor Gordon (NEC)
  */
 
-package org.xtreemfs.interfaces.utils;
+package org.xtreemfs.foundation.oncrpc.utils;
 
 
 public abstract class Response implements yidl.runtime.Struct {
