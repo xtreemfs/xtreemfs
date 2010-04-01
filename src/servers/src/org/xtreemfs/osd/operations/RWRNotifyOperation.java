@@ -36,7 +36,7 @@ import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_notifyResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_updateRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_updateResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;

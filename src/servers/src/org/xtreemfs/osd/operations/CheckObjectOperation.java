@@ -38,7 +38,7 @@ import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_check_objectRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_check_objectResponse;
 import org.xtreemfs.interfaces.ObjectData;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;

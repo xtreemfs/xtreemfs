@@ -35,7 +35,7 @@ import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.Lock;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_lock_releaseRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_lock_releaseResponse;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.PreprocStage.LockOperationCompleteCallback;

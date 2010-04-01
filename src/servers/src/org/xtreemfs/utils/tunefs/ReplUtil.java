@@ -12,7 +12,7 @@ import java.net.InetSocketAddress;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.util.CLOption;
 import org.xtreemfs.foundation.util.InvalidUsageException;
-import org.xtreemfs.interfaces.utils.XDRUtils;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUtils;
 import org.xtreemfs.utils.utils;
 import org.xtreemfs.utils.xtfs_repl;
 

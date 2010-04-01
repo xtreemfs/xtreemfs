@@ -47,6 +47,7 @@ import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUtils;
 import org.xtreemfs.foundation.util.CLIParser;
 import org.xtreemfs.foundation.util.ONCRPCServiceURL;
 import org.xtreemfs.foundation.util.OutputUtils;
@@ -59,7 +60,6 @@ import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
-import org.xtreemfs.interfaces.utils.XDRUtils;
 import org.xtreemfs.utils.DefaultDirConfig;
 
 /**

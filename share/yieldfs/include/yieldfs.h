@@ -1,31 +1,5 @@
-// Copyright (c) 2010 Minor Gordon
-// All rights reserved
-// 
-// This source file is part of the YieldFS project.
-// It is licensed under the New BSD license:
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-// * Neither the name of the YieldFS project nor the
-// names of its contributors may be used to endorse or promote products
-// derived from this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+// Copyright 2009 Minor Gordon.
+// This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
 #ifndef _YIELDFS_H_
 #define _YIELDFS_H_
@@ -34,229 +8,213 @@
 
 #ifndef _WIN32
 #include <unistd.h>
+#endif
+
+#include <map>
+#include <string>
+
+#ifndef _WIN32
 struct fuse_args;
 #endif
 
 
 namespace yieldfs
 {
-  using yield::platform::Directory;
-  using yield::platform::File;
-  using yield::platform::Log;
-  using yield::platform::Path;
-  using yield::platform::Stat;
-  using yield::platform::Volume;
+  class CachedStat;
+#ifdef _WIN32
+  class FUSEWin32;
+#else
+  class FUSEUnix;
+#endif
+  class PageCache;
+
+
+  class StackableFile : public YIELD::platform::File
+  {
+  public:
+    const YIELD::platform::Path& get_path() const { return path; }
+
+    // YIELD::platform::File
+    // virtual YIELD::platform::File methods that delegate to underlying_file
+    YIELD_PLATFORM_FILE_PROTOTYPES;
+
+  protected:
+    StackableFile( const YIELD::platform::Path& path, YIELD::platform::auto_File underlying_file, YIELD::platform::auto_Log log )
+      : path( path ), underlying_file( underlying_file ), log( log )
+    { }
+
+    virtual ~StackableFile()
+    { }
+
+
+    YIELD::platform::Path path;
+    YIELD::platform::auto_File underlying_file;
+    YIELD::platform::auto_Log log;
+  };
+
+
+  class StackableVolume : public YIELD::platform::Volume
+  {
+  public:
+    // YIELD::platform::Volume
+    // virtual YIELD::platform::Volume methods that delegate to underlying_volume
+    YIELD_PLATFORM_VOLUME_PROTOTYPES;
+
+  protected:
+    StackableVolume()
+    {
+      underlying_volume = new YIELD::platform::Volume;
+    }
+
+    StackableVolume( YIELD::platform::auto_Volume underlying_volume )
+      : underlying_volume( underlying_volume )
+    { }
+
+    StackableVolume( YIELD::platform::auto_Volume underlying_volume, YIELD::platform::auto_Log log )
+      : underlying_volume( underlying_volume ), log( log )
+    { }
+
+
+    YIELD::platform::auto_Volume underlying_volume;
+    YIELD::platform::auto_Log log;
+  };
 
 
   class FUSE
   {
   public:
-    virtual ~FUSE();
+    const static uint32_t FUSE_FLAG_DEBUG = 1;
+    const static uint32_t FUSE_FLAG_DIRECT_IO = 2;
 
-    const static uint32_t FLAG_DEBUG = 1;
-    const static uint32_t FLAG_DIRECT_IO = 2;
-    const static uint32_t FLAGS_DEFAULT = 0;
-
-    static FUSE& create( Volume& volume, uint32_t flags = FLAGS_DEFAULT );
-
-    uint32_t get_flags() const { return flags; }
-    Volume& get_volume() const { return volume; }
+    FUSE( YIELD::platform::auto_Volume volume, uint32_t flags = 0 );
+    ~FUSE();
 
     static uint32_t getpid();
 #ifdef _WIN32
-    virtual int main( const Path& mount_point ) = 0;
+    int main( const char* drive_letter );
 #else
     static uid_t geteuid();
     static gid_t getegid();
-    virtual int main( char* argv0, const Path& mount_point ) = 0;
-    virtual int main( struct fuse_args&, const Path& mount_point ) = 0;
+    int main( char* argv0, const char* mount_point );
+    int main( struct fuse_args&, const char* mount_point );
 #endif
 
   protected:
-    FUSE( uint32_t flags, Volume& volume ); // Steals the reference to volume
-  
-  protected:
-#ifndef _WIN32
+#ifdef _WIN32
+    FUSEWin32* fuse_win32;
+#else
+    FUSEUnix* fuse_unix;
     static bool is_running;
 #endif
-    uint32_t flags;
-    Volume& volume;
   };
 
 
-  class StackableDirectory : public Directory
+  class MetadataCachingVolume : public StackableVolume, private std::map<std::string, CachedStat*> // YIELD::HATTrie<CachedStat*>
   {
   public:
-    // yield::platform::Directory
-    // virtual yield::platform::Directory methods that 
-    // delegate to underlying_directory
-    YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
+    MetadataCachingVolume(); // For testing
+    MetadataCachingVolume( YIELD::platform::auto_Volume underlying_volume, double ttl_s );
+    MetadataCachingVolume( YIELD::platform::auto_Volume underlying_volume, YIELD::platform::auto_Log log, double ttl_s );
 
-  protected:
-    StackableDirectory( Directory& underlying_directory ); // Steals the ref
-    virtual ~StackableDirectory();
+    // yidl::runtime::Object
+    YIDL_RUNTIME_OBJECT_PROTOTYPES( MetadataCachingVolume, 0 );
 
-  private:
-    Directory& underlying_directory;
-  };
-
-
-  class StackableFile : public File
-  {
-  public:
-    // yield::platform::File
-    // virtual yield::platform::File methods that delegate to underlying_file
-    YIELD_PLATFORM_FILE_PROTOTYPES;
-
-  protected:
-    StackableFile( File& underlying_file ); // Steals the ref
-    virtual ~StackableFile();
-
-  private:
-    File& underlying_file;
-  };
-
-
-  class StackableVolume : public Volume
-  {
-  public:
-    // yield::platform::Volume methods that delegate to underlying_volume
-    YIELD_PLATFORM_VOLUME_PROTOTYPES;
-
-  protected:
-    StackableVolume( Volume& underlying_volume ); // Steals the ref
-    virtual ~StackableVolume();
+    // YIELD::platform::Volume
+    bool chmod( const YIELD::platform::Path& path, mode_t mode );
+    bool chown( const YIELD::platform::Path& path, int32_t uid, int32_t gid );
+    bool link( const YIELD::platform::Path& old_path, const YIELD::platform::Path& new_path );
+    bool mkdir( const YIELD::platform::Path& path, mode_t mode );
+    YIELD::platform::auto_File open( const YIELD::platform::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
+    bool readdir( const YIELD::platform::Path& path, const YIELD::platform::Path& match_file_name_prefix, YIELD::platform::Volume::readdirCallback& callback );
+    bool removexattr( const YIELD::platform::Path& path, const std::string& name );
+    bool rename( const YIELD::platform::Path& from_path, const YIELD::platform::Path& to_path );
+    bool rmdir( const YIELD::platform::Path& path );
+    bool setattr( const YIELD::platform::Path& path, uint32_t file_attributes );
+    bool setxattr( const YIELD::platform::Path& path, const std::string& name, const std::string& value, int32_t flags );
+    YIELD::platform::auto_Stat stat( const YIELD::platform::Path& path );
+    bool symlink( const YIELD::platform::Path& to_path, const YIELD::platform::Path& from_path );
+    bool truncate( const YIELD::platform::Path& path, uint64_t new_size );
+    bool unlink( const YIELD::platform::Path& path );
+    bool utimens( const YIELD::platform::Path& path, const YIELD::platform::Time& atime, const YIELD::platform::Time& mtime, const YIELD::platform::Time& ctime );
 
   private:
-    Volume& underlying_volume;
+    friend class MetadataCachingFile;
+    friend class MetadataCachingVolumereaddirCallback;
+
+    ~MetadataCachingVolume();
+
+
+    double ttl_s;
+
+    YIELD::platform::Mutex lock;
+
+    yidl::runtime::auto_Object<CachedStat> evict( const YIELD::platform::Path& path );
+    yidl::runtime::auto_Object<CachedStat> find( const YIELD::platform::Path& path );
+    YIELD::platform::Path getParentDirectoryPath( const YIELD::platform::Path& );
+    void insert( CachedStat* cached_stat );
+    void updateCachedFileSize( const YIELD::platform::Path& path, uint64_t new_file_size );
   };
-
-
-  static inline ostream& operator<<( ostream& os, const Stat& stbuf )
-  {
-    os << "{ ";
-#ifndef _WIN32
-    os << "st_dev: " << stbuf.get_dev() << ", ";
-    os << "st_ino: " << stbuf.get_ino() << ", ";
-#endif
-    os << "st_mode: " << stbuf.get_mode() << " (";
-    if ( ( stbuf.get_mode() & S_IFDIR ) == S_IFDIR ) os << "S_IFDIR|";
-    if ( ( stbuf.get_mode() & S_IFCHR ) == S_IFCHR ) os << "S_IFCHR|";
-    if ( ( stbuf.get_mode() & S_IFREG ) == S_IFREG ) os << "S_IFREG|";
-#ifdef _WIN32
-    if ( ( stbuf.get_mode() & S_IREAD ) == S_IREAD ) os << "S_IREAD|";
-    if ( ( stbuf.get_mode() & S_IWRITE ) == S_IWRITE ) os << "S_IWRITE|";
-    if ( ( stbuf.get_mode() & S_IEXEC ) == S_IEXEC ) os << "S_IEXEC|";
-#else
-    if ( ( stbuf.get_mode() & S_IFBLK ) == S_IFBLK ) os << "S_IFBLK|";
-    if ( ( stbuf.get_mode() & S_IFLNK ) == S_IFLNK ) os << "S_IFLNK|";
-    if ( ( stbuf.get_mode() & S_IRUSR ) == S_IFDIR ) os << "S_IRUSR|";
-    if ( ( stbuf.get_mode() & S_IWUSR ) == S_IWUSR ) os << "S_IWUSR|";
-    if ( ( stbuf.get_mode() & S_IXUSR ) == S_IXUSR ) os << "S_IXUSR|";
-    if ( ( stbuf.get_mode() & S_IRGRP ) == S_IRGRP ) os << "S_IRGRP|";
-    if ( ( stbuf.get_mode() & S_IWGRP ) == S_IWGRP ) os << "S_IWGRP|";
-    if ( ( stbuf.get_mode() & S_IXGRP ) == S_IXGRP ) os << "S_IXGRP|";
-    if ( ( stbuf.get_mode() & S_IROTH ) == S_IROTH ) os << "S_IROTH|";
-    if ( ( stbuf.get_mode() & S_IWOTH ) == S_IWOTH ) os << "S_IWOTH|";
-    if ( ( stbuf.get_mode() & S_IXOTH ) == S_IXOTH ) os << "S_IXOTH|";
-    if ( ( stbuf.get_mode() & S_ISUID ) == S_ISUID ) os << "S_ISUID|";
-    if ( ( stbuf.get_mode() & S_ISGID ) == S_ISGID ) os << "S_ISGID|";
-    if ( ( stbuf.get_mode() & S_ISVTX ) == S_ISVTX ) os << "S_ISVTX|";
-#endif
-    os << "0), ";
-#ifndef _WIN32
-    os << "st_nlink: " << stbuf.get_nlink() << ", ";
-    os << "st_uid: " << stbuf.get_uid() << ", ";
-    os << "st_gid: " << stbuf.get_gid() << ", ";
-    os << "st_rdev: " << stbuf.get_rdev() << ", ";
-#endif
-    os << "st_size: " << stbuf.get_size() << ", ";
-    os << "st_atime: " << stbuf.get_atime() << ", ";
-    os << "st_mtime: " << stbuf.get_mtime() << ", ";
-    os << "st_ctime: " << stbuf.get_ctime() << ", ";
-#ifndef _WIN32
-    os << "st_blksize: " << stbuf.get_blksize() << ", ";
-    os << "st_blocks: " << stbuf.get_blocks() << ", ";
-#else
-    os << "attributes: " << stbuf.get_attributes() << ", ";
-#endif
-    os << " 0 }";
-    return os;
-  }
 
 
   class TracingVolume : public StackableVolume
   {
   public:
     TracingVolume(); // For testing
-    // Steals references to underlying_volume
-    TracingVolume( Volume& underlying_volume ); // Log to cout
-    TracingVolume( Log& log, Volume& underlying_volume );
+    TracingVolume( YIELD::platform::auto_Volume underlying_volume ); // Log to std::cout
+    TracingVolume( YIELD::platform::auto_Volume underlying_volume, YIELD::platform::auto_Log log ); // Steals a reference to log
 
-    // static trace methods for TracingDirectory and TracingFile to share
-    static bool
-    trace
-    (
-      Log& log,
-      const char* operation_name,
-      const Path& path,
-      bool operation_result
-    );
-
-    static bool
-    trace
-    (
-      Log& log,
-      const char* operation_name,
-      const Path& path,
-      mode_t mode,
-      bool operation_result
-    );
-
-    static bool
-    trace
-    (
-      Log& log,
-      const char* operation_name,
-      const Path& old_path,
-      const Path& new_path,
-      bool operation_result
-    );
-
-    static bool
-    trace
-    (
-      Log& log,
-      const char* operation_name,
-      const Path& path,
-      const string& xattr_name,
-      const string& xattr_value,
-      bool operation_result
-    );
-
-    static bool
-    trace
-    (
-      Log& log,
-      const char* operation_name,
-      const Path& path,
-      uint64_t size,
-      uint64_t offset,
-      bool operation_result
-    );
-
-    static bool
-    trace
-    (
-      Log::Stream& log_stream,
-      bool operation_result
-    );
-
-    // yield::platform::Volume
+    // YIELD::platform::Volume
     YIELD_PLATFORM_VOLUME_PROTOTYPES;
+    virtual bool exists( const YIELD::platform::Path& path );
+    virtual bool listdir( const YIELD::platform::Path& path, const YIELD::platform::Path& match_file_name_prefix, listdirCallback& callback );
+    virtual bool mktree( const YIELD::platform::Path& path, mode_t mode );
+    virtual bool rmtree( const YIELD::platform::Path& path );
 
   private:
-    Log& log;
+    friend class TracingFile;
+
+    ~TracingVolume() { }
+
+    static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, bool operation_result );
+    static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, mode_t mode, bool operation_result );
+    static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& old_path, const YIELD::platform::Path& new_path, bool operation_result );
+    static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, const std::string& xattr_name, const std::string& xattr_value, bool operation_result );
+    static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, uint64_t size, uint64_t offset, bool operation_result );
+    static bool trace( YIELD::platform::Log::Stream& log_stream, bool operation_result );
+  };
+
+
+  class WriteBackCachingVolume : public StackableVolume
+  {
+  public:
+    WriteBackCachingVolume(); // For testing
+    WriteBackCachingVolume( size_t cache_capacity_bytes, uint32_t cache_flush_timeout_ms, YIELD::platform::auto_Volume underlying_volume );
+    WriteBackCachingVolume( size_t cache_capacity_bytes, uint32_t cache_flush_timeout_ms, YIELD::platform::auto_Volume underlying_volume, YIELD::platform::auto_Log log );
+
+    // YIELD::platform::Volume
+    YIELD::platform::auto_File open( const YIELD::platform::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
+
+  private:
+    virtual ~WriteBackCachingVolume();
+
+    PageCache* page_cache;
+  };
+
+
+  class WriteThroughCachingVolume : public StackableVolume
+  {
+  public:
+    WriteThroughCachingVolume(); // For testing
+    WriteThroughCachingVolume( YIELD::platform::auto_Volume underlying_volume );
+    WriteThroughCachingVolume( YIELD::platform::auto_Volume underlying_volume, YIELD::platform::auto_Log log );
+
+    // YIELD::platform::Volume
+    YIELD::platform::auto_File open( const YIELD::platform::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
+
+  private:
+    virtual ~WriteThroughCachingVolume();
+
+    PageCache* page_cache;
   };
 };
 

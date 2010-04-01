@@ -45,7 +45,7 @@ import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.MRCInterface.MRCException;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.MRCInterface.errnoException;
-import org.xtreemfs.interfaces.utils.XDRUtils;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUtils;
 import org.xtreemfs.mrc.client.MRCClient;
 
 public class xtfs_mrcdbtool {

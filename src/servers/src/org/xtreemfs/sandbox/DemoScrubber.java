@@ -61,7 +61,7 @@ import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
-import org.xtreemfs.interfaces.utils.XDRUtils;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUtils;
 import org.xtreemfs.mrc.client.MRCClient;
 
 /**

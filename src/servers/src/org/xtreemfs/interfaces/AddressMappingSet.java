@@ -4,7 +4,8 @@ import java.io.StringWriter;
 import java.util.Iterator;
 import org.xtreemfs.*;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.interfaces.utils.*;
+import org.xtreemfs.foundation.oncrpc.utils.*;
+
 import yidl.runtime.Marshaller;
 import yidl.runtime.PrettyPrinter;
 import yidl.runtime.Sequence;

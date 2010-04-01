@@ -53,7 +53,7 @@ import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.osd.ErrorCodes;

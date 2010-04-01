@@ -30,12 +30,12 @@ import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
-import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
-import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
-import org.xtreemfs.interfaces.utils.Request;
-import org.xtreemfs.interfaces.utils.Response;
-import org.xtreemfs.interfaces.utils.XDRUtils;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCRecordFragmentHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCRequestHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCResponseHeader;
+import org.xtreemfs.foundation.oncrpc.utils.Request;
+import org.xtreemfs.foundation.oncrpc.utils.Response;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUtils;
 
 public class UDPMessage {
 

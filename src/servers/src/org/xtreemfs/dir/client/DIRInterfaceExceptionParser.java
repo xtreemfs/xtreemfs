@@ -25,10 +25,11 @@
 package org.xtreemfs.dir.client;
 
 import java.io.IOException;
+
 import org.xtreemfs.foundation.oncrpc.client.RemoteExceptionParser;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
 
 /**
  *

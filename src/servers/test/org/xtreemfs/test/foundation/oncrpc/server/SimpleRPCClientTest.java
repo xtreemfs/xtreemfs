@@ -28,7 +28,7 @@ import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getResponse;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
 import org.xtreemfs.mrc.UserCredentialsAuthFlavorProvider;
 import org.xtreemfs.test.TestEnvironment;
 

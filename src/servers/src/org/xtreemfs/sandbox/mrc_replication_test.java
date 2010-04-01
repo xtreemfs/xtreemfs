@@ -135,7 +135,8 @@ public class mrc_replication_test {
         
         RPCResponse<Object> rp = null;
         try {
-            rp = masterClient.replication_toMaster(null, creds);
+            // TODO rebuild test
+            //rp = masterClient.replication_toMaster(null, creds);
             rp.get();
         } catch (DIRException e) {
             if (e.getError_code() == ErrorCodes.NOT_ENOUGH_PARTICIPANTS)

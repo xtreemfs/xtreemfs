@@ -9,7 +9,10 @@ import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCRequestHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCResponseHeader;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUtils;
 import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 import org.xtreemfs.interfaces.NettestInterface.nopRequest;
 import org.xtreemfs.interfaces.NettestInterface.nopResponse;
@@ -17,9 +20,6 @@ import org.xtreemfs.interfaces.NettestInterface.recv_bufferRequest;
 import org.xtreemfs.interfaces.NettestInterface.recv_bufferResponse;
 import org.xtreemfs.interfaces.NettestInterface.send_bufferRequest;
 import org.xtreemfs.interfaces.NettestInterface.send_bufferResponse;
-import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
-import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
-import org.xtreemfs.interfaces.utils.XDRUtils;
 
 /**
  *

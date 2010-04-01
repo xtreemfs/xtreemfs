@@ -25,10 +25,11 @@
 package org.xtreemfs.mrc.client;
 
 import java.io.IOException;
+
 import org.xtreemfs.foundation.oncrpc.client.RemoteExceptionParser;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
 
 /**
  *

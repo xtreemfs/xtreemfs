@@ -65,7 +65,7 @@ public class DIR {
         try {
             dbsConfig = new ReplicationConfig(configFileName);
         } catch (Throwable e) {
-            Logging.logError(Logging.LEVEL_INFO, null, e);
+            Logging.logError(Logging.LEVEL_DEBUG, Category.storage, e);
             try {
                 dbsConfig = new BabuDBConfig(configFileName);
             } catch (IOException ex) {

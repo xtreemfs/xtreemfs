@@ -3,8 +3,8 @@ package org.xtreemfs.interfaces.MRCInterface;
 import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.oncrpc.utils.*;
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.utils.*;
 import yidl.runtime.Marshaller;
 import yidl.runtime.PrettyPrinter;
 import yidl.runtime.Struct;
@@ -13,7 +13,7 @@ import yidl.runtime.Unmarshaller;
 
 
 
-public class xtreemfs_lsvolRequest extends org.xtreemfs.interfaces.utils.Request
+public class xtreemfs_lsvolRequest extends org.xtreemfs.foundation.oncrpc.utils.Request
 {
     public static final int TAG = 2010031151;
 

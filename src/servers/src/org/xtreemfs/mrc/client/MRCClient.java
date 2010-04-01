@@ -105,8 +105,6 @@ import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_addRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_addResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeResponse;
-import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replication_to_masterRequest;
-import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replication_to_masterResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileRequest;
@@ -670,21 +668,5 @@ public class MRCClient extends ONCRPCClient {
             gidsAsSet.add(gid);
         
         return new UserCredentials(uid, gidsAsSet, "");
-    }
-    
-    public RPCResponse<Object> replication_toMaster(InetSocketAddress server, UserCredentials credentials) {
-        
-        xtreemfs_replication_to_masterRequest rq = new xtreemfs_replication_to_masterRequest();
-        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Object>() {
-            
-            @Override
-            public Object getResult(ReusableBuffer data) {
-                final xtreemfs_replication_to_masterResponse resp = new xtreemfs_replication_to_masterResponse();
-                resp.unmarshal(new XDRUnmarshaller(data));
-                return null;
-            }
-        }, credentials);
-        return r;
-    }
-    
+    }    
 }

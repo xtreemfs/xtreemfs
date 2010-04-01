@@ -24,6 +24,13 @@
 
 package org.xtreemfs.dir.operations;
 
+import static org.xtreemfs.babudb.BabuDBException.ErrorCode.DB_EXISTS;
+import static org.xtreemfs.babudb.BabuDBException.ErrorCode.NO_ACCESS;
+import static org.xtreemfs.babudb.BabuDBException.ErrorCode.NO_SUCH_DB;
+import static org.xtreemfs.babudb.BabuDBException.ErrorCode.NO_SUCH_INDEX;
+import static org.xtreemfs.babudb.BabuDBException.ErrorCode.NO_SUCH_SNAPSHOT;
+import static org.xtreemfs.babudb.BabuDBException.ErrorCode.SNAP_EXISTS;
+
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.babudb.BabuDBException;
@@ -32,11 +39,9 @@ import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
 import org.xtreemfs.interfaces.DIRInterface.InvalidArgumentException;
 import org.xtreemfs.interfaces.DIRInterface.RedirectException;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
-import static org.xtreemfs.babudb.BabuDBException.ErrorCode.*;
 
 /**
  * 

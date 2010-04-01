@@ -3,8 +3,8 @@ package org.xtreemfs.interfaces.MRCInterface;
 import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.oncrpc.utils.*;
 import org.xtreemfs.interfaces.*;
-import org.xtreemfs.interfaces.utils.*;
 import yidl.runtime.PrettyPrinter;
 
 

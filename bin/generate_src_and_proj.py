@@ -61,8 +61,8 @@ INCLUDE_DIR_PATHS = \
 IMPORTS = \
 [
     "import java.io.StringWriter;",
-    "import org.xtreemfs.interfaces.utils.*;",
-    "import org.xtreemfs.common.buffer.ReusableBuffer;",
+    "import org.xtreemfs.foundation.oncrpc.utils.*;",
+    "import org.xtreemfs.foundation.buffer.ReusableBuffer;",
     "import yidl.runtime.PrettyPrinter;",
 ]
 
@@ -257,7 +257,7 @@ class XtreemFSJavaBufferType(JavaBufferType):
 
 class XtreemFSJavaExceptionType(JavaExceptionType):
     def generate( self ):
-        XtreemFSJavaStructType( self.get_scope(), self.get_qname(), self.get_tag(), ( "org.xtreemfs.interfaces.utils.ONCRPCException", ), self.get_members() ).generate()
+        XtreemFSJavaStructType( self.get_scope(), self.get_qname(), self.get_tag(), ( "org.xtreemfs.foundation.oncrpc.utils.ONCRPCException", ), self.get_members() ).generate()
 
     def get_factory( self ):
         return "case %i: return new %s();" % ( self.get_tag(), self.get_name() )
@@ -420,7 +420,7 @@ class XtreemFSJavaRequestType(XtreemFSJavaStructType):
 public Response createDefaultResponse() { return new %(response_type_name)s(); }""" % locals()
 
     def get_parent_names( self ):
-        return ( "org.xtreemfs.interfaces.utils.Request", )
+        return ( "org.xtreemfs.foundation.oncrpc.utils.Request", )
 
 
 class XtreemFSJavaResponseType(XtreemFSJavaStructType):
@@ -428,7 +428,7 @@ class XtreemFSJavaResponseType(XtreemFSJavaStructType):
         return "case %i: return new %s();" % ( self.get_tag(), self.get_name() )
 
     def get_parent_names( self ):
-        return ( "org.xtreemfs.interfaces.utils.Response", )
+        return ( "org.xtreemfs.foundation.oncrpc.utils.Response", )
 
 
 class XtreemFSJavaTarget(JavaTarget): pass

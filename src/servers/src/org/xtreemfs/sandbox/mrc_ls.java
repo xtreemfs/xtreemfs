@@ -25,7 +25,7 @@ import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
-import org.xtreemfs.interfaces.utils.XDRUtils;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUtils;
 import org.xtreemfs.mrc.client.MRCClient;
 
 /**

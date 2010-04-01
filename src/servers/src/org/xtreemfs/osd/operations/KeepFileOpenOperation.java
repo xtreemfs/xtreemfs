@@ -30,7 +30,7 @@
 //import org.xtreemfs.common.xloc.XLocations;
 //import org.xtreemfs.interfaces.OSDInterface.keep_file_openRequest;
 //import org.xtreemfs.interfaces.OSDInterface.keep_file_openResponse;
-//import org.xtreemfs.interfaces.utils.Serializable;
+//import org.xtreemfs.foundation.oncrpc.utils.Serializable;
 //import org.xtreemfs.osd.OSDRequest;
 //import org.xtreemfs.osd.OSDRequestDispatcher;
 //

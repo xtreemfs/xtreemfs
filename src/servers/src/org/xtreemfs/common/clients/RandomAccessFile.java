@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.xtreemfs.common.clients.internal.ObjectMapper;
 import org.xtreemfs.common.clients.internal.ObjectMapper.ObjectRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -40,17 +40,17 @@ import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.NewFileSizeSet;
-import org.xtreemfs.interfaces.OSDInterface.RedirectException;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.XLocSet;
-import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.interfaces.OSDInterface.RedirectException;
 import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.osd.replication.ObjectSet;
 

@@ -16,7 +16,7 @@ import org.xtreemfs.foundation.util.CLOption;
 import org.xtreemfs.foundation.util.CLOptionParser;
 import org.xtreemfs.foundation.util.InvalidUsageException;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
-import org.xtreemfs.interfaces.utils.XDRUtils;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUtils;
 
 /**
  *
