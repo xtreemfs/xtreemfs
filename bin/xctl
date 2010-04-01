@@ -331,6 +331,7 @@ ssl.enabled = false
                               os.path.abspath( os.path.join( MY_DIR_PATH, "..", "src", "servers", "lib", "BabuDB.jar" ) ),
                               os.path.abspath( os.path.join( MY_DIR_PATH, "..", "src", "servers", "lib", "yidl.jar" ) ),
 			      os.path.abspath( os.path.join( MY_DIR_PATH, "..", "src", "servers", "lib", "Flease.jar" ) ),
+                              os.path.abspath( os.path.join( MY_DIR_PATH, "..", "src", "servers", "lib", "Foundation.jar" ) ),
                             )
                 if sys.platform.startswith( "win" ):
                     classpath = ";".join( classpath )
