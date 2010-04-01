@@ -138,7 +138,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 master.getConfig().getFleaseDmaxMS(), master.getConfig().getFleaseDmaxMS(),
                 null, localID.toString(), master.getConfig().getFleaseRetries());
 
-        fstage = new FleaseStage(fcfg, master.getConfig().getObjDir()+"/.flease_"+master.getConfig().getUUID().toString()+".lock",
+        fstage = new FleaseStage(fcfg, master.getConfig().getObjDir()+"/",
                 this, false, new FleaseViewChangeListenerInterface() {
 
             @Override
