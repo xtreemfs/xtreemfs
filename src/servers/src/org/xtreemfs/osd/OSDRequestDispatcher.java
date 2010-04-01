@@ -238,6 +238,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         operations = new HashMap<Integer, OSDOperation>();
         internalEvents = new HashMap<Class<?>, OSDOperation>();
         initializeOperations();
+
+        //create directory if necessary
+        try {
+            File objDir = new File(config.getObjDir());
+            if (!objDir.exists())
+                objDir.mkdirs();
+        } catch (Exception ex) {
+        }
         
         // -------------------------------
         // initialize communication stages
