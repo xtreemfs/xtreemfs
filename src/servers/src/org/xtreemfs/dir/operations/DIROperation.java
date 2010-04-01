@@ -32,6 +32,7 @@ import static org.xtreemfs.babudb.BabuDBException.ErrorCode.NO_SUCH_SNAPSHOT;
 import static org.xtreemfs.babudb.BabuDBException.ErrorCode.SNAP_EXISTS;
 
 import java.net.InetSocketAddress;
+import java.util.ConcurrentModificationException;
 
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBRequestListener;
@@ -95,10 +96,17 @@ public abstract class DIROperation {
      * @param rq - original {@link DIRRequest}.
      */
     void requestFailed(Exception error, DIRRequest rq) {
-        if (error != null && 
-            error instanceof BabuDBException && 
-            ((BabuDBException) error).getErrorCode().equals(NO_ACCESS) && 
-            dbsReplicationManager != null) {
+        // handle connection errors caused by being not the replication master
+        if (error != null && dbsReplicationManager != null && 
+           (
+                 (
+                    error instanceof BabuDBException && 
+                    ((BabuDBException) error).getErrorCode().equals(NO_ACCESS)
+                  ) || (
+                    error instanceof ConcurrentModificationException && 
+                    dbsReplicationManager.isMaster())
+                  )
+            ) {
             
             InetSocketAddress altMaster = dbsReplicationManager.getMaster();
             if (altMaster != null) {
@@ -121,9 +129,11 @@ public abstract class DIROperation {
                         this.master.getConfig().getAddress().getHostAddress(), 
                         this.master.getConfig().getPort());
             }
+        // handle errors caused by ServerExceptions
         } else if (error != null && error instanceof ONCRPCException) {
             Logging.logError(Logging.LEVEL_ERROR, this, error);
             rq.sendException((ONCRPCException) error);
+        // handle user errors
         } else if (error != null && 
                    error instanceof BabuDBException &&
                   (((BabuDBException)error).getErrorCode().equals(NO_SUCH_DB) ||
@@ -135,6 +145,7 @@ public abstract class DIROperation {
         { // blame the client
             Logging.logError(Logging.LEVEL_ERROR, this, error);
             rq.sendException(new InvalidArgumentException(error.getMessage()));
+        // handle unknown errors
         } else {
             if (error != null && !(error instanceof BabuDBException))
                 Logging.logError(Logging.LEVEL_ERROR, this, error);
