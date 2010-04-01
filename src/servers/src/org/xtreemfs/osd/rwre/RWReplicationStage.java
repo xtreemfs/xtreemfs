@@ -45,6 +45,7 @@ import org.xtreemfs.foundation.flease.FleaseViewChangeListenerInterface;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.flease.proposer.FleaseException;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
@@ -223,7 +224,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             final Flease lease = (Flease) method.getArgs()[1];
             final FleaseException error = (FleaseException) method.getArgs()[2];
 
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"lease change event: %s, %s, %s",cellId,lease,error);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"lease change event: %s, %s, %s",cellId,lease,error);
 
             final String fileId = cellToFileId.get(cellId);
             if (fileId != null) {
@@ -268,7 +269,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
             ReplicatedFileState state = files.get(fileId);
             if (state == null) {
-                Logging.logMessage(Logging.LEVEL_WARN, this,"fetch objects for unknown file: %s",fileId);
+                Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"fetch objects for unknown file: %s",fileId);
                 return;
             }
 
@@ -276,11 +277,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 failed(state, error);
             } else {
                 if ((objects == null) || (objects.size() == 0)) {
-                    Logging.logMessage(Logging.LEVEL_INFO, this,"replica RESET finished: %s",state.getFileId());
+                    Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this,"replica RESET finished: %s",state.getFileId());
                     doOpen(state);
                 } else {
                     if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"file %s, objects to fetch: %s",fileId,objects);
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"file %s, objects to fetch: %s",fileId,objects);
                     }
 
                     state.setObjectsToFetch(objects);
@@ -304,7 +305,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         ObjectFetchRecord r1 = state.getObjectsToFetch().poll();
         OSDOperation op = master.getInternalEvent(EventTruncate.class);
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"truncate requested by RESET for %s to %d/%d",state.getFileId(),
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"truncate requested by RESET for %s to %d/%d",state.getFileId(),
                     r1.getNewFileSize(),r1.getNewTruncateEpoch());
         }
         op.startInternalEvent(new Object[]{state.getFileId(),r1.getNewFileSize(),r1.getNewTruncateEpoch(),state.getsPolicy(),state.getLocalReplica()});
@@ -318,7 +319,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             ReplicatedFileState state = files.get(fileId);
             if (state != null) {
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"truncate requested by RESET for %s completed with %s",state.getFileId(),
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"truncate requested by RESET for %s completed with %s",state.getFileId(),
                             error);
                 }
                 if (error != null) {
@@ -358,7 +359,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         final InetSocketAddress osd = record.getNextOSD();
         //fetch that object
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"file %s, fetch object %d from %s",fileId,record.getObjNumber(),osd);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"file %s, fetch object %d from %s",fileId,record.getObjNumber(),osd);
         ReplicatedFileState state = files.get(fileId);
         if (state == null) {
             return;
@@ -403,7 +404,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         @Override
                         public void writeComplete(OSDWriteResponse result, Exception error) {
                             if (error != null) {
-                                Logging.logMessage(Logging.LEVEL_ERROR, this,"cannot write object locally: %s",error);
+                                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,"cannot write object locally: %s",error);
                             }
                         }
                     });
@@ -414,7 +415,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     state.setNumObjectsPending(numPendingFile);
                     state.getPolicy().objectFetched(record.getObjVersion());
                     if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"fetched object for replica, file %s, remaining %d",fileId,numPendingFile);
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"fetched object for replica, file %s, remaining %d",fileId,numPendingFile);
                     fetchObjects();
                     if (numPendingFile == 0) {
                         //reset complete!
@@ -432,14 +433,14 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
         if (file.getState() == ReplicaState.RESET) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"file %s is already in RESET",file.getFileId());
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"file %s is already in RESET",file.getFileId());
             return;
         }
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"replica state changed for %s from %s to %s",file.getFileId(),file.getState(),ReplicaState.RESET);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"replica state changed for %s from %s to %s",file.getFileId(),file.getState(),ReplicaState.RESET);
         }
         file.setState(ReplicaState.RESET);
-        Logging.logMessage(Logging.LEVEL_INFO, this,"replica RESET started: %s (update objVer=%d)",file.getFileId(),updateObjVer);
+        Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this,"replica RESET started: %s (update objVer=%d)",file.getFileId(),updateObjVer);
 
         OSDOperation op = master.getInternalEvent(EventGetFileSize.class);
         op.startInternalEvent(new Object[]{file.getFileId(),updateObjVer,file.getsPolicy()});
@@ -458,7 +459,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             if (state != null) {
 
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"local FS read for %s: %d/%s",state.getFileId(),
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"local FS read for %s: %d/%s",state.getFileId(),
                             filesize,error);
                 }
 
@@ -514,7 +515,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             } else {
                 file.setCellOpen(true);
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"replica state changed for %s from %s to %s",
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"replica state changed for %s from %s to %s",
                             file.getFileId(),file.getState(),ReplicaState.WAITING_FOR_LEASE);
                 }
                 file.setState(ReplicaState.WAITING_FOR_LEASE);
@@ -546,7 +547,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 doReset(file,ReplicaUpdatePolicy.UNLIMITED_RESET);
             } else {
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"replica state changed for %s from %s to %s",
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"replica state changed for %s from %s to %s",
                             file.getFileId(),file.getState(),ReplicaState.PRIMARY);
                 }
                 file.setPrimaryReset(false);
@@ -566,7 +567,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 doReset(file,ReplicaUpdatePolicy.UNLIMITED_RESET);
             } else {
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"replica state changed for %s from %s to %s",
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"replica state changed for %s from %s to %s",
                             file.getFileId(),file.getState(),ReplicaState.BACKUP);
                 }
                 file.setPrimaryReset(false);
@@ -580,9 +581,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void failed(ReplicatedFileState file, Exception ex) {
-        Logging.logMessage(Logging.LEVEL_WARN, this,"replica for file %s failed: %s",file.getFileId(),ex.toString());
+        Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"replica for file %s failed: %s",file.getFileId(),ex.toString());
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"replica state changed for %s from %s to %s",
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"replica state changed for %s from %s to %s",
                     file.getFileId(),file.getState(),ReplicaState.BACKUP);
         }
         file.setPrimaryReset(false);
@@ -688,7 +689,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             ReplicatedFileState state = files.remove(fileId);
             if (state != null) {
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"closing file %s",fileId);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"closing file %s",fileId);
                 }
                 state.getPolicy().closeFile();
                 if (state.getPolicy().requiresLease())
@@ -707,7 +708,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         ReplicatedFileState state = files.get(fileId);
         if (state == null) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"open file: "+fileId);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"open file: "+fileId);
             //"open" file
             state = new ReplicatedFileState(fileId,loc, master.getConfig().getUUID(), fstage, osdClient);
             files.put(fileId,state);
@@ -734,12 +735,12 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             final Exception error = (Exception) method.getArgs()[2];
 
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"max obj avail for file: "+fileId+" max="+maxObjVersion);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"max obj avail for file: "+fileId+" max="+maxObjVersion);
 
 
             ReplicatedFileState state = files.get(fileId);
             if (state == null) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this,"received maxObjAvail event for unknow file: %s",fileId);
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,"received maxObjAvail event for unknow file: %s",fileId);
                 return;
             }
 
@@ -849,7 +850,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     case INITIALIZING:
                     case RESET : {
                         if (Logging.isDebug()) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"enqeue update for %s (state is %s)",fileId,state.getState());
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"enqeue update for %s (state is %s)",fileId,state.getState());
                         }
                         if (state.getPendingRequests().size() > MAX_PENDING_PER_FILE) {
                             callback.failed(new OSDException(ErrorCodes.IO_ERROR, "too many requests in queue for file", ""));
@@ -861,7 +862,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 }
                 boolean needsReset = state.getPolicy().onRemoteUpdate(objVersion, state.getState());
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"%s needs reset: %s",fileId,needsReset);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"%s needs reset: %s",fileId,needsReset);
                 }
                 if (needsReset) {
                     state.getPendingRequests().add(method);

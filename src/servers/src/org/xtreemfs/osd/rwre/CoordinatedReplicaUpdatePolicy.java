@@ -37,6 +37,7 @@ import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.FileCredentials;
@@ -65,7 +66,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
         super(remoteOSDs,new ASCIIString(FILE_CELLID_PREFIX+fileId));
         this.client = client;
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"created %s for %s",this.getClass().getSimpleName(),cellId);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"created %s for %s",this.getClass().getSimpleName(),cellId);
     }
 
     protected abstract int getNumRequiredAcks(Operation operation);
@@ -76,7 +77,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
     @Override
     public void closeFile() {
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"closed %s for %s",this.getClass().getSimpleName(),cellId);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"closed %s for %s",this.getClass().getSimpleName(),cellId);
     }
 
     @Override
@@ -119,7 +120,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                     try {
                         states[osdNum] = (ReplicaStatus)r.get();
                         if (Logging.isDebug()) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"received status response %d: %s",osdNum,states[osdNum]);
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"received status response %d: %s",osdNum,states[osdNum]);
                         }
                         numResponses++;
                     } catch (Exception ex) {
@@ -128,7 +129,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                             if (!exceptionSent) {
                                 exceptionSent = true;
                                 if (Logging.isDebug()) {
-                                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"read status FAILED for %s",fileId);
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"read status FAILED for %s",fileId);
                                 }
                                 callback.failed(ex);
                             }
@@ -141,7 +142,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
 
                 if (numResponses == numAcksRequired) {
                     if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"read status successfull for %s",fileId);
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"read status successfull for %s",fileId);
                     }
                     //analyze the state
                     boolean needsReset = false;
@@ -165,7 +166,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                         if ((localTruncateEpoch < maxTrEpoch) && (localFileSize > maxFileSize)) {
                             //we need to execute a local truncate first!
                             if (Logging.isDebug()) {
-                                Logging.logMessage(Logging.LEVEL_DEBUG, this,"file needs truncate: %s (te local=%d, remote=%d)",fileId,localTruncateEpoch,maxTrEpoch);
+                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"file needs truncate: %s (te local=%d, remote=%d)",fileId,localTruncateEpoch,maxTrEpoch);
                             }
                             order.add(new ObjectFetchRecord(maxFileSize, maxTrEpoch));
                         }
@@ -212,7 +213,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                         callback.finished(order);
                     } else {
                         if (Logging.isDebug()) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"reset not required for %s, max is %d",fileId,maxObjVer);
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"reset not required for %s, max is %d",fileId,maxObjVer);
                         }
                         callback.finished(null);
                     }
@@ -227,7 +228,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
 
         //callback.writeUpdateCompleted(null, null, null);
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"sent update for "+cellId);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"sent update for "+cellId);
     }
 
     @Override
@@ -250,7 +251,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
 
         //callback.writeUpdateCompleted(null, null, null);
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"sent update for "+cellId);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"sent update for "+cellId);
     }
 
     @Override
@@ -270,7 +271,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
 
         //callback.writeUpdateCompleted(null, null, null);
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"sent truncate updates for "+cellId);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"sent truncate updates for "+cellId);
     }
 
     protected RPCResponseAvailableListener getResponseListener(final ClientOperationCallback callback,
@@ -293,7 +294,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                     if (numErrors > maxErrors) {
                         if (!exceptionSent) {
                             exceptionSent = true;
-                            Logging.logMessage(Logging.LEVEL_INFO, this,"replicated %s FAILED for %s",operation,fileId);
+                            Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this,"replicated %s FAILED for %s",operation,fileId);
                             callback.failed(ex);
                         }
                     }
@@ -303,7 +304,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                 }
                 if (numAcks == numAcksRequired) {
                     if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"replicated %s successfull for %s",operation,fileId);
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"replicated %s successfull for %s",operation,fileId);
                     }
                     callback.finsihed();
                 }
@@ -330,16 +331,17 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
 
 
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"prepared op for %s with objVer %d",cellId,nextObjVer);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"prepared op for %s with objVer %d",cellId,nextObjVer);
 
             return nextObjVer;
         } else if (currentState == ReplicaState.BACKUP) {
             if (backupCanRead() && (operation == Operation.READ)) {
                 return this.localObjVersion;
             } else {
-                if ((lease == null) || (lease.isEmptyLease()) || (!lease.isValid()))
+                if ((lease == null) || (lease.isEmptyLease()) || (!lease.isValid())) {
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"unknown lease state for %s: %s",this.cellId,lease);
                     throw new OSDException(ErrorCodes.LEASE_TIMED_OUT, "unknown lease state, can't redirect to master", "");
-                else
+                } else
                     throw new RedirectException(lease.getLeaseHolder().toString());
             }
         } else {
@@ -361,7 +363,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
 
         if (objVersion > localObjVersion+1) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"require reset for %s due to version GAP (local=%d, remote=%d)",
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"require reset for %s due to version GAP (local=%d, remote=%d)",
                         cellId,localObjVersion,objVersion);
             return true;
         }

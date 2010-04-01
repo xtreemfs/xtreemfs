@@ -113,7 +113,6 @@ public final class TruncateOperation extends OSDOperation {
 
             @Override
             public void success(final long newObjectVersion) {
-                System.out.println("preparOpComplete called");
                 final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
                 //FIXME: ignore canExecOperation for now...

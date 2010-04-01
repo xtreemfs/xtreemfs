@@ -40,6 +40,7 @@ import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.flease.FleaseStage;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.ObjectVersionList;
@@ -239,7 +240,7 @@ public class ReplicatedFileState {
      */
     public void setState(ReplicaState state) {
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"fileId %s changed state from: %s to: %s",this.fileId,this.state, state);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"fileId %s changed state from: %s to: %s",this.fileId,this.state, state);
         }
         this.state = state;
     }

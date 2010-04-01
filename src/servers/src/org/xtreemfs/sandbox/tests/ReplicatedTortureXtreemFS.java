@@ -70,6 +70,7 @@ public class ReplicatedTortureXtreemFS {
             CLOption.Switch      optRandomOnly = (Switch) parser.addOption(new CLOption.Switch("r", "random", "execute only random test"));
             CLOption.IntegerValue optReplicas = (IntegerValue) parser.addOption(new CLOption.IntegerValue("n", "num-replicas", "number of replicas to use (default is 1)"));
             CLOption.Switch      optTrunc = (Switch) parser.addOption(new CLOption.Switch("t", "truncae", "truncate to 0 instead of creating a new file"));
+            CLOption.Switch      optAddR = (Switch) parser.addOption(new CLOption.Switch("a", "addreplica", "adds a new replica after writing and reads from it"));
 
             parser.parse(args);
 
@@ -92,6 +93,7 @@ public class ReplicatedTortureXtreemFS {
             
             final boolean useSSL = dirURL.getProtocol().equals(XDRUtils.ONCRPCG_SCHEME) || dirURL.getProtocol().equals(XDRUtils.ONCRPCS_SCHEME);
             final boolean randomOnly = optRandomOnly.isSet();
+            final boolean addReplica = optAddR.isSet();
 
             final int replicas = optReplicas.isSet() ? optReplicas.getValue() : 1;
             
@@ -153,9 +155,20 @@ public class ReplicatedTortureXtreemFS {
                 }
                 System.out.println("waiting for files to be closed on OSD (100 seconds)");
                 Thread.sleep(100*1000);
+                int readRepl = replicas-1;
+                if (addReplica) {
+                    for (int fsize = MIN_FS; fsize <= MAX_FS; fsize = fsize * 2) {
+                        for (int recsize = MIN_REC; recsize <= MAX_REC; recsize = recsize * 2) {
+                            File f = v.getFile(path+"."+fsize+"-"+recsize);
+                            f.addReplica(1, f.getSuitableOSDs(1), 0);
+                        }
+                    }
+                    readRepl = replicas;
+                }
+
                 for (int fsize = MIN_FS; fsize <= MAX_FS; fsize = fsize * 2) {
                     for (int recsize = MIN_REC; recsize <= MAX_REC; recsize = recsize * 2) {
-                        if (testSequential_read(fsize, recsize, path, v)) {
+                        if (testSequential_read(fsize, recsize, path, v,readRepl)) {
                             continue;
                         }
                     }
@@ -216,7 +229,7 @@ public class ReplicatedTortureXtreemFS {
         return false;
     }
 
-    private static boolean testSequential_read(int fsize, int recsize, final String path, Volume v)
+    private static boolean testSequential_read(int fsize, int recsize, final String path, Volume v, int forceReplica)
         throws ONCRPCException, InterruptedException, Exception, IOException {
         final int numRecs = fsize / recsize;
         if (numRecs == 0) {
@@ -229,7 +242,7 @@ public class ReplicatedTortureXtreemFS {
         long tStart = System.currentTimeMillis();
         File f = v.getFile(path+"."+fsize+"-"+recsize);
         RandomAccessFile raf = f.open("rw", 0666);
-        raf.forceReplica(1);
+        raf.forceReplica(forceReplica);
         long tOpen = System.currentTimeMillis();
 
         long tRead = 0;

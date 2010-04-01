@@ -32,7 +32,6 @@ import org.xtreemfs.common.clients.internal.OpenFileList;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.foundation.ErrNo;
-import org.xtreemfs.foundation.LRUCache;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.DirectoryEntry;
@@ -190,6 +189,24 @@ public class Volume {
             response = mrcClient.statfs(mrcClient.getDefaultServerAddress(), userCreds, volumeName.replace("/", ""));
             StatVFS fsinfo = response.get().get(0);
             return fsinfo.getBavail()*fsinfo.getBsize();
+        } catch (MRCException ex) {
+            throw wrapException(ex);
+        } catch (ONCRPCException ex) {
+            throw wrapException(ex);
+        } catch (InterruptedException ex) {
+            throw wrapException(ex);
+        } finally {
+            if (response != null)
+                response.freeBuffers();
+        }
+    }
+
+    public StatVFS statfs() throws IOException {
+        RPCResponse<StatVFSSet> response = null;
+        try {
+            response = mrcClient.statfs(mrcClient.getDefaultServerAddress(), userCreds, volumeName.replace("/", ""));
+            StatVFS fsinfo = response.get().get(0);
+            return fsinfo;
         } catch (MRCException ex) {
             throw wrapException(ex);
         } catch (ONCRPCException ex) {

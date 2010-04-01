@@ -30,7 +30,6 @@ import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.OSDWriteResponse;
@@ -44,7 +43,6 @@ import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
-import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
@@ -128,7 +126,6 @@ public final class WriteOperation extends OSDOperation {
             @Override
             public void success(final long newObjectVersion) {
                 assert(newObjectVersion > 0);
-                System.out.println("preparOpComplete called");
 
                 //FIXME: ignore canExecOperation for now...
                 master.getStorageStage().writeObject(args.getFile_id(), args.getObject_number(),

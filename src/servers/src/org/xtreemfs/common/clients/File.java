@@ -103,6 +103,29 @@ public class File {
         return true;
     }
 
+    public boolean canRead() throws IOException {
+        try {
+            Stat stat = volume.stat(path);
+            return (stat.getMode() & 0400) > 0;
+        } catch (FileNotFoundException ex) {
+            return false;
+        }
+    }
+
+    public boolean canWrite() throws IOException {
+        try {
+            Stat stat = volume.stat(path);
+            return (stat.getMode() & 0200) > 0;
+        } catch (FileNotFoundException ex) {
+            return false;
+        }
+    }
+
+    public long lastModified() throws IOException {
+        Stat stat = volume.stat(path);
+        return stat.getMtime_ns()/1000000;
+    }
+
     /**
      * get file size
      * @return the files size in bytes, or 0L if it does not exist

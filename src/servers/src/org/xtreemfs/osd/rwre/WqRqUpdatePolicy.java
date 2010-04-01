@@ -10,6 +10,7 @@ import java.net.InetSocketAddress;
 import java.util.List;
 
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.osd.rwre.RWReplicationStage.Operation;
 
@@ -25,7 +26,7 @@ public class WqRqUpdatePolicy extends CoordinatedReplicaUpdatePolicy {
         super(remoteOSDs, fileId, client);
         this.numResponses = (int) Math.floor((double)(remoteOSDs.size())/ 2.0) + 1;
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"majority for %s is %d",fileId,numResponses);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"majority for %s is %d",fileId,numResponses);
     }
 
     @Override
