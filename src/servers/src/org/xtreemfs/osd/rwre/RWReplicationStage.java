@@ -848,7 +848,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 switch (state.getState()) {
                     case WAITING_FOR_LEASE:
                     case INITIALIZING:
-                    case RESET : {
+                    case RESET:
+                    case OPEN: {
                         if (Logging.isDebug()) {
                             Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"enqeue update for %s (state is %s)",fileId,state.getState());
                         }
@@ -856,6 +857,10 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                             callback.failed(new OSDException(ErrorCodes.IO_ERROR, "too many requests in queue for file", ""));
                         } else {
                             state.getPendingRequests().add(method);
+                        }
+                        if (state.getState() == ReplicaState.OPEN) {
+                            //immediately change to backup mode...no need to check the lease
+                            doBackup(state);
                         }
                         return;
                     }
