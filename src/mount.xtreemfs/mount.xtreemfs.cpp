@@ -196,13 +196,13 @@ int main( int argc, char** argv )
         //  directory_test_suite( "DirectoryTestSuite", &volume->inc_ref() );
         //failed_test_case_count += test_runner.run( directory_test_suite );
 
-        //FileTestSuite
-        //  file_test_suite( "FileTestSuite", &volume->inc_ref() );
-        //failed_test_case_count += test_runner.run( file_test_suite );
+        FileTestSuite
+          file_test_suite( "FileTestSuite", &volume->inc_ref() );
+        failed_test_case_count += test_runner.run( file_test_suite );
 
-        VolumeTestSuite 
-          volume_test_suite( "VolumeTestSuite", &volume->inc_ref() );
-        failed_test_case_count += test_runner.run( volume_test_suite );
+        //VolumeTestSuite 
+        //  volume_test_suite( "VolumeTestSuite", &volume->inc_ref() );
+        //failed_test_case_count += test_runner.run( volume_test_suite );
 
         return failed_test_case_count;
       }

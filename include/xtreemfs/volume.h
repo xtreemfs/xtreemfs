@@ -42,10 +42,12 @@ namespace xtreemfs
   class Options;
   class Stat;
   class StatCache;
+  using org::xtreemfs::interfaces::FileCredentials;
   using org::xtreemfs::interfaces::VivaldiCoordinates;
   using org::xtreemfs::interfaces::XCap;
 
   using yield::concurrency::StageGroup;
+  using yield::platform::Mutex;
   using yield::platform::Path;
 
 
@@ -65,6 +67,8 @@ namespace xtreemfs
 
     virtual ~Volume();
 
+    void close( File& file );
+
     static Volume&
     create
     (
@@ -77,7 +81,7 @@ namespace xtreemfs
     create
     (
       const URI& dir_uri,
-      const std::string& name_utf8,
+      const string& name_utf8,
       Log* error_log = NULL,
       uint32_t flags = FLAGS_DEFAULT,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
@@ -99,14 +103,13 @@ namespace xtreemfs
     DIRProxy& get_dir_proxy() const { return dir_proxy; }
     uint32_t get_flags() const { return flags; }    
     MRCProxy& get_mrc_proxy() const { return mrc_proxy; }
-    const std::string& get_name() const { return name_utf8; }
+    const string& get_name() const { return name_utf8; }
     OSDProxies& get_osd_proxies() const { return osd_proxies; }
     Log* get_trace_log() const { return trace_log; }
     UserCredentialsCache& get_user_credentials_cache() const;
     const string& get_uuid() const { return uuid; }
     VivaldiCoordinates get_vivaldi_coordinates() const;
-    void metadatasync( const Path& path, const XCap& write_xcap );
-    void release( File& file );
+    void metadatasync( const Path& path, const XCap& write_xcap );    
     void set_errno( const char* operation_name, Exception& exception );
     void set_errno( const char* operation_name, std::exception& exception );
 
@@ -131,13 +134,18 @@ namespace xtreemfs
       const Path& vivaldi_coordinates_file_path
     );
 
+    void osd_unlink( const FileCredentials& file_credentials );
+
   private:
     DIRProxy& dir_proxy;
     Log* error_log;
+    class FileState;
+    typedef map<string, FileState*> FileStateMap;
+    FileStateMap file_state_map;
+    Mutex file_state_map_lock;
     uint32_t flags;
     MRCProxy& mrc_proxy;
-    std::string name_utf8;
-    OpenFileTable* open_file_table;
+    string name_utf8;
     OSDProxies& osd_proxies;
     StageGroup& stage_group;
     string uuid;

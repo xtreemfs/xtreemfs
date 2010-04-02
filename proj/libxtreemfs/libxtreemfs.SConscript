@@ -101,7 +101,6 @@ build_env.Library( "../../lib/xtreemfs", (
     r"../../src/libxtreemfs/file.cpp",
     r"../../src/libxtreemfs/grid_ssl_socket.cpp",
     r"../../src/libxtreemfs/mrc_proxy.cpp",
-    r"../../src/libxtreemfs/open_file_table.cpp",
     r"../../src/libxtreemfs/options.cpp",
     r"../../src/libxtreemfs/osd_proxies.cpp",
     r"../../src/libxtreemfs/osd_proxy.cpp",

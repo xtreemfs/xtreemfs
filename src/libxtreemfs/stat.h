@@ -47,12 +47,15 @@ namespace org
 
 namespace xtreemfs
 {
+  using org::xtreemfs::interfaces::OSDWriteResponse;
+
+
   class Stat : public yield::platform::Stat
   {
   public:
     Stat( const yield::platform::Stat& stbuf );
     Stat( const org::xtreemfs::interfaces::Stat& stbuf );
-    Stat( const org::xtreemfs::interfaces::OSDWriteResponse& );
+    Stat( const OSDWriteResponse& );
 
     uint64_t get_etag() const { return etag; }
     const string& get_group_id() const { return group_id; }

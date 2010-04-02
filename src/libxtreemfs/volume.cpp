@@ -30,7 +30,6 @@
 #include "xtreemfs/volume.h"
 #include "directory.h"
 #include "file.h"
-#include "open_file_table.h"
 #include "stat.h"
 #include "stat_cache.h"
 #include "user_credentials_cache.h"
@@ -41,9 +40,21 @@ using namespace xtreemfs;
 using org::xtreemfs::interfaces::DirectoryEntrySet;
 using org::xtreemfs::interfaces::FileCredentials;
 using org::xtreemfs::interfaces::FileCredentialsSet;
+using org::xtreemfs::interfaces::ReplicaSet;
 using org::xtreemfs::interfaces::StatSet;
 using org::xtreemfs::interfaces::StatVFSSet;
 using org::xtreemfs::interfaces::StringSet;
+using org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_RDONLY;
+using org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_WRONLY;
+using org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_RDWR;
+using org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_APPEND;
+using org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_CREAT;
+using org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_TRUNC;
+using org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_EXCL;
+using org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_SYNC;
+
+#include "yidl.h"
+using yidl::runtime::auto_Object;
 
 #include "yield.h"
 using yield::concurrency::StageGroup;
@@ -81,6 +92,25 @@ uint32_t Volume::ERROR_CODE_DEFAULT = EIO;
 #endif
 
 
+class Volume::FileState
+{
+public:
+  FileState( uint32_t reader_count, uint32_t writer_count )
+    : reader_count( reader_count ), writer_count( writer_count )
+  { }
+
+  uint32_t get_reader_count() const { return reader_count; }
+  uint32_t get_writer_count() const { return writer_count; }
+  void inc_reader_count() { ++reader_count; }
+  void inc_writer_count() { ++writer_count; }
+  uint32_t dec_reader_count() { return --reader_count; }
+  uint32_t dec_writer_count() { return --writer_count; }
+
+private:
+  uint32_t reader_count, writer_count;
+};
+
+
 Volume::Volume
 (
   DIRProxy& dir_proxy,
@@ -105,8 +135,6 @@ Volume::Volume
     user_credentials_cache( user_credentials_cache ),
     vivaldi_coordinates_file_path( vivaldi_coordinates_file_path )
 {
-  open_file_table = new OpenFileTable;
-
   double stat_cache_read_ttl_s;
   uint32_t stat_cache_write_back_attrs;
 
@@ -148,8 +176,14 @@ Volume::~Volume()
 {
   DIRProxy::dec_ref( dir_proxy );
   Log::dec_ref( error_log );
+  for 
+  ( 
+    FileStateMap::iterator file_state_i = file_state_map.begin();
+    file_state_i != file_state_map.end();
+    ++file_state_i
+  )
+    delete file_state_i->second;
   OSDProxies::dec_ref( osd_proxies );
-  delete open_file_table;
   StageGroup::dec_ref( stage_group );
   delete stat_cache;
   Log::dec_ref( trace_log );
@@ -159,6 +193,59 @@ Volume::~Volume()
 bool Volume::access( const Path&, int )
 {
   return true;
+}
+
+void Volume::close( File& file )
+{
+  file_state_map_lock.acquire();
+
+  FileStateMap::const_iterator file_state_i 
+    = file_state_map.find( file.get_xcap().get_file_id() );
+
+  if ( file_state_i != file_state_map.end() )
+  {
+    FileState* file_state = file_state_i->second;
+
+    if 
+    ( 
+      ( file.get_xcap().get_access_mode() & SYSTEM_V_FCNTL_H_O_WRONLY )
+        == SYSTEM_V_FCNTL_H_O_WRONLY
+      ||
+      ( file.get_xcap().get_access_mode() & SYSTEM_V_FCNTL_H_O_RDWR )
+        == SYSTEM_V_FCNTL_H_O_RDWR
+    )
+    {
+      // Writer
+      if ( file_state->dec_writer_count() == 0 )
+      {
+        metadatasync( file.get_path(), file.get_xcap() );
+
+        if ( file_state->get_reader_count() == 0 )
+        {
+          file_state_map.erase( file_state_i );
+          delete file_state;
+        }
+      }
+    }
+    else
+    {
+      // Reader
+      if 
+      ( 
+        file_state->dec_reader_count() == 0
+        &&
+        file_state->get_writer_count() == 0
+      )
+      {
+        file_state_map.erase( file_state_i );
+        delete file_state;
+      }
+    }
+  }
+  else
+    DebugBreak();
+  
+  file_state_map_lock.release();
 }
 
 Volume&
@@ -501,11 +588,35 @@ Volume::open
       file_credentials
     );
 
-    DebugBreak();
-    //SharedFile& shared_file = get_shared_file( path );
-    //File& file = shared_file.open( file_credentials );
-    //SharedFile::dec_ref( shared_file );
-    //return &file;
+    file_state_map_lock.acquire();
+    FileStateMap::const_iterator file_state_i 
+      = file_state_map.find( file_credentials.get_xcap().get_file_id() );
+    if ( file_state_i != file_state_map.end() )
+    {
+      FileState* file_state = file_state_i->second;
+      if ( flags == O_RDONLY )
+        file_state->inc_reader_count();
+      else
+        file_state->inc_writer_count();
+    }
+    else
+    {
+      FileState* file_state;
+      if ( flags == O_RDONLY )
+        file_state = new FileState( 1, 0 );
+      else
+        file_state = new FileState( 0, 1 );
+      file_state_map[file_credentials.get_xcap().get_file_id()] = file_state;
+    }
+    file_state_map_lock.release();
+
+    return new File
+               (
+                 *this,
+                 path,
+                 file_credentials.get_xcap(),
+                 file_credentials.get_xlocs()
+               );
   }
   VOLUME_OPERATION_END( open );
   return NULL;
@@ -545,6 +656,24 @@ yield::platform::Directory* Volume::opendir( const Path& path  )
   return NULL;
 }
 
+void Volume::osd_unlink( const FileCredentials& file_credentials )
+{
+  const string& file_id = file_credentials.get_xcap().get_file_id();
+
+  for
+  (
+    ReplicaSet::const_iterator replica_i 
+      = file_credentials.get_xlocs().get_replicas().begin();
+    replica_i != file_credentials.get_xlocs().get_replicas().end();
+    ++replica_i
+  )
+  {
+    auto_Object<OSDProxy> osd_proxy
+      = osd_proxies.get_osd_proxy( ( *replica_i ).get_osd_uuids()[0] );
+    osd_proxy->unlink( file_credentials, file_id );
+  }    
+}
+
 Path* Volume::readlink( const Path& path )
 {
   VOLUME_OPERATION_BEGIN( readlink )
@@ -560,25 +689,6 @@ Path* Volume::readlink( const Path& path )
   }
   VOLUME_OPERATION_END( readlink );
   return NULL;
-}
-
-void Volume::release( File& file )
-{
-  DebugBreak();
-  //files_lock.acquire();
-
-  //map<string, SharedFile*>::iterator shared_file_i
-  //  = shared_files.find( shared_file.get_path() );
-
-  //if ( shared_file_i != shared_files.end() )
-  //{
-  //  shared_files.erase( shared_file_i );
-  //  SharedFile::dec_ref( shared_file );
-  //}
-  //else
-  //  DebugBreak();
-
-  //shared_files_lock.release();
 }
 
 bool Volume::removexattr( const Path& path, const string& name )
@@ -612,14 +722,7 @@ bool Volume::rename( const Path& from_path, const Path& to_path )
     );
 
     if ( !file_credentials_set.empty() )
-    {
-      DebugBreak();
-      //osd_proxies.unlink
-      //(
-      //  file_credentials_set[0],
-      //  file_credentials_set[0].get_xcap().get_file_id()
-      //);
-    }
+      osd_unlink( file_credentials_set[0] );
 
     return true;
   }
@@ -885,14 +988,7 @@ bool Volume::unlink( const Path& path )
     );
 
     if ( !file_credentials_set.empty() )
-    {
-      DebugBreak();
-      //osd_proxies->unlink
-      //(
-      //  file_credentials_set[0],
-      //  file_credentials_set[0].get_xcap().get_file_id()
-      //);
-    }
+      osd_unlink( file_credentials_set[0] );
 
     // Don't stat_cache->evict( path ) in case there are
     // outstanding file size updates

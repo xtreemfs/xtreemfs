@@ -214,7 +214,7 @@ bool File::close()
 {
   if ( !closed )
   {
-    parent_volume.release( *this );
+    parent_volume.close( *this );
     closed = true;
   }
 

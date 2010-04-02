@@ -137,13 +137,6 @@ OSDProxies::get_osd_proxy
       return get_osd_proxy( osd_uuid );
     }
     break;
-
-    default:
-    {
-      DebugBreak(); 
-      throw Exception();
-    }
-    break;
   }
 }
 

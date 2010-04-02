@@ -55,6 +55,10 @@ namespace xtreemfs
 
     ~File();
 
+    const Path& get_path() const { return path; }
+    const XCap& get_xcap() const { return xcap; }
+    const XLocSet& get_xlocs() const { return xlocs; }
+
     // yidl::runtime::Object
     File& inc_ref() { return Object::inc_ref( *this ); }
 

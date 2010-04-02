@@ -73,10 +73,7 @@ Stat::Stat( const org::xtreemfs::interfaces::Stat& stbuf )
   user_id( stbuf.get_user_id() )
 { }
 
-Stat::Stat
-(
-  const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response
-)
+Stat::Stat( const OSDWriteResponse& osd_write_response )
 {
   if ( osd_write_response.get_new_file_size().empty() )
     DebugBreak();

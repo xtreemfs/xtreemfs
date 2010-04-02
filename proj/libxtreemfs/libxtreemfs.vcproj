@@ -440,14 +440,6 @@
     >
 </File>
 <File
-    RelativePath="..\..\src\libxtreemfs\open_file_table.cpp"
-    >
-</File>
-<File
-    RelativePath="..\..\src\libxtreemfs\open_file_table.h"
-    >
-</File>
-<File
     RelativePath="..\..\src\libxtreemfs\options.cpp"
     >
 </File>

@@ -46,11 +46,12 @@ public:
   Entry() // Missing file
   {
     // refresh_time = current_time
-    // stbuf = NULL = missing file
+    stbuf = NULL; // =  missing file
     write_back_attrs = 0;
   }
 
   Entry( org::xtreemfs::interfaces::Stat stbuf ) // From a getattr
+    : stbuf( new Stat( stbuf ) )
   {
     // refresh_time = current_time
     write_back_attrs = 0;
