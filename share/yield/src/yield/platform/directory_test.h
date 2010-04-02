@@ -31,9 +31,8 @@
 #ifndef _YIELD_PLATFORM_DIRECTORY_TEST_H_
 #define _YIELD_PLATFORM_DIRECTORY_TEST_H_
 
-#include "file_test.h"
-
-#define YIELD_PLATFORM_DIRECTORY_TEST_DIR_NAME "directory_test"
+#include "yield/platform.h"
+#include "yunit.h"
 
 
 namespace yield
@@ -43,8 +42,14 @@ namespace yield
     class DirectoryTestCase : public yunit::TestCase
     {
     public:
+      virtual ~DirectoryTestCase() { }
+
+    protected:
       DirectoryTestCase( const string& name, Volume* volume = NULL )
-        : yunit::TestCase( name )
+        : yunit::TestCase( name ),
+          test_dir_name( "directory_test" ),
+          test_file_name( "directory_test.txt" ),
+          test_file_path( test_dir_name / test_file_name )
       {
         directory = NULL;
           
@@ -54,27 +59,15 @@ namespace yield
           this->volume = new Volume;
       }
 
-      virtual ~DirectoryTestCase()
-      { }
-
+      // yunit::TestCase
       void setUp()
       {        
         tearDown();
 
-        if ( !volume->mkdir( YIELD_PLATFORM_DIRECTORY_TEST_DIR_NAME ) )
-          throw Exception();
+        if ( !volume->mkdir( get_test_dir_name() ) ) throw Exception();
+        if ( !volume->touch( get_test_file_path() ) ) throw Exception();
 
-        if 
-        ( 
-           !volume->touch
-           ( 
-             yield::platform::Path( YIELD_PLATFORM_DIRECTORY_TEST_DIR_NAME )
-             / YIELD_PLATFORM_FILE_TEST_FILE_NAME 
-           )
-         )
-          throw Exception();
-
-        directory = volume->opendir( YIELD_PLATFORM_DIRECTORY_TEST_DIR_NAME );
+        directory = volume->opendir( get_test_dir_name() );
         if ( directory == NULL )
           throw Exception();
       }
@@ -82,14 +75,18 @@ namespace yield
       void tearDown()
       {
         Directory::dec_ref( directory );
-        volume->rmtree( YIELD_PLATFORM_DIRECTORY_TEST_DIR_NAME );
+        volume->rmtree( get_test_dir_name() );
       }
 
     protected:
       Directory& get_directory() const { return *directory; }
+      const Path& get_test_dir_name() const { return test_dir_name; }
+      const Path& get_test_file_name() const { return test_file_name; }
+      const Path& get_test_file_path() const { return test_file_path; }
 
     private:
       Directory* directory;
+      Path test_dir_name, test_file_name, test_file_path;
       Volume* volume;
     };
 
@@ -114,20 +111,22 @@ namespace yield
       dirent = get_directory().readdir();
       ASSERT_EQUAL( dirent->get_name(), ".." );
       dirent = get_directory().readdir();
-      ASSERT_EQUAL( dirent->get_name(), YIELD_PLATFORM_FILE_TEST_FILE_NAME );
+      ASSERT_EQUAL( dirent->get_name(), get_test_file_name() );
       Directory::Entry::dec_ref( *dirent );
     }
 
 
-    template <class VolumeType = Volume>
     class DirectoryTestSuite : public yunit::TestSuite
     {
     public:
-      DirectoryTestSuite( const string& name )
+      DirectoryTestSuite( const string& name, Volume* volume = NULL )
         : TestSuite( name )
       {
-        Volume* volume = new VolumeType;
+        if ( volume == NULL )
+          volume = new Volume;
+
         addTest( new Directory_readdirTest( &volume->inc_ref() ) );
+
         Volume::dec_ref( *volume );
       }
     };

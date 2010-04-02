@@ -54,6 +54,7 @@ INCLUDE_DIR_PATHS = \
     join( XTREEMFS_DIR_PATH, "include" ),
     join( XTREEMFS_DIR_PATH, "share", "yidl", "include" ),
     join( XTREEMFS_DIR_PATH, "share", "yield", "include" ),
+    join( XTREEMFS_DIR_PATH, "share", "yield", "src" ),    
     join( XTREEMFS_DIR_PATH, "share", "yieldfs", "include" ),
     join( GOOGLE_BREAKPAD_DIR_PATH, "src" )
 )
@@ -76,7 +77,7 @@ try:
 except ImportError:
     sys.path.append( join( YIDL_DIR_PATH, "src", "py" ) )
 
-from yidl.compiler.idl_parser import parse_idl
+import yidl.compiler
 from yidl.generators import generate_proj, generate_SConscript, generate_vcproj
 from yidl.generators import generate_yield_cpp
 from yidl.utilities import copy_file, format_src, indent, pad, write_file
@@ -102,7 +103,7 @@ for file_stem in ( "concurrency", "ipc", "platform" ):
   copy_file_paths[join( YIELD_DIR_PATH, "include", "yield", file_stem + ".h" )] = join( XTREEMFS_DIR_PATH, "share", "yield", "include", "yield", file_stem + ".h" )
   copy_file_paths[join( YIELD_DIR_PATH, "src", "yield", file_stem + ".cpp" )] = join( XTREEMFS_DIR_PATH, "share", "yield", "src", "yield", file_stem + ".cpp" )
 # yield/platform _test.h's
-for test_h_file_prefix in ( "directory", "file", "volume" ):
+for test_h_file_prefix in ( "channel", "directory", "file", "volume" ):
     copy_file_paths[join( YIELD_DIR_PATH, "src", "yield", "platform", test_h_file_prefix + "_test.h" )] = join( XTREEMFS_DIR_PATH, "share", "yield", "src", "yield", "platform", test_h_file_prefix + "_test.h" )
 
 # YieldFS
@@ -439,5 +440,5 @@ chdir( join( MY_DIR_PATH, "..", "src", "servers", "src" ) )
 for interface_idl_file_name in listdir( INTERFACES_DIR_PATH ):
     if interface_idl_file_name.endswith( ".idl" ):
         target = XtreemFSJavaTarget()
-        parse_idl( join( INTERFACES_DIR_PATH, interface_idl_file_name ), target )
+        yidl.compiler.parse( join( INTERFACES_DIR_PATH, interface_idl_file_name ), target )
         target.generate()

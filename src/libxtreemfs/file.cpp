@@ -66,15 +66,24 @@ using yield::platform::TimerQueue;
   }
 
 
-class File::Buffer : public yidl::runtime::FixedBuffer
+class File::Buffer : public yidl::runtime::Buffer
 {
 public:
-  Buffer( const void* buf, size_t len )
-    : FixedBuffer( const_cast<void*>( buf ), len, len )
+  Buffer( void* buf, size_t len )
+    : buf( buf ), len( len )
   { }
 
   // yidl::runtime::RTTIObject
   YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( File::Buffer, 0 );
+
+  // yidl::runtime::Buffer
+  size_t capacity() const { return len; }
+  operator void*() const { return buf; }
+  void resize( size_t n ) { len = n; }
+  size_t size() const { return len; }
+
+private:
+  void* buf; size_t len;
 };
 
 
@@ -669,7 +678,11 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
         0,
         false,
         0,
-        new Buffer( wbuf_p, static_cast<uint32_t>( object_size ) )
+        new Buffer
+            ( 
+              const_cast<char*>( wbuf_p ),
+              static_cast<uint32_t>( object_size ) 
+            )
       );
 
       OSDInterfaceMessages::writeRequest* write_request =

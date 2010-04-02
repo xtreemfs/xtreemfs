@@ -30,8 +30,8 @@
 #ifndef _XTREEMFS_MRC_PROXY_H_
 #define _XTREEMFS_MRC_PROXY_H_
 
-#include "xtreemfs/interfaces/mrc_interface.h"
 #include "xtreemfs/proxy.h"
+#include "xtreemfs/interfaces/mrc_interface.h"
 
 
 namespace xtreemfs
@@ -66,7 +66,6 @@ namespace xtreemfs
     create
     (
       const URI& absolute_uri,
-      Configuration* configuration = NULL,
       Log* error_log = NULL,
       const char* password = "",
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL

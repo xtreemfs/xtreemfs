@@ -30,11 +30,6 @@
 #include "xtreemfs/osd_proxies.h"
 #include "xtreemfs/dir_proxy.h"
 using org::xtreemfs::interfaces::AddressMappingSet;
-using org::xtreemfs::interfaces::ONCRPC_SCHEME;
-#ifdef YIELD_PLATFORM_HAVE_OPENSSL
-using org::xtreemfs::interfaces::ONCRPCG_SCHEME;
-using org::xtreemfs::interfaces::ONCRPCS_SCHEME;
-#endif
 using org::xtreemfs::interfaces::Replica;
 using org::xtreemfs::interfaces::ReplicaSet;
 using org::xtreemfs::interfaces::StripingPolicy;
@@ -46,7 +41,6 @@ OSDProxies::OSDProxies
 (
   DIRProxy& dir_proxy,
   Log* error_log,  
-  OSDProxy::Configuration* osd_proxy_configuration,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
   SSLContext* osd_proxy_ssl_context,
 #endif
@@ -60,12 +54,7 @@ OSDProxies::OSDProxies
 #endif
     osd_proxy_stage_group( Object::inc_ref( osd_proxy_stage_group ) ),
     trace_log( Object::inc_ref( trace_log ) )
-{
-  if ( osd_proxy_configuration != NULL )
-    this->osd_proxy_configuration = osd_proxy_configuration;
-  else
-    this->osd_proxy_configuration = new OSDProxy::Configuration;
-}
+{ }
 
 OSDProxies::~OSDProxies()
 {
@@ -74,7 +63,6 @@ OSDProxies::~OSDProxies()
 
   DIRProxy::dec_ref( dir_proxy );
   Log::dec_ref( error_log );
-  OSDProxy::Configuration::dec_ref( *osd_proxy_configuration );
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
   SSLContext::dec_ref( osd_proxy_ssl_context );
 #endif
@@ -185,9 +173,9 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
         osd_proxy_ssl_context != NULL 
         &&
         (
-          ( *address_mapping_i ).get_protocol() == ONCRPCS_SCHEME 
+          ( *address_mapping_i ).get_protocol() == "oncrpcs" 
           ||
-          ( *address_mapping_i ).get_protocol() == ONCRPCG_SCHEME
+          ( *address_mapping_i ).get_protocol() == "oncrpcg"
         )
       )
       {
@@ -195,7 +183,6 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
           = &OSDProxy::create
             (
               ( *address_mapping_i ).get_uri(),
-              &osd_proxy_configuration->inc_ref(),
               error_log,
               osd_proxy_ssl_context,
               trace_log
@@ -206,13 +193,12 @@ OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )
       }
       else
 #endif
-      if ( ( *address_mapping_i ).get_protocol() == ONCRPC_SCHEME )
+      if ( ( *address_mapping_i ).get_protocol() == "oncrpc" )
       {
         osd_proxy
           = &OSDProxy::create
             (
               ( *address_mapping_i ).get_uri(),
-              &osd_proxy_configuration->inc_ref(),
               error_log,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
               osd_proxy_ssl_context,

@@ -27,55 +27,41 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#ifndef _LIBXTREEMFS_FILE_H_
-#define _LIBXTREEMFS_FILE_H_
+#ifndef _XTREEMFS_PROXY_EXCEPTION_H_
+#define _XTREEMFS_PROXY_EXCEPTION_H_
 
-#include "xtreemfs/osd_proxy.h"
+#include "yield.h"
 
 
 namespace xtreemfs
 {
-  class Volume;
-  using org::xtreemfs::interfaces::Lock;
-  using org::xtreemfs::interfaces::XCap;
-  using org::xtreemfs::interfaces::XLocSet;
-  using yield::platform::Path;
-
-
-  class File : public yield::platform::File
+  class ProxyException : public yield::concurrency::Exception
   {
-  public:
-    File
-    (
-      Volume& parent_volume,
-      const Path& path,
-      const XCap& xcap,
-      const XLocSet& xlocs
-    );
+  public:    
+    virtual const string& get_error_message() const
+    { 
+      return empty_error_message;
+    }
 
-    ~File();
+    // std::exception
+    const char* what() const throw()
+    { 
+      return get_error_message().c_str(); 
+    }
 
-    // yidl::runtime::Object
-    File& inc_ref() { return Object::inc_ref( *this ); }
+  protected:
+    ProxyException()
+    { }
 
-    // yield::platform::File
-    YIELD_PLATFORM_FILE_PROTOTYPES;
-    size_t getpagesize();
-
-  private:
-    class Buffer;
-    class XCapTimer;
+    ProxyException( const char* what )
+      : yield::concurrency::Exception( what )
+    { }
 
   private:
-    bool closed;
-    vector<Lock> locks;
-    Path path;
-    Volume& parent_volume;
-    size_t selected_file_replica_i;
-    XCap xcap;
-    XCapTimer* xcap_timer;
-    XLocSet xlocs;
+    string empty_error_message;
   };
 };
+
+#define ORG_XTREEMFS_EXCEPTION_PARENT_CLASS ::xtreemfs::ProxyException
 
 #endif

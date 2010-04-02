@@ -5,7 +5,6 @@ import java.util.Iterator;
 import org.xtreemfs.*;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.*;
-
 import yidl.runtime.Marshaller;
 import yidl.runtime.PrettyPrinter;
 import yidl.runtime.Sequence;
@@ -20,8 +19,8 @@ public class ReplicaSet extends Sequence<Replica>
     public ReplicaSet() { }
 
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -29,7 +28,6 @@ public class ReplicaSet extends Sequence<Replica>
         pretty_printer.writeSequence( "", this );
         return string_writer.toString();
     }
-
 
     // yidl.runtime.Object
     public int getTag() { return 2010030937; }
@@ -61,6 +59,4 @@ public class ReplicaSet extends Sequence<Replica>
         this.add( value );
     }
 
-
 }
-

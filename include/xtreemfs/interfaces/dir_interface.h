@@ -1,5 +1,5 @@
-#ifndef _2127724562_H_
-#define _2127724562_H_
+#ifndef _820275261_H_
+#define _820275261_H_
 
 
 #include "constants.h"
@@ -1943,6 +1943,44 @@ namespace org
           else return NULL;
         }
 
+
+        // yidl::runtime::MarshallableObjectFactory
+        virtual ::yidl::runtime::MarshallableObject*
+        createMarshallableObject
+        (
+          uint32_t type_id
+        )
+        {
+          switch ( type_id )
+          {
+            case 2010030951: return new ServiceSet;
+            case 2010030950: return new Service;
+            case 2010030918: return new UserCredentials;
+            case 2010030948: return new ServiceDataMap;
+            case 2010030947: return new AddressMappingSet;
+            case 2010030946: return new AddressMapping;
+            case 2010030917: return new StringSet;
+            default: return NULL;
+          }
+        }
+
+        virtual ::yidl::runtime::MarshallableObject*
+        createMarshallableObject
+        (
+          const char* type_name,
+          size_t type_name_len
+        )
+        {
+          if ( type_name_len == 10 && strncmp( type_name, "ServiceSet", 10 ) == 0 ) return new ServiceSet;
+          else if ( type_name_len == 7 && strncmp( type_name, "Service", 7 ) == 0 ) return new Service;
+          else if ( type_name_len == 15 && strncmp( type_name, "UserCredentials", 15 ) == 0 ) return new UserCredentials;
+          else if ( type_name_len == 14 && strncmp( type_name, "ServiceDataMap", 14 ) == 0 ) return new ServiceDataMap;
+          else if ( type_name_len == 17 && strncmp( type_name, "AddressMappingSet", 17 ) == 0 ) return new AddressMappingSet;
+          else if ( type_name_len == 14 && strncmp( type_name, "AddressMapping", 14 ) == 0 ) return new AddressMapping;
+          else if ( type_name_len == 10 && strncmp( type_name, "DirService", 10 ) == 0 ) return new DirService;
+          else if ( type_name_len == 9 && strncmp( type_name, "StringSet", 9 ) == 0 ) return new StringSet;
+          else return NULL;
+        }
       };
 
 

@@ -48,7 +48,9 @@ using org::xtreemfs::interfaces::StringSet;
 #include "yield.h"
 using yield::concurrency::StageGroup;
 using yield::platform::iconv;
+using yield::platform::StackBuffer;
 using yield::platform::UUID;
+using yield::platform::XDRUnmarshaller;
 
 #include <errno.h>
 #ifdef _WIN32
@@ -206,7 +208,6 @@ Volume::create
     = DIRProxy::create
       (
         dir_uri,
-        NULL,
         error_log,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
         proxy_ssl_context,
@@ -225,7 +226,6 @@ Volume::create
     = MRCProxy::create
       (
         mrc_uri,
-        NULL,
         error_log,
         "",
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
@@ -247,7 +247,6 @@ Volume::create
           (
             dir_proxy,
             error_log,
-            NULL,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
             proxy_ssl_context,
 #endif
@@ -315,14 +314,12 @@ Volume::get_vivaldi_coordinates() const
 
     if ( vivaldi_coordinates_file != NULL )
     {
-      yidl::runtime::StackBuffer<sizeof( VivaldiCoordinates )>
-        vivaldi_coordinates_buffer;
+      StackBuffer<sizeof( VivaldiCoordinates )> vivaldi_coordinates_buffer;
 
       vivaldi_coordinates_file->read( vivaldi_coordinates_buffer );
       yield::platform::File::dec_ref( *vivaldi_coordinates_file );
 
-      yidl::runtime::XDRUnmarshaller
-        xdr_unmarshaller( vivaldi_coordinates_buffer );
+      XDRUnmarshaller xdr_unmarshaller( vivaldi_coordinates_buffer );
       vivaldi_coordinates.unmarshal( xdr_unmarshaller );
     }
   }

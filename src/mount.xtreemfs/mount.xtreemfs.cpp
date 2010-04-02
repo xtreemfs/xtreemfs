@@ -43,9 +43,20 @@ using namespace xtreemfs;
 using yield::platform::Process;
 using yield::platform::Thread;
 
+#include "yield/platform/directory_test.h"
+using yield::platform::DirectoryTestSuite;
+
+#include "yield/platform/file_test.h"
+using yield::platform::FileTestSuite;
+
+#include "yield/platform/volume_test.h"
+using yield::platform::VolumeTestSuite;
+
 #include "yieldfs.h"
 using yieldfs::FUSE;
 
+#include "yunit.h"
+using yunit::TestRunner;
 
 
 int main( int argc, char** argv )
@@ -57,6 +68,7 @@ int main( int argc, char** argv )
 #if FUSE_MAJOR_VERSION > 2 || ( FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 8 )
   mount_options.add( "--no-big-writes", false );
 #endif
+  mount_options.add( "--test", false );
   mount_options.add( "--trace-file-io", false );
   mount_options.add( "--trace-volume-operations", false );
   mount_options.add
@@ -89,6 +101,7 @@ int main( int argc, char** argv )
 #if FUSE_MAJOR_VERSION > 2 || ( FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 8 )
     bool no_big_writes = false;
 #endif
+    bool test = false;
     Path vivaldi_coordinates_file_path;
     uint32_t volume_flags = Volume::FLAGS_DEFAULT;
 
@@ -113,6 +126,11 @@ int main( int argc, char** argv )
 
         if ( popt.get_argument().find_first_of( "direct_io" ) != string::npos )
           fuse_flags |= FUSE::FLAG_DIRECT_IO;  
+      }
+      else if ( popt == "--test" )
+      {
+        foreground = true;
+        test = true;
       }
       else if ( popt == "--vivaldi-coordinates-file-path" )
         vivaldi_coordinates_file_path = popt.get_argument();
@@ -140,11 +158,13 @@ int main( int argc, char** argv )
     if ( options.get_trace_log() != NULL )
       fuse_flags |= FUSE::FLAG_DEBUG;
 
-    if ( !options.get_positional_arguments().empty() )
-      mount_point = options.get_positional_arguments()[0];
-    else
-      throw Exception( 1, "must specify mount point" );
-
+    if ( !test )
+    {
+      if ( !options.get_positional_arguments().empty() )
+        mount_point = options.get_positional_arguments()[0];
+      else
+        throw Exception( 1, "must specify mount point" );
+    }
 
     // Create the XtreemFS volume in the parent as well as the child process
     // so that the parent will fail on most common errors
@@ -169,37 +189,59 @@ int main( int argc, char** argv )
                 );
       }
 
-      auto_ptr<FUSE> fuse( &FUSE::create( *volume, fuse_flags ) );
+      if ( test )
+      {
+        int failed_test_case_count = 0;
+        TestRunner test_runner;
+
+        //DirectoryTestSuite
+        //  directory_test_suite( "DirectoryTestSuite", &volume->inc_ref() );
+        //failed_test_case_count += test_runner.run( directory_test_suite );
+
+        //FileTestSuite
+        //  file_test_suite( "FileTestSuite", &volume->inc_ref() );
+        //failed_test_case_count += test_runner.run( file_test_suite );
+
+        VolumeTestSuite 
+          volume_test_suite( "VolumeTestSuite", &volume->inc_ref() );
+        failed_test_case_count += test_runner.run( volume_test_suite );
+
+        return failed_test_case_count;
+      }
+      else
+      {
+        auto_ptr<FUSE> fuse( &FUSE::create( *volume, fuse_flags ) );
 
 #ifdef _WIN32
-      return fuse->main( mount_point.c_str() );
+        return fuse->main( mount_point.c_str() );
 #else
-      std::vector<char*> fuse_argvv;
-      fuse_argvv.push_back( argv[0] );
-      if ( ( fuse_flags & FUSE::FLAG_DEBUG ) == FUSE::FLAG_DEBUG )
-        fuse_argvv.push_back( "-d" );
-      fuse_argvv.push_back( "-o" );
-      if ( !fuse_o_args.empty() )
-        fuse_o_args.append( "," );
-      fuse_o_args.append( "use_ino,fsname=xtreemfs" );
+        std::vector<char*> fuse_argvv;
+        fuse_argvv.push_back( argv[0] );
+        if ( ( fuse_flags & FUSE::FLAG_DEBUG ) == FUSE::FLAG_DEBUG )
+          fuse_argvv.push_back( "-d" );
+        fuse_argvv.push_back( "-o" );
+        if ( !fuse_o_args.empty() )
+          fuse_o_args.append( "," );
+        fuse_o_args.append( "use_ino,fsname=xtreemfs" );
 #if FUSE_MAJOR_VERSION > 2 || ( FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 8 )
-      if ( !no_big_writes )
-        fuse_o_args.append( ",big_writes" );
+        if ( !no_big_writes )
+          fuse_o_args.append( ",big_writes" );
 #endif
-      fuse_argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
-      get_log()->get_stream( Log::LOG_INFO ) <<
-          get_program_name() << ": passing -o " << fuse_o_args <<
-          " to FUSE.";
-      fuse_argvv.push_back( NULL );
-      struct fuse_args fuse_args_ =
-        FUSE_ARGS_INIT( fuse_argvv.size() - 1 , &fuse_argvv[0] );
+        fuse_argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
+        get_log()->get_stream( Log::LOG_INFO ) <<
+            get_program_name() << ": passing -o " << fuse_o_args <<
+            " to FUSE.";
+        fuse_argvv.push_back( NULL );
+        struct fuse_args fuse_args_ =
+          FUSE_ARGS_INIT( fuse_argvv.size() - 1 , &fuse_argvv[0] );
 
-      ::close( STDIN_FILENO );
-      ::close( STDOUT_FILENO );
-      ::close( STDERR_FILENO );
+        ::close( STDIN_FILENO );
+        ::close( STDOUT_FILENO );
+        ::close( STDERR_FILENO );
 
-      return fuse->main( fuse_args_, mount_point.c_str() );
+        return fuse->main( fuse_args_, mount_point.c_str() );
 #endif
+      }
     }
     else // !foreground
     {

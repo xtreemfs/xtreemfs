@@ -206,9 +206,9 @@ int main( int argc, char** argv )
           // Default to SSL if we have an SSL context, otherwise TCP
           string match_protocol;
           if ( options.get_ssl_context() != NULL )
-            match_protocol = ONCRPCS_SCHEME;
+            match_protocol = "oncrpcs";
           else
-            match_protocol = ONCRPC_SCHEME;
+            match_protocol = "oncrpc";
 
           for
           (

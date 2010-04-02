@@ -39,7 +39,6 @@ OSDProxy&
 OSDProxy::create
 (
   const URI& absolute_uri,
-  Configuration* configuration,
   Log* error_log,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
   SSLContext* ssl_context,
@@ -56,7 +55,6 @@ OSDProxy::create
                   ONC_RPC_PORT_DEFAULT,
                   0x20000000 + TAG,
                   TAG,
-                  configuration,
                   error_log,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
                   ssl_context,

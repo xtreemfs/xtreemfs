@@ -1,5 +1,5 @@
-#ifndef _1523145150_H_
-#define _1523145150_H_
+#ifndef _2064902146_H_
+#define _2064902146_H_
 
 
 #include "constants.h"
@@ -4363,6 +4363,73 @@ namespace org
           else return NULL;
         }
 
+
+        // yidl::runtime::MarshallableObjectFactory
+        virtual ::yidl::runtime::MarshallableObject*
+        createMarshallableObject
+        (
+          uint32_t type_id
+        )
+        {
+          switch ( type_id )
+          {
+            case 2010030933: return new OSDWriteResponse;
+            case 2010030942: return new FileCredentialsSet;
+            case 2010030973: return new ObjectVersion;
+            case 2010030927: return new NewFileSize;
+            case 2010030917: return new StringSet;
+            case 2010030974: return new ObjectVersionList;
+            case 2010030966: return new InternalGmax;
+            case 2010030939: return new XCap;
+            case 2010030972: return new ObjectListSet;
+            case 2010030975: return new ReplicaStatus;
+            case 2010030918: return new UserCredentials;
+            case 2010030967: return new ObjectData;
+            case 2010030938: return new VivaldiCoordinates;
+            case 2010030937: return new ReplicaSet;
+            case 2010030968: return new InternalReadLocalResponse;
+            case 2010030970: return new Lock;
+            case 2010030935: return new StripingPolicy;
+            case 2010030928: return new NewFileSizeSet;
+            case 2010030941: return new FileCredentials;
+            case 2010030936: return new Replica;
+            case 2010030940: return new XLocSet;
+            case 2010030971: return new ObjectList;
+            default: return NULL;
+          }
+        }
+
+        virtual ::yidl::runtime::MarshallableObject*
+        createMarshallableObject
+        (
+          const char* type_name,
+          size_t type_name_len
+        )
+        {
+          if ( type_name_len == 16 && strncmp( type_name, "OSDWriteResponse", 16 ) == 0 ) return new OSDWriteResponse;
+          else if ( type_name_len == 18 && strncmp( type_name, "FileCredentialsSet", 18 ) == 0 ) return new FileCredentialsSet;
+          else if ( type_name_len == 13 && strncmp( type_name, "ObjectVersion", 13 ) == 0 ) return new ObjectVersion;
+          else if ( type_name_len == 11 && strncmp( type_name, "NewFileSize", 11 ) == 0 ) return new NewFileSize;
+          else if ( type_name_len == 9 && strncmp( type_name, "StringSet", 9 ) == 0 ) return new StringSet;
+          else if ( type_name_len == 17 && strncmp( type_name, "ObjectVersionList", 17 ) == 0 ) return new ObjectVersionList;
+          else if ( type_name_len == 12 && strncmp( type_name, "InternalGmax", 12 ) == 0 ) return new InternalGmax;
+          else if ( type_name_len == 4 && strncmp( type_name, "XCap", 4 ) == 0 ) return new XCap;
+          else if ( type_name_len == 13 && strncmp( type_name, "ObjectListSet", 13 ) == 0 ) return new ObjectListSet;
+          else if ( type_name_len == 13 && strncmp( type_name, "ReplicaStatus", 13 ) == 0 ) return new ReplicaStatus;
+          else if ( type_name_len == 15 && strncmp( type_name, "UserCredentials", 15 ) == 0 ) return new UserCredentials;
+          else if ( type_name_len == 10 && strncmp( type_name, "ObjectData", 10 ) == 0 ) return new ObjectData;
+          else if ( type_name_len == 18 && strncmp( type_name, "VivaldiCoordinates", 18 ) == 0 ) return new VivaldiCoordinates;
+          else if ( type_name_len == 10 && strncmp( type_name, "ReplicaSet", 10 ) == 0 ) return new ReplicaSet;
+          else if ( type_name_len == 25 && strncmp( type_name, "InternalReadLocalResponse", 25 ) == 0 ) return new InternalReadLocalResponse;
+          else if ( type_name_len == 4 && strncmp( type_name, "Lock", 4 ) == 0 ) return new Lock;
+          else if ( type_name_len == 14 && strncmp( type_name, "StripingPolicy", 14 ) == 0 ) return new StripingPolicy;
+          else if ( type_name_len == 14 && strncmp( type_name, "NewFileSizeSet", 14 ) == 0 ) return new NewFileSizeSet;
+          else if ( type_name_len == 15 && strncmp( type_name, "FileCredentials", 15 ) == 0 ) return new FileCredentials;
+          else if ( type_name_len == 7 && strncmp( type_name, "Replica", 7 ) == 0 ) return new Replica;
+          else if ( type_name_len == 7 && strncmp( type_name, "XLocSet", 7 ) == 0 ) return new XLocSet;
+          else if ( type_name_len == 10 && strncmp( type_name, "ObjectList", 10 ) == 0 ) return new ObjectList;
+          else return NULL;
+        }
       };
 
 

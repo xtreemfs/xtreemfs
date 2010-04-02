@@ -29,10 +29,6 @@
 
 #include "xtreemfs/dir_proxy.h"
 #include "xtreemfs/options.h"
-using org::xtreemfs::interfaces::ONCRPC_SCHEME;
-using org::xtreemfs::interfaces::ONCRPCG_SCHEME;
-using org::xtreemfs::interfaces::ONCRPCS_SCHEME;
-using org::xtreemfs::interfaces::ONCRPCU_SCHEME;
 using org::xtreemfs::interfaces::ServiceSet;
 using org::xtreemfs::interfaces::ServiceDataMap;
 using namespace xtreemfs;
@@ -85,7 +81,6 @@ DIRProxy& DIRProxy::create( const Options& options )
     return create
            (
              *options.get_uri(),
-             NULL,
              options.get_error_log(),
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
              options.get_ssl_context(),
@@ -101,7 +96,6 @@ DIRProxy&
 DIRProxy::create
 (
   const URI& absolute_uri,
-  Configuration* configuration,
   Log* error_log,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
   SSLContext* ssl_context,
@@ -118,7 +112,6 @@ DIRProxy::create
                   ONC_RPC_PORT_DEFAULT,
                   0x20000000 + TAG,
                   TAG,
-                  configuration,
                   error_log,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
                   ssl_context,
@@ -231,7 +224,7 @@ URI DIRProxy::getVolumeURIFromVolumeName( const string& volume_name_utf8 )
             address_mapping_i++
           )
           {
-            if ( ( *address_mapping_i ).get_protocol() == ONCRPC_SCHEME )
+            if ( ( *address_mapping_i ).get_protocol() == "oncrpc" )
               return URI( ( *address_mapping_i ).get_uri() );
           }
 
@@ -243,7 +236,7 @@ URI DIRProxy::getVolumeURIFromVolumeName( const string& volume_name_utf8 )
             address_mapping_i++
           )
           {
-            if ( ( *address_mapping_i ).get_protocol() == ONCRPCG_SCHEME )
+            if ( ( *address_mapping_i ).get_protocol() == "oncrpcg" )
               return URI( ( *address_mapping_i ).get_uri() );
           }
 
@@ -255,7 +248,7 @@ URI DIRProxy::getVolumeURIFromVolumeName( const string& volume_name_utf8 )
             address_mapping_i++
           )
           {
-            if ( ( *address_mapping_i ).get_protocol() == ONCRPCS_SCHEME )
+            if ( ( *address_mapping_i ).get_protocol() == "oncrpcs" )
               return URI( ( *address_mapping_i ).get_uri() );
           }
 
@@ -267,7 +260,7 @@ URI DIRProxy::getVolumeURIFromVolumeName( const string& volume_name_utf8 )
             address_mapping_i++
           )
           {
-            if ( ( *address_mapping_i ).get_protocol() == ONCRPCU_SCHEME )
+            if ( ( *address_mapping_i ).get_protocol() == "oncrpcu" )
               return URI( ( *address_mapping_i ).get_uri() );
           }
         }

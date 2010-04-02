@@ -30,7 +30,7 @@
 #ifndef _LIBXTREEMFS_DIRECTORY_H_
 #define _LIBXTREEMFS_DIRECTORY_H_
 
-#include "xtreemfs/interfaces/mrc_interface.h"
+#include "xtreemfs/mrc_proxy.h"
 
 #include "yield.h"
 

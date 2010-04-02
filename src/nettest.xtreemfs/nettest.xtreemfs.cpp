@@ -35,10 +35,10 @@ using namespace xtreemfs;
 #include "yidl.h"
 using yidl::runtime::auto_Object;
 using yidl::runtime::Buffer;
-using yidl::runtime::HeapBuffer;
 
 #include "yield.h"
 using yield::platform::Thread;
+using yield::platform::HeapBuffer;
 
 
 // Constants

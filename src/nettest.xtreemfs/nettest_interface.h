@@ -1,5 +1,5 @@
-#ifndef _1527176303_H_
-#define _1527176303_H_
+#ifndef _1742973684_H_
+#define _1742973684_H_
 
 
 #include "yield/concurrency.h"
@@ -342,6 +342,9 @@ namespace org
           else if ( type_name_len == 19 && strncmp( type_name, "recv_bufferResponse", 19 ) == 0 ) return new recv_bufferResponse;
           else return NULL;
         }
+
+
+        // yidl::runtime::MarshallableObjectFactory
 
       };
 

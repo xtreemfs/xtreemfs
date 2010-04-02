@@ -1,69 +1,107 @@
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+// Copyright (c) 2010 Minor Gordon
+// With original implementations and ideas contributed by Felix Hupfeld
+// All rights reserved
+// 
+// This source file is part of the Yield project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the Yield project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #ifndef _YIELD_PLATFORM_FILE_TEST_H_
 #define _YIELD_PLATFORM_FILE_TEST_H_
 
-#include "yield/platform.h"
-#include "yunit.h"
+#include "channel_test.h"
 
 
-#define YIELD_FILE_TEST_FILE_NAME "file_test.txt"
-#define YIELD_FILE_TEST_FILE_OPEN_FLAGS O_CREAT|O_TRUNC|O_RDWR
-#define YIELD_FILE_TEST_STRING "file_test"
-#define YIELD_FILE_TEST_STRING_LEN 11
-#define YIELD_FILE_TEST_XATTR_NAME "file_test_xattr_name"
-#define YIELD_FILE_TEST_XATTR_VALUE "file_test_xattr_value"
-
-
-namespace YIELD
+namespace yield
 {
   namespace platform
   {
-    class FileTestCase : public yunit::TestCase
+    class FileTestCase : public ChannelTestCase
     {
     public:
-      FileTestCase( const std::string& name, YIELD::platform::auto_Volume volume = NULL )
-        : yunit::TestCase( name )
+      FileTestCase( const string& name, Volume* volume = NULL )
+        : ChannelTestCase( name ),
+          test_xattr_name( "test_xattr_name" ),
+          test_xattr_value( "test_xattr_value" )
       {
+        file = NULL;
+
         if ( volume != NULL )
-          this->volume = volume;
+          this->volume = &volume->inc_ref();
         else
           this->volume = new Volume;
       }
 
       virtual ~FileTestCase()
-      { }
+      {
+        Volume::dec_ref( *volume );
+      }
 
-      FileTestCase& operator=( const FileTestCase& ) { return *this; }
-
+      // yunit::TestCase
       void setUp()
       {
-        tearDown();
-        file = volume->open( YIELD_FILE_TEST_FILE_NAME, YIELD_FILE_TEST_FILE_OPEN_FLAGS );
-        if ( file == NULL ) 
-          throw Exception();
+        volume->unlink( "file_test.txt" );
       }
 
       void tearDown()
       {
-        file.reset( NULL );
-        volume->unlink( YIELD_FILE_TEST_FILE_NAME );
+        File::dec_ref( file );
+        volume->unlink( "file_test.txt" );
       }
 
     protected:
-      auto_File get_file() const { return file; }
+      File& get_file( uint32_t open_flags = O_CREAT|O_TRUNC|O_RDWR ) 
+      {
+        if ( file == NULL )
+        {
+          file = volume->open( "file_test.txt", open_flags );
+          if ( file == NULL ) throw Exception();
+        }
+
+        return *file; 
+      }
+
+      const string& get_test_xattr_name() const { return test_xattr_name; }
+      const string& get_test_xattr_value() const { return test_xattr_value; }
+
+      bool set_test_xattr()
+      {
+        return get_file().setxattr( test_xattr_name, test_xattr_value, 0 );
+      }
 
     private:
-      YIELD::platform::auto_Volume volume;
-      auto_File file;
+      File* file;
+      string test_xattr_name, test_xattr_value;
+      Volume* volume;
     };
 
-#define YIELD_FILE_TEST_CASE( TestCaseName ) \
+#define YIELD_PLATFORM_FILE_TEST_CASE( TestCaseName ) \
     class File_##TestCaseName##Test : public FileTestCase \
     { \
     public:\
-      File_##TestCaseName##Test( YIELD::platform::auto_Volume volume = NULL ) \
+      File_##TestCaseName##Test( yield::platform::Volume* volume = NULL ) \
         : FileTestCase( "File_" # TestCaseName "Test", volume ) \
       { } \
       void runTest(); \
@@ -71,178 +109,238 @@ namespace YIELD
       inline void File_##TestCaseName##Test::runTest()
 
 
-    YIELD_FILE_TEST_CASE( close )
+    YIELD_PLATFORM_FILE_TEST_CASE( aio_read_bio )
     {
-      if ( !get_file()->close() ) 
-        throw Exception();
-      ASSERT_FALSE( get_file()->close() );
+      auto_Object<BIOQueue> bio_queue( BIOQueue::create() );
+      if ( !get_file().associate( *bio_queue ) ) throw Exception();
+
+      auto_Object<Buffer> write_buffer( get_write_buffer() );
+      ssize_t write_ret = get_file().write( *write_buffer );
+      check_write( write_ret );
+
+      get_file().aio_read( get_read_buffer(), 0, *this );
+
+      wait_for_aio();
     }
 
-    YIELD_FILE_TEST_CASE( datasync )
+    YIELD_PLATFORM_FILE_TEST_CASE( aio_read_no_io_queue )
     {
-      get_file()->write( YIELD_FILE_TEST_STRING, YIELD_FILE_TEST_STRING_LEN, 0 );
-      if ( !get_file()->datasync() ) 
-        throw Exception();
-      ASSERT_TRUE( get_file()->stat()->get_size() >= YIELD_FILE_TEST_STRING_LEN );
+      auto_Object<Buffer> write_buffer( get_write_buffer() );
+      ssize_t write_ret = get_file().write( *write_buffer );
+      check_write( write_ret );
+
+      auto_Object<Buffer> read_buffer( get_read_buffer() );
+      get_file().aio_read( read_buffer->inc_ref(), 0, *this );
+      check_read( read_buffer->size(), *read_buffer );
     }
 
-    YIELD_FILE_TEST_CASE( getpagesize )
+    YIELD_PLATFORM_FILE_TEST_CASE( aio_write_bio )
     {
-      size_t pagesize = get_file()->getpagesize();
+      auto_Object<BIOQueue> bio_queue( BIOQueue::create() );
+      if ( !get_file().associate( *bio_queue ) ) throw Exception();
+
+      get_file().aio_write( get_write_buffer(), *this );
+      wait_for_aio();
+
+      auto_Object<Buffer> read_buffer( get_read_buffer() );  
+      ssize_t read_ret = get_file().read( *read_buffer, 0 );
+      check_read( read_ret, *read_buffer );
+    }
+
+    YIELD_PLATFORM_FILE_TEST_CASE( aio_write_no_io_queue )
+    {
+      get_file().aio_write( get_write_buffer(), *this );
+
+      auto_Object<Buffer> read_buffer( get_read_buffer() );  
+      ssize_t read_ret = get_file().read( *read_buffer, 0 );
+      check_read( read_ret, *read_buffer );
+    }
+
+    YIELD_PLATFORM_FILE_TEST_CASE( close )
+    {
+      if ( !get_file().close() ) throw Exception();
+      ASSERT_FALSE( get_file().close() );
+    }
+
+    YIELD_PLATFORM_FILE_TEST_CASE( datasync )
+    {
+      auto_Object<Buffer> write_buffer( get_write_buffer() );
+      ssize_t write_ret = get_file().write( *write_buffer );
+      check_write( write_ret );
+      if ( !get_file().datasync() ) throw Exception();
+      ASSERT_TRUE( get_file().getattr()->get_size() >= write_buffer->size() );
+    }
+
+    YIELD_PLATFORM_FILE_TEST_CASE( getpagesize )
+    {
+      size_t pagesize = get_file().getpagesize();
       ASSERT_EQUAL( pagesize % 2, 0 );
     }
 
-    YIELD_FILE_TEST_CASE( get_size )
+    YIELD_PLATFORM_FILE_TEST_CASE( getattr )
     {
-      uint64_t size = get_file()->get_size();
-      ASSERT_EQUAL( size, 0 );
+      Stat* stbuf = get_file().getattr();
+      if ( stbuf == NULL ) throw Exception();
+      ASSERT_TRUE( stbuf->ISREG() );
+      ASSERT_EQUAL( stbuf->get_size(), 0 );
+      ASSERT_NOTEQUAL( stbuf->get_atime(), static_cast<uint64_t>( 0 ) );
+      ASSERT_NOTEQUAL( stbuf->get_mtime(), static_cast<uint64_t>( 0 ) );
+      ASSERT_NOTEQUAL( stbuf->get_ctime(), static_cast<uint64_t>( 0 ) );
+      Stat::dec_ref( *stbuf );
     }
 
-    YIELD_FILE_TEST_CASE( getxattr )
+    YIELD_PLATFORM_FILE_TEST_CASE( getxattr )
     {
-      if ( get_file()->setxattr( YIELD_FILE_TEST_XATTR_NAME, YIELD_FILE_TEST_XATTR_VALUE, 0 ) )
+      if ( set_test_xattr() )
       {
-        std::string value;
-        get_file()->getxattr( YIELD_FILE_TEST_XATTR_NAME, value );
-        ASSERT_EQUAL( value, YIELD_FILE_TEST_XATTR_VALUE );
+        string xattr_value;
+        get_file().getxattr( get_test_xattr_name(), xattr_value );
+        ASSERT_EQUAL( xattr_value, get_test_xattr_value() );
       }
-#ifdef YIELD_HAVE_XATTR_H
-      else
+#ifdef YIELD_PLATFORM_HAVE_XATTR_H
+      else if ( errno != ENOTSUP )
         throw Exception();
 #endif
     }
 
-    YIELD_FILE_TEST_CASE( listxattr )
+    YIELD_PLATFORM_FILE_TEST_CASE( listxattr )
     {
-      if ( get_file()->setxattr( YIELD_FILE_TEST_XATTR_NAME, YIELD_FILE_TEST_XATTR_VALUE, 0 ) )
+      if ( set_test_xattr() )
       {
-        std::vector<std::string> names;
-        get_file()->listxattr( names );
+        vector<string> names;
+        get_file().listxattr( names );
         ASSERT_TRUE( names.size() >= 1 );
-        for ( std::vector<std::string>::const_iterator name_i = names.begin(); name_i != names.end(); name_i++ )
+        for
+        (
+          vector<string>::const_iterator name_i = names.begin();
+          name_i != names.end();
+          name_i++
+        )
         {
-          if ( *name_i == YIELD_FILE_TEST_XATTR_NAME )
+          if ( *name_i == get_test_xattr_name() )
             return;
         }
         FAIL();
       }
-#ifdef YIELD_HAVE_XATTR_H
-      else
+#ifdef YIELD_PLATFORM_HAVE_XATTR_H
+      else if ( errno != ENOTSUP )
         throw Exception();
 #endif
     }
 
-    YIELD_FILE_TEST_CASE( operatorint )
+    YIELD_PLATFORM_FILE_TEST_CASE( operatorint )
     {
 #ifdef _WIN32
-      static_cast<void*>( *get_file() );
+      static_cast<void*>( get_file() );
 #else
-      static_cast<int>( *get_file() );
+      static_cast<int>( get_file() );
 #endif
     }
 
-    YIELD_FILE_TEST_CASE( read )
+    YIELD_PLATFORM_FILE_TEST_CASE( read )
     {
-      ssize_t bytes_written = get_file()->write( YIELD_FILE_TEST_STRING, YIELD_FILE_TEST_STRING_LEN, 0 );
-      if ( bytes_written <= 0 ) throw Exception();
-      if ( !get_file()->sync() ) throw Exception();
-      ASSERT_EQUAL( bytes_written, YIELD_FILE_TEST_STRING_LEN );
-      char test_str[YIELD_FILE_TEST_STRING_LEN];
-      for ( uint8_t read_i = 0; read_i < 8; read_i++ ) // Read multiple times to test caching files
+      auto_Object<Buffer> write_buffer( get_write_buffer() );
+      ssize_t write_ret = get_file().write( *write_buffer );
+      check_write( write_ret );
+
+      for ( uint8_t read_i = 0; read_i < 8; read_i++ )
       {
-        ssize_t bytes_read = get_file()->read( test_str, YIELD_FILE_TEST_STRING_LEN, 0 );
-        if ( bytes_read <= 0 ) throw Exception();
-        ASSERT_EQUAL( bytes_read, YIELD_FILE_TEST_STRING_LEN );
-        ASSERT_TRUE( strncmp( test_str, YIELD_FILE_TEST_STRING, YIELD_FILE_TEST_STRING_LEN ) == 0 );
+        auto_Object<Buffer> read_buffer( get_read_buffer() );
+        ssize_t read_ret = get_file().read( *read_buffer, 0 );
+        check_read( read_ret, *read_buffer );
       }
     }
 
-    YIELD_FILE_TEST_CASE( removexattr )
+    YIELD_PLATFORM_FILE_TEST_CASE( removexattr )
     {
-      if ( get_file()->setxattr( YIELD_FILE_TEST_XATTR_NAME, YIELD_FILE_TEST_XATTR_VALUE, 0 ) )
+      if ( set_test_xattr() )
       {
-        if ( !get_file()->removexattr( YIELD_FILE_TEST_XATTR_NAME ) ) 
+        if ( !get_file().removexattr( get_test_xattr_name() ) )
           throw Exception();
       }
-#ifdef YIELD_HAVE_XATTR_H
-      else
+#ifdef YIELD_PLATFORM_HAVE_XATTR_H
+      else if ( errno != ENOTSUP )
         throw Exception();
 #endif
     }
 
-    YIELD_FILE_TEST_CASE( setlk )
+    YIELD_PLATFORM_FILE_TEST_CASE( setlk )
     {
-      if ( !get_file()->setlk( true, 0, 256 ) ) throw Exception();
+      if ( !get_file().setlk( true, 0, 256 ) ) throw Exception();
     }
 
-    YIELD_FILE_TEST_CASE( setlkw )
+    YIELD_PLATFORM_FILE_TEST_CASE( setlkw )
     {
-      if ( !get_file()->setlkw( true, 0, 256 ) ) throw Exception();
+      if ( !get_file().setlkw( true, 0, 256 ) ) throw Exception();
     }
 
-    YIELD_FILE_TEST_CASE( setxattr )
+    YIELD_PLATFORM_FILE_TEST_CASE( setxattr )
     {
-      if ( get_file()->setxattr( YIELD_FILE_TEST_XATTR_NAME, YIELD_FILE_TEST_XATTR_VALUE, 0 ) )
+      if ( set_test_xattr() )
       {
-        std::string value;
-        get_file()->getxattr( YIELD_FILE_TEST_XATTR_NAME, value );
-        ASSERT_EQUAL( value, YIELD_FILE_TEST_XATTR_VALUE );
+        string xattr_value;
+        get_file().getxattr( get_test_xattr_name(), xattr_value );
+        ASSERT_EQUAL( xattr_value, get_test_xattr_value() );
       }
-#ifdef YIELD_HAVE_XATTR_H
-      else
+#ifdef YIELD_PLATFORM_HAVE_XATTR_H
+      else if ( errno != ENOTSUP )
         throw Exception();
 #endif
     }
 
-    YIELD_FILE_TEST_CASE( stat )
+    YIELD_PLATFORM_FILE_TEST_CASE( sync )
     {
-      auto_Stat stbuf = get_file()->stat();
-      ASSERT_TRUE( stbuf->ISREG() );
-      ASSERT_EQUAL( stbuf->get_size(), 0 );
-      ASSERT_NOTEQUAL( stbuf->get_atime(), 0 );
-      ASSERT_NOTEQUAL( stbuf->get_mtime(), 0 );
-      ASSERT_NOTEQUAL( stbuf->get_ctime(), 0 );
+      auto_Object<Buffer> write_buffer( get_write_buffer() );
+      ssize_t write_ret = get_file().write( *write_buffer );
+      check_write( write_ret );
+      if ( !get_file().sync() ) throw Exception();
+      ASSERT_TRUE( get_file().getattr()->get_size() >= write_buffer->size() );
     }
 
-    YIELD_FILE_TEST_CASE( sync )
+    YIELD_PLATFORM_FILE_TEST_CASE( truncate )
     {
-      get_file()->write( YIELD_FILE_TEST_STRING, YIELD_FILE_TEST_STRING_LEN, 0 );
-      if ( !get_file()->sync() ) throw Exception();
-      ASSERT_TRUE( get_file()->stat()->get_size() >= YIELD_FILE_TEST_STRING_LEN );
+      auto_Object<Buffer> write_buffer( get_write_buffer() );
+      ssize_t write_ret = get_file().write( *write_buffer );
+      check_write( write_ret );
+      if ( !get_file().sync() ) throw Exception();
+      ASSERT_TRUE( get_file().getattr()->get_size() >= write_buffer->size() );
+      if ( !get_file().truncate( 0 ) ) throw Exception();
+      if ( !get_file().sync() ) throw Exception();
+      ASSERT_EQUAL( get_file().getattr()->get_size(), 0 );
     }
 
-    YIELD_FILE_TEST_CASE( truncate )
+    YIELD_PLATFORM_FILE_TEST_CASE( unlk )
     {
-      if ( !get_file()->write( YIELD_FILE_TEST_STRING, YIELD_FILE_TEST_STRING_LEN, 0 ) ) throw YIELD::platform::Exception();
-      if ( !get_file()->sync() ) throw Exception();
-      ASSERT_TRUE( get_file()->stat()->get_size() >= YIELD_FILE_TEST_STRING_LEN );
-      if ( !get_file()->truncate( 0 ) ) throw Exception();
-      if ( !get_file()->sync() ) throw Exception();
-      ASSERT_EQUAL( get_file()->stat()->get_size(), 0 );
-    }
-
-    YIELD_FILE_TEST_CASE( unlk )
-    {
-      if ( !get_file()->setlkw( true, 0, 256 ) ) throw Exception();
+      if ( !get_file().setlkw( true, 0, 256 ) )
+        throw Exception();
 #ifndef _WIN32
-      if ( get_file()->getlk( true, 0, 256 ) ) throw Exception(); // getlk will not be true because we're using the same pid as the one that acquired the lock
+      // getlk will not be true because we're using the same pid
+      // as the one that acquired the lock
+      if ( get_file().getlk( true, 0, 256 ) )
+        throw Exception();
 #endif
-      if ( !get_file()->unlk( 0, 256 ) ) throw Exception();
+      if ( !get_file().unlk( 0, 256 ) )
+        throw Exception();
     }
 
 
-    template <class VolumeType = Volume>
     class FileTestSuite : public yunit::TestSuite
     {
     public:
-      FileTestSuite( const std::string& name )
+      FileTestSuite( const string& name, Volume* volume = NULL )
         : TestSuite( name )
       {
-        YIELD::platform::auto_Volume volume = new VolumeType;
+        if ( volume == NULL )
+          volume = new Volume;
+
+        addTest( new File_aio_read_bioTest( volume ) );
+        addTest( new File_aio_read_no_io_queueTest( volume ) );
+        addTest( new File_aio_write_bioTest( volume ) );
+        addTest( new File_aio_write_no_io_queueTest( volume ) );
         addTest( new File_closeTest( volume ) );
         addTest( new File_datasyncTest( volume ) );
         addTest( new File_getpagesizeTest( volume ) );
-        addTest( new File_get_sizeTest( volume ) );
+        addTest( new File_getattrTest( volume ) );
         addTest( new File_getxattrTest( volume  ) );
         addTest( new File_listxattrTest( volume ) );
         addTest( new File_operatorintTest( volume ) );
@@ -251,13 +349,15 @@ namespace YIELD
         addTest( new File_setlkTest( volume ) );
         addTest( new File_setlkwTest( volume ) );
         addTest( new File_setxattrTest( volume ) );
-        addTest( new File_statTest( volume ) );
         addTest( new File_syncTest( volume ) );
         addTest( new File_truncateTest( volume ) );
         addTest( new File_unlkTest( volume ) );
+
+        Volume::dec_ref( *volume );
       }
     };
   };
 };
+
 
 #endif

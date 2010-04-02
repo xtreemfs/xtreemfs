@@ -30,8 +30,8 @@
 #ifndef _XTREEMFS_DIR_PROXY_H_
 #define _XTREEMFS_DIR_PROXY_H_
 
-#include "xtreemfs/interfaces/dir_interface.h"
 #include "xtreemfs/proxy.h"
+#include "xtreemfs/interfaces/dir_interface.h"
 
 
 namespace xtreemfs
@@ -54,7 +54,6 @@ namespace xtreemfs
     create
     (
       const URI& absolute_uri,
-      Configuration* configuration = NULL,
       Log* error_log = NULL,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
       SSLContext* ssl_context = NULL,

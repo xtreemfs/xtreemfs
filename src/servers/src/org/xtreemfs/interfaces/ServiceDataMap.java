@@ -5,7 +5,6 @@ import java.util.Iterator;
 import org.xtreemfs.*;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.*;
-
 import yidl.runtime.Map;
 import yidl.runtime.Marshaller;
 import yidl.runtime.PrettyPrinter;
@@ -17,9 +16,10 @@ import yidl.runtime.Unmarshaller;
 public class ServiceDataMap extends Map<String, String>
 {
     public ServiceDataMap() { }
+
     // java.lang.Object
-    public String toString() 
-    { 
+    public String toString()
+    {
         StringWriter string_writer = new StringWriter();
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
@@ -27,7 +27,6 @@ public class ServiceDataMap extends Map<String, String>
         pretty_printer.writeMap( "", this );
         return string_writer.toString();
     }
-
 
     // yidl.runtime.Object
     public int getTag() { return 2010030948; }
@@ -69,6 +68,4 @@ public class ServiceDataMap extends Map<String, String>
             put( key, value );
         }
     }
-
 }
-

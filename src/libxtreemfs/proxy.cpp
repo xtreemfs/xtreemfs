@@ -21,7 +21,6 @@ Proxy::createONCRPCClient
   uint16_t port_default,
   uint32_t prog,
   uint32_t vers,
-  Configuration* configuration,
   Log* error_log,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
   SSLContext* ssl_context,
@@ -35,7 +34,7 @@ Proxy::createONCRPCClient
   if ( absolute_uri_with_port.get_port() == 0 )
     absolute_uri_with_port.set_port( port_default );
 
-  if ( scheme == ONCRPCU_SCHEME )
+  if ( scheme == "oncrpcu" )
   {
     return ONCRPCUDPSocketClient::create
            (
@@ -50,7 +49,7 @@ Proxy::createONCRPCClient
            );
   }
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
-  else if ( scheme == ONCRPCG_SCHEME && ssl_context != NULL )
+  else if ( scheme == "oncrpcg" && ssl_context != NULL )
   {
     SocketAddress* peername = 
       SocketAddress::create
@@ -75,7 +74,7 @@ Proxy::createONCRPCClient
                         prog,
                         *grid_ssl_socket,
                         vers,
-                        configuration,
+                        NULL,
                         NULL,
                         error_log,
                         trace_log
@@ -93,7 +92,7 @@ Proxy::createONCRPCClient
     else
       throw Exception();
   }
-  else if ( scheme == ONCRPCS_SCHEME && ssl_context != NULL )
+  else if ( scheme == "oncrpcs" && ssl_context != NULL )
   {
     return ONCRPCSSLSocketClient::create
            (
@@ -102,7 +101,7 @@ Proxy::createONCRPCClient
              *ssl_context,
              prog,
              vers,
-             configuration,
+             NULL,
              NULL,
              error_log,
              trace_log
@@ -117,7 +116,7 @@ Proxy::createONCRPCClient
              message_factory,
              prog,
              vers,
-             configuration,
+             NULL,
              NULL,
              error_log,
              trace_log

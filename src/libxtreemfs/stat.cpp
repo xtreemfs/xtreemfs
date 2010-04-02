@@ -30,14 +30,7 @@
 #include "stat.h"
 using namespace xtreemfs;
 
-#ifdef _WIN32
-#pragma warning( push )
-#pragma warning( disable: 4100 )
-#endif
-#include "xtreemfs/interfaces/mrc_interface.h"
-#ifdef _WIN32
-#pragma warning( pop )
-#endif
+#include "xtreemfs/mrc_proxy.h"
 
 
 Stat::Stat( const yield::platform::Stat& stbuf )

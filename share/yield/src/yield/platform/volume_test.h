@@ -1,288 +1,312 @@
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+// Copyright (c) 2010 Minor Gordon
+// With original implementations and ideas contributed by Felix Hupfeld
+// All rights reserved
+// 
+// This source file is part of the Yield project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the Yield project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #ifndef _YIELD_PLATFORM_VOLUME_TEST_H_
 #define _YIELD_PLATFORM_VOLUME_TEST_H_
 
 #include "yield/platform.h"
-#include "file_test.h"
+#include "yunit.h"
 #ifndef _WIN32
 #include <sys/statvfs.h>
 #endif
 
 
-#define YIELD_PLATFORM_VOLUME_TEST_DIR_NAME "volume_test"
-#define YIELD_PLATFORM_VOLUME_TEST_LINK_NAME "volume_test_link.txt"
-
-
-namespace YIELD
+namespace yield
 {
   namespace platform
   {
-    template <class VolumeType>
+    using yidl::runtime::auto_Object;
+
+
     class VolumeTestCase : public yunit::TestCase
     {
     public:
-      VolumeTestCase<VolumeType> operator=( const VolumeTestCase<VolumeType>& ) { }
-
-      virtual ~VolumeTestCase()
-      { }
-
-      yidl::runtime::auto_Object<VolumeType> get_volume() const { return volume; }
+      virtual ~VolumeTestCase() { }
 
     protected:
-      VolumeTestCase( const std::string& name, yidl::runtime::auto_Object<VolumeType> volume )
-        : yunit::TestCase( name ), volume( volume )
+      VolumeTestCase( const string& name, Volume& volume )
+        : yunit::TestCase( name ),
+          test_dir_name( "volume_test" ),
+          test_file_name( "volume_test.txt" ),
+          test_link_name( "volume_test_link.txt" ),
+          test_xattr_name( "test_xattr_name" ),
+          test_xattr_value( "test_xattr_value" ),
+          volume( volume.inc_ref() )
       { }
 
+      const Path& get_test_dir_name() const { return test_dir_name; }
+      const Path& get_test_file_name() const { return test_file_name; }
+      const Path& get_test_link_name() const { return test_link_name; }
+      const string& get_test_xattr_name() const { return test_xattr_name; }
+      const string& get_test_xattr_value() const { return test_xattr_value; }
+      Volume& get_volume() const { return volume; }
+
+      bool set_test_xattr()
+      {
+        return get_volume().setxattr
+               ( 
+                 test_file_name,
+                 test_xattr_name,
+                 test_xattr_value, 
+                 0 
+               );
+      }
+
+      // yunit::TestCase
       void setUp()
       {
         tearDown();
-        volume->creat( YIELD_FILE_TEST_FILE_NAME );
+        volume.touch( test_file_name );
       }
 
       void tearDown()
       {
-        volume->unlink( YIELD_FILE_TEST_FILE_NAME );
-        volume->unlink( YIELD_PLATFORM_VOLUME_TEST_LINK_NAME );
-        volume->rmtree( YIELD_PLATFORM_VOLUME_TEST_DIR_NAME );
+        volume.rmtree( test_dir_name );
+        volume.unlink( test_file_name );
+        volume.unlink( test_link_name );
       }
 
     private:
-      yidl::runtime::auto_Object<VolumeType> volume;
+      Path test_dir_name, test_file_name, test_link_name;
+      string test_xattr_name, test_xattr_value;
+      Volume& volume;
     };
 
-#define YIELD_PLATFORM_VOLUME_TEST_CASE( TestCaseName ) \
-    template <class VolumeType> \
-    class Volume_##TestCaseName##Test : public YIELD::platform::VolumeTestCase<VolumeType> \
-    { \
+#define YIELD_PLATFORM_VOLUME_TEST_CASE( TestCaseName )\
+    class Volume_##TestCaseName##Test : public yield::platform::VolumeTestCase\
+    {\
     public:\
-      Volume_##TestCaseName##Test( yidl::runtime::auto_Object<VolumeType> volume ) \
-        : VolumeTestCase<VolumeType>( "Volume_" # TestCaseName "Test", volume ) \
+      Volume_##TestCaseName##Test( Volume& volume )\
+        : VolumeTestCase( "Volume_" # TestCaseName "Test", volume )\
       { }\
-      void runTest(); \
+      void runTest();\
     };\
-    template <class VolumeType> \
-    inline void Volume_##TestCaseName##Test<VolumeType>::runTest()
+    inline void Volume_##TestCaseName##Test::runTest()
 
 
 #ifndef _WIN32
     YIELD_PLATFORM_VOLUME_TEST_CASE( access )
     {
-      ASSERT_TRUE( this->get_volume()->access( YIELD_FILE_TEST_FILE_NAME, O_RDONLY ) );
+      ASSERT_TRUE( get_volume().access( get_test_file_name(), O_RDONLY ) );
     }
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( chmod )
     {
-      if ( !this->get_volume()->chmod( YIELD_FILE_TEST_FILE_NAME, File::DEFAULT_MODE ) ) 
+      if ( !get_volume().chmod( get_test_file_name(), File::MODE_DEFAULT ) )
         throw Exception();
     }
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( chown )
     {
-      if ( !this->get_volume()->chown( YIELD_FILE_TEST_FILE_NAME, ::getuid(), ::getgid() ) )
+      if ( !get_volume().chown( get_test_file_name(), ::getuid(), ::getgid() ))
         throw Exception();
     }
 #endif
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( exists )
     {
-      ASSERT_TRUE( this->get_volume()->exists( YIELD_FILE_TEST_FILE_NAME ) );
-      ASSERT_FALSE( this->get_volume()->exists( "some other file.txt" ) );
+      ASSERT_TRUE( get_volume().exists( get_test_file_name() ) );
+      ASSERT_FALSE( get_volume().exists( "some other file.txt" ) );
+    }
+
+    YIELD_PLATFORM_VOLUME_TEST_CASE( getattr )
+    {
+      Stat* stbuf = get_volume().getattr( get_test_file_name() );
+      if ( stbuf != NULL ) 
+        Stat::dec_ref( *stbuf );
+      else
+        throw Exception();
     }
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( getxattr )
     {
-      if ( this->get_volume()->setxattr( YIELD_FILE_TEST_FILE_NAME, YIELD_FILE_TEST_XATTR_NAME, YIELD_FILE_TEST_XATTR_VALUE, 0 ) )
+      if ( set_test_xattr() )
       {
-        std::string value;
-        this->get_volume()->getxattr( YIELD_FILE_TEST_FILE_NAME, YIELD_FILE_TEST_XATTR_NAME, value );
-        ASSERT_EQUAL( value, YIELD_FILE_TEST_XATTR_VALUE );
+        string xattr_value;
+        get_volume().getxattr
+        (
+          get_test_file_name(),
+          get_test_xattr_name(),
+          xattr_value
+        );
+        ASSERT_EQUAL( xattr_value, get_test_xattr_value() );
       }
-#ifdef YIELD_HAVE_XATTR_H
-      else
+#ifdef YIELD_PLATFORM_HAVE_XATTR_H
+      else if ( errno != ENOTSUP )
         throw Exception();
 #endif
     }
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( isdir )
     {
-      this->get_volume()->mkdir( YIELD_PLATFORM_VOLUME_TEST_DIR_NAME, Volume::DEFAULT_DIRECTORY_MODE );
-      ASSERT_TRUE( this->get_volume()->isdir( YIELD_PLATFORM_VOLUME_TEST_DIR_NAME ) );
-      ASSERT_FALSE( this->get_volume()->isdir( YIELD_FILE_TEST_FILE_NAME ) );
+      get_volume().mkdir( get_test_dir_name() );
+      ASSERT_TRUE( get_volume().isdir( get_test_dir_name() ) );
+      ASSERT_FALSE( get_volume().isdir( get_test_file_name() ) );
     }
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( isfile )
     {
-      this->get_volume()->mkdir( YIELD_PLATFORM_VOLUME_TEST_DIR_NAME, Volume::DEFAULT_DIRECTORY_MODE );
-      ASSERT_TRUE( this->get_volume()->isfile( YIELD_FILE_TEST_FILE_NAME ) );
-      ASSERT_FALSE( this->get_volume()->isfile( YIELD_PLATFORM_VOLUME_TEST_DIR_NAME ) );
+      ASSERT_TRUE( get_volume().isfile( get_test_file_name() ) );
+      get_volume().mkdir( get_test_dir_name() );
+      ASSERT_FALSE( get_volume().isfile( get_test_dir_name() ) );
     }
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( link )
     {
-      if ( !this->get_volume()->link( YIELD_FILE_TEST_FILE_NAME, YIELD_PLATFORM_VOLUME_TEST_LINK_NAME ) ) 
-        throw Exception();
-      this->get_volume()->unlink( YIELD_PLATFORM_VOLUME_TEST_LINK_NAME );
-    }
-
-    class DummylistdirCallback : public Volume::listdirCallback
-    {
-    public:
-      bool operator()( const Path& )
-      {
-        return true;
-      }
-    };
-
-    YIELD_PLATFORM_VOLUME_TEST_CASE( listdir )
-    {
-      this->get_volume()->mkdir( YIELD_PLATFORM_VOLUME_TEST_DIR_NAME, Volume::DEFAULT_DIRECTORY_MODE );
-      DummylistdirCallback listdir_callback;
-      if ( !this->get_volume()->listdir( YIELD_PLATFORM_VOLUME_TEST_DIR_NAME, Path(), listdir_callback ) ) 
-        throw Exception();
-
-      std::vector<YIELD::platform::Path> names;
-      if ( static_cast<Volume*>( this->get_volume().get() )->listdir( ".", Path(), names ) )
-      {
-        ASSERT_FALSE( names.empty() );
-        for ( std::vector<YIELD::platform::Path>::iterator name_i = names.begin(); name_i != names.end(); name_i++ )
-        {
-          if ( *name_i == YIELD_FILE_TEST_FILE_NAME )
-            return;
-        }
-        FAIL();
-      }
-      else
+      if ( !get_volume().link( get_test_file_name(), get_test_link_name() ) )
         throw Exception();
     }
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( listxattr )
     {
-      if ( this->get_volume()->setxattr( YIELD_FILE_TEST_FILE_NAME, YIELD_FILE_TEST_XATTR_NAME, YIELD_FILE_TEST_XATTR_VALUE, 0 ) )
+      if ( set_test_xattr() )
       {
-        std::vector<std::string> names; this->get_volume()->listxattr( YIELD_FILE_TEST_FILE_NAME, names );
-        ASSERT_TRUE( names.size() >= 1 );
-        for ( std::vector<std::string>::const_iterator name_i = names.begin(); name_i != names.end(); name_i++ )
+        vector<string> names;
+        get_volume().listxattr( get_test_file_name(), names );
+
+        for
+        (
+          vector<string>::const_iterator name_i = names.begin();
+          name_i != names.end();
+          name_i++
+        )
         {
-          if ( *name_i == YIELD_FILE_TEST_XATTR_NAME )
+          if ( *name_i == get_test_xattr_name() )
             return;
         }
         FAIL();
       }
-#ifdef YIELD_HAVE_XATTR_H
-      else
+#ifdef YIELD_PLATFORM_HAVE_XATTR_H
+      else if ( errno != ENOTSUP )
         throw Exception();
 #endif
     }
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( mkdir )
     {
-      if ( !this->get_volume()->mkdir( YIELD_PLATFORM_VOLUME_TEST_DIR_NAME, Volume::DEFAULT_DIRECTORY_MODE ) )
+      if ( !get_volume().mkdir( get_test_dir_name() ) )
         throw Exception();
     }
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( mktree )
     {
       Path subdir_path( Path( "volume_test" ) + Path( "subdir" ) );
-      if ( !static_cast<Volume*>( this->get_volume().get() )->mktree( subdir_path ) )
-        throw Exception();
-      ASSERT_TRUE( this->get_volume()->exists( subdir_path ) );
+      if ( !get_volume().mktree( subdir_path ) ) throw Exception();
+      ASSERT_TRUE( get_volume().exists( subdir_path ) );
     }
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( open )
     {
-      auto_File file = this->get_volume()->open( YIELD_FILE_TEST_FILE_NAME, YIELD_FILE_TEST_FILE_OPEN_FLAGS, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES );
-      ASSERT_TRUE( file.get() != NULL );
-    }
-
-    class DummyreaddirCallback : public Volume::readdirCallback
-    {
-    public:
-      bool operator()( const Path&, auto_Stat )
-      {
-        return true;
-      }
-    };
-
-    YIELD_PLATFORM_VOLUME_TEST_CASE( readdir )
-    {
-      this->get_volume()->mkdir( YIELD_PLATFORM_VOLUME_TEST_DIR_NAME, Volume::DEFAULT_DIRECTORY_MODE );
-      DummyreaddirCallback readdir_callback;
-      if ( !this->get_volume()->readdir( YIELD_PLATFORM_VOLUME_TEST_DIR_NAME, Path(), readdir_callback ) )
+      File* file = get_volume().open( get_test_file_name() );
+      if ( file != NULL )
+        File::dec_ref( *file );
+      else
         throw Exception();
     }
 
 #ifndef _WIN32
     YIELD_PLATFORM_VOLUME_TEST_CASE( readlink )
     {
-      if ( !this->get_volume()->symlink( YIELD_FILE_TEST_FILE_NAME, YIELD_PLATFORM_VOLUME_TEST_LINK_NAME ) )
+      if ( !get_volume().symlink( get_test_file_name(), get_test_link_name() ))
         throw Exception();
-      auto_Path target_path = this->get_volume()->readlink( YIELD_PLATFORM_VOLUME_TEST_LINK_NAME );
-      ASSERT_TRUE( *target_path == YIELD_FILE_TEST_FILE_NAME );
+
+      Path* target_path = get_volume().readlink( get_test_link_name() );
+      if ( target_path != NULL )
+      {
+        ASSERT_EQUAL( *target_path, get_test_file_name() );
+        Path::dec_ref( *target_path );
+      }
+      else
+        throw Exception();
     }
 #endif
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( removexattr )
     {
-      if ( this->get_volume()->setxattr( YIELD_FILE_TEST_FILE_NAME, YIELD_FILE_TEST_XATTR_NAME, YIELD_FILE_TEST_XATTR_VALUE, 0 ) )
+      if ( set_test_xattr() )
       {
-        bool removexattr_ret = this->get_volume()->removexattr( YIELD_FILE_TEST_FILE_NAME, YIELD_FILE_TEST_XATTR_NAME );
-        ASSERT_TRUE( removexattr_ret );
+        if
+        (
+          !get_volume().removexattr
+          (
+            get_test_file_name(),
+            get_test_xattr_name()
+          )
+        )
+          throw Exception();
       }
-#ifdef YIELD_HAVE_XATTR_H
-      else
+#ifdef YIELD_PLATFORM_HAVE_XATTR_H
+      else if ( errno != ENOTSUP )
         throw Exception();
 #endif
     }
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( rename )
     {
-      if ( !this->get_volume()->rename( YIELD_FILE_TEST_FILE_NAME, "volume_test2.txt" ) )
+      if ( !get_volume().rename( get_test_file_name(), "volume_test2.txt" ) )
         throw Exception();
-      this->get_volume()->unlink( "volume_test2.txt" );
+      get_volume().unlink( "volume_test2.txt" );
     }
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( rmdir )
     {
-      this->get_volume()->mkdir( YIELD_PLATFORM_VOLUME_TEST_DIR_NAME, Volume::DEFAULT_DIRECTORY_MODE );
-      if ( !this->get_volume()->rmdir( YIELD_PLATFORM_VOLUME_TEST_DIR_NAME ) )
+      get_volume().mkdir( get_test_dir_name() );
+      if ( !get_volume().rmdir( get_test_dir_name() ) )
         throw Exception();
-    }
-
-    YIELD_PLATFORM_VOLUME_TEST_CASE( setattr )
-    {
-#ifdef _WIN32
-      if ( !this->get_volume()->setattr( YIELD_FILE_TEST_FILE_NAME, 0x00000080 ) ) throw Exception(); // FILE_ATTRIBUTE_NORMAL
-#else
-      ASSERT_FALSE( this->get_volume()->setattr( YIELD_FILE_TEST_FILE_NAME, 0 ) );
-#endif
     }
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( setxattr )
     {
-      if ( this->get_volume()->setxattr( YIELD_FILE_TEST_FILE_NAME, YIELD_FILE_TEST_XATTR_NAME, YIELD_FILE_TEST_XATTR_VALUE, 0 ) )
+      if ( set_test_xattr() )
       {
-        std::string value; this->get_volume()->getxattr( YIELD_FILE_TEST_FILE_NAME, YIELD_FILE_TEST_XATTR_NAME, value );
-        ASSERT_EQUAL( value, YIELD_FILE_TEST_XATTR_VALUE );
+        string xattr_value;
+        get_volume().getxattr
+        (
+          get_test_file_name(),
+          get_test_xattr_name(),
+          xattr_value
+        );
+
+        ASSERT_EQUAL( xattr_value, get_test_xattr_value() );
       }
-#ifdef YIELD_HAVE_XATTR_H
-      else
+#ifdef YIELD_PLATFORM_HAVE_XATTR_H
+      else if ( errno != ENOTSUP )
         throw Exception();
 #endif
     }
 
-    YIELD_PLATFORM_VOLUME_TEST_CASE( stat )
-    {
-      auto_Stat stbuf = this->get_volume()->stat( YIELD_FILE_TEST_FILE_NAME );
-      ASSERT_TRUE( stbuf != NULL );
-    }
-
     YIELD_PLATFORM_VOLUME_TEST_CASE( statvfs )
     {
-      this->get_volume()->mkdir( YIELD_PLATFORM_VOLUME_TEST_DIR_NAME, Volume::DEFAULT_DIRECTORY_MODE );
+      get_volume().mkdir( get_test_dir_name() );
       struct statvfs stvfsbuf;
-      if ( !this->get_volume()->statvfs( YIELD_PLATFORM_VOLUME_TEST_DIR_NAME, stvfsbuf ) )
+      if ( !get_volume().statvfs( get_test_dir_name(), stvfsbuf ) )
         throw Exception();
       ASSERT_TRUE( stvfsbuf.f_bsize > 0 );
       ASSERT_TRUE( stvfsbuf.f_blocks > 0 );
@@ -294,24 +318,39 @@ namespace YIELD
 #ifndef _WIN32
     YIELD_PLATFORM_VOLUME_TEST_CASE( symlink )
     {
-      if ( !this->get_volume()->symlink( YIELD_FILE_TEST_FILE_NAME, YIELD_PLATFORM_VOLUME_TEST_LINK_NAME ) )
+      if ( !get_volume().symlink( get_test_file_name(), get_test_link_name() ))
         throw Exception();
     }
 #endif
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( truncate )
     {
-      auto_File file = this->get_volume()->open( YIELD_FILE_TEST_FILE_NAME, YIELD_FILE_TEST_FILE_OPEN_FLAGS, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES );
-      if ( file.get() != NULL )
+      File* file = get_volume().open( get_test_file_name() );
+
+      if ( file != NULL )
       {
-        file->write( YIELD_FILE_TEST_STRING, YIELD_FILE_TEST_STRING_LEN, 0 );
-        file.reset( NULL );
-        auto_Stat stbuf = this->get_volume()->stat( YIELD_FILE_TEST_FILE_NAME );
-        ASSERT_EQUAL( stbuf->get_size(), YIELD_FILE_TEST_STRING_LEN );
-        stbuf.reset( NULL );
-        this->get_volume()->truncate( YIELD_FILE_TEST_FILE_NAME, 0 );
-        stbuf = this->get_volume()->stat( YIELD_FILE_TEST_FILE_NAME );
-        ASSERT_EQUAL( stbuf->get_size(), 0 );
+        file->write( "test", 4 );
+        File::dec_ref( *file );
+
+        Stat* stbuf = get_volume().getattr( get_test_file_name() );
+        if ( stbuf != NULL )
+        {
+          ASSERT_EQUAL( stbuf->get_size(), 4 );
+          Stat::dec_ref( *stbuf );
+        }
+        else
+          throw Exception();
+
+        ssize_t trunc_ret = get_volume().truncate( get_test_file_name(), 0 );
+        ASSERT_EQUAL( trunc_ret, 0 );
+        stbuf = get_volume().getattr( get_test_file_name() );
+        if ( stbuf != NULL )
+        {
+          ASSERT_EQUAL( stbuf->get_size(), 0 );
+          Stat::dec_ref( *stbuf );
+        }
+        else
+          throw Exception();
       }
       else
         throw Exception();
@@ -319,70 +358,88 @@ namespace YIELD
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( unlink )
     {
-      if ( !this->get_volume()->unlink( YIELD_FILE_TEST_FILE_NAME ) )
+      if ( !get_volume().unlink( get_test_file_name() ) )
         throw Exception();
     }
 
-    YIELD_PLATFORM_VOLUME_TEST_CASE( utimens )
+    YIELD_PLATFORM_VOLUME_TEST_CASE( utime )
     {
-      if ( !this->get_volume()->utimens( YIELD_FILE_TEST_FILE_NAME, Time(), Time(), Time() ) )
+      Time atime, mtime, ctime;
+
+      if ( get_volume().utime( get_test_file_name(), atime, mtime, ctime ) )
+      {
+        Stat* stbuf = get_volume().getattr( get_test_file_name() );
+
+        if ( stbuf != NULL )
+        {
+          ASSERT_TRUE( stbuf->get_atime() - atime <= Time::NS_IN_S );
+          ASSERT_TRUE( stbuf->get_mtime() - mtime <= Time::NS_IN_S );
+#ifdef _WIN32
+          ASSERT_TRUE( stbuf->get_ctime() - ctime <= Time::NS_IN_S );
+#endif
+          Stat::dec_ref( *stbuf );
+        }
+        else
+          throw Exception();
+      }
+      else
         throw Exception();
     }
 
     YIELD_PLATFORM_VOLUME_TEST_CASE( volname )
     {
-      Path volname = this->get_volume()->volname( YIELD_FILE_TEST_FILE_NAME );
+      Path volname = get_volume().volname( get_test_file_name() );
 #ifdef _WIN32
-      if ( volname.empty() )
-        throw Exception();
+      if ( volname.empty() ) throw Exception();
 #endif
     }
 
 
-    template <class VolumeType = Volume>
     class VolumeTestSuite : public yunit::TestSuite
     {
     public:
-      VolumeTestSuite( const std::string& name )
+      VolumeTestSuite( const string& name, Volume* volume = NULL )
         : yunit::TestSuite( name )
       {
-        yidl::runtime::auto_Object<VolumeType> volume = new VolumeType;
+        if ( volume == NULL )
+          volume = new Volume;
+
 #ifndef _WIN32
-        addTest( new Volume_accessTest<VolumeType>( volume ) );
-        addTest( new Volume_chmodTest<VolumeType>( volume ) );
-        addTest( new Volume_chownTest<VolumeType>( volume ) );
+        addTest( new Volume_accessTest( *volume ) );
+        addTest( new Volume_chmodTest( *volume ) );
+        addTest( new Volume_chownTest( *volume ) );
 #endif
-        addTest( new Volume_existsTest<VolumeType>( volume ) );
-        addTest( new Volume_getxattrTest<VolumeType>( volume ) );
-        addTest( new Volume_isdirTest<VolumeType>( volume ) );
-        addTest( new Volume_isfileTest<VolumeType>( volume ) );
-        addTest( new Volume_linkTest<VolumeType>( volume ) );
-        addTest( new Volume_listdirTest<VolumeType>( volume ) );
-        addTest( new Volume_listxattrTest<VolumeType>( volume ) );
-        addTest( new Volume_mkdirTest<VolumeType>( volume ) );
-        addTest( new Volume_mktreeTest<VolumeType>( volume ) );
-        addTest( new Volume_openTest<VolumeType>( volume ) );
-        addTest( new Volume_readdirTest<VolumeType>( volume ) );
+        addTest( new Volume_existsTest( *volume ) );
+        addTest( new Volume_getattrTest( *volume ) );
+        addTest( new Volume_getxattrTest( *volume ) );
+        addTest( new Volume_isdirTest( *volume ) );
+        addTest( new Volume_isfileTest( *volume ) );
+        addTest( new Volume_linkTest( *volume ) );
+        addTest( new Volume_listxattrTest( *volume ) );
+        addTest( new Volume_mkdirTest( *volume ) );
+        addTest( new Volume_mktreeTest( *volume ) );
+        addTest( new Volume_openTest( *volume ) );
 #ifndef _WIN32
-        addTest( new Volume_readlinkTest<VolumeType>( volume ) );
+        addTest( new Volume_readlinkTest( *volume ) );
 #endif
-        addTest( new Volume_removexattrTest<VolumeType>( volume ) );
-        addTest( new Volume_renameTest<VolumeType>( volume ) );
-        addTest( new Volume_rmdirTest<VolumeType>( volume ) );
-        addTest( new Volume_setattrTest<VolumeType>( volume ) );
-        addTest( new Volume_setxattrTest<VolumeType>( volume ) );
-        addTest( new Volume_statTest<VolumeType>( volume ) );
-        addTest( new Volume_statvfsTest<VolumeType>( volume ) );
+        addTest( new Volume_removexattrTest( *volume ));
+        addTest( new Volume_renameTest( *volume ) );
+        addTest( new Volume_rmdirTest( *volume ) );
+        addTest( new Volume_setxattrTest( *volume ) );
+        addTest( new Volume_statvfsTest( *volume ) );
 #ifndef _WIN32
-        addTest( new Volume_symlinkTest<VolumeType>( volume ) );
+        addTest( new Volume_symlinkTest( *volume ) );
 #endif
-        addTest( new Volume_truncateTest<VolumeType>( volume ) );
-        addTest( new Volume_unlinkTest<VolumeType>( volume ) );
-        addTest( new Volume_utimensTest<VolumeType>( volume ) );
-        addTest( new Volume_volnameTest<VolumeType>( volume ) );
+        addTest( new Volume_truncateTest( *volume ) );
+        addTest( new Volume_unlinkTest( *volume ) );
+        addTest( new Volume_utimeTest( *volume ) );
+        addTest( new Volume_volnameTest( *volume ) );
+
+        Volume::dec_ref( *volume );
       }
     };
   };
 };
+
 
 #endif

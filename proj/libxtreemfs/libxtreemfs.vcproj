@@ -27,7 +27,7 @@
             <Tool
                 Name="VCCLCompilerTool"
                 Optimization="0"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yieldfs\include;$(ProjectDir)..\..\share\google-breakpad\src"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yield\src;$(ProjectDir)..\..\share\yieldfs\include;$(ProjectDir)..\..\share\google-breakpad\src"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_PLATFORM_HAVE_OPENSSL"
                 BasicRuntimeChecks="3"
                 RuntimeLibrary="3"
@@ -73,7 +73,7 @@
             >
             <Tool
                 Name="VCCLCompilerTool"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yieldfs\include;$(ProjectDir)..\..\share\google-breakpad\src"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yield\src;$(ProjectDir)..\..\share\yieldfs\include;$(ProjectDir)..\..\share\google-breakpad\src"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_PLATFORM_HAVE_OPENSSL"
                 StringPooling="false"
                 RuntimeLibrary="2"
@@ -118,7 +118,7 @@
             >
             <Tool
                 Name="VCCLCompilerTool"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yieldfs\include;$(ProjectDir)..\..\share\google-breakpad\src"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\yield\src;$(ProjectDir)..\..\share\yieldfs\include;$(ProjectDir)..\..\share\google-breakpad\src"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_PLATFORM_HAVE_OPENSSL"
                 StringPooling="false"
                 RuntimeLibrary="2"
@@ -199,6 +199,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\include\xtreemfs\proxy_exception.h"
+    >
+</File>
+<File
     RelativePath="..\..\include\xtreemfs\volume.h"
     >
 </File>
@@ -253,6 +257,10 @@
 </File>
 </Filter>
 <Filter Name="src">
+<File
+    RelativePath="..\..\share\yield\src\yield\platform\channel_test.h"
+    >
+</File>
 <File
     RelativePath="..\..\share\yield\src\yield\platform\directory_test.h"
     >

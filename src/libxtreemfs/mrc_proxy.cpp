@@ -64,7 +64,6 @@ MRCProxy::create
   return create
          ( 
            absolute_uri,
-           NULL,
            options.get_error_log(),
            password,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
@@ -78,7 +77,6 @@ MRCProxy&
 MRCProxy::create
 (
   const URI& absolute_uri,
-  Configuration* configuration,
   Log* error_log,
   const char* password,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
@@ -97,7 +95,6 @@ MRCProxy::create
                   ONC_RPC_PORT_DEFAULT,
                   0x20000000 + TAG,
                   TAG,
-                  configuration,
                   error_log,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
                   ssl_context,

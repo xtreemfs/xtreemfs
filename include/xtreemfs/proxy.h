@@ -30,6 +30,7 @@
 #ifndef _XTREEMFS_PROXY_H_
 #define _XTREEMFS_PROXY_H_
 
+#include "xtreemfs/proxy_exception.h"
 #include "yield.h"
 
 
@@ -38,7 +39,6 @@ namespace xtreemfs
   using yield::concurrency::Exception;
   using yield::concurrency::EventHandler;
   using yield::concurrency::MessageFactory;
-  using yield::ipc::ONCRPCStreamSocketClient;
   using yield::ipc::URI;
   using yield::platform::Log;
   using yield::platform::SSLContext;
@@ -46,9 +46,6 @@ namespace xtreemfs
 
   class Proxy : public yidl::runtime::Object
   {
-  public:
-    typedef ONCRPCStreamSocketClient::Configuration Configuration;
-
   protected:
     Proxy() { }
     virtual ~Proxy() { }
@@ -61,7 +58,6 @@ namespace xtreemfs
       uint16_t port_default,
       uint32_t prog,
       uint32_t vers,
-      Configuration* configuration = NULL,
       Log* error_log = NULL,
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
       SSLContext* ssl_context = NULL,

@@ -20,7 +20,6 @@ NettestProxy& NettestProxy::create( const Options& options )
                     0,
                     0x20000000 + TAG,
                     TAG,
-                    NULL,
                     options.get_error_log(),
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
                     options.get_ssl_context(),

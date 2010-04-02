@@ -29,9 +29,6 @@
 
 #include "xtreemfs/options.h"
 using namespace xtreemfs;
-#include "xtreemfs/interfaces/constants.h"
-using org::xtreemfs::interfaces::ONCRPC_SCHEME;
-using org::xtreemfs::interfaces::ONCRPCS_SCHEME;
 
 #include "yield.h"
 using yield::ipc::ONCRPCClient;
@@ -65,7 +62,8 @@ Options::Options
 }
 
 Options::Options( const Options& other )
-  : error_log( yidl::runtime::Object::inc_ref( other.error_log ) ),
+  : OptionParser::ParsedOptions( other ),
+    error_log( yidl::runtime::Object::inc_ref( other.error_log ) ),
     error_log_file_path( other.error_log_file_path ),
     error_log_level( other.error_log_level ),
     positional_arguments( other.positional_arguments ),
@@ -224,10 +222,10 @@ Options::parse
     {
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
       if ( ssl_context != NULL )
-        uri_string = ONCRPCS_SCHEME + string( "://" ) + uri_string;
+        uri_string = string( "oncrpcs://" ) + uri_string;
       else
 #endif
-        uri_string = ONCRPC_SCHEME + string( "://" ) + uri_string;
+        uri_string = string( "oncrpc://" ) + uri_string;
     }
 
     uri = URI::parse( uri_string );
