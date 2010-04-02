@@ -1,3 +1,5 @@
+// Revision: 2162
+
 #include "yield/concurrency.h"
 using namespace yield::concurrency;
 
@@ -487,17 +489,14 @@ template class PollingStageGroup<WavefrontVisitPolicy>;
 // request.cpp
 Request::Request()
 {
+  credentials = NULL;
   response_handler = NULL;
 }
 
 Request::~Request()
 {
+  MarshallableObject::dec_ref( credentials );
   EventHandler::dec_ref( response_handler );
-}
-
-EventHandler* Request::get_response_handler() const
-{
-  return response_handler;
 }
 
 void Request::respond( Response& response )
@@ -508,10 +507,22 @@ void Request::respond( Response& response )
     Response::dec_ref( response );
 }
 
+void Request::set_credentials( MarshallableObject* credentials )
+{
+  MarshallableObject::dec_ref( this->credentials );
+  this->credentials = credentials;
+}
+
 void Request::set_response_handler( EventHandler* response_handler )
 {
   EventHandler::dec_ref( this->response_handler );
-  this->response_handler = &response_handler->inc_ref();
+  this->response_handler = response_handler;
+}
+
+void Request::set_response_handler( EventHandler& response_handler )
+{
+  EventHandler::dec_ref( this->response_handler );
+  this->response_handler = &response_handler.inc_ref();
 }
 
 

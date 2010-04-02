@@ -44,7 +44,7 @@ namespace xtreemfs
   using yield::platform::SSLContext;
 
 
-  class Proxy : public yidl::runtime::Object
+  class Proxy
   {
   protected:
     Proxy() { }

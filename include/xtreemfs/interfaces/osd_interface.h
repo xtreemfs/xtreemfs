@@ -1,5 +1,5 @@
-#ifndef _2064902146_H_
-#define _2064902146_H_
+#ifndef _876842932_H_
+#define _876842932_H_
 
 
 #include "constants.h"
@@ -4464,39 +4464,39 @@ namespace org
           // Switch on the request types that this interface handles, unwrap the corresponding requests and delegate to _interface
           switch ( request.get_type_id() )
           {
-            case 2010031226UL: handlereadRequest( static_cast<readRequest&>( request ) ); return;
-            case 2010031227UL: handletruncateRequest( static_cast<truncateRequest&>( request ) ); return;
-            case 2010031228UL: handleunlinkRequest( static_cast<unlinkRequest&>( request ) ); return;
-            case 2010031229UL: handlewriteRequest( static_cast<writeRequest&>( request ) ); return;
-            case 2010031236UL: handlextreemfs_broadcast_gmaxRequest( static_cast<xtreemfs_broadcast_gmaxRequest&>( request ) ); return;
-            case 2010031237UL: handlextreemfs_check_objectRequest( static_cast<xtreemfs_check_objectRequest&>( request ) ); return;
-            case 2010031246UL: handlextreemfs_cleanup_get_resultsRequest( static_cast<xtreemfs_cleanup_get_resultsRequest&>( request ) ); return;
-            case 2010031247UL: handlextreemfs_cleanup_is_runningRequest( static_cast<xtreemfs_cleanup_is_runningRequest&>( request ) ); return;
-            case 2010031248UL: handlextreemfs_cleanup_startRequest( static_cast<xtreemfs_cleanup_startRequest&>( request ) ); return;
-            case 2010031249UL: handlextreemfs_cleanup_statusRequest( static_cast<xtreemfs_cleanup_statusRequest&>( request ) ); return;
-            case 2010031250UL: handlextreemfs_cleanup_stopRequest( static_cast<xtreemfs_cleanup_stopRequest&>( request ) ); return;
-            case 2010031289UL: handlextreemfs_rwr_fetchRequest( static_cast<xtreemfs_rwr_fetchRequest&>( request ) ); return;
-            case 2010031287UL: handlextreemfs_rwr_flease_msgRequest( static_cast<xtreemfs_rwr_flease_msgRequest&>( request ) ); return;
-            case 2010031291UL: handlextreemfs_rwr_notifyRequest( static_cast<xtreemfs_rwr_notifyRequest&>( request ) ); return;
-            case 2010031292UL: handlextreemfs_rwr_statusRequest( static_cast<xtreemfs_rwr_statusRequest&>( request ) ); return;
-            case 2010031290UL: handlextreemfs_rwr_truncateRequest( static_cast<xtreemfs_rwr_truncateRequest&>( request ) ); return;
-            case 2010031288UL: handlextreemfs_rwr_updateRequest( static_cast<xtreemfs_rwr_updateRequest&>( request ) ); return;
-            case 2010031256UL: handlextreemfs_internal_get_gmaxRequest( static_cast<xtreemfs_internal_get_gmaxRequest&>( request ) ); return;
-            case 2010031257UL: handlextreemfs_internal_truncateRequest( static_cast<xtreemfs_internal_truncateRequest&>( request ) ); return;
-            case 2010031258UL: handlextreemfs_internal_get_file_sizeRequest( static_cast<xtreemfs_internal_get_file_sizeRequest&>( request ) ); return;
-            case 2010031259UL: handlextreemfs_internal_read_localRequest( static_cast<xtreemfs_internal_read_localRequest&>( request ) ); return;
-            case 2010031260UL: handlextreemfs_internal_get_object_setRequest( static_cast<xtreemfs_internal_get_object_setRequest&>( request ) ); return;
-            case 2010031266UL: handlextreemfs_lock_acquireRequest( static_cast<xtreemfs_lock_acquireRequest&>( request ) ); return;
-            case 2010031267UL: handlextreemfs_lock_checkRequest( static_cast<xtreemfs_lock_checkRequest&>( request ) ); return;
-            case 2010031268UL: handlextreemfs_lock_releaseRequest( static_cast<xtreemfs_lock_releaseRequest&>( request ) ); return;
-            case 2010031276UL: handlextreemfs_pingRequest( static_cast<xtreemfs_pingRequest&>( request ) ); return;
-            case 2010031286UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( request ) ); return;
+            case 2010031226UL: handle( static_cast<readRequest&>( request ) ); return;
+            case 2010031227UL: handle( static_cast<truncateRequest&>( request ) ); return;
+            case 2010031228UL: handle( static_cast<unlinkRequest&>( request ) ); return;
+            case 2010031229UL: handle( static_cast<writeRequest&>( request ) ); return;
+            case 2010031236UL: handle( static_cast<xtreemfs_broadcast_gmaxRequest&>( request ) ); return;
+            case 2010031237UL: handle( static_cast<xtreemfs_check_objectRequest&>( request ) ); return;
+            case 2010031246UL: handle( static_cast<xtreemfs_cleanup_get_resultsRequest&>( request ) ); return;
+            case 2010031247UL: handle( static_cast<xtreemfs_cleanup_is_runningRequest&>( request ) ); return;
+            case 2010031248UL: handle( static_cast<xtreemfs_cleanup_startRequest&>( request ) ); return;
+            case 2010031249UL: handle( static_cast<xtreemfs_cleanup_statusRequest&>( request ) ); return;
+            case 2010031250UL: handle( static_cast<xtreemfs_cleanup_stopRequest&>( request ) ); return;
+            case 2010031289UL: handle( static_cast<xtreemfs_rwr_fetchRequest&>( request ) ); return;
+            case 2010031287UL: handle( static_cast<xtreemfs_rwr_flease_msgRequest&>( request ) ); return;
+            case 2010031291UL: handle( static_cast<xtreemfs_rwr_notifyRequest&>( request ) ); return;
+            case 2010031292UL: handle( static_cast<xtreemfs_rwr_statusRequest&>( request ) ); return;
+            case 2010031290UL: handle( static_cast<xtreemfs_rwr_truncateRequest&>( request ) ); return;
+            case 2010031288UL: handle( static_cast<xtreemfs_rwr_updateRequest&>( request ) ); return;
+            case 2010031256UL: handle( static_cast<xtreemfs_internal_get_gmaxRequest&>( request ) ); return;
+            case 2010031257UL: handle( static_cast<xtreemfs_internal_truncateRequest&>( request ) ); return;
+            case 2010031258UL: handle( static_cast<xtreemfs_internal_get_file_sizeRequest&>( request ) ); return;
+            case 2010031259UL: handle( static_cast<xtreemfs_internal_read_localRequest&>( request ) ); return;
+            case 2010031260UL: handle( static_cast<xtreemfs_internal_get_object_setRequest&>( request ) ); return;
+            case 2010031266UL: handle( static_cast<xtreemfs_lock_acquireRequest&>( request ) ); return;
+            case 2010031267UL: handle( static_cast<xtreemfs_lock_checkRequest&>( request ) ); return;
+            case 2010031268UL: handle( static_cast<xtreemfs_lock_releaseRequest&>( request ) ); return;
+            case 2010031276UL: handle( static_cast<xtreemfs_pingRequest&>( request ) ); return;
+            case 2010031286UL: handle( static_cast<xtreemfs_shutdownRequest&>( request ) ); return;
           }
         }
 
       protected:
 
-        virtual void handlereadRequest( readRequest& __request )
+        virtual void handle( readRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4532,7 +4532,7 @@ namespace org
           }
         }
 
-        virtual void handletruncateRequest( truncateRequest& __request )
+        virtual void handle( truncateRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4565,7 +4565,7 @@ namespace org
           }
         }
 
-        virtual void handleunlinkRequest( unlinkRequest& __request )
+        virtual void handle( unlinkRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4592,7 +4592,7 @@ namespace org
           }
         }
 
-        virtual void handlewriteRequest( writeRequest& __request )
+        virtual void handle( writeRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4629,7 +4629,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_broadcast_gmaxRequest( xtreemfs_broadcast_gmaxRequest& __request )
+        virtual void handle( xtreemfs_broadcast_gmaxRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4658,7 +4658,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_check_objectRequest( xtreemfs_check_objectRequest& __request )
+        virtual void handle( xtreemfs_check_objectRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4691,7 +4691,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_cleanup_get_resultsRequest( xtreemfs_cleanup_get_resultsRequest& __request )
+        virtual void handle( xtreemfs_cleanup_get_resultsRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4718,7 +4718,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_cleanup_is_runningRequest( xtreemfs_cleanup_is_runningRequest& __request )
+        virtual void handle( xtreemfs_cleanup_is_runningRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4745,7 +4745,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_cleanup_startRequest( xtreemfs_cleanup_startRequest& __request )
+        virtual void handle( xtreemfs_cleanup_startRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4773,7 +4773,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_cleanup_statusRequest( xtreemfs_cleanup_statusRequest& __request )
+        virtual void handle( xtreemfs_cleanup_statusRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4800,7 +4800,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_cleanup_stopRequest( xtreemfs_cleanup_stopRequest& __request )
+        virtual void handle( xtreemfs_cleanup_stopRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4823,7 +4823,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_rwr_fetchRequest( xtreemfs_rwr_fetchRequest& __request )
+        virtual void handle( xtreemfs_rwr_fetchRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4857,7 +4857,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_rwr_flease_msgRequest( xtreemfs_rwr_flease_msgRequest& __request )
+        virtual void handle( xtreemfs_rwr_flease_msgRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4885,7 +4885,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_rwr_notifyRequest( xtreemfs_rwr_notifyRequest& __request )
+        virtual void handle( xtreemfs_rwr_notifyRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4912,7 +4912,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_rwr_statusRequest( xtreemfs_rwr_statusRequest& __request )
+        virtual void handle( xtreemfs_rwr_statusRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4945,7 +4945,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_rwr_truncateRequest( xtreemfs_rwr_truncateRequest& __request )
+        virtual void handle( xtreemfs_rwr_truncateRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -4974,7 +4974,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_rwr_updateRequest( xtreemfs_rwr_updateRequest& __request )
+        virtual void handle( xtreemfs_rwr_updateRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -5005,7 +5005,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_internal_get_gmaxRequest( xtreemfs_internal_get_gmaxRequest& __request )
+        virtual void handle( xtreemfs_internal_get_gmaxRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -5036,7 +5036,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_internal_truncateRequest( xtreemfs_internal_truncateRequest& __request )
+        virtual void handle( xtreemfs_internal_truncateRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -5069,7 +5069,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_internal_get_file_sizeRequest( xtreemfs_internal_get_file_sizeRequest& __request )
+        virtual void handle( xtreemfs_internal_get_file_sizeRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -5100,7 +5100,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_internal_read_localRequest( xtreemfs_internal_read_localRequest& __request )
+        virtual void handle( xtreemfs_internal_read_localRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -5137,7 +5137,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_internal_get_object_setRequest( xtreemfs_internal_get_object_setRequest& __request )
+        virtual void handle( xtreemfs_internal_get_object_setRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -5168,7 +5168,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_lock_acquireRequest( xtreemfs_lock_acquireRequest& __request )
+        virtual void handle( xtreemfs_lock_acquireRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -5204,7 +5204,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_lock_checkRequest( xtreemfs_lock_checkRequest& __request )
+        virtual void handle( xtreemfs_lock_checkRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -5240,7 +5240,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_lock_releaseRequest( xtreemfs_lock_releaseRequest& __request )
+        virtual void handle( xtreemfs_lock_releaseRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -5268,7 +5268,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_pingRequest( xtreemfs_pingRequest& __request )
+        virtual void handle( xtreemfs_pingRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -5299,7 +5299,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& __request )
+        virtual void handle( xtreemfs_shutdownRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -5327,37 +5327,38 @@ namespace org
       };
 
       #define ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_HANDLER_PROTOTYPES \
-      virtual void handlereadRequest( readRequest& __request );\
-      virtual void handletruncateRequest( truncateRequest& __request );\
-      virtual void handleunlinkRequest( unlinkRequest& __request );\
-      virtual void handlewriteRequest( writeRequest& __request );\
-      virtual void handlextreemfs_broadcast_gmaxRequest( xtreemfs_broadcast_gmaxRequest& __request );\
-      virtual void handlextreemfs_check_objectRequest( xtreemfs_check_objectRequest& __request );\
-      virtual void handlextreemfs_cleanup_get_resultsRequest( xtreemfs_cleanup_get_resultsRequest& __request );\
-      virtual void handlextreemfs_cleanup_is_runningRequest( xtreemfs_cleanup_is_runningRequest& __request );\
-      virtual void handlextreemfs_cleanup_startRequest( xtreemfs_cleanup_startRequest& __request );\
-      virtual void handlextreemfs_cleanup_statusRequest( xtreemfs_cleanup_statusRequest& __request );\
-      virtual void handlextreemfs_cleanup_stopRequest( xtreemfs_cleanup_stopRequest& __request );\
-      virtual void handlextreemfs_rwr_fetchRequest( xtreemfs_rwr_fetchRequest& __request );\
-      virtual void handlextreemfs_rwr_flease_msgRequest( xtreemfs_rwr_flease_msgRequest& __request );\
-      virtual void handlextreemfs_rwr_notifyRequest( xtreemfs_rwr_notifyRequest& __request );\
-      virtual void handlextreemfs_rwr_statusRequest( xtreemfs_rwr_statusRequest& __request );\
-      virtual void handlextreemfs_rwr_truncateRequest( xtreemfs_rwr_truncateRequest& __request );\
-      virtual void handlextreemfs_rwr_updateRequest( xtreemfs_rwr_updateRequest& __request );\
-      virtual void handlextreemfs_internal_get_gmaxRequest( xtreemfs_internal_get_gmaxRequest& __request );\
-      virtual void handlextreemfs_internal_truncateRequest( xtreemfs_internal_truncateRequest& __request );\
-      virtual void handlextreemfs_internal_get_file_sizeRequest( xtreemfs_internal_get_file_sizeRequest& __request );\
-      virtual void handlextreemfs_internal_read_localRequest( xtreemfs_internal_read_localRequest& __request );\
-      virtual void handlextreemfs_internal_get_object_setRequest( xtreemfs_internal_get_object_setRequest& __request );\
-      virtual void handlextreemfs_lock_acquireRequest( xtreemfs_lock_acquireRequest& __request );\
-      virtual void handlextreemfs_lock_checkRequest( xtreemfs_lock_checkRequest& __request );\
-      virtual void handlextreemfs_lock_releaseRequest( xtreemfs_lock_releaseRequest& __request );\
-      virtual void handlextreemfs_pingRequest( xtreemfs_pingRequest& __request );\
-      virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& __request );
+      virtual void handle( readRequest& __request );\
+      virtual void handle( truncateRequest& __request );\
+      virtual void handle( unlinkRequest& __request );\
+      virtual void handle( writeRequest& __request );\
+      virtual void handle( xtreemfs_broadcast_gmaxRequest& __request );\
+      virtual void handle( xtreemfs_check_objectRequest& __request );\
+      virtual void handle( xtreemfs_cleanup_get_resultsRequest& __request );\
+      virtual void handle( xtreemfs_cleanup_is_runningRequest& __request );\
+      virtual void handle( xtreemfs_cleanup_startRequest& __request );\
+      virtual void handle( xtreemfs_cleanup_statusRequest& __request );\
+      virtual void handle( xtreemfs_cleanup_stopRequest& __request );\
+      virtual void handle( xtreemfs_rwr_fetchRequest& __request );\
+      virtual void handle( xtreemfs_rwr_flease_msgRequest& __request );\
+      virtual void handle( xtreemfs_rwr_notifyRequest& __request );\
+      virtual void handle( xtreemfs_rwr_statusRequest& __request );\
+      virtual void handle( xtreemfs_rwr_truncateRequest& __request );\
+      virtual void handle( xtreemfs_rwr_updateRequest& __request );\
+      virtual void handle( xtreemfs_internal_get_gmaxRequest& __request );\
+      virtual void handle( xtreemfs_internal_truncateRequest& __request );\
+      virtual void handle( xtreemfs_internal_get_file_sizeRequest& __request );\
+      virtual void handle( xtreemfs_internal_read_localRequest& __request );\
+      virtual void handle( xtreemfs_internal_get_object_setRequest& __request );\
+      virtual void handle( xtreemfs_lock_acquireRequest& __request );\
+      virtual void handle( xtreemfs_lock_checkRequest& __request );\
+      virtual void handle( xtreemfs_lock_releaseRequest& __request );\
+      virtual void handle( xtreemfs_pingRequest& __request );\
+      virtual void handle( xtreemfs_shutdownRequest& __request );
 
 
       class OSDInterfaceProxy
         : public OSDInterface,
+          public ::yield::concurrency::RequestHandler,
           private OSDInterfaceMessages
       {
       public:
@@ -5370,9 +5371,16 @@ namespace org
           ::yield::concurrency::EventHandler::dec_ref( __request_handler );
         }
 
-        ::yield::concurrency::EventHandler& get_request_handler() const
+        // yidl::runtime::RTTIObject
+        virtual const char* get_type_name() const
         {
-          return __request_handler;
+          return "OSDInterfaceProxy";
+        }
+
+        // yield::concurrency::RequestHandler
+        virtual void handle( ::yield::concurrency::Request& request )
+        {
+          __request_handler.handle( request );
         }
 
         // OSDInterface
@@ -5392,9 +5400,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<readResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<readResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<readResponse> __response = __response_queue->dequeue();
           object_data = __response->get_object_data();
@@ -5413,9 +5421,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<truncateResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<truncateResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<truncateResponse> __response = __response_queue->dequeue();
           osd_write_response = __response->get_osd_write_response();
@@ -5432,9 +5440,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<unlinkResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<unlinkResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<unlinkResponse> __response = __response_queue->dequeue();
         }
@@ -5456,9 +5464,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<writeResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<writeResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<writeResponse> __response = __response_queue->dequeue();
           osd_write_response = __response->get_osd_write_response();
@@ -5477,9 +5485,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_broadcast_gmaxResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_broadcast_gmaxResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_broadcast_gmaxResponse> __response = __response_queue->dequeue();
         }
@@ -5497,9 +5505,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_check_objectResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_check_objectResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_check_objectResponse> __response = __response_queue->dequeue();
           org::xtreemfs::interfaces::ObjectData _return_value = __response->get__return_value();return _return_value;
@@ -5515,9 +5523,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_get_resultsResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_get_resultsResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_cleanup_get_resultsResponse> __response = __response_queue->dequeue();
           results = __response->get_results();
@@ -5529,9 +5537,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_is_runningResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_is_runningResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_cleanup_is_runningResponse> __response = __response_queue->dequeue();
           is_running = __response->get_is_running();
@@ -5549,9 +5557,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_startResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_startResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_cleanup_startResponse> __response = __response_queue->dequeue();
         }
@@ -5562,9 +5570,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_statusResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_statusResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_cleanup_statusResponse> __response = __response_queue->dequeue();
           status = __response->get_status();
@@ -5576,9 +5584,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_stopResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_cleanup_stopResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_cleanup_stopResponse> __response = __response_queue->dequeue();
         }
@@ -5597,9 +5605,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_rwr_fetchResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_rwr_fetchResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_rwr_fetchResponse> __response = __response_queue->dequeue();
           object_data = __response->get_object_data();
@@ -5617,9 +5625,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_rwr_flease_msgResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_rwr_flease_msgResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_rwr_flease_msgResponse> __response = __response_queue->dequeue();
         }
@@ -5635,9 +5643,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_rwr_notifyResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_rwr_notifyResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_rwr_notifyResponse> __response = __response_queue->dequeue();
         }
@@ -5655,9 +5663,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_rwr_statusResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_rwr_statusResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_rwr_statusResponse> __response = __response_queue->dequeue();
           local_state = __response->get_local_state();
@@ -5676,9 +5684,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_rwr_truncateResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_rwr_truncateResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_rwr_truncateResponse> __response = __response_queue->dequeue();
         }
@@ -5698,9 +5706,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_rwr_updateResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_rwr_updateResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_rwr_updateResponse> __response = __response_queue->dequeue();
         }
@@ -5716,9 +5724,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_internal_get_gmaxResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_internal_get_gmaxResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_internal_get_gmaxResponse> __response = __response_queue->dequeue();
           org::xtreemfs::interfaces::InternalGmax _return_value = __response->get__return_value();return _return_value;
@@ -5737,9 +5745,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_internal_truncateResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_internal_truncateResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_internal_truncateResponse> __response = __response_queue->dequeue();
           osd_write_response = __response->get_osd_write_response();
@@ -5756,9 +5764,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_internal_get_file_sizeResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_internal_get_file_sizeResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_internal_get_file_sizeResponse> __response = __response_queue->dequeue();
           uint64_t _return_value = __response->get__return_value();return _return_value;
@@ -5781,9 +5789,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_internal_read_localResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_internal_read_localResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_internal_read_localResponse> __response = __response_queue->dequeue();
           org::xtreemfs::interfaces::InternalReadLocalResponse _return_value = __response->get__return_value();return _return_value;
@@ -5800,9 +5808,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_internal_get_object_setResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_internal_get_object_setResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_internal_get_object_setResponse> __response = __response_queue->dequeue();
           org::xtreemfs::interfaces::ObjectList _return_value = __response->get__return_value();return _return_value;
@@ -5824,9 +5832,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_lock_acquireResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_lock_acquireResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_lock_acquireResponse> __response = __response_queue->dequeue();
           org::xtreemfs::interfaces::Lock _return_value = __response->get__return_value();return _return_value;
@@ -5848,9 +5856,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_lock_checkResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_lock_checkResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_lock_checkResponse> __response = __response_queue->dequeue();
           org::xtreemfs::interfaces::Lock _return_value = __response->get__return_value();return _return_value;
@@ -5868,9 +5876,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_lock_releaseResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_lock_releaseResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_lock_releaseResponse> __response = __response_queue->dequeue();
         }
@@ -5886,9 +5894,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_pingResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_pingResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_pingResponse> __response = __response_queue->dequeue();
           remote_coordinates = __response->get_remote_coordinates();
@@ -5900,9 +5908,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_shutdownResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_shutdownResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_shutdownResponse> __response = __response_queue->dequeue();
         }

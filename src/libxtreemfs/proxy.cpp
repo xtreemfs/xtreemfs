@@ -42,7 +42,6 @@ Proxy::createONCRPCClient
              message_factory,
              prog,
              vers,
-             NULL,
              error_log,
              ONCRPCUDPSocketClient::RECV_TIMEOUT_DEFAULT,
              trace_log
@@ -75,7 +74,6 @@ Proxy::createONCRPCClient
                         *grid_ssl_socket,
                         vers,
                         NULL,
-                        NULL,
                         error_log,
                         trace_log
                       );                        
@@ -102,7 +100,6 @@ Proxy::createONCRPCClient
              prog,
              vers,
              NULL,
-             NULL,
              error_log,
              trace_log
            );
@@ -116,7 +113,6 @@ Proxy::createONCRPCClient
              message_factory,
              prog,
              vers,
-             NULL,
              NULL,
              error_log,
              trace_log

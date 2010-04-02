@@ -340,7 +340,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         );
       read_request->set_response_handler( &read_response_queue );
 
-      osd_proxy->get_request_handler().handle( *read_request );
+      osd_proxy->handle( *read_request );
       expected_read_response_count++;
 
       rbuf_p += object_size;
@@ -560,7 +560,7 @@ bool File::truncate( uint64_t new_size )
       = parent_volume.get_osd_proxies().
           get_osd_proxy( ( *replica_i ).get_osd_uuids()[0] );
 
-    osd_proxy.get_request_handler().handle( truncate_request.inc_ref() );  
+    osd_proxy.handle( truncate_request.inc_ref() );  
 
     OSDProxy::dec_ref( osd_proxy );
   }
@@ -714,7 +714,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
       }
 #endif
 
-      osd_proxy->get_request_handler().handle( *write_request );
+      osd_proxy->handle( *write_request );
       expected_write_response_count++;
 
       wbuf_p += object_size;

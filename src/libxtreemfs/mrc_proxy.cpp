@@ -106,13 +106,18 @@ MRCProxy::create
               );
 }
 
-yidl::runtime::MarshallableObject* MRCProxy::get_cred()
+void MRCProxy::handle( Request& request )
 {
-  UserCredentials* user_credentials
-    = user_credentials_cache->getCurrentUserCredentials();
+  if ( request.get_credentials() == NULL )
+  {
+    UserCredentials* user_credentials
+      = user_credentials_cache->getCurrentUserCredentials();
 
-  if ( user_credentials != NULL )
-    user_credentials->set_password( password );
+    if ( user_credentials != NULL )
+      user_credentials->set_password( password );
 
-  return user_credentials;
+    request.set_credentials( user_credentials );
+  }
+
+  MRCInterfaceProxy::handle( request );
 }

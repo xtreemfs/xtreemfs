@@ -1,5 +1,5 @@
-#ifndef _820275261_H_
-#define _820275261_H_
+#ifndef _794557633_H_
+#define _794557633_H_
 
 
 #include "constants.h"
@@ -2015,25 +2015,25 @@ namespace org
           // Switch on the request types that this interface handles, unwrap the corresponding requests and delegate to _interface
           switch ( request.get_type_id() )
           {
-            case 2010031017UL: handlextreemfs_address_mappings_getRequest( static_cast<xtreemfs_address_mappings_getRequest&>( request ) ); return;
-            case 2010031018UL: handlextreemfs_address_mappings_removeRequest( static_cast<xtreemfs_address_mappings_removeRequest&>( request ) ); return;
-            case 2010031019UL: handlextreemfs_address_mappings_setRequest( static_cast<xtreemfs_address_mappings_setRequest&>( request ) ); return;
-            case 2010031020UL: handlextreemfs_checkpointRequest( static_cast<xtreemfs_checkpointRequest&>( request ) ); return;
-            case 2010031021UL: handlextreemfs_discover_dirRequest( static_cast<xtreemfs_discover_dirRequest&>( request ) ); return;
-            case 2010031022UL: handlextreemfs_global_time_s_getRequest( static_cast<xtreemfs_global_time_s_getRequest&>( request ) ); return;
-            case 2010031028UL: handlextreemfs_service_deregisterRequest( static_cast<xtreemfs_service_deregisterRequest&>( request ) ); return;
-            case 2010031026UL: handlextreemfs_service_get_by_nameRequest( static_cast<xtreemfs_service_get_by_nameRequest&>( request ) ); return;
-            case 2010031024UL: handlextreemfs_service_get_by_typeRequest( static_cast<xtreemfs_service_get_by_typeRequest&>( request ) ); return;
-            case 2010031025UL: handlextreemfs_service_get_by_uuidRequest( static_cast<xtreemfs_service_get_by_uuidRequest&>( request ) ); return;
-            case 2010031029UL: handlextreemfs_service_offlineRequest( static_cast<xtreemfs_service_offlineRequest&>( request ) ); return;
-            case 2010031027UL: handlextreemfs_service_registerRequest( static_cast<xtreemfs_service_registerRequest&>( request ) ); return;
-            case 2010031030UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( request ) ); return;
+            case 2010031017UL: handle( static_cast<xtreemfs_address_mappings_getRequest&>( request ) ); return;
+            case 2010031018UL: handle( static_cast<xtreemfs_address_mappings_removeRequest&>( request ) ); return;
+            case 2010031019UL: handle( static_cast<xtreemfs_address_mappings_setRequest&>( request ) ); return;
+            case 2010031020UL: handle( static_cast<xtreemfs_checkpointRequest&>( request ) ); return;
+            case 2010031021UL: handle( static_cast<xtreemfs_discover_dirRequest&>( request ) ); return;
+            case 2010031022UL: handle( static_cast<xtreemfs_global_time_s_getRequest&>( request ) ); return;
+            case 2010031028UL: handle( static_cast<xtreemfs_service_deregisterRequest&>( request ) ); return;
+            case 2010031026UL: handle( static_cast<xtreemfs_service_get_by_nameRequest&>( request ) ); return;
+            case 2010031024UL: handle( static_cast<xtreemfs_service_get_by_typeRequest&>( request ) ); return;
+            case 2010031025UL: handle( static_cast<xtreemfs_service_get_by_uuidRequest&>( request ) ); return;
+            case 2010031029UL: handle( static_cast<xtreemfs_service_offlineRequest&>( request ) ); return;
+            case 2010031027UL: handle( static_cast<xtreemfs_service_registerRequest&>( request ) ); return;
+            case 2010031030UL: handle( static_cast<xtreemfs_shutdownRequest&>( request ) ); return;
           }
         }
 
       protected:
 
-        virtual void handlextreemfs_address_mappings_getRequest( xtreemfs_address_mappings_getRequest& __request )
+        virtual void handle( xtreemfs_address_mappings_getRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -2064,7 +2064,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_address_mappings_removeRequest( xtreemfs_address_mappings_removeRequest& __request )
+        virtual void handle( xtreemfs_address_mappings_removeRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -2087,7 +2087,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_address_mappings_setRequest( xtreemfs_address_mappings_setRequest& __request )
+        virtual void handle( xtreemfs_address_mappings_setRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -2117,7 +2117,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_checkpointRequest( xtreemfs_checkpointRequest& __request )
+        virtual void handle( xtreemfs_checkpointRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -2140,7 +2140,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_discover_dirRequest( xtreemfs_discover_dirRequest& __request )
+        virtual void handle( xtreemfs_discover_dirRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -2167,7 +2167,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_global_time_s_getRequest( xtreemfs_global_time_s_getRequest& __request )
+        virtual void handle( xtreemfs_global_time_s_getRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -2194,7 +2194,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_service_deregisterRequest( xtreemfs_service_deregisterRequest& __request )
+        virtual void handle( xtreemfs_service_deregisterRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -2217,7 +2217,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_service_get_by_nameRequest( xtreemfs_service_get_by_nameRequest& __request )
+        virtual void handle( xtreemfs_service_get_by_nameRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -2248,7 +2248,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_service_get_by_typeRequest( xtreemfs_service_get_by_typeRequest& __request )
+        virtual void handle( xtreemfs_service_get_by_typeRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -2279,7 +2279,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_service_get_by_uuidRequest( xtreemfs_service_get_by_uuidRequest& __request )
+        virtual void handle( xtreemfs_service_get_by_uuidRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -2310,7 +2310,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_service_offlineRequest( xtreemfs_service_offlineRequest& __request )
+        virtual void handle( xtreemfs_service_offlineRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -2333,7 +2333,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_service_registerRequest( xtreemfs_service_registerRequest& __request )
+        virtual void handle( xtreemfs_service_registerRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -2360,7 +2360,7 @@ namespace org
           }
         }
 
-        virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& __request )
+        virtual void handle( xtreemfs_shutdownRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -2388,23 +2388,24 @@ namespace org
       };
 
       #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_HANDLER_PROTOTYPES \
-      virtual void handlextreemfs_address_mappings_getRequest( xtreemfs_address_mappings_getRequest& __request );\
-      virtual void handlextreemfs_address_mappings_removeRequest( xtreemfs_address_mappings_removeRequest& __request );\
-      virtual void handlextreemfs_address_mappings_setRequest( xtreemfs_address_mappings_setRequest& __request );\
-      virtual void handlextreemfs_checkpointRequest( xtreemfs_checkpointRequest& __request );\
-      virtual void handlextreemfs_discover_dirRequest( xtreemfs_discover_dirRequest& __request );\
-      virtual void handlextreemfs_global_time_s_getRequest( xtreemfs_global_time_s_getRequest& __request );\
-      virtual void handlextreemfs_service_deregisterRequest( xtreemfs_service_deregisterRequest& __request );\
-      virtual void handlextreemfs_service_get_by_nameRequest( xtreemfs_service_get_by_nameRequest& __request );\
-      virtual void handlextreemfs_service_get_by_typeRequest( xtreemfs_service_get_by_typeRequest& __request );\
-      virtual void handlextreemfs_service_get_by_uuidRequest( xtreemfs_service_get_by_uuidRequest& __request );\
-      virtual void handlextreemfs_service_offlineRequest( xtreemfs_service_offlineRequest& __request );\
-      virtual void handlextreemfs_service_registerRequest( xtreemfs_service_registerRequest& __request );\
-      virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& __request );
+      virtual void handle( xtreemfs_address_mappings_getRequest& __request );\
+      virtual void handle( xtreemfs_address_mappings_removeRequest& __request );\
+      virtual void handle( xtreemfs_address_mappings_setRequest& __request );\
+      virtual void handle( xtreemfs_checkpointRequest& __request );\
+      virtual void handle( xtreemfs_discover_dirRequest& __request );\
+      virtual void handle( xtreemfs_global_time_s_getRequest& __request );\
+      virtual void handle( xtreemfs_service_deregisterRequest& __request );\
+      virtual void handle( xtreemfs_service_get_by_nameRequest& __request );\
+      virtual void handle( xtreemfs_service_get_by_typeRequest& __request );\
+      virtual void handle( xtreemfs_service_get_by_uuidRequest& __request );\
+      virtual void handle( xtreemfs_service_offlineRequest& __request );\
+      virtual void handle( xtreemfs_service_registerRequest& __request );\
+      virtual void handle( xtreemfs_shutdownRequest& __request );
 
 
       class DIRInterfaceProxy
         : public DIRInterface,
+          public ::yield::concurrency::RequestHandler,
           private DIRInterfaceMessages
       {
       public:
@@ -2417,9 +2418,16 @@ namespace org
           ::yield::concurrency::EventHandler::dec_ref( __request_handler );
         }
 
-        ::yield::concurrency::EventHandler& get_request_handler() const
+        // yidl::runtime::RTTIObject
+        virtual const char* get_type_name() const
         {
-          return __request_handler;
+          return "DIRInterfaceProxy";
+        }
+
+        // yield::concurrency::RequestHandler
+        virtual void handle( ::yield::concurrency::Request& request )
+        {
+          __request_handler.handle( request );
         }
 
         // DIRInterface
@@ -2434,9 +2442,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_getResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_getResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_address_mappings_getResponse> __response = __response_queue->dequeue();
           address_mappings = __response->get_address_mappings();
@@ -2448,9 +2456,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_removeResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_removeResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_address_mappings_removeResponse> __response = __response_queue->dequeue();
         }
@@ -2465,9 +2473,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_setResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_address_mappings_setResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_address_mappings_setResponse> __response = __response_queue->dequeue();
           uint64_t _return_value = __response->get__return_value();return _return_value;
@@ -2479,9 +2487,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_checkpointResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_checkpointResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_checkpointResponse> __response = __response_queue->dequeue();
         }
@@ -2496,9 +2504,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_discover_dirResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_discover_dirResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_discover_dirResponse> __response = __response_queue->dequeue();
           dir_service = __response->get_dir_service();
@@ -2510,9 +2518,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_global_time_s_getResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_global_time_s_getResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_global_time_s_getResponse> __response = __response_queue->dequeue();
           uint64_t _return_value = __response->get__return_value();return _return_value;
@@ -2524,9 +2532,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_deregisterResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_deregisterResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_deregisterResponse> __response = __response_queue->dequeue();
         }
@@ -2542,9 +2550,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_nameResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_nameResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_get_by_nameResponse> __response = __response_queue->dequeue();
           services = __response->get_services();
@@ -2561,9 +2569,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_typeResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_typeResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_get_by_typeResponse> __response = __response_queue->dequeue();
           services = __response->get_services();
@@ -2580,9 +2588,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_uuidResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_get_by_uuidResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_get_by_uuidResponse> __response = __response_queue->dequeue();
           services = __response->get_services();
@@ -2594,9 +2602,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_offlineResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_offlineResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_offlineResponse> __response = __response_queue->dequeue();
         }
@@ -2611,9 +2619,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_service_registerResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_service_registerResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_service_registerResponse> __response = __response_queue->dequeue();
           uint64_t _return_value = __response->get__return_value();return _return_value;
@@ -2625,9 +2633,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<xtreemfs_shutdownResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<xtreemfs_shutdownResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<xtreemfs_shutdownResponse> __response = __response_queue->dequeue();
         }

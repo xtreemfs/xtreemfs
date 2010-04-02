@@ -1,5 +1,5 @@
-#ifndef _1742973684_H_
-#define _1742973684_H_
+#ifndef _1005331369_H_
+#define _1005331369_H_
 
 
 #include "yield/concurrency.h"
@@ -380,15 +380,15 @@ namespace org
           // Switch on the request types that this interface handles, unwrap the corresponding requests and delegate to _interface
           switch ( request.get_type_id() )
           {
-            case 2010031317UL: handlenopRequest( static_cast<nopRequest&>( request ) ); return;
-            case 2010031318UL: handlesend_bufferRequest( static_cast<send_bufferRequest&>( request ) ); return;
-            case 2010031319UL: handlerecv_bufferRequest( static_cast<recv_bufferRequest&>( request ) ); return;
+            case 2010031317UL: handle( static_cast<nopRequest&>( request ) ); return;
+            case 2010031318UL: handle( static_cast<send_bufferRequest&>( request ) ); return;
+            case 2010031319UL: handle( static_cast<recv_bufferRequest&>( request ) ); return;
           }
         }
 
       protected:
 
-        virtual void handlenopRequest( nopRequest& __request )
+        virtual void handle( nopRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -411,7 +411,7 @@ namespace org
           }
         }
 
-        virtual void handlesend_bufferRequest( send_bufferRequest& __request )
+        virtual void handle( send_bufferRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -434,7 +434,7 @@ namespace org
           }
         }
 
-        virtual void handlerecv_bufferRequest( recv_bufferRequest& __request )
+        virtual void handle( recv_bufferRequest& __request )
         {
           if ( _interface != NULL )
           {
@@ -466,13 +466,14 @@ namespace org
       };
 
       #define ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_REQUEST_HANDLER_PROTOTYPES \
-      virtual void handlenopRequest( nopRequest& __request );\
-      virtual void handlesend_bufferRequest( send_bufferRequest& __request );\
-      virtual void handlerecv_bufferRequest( recv_bufferRequest& __request );
+      virtual void handle( nopRequest& __request );\
+      virtual void handle( send_bufferRequest& __request );\
+      virtual void handle( recv_bufferRequest& __request );
 
 
       class NettestInterfaceProxy
         : public NettestInterface,
+          public ::yield::concurrency::RequestHandler,
           private NettestInterfaceMessages
       {
       public:
@@ -485,9 +486,16 @@ namespace org
           ::yield::concurrency::EventHandler::dec_ref( __request_handler );
         }
 
-        ::yield::concurrency::EventHandler& get_request_handler() const
+        // yidl::runtime::RTTIObject
+        virtual const char* get_type_name() const
         {
-          return __request_handler;
+          return "NettestInterfaceProxy";
+        }
+
+        // yield::concurrency::RequestHandler
+        virtual void handle( ::yield::concurrency::Request& request )
+        {
+          __request_handler.handle( request );
         }
 
         // NettestInterface
@@ -497,9 +505,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<nopResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<nopResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<nopResponse> __response = __response_queue->dequeue();
         }
@@ -510,9 +518,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<send_bufferResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<send_bufferResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<send_bufferResponse> __response = __response_queue->dequeue();
         }
@@ -523,9 +531,9 @@ namespace org
 
           ::yidl::runtime::auto_Object< ::yield::concurrency::ResponseQueue<recv_bufferResponse> >
             __response_queue( new ::yield::concurrency::ResponseQueue<recv_bufferResponse> );
-          __request->set_response_handler( &__response_queue.get() );
+          __request->set_response_handler( *__response_queue );
 
-          __request_handler.handle( *__request );
+          handle( *__request );
 
           ::yidl::runtime::auto_Object<recv_bufferResponse> __response = __response_queue->dequeue();
           data = __response->get_data();

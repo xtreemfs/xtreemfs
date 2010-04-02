@@ -8898,8 +8898,8 @@ HTTPResponse& HTTPClient::GET( const URI& absolute_uri )
 
   HTTPRequest* http_request = new HTTPRequest( "GET", absolute_uri );
 
-  ResponseQueue<HTTPResponse> http_response_queue;
-  http_request->set_response_handler( &http_response_queue );
+  HTTPResponseQueue http_response_queue;
+  http_request->set_response_handler( http_response_queue );
 
   http_client.handle( *http_request );
 
@@ -8928,8 +8928,8 @@ HTTPResponse& HTTPClient::PUT( const URI& absolute_uri, Buffer& body )
 
   HTTPRequest* http_request = new HTTPRequest( "PUT", absolute_uri, body );
 
-  ResponseQueue<HTTPResponse> http_response_queue;
-  http_request->set_response_handler( &http_response_queue );
+  HTTPResponseQueue http_response_queue;
+  http_request->set_response_handler( http_response_queue );
 
   http_client.handle( *http_request );
 
@@ -11618,7 +11618,7 @@ public:
       if ( object->get_type_id() == HTTPRequest::TYPE_ID )
       {
         HTTPRequest* http_request = static_cast<HTTPRequest*>( object );
-        http_request->set_response_handler( this );
+        http_request->set_response_handler( *this );
         http_server.http_request_handler.handle( *http_request );
       }
       else
@@ -12606,9 +12606,8 @@ void JSONRPCClient::handle( Request& request )
                 *http_request,
                 *new JSONNumber( request.get_type_id() )
               );
-      ResponseHandler* response_handler = new RPCResponseHandler( request );
-      json_rpc_request->set_response_handler( response_handler );
-      ResponseHandler::dec_ref( *response_handler );
+      json_rpc_request
+        ->set_response_handler( new RPCResponseHandler( request ) );
     }
     break;
   }
@@ -13144,7 +13143,7 @@ public:
 
         if ( json_rpc_request != NULL )
         {
-          json_rpc_request->set_response_handler( this );
+          json_rpc_request->set_response_handler( *this );
           json_rpc_server.handle( *json_rpc_request );
         }
         else
@@ -13389,20 +13388,13 @@ void JSONUnmarshaller::read( const Key& key, string& value )
 // onc_rpc_client.cpp
 ONCRPCClient::ONCRPCClient
 (
-  MarshallableObject* cred,
   MessageFactory& message_factory,
   uint32_t prog,
   uint32_t vers
 ) : RPCClient<ONCRPCRequest, ONCRPCResponse>( message_factory ),
-    cred( Object::inc_ref( cred ) ),
     prog( prog ),
     vers( vers )
 { }
-
-ONCRPCClient::~ONCRPCClient()
-{
-  MarshallableObject::dec_ref( cred );
-}
 
 void ONCRPCClient::handle( Request& request )
 {
@@ -13424,13 +13416,11 @@ void ONCRPCClient::handle( Request& request )
                 request.inc_ref(),
                 get_prog(),
                 get_vers(),
-                static_cast<uint32_t>( Time().as_unix_time_s() ),
-                get_cred()
+                static_cast<uint32_t>( Time().as_unix_time_s() )
               );
 
-      ResponseHandler* response_handler = new RPCResponseHandler( request );
-      onc_rpc_request->set_response_handler( response_handler );
-      ResponseHandler::dec_ref( *response_handler );
+      onc_rpc_request
+        ->set_response_handler( new RPCResponseHandler( request ) );
     }
     break;
   }
@@ -13524,14 +13514,12 @@ ONCRPCRequest::ONCRPCRequest
 )
   : ONCRPCMessage( verf, xid ),
     RPCRequest( body ),
-    cred( Object::inc_ref( cred ) ),
     prog( prog ),
     vers( vers )
-{ }
-
-ONCRPCRequest::~ONCRPCRequest()
 {
-  MarshallableObject::dec_ref( cred );
+  if ( cred == NULL )
+    cred = Object::inc_ref( get_body().get_credentials() );
+  set_credentials( cred );
 }
 
 Buffers& ONCRPCRequest::marshal() const
@@ -13904,7 +13892,6 @@ ONCRPCSSLSocketClient::ONCRPCSSLSocketClient
   SSLSocket& ssl_socket,
   uint32_t vers,
   Configuration* configuration,
-  MarshallableObject* cred,
   Log* error_log,
   Log* trace_log
 )
@@ -13916,7 +13903,6 @@ ONCRPCSSLSocketClient::ONCRPCSSLSocketClient
     ssl_socket,
     vers,
     configuration,
-    cred,
     error_log,
     trace_log
   )
@@ -13931,7 +13917,6 @@ ONCRPCSSLSocketClient::create
   uint32_t prog,
   uint32_t vers,
   Configuration* configuration,
-  MarshallableObject* cred,
   Log* error_log,
   Log* trace_log
 )
@@ -13952,7 +13937,6 @@ ONCRPCSSLSocketClient::create
                   *ssl_socket,
                   vers,
                   configuration,
-                  cred,
                   error_log,
                   trace_log
                 );
@@ -14037,11 +14021,10 @@ ONCRPCStreamSocketClient<StreamSocketType>::ONCRPCStreamSocketClient
   StreamSocketType& stream_socket,
   uint32_t vers,
   Configuration* configuration,
-  MarshallableObject* cred,
   Log* error_log,
   Log* trace_log
 )
-  : ONCRPCClient( cred, message_factory, prog, vers ),
+  : ONCRPCClient( message_factory, prog, vers ),
     StreamSocketClient<StreamSocketType>
     (
       peername,
@@ -14397,7 +14380,7 @@ private:
           {
             ONCRPCRequest* onc_rpc_request
               = static_cast<ONCRPCRequest*>( message );
-            onc_rpc_request->set_response_handler( this );
+            onc_rpc_request->set_response_handler( *this );
             onc_rpc_stream_socket_server.handle( *onc_rpc_request );
           }
           else if ( message->get_type_id() == ONCRPCResponse::TYPE_ID )
@@ -14483,7 +14466,6 @@ ONCRPCTCPSocketClient::ONCRPCTCPSocketClient
   TCPSocket& tcp_socket,
   uint32_t vers,
   Configuration* configuration,
-  MarshallableObject* cred,
   Log* error_log,
   Log* trace_log
 )
@@ -14495,7 +14477,6 @@ ONCRPCTCPSocketClient::ONCRPCTCPSocketClient
     tcp_socket,
     vers,
     configuration,
-    cred,
     error_log,
     trace_log
   )
@@ -14509,7 +14490,6 @@ ONCRPCTCPSocketClient::create
   uint32_t prog,
   uint32_t vers,
   Configuration* configuration,
-  MarshallableObject* cred,
   Log* error_log,
   Log* trace_log
 )
@@ -14540,7 +14520,6 @@ ONCRPCTCPSocketClient::create
                   *tcp_socket,
                   vers,
                   configuration,
-                  cred,
                   error_log,
                   trace_log
                 );
@@ -14606,12 +14585,11 @@ ONCRPCUDPSocketClient::ONCRPCUDPSocketClient
   uint32_t prog,
   UDPSocket& udp_socket,
   uint32_t vers,
-  MarshallableObject* cred,
   Log* error_log,
   const Time& recv_timeout,
   Log* trace_log
 )
-: ONCRPCClient( cred, message_factory, prog, vers ),
+: ONCRPCClient( message_factory, prog, vers ),
   UDPSocketClient( peername, udp_socket, error_log, recv_timeout, trace_log ),
   ONCRPCResponseParser( message_factory )
 { }
@@ -14623,7 +14601,6 @@ ONCRPCUDPSocketClient::create
   MessageFactory& message_factory,
   uint32_t prog,
   uint32_t vers,
-  MarshallableObject* cred,
   Log* error_log,
   const Time& recv_timeout,
   Log* trace_log
@@ -14642,7 +14619,6 @@ ONCRPCUDPSocketClient::create
                   prog,
                   udp_socket,
                   vers,
-                  cred,
                   error_log,
                   recv_timeout,
                   trace_log

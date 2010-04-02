@@ -250,12 +250,9 @@ namespace yield
     protected:
       void handle( RPCRequestType& rpc_request )
       {
-        ResponseHandler* response_handler
-          = new RPCResponseHandler( rpc_request );
-        rpc_request.get_body().set_response_handler( response_handler );
-        ResponseHandler::dec_ref( *response_handler );
-
-        request_handler.handle( rpc_request.get_body().inc_ref() );
+        Request& request = rpc_request.get_body();
+        request.set_response_handler( new RPCResponseHandler( rpc_request ) );
+        request_handler.handle( request.inc_ref() );
       }
 
     private:
@@ -966,6 +963,9 @@ namespace yield
     private:
       uint16_t status_code;
     };
+
+
+    typedef yield::concurrency::ResponseQueue<HTTPResponse> HTTPResponseQueue;
 
 
     class HTTPResponseParser 
@@ -1742,9 +1742,9 @@ namespace yield
         MarshallableObject* verf = NULL // = AUTH_NONE, steals this reference
       );
 
-      virtual ~ONCRPCRequest();
+      virtual ~ONCRPCRequest() { }
 
-      MarshallableObject* get_cred() const { return cred; }
+      MarshallableObject* get_cred() const { return get_credentials(); }
       uint32_t get_proc() const { return get_body().get_type_id(); }      
       uint32_t get_prog() const { return prog; }
       uint32_t get_vers() const { return vers; }
@@ -1764,7 +1764,6 @@ namespace yield
       void unmarshal( Unmarshaller& unmarshaller ) { }
 
     private:      
-      MarshallableObject* cred;
       uint32_t prog, vers;
     };
 
@@ -1903,7 +1902,10 @@ namespace yield
     class ONCRPCClient : public RPCClient<ONCRPCRequest, ONCRPCResponse>
     {
     public:
-      virtual ~ONCRPCClient();
+      virtual ~ONCRPCClient() { }
+
+      uint32_t get_prog() const { return prog; }
+      uint32_t get_vers() const { return vers; }
 
       virtual void handle( ONCRPCRequest& onc_rpc_request ) = 0;
 
@@ -1913,18 +1915,12 @@ namespace yield
     protected:
       ONCRPCClient
       (
-        MarshallableObject* cred,
         MessageFactory& message_factory, // Steals this reference
         uint32_t prog,
         uint32_t vers
       );
-
-      virtual MarshallableObject* get_cred() { return cred; }
-      uint32_t get_prog() const { return prog; }
-      uint32_t get_vers() const { return vers; }
     
     private:
-      MarshallableObject* cred;
       uint32_t prog, vers;
     };
 
@@ -1949,7 +1945,6 @@ namespace yield
         StreamSocketType& stream_socket, // Steals this reference
         uint32_t vers,
         Configuration* configuration = NULL, // Steals this reference
-        MarshallableObject* cred = NULL, // Steals this reference
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -2052,7 +2047,6 @@ namespace yield
         SSLSocket& ssl_socket, // Steals this reference
         uint32_t vers,
         Configuration* configuration = NULL, // Steals this reference
-        MarshallableObject* cred = NULL, // Steals this reference
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -2068,7 +2062,6 @@ namespace yield
         uint32_t prog,
         uint32_t vers,
         Configuration* configuration = NULL, // Steals this reference
-        MarshallableObject* cred = NULL, // Steals this reference
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -2124,7 +2117,6 @@ namespace yield
         TCPSocket& tcp_socket, // Steals this reference
         uint32_t vers,
         Configuration* configuration = NULL, // Steals this reference
-        MarshallableObject* cred = NULL, // Steals this reference
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -2139,7 +2131,6 @@ namespace yield
         uint32_t prog,
         uint32_t vers,
         Configuration* configuration = NULL, // Steals this reference
-        MarshallableObject* cred = NULL, // Steals this reference
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -2195,7 +2186,6 @@ namespace yield
         uint32_t prog,
         UDPSocket& udp_socket, // Steals this reference
         uint32_t vers,
-        MarshallableObject* cred = NULL,
         Log* error_log = NULL,
         const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
         Log* trace_log = NULL
@@ -2208,7 +2198,6 @@ namespace yield
         MessageFactory& message_factory, // Steals this reference
         uint32_t prog,
         uint32_t vers,
-        MarshallableObject* cred = NULL,
         Log* error_log = NULL,        
         const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
         Log* trace_log = NULL

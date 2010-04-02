@@ -38,6 +38,7 @@ namespace xtreemfs
 {
   class Options;
   class UserCredentialsCache;
+  using yield::concurrency::Request;
 
 
   class MRCProxy
@@ -78,9 +79,8 @@ namespace xtreemfs
     // yidl::runtime::Object
     MRCProxy& inc_ref() { return Object::inc_ref( *this ); }
 
-  private:
-    // yield::ipc::ONCRPCClient
-    yidl::runtime::MarshallableObject* get_cred();
+    // yield::concurrency::RequestHandler
+    virtual void handle( Request& request );
 
   private:
     string password;

@@ -13424,12 +13424,11 @@ void XDRMarshaller::write( const Key& key, Buffer& value )
 
 void XDRMarshaller::write( Buffer& value )
 {
-  if ( scratch_buffer != NULL )
-  {
-    BufferedMarshaller::write( *scratch_buffer );
-    StringBuffer::dec_ref( *scratch_buffer );
-    scratch_buffer = NULL;
-  }
+  write( static_cast<uint32_t>( value.size() ) );
+
+  BufferedMarshaller::write( *scratch_buffer );
+  StringBuffer::dec_ref( *scratch_buffer );
+  scratch_buffer = NULL;
 
   BufferedMarshaller::write( value );
 }

@@ -514,9 +514,12 @@ namespace yield
       Request();
       virtual ~Request();
 
-      EventHandler* get_response_handler() const;
+      MarshallableObject* get_credentials() const { return credentials; }
+      EventHandler* get_response_handler() const { return response_handler; }
       virtual void respond( Response& response );
-      void set_response_handler( EventHandler* response_handler );
+      void set_credentials( MarshallableObject* credentials ); // Steals
+      void set_response_handler( EventHandler* response_handler ); // Steals
+      void set_response_handler( EventHandler& response_handler );
 
       // Object
       Request& inc_ref() { return Object::inc_ref( *this ); }
@@ -525,6 +528,7 @@ namespace yield
       bool is_request() const { return true; }
 
     private:
+      MarshallableObject* credentials;
       EventHandler* response_handler;
     };
 
