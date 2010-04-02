@@ -2325,7 +2325,7 @@ namespace yield
       ) const;
 
       URI& operator=( const URI& );
-      operator std::string() const;
+      operator string() const;
 
       static URI* parse( const char* uri );
       static URI* parse( const string& uri );

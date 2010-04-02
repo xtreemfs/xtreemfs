@@ -1,5 +1,5 @@
-#ifndef _532861505_H_
-#define _532861505_H_
+#ifndef _501049470_H_
+#define _501049470_H_
 
 
 #include "yield/concurrency.h"
@@ -165,7 +165,7 @@ namespace org
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            if ( data != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ), *data );
+            if ( data != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ), *data ); else data = unmarshaller.read_buffer( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ) );
           }
 
         protected:
@@ -239,7 +239,7 @@ namespace org
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
             size = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "size", 0 ) );
-            if ( data != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ), *data );
+            if ( data != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ), *data ); else data = unmarshaller.read_buffer( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ) );
           }
 
         protected:
@@ -280,7 +280,7 @@ namespace org
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            if ( data != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ), *data );
+            if ( data != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ), *data ); else data = unmarshaller.read_buffer( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ) );
           }
 
         protected:

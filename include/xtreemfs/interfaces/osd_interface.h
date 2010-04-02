@@ -1,5 +1,5 @@
-#ifndef _457856108_H_
-#define _457856108_H_
+#ifndef _433064903_H_
+#define _433064903_H_
 
 
 #include "constants.h"
@@ -196,7 +196,7 @@ namespace org
           checksum = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "checksum", 0 ) );
           invalid_checksum_on_osd = unmarshaller.read_bool( ::yidl::runtime::Unmarshaller::StringLiteralKey( "invalid_checksum_on_osd", 0 ) );
           zero_padding = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "zero_padding", 0 ) );
-          if ( data != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ), *data );
+          if ( data != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ), *data ); else data = unmarshaller.read_buffer( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ) );
         }
 
       protected:
@@ -255,7 +255,7 @@ namespace org
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
         {
-          if ( set != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "set", 0 ), *set );
+          if ( set != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "set", 0 ), *set ); else set = unmarshaller.read_buffer( ::yidl::runtime::Unmarshaller::StringLiteralKey( "set", 0 ) );
           stripe_width = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "stripe_width", 0 ) );
           first_ = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "first_", 0 ) );
         }
@@ -2266,7 +2266,7 @@ namespace org
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            if ( fleaseMessage != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "fleaseMessage", 0 ), *fleaseMessage );
+            if ( fleaseMessage != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "fleaseMessage", 0 ), *fleaseMessage ); else fleaseMessage = unmarshaller.read_buffer( ::yidl::runtime::Unmarshaller::StringLiteralKey( "fleaseMessage", 0 ) );
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "senderHostname", 0 ), senderHostname );
             senderPort = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "senderPort", 0 ) );
           }

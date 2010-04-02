@@ -1205,6 +1205,13 @@ namespace yidl
 
       virtual void read( const Key& key, Buffer& value ) { }
 
+      Buffer* read_buffer( const char* key )
+      {
+        return read_buffer( StringLiteralKey( key ) );
+      }
+
+      virtual Buffer* read_buffer( const Key& key ) { return NULL; }
+
       // float and double
       float read_float( const char* key )
       {

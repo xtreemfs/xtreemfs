@@ -1,4 +1,4 @@
-// Revision: 2162
+// Revision: 2166
 
 #include "yield/concurrency.h"
 #include "yield/ipc.h"
@@ -15821,7 +15821,7 @@ URI& URI::operator=( const URI& other )
   return *this;
 }
 
-URI::operator std::string() const
+URI::operator string() const
 {
   ostringstream uri_oss;
   uri_oss << scheme << "://";

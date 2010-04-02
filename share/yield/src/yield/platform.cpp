@@ -1,4 +1,4 @@
-// Revision: 2162
+// Revision: 2166
 
 #include "yield/platform.h"
 using namespace yield::platform;
@@ -13670,14 +13670,38 @@ XDRUnmarshaller::~XDRUnmarshaller()
 void XDRUnmarshaller::read( Buffer& value )
 {
   size_t size = read_int32();
-  if ( value.capacity() - value.size() < size ) DebugBreak();
+  if ( value.capacity() - value.size() < size )
+    size = value.capacity() - value.size();
+
+  if ( size > 0 )
+  {
+    read( static_cast<void*>( value ), size );
+    value.resize( size );
+
+    if ( size % 4 != 0 )
+    {
+      char zeros[3];
+      read( zeros, 4 - ( size % 4 ) );
+    }
+  }
+}
+
+Buffer* XDRUnmarshaller::read_buffer()
+{
+  size_t size = read_int32();
+
+  HeapBuffer* value = new HeapBuffer( size );
+
   read( static_cast<void*>( value ), size );
-  value.resize( size );
+  value->resize( size );
+
   if ( size % 4 != 0 )
   {
     char zeros[3];
     read( zeros, 4 - ( size % 4 ) );
   }
+
+  return value;
 }
 
 void XDRUnmarshaller::read( double& value )

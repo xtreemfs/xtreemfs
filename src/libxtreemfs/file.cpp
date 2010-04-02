@@ -38,6 +38,9 @@ using org::xtreemfs::interfaces::ReplicaSet;
 using org::xtreemfs::interfaces::XCAP_EXPIRE_TIMEOUT_S_MIN;
 using namespace xtreemfs;
 
+#include "yidl.h"
+using yidl::runtime::auto_Object;
+
 #include "yield.h"
 using yield::concurrency::ResponseQueue;
 using yield::platform::Time;
@@ -216,9 +219,10 @@ bool File::close()
   {
     parent_volume.close( *this );
     closed = true;
+    return true;
   }
-
-  return true;
+  else
+    return false;
 }
 
 bool File::datasync()
@@ -233,7 +237,7 @@ yield::platform::Stat* File::getattr()
 
 bool File::getlk( bool exclusive, uint64_t offset, uint64_t length )
 {
-  ::yidl::runtime::auto_Object<OSDProxy> osd_proxy
+  auto_Object<OSDProxy> osd_proxy
     = parent_volume.get_osd_proxies().
         get_osd_proxy( xlocs.get_replicas()[0].get_osd_uuids()[0] );
 
@@ -319,7 +323,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       }
 #endif
 
-      ::yidl::runtime::auto_Object<OSDProxy> osd_proxy
+      auto_Object<OSDProxy> osd_proxy
         = parent_volume.get_osd_proxies().get_osd_proxy
           (
             object_number,
@@ -338,7 +342,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
           static_cast<uint32_t>( object_size ),
           ObjectData( 0, 0, 0, new Buffer( rbuf_p, object_size ) )
         );
-      read_request->set_response_handler( &read_response_queue );
+      read_request->set_response_handler( read_response_queue );
 
       osd_proxy->handle( *read_request );
       expected_read_response_count++;
@@ -450,7 +454,7 @@ bool File::setlk( bool exclusive, uint64_t offset, uint64_t length )
 {
   FILE_OPERATION_BEGIN( setlk );
 
-  ::yidl::runtime::auto_Object<OSDProxy> osd_proxy
+  auto_Object<OSDProxy> osd_proxy
     = parent_volume.get_osd_proxies().get_osd_proxy
       (
         0,
@@ -480,7 +484,7 @@ bool File::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 {
   FILE_OPERATION_BEGIN( setlkw );
 
-  ::yidl::runtime::auto_Object<OSDProxy> osd_proxy
+  auto_Object<OSDProxy> osd_proxy
     = parent_volume.get_osd_proxies().get_osd_proxy
       (
         0,
@@ -609,7 +613,7 @@ bool File::unlk( uint64_t offset, uint64_t length )
     return true;
   else
   {
-    ::yidl::runtime::auto_Object<OSDProxy> osd_proxy
+    auto_Object<OSDProxy> osd_proxy
       = parent_volume.get_osd_proxies().get_osd_proxy
         (
           0,
@@ -665,7 +669,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
       if ( object_offset + object_size > stripe_size )
         object_size = stripe_size - object_offset;
 
-      yidl::runtime::auto_Object<OSDProxy> osd_proxy
+      auto_Object<OSDProxy> osd_proxy
         = parent_volume.get_osd_proxies().get_osd_proxy
           (
             object_number,

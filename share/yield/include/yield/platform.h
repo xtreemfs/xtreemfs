@@ -3328,6 +3328,7 @@ namespace yield
 
       bool read_bool() { return read_int32() == 1; }
       void read( Buffer& value );
+      Buffer* read_buffer();
       double read_double() { double value; read( value ); return value; }
       void read( double& value );
       float read_float();
@@ -3344,6 +3345,7 @@ namespace yield
       // Unmarshaller
       bool read_bool( const Key& ) { return read_bool(); }
       void read( const Key&, Buffer& value ) { read( value ); }
+      Buffer* read_buffer( const Key& ) { return read_buffer(); }
       void read( const Key&, double& value ) { read( value ); }
       float read_float( const Key& ) { return read_float(); }
       int32_t read_int32( const Key& ) { return read_int32(); }
