@@ -1326,6 +1326,7 @@ namespace yield
       typedef vector<ParsedOption> ParsedOptions;
 
 
+      YIELD_PLATFORM_EXCEPTION_SUBCLASS( DuplicateOptionException );
       YIELD_PLATFORM_EXCEPTION_SUBCLASS( InvalidValueException );
       YIELD_PLATFORM_EXCEPTION_SUBCLASS( MissingValueException );
       YIELD_PLATFORM_EXCEPTION_SUBCLASS( UnexpectedValueException );

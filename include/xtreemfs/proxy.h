@@ -36,10 +36,10 @@
 
 namespace xtreemfs
 {
-  using yield::concurrency::Exception;
   using yield::concurrency::EventHandler;
   using yield::concurrency::MessageFactory;
   using yield::ipc::URI;
+  using yield::platform::Exception;
   using yield::platform::Log;
   using yield::platform::SSLContext;
 

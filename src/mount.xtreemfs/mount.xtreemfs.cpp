@@ -69,8 +69,6 @@ int main( int argc, char** argv )
   mount_options.add( "--no-big-writes", false );
 #endif
   mount_options.add( "--test", false );
-  mount_options.add( "--trace-file-io", false );
-  mount_options.add( "--trace-volume-operations", false );
   mount_options.add
   (
     "--vivaldi-coordinates-file-path",

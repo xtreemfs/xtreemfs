@@ -236,7 +236,7 @@ Volume::create
       );
 
   StatSet stbuf;
-  mrc_proxy.getattr( name_utf8, "/", 0, stbuf );
+  mrc_proxy.getattr( name_utf8, "", 0, stbuf );
 
   StageGroup* stage_group = new yield::concurrency::SEDAStageGroup;
   //stage_group->createStage( dir_proxy );

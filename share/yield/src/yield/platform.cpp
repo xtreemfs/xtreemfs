@@ -5245,9 +5245,17 @@ OptionParser::parse_args
 
       case SO_OPT_INVALID:
       {
-        string error_message( "unregistered option " );
+        string error_message( "unregistered option: " );
         error_message.append( args.OptionText() );
         throw UnregisteredOptionException( error_message );
+      }
+      break;
+
+      case SO_OPT_MULTIPLE:
+      {
+        string error_message( "duplicate option: " );
+        error_message.append( args.OptionText() );
+        throw DuplicateOptionException( error_message );
       }
       break;
 
