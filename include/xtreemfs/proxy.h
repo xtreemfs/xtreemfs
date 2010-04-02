@@ -30,7 +30,6 @@
 #ifndef _XTREEMFS_PROXY_H_
 #define _XTREEMFS_PROXY_H_
 
-#include "xtreemfs/proxy_exception.h"
 #include "yield.h"
 
 

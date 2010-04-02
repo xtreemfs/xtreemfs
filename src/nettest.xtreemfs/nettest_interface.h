@@ -1,5 +1,5 @@
-#ifndef _1005331369_H_
-#define _1005331369_H_
+#ifndef _532861505_H_
+#define _532861505_H_
 
 
 #include "yield/concurrency.h"
@@ -151,7 +151,7 @@ namespace org
 
           bool operator==( const send_bufferRequest& other ) const
           {
-            return data == other.data;
+            return get_data() == other.get_data();
           }
 
           // yidl::runtime::RTTIObject
@@ -160,7 +160,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            if ( data != NULL ) marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "data", 0 ), *data );
+            if ( get_data() != NULL ) marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "data", 0 ), *get_data() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -221,9 +221,9 @@ namespace org
 
           bool operator==( const recv_bufferRequest& other ) const
           {
-            return size == other.size
+            return get_size() == other.get_size()
                    &&
-                   data == other.data;
+                   get_data() == other.get_data();
           }
 
           // yidl::runtime::RTTIObject
@@ -232,8 +232,8 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "size", 0 ), size );
-            if ( data != NULL ) marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "data", 0 ), *data );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "size", 0 ), get_size() );
+            if ( get_data() != NULL ) marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "data", 0 ), *get_data() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -266,7 +266,7 @@ namespace org
 
           bool operator==( const recv_bufferResponse& other ) const
           {
-            return data == other.data;
+            return get_data() == other.get_data();
           }
 
           // yidl::runtime::RTTIObject
@@ -275,7 +275,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            if ( data != NULL ) marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "data", 0 ), *data );
+            if ( get_data() != NULL ) marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "data", 0 ), *get_data() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )

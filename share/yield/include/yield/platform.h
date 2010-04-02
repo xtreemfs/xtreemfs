@@ -546,19 +546,16 @@ namespace yield
       virtual ~Exception() throw();
 
       virtual uint32_t get_error_code() const { return error_code; }
-      virtual const char* get_error_message() throw();
+      virtual const char* get_error_message() const throw();
 
-      operator const char*() throw() { return get_error_message(); }
+      operator const char*() const throw() { return get_error_message(); }
 
-      // std::exception
-      const char* what() const throw()
-      {
-        return const_cast<Exception*>( this )->get_error_message();
-      }
-
-    protected:
       void set_error_code( uint32_t error_code );
       void set_error_message( const char* error_message );
+      void set_error_message( const string& error_message );
+
+      // std::exception
+      const char* what() const throw();
 
     private:
       uint32_t error_code;

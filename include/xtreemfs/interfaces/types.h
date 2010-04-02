@@ -1,5 +1,5 @@
-#ifndef _1136993229_H_
-#define _1136993229_H_
+#ifndef _698985593_H_
+#define _698985593_H_
 
 
 #include "yidl.h"
@@ -71,11 +71,11 @@ namespace org
 
         bool operator==( const UserCredentials& other ) const
         {
-          return user_id == other.user_id
+          return get_user_id() == other.get_user_id()
                  &&
-                 group_ids == other.group_ids
+                 get_group_ids() == other.get_group_ids()
                  &&
-                 password == other.password;
+                 get_password() == other.get_password();
         }
 
         // yidl::runtime::RTTIObject
@@ -84,9 +84,9 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "user_id", 0 ), user_id );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "group_ids", 0 ), group_ids );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "password", 0 ), password );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "user_id", 0 ), get_user_id() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "group_ids", 0 ), get_group_ids() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "password", 0 ), get_password() );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )

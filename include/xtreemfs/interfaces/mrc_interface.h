@@ -1,5 +1,5 @@
-#ifndef _1012267866_H_
-#define _1012267866_H_
+#ifndef _2111522337_H_
+#define _2111522337_H_
 
 
 #include "constants.h"
@@ -99,33 +99,33 @@ namespace org
 
         bool operator==( const Stat& other ) const
         {
-          return dev == other.dev
+          return get_dev() == other.get_dev()
                  &&
-                 ino == other.ino
+                 get_ino() == other.get_ino()
                  &&
-                 mode == other.mode
+                 get_mode() == other.get_mode()
                  &&
-                 nlink == other.nlink
+                 get_nlink() == other.get_nlink()
                  &&
-                 user_id == other.user_id
+                 get_user_id() == other.get_user_id()
                  &&
-                 group_id == other.group_id
+                 get_group_id() == other.get_group_id()
                  &&
-                 size == other.size
+                 get_size() == other.get_size()
                  &&
-                 atime_ns == other.atime_ns
+                 get_atime_ns() == other.get_atime_ns()
                  &&
-                 mtime_ns == other.mtime_ns
+                 get_mtime_ns() == other.get_mtime_ns()
                  &&
-                 ctime_ns == other.ctime_ns
+                 get_ctime_ns() == other.get_ctime_ns()
                  &&
-                 blksize == other.blksize
+                 get_blksize() == other.get_blksize()
                  &&
-                 etag == other.etag
+                 get_etag() == other.get_etag()
                  &&
-                 truncate_epoch == other.truncate_epoch
+                 get_truncate_epoch() == other.get_truncate_epoch()
                  &&
-                 attributes == other.attributes;
+                 get_attributes() == other.get_attributes();
         }
 
         // yidl::runtime::RTTIObject
@@ -134,20 +134,20 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "dev", 0 ), dev );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "ino", 0 ), ino );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "mode", 0 ), mode );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "nlink", 0 ), nlink );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "user_id", 0 ), user_id );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "group_id", 0 ), group_id );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "size", 0 ), size );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "atime_ns", 0 ), atime_ns );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "mtime_ns", 0 ), mtime_ns );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "ctime_ns", 0 ), ctime_ns );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "blksize", 0 ), blksize );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "etag", 0 ), etag );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "truncate_epoch", 0 ), truncate_epoch );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "attributes", 0 ), attributes );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "dev", 0 ), get_dev() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "ino", 0 ), get_ino() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "mode", 0 ), get_mode() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "nlink", 0 ), get_nlink() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "user_id", 0 ), get_user_id() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "group_id", 0 ), get_group_id() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "size", 0 ), get_size() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "atime_ns", 0 ), get_atime_ns() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "mtime_ns", 0 ), get_mtime_ns() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "ctime_ns", 0 ), get_ctime_ns() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "blksize", 0 ), get_blksize() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "etag", 0 ), get_etag() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "truncate_epoch", 0 ), get_truncate_epoch() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "attributes", 0 ), get_attributes() );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -241,9 +241,9 @@ namespace org
 
         bool operator==( const DirectoryEntry& other ) const
         {
-          return name == other.name
+          return get_name() == other.get_name()
                  &&
-                 stbuf == other.stbuf;
+                 get_stbuf() == other.get_stbuf();
         }
 
         // yidl::runtime::RTTIObject
@@ -252,8 +252,8 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "name", 0 ), name );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stbuf", 0 ), stbuf );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "name", 0 ), get_name() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stbuf", 0 ), get_stbuf() );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -372,29 +372,29 @@ namespace org
 
         bool operator==( const StatVFS& other ) const
         {
-          return bsize == other.bsize
+          return get_bsize() == other.get_bsize()
                  &&
-                 bavail == other.bavail
+                 get_bavail() == other.get_bavail()
                  &&
-                 blocks == other.blocks
+                 get_blocks() == other.get_blocks()
                  &&
-                 fsid == other.fsid
+                 get_fsid() == other.get_fsid()
                  &&
-                 namemax == other.namemax
+                 get_namemax() == other.get_namemax()
                  &&
-                 access_control_policy == other.access_control_policy
+                 get_access_control_policy() == other.get_access_control_policy()
                  &&
-                 default_striping_policy == other.default_striping_policy
+                 get_default_striping_policy() == other.get_default_striping_policy()
                  &&
-                 etag == other.etag
+                 get_etag() == other.get_etag()
                  &&
-                 mode == other.mode
+                 get_mode() == other.get_mode()
                  &&
-                 name == other.name
+                 get_name() == other.get_name()
                  &&
-                 owner_group_id == other.owner_group_id
+                 get_owner_group_id() == other.get_owner_group_id()
                  &&
-                 owner_user_id == other.owner_user_id;
+                 get_owner_user_id() == other.get_owner_user_id();
         }
 
         // yidl::runtime::RTTIObject
@@ -403,18 +403,18 @@ namespace org
         // yidl::runtime::MarshallableObject
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "bsize", 0 ), bsize );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "bavail", 0 ), bavail );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "blocks", 0 ), blocks );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "fsid", 0 ), fsid );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "namemax", 0 ), namemax );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "access_control_policy", 0 ), static_cast<int32_t>( access_control_policy ) );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "default_striping_policy", 0 ), default_striping_policy );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "etag", 0 ), etag );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "mode", 0 ), mode );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "name", 0 ), name );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "owner_group_id", 0 ), owner_group_id );
-          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "owner_user_id", 0 ), owner_user_id );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "bsize", 0 ), get_bsize() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "bavail", 0 ), get_bavail() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "blocks", 0 ), get_blocks() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "fsid", 0 ), get_fsid() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "namemax", 0 ), get_namemax() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "access_control_policy", 0 ), static_cast<int32_t>( get_access_control_policy() ) );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "default_striping_policy", 0 ), get_default_striping_policy() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "etag", 0 ), get_etag() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "mode", 0 ), get_mode() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "name", 0 ), get_name() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "owner_group_id", 0 ), get_owner_group_id() );
+          marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "owner_user_id", 0 ), get_owner_user_id() );
         }
 
         void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1033,9 +1033,9 @@ namespace org
 
           bool operator==( const closeRequest& other ) const
           {
-            return client_vivaldi_coordinates == other.client_vivaldi_coordinates
+            return get_client_vivaldi_coordinates() == other.get_client_vivaldi_coordinates()
                    &&
-                   write_xcap == other.write_xcap;
+                   get_write_xcap() == other.get_write_xcap();
           }
 
           // yidl::runtime::RTTIObject
@@ -1044,8 +1044,8 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "client_vivaldi_coordinates", 0 ), client_vivaldi_coordinates );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "write_xcap", 0 ), write_xcap );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "client_vivaldi_coordinates", 0 ), get_client_vivaldi_coordinates() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "write_xcap", 0 ), get_write_xcap() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1115,11 +1115,11 @@ namespace org
 
           bool operator==( const fsetattrRequest& other ) const
           {
-            return stbuf == other.stbuf
+            return get_stbuf() == other.get_stbuf()
                    &&
-                   to_set == other.to_set
+                   get_to_set() == other.get_to_set()
                    &&
-                   xcap == other.xcap;
+                   get_xcap() == other.get_xcap();
           }
 
           // yidl::runtime::RTTIObject
@@ -1128,9 +1128,9 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stbuf", 0 ), stbuf );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "to_set", 0 ), to_set );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "xcap", 0 ), xcap );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stbuf", 0 ), get_stbuf() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "to_set", 0 ), get_to_set() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "xcap", 0 ), get_xcap() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1191,7 +1191,7 @@ namespace org
 
           bool operator==( const ftruncateRequest& other ) const
           {
-            return write_xcap == other.write_xcap;
+            return get_write_xcap() == other.get_write_xcap();
           }
 
           // yidl::runtime::RTTIObject
@@ -1200,7 +1200,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "write_xcap", 0 ), write_xcap );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "write_xcap", 0 ), get_write_xcap() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1229,7 +1229,7 @@ namespace org
 
           bool operator==( const ftruncateResponse& other ) const
           {
-            return truncate_xcap == other.truncate_xcap;
+            return get_truncate_xcap() == other.get_truncate_xcap();
           }
 
           // yidl::runtime::RTTIObject
@@ -1238,7 +1238,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "truncate_xcap", 0 ), truncate_xcap );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "truncate_xcap", 0 ), get_truncate_xcap() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1289,11 +1289,11 @@ namespace org
 
           bool operator==( const getattrRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   path == other.path
+                   get_path() == other.get_path()
                    &&
-                   known_etag == other.known_etag;
+                   get_known_etag() == other.get_known_etag();
           }
 
           // yidl::runtime::RTTIObject
@@ -1302,9 +1302,9 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), path );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "known_etag", 0 ), known_etag );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), get_path() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "known_etag", 0 ), get_known_etag() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1337,7 +1337,7 @@ namespace org
 
           bool operator==( const getattrResponse& other ) const
           {
-            return stbuf == other.stbuf;
+            return get_stbuf() == other.get_stbuf();
           }
 
           // yidl::runtime::RTTIObject
@@ -1346,7 +1346,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stbuf", 0 ), stbuf );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stbuf", 0 ), get_stbuf() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1395,11 +1395,11 @@ namespace org
 
           bool operator==( const getxattrRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   path == other.path
+                   get_path() == other.get_path()
                    &&
-                   name == other.name;
+                   get_name() == other.get_name();
           }
 
           // yidl::runtime::RTTIObject
@@ -1408,9 +1408,9 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), path );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "name", 0 ), name );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), get_path() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "name", 0 ), get_name() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1443,7 +1443,7 @@ namespace org
 
           bool operator==( const getxattrResponse& other ) const
           {
-            return value == other.value;
+            return get_value() == other.get_value();
           }
 
           // yidl::runtime::RTTIObject
@@ -1452,7 +1452,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "value", 0 ), value );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "value", 0 ), get_value() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1501,11 +1501,11 @@ namespace org
 
           bool operator==( const linkRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   target_path == other.target_path
+                   get_target_path() == other.get_target_path()
                    &&
-                   link_path == other.link_path;
+                   get_link_path() == other.get_link_path();
           }
 
           // yidl::runtime::RTTIObject
@@ -1514,9 +1514,9 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "target_path", 0 ), target_path );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "link_path", 0 ), link_path );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "target_path", 0 ), get_target_path() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "link_path", 0 ), get_link_path() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1579,9 +1579,9 @@ namespace org
 
           bool operator==( const listxattrRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   path == other.path;
+                   get_path() == other.get_path();
           }
 
           // yidl::runtime::RTTIObject
@@ -1590,8 +1590,8 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), path );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), get_path() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1622,7 +1622,7 @@ namespace org
 
           bool operator==( const listxattrResponse& other ) const
           {
-            return names == other.names;
+            return get_names() == other.get_names();
           }
 
           // yidl::runtime::RTTIObject
@@ -1631,7 +1631,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "names", 0 ), names );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "names", 0 ), get_names() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1677,11 +1677,11 @@ namespace org
 
           bool operator==( const mkdirRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   path == other.path
+                   get_path() == other.get_path()
                    &&
-                   mode == other.mode;
+                   get_mode() == other.get_mode();
           }
 
           // yidl::runtime::RTTIObject
@@ -1690,9 +1690,9 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), path );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "mode", 0 ), mode );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), get_path() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "mode", 0 ), get_mode() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1788,17 +1788,17 @@ namespace org
 
           bool operator==( const openRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   path == other.path
+                   get_path() == other.get_path()
                    &&
-                   flags == other.flags
+                   get_flags() == other.get_flags()
                    &&
-                   mode == other.mode
+                   get_mode() == other.get_mode()
                    &&
-                   attributes == other.attributes
+                   get_attributes() == other.get_attributes()
                    &&
-                   client_vivaldi_coordinates == other.client_vivaldi_coordinates;
+                   get_client_vivaldi_coordinates() == other.get_client_vivaldi_coordinates();
           }
 
           // yidl::runtime::RTTIObject
@@ -1807,12 +1807,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), path );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "flags", 0 ), flags );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "mode", 0 ), mode );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "attributes", 0 ), attributes );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "client_vivaldi_coordinates", 0 ), client_vivaldi_coordinates );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), get_path() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "flags", 0 ), get_flags() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "mode", 0 ), get_mode() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "attributes", 0 ), get_attributes() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "client_vivaldi_coordinates", 0 ), get_client_vivaldi_coordinates() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1854,7 +1854,7 @@ namespace org
 
           bool operator==( const openResponse& other ) const
           {
-            return file_credentials == other.file_credentials;
+            return get_file_credentials() == other.get_file_credentials();
           }
 
           // yidl::runtime::RTTIObject
@@ -1863,7 +1863,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), file_credentials );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -1941,17 +1941,17 @@ namespace org
 
           bool operator==( const readdirRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   path == other.path
+                   get_path() == other.get_path()
                    &&
-                   known_etag == other.known_etag
+                   get_known_etag() == other.get_known_etag()
                    &&
-                   limit_directory_entries_count == other.limit_directory_entries_count
+                   get_limit_directory_entries_count() == other.get_limit_directory_entries_count()
                    &&
-                   names_only == other.names_only
+                   get_names_only() == other.get_names_only()
                    &&
-                   seen_directory_entries_count == other.seen_directory_entries_count;
+                   get_seen_directory_entries_count() == other.get_seen_directory_entries_count();
           }
 
           // yidl::runtime::RTTIObject
@@ -1960,12 +1960,12 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), path );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "known_etag", 0 ), known_etag );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "limit_directory_entries_count", 0 ), limit_directory_entries_count );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "names_only", 0 ), names_only );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "seen_directory_entries_count", 0 ), seen_directory_entries_count );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), get_path() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "known_etag", 0 ), get_known_etag() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "limit_directory_entries_count", 0 ), get_limit_directory_entries_count() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "names_only", 0 ), get_names_only() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "seen_directory_entries_count", 0 ), get_seen_directory_entries_count() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2007,7 +2007,7 @@ namespace org
 
           bool operator==( const readdirResponse& other ) const
           {
-            return directory_entries == other.directory_entries;
+            return get_directory_entries() == other.get_directory_entries();
           }
 
           // yidl::runtime::RTTIObject
@@ -2016,7 +2016,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "directory_entries", 0 ), directory_entries );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "directory_entries", 0 ), get_directory_entries() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2058,9 +2058,9 @@ namespace org
 
           bool operator==( const readlinkRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   path == other.path;
+                   get_path() == other.get_path();
           }
 
           // yidl::runtime::RTTIObject
@@ -2069,8 +2069,8 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), path );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), get_path() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2101,7 +2101,7 @@ namespace org
 
           bool operator==( const readlinkResponse& other ) const
           {
-            return link_target_path == other.link_target_path;
+            return get_link_target_path() == other.get_link_target_path();
           }
 
           // yidl::runtime::RTTIObject
@@ -2110,7 +2110,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "link_target_path", 0 ), link_target_path );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "link_target_path", 0 ), get_link_target_path() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2159,11 +2159,11 @@ namespace org
 
           bool operator==( const removexattrRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   path == other.path
+                   get_path() == other.get_path()
                    &&
-                   name == other.name;
+                   get_name() == other.get_name();
           }
 
           // yidl::runtime::RTTIObject
@@ -2172,9 +2172,9 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), path );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "name", 0 ), name );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), get_path() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "name", 0 ), get_name() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2256,11 +2256,11 @@ namespace org
 
           bool operator==( const renameRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   source_path == other.source_path
+                   get_source_path() == other.get_source_path()
                    &&
-                   target_path == other.target_path;
+                   get_target_path() == other.get_target_path();
           }
 
           // yidl::runtime::RTTIObject
@@ -2269,9 +2269,9 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "source_path", 0 ), source_path );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "target_path", 0 ), target_path );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "source_path", 0 ), get_source_path() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "target_path", 0 ), get_target_path() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2307,7 +2307,7 @@ namespace org
 
           bool operator==( const renameResponse& other ) const
           {
-            return file_credentials == other.file_credentials;
+            return get_file_credentials() == other.get_file_credentials();
           }
 
           // yidl::runtime::RTTIObject
@@ -2316,7 +2316,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), file_credentials );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2358,9 +2358,9 @@ namespace org
 
           bool operator==( const rmdirRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   path == other.path;
+                   get_path() == other.get_path();
           }
 
           // yidl::runtime::RTTIObject
@@ -2369,8 +2369,8 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), path );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), get_path() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2443,13 +2443,13 @@ namespace org
 
           bool operator==( const setattrRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   path == other.path
+                   get_path() == other.get_path()
                    &&
-                   stbuf == other.stbuf
+                   get_stbuf() == other.get_stbuf()
                    &&
-                   to_set == other.to_set;
+                   get_to_set() == other.get_to_set();
           }
 
           // yidl::runtime::RTTIObject
@@ -2458,10 +2458,10 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), path );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stbuf", 0 ), stbuf );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "to_set", 0 ), to_set );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), get_path() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stbuf", 0 ), get_stbuf() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "to_set", 0 ), get_to_set() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2545,15 +2545,15 @@ namespace org
 
           bool operator==( const setxattrRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   path == other.path
+                   get_path() == other.get_path()
                    &&
-                   name == other.name
+                   get_name() == other.get_name()
                    &&
-                   value == other.value
+                   get_value() == other.get_value()
                    &&
-                   flags == other.flags;
+                   get_flags() == other.get_flags();
           }
 
           // yidl::runtime::RTTIObject
@@ -2562,11 +2562,11 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), path );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "name", 0 ), name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "value", 0 ), value );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "flags", 0 ), flags );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), get_path() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "name", 0 ), get_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "value", 0 ), get_value() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "flags", 0 ), get_flags() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2635,9 +2635,9 @@ namespace org
 
           bool operator==( const statvfsRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   known_etag == other.known_etag;
+                   get_known_etag() == other.get_known_etag();
           }
 
           // yidl::runtime::RTTIObject
@@ -2646,8 +2646,8 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "known_etag", 0 ), known_etag );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "known_etag", 0 ), get_known_etag() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2678,7 +2678,7 @@ namespace org
 
           bool operator==( const statvfsResponse& other ) const
           {
-            return stbuf == other.stbuf;
+            return get_stbuf() == other.get_stbuf();
           }
 
           // yidl::runtime::RTTIObject
@@ -2687,7 +2687,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stbuf", 0 ), stbuf );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stbuf", 0 ), get_stbuf() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2736,11 +2736,11 @@ namespace org
 
           bool operator==( const symlinkRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   target_path == other.target_path
+                   get_target_path() == other.get_target_path()
                    &&
-                   link_path == other.link_path;
+                   get_link_path() == other.get_link_path();
           }
 
           // yidl::runtime::RTTIObject
@@ -2749,9 +2749,9 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "target_path", 0 ), target_path );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "link_path", 0 ), link_path );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "target_path", 0 ), get_target_path() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "link_path", 0 ), get_link_path() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2824,9 +2824,9 @@ namespace org
 
           bool operator==( const unlinkRequest& other ) const
           {
-            return volume_name == other.volume_name
+            return get_volume_name() == other.get_volume_name()
                    &&
-                   path == other.path;
+                   get_path() == other.get_path();
           }
 
           // yidl::runtime::RTTIObject
@@ -2835,8 +2835,8 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), path );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "path", 0 ), get_path() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2870,7 +2870,7 @@ namespace org
 
           bool operator==( const unlinkResponse& other ) const
           {
-            return file_credentials == other.file_credentials;
+            return get_file_credentials() == other.get_file_credentials();
           }
 
           // yidl::runtime::RTTIObject
@@ -2879,7 +2879,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), file_credentials );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -2973,11 +2973,11 @@ namespace org
 
           bool operator==( const xtreemfs_check_file_existsRequest& other ) const
           {
-            return volume_id == other.volume_id
+            return get_volume_id() == other.get_volume_id()
                    &&
-                   file_ids == other.file_ids
+                   get_file_ids() == other.get_file_ids()
                    &&
-                   osd_uuid == other.osd_uuid;
+                   get_osd_uuid() == other.get_osd_uuid();
           }
 
           // yidl::runtime::RTTIObject
@@ -2986,9 +2986,9 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_id", 0 ), volume_id );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_ids", 0 ), file_ids );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "osd_uuid", 0 ), osd_uuid );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_id", 0 ), get_volume_id() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_ids", 0 ), get_file_ids() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "osd_uuid", 0 ), get_osd_uuid() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3021,7 +3021,7 @@ namespace org
 
           bool operator==( const xtreemfs_check_file_existsResponse& other ) const
           {
-            return bitmap == other.bitmap;
+            return get_bitmap() == other.get_bitmap();
           }
 
           // yidl::runtime::RTTIObject
@@ -3030,7 +3030,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "bitmap", 0 ), bitmap );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "bitmap", 0 ), get_bitmap() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3070,7 +3070,7 @@ namespace org
 
           bool operator==( const xtreemfs_dump_databaseRequest& other ) const
           {
-            return dump_file == other.dump_file;
+            return get_dump_file() == other.get_dump_file();
           }
 
           // yidl::runtime::RTTIObject
@@ -3079,7 +3079,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "dump_file", 0 ), dump_file );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "dump_file", 0 ), get_dump_file() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3140,9 +3140,9 @@ namespace org
 
           bool operator==( const xtreemfs_get_suitable_osdsRequest& other ) const
           {
-            return file_id == other.file_id
+            return get_file_id() == other.get_file_id()
                    &&
-                   num_osds == other.num_osds;
+                   get_num_osds() == other.get_num_osds();
           }
 
           // yidl::runtime::RTTIObject
@@ -3151,8 +3151,8 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_id", 0 ), file_id );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "num_osds", 0 ), num_osds );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_id", 0 ), get_file_id() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "num_osds", 0 ), get_num_osds() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3186,7 +3186,7 @@ namespace org
 
           bool operator==( const xtreemfs_get_suitable_osdsResponse& other ) const
           {
-            return osd_uuids == other.osd_uuids;
+            return get_osd_uuids() == other.get_osd_uuids();
           }
 
           // yidl::runtime::RTTIObject
@@ -3195,7 +3195,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "osd_uuids", 0 ), osd_uuids );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "osd_uuids", 0 ), get_osd_uuids() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3235,7 +3235,7 @@ namespace org
 
           bool operator==( const xtreemfs_internal_debugRequest& other ) const
           {
-            return operation == other.operation;
+            return get_operation() == other.get_operation();
           }
 
           // yidl::runtime::RTTIObject
@@ -3244,7 +3244,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "operation", 0 ), operation );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "operation", 0 ), get_operation() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3273,7 +3273,7 @@ namespace org
 
           bool operator==( const xtreemfs_internal_debugResponse& other ) const
           {
-            return result == other.result;
+            return get_result() == other.get_result();
           }
 
           // yidl::runtime::RTTIObject
@@ -3282,7 +3282,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "result", 0 ), result );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "result", 0 ), get_result() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3339,7 +3339,7 @@ namespace org
 
           bool operator==( const xtreemfs_lsvolResponse& other ) const
           {
-            return volumes == other.volumes;
+            return get_volumes() == other.get_volumes();
           }
 
           // yidl::runtime::RTTIObject
@@ -3348,7 +3348,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volumes", 0 ), volumes );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volumes", 0 ), get_volumes() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3388,7 +3388,7 @@ namespace org
 
           bool operator==( const xtreemfs_mkvolRequest& other ) const
           {
-            return volume == other.volume;
+            return get_volume() == other.get_volume();
           }
 
           // yidl::runtime::RTTIObject
@@ -3397,7 +3397,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume", 0 ), volume );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume", 0 ), get_volume() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3457,7 +3457,7 @@ namespace org
 
           bool operator==( const xtreemfs_renew_capabilityRequest& other ) const
           {
-            return old_xcap == other.old_xcap;
+            return get_old_xcap() == other.get_old_xcap();
           }
 
           // yidl::runtime::RTTIObject
@@ -3466,7 +3466,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "old_xcap", 0 ), old_xcap );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "old_xcap", 0 ), get_old_xcap() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3498,7 +3498,7 @@ namespace org
 
           bool operator==( const xtreemfs_renew_capabilityResponse& other ) const
           {
-            return renewed_xcap == other.renewed_xcap;
+            return get_renewed_xcap() == other.get_renewed_xcap();
           }
 
           // yidl::runtime::RTTIObject
@@ -3507,7 +3507,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "renewed_xcap", 0 ), renewed_xcap );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "renewed_xcap", 0 ), get_renewed_xcap() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3553,9 +3553,9 @@ namespace org
 
           bool operator==( const xtreemfs_replica_addRequest& other ) const
           {
-            return file_id == other.file_id
+            return get_file_id() == other.get_file_id()
                    &&
-                   new_replica == other.new_replica;
+                   get_new_replica() == other.get_new_replica();
           }
 
           // yidl::runtime::RTTIObject
@@ -3564,8 +3564,8 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_id", 0 ), file_id );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "new_replica", 0 ), new_replica );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_id", 0 ), get_file_id() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "new_replica", 0 ), get_new_replica() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3624,7 +3624,7 @@ namespace org
 
           bool operator==( const xtreemfs_replica_listRequest& other ) const
           {
-            return file_id == other.file_id;
+            return get_file_id() == other.get_file_id();
           }
 
           // yidl::runtime::RTTIObject
@@ -3633,7 +3633,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_id", 0 ), file_id );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_id", 0 ), get_file_id() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3665,7 +3665,7 @@ namespace org
 
           bool operator==( const xtreemfs_replica_listResponse& other ) const
           {
-            return replicas == other.replicas;
+            return get_replicas() == other.get_replicas();
           }
 
           // yidl::runtime::RTTIObject
@@ -3674,7 +3674,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "replicas", 0 ), replicas );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "replicas", 0 ), get_replicas() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3716,9 +3716,9 @@ namespace org
 
           bool operator==( const xtreemfs_replica_removeRequest& other ) const
           {
-            return file_id == other.file_id
+            return get_file_id() == other.get_file_id()
                    &&
-                   osd_uuid == other.osd_uuid;
+                   get_osd_uuid() == other.get_osd_uuid();
           }
 
           // yidl::runtime::RTTIObject
@@ -3727,8 +3727,8 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_id", 0 ), file_id );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "osd_uuid", 0 ), osd_uuid );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_id", 0 ), get_file_id() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "osd_uuid", 0 ), get_osd_uuid() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3762,7 +3762,7 @@ namespace org
 
           bool operator==( const xtreemfs_replica_removeResponse& other ) const
           {
-            return delete_xcap == other.delete_xcap;
+            return get_delete_xcap() == other.get_delete_xcap();
           }
 
           // yidl::runtime::RTTIObject
@@ -3771,7 +3771,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "delete_xcap", 0 ), delete_xcap );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "delete_xcap", 0 ), get_delete_xcap() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3811,7 +3811,7 @@ namespace org
 
           bool operator==( const xtreemfs_restore_databaseRequest& other ) const
           {
-            return dump_file == other.dump_file;
+            return get_dump_file() == other.get_dump_file();
           }
 
           // yidl::runtime::RTTIObject
@@ -3820,7 +3820,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "dump_file", 0 ), dump_file );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "dump_file", 0 ), get_dump_file() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3898,15 +3898,15 @@ namespace org
 
           bool operator==( const xtreemfs_restore_fileRequest& other ) const
           {
-            return file_path == other.file_path
+            return get_file_path() == other.get_file_path()
                    &&
-                   file_id == other.file_id
+                   get_file_id() == other.get_file_id()
                    &&
-                   file_size == other.file_size
+                   get_file_size() == other.get_file_size()
                    &&
-                   osd_uuid == other.osd_uuid
+                   get_osd_uuid() == other.get_osd_uuid()
                    &&
-                   stripe_size == other.stripe_size;
+                   get_stripe_size() == other.get_stripe_size();
           }
 
           // yidl::runtime::RTTIObject
@@ -3915,11 +3915,11 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_path", 0 ), file_path );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_id", 0 ), file_id );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_size", 0 ), file_size );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "osd_uuid", 0 ), osd_uuid );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stripe_size", 0 ), stripe_size );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_path", 0 ), get_file_path() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_id", 0 ), get_file_id() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_size", 0 ), get_file_size() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "osd_uuid", 0 ), get_osd_uuid() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stripe_size", 0 ), get_stripe_size() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -3984,7 +3984,7 @@ namespace org
 
           bool operator==( const xtreemfs_rmvolRequest& other ) const
           {
-            return volume_name == other.volume_name;
+            return get_volume_name() == other.get_volume_name();
           }
 
           // yidl::runtime::RTTIObject
@@ -3993,7 +3993,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), volume_name );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "volume_name", 0 ), get_volume_name() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -4072,12 +4072,7 @@ namespace org
         {
         public:
           ConcurrentModificationException() { }
-
-          ConcurrentModificationException( const string& stack_trace )
-            : stack_trace( stack_trace )
-          { }
-
-          ConcurrentModificationException( const char* what ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( what ) { }
+          ConcurrentModificationException( const string& stack_trace ) : stack_trace( stack_trace ) { }
           virtual ~ConcurrentModificationException() throw() { ; }
 
           const string& get_stack_trace() const { return stack_trace; }
@@ -4089,7 +4084,7 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stack_trace", 0 ), get_stack_trace() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -4100,12 +4095,12 @@ namespace org
           // yield::concurrency::Exception
           virtual ::yield::concurrency::Exception& clone() const
           {
-            return *new ConcurrentModificationException( stack_trace );
+            return *new ConcurrentModificationException( get_stack_trace() );
           }
 
           virtual void throwStackClone() const
           {
-            throw ConcurrentModificationException( stack_trace );
+            throw ConcurrentModificationException( get_stack_trace() );
           }
 
         protected:
@@ -4116,29 +4111,16 @@ namespace org
         class errnoException : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS
         {
         public:
-          errnoException()
-            : error_code( 0 )
-          { }
-
-          errnoException
-          (
-            uint32_t error_code,
-            const string& error_message,
-            const string& stack_trace
-          )
-            : error_code( error_code ),
-              error_message( error_message ),
-              stack_trace( stack_trace )
-          { }
-
-          errnoException( const char* what ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( what ) { }
+          errnoException() { }
+          errnoException( uint32_t error_code ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_code ) { }
+          errnoException( const char* error_message ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_message ) { }
+          errnoException( const string& error_message ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_message ) { }
+          errnoException( uint32_t error_code, const char* error_message ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_code, error_message ) { }
+          errnoException( uint32_t error_code, const string& error_message ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_code, error_message ) { }
+          errnoException( uint32_t error_code, const string& error_message, const string& stack_trace ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_code, error_message ), stack_trace( stack_trace ) { }
           virtual ~errnoException() throw() { ; }
 
-          uint32_t get_error_code() const { return error_code; }
-          const string& get_error_message() const { return error_message; }
           const string& get_stack_trace() const { return stack_trace; }
-          void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
-          void set_error_message( const string& error_message ) { this->error_message = error_message; }
           void set_stack_trace( const string& stack_trace ) { this->stack_trace = stack_trace; }
 
           // yidl::runtime::RTTIObject
@@ -4147,32 +4129,30 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_code", 0 ), error_code );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_message", 0 ), error_message );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_code", 0 ), get_error_code() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_message", 0 ), get_error_message() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stack_trace", 0 ), get_stack_trace() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            error_code = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_code", 0 ) );
-            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_message", 0 ), error_message );
+            uint32_t error_code; error_code = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_code", 0 ) ); set_error_code( error_code );
+            string error_message; unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_message", 0 ), error_message ); set_error_message( error_message );
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
           }
 
           // yield::concurrency::Exception
           virtual ::yield::concurrency::Exception& clone() const
           {
-            return *new errnoException( error_code, error_message, stack_trace );
+            return *new errnoException( get_error_code(), get_error_message(), get_stack_trace() );
           }
 
           virtual void throwStackClone() const
           {
-            throw errnoException( error_code, error_message, stack_trace );
+            throw errnoException( get_error_code(), get_error_message(), get_stack_trace() );
           }
 
         protected:
-          uint32_t error_code;
-          string error_message;
           string stack_trace;
         };
 
@@ -4181,16 +4161,9 @@ namespace org
         {
         public:
           InvalidArgumentException() { }
-
-          InvalidArgumentException( const string& error_message )
-            : error_message( error_message )
-          { }
-
-          InvalidArgumentException( const char* what ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( what ) { }
+          InvalidArgumentException( const char* error_message ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_message ) { }
+          InvalidArgumentException( const string& error_message ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_message ) { }
           virtual ~InvalidArgumentException() throw() { ; }
-
-          const string& get_error_message() const { return error_message; }
-          void set_error_message( const string& error_message ) { this->error_message = error_message; }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( InvalidArgumentException, 2010031168 );
@@ -4198,56 +4171,40 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_message", 0 ), error_message );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_message", 0 ), get_error_message() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_message", 0 ), error_message );
+            string error_message; unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_message", 0 ), error_message ); set_error_message( error_message );
           }
 
           // yield::concurrency::Exception
           virtual ::yield::concurrency::Exception& clone() const
           {
-            return *new InvalidArgumentException( error_message );
+            return *new InvalidArgumentException( get_error_message() );
           }
 
           virtual void throwStackClone() const
           {
-            throw InvalidArgumentException( error_message );
+            throw InvalidArgumentException( get_error_message() );
           }
-
-        protected:
-          string error_message;
         };
 
 
         class MRCException : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS
         {
         public:
-          MRCException()
-            : error_code( 0 )
-          { }
-
-          MRCException
-          (
-            uint32_t error_code,
-            const string& error_message,
-            const string& stack_trace
-          )
-            : error_code( error_code ),
-              error_message( error_message ),
-              stack_trace( stack_trace )
-          { }
-
-          MRCException( const char* what ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( what ) { }
+          MRCException() { }
+          MRCException( uint32_t error_code ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_code ) { }
+          MRCException( const char* error_message ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_message ) { }
+          MRCException( const string& error_message ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_message ) { }
+          MRCException( uint32_t error_code, const char* error_message ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_code, error_message ) { }
+          MRCException( uint32_t error_code, const string& error_message ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_code, error_message ) { }
+          MRCException( uint32_t error_code, const string& error_message, const string& stack_trace ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_code, error_message ), stack_trace( stack_trace ) { }
           virtual ~MRCException() throw() { ; }
 
-          uint32_t get_error_code() const { return error_code; }
-          const string& get_error_message() const { return error_message; }
           const string& get_stack_trace() const { return stack_trace; }
-          void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
-          void set_error_message( const string& error_message ) { this->error_message = error_message; }
           void set_stack_trace( const string& stack_trace ) { this->stack_trace = stack_trace; }
 
           // yidl::runtime::RTTIObject
@@ -4256,32 +4213,30 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_code", 0 ), error_code );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_message", 0 ), error_message );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_code", 0 ), get_error_code() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_message", 0 ), get_error_message() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stack_trace", 0 ), get_stack_trace() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
-            error_code = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_code", 0 ) );
-            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_message", 0 ), error_message );
+            uint32_t error_code; error_code = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_code", 0 ) ); set_error_code( error_code );
+            string error_message; unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_message", 0 ), error_message ); set_error_message( error_message );
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
           }
 
           // yield::concurrency::Exception
           virtual ::yield::concurrency::Exception& clone() const
           {
-            return *new MRCException( error_code, error_message, stack_trace );
+            return *new MRCException( get_error_code(), get_error_message(), get_stack_trace() );
           }
 
           virtual void throwStackClone() const
           {
-            throw MRCException( error_code, error_message, stack_trace );
+            throw MRCException( get_error_code(), get_error_message(), get_stack_trace() );
           }
 
         protected:
-          uint32_t error_code;
-          string error_message;
           string stack_trace;
         };
 
@@ -4289,27 +4244,14 @@ namespace org
         class ProtocolException : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS
         {
         public:
-          ProtocolException()
-            : accept_stat( 0 ), error_code( 0 )
-          { }
-
-          ProtocolException
-          (
-            uint32_t accept_stat,
-            uint32_t error_code,
-            const string& stack_trace
-          )
-            : accept_stat( accept_stat ), error_code( error_code ), stack_trace( stack_trace )
-          { }
-
-          ProtocolException( const char* what ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( what ) { }
+          ProtocolException() : accept_stat( 0 ) { }
+          ProtocolException( uint32_t error_code ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_code ), accept_stat( 0 ) { }
+          ProtocolException( uint32_t accept_stat, uint32_t error_code, const string& stack_trace ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( error_code ), accept_stat( accept_stat ), stack_trace( stack_trace ) { }
           virtual ~ProtocolException() throw() { ; }
 
           uint32_t get_accept_stat() const { return accept_stat; }
-          uint32_t get_error_code() const { return error_code; }
-          const string& get_stack_trace() const { return stack_trace; }
           void set_accept_stat( uint32_t accept_stat ) { this->accept_stat = accept_stat; }
-          void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
+          const string& get_stack_trace() const { return stack_trace; }
           void set_stack_trace( const string& stack_trace ) { this->stack_trace = stack_trace; }
 
           // yidl::runtime::RTTIObject
@@ -4318,32 +4260,31 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "accept_stat", 0 ), accept_stat );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_code", 0 ), error_code );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "accept_stat", 0 ), get_accept_stat() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_code", 0 ), get_error_code() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stack_trace", 0 ), get_stack_trace() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
           {
             accept_stat = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "accept_stat", 0 ) );
-            error_code = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_code", 0 ) );
+            uint32_t error_code; error_code = unmarshaller.read_uint32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "error_code", 0 ) ); set_error_code( error_code );
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "stack_trace", 0 ), stack_trace );
           }
 
           // yield::concurrency::Exception
           virtual ::yield::concurrency::Exception& clone() const
           {
-            return *new ProtocolException( accept_stat, error_code, stack_trace );
+            return *new ProtocolException( get_accept_stat(), get_error_code(), get_stack_trace() );
           }
 
           virtual void throwStackClone() const
           {
-            throw ProtocolException( accept_stat, error_code, stack_trace );
+            throw ProtocolException( get_accept_stat(), get_error_code(), get_stack_trace() );
           }
 
         protected:
           uint32_t accept_stat;
-          uint32_t error_code;
           string stack_trace;
         };
 
@@ -4351,20 +4292,13 @@ namespace org
         class RedirectException : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS
         {
         public:
-          RedirectException()
-            : port( 0 )
-          { }
-
-          RedirectException( const string& address, uint16_t port )
-            : address( address ), port( port )
-          { }
-
-          RedirectException( const char* what ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( what ) { }
+          RedirectException() : port( 0 ) { }
+          RedirectException( const string& address, uint16_t port ) : address( address ), port( port ) { }
           virtual ~RedirectException() throw() { ; }
 
           const string& get_address() const { return address; }
-          uint16_t get_port() const { return port; }
           void set_address( const string& address ) { this->address = address; }
+          uint16_t get_port() const { return port; }
           void set_port( uint16_t port ) { this->port = port; }
 
           // yidl::runtime::RTTIObject
@@ -4373,8 +4307,8 @@ namespace org
           // yidl::runtime::MarshallableObject
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "address", 0 ), address );
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "port", 0 ), port );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "address", 0 ), get_address() );
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "port", 0 ), get_port() );
           }
 
           void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
@@ -4386,12 +4320,12 @@ namespace org
           // yield::concurrency::Exception
           virtual ::yield::concurrency::Exception& clone() const
           {
-            return *new RedirectException( address, port );
+            return *new RedirectException( get_address(), get_port() );
           }
 
           virtual void throwStackClone() const
           {
-            throw RedirectException( address, port );
+            throw RedirectException( get_address(), get_port() );
           }
 
         protected:
@@ -4404,7 +4338,6 @@ namespace org
         {
         public:
           StaleETagException() { }
-          StaleETagException( const char* what ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_PARENT_CLASS( what ) { }
           virtual ~StaleETagException() throw() { ; }
 
           // yidl::runtime::RTTIObject
