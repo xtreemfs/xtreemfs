@@ -60,7 +60,7 @@ public class StatOperation extends MRCOperation {
         
         validateContext(rq);
         
-        Path p = new Path(rqArgs.getVolume_name() + "/" + rqArgs.getPath());
+        Path p = new Path(rqArgs.getVolume_name(), rqArgs.getPath());
         
         // if(p.getLastComp(0).startsWith(".fuse_hidden"))
         // p = MRCHelper.getFuseHiddenPath(p);

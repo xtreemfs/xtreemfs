@@ -66,7 +66,7 @@ public class GetXAttrsOperation extends MRCOperation {
         
         validateContext(rq);
         
-        Path p = new Path(rqArgs.getVolume_name() + "/" + rqArgs.getPath());
+        Path p = new Path(rqArgs.getVolume_name(), rqArgs.getPath());
         
         StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         PathResolver res = new PathResolver(sMan, p);

@@ -59,8 +59,8 @@ public class CreateLinkOperation extends MRCOperation {
         
         validateContext(rq);
         
-        final Path lp = new Path(rqArgs.getVolume_name() + "/" + rqArgs.getLink_path());
-        final Path tp = new Path(rqArgs.getVolume_name() + "/" + rqArgs.getTarget_path());
+        final Path lp = new Path(rqArgs.getVolume_name(), rqArgs.getLink_path());
+        final Path tp = new Path(rqArgs.getVolume_name(), rqArgs.getTarget_path());
         
         if (!lp.getComp(0).equals(tp.getComp(0)))
             throw new UserException(ErrNo.EXDEV, "cannot create hard links across volume boundaries");

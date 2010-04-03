@@ -68,9 +68,8 @@ public class DeleteOperation extends MRCOperation {
         validateContext(rq);
         
         Path p = new Path((rq.getRequestArgs() instanceof unlinkRequest ? ((unlinkRequest) rq
-                .getRequestArgs()).getVolume_name() : ((rmdirRequest) rq.getRequestArgs()).getVolume_name())
-            + "/"
-            + (rq.getRequestArgs() instanceof unlinkRequest ? ((unlinkRequest) rq.getRequestArgs()).getPath()
+                .getRequestArgs()).getVolume_name() : ((rmdirRequest) rq.getRequestArgs()).getVolume_name()),
+            (rq.getRequestArgs() instanceof unlinkRequest ? ((unlinkRequest) rq.getRequestArgs()).getPath()
                 : ((rmdirRequest) rq.getRequestArgs()).getPath()));
         
         final StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));

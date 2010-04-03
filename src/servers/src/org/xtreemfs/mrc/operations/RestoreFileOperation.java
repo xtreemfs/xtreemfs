@@ -70,8 +70,8 @@ public class RestoreFileOperation extends MRCOperation {
         // parse volume and file ID from global file ID
         GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFile_id());
         
-        final Path p = new Path(vMan.getStorageManager(idRes.getVolumeId()).getVolumeInfo().getName() + "/"
-            + rqArgs.getFile_path());
+        final Path p = new Path(vMan.getStorageManager(idRes.getVolumeId()).getVolumeInfo().getName(),
+              rqArgs.getFile_path());
         final StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
         
         // prepare file creation in database

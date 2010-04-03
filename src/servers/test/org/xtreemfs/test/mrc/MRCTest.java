@@ -186,6 +186,18 @@ public class MRCTest extends TestCase {
         
         invokeSync(client.rmdir(mrcAddress, uc, volumeName, "anotherDir"));
     }
+
+    public void testReaddir() throws Exception {
+
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
+        final String volumeName = "testVolume";
+        final UserCredentials uc = MRCClient.getCredentials(uid, gids);
+
+        invokeSync(client.mkvol(mrcAddress, uc, volumeName, getDefaultStripingPolicy(),
+            YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
+        invokeSync(client.readdir(mrcAddress, uc, volumeName, "/"));
+    }
     
     public void testXAttrs() throws Exception {
         
@@ -217,6 +229,9 @@ public class MRCTest extends TestCase {
         assertEquals("quatsch", val);
         val = invokeSync(client.getxattr(mrcAddress, uc, volumeName, "test.txt", "myAttr"));
         assertEquals("171", val);
+
+        //check if / works
+        val = invokeSync(client.getxattr(mrcAddress, uc, volumeName, "/", "xtreemfs.url"));
         
         // create a new file, add some attrs and delete some attrs
         invokeSync(client.open(mrcAddress, uc, volumeName, "test2.txt", FileAccessManager.O_CREAT, 0, 0,

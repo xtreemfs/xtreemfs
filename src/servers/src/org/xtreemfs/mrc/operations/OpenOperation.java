@@ -83,7 +83,7 @@ public class OpenOperation extends MRCOperation {
         final VolumeManager vMan = master.getVolumeManager();
         final FileAccessManager faMan = master.getFileAccessManager();
         
-        Path p = new Path(rqArgs.getVolume_name() + "/" + rqArgs.getPath());
+        Path p = new Path(rqArgs.getVolume_name(), rqArgs.getPath());
         
         StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         PathResolver res = new PathResolver(sMan, p);

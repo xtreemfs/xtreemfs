@@ -40,15 +40,27 @@ public class Path {
     private String            path;
     
     private List<Integer>     compIndices;
-    
-    public Path(String path) {
 
+
+    public Path(String volumeName, String path) {
+        if ((path.length() > 0) && (path.charAt(0) == '/')) {
+            parsePath(volumeName+path);
+        } else {
+            parsePath(volumeName+"/"+path);
+        }
+    }
+
+    public Path(String path) {
+        parsePath(path);
+    }
+
+    private void parsePath(String path) {
         if (path.length() == 0) {
             this.path = "";
             this.compIndices = new ArrayList<Integer>(15);
             compIndices.add(-1);
         } else {
-        
+
             this.path = path.charAt(path.length() - 1) == SEPARATOR ? path.substring(0,
                 path.length() - 1) : path;
             this.compIndices = new ArrayList<Integer>(15);
@@ -59,7 +71,6 @@ public class Path {
                 if (chars[i] == SEPARATOR)
                     compIndices.add(i);
         }
-        
     }
     
     public Path(String[] comps) {
