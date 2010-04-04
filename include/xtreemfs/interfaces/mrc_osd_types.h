@@ -1,5 +1,5 @@
-#ifndef _224677218_H_
-#define _224677218_H_
+#ifndef _1252488516_H_
+#define _1252488516_H_
 
 
 #include "types.h"
@@ -49,6 +49,9 @@ namespace org
                  get_truncate_epoch() == other.get_truncate_epoch();
         }
 
+        // yidl::runtime::Object
+        NewFileSize& inc_ref() { return Object::inc_ref( *this ); }
+
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( NewFileSize, 2010030927 );
 
@@ -79,6 +82,9 @@ namespace org
         NewFileSizeSet( const org::xtreemfs::interfaces::NewFileSize& first_value ) { vector<org::xtreemfs::interfaces::NewFileSize>::push_back( first_value ); }
         NewFileSizeSet( size_type size ) : vector<org::xtreemfs::interfaces::NewFileSize>( size ) { }
         virtual ~NewFileSizeSet() { }
+
+        // yidl::runtime::Object
+        NewFileSizeSet& inc_ref() { return Object::inc_ref( *this ); }
 
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( NewFileSizeSet, 2010030928 );
@@ -129,6 +135,9 @@ namespace org
         {
           return get_new_file_size() == other.get_new_file_size();
         }
+
+        // yidl::runtime::Object
+        OSDWriteResponse& inc_ref() { return Object::inc_ref( *this ); }
 
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( OSDWriteResponse, 2010030933 );
@@ -187,6 +196,9 @@ namespace org
                  &&
                  get_width() == other.get_width();
         }
+
+        // yidl::runtime::Object
+        StripingPolicy& inc_ref() { return Object::inc_ref( *this ); }
 
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( StripingPolicy, 2010030935 );
@@ -254,6 +266,9 @@ namespace org
                  get_striping_policy() == other.get_striping_policy();
         }
 
+        // yidl::runtime::Object
+        Replica& inc_ref() { return Object::inc_ref( *this ); }
+
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( Replica, 2010030936 );
 
@@ -287,6 +302,9 @@ namespace org
         ReplicaSet( const org::xtreemfs::interfaces::Replica& first_value ) { vector<org::xtreemfs::interfaces::Replica>::push_back( first_value ); }
         ReplicaSet( size_type size ) : vector<org::xtreemfs::interfaces::Replica>( size ) { }
         virtual ~ReplicaSet() { }
+
+        // yidl::runtime::Object
+        ReplicaSet& inc_ref() { return Object::inc_ref( *this ); }
 
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ReplicaSet, 2010030937 );
@@ -353,6 +371,9 @@ namespace org
                  &&
                  get_local_error() == other.get_local_error();
         }
+
+        // yidl::runtime::Object
+        VivaldiCoordinates& inc_ref() { return Object::inc_ref( *this ); }
 
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( VivaldiCoordinates, 2010030938 );
@@ -475,6 +496,9 @@ namespace org
                  get_snap_timestamp() == other.get_snap_timestamp();
         }
 
+        // yidl::runtime::Object
+        XCap& inc_ref() { return Object::inc_ref( *this ); }
+
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( XCap, 2010030939 );
 
@@ -569,6 +593,9 @@ namespace org
                  get_version() == other.get_version();
         }
 
+        // yidl::runtime::Object
+        XLocSet& inc_ref() { return Object::inc_ref( *this ); }
+
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( XLocSet, 2010030940 );
 
@@ -628,6 +655,9 @@ namespace org
                  get_xlocs() == other.get_xlocs();
         }
 
+        // yidl::runtime::Object
+        FileCredentials& inc_ref() { return Object::inc_ref( *this ); }
+
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( FileCredentials, 2010030941 );
 
@@ -658,6 +688,9 @@ namespace org
         FileCredentialsSet( const org::xtreemfs::interfaces::FileCredentials& first_value ) { vector<org::xtreemfs::interfaces::FileCredentials>::push_back( first_value ); }
         FileCredentialsSet( size_type size ) : vector<org::xtreemfs::interfaces::FileCredentials>( size ) { }
         virtual ~FileCredentialsSet() { }
+
+        // yidl::runtime::Object
+        FileCredentialsSet& inc_ref() { return Object::inc_ref( *this ); }
 
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( FileCredentialsSet, 2010030942 );

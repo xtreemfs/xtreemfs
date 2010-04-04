@@ -1,5 +1,5 @@
-#ifndef _2105579095_H_
-#define _2105579095_H_
+#ifndef _1645138936_H_
+#define _1645138936_H_
 
 
 #include "yield/concurrency.h"
@@ -84,6 +84,9 @@ namespace org
 
           bool operator==( const nopRequest& ) const { return true; }
 
+          // yidl::runtime::Object
+          nopRequest& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( nopRequest, 2010031317 );
 
@@ -115,6 +118,9 @@ namespace org
           virtual ~nopResponse() {  }
 
           bool operator==( const nopResponse& ) const { return true; }
+
+          // yidl::runtime::Object
+          nopResponse& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( nopResponse, 2010031317 );
@@ -149,6 +155,9 @@ namespace org
           {
             return get_data() == other.get_data();
           }
+
+          // yidl::runtime::Object
+          send_bufferRequest& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( send_bufferRequest, 2010031318 );
@@ -192,6 +201,9 @@ namespace org
 
           bool operator==( const send_bufferResponse& ) const { return true; }
 
+          // yidl::runtime::Object
+          send_bufferResponse& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( send_bufferResponse, 2010031318 );
 
@@ -230,6 +242,9 @@ namespace org
                    &&
                    get_data() == other.get_data();
           }
+
+          // yidl::runtime::Object
+          recv_bufferRequest& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( recv_bufferRequest, 2010031319 );
@@ -296,6 +311,9 @@ namespace org
           {
             return get_data() == other.get_data();
           }
+
+          // yidl::runtime::Object
+          recv_bufferResponse& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( recv_bufferResponse, 2010031319 );

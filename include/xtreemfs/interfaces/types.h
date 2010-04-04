@@ -1,5 +1,5 @@
-#ifndef _442085358_H_
-#define _442085358_H_
+#ifndef _854705532_H_
+#define _854705532_H_
 
 
 #include "yidl.h"
@@ -21,6 +21,9 @@ namespace org
         StringSet( const string& first_value ) { vector<string>::push_back( first_value ); }
         StringSet( size_type size ) : vector<string>( size ) { }
         virtual ~StringSet() { }
+
+        // yidl::runtime::Object
+        StringSet& inc_ref() { return Object::inc_ref( *this ); }
 
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( StringSet, 2010030917 );
@@ -83,6 +86,9 @@ namespace org
                  &&
                  get_password() == other.get_password();
         }
+
+        // yidl::runtime::Object
+        UserCredentials& inc_ref() { return Object::inc_ref( *this ); }
 
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( UserCredentials, 2010030918 );

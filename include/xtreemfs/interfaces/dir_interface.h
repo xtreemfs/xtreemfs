@@ -1,5 +1,5 @@
-#ifndef _1804198200_H_
-#define _1804198200_H_
+#ifndef _2114912582_H_
+#define _2114912582_H_
 
 
 #include "constants.h"
@@ -94,6 +94,9 @@ namespace org
                  get_uri() == other.get_uri();
         }
 
+        // yidl::runtime::Object
+        AddressMapping& inc_ref() { return Object::inc_ref( *this ); }
+
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( AddressMapping, 2010030946 );
 
@@ -143,6 +146,9 @@ namespace org
         AddressMappingSet( size_type size ) : vector<org::xtreemfs::interfaces::AddressMapping>( size ) { }
         virtual ~AddressMappingSet() { }
 
+        // yidl::runtime::Object
+        AddressMappingSet& inc_ref() { return Object::inc_ref( *this ); }
+
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( AddressMappingSet, 2010030947 );
 
@@ -174,7 +180,10 @@ namespace org
       public:
         virtual ~ServiceDataMap() { }
 
-          // yidl::runtime::RTTIObject
+          // yidl::runtime::Object
+        ServiceDataMap& inc_ref() { return Object::inc_ref( *this ); }
+
+        // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ServiceDataMap, 2010030948 );
 
         // yidl::runtime::MarshallableObject
@@ -270,6 +279,9 @@ namespace org
                  get_data() == other.get_data();
         }
 
+        // yidl::runtime::Object
+        Service& inc_ref() { return Object::inc_ref( *this ); }
+
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( Service, 2010030950 );
 
@@ -312,6 +324,9 @@ namespace org
         ServiceSet( const org::xtreemfs::interfaces::Service& first_value ) { vector<org::xtreemfs::interfaces::Service>::push_back( first_value ); }
         ServiceSet( size_type size ) : vector<org::xtreemfs::interfaces::Service>( size ) { }
         virtual ~ServiceSet() { }
+
+        // yidl::runtime::Object
+        ServiceSet& inc_ref() { return Object::inc_ref( *this ); }
 
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ServiceSet, 2010030951 );
@@ -385,6 +400,9 @@ namespace org
                  &&
                  get_interface_version() == other.get_interface_version();
         }
+
+        // yidl::runtime::Object
+        DirService& inc_ref() { return Object::inc_ref( *this ); }
 
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( DirService, 2010030951 );
@@ -608,6 +626,9 @@ namespace org
             return get_uuid() == other.get_uuid();
           }
 
+          // yidl::runtime::Object
+          xtreemfs_address_mappings_getRequest& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_address_mappings_getRequest, 2010031017 );
 
@@ -679,6 +700,9 @@ namespace org
             return get_address_mappings() == other.get_address_mappings();
           }
 
+          // yidl::runtime::Object
+          xtreemfs_address_mappings_getResponse& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_address_mappings_getResponse, 2010031017 );
 
@@ -720,6 +744,9 @@ namespace org
           {
             return get_uuid() == other.get_uuid();
           }
+
+          // yidl::runtime::Object
+          xtreemfs_address_mappings_removeRequest& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_address_mappings_removeRequest, 2010031018 );
@@ -763,6 +790,9 @@ namespace org
 
           bool operator==( const xtreemfs_address_mappings_removeResponse& ) const { return true; }
 
+          // yidl::runtime::Object
+          xtreemfs_address_mappings_removeResponse& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_address_mappings_removeResponse, 2010031018 );
 
@@ -797,6 +827,9 @@ namespace org
           {
             return get_address_mappings() == other.get_address_mappings();
           }
+
+          // yidl::runtime::Object
+          xtreemfs_address_mappings_setRequest& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_address_mappings_setRequest, 2010031019 );
@@ -858,6 +891,9 @@ namespace org
             return get__return_value() == other.get__return_value();
           }
 
+          // yidl::runtime::Object
+          xtreemfs_address_mappings_setResponse& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_address_mappings_setResponse, 2010031019 );
 
@@ -883,6 +919,9 @@ namespace org
           virtual ~xtreemfs_checkpointRequest() {  }
 
           bool operator==( const xtreemfs_checkpointRequest& ) const { return true; }
+
+          // yidl::runtime::Object
+          xtreemfs_checkpointRequest& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_checkpointRequest, 2010031020 );
@@ -916,6 +955,9 @@ namespace org
 
           bool operator==( const xtreemfs_checkpointResponse& ) const { return true; }
 
+          // yidl::runtime::Object
+          xtreemfs_checkpointResponse& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_checkpointResponse, 2010031020 );
 
@@ -931,6 +973,9 @@ namespace org
           virtual ~xtreemfs_discover_dirRequest() {  }
 
           bool operator==( const xtreemfs_discover_dirRequest& ) const { return true; }
+
+          // yidl::runtime::Object
+          xtreemfs_discover_dirRequest& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_discover_dirRequest, 2010031021 );
@@ -993,6 +1038,9 @@ namespace org
             return get_dir_service() == other.get_dir_service();
           }
 
+          // yidl::runtime::Object
+          xtreemfs_discover_dirResponse& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_discover_dirResponse, 2010031021 );
 
@@ -1018,6 +1066,9 @@ namespace org
           virtual ~xtreemfs_global_time_s_getRequest() {  }
 
           bool operator==( const xtreemfs_global_time_s_getRequest& ) const { return true; }
+
+          // yidl::runtime::Object
+          xtreemfs_global_time_s_getRequest& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_global_time_s_getRequest, 2010031022 );
@@ -1069,6 +1120,9 @@ namespace org
             return get__return_value() == other.get__return_value();
           }
 
+          // yidl::runtime::Object
+          xtreemfs_global_time_s_getResponse& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_global_time_s_getResponse, 2010031022 );
 
@@ -1110,6 +1164,9 @@ namespace org
           {
             return get_uuid() == other.get_uuid();
           }
+
+          // yidl::runtime::Object
+          xtreemfs_service_deregisterRequest& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_service_deregisterRequest, 2010031028 );
@@ -1153,6 +1210,9 @@ namespace org
 
           bool operator==( const xtreemfs_service_deregisterResponse& ) const { return true; }
 
+          // yidl::runtime::Object
+          xtreemfs_service_deregisterResponse& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_service_deregisterResponse, 2010031028 );
 
@@ -1184,6 +1244,9 @@ namespace org
           {
             return get_name() == other.get_name();
           }
+
+          // yidl::runtime::Object
+          xtreemfs_service_get_by_nameRequest& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_service_get_by_nameRequest, 2010031026 );
@@ -1246,6 +1309,9 @@ namespace org
             return get_services() == other.get_services();
           }
 
+          // yidl::runtime::Object
+          xtreemfs_service_get_by_nameResponse& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_service_get_by_nameResponse, 2010031026 );
 
@@ -1292,6 +1358,9 @@ namespace org
           {
             return get_type() == other.get_type();
           }
+
+          // yidl::runtime::Object
+          xtreemfs_service_get_by_typeRequest& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_service_get_by_typeRequest, 2010031024 );
@@ -1354,6 +1423,9 @@ namespace org
             return get_services() == other.get_services();
           }
 
+          // yidl::runtime::Object
+          xtreemfs_service_get_by_typeResponse& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_service_get_by_typeResponse, 2010031024 );
 
@@ -1395,6 +1467,9 @@ namespace org
           {
             return get_uuid() == other.get_uuid();
           }
+
+          // yidl::runtime::Object
+          xtreemfs_service_get_by_uuidRequest& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_service_get_by_uuidRequest, 2010031025 );
@@ -1457,6 +1532,9 @@ namespace org
             return get_services() == other.get_services();
           }
 
+          // yidl::runtime::Object
+          xtreemfs_service_get_by_uuidResponse& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_service_get_by_uuidResponse, 2010031025 );
 
@@ -1498,6 +1576,9 @@ namespace org
           {
             return get_uuid() == other.get_uuid();
           }
+
+          // yidl::runtime::Object
+          xtreemfs_service_offlineRequest& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_service_offlineRequest, 2010031029 );
@@ -1541,6 +1622,9 @@ namespace org
 
           bool operator==( const xtreemfs_service_offlineResponse& ) const { return true; }
 
+          // yidl::runtime::Object
+          xtreemfs_service_offlineResponse& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_service_offlineResponse, 2010031029 );
 
@@ -1575,6 +1659,9 @@ namespace org
           {
             return get_service() == other.get_service();
           }
+
+          // yidl::runtime::Object
+          xtreemfs_service_registerRequest& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_service_registerRequest, 2010031027 );
@@ -1636,6 +1723,9 @@ namespace org
             return get__return_value() == other.get__return_value();
           }
 
+          // yidl::runtime::Object
+          xtreemfs_service_registerResponse& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_service_registerResponse, 2010031027 );
 
@@ -1661,6 +1751,9 @@ namespace org
           virtual ~xtreemfs_shutdownRequest() {  }
 
           bool operator==( const xtreemfs_shutdownRequest& ) const { return true; }
+
+          // yidl::runtime::Object
+          xtreemfs_shutdownRequest& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 2010031030 );
@@ -1694,6 +1787,9 @@ namespace org
 
           bool operator==( const xtreemfs_shutdownResponse& ) const { return true; }
 
+          // yidl::runtime::Object
+          xtreemfs_shutdownResponse& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 2010031030 );
 
@@ -1712,6 +1808,9 @@ namespace org
 
           const string& get_stack_trace() const { return stack_trace; }
           void set_stack_trace( const string& stack_trace ) { this->stack_trace = stack_trace; }
+
+          // yidl::runtime::Object
+          ConcurrentModificationException& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ConcurrentModificationException, 2010031036 );
@@ -1758,6 +1857,9 @@ namespace org
           const string& get_stack_trace() const { return stack_trace; }
           void set_stack_trace( const string& stack_trace ) { this->stack_trace = stack_trace; }
 
+          // yidl::runtime::Object
+          DIRException& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( DIRException, 2010031039 );
 
@@ -1800,6 +1902,9 @@ namespace org
           InvalidArgumentException( const string& error_message ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_PARENT_CLASS( error_message ) { }
           virtual ~InvalidArgumentException() throw() { ; }
 
+          // yidl::runtime::Object
+          InvalidArgumentException& inc_ref() { return Object::inc_ref( *this ); }
+
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( InvalidArgumentException, 2010031037 );
 
@@ -1839,6 +1944,9 @@ namespace org
           void set_accept_stat( uint32_t accept_stat ) { this->accept_stat = accept_stat; }
           const string& get_stack_trace() const { return stack_trace; }
           void set_stack_trace( const string& stack_trace ) { this->stack_trace = stack_trace; }
+
+          // yidl::runtime::Object
+          ProtocolException& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ProtocolException, 2010031038 );
@@ -1886,6 +1994,9 @@ namespace org
           void set_address( const string& address ) { this->address = address; }
           uint16_t get_port() const { return port; }
           void set_port( uint16_t port ) { this->port = port; }
+
+          // yidl::runtime::Object
+          RedirectException& inc_ref() { return Object::inc_ref( *this ); }
 
           // yidl::runtime::RTTIObject
           YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( RedirectException, 2010031040 );
