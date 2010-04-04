@@ -828,6 +828,15 @@ namespace yidl
 
       virtual void resize( size_t n ) = 0;
 
+      void rewind() { position( 0 ); }
+      void rewind( size_t n )
+      { 
+        if ( position() >= n )
+          position( position() - n );
+        else
+          position( 0 );
+      }
+
       // size: the number of filled bytes, <= capacity
       virtual size_t size() const = 0;
 

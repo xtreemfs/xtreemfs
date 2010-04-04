@@ -115,7 +115,7 @@ namespace yield
       if ( !get_file().associate( *bio_queue ) ) throw Exception();
 
       auto_Object<Buffer> write_buffer( get_write_buffer() );
-      ssize_t write_ret = get_file().write( *write_buffer );
+      ssize_t write_ret = get_file().write( *write_buffer, 0 );
       check_write( write_ret );
 
       get_file().aio_read( get_read_buffer(), 0, *this );
@@ -126,7 +126,7 @@ namespace yield
     YIELD_PLATFORM_FILE_TEST_CASE( aio_read_no_io_queue )
     {
       auto_Object<Buffer> write_buffer( get_write_buffer() );
-      ssize_t write_ret = get_file().write( *write_buffer );
+      ssize_t write_ret = get_file().write( *write_buffer, 0 );
       check_write( write_ret );
 
       auto_Object<Buffer> read_buffer( get_read_buffer() );
@@ -139,7 +139,7 @@ namespace yield
       auto_Object<BIOQueue> bio_queue( BIOQueue::create() );
       if ( !get_file().associate( *bio_queue ) ) throw Exception();
 
-      get_file().aio_write( get_write_buffer(), *this );
+      get_file().aio_write( get_write_buffer(), 0, *this );
       wait_for_aio();
 
       auto_Object<Buffer> read_buffer( get_read_buffer() );  
@@ -149,7 +149,7 @@ namespace yield
 
     YIELD_PLATFORM_FILE_TEST_CASE( aio_write_no_io_queue )
     {
-      get_file().aio_write( get_write_buffer(), *this );
+      get_file().aio_write( get_write_buffer(), 0, *this );
 
       auto_Object<Buffer> read_buffer( get_read_buffer() );  
       ssize_t read_ret = get_file().read( *read_buffer, 0 );
@@ -165,7 +165,7 @@ namespace yield
     YIELD_PLATFORM_FILE_TEST_CASE( datasync )
     {
       auto_Object<Buffer> write_buffer( get_write_buffer() );
-      ssize_t write_ret = get_file().write( *write_buffer );
+      ssize_t write_ret = get_file().write( *write_buffer, 0 );
       check_write( write_ret );
       if ( !get_file().datasync() ) throw Exception();
       ASSERT_TRUE( get_file().getattr()->get_size() >= write_buffer->size() );
@@ -240,7 +240,7 @@ namespace yield
     YIELD_PLATFORM_FILE_TEST_CASE( read )
     {
       auto_Object<Buffer> write_buffer( get_write_buffer() );
-      ssize_t write_ret = get_file().write( *write_buffer );
+      ssize_t write_ret = get_file().write( *write_buffer, 0 );
       check_write( write_ret );
 
       for ( uint8_t read_i = 0; read_i < 8; read_i++ )
@@ -291,7 +291,7 @@ namespace yield
     YIELD_PLATFORM_FILE_TEST_CASE( sync )
     {
       auto_Object<Buffer> write_buffer( get_write_buffer() );
-      ssize_t write_ret = get_file().write( *write_buffer );
+      ssize_t write_ret = get_file().write( *write_buffer, 0 );
       check_write( write_ret );
       if ( !get_file().sync() ) throw Exception();
       ASSERT_TRUE( get_file().getattr()->get_size() >= write_buffer->size() );
@@ -300,7 +300,7 @@ namespace yield
     YIELD_PLATFORM_FILE_TEST_CASE( truncate )
     {
       auto_Object<Buffer> write_buffer( get_write_buffer() );
-      ssize_t write_ret = get_file().write( *write_buffer );
+      ssize_t write_ret = get_file().write( *write_buffer, 0 );
       check_write( write_ret );
       if ( !get_file().sync() ) throw Exception();
       ASSERT_TRUE( get_file().getattr()->get_size() >= write_buffer->size() );

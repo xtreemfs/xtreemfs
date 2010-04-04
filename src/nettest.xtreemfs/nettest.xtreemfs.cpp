@@ -37,8 +37,8 @@ using yidl::runtime::auto_Object;
 using yidl::runtime::Buffer;
 
 #include "yield.h"
+using yield::platform::StringBuffer;
 using yield::platform::Thread;
-using yield::platform::HeapBuffer;
 
 
 // Constants
@@ -158,7 +158,8 @@ int main( int argc, char** argv )
         else
           capacity_kb = 1;
 
-        auto_Object<Buffer> recv_buffer = new HeapBuffer( capacity_kb * 1024 );
+        auto_Object<Buffer> recv_buffer 
+          = new StringBuffer( capacity_kb * 1024 );
 
         cout << "nettest: sending " << num_calls << " recv_buffers's:" << endl;
 
@@ -190,7 +191,8 @@ int main( int argc, char** argv )
         if ( capacity_kb == 0 )
           capacity_kb = 1;
 
-        auto_Object<Buffer> send_buffer = new HeapBuffer( capacity_kb * 1024 );
+        auto_Object<Buffer> send_buffer 
+          = new StringBuffer( capacity_kb * 1024 );
         for ( uint32_t byte_i = 0; byte_i < capacity_kb * 1024; byte_i++ )
           send_buffer->put( "m", 1 );
 

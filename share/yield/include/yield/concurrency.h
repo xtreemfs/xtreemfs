@@ -514,6 +514,7 @@ namespace yield
       Request();
       virtual ~Request();
 
+      virtual Response* createDefaultResponse() { return NULL; }
       MarshallableObject* get_credentials() const { return credentials; }
       EventHandler* get_response_handler() const { return response_handler; }
       virtual void respond( Response& response );

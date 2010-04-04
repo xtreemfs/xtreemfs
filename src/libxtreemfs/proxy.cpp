@@ -62,10 +62,10 @@ Proxy::createONCRPCClient
       GridSSLSocket* grid_ssl_socket = GridSSLSocket::create( *ssl_context );
       if ( grid_ssl_socket != NULL )
       {
-        NBIOQueue& io_queue = NBIOQueue::create();
-        if ( grid_ssl_socket->associate( io_queue ) )
+        NBIOQueue* nbio_queue = NBIOQueue::create();
+        if ( nbio_queue != NULL && grid_ssl_socket->associate( *nbio_queue ) )
         {
-          NBIOQueue::dec_ref( io_queue );
+          NBIOQueue::dec_ref( *nbio_queue );
           return *new ONCRPCSSLSocketClient
                       (
                         message_factory,
@@ -79,16 +79,11 @@ Proxy::createONCRPCClient
                       );                        
         }
         else
-        {
-          NBIOQueue::dec_ref( io_queue );
-          throw Exception();
-        }
+          NBIOQueue::dec_ref( nbio_queue );
       }
-      else
-        throw Exception();
     }
-    else
-      throw Exception();
+
+    throw Exception();
   }
   else if ( scheme == "oncrpcs" && ssl_context != NULL )
   {
@@ -96,11 +91,11 @@ Proxy::createONCRPCClient
            (
              absolute_uri_with_port,
              message_factory,
-             *ssl_context,
              prog,
              vers,
              NULL,
              error_log,
+             ssl_context,
              trace_log
            );
   }

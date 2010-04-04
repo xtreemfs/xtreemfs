@@ -127,17 +127,12 @@ OSDProxies::get_osd_proxy
 
   const StripingPolicy& striping_policy
     = selected_file_replica->get_striping_policy();
+  if ( striping_policy.get_type() != STRIPING_POLICY_RAID0 ) DebugBreak();
 
-  switch ( striping_policy.get_type() )
-  {
-    case STRIPING_POLICY_RAID0:
-    {
-      size_t osd_i = object_number % striping_policy.get_width();
-      const string& osd_uuid = selected_file_replica->get_osd_uuids()[osd_i];
-      return get_osd_proxy( osd_uuid );
-    }
-    break;
-  }
+  size_t osd_i = object_number % striping_policy.get_width();
+  const string& osd_uuid = selected_file_replica->get_osd_uuids()[osd_i];
+
+  return get_osd_proxy( osd_uuid );
 }
 
 OSDProxy& OSDProxies::get_osd_proxy( const string& osd_uuid )

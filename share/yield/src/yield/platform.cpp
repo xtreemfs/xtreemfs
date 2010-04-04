@@ -1,4 +1,4 @@
-// Revision: 2166
+// Revision: 2173
 
 #include "yield/platform.h"
 using namespace yield::platform;
@@ -24,9 +24,9 @@ private:
 };
 
 
-BIOQueue& BIOQueue::create()
+BIOQueue* BIOQueue::create()
 {
-  return *new BIOQueue;
+  return new BIOQueue;
 }
 
 void BIOQueue::submit( BIOCB& biocb )
@@ -332,7 +332,7 @@ Buffer& Buffers::join()
       Buffer::dec_ref( *joined_buffer );
   }
 
-  joined_buffer = new HeapBuffer( join_size );
+  joined_buffer = new StringBuffer( join_size );
   char* joined_buffer_p = *joined_buffer;
 
   for ( uint32_t iov_i = 0; iov_i < size(); iov_i++ )
@@ -493,13 +493,7 @@ Channel::aio_read
     );
   }
   else
-  {
-#ifdef _WIN32
-    callback.onReadError( GetLastError(), callback_context );
-#else
-    callback.onReadError( errno, callback_context );
-#endif
-  }
+    callback.onReadError( Exception::get_last_error(), callback_context );
 
   Buffer::dec_ref( buffer );
 }
@@ -522,11 +516,7 @@ Channel::aio_write
     callback.onWriteCompletion( write_ret, callback_context );
   }
   else
-#ifdef _WIN32
-    callback.onWriteError( GetLastError(), callback_context );
-#else
-    callback.onWriteError( errno, callback_context );
-#endif
+    callback.onWriteError( Exception::get_last_error(), callback_context );
 
   Buffer::dec_ref( buffer );
 }
@@ -540,14 +530,12 @@ Channel::aio_writev
 )
 {
   ssize_t writev_ret = writev( buffers );
+
   if ( writev_ret >= 0 )
     callback.onWriteCompletion( writev_ret, callback_context );
   else
-#ifdef _WIN32
-    callback.onWriteError( GetLastError(), callback_context );
-#else
-    callback.onWriteError( errno, callback_context );
-#endif
+    callback.onWriteError( Exception::get_last_error(), callback_context );
+
   Buffer::dec_ref( buffers );
 }
 
@@ -700,13 +688,9 @@ Directory::Entry::~Entry()
 
 
 Exception::Exception()
-  : error_message( NULL )
+  : error_code( get_last_error() ),
+    error_message( NULL )
 {
-#ifdef _WIN32
-  error_code = static_cast<uint32_t>( ::GetLastError() );
-#else
-  error_code = static_cast<uint32_t>( errno );
-#endif
 }
 
 Exception::Exception( uint32_t error_code )
@@ -832,12 +816,21 @@ const char* Exception::get_error_message() const throw()
     // You have to define _XOPEN_SOURCE to get the POSIX implementation,
     // but that apparently breaks libstdc++.
     // So we just use strerror.
-    set_error_message( strerror( error_code ) );
+    const_cast<Exception*>( this )->set_error_message( strerror( error_code ) );
     return error_message;
 #endif
   }
   else
     return "(unknown)";
+}
+
+uint32_t Exception::get_last_error()
+{
+#ifdef _WIN32
+  return static_cast<uint32_t>( GetLastError() );
+#else
+  return static_cast<uint32_t>( errno );
+#endif
 }
 
 void Exception::set_error_code( uint32_t error_code )
@@ -883,6 +876,15 @@ void Exception::set_error_message( const string& error_message )
   this->error_message = new char[error_message.size()+1];
 #endif
   memcpy( this->error_message, error_message.c_str(), error_message.size()+1 );
+}
+
+void Exception::set_last_error( uint32_t error_code )
+{
+#ifdef _WIN32
+  SetLastError( error_code );
+#else
+  errno = error_code;
+#endif
 }
 
 const char* Exception::what() const throw()
@@ -1978,11 +1980,7 @@ protected:
 
   void onReadError()
   {
-#ifdef _WIN32
-    onReadError( GetLastError() );
-#else
-    onReadError( static_cast<uint32_t>( errno ) );
-#endif
+    onReadError( Exception::get_last_error() );
   }
 
   void onReadError( uint32_t error_code )
@@ -2024,11 +2022,7 @@ protected:
 
   void onWriteError()
   {
-#ifdef _WIN32
-    onWriteError( GetLastError() );
-#else
-    onWriteError( static_cast<uint32_t>( errno ) );
-#endif
+    onWriteError( Exception::get_last_error() );
   }
 
   void onWriteError( uint32_t error_code )
@@ -2070,11 +2064,7 @@ protected:
 
   void onWriteVError()
   {
-#ifdef _WIN32
-    onWriteVError( GetLastError() );
-#else
-    onWriteVError( static_cast<uint32_t>( errno ) );
-#endif
+    onWriteVError( Exception::get_last_error() );
   }
 
   void onWriteVError( uint32_t error_code )
@@ -2102,18 +2092,19 @@ public:
   { }
 
   // BIOCB
-  bool execute()
+  void execute()
   {
     ssize_t read_ret = get_file().read( get_buffer(), get_offset() );
+
     if ( read_ret >= 0 )
     {
+      set_state( STATE_COMPLETE );
       onReadCompletion();
-      return true;
     }
     else
     {
+      set_state( STATE_ERROR );
       onReadError();
-      return false;
     }
   }
 };
@@ -2134,18 +2125,19 @@ public:
   { }
 
   // BIOCB
-  bool execute()
+  void execute()
   {
     ssize_t write_ret = get_file().write( get_buffer(), get_offset() );
+
     if ( write_ret >= 0 )
     {
+      set_state( STATE_COMPLETE );
       onWriteCompletion( static_cast<size_t>( write_ret ) );
-      return true;
     }
     else
     {
+      set_state( STATE_ERROR );
       onWriteError();
-      return false;
     }
   }
 };
@@ -2166,18 +2158,18 @@ public:
   { }
 
   // BIOCB
-  bool execute()
+  void execute()
   {
     ssize_t writev_ret = get_file().writev( get_buffers(), get_offset() );
     if ( writev_ret >= 0 )
     {
+      set_state( STATE_COMPLETE );
       onWriteVCompletion( static_cast<size_t>( writev_ret ) );
-      return true;
     }
     else
     {
+      set_state( STATE_ERROR );
       onWriteVError();
-      return false;
     }
   }
 };
@@ -2201,12 +2193,14 @@ public:
   // Win32AIOCB
   void onCompletion( DWORD dwNumberOfBytesTransferred )
   {
+    set_state( STATE_COMPLETE );
     get_buffer().resize( get_buffer().size() + dwNumberOfBytesTransferred );
     onReadCompletion();
   }
 
   void onError( DWORD dwErrorCode )
   {
+    set_state( STATE_ERROR );
     onReadError( dwErrorCode );
   }
 };
@@ -2229,11 +2223,13 @@ public:
   // Win32AIOCB
   void onCompletion( DWORD dwNumberOfBytesTransferred )
   {
+    set_state( STATE_COMPLETE );
     onWriteCompletion( dwNumberOfBytesTransferred );
   }
 
   void onError( DWORD dwErrorCode )
   {
+    set_state( STATE_ERROR );
     onWriteError( dwErrorCode );
   }
 };
@@ -2825,6 +2821,11 @@ ssize_t File::write( const void* buf, size_t buflen )
 #endif
 }
 
+ssize_t File::write( const Buffer& buffer, uint64_t offset )
+{
+  return write( buffer, buffer.size(), offset );
+}
+
 ssize_t File::write( const void* buf, size_t buflen, uint64_t offset )
 {
   if ( seek( offset ) )
@@ -2847,20 +2848,9 @@ ssize_t File::writev( const struct iovec* iov, uint32_t iovlen )
 #endif
 }
 
-ssize_t File::write( const Buffer& buffer, uint64_t offset )
-{
-  if ( seek( offset ) )
-    return write( buffer );
-  else
-    return -1;
-}
-
 ssize_t File::writev( Buffers& buffers, uint64_t offset )
 {
-  if ( seek( offset ) )
-    return writev( buffers );
-  else
-    return -1;
+  return writev( buffers, buffers.size(), offset );
 }
 
 ssize_t
@@ -2875,36 +2865,6 @@ File::writev
     return writev( iov, iovlen );
   else
     return -1;
-}
-
-
-// heap_buffer.cpp
-HeapBuffer::HeapBuffer( void* buffer, size_t capacity, size_t size )
-  : _capacity( capacity ), _size( size )
-{
-  this->buffer = new uint8_t[_capacity];
-  memcpy_s( *this, _capacity, buffer, size );
-}
-
-HeapBuffer::HeapBuffer( size_t capacity )
- : _capacity( capacity )
-{
-  buffer = new uint8_t[_capacity];
-  _size = 0;
-}
-
-HeapBuffer::HeapBuffer( Buffer& buffer )
-{
-  _capacity = buffer.size() - buffer.position();
-  this->buffer = new uint8_t[_capacity];
-  _size = _capacity;
-  memcpy_s( *this, _capacity, buffer, buffer.size() - buffer.position() );
-  buffer.position( buffer.position() + _size );
-}
-
-HeapBuffer::~HeapBuffer()
-{
-  delete [] buffer;
 }
 
 
@@ -3499,7 +3459,7 @@ Log::Stream::~Stream()
   if ( level <= log.get_level() && !oss.str().empty() )
   {
     ostringstream stamped_oss;
-    stamped_oss << static_cast<string>( Time() );
+    stamped_oss << static_cast<uint32_t>( Time().as_unix_time_s() );
     stamped_oss << " ";
     stamped_oss << static_cast<const char*>( log.get_level() );
     stamped_oss << ": ";
@@ -4137,6 +4097,9 @@ public:
               {
                 if ( nbiocb != NULL )
                 {
+                  if ( nbiocb->get_state() == NBIOCB::STATE_UNKNOWN )
+                    nbiocb->execute();
+
                   switch ( nbiocb->get_state() )
                   {
                     case NBIOCB::STATE_WANT_CONNECT:
@@ -4251,7 +4214,7 @@ NBIOQueue::~NBIOQueue()
   }
 }
 
-NBIOQueue& NBIOQueue::create( int16_t thread_count )
+NBIOQueue* NBIOQueue::create( int16_t thread_count )
 {
   if ( thread_count <= 0 )
     thread_count = ProcessorSet::getOnlineLogicalProcessorCount();
@@ -4264,7 +4227,12 @@ NBIOQueue& NBIOQueue::create( int16_t thread_count )
     threads.push_back( &thread );
   }
 
-  return *new NBIOQueue( threads );
+  return new NBIOQueue( threads );
+}
+
+uint16_t NBIOQueue::get_thread_count() const
+{
+  return static_cast<uint16_t>( threads.size() );
 }
 
 void NBIOQueue::submit( NBIOCB& nbiocb )
@@ -6794,7 +6762,7 @@ Socket::IORecvCB::IORecvCB
   : IOCB<AIORecvCallback>( callback, callback_context ),
     buffer( buffer ),
     flags( flags ),
-    socket_( socket_ )
+    socket_( socket_.inc_ref() )
 { }
 
 Socket::IORecvCB::~IORecvCB()
@@ -6811,11 +6779,13 @@ bool Socket::IORecvCB::execute( bool blocking_mode )
     if ( recv_ret > 0 )
       return true;
     else if ( recv_ret == 0 )
+    {
 #ifdef _WIN32
       WSASetLastError( WSAECONNABORTED );
 #else
       errno = ECONNABORTED;
 #endif
+    }
   }
 
   return false;
@@ -6829,7 +6799,7 @@ void Socket::IORecvCB::onRecvCompletion()
 
 void Socket::IORecvCB::onRecvError()
 {
-  onRecvError( get_last_error() );
+  onRecvError( Exception::get_last_error() );
 }
 
 void Socket::IORecvCB::onRecvError( uint32_t error_code )
@@ -6849,7 +6819,7 @@ Socket::IOSendCB::IOSendCB
   : IOCB<AIOSendCallback>( callback, callback_context ),
     buffer( buffer ),
     flags( flags ),
-    socket_( socket_ )
+    socket_( socket_.inc_ref() )
 {
   partial_send_len = 0;
 }
@@ -6897,7 +6867,7 @@ void Socket::IOSendCB::onSendCompletion()
 
 void Socket::IOSendCB::onSendError()
 {
-  onSendError( get_last_error() );
+  onSendError( Exception::get_last_error() );
 }
 
 void Socket::IOSendCB::onSendError( uint32_t error_code )
@@ -6917,7 +6887,7 @@ Socket::IOSendMsgCB::IOSendMsgCB
   : IOCB<AIOSendCallback>( callback, callback_context ),
     buffers( buffers ),
     flags( flags ),
-    socket_( socket_ )
+    socket_( socket_.inc_ref() )
 {
   buffers_len = 0;
   const struct iovec* iov = get_buffers();
@@ -7026,7 +6996,7 @@ void Socket::IOSendMsgCB::onSendMsgCompletion()
 
 void Socket::IOSendMsgCB::onSendMsgError()
 {
-  onSendMsgError( get_last_error() );
+  onSendMsgError( Exception::get_last_error() );
 }
 
 void Socket::IOSendMsgCB::onSendMsgError( uint32_t error_code )
@@ -7045,22 +7015,21 @@ public:
     void* callback_context,
     int flags,
     Socket& socket_
-  )
-    : IORecvCB( buffer, callback, callback_context, flags, socket_)
+  ) : IORecvCB( buffer, callback, callback_context, flags, socket_)
   { }
 
   // BIOCB
-  bool execute()
+  void execute()
   {
     if ( IORecvCB::execute( true ) )
     {
+      set_state( STATE_COMPLETE );
       onRecvCompletion();
-      return true;
     }
     else
     {
+      set_state( STATE_ERROR );
       onRecvError();
-      return false;
     }
   }
 };
@@ -7076,22 +7045,21 @@ public:
     void* callback_context,
     int flags,
     Socket& socket_
-  )
-    : IOSendCB( buffer, callback, callback_context, flags, socket_ )
+  ) : IOSendCB( buffer, callback, callback_context, flags, socket_ )
   { }
 
   // BIOCB
-  bool execute()
+  void execute()
   {
     if ( IOSendCB::execute( true ) )
     {
+      set_state( STATE_COMPLETE );
       onSendCompletion();
-      return true;
     }
     else
     {
+      set_state( STATE_ERROR );
       onSendError();
-      return false;
     }
   }
 };
@@ -7107,22 +7075,21 @@ public:
     void* callback_context,
     int flags,
     Socket& socket_
-  )
-    : IOSendMsgCB( buffers, callback, callback_context, flags, socket_ )
+  ) : IOSendMsgCB( buffers, callback, callback_context, flags, socket_ )
   { }
 
   // BIOCB
-  bool execute()
+  void execute()
   {
     if ( IOSendMsgCB::execute( true ) )
     {
+      set_state( STATE_COMPLETE );
       onSendMsgCompletion();
-      return true;
     }
     else
     {
+      set_state( STATE_ERROR );
       onSendMsgError();
-      return false;
     }
   }
 };
@@ -7137,15 +7104,12 @@ public:
     AIORecvCallback& callback,
     void* callback_context,
     int flags,
-    Socket& socket_,
-    State state
-  )
-    : NBIOCB( state ),
-      IORecvCB( buffer, callback, callback_context, flags, socket_ )
+    Socket& socket_
+  ) : IORecvCB( buffer, callback, callback_context, flags, socket_ )
   { }
 
   // NBIOCB
-  State execute()
+  void execute()
   {
     if ( IORecvCB::execute( false ) )
     {
@@ -7161,8 +7125,6 @@ public:
       set_state( STATE_ERROR );
       onRecvError();
     }
-
-    return get_state();
   }
 
   socket_t get_fd() const { return get_socket(); }
@@ -7178,15 +7140,12 @@ public:
     AIOSendCallback& callback,
     void* callback_context,
     int flags,
-    Socket& socket_,
-    State state
-  )
-    : NBIOCB( state ),
-      IOSendCB( buffer, callback, callback_context, flags, socket_ )
+    Socket& socket_
+  ) : IOSendCB( buffer, callback, callback_context, flags, socket_ )
   { }
 
   // NBIOCB
-  State execute()
+  void execute()
   {
     if ( IOSendCB::execute( false ) )
     {
@@ -7202,8 +7161,6 @@ public:
       set_state( STATE_ERROR );
       onSendError();
     }
-
-    return get_state();
   }
 
   socket_t get_fd() const { return get_socket(); }
@@ -7219,15 +7176,12 @@ public:
     AIOSendCallback& callback,
     void* callback_context,
     int flags,
-    Socket& socket_,
-    State state
-  )
-    : NBIOCB( state ),
-      IOSendMsgCB( buffers, callback, callback_context, flags, socket_ )
+    Socket& socket_
+  ) : IOSendMsgCB( buffers, callback, callback_context, flags, socket_ )
   { }
 
   // NBIOCB
-  State execute()
+  void execute()
   {
     if ( IOSendMsgCB::execute( false ) )
     {
@@ -7243,8 +7197,6 @@ public:
       set_state( STATE_ERROR );
       onSendMsgError();
     }
-
-    return get_state();
   }
 
   socket_t get_fd() const { return get_socket(); }
@@ -7284,65 +7236,46 @@ Socket::aio_recv
   void* callback_context
 )
 {
-  // Try a non-blocking recv first
-  switch
-  (
-    NBIORecvCB
-    (
-      buffer.inc_ref(),
-      callback,
-      callback_context,
-      flags,
-      inc_ref(),
-      NBIORecvCB::STATE_WANT_READ
-    ).execute()
-  )
-  {
-    case NBIORecvCB::STATE_COMPLETE:
-    case NBIORecvCB::STATE_ERROR: Buffer::dec_ref( buffer ); return;
-    default: break; // To appease gcc
-  }
-
-  // Next try to offload the recv to an IOQueue
   if ( get_bio_queue() != NULL )
   {
-    get_bio_queue()->submit
-    (
-      *new BIORecvCB
-           (
-             buffer,
-             callback,
-             callback_context,
-             flags,
-             inc_ref()
-           )
-    );
-
-    return;
+    BIOCB* biocb
+      = new BIORecvCB( buffer, callback, callback_context, flags, *this );
+    get_bio_queue()->submit( *biocb );
   }
-  else if ( get_nbio_queue() != NULL )
+  else
   {
-    get_nbio_queue()->submit
-    (
-      *new NBIORecvCB
-           (
-             buffer,
-             callback,
-             callback_context,
-             flags,
-             inc_ref(),
-             want_recv()
-               ? NBIORecvCB::STATE_WANT_READ
-               : NBIORecvCB::STATE_WANT_WRITE
-           )
-     );
+    NBIOQueue* nbio_queue = get_nbio_queue();
+    if ( nbio_queue == NULL )
+    {
+      nbio_queue = NBIOQueue::create();
+      if ( nbio_queue != NULL && associate( *nbio_queue ) )
+        NBIOQueue::dec_ref( *nbio_queue );
+      else
+      {
+        NBIOQueue::dec_ref( nbio_queue );
+        Buffer::dec_ref( buffer );
+        callback.onReadError( Exception::get_last_error(), callback_context );
+        return;
+      }
+    }
 
-    return;
+    NBIOCB* nbiocb
+      = new NBIORecvCB( buffer, callback, callback_context, flags, *this );
+
+    if ( nbio_queue->get_thread_count() > 1 )
+    {
+      nbiocb->execute();
+
+      switch ( nbiocb->get_state() )
+      {
+        case NBIORecvCB::STATE_COMPLETE:
+        case NBIORecvCB::STATE_ERROR: delete nbiocb; return;
+        default: break; // To appease gcc
+      }
+    }
+
+    nbio_queue->submit( *nbiocb );
   }
-
-  // Nothing worked, return an error
-  callback.onReadError( get_last_error(), callback_context );
-  Buffer::dec_ref( buffer );
 }
 
 void
@@ -7354,64 +7287,37 @@ Socket::aio_send
   void* callback_context
 )
 {
-  // First try a non-blocking send
-  switch
-  (
-    NBIOSendCB
-    (
-      buffer.inc_ref(),
-      callback,
-      callback_context,
-      flags,
-      inc_ref(),
-      NBIOSendCB::STATE_WANT_WRITE
-    ).execute()
-  )
-  {
-    case NBIOSendCB::STATE_COMPLETE:
-    case NBIOSendCB::STATE_ERROR: Buffer::dec_ref( buffer ); return;
-    default: break; // To appease gcc
-  }
-
-  // Next try to offload the send to an IOQueue
   if ( get_bio_queue() != NULL )
   {
-    get_bio_queue()->submit
-    (
-      *new BIOSendCB
-           (
-             buffer,
-             callback,
-             callback_context,
-             flags,
-             inc_ref()
-           )
-    );
-
-    return;
+    BIOCB* biocb
+      = new BIOSendCB( buffer, callback, callback_context, flags, *this );
+    get_bio_queue()->submit( *biocb );
   }
-  else if ( get_nbio_queue() != NULL )
+  else
   {
-    get_nbio_queue()->submit
-    (
-       *new NBIOSendCB
-            (
-              buffer,
-              callback,
-              callback_context,
-              flags,
-              inc_ref(),
-              want_send()
-                ? NBIOSendCB::STATE_WANT_WRITE
-                : NBIOSendCB::STATE_WANT_READ
-            )
-    );
+    NBIOQueue* nbio_queue = get_nbio_queue();
+    if ( nbio_queue != NULL )
+    {
+      NBIOCB* nbiocb
+        = new NBIOSendCB( buffer, callback, callback_context, flags, *this );
 
-    return;
+      if ( nbio_queue->get_thread_count() > 1 )
+      {
+        nbiocb->execute();
+
+        switch ( nbiocb->get_state() )
+        {
+          case NBIOSendCB::STATE_COMPLETE:
+          case NBIOSendCB::STATE_ERROR: delete nbiocb; return;
+          default: break; // To appease gcc
+        }
+      }
+
+      nbio_queue->submit( *nbiocb );
+    }
+    else
+      BIOSendCB( buffer, callback, callback_context, flags, *this ).execute();
   }
-
-  // Finally try a blocking send
-  BIOSendCB( buffer, callback, callback_context, flags, inc_ref() ).execute();
 }
 
 void Socket::aio_sendmsg
@@ -7422,71 +7328,46 @@ void Socket::aio_sendmsg
   void* callback_context
 )
 {
-  // First try a non-blocking sendmsg
-  switch
-  (
-    NBIOSendMsgCB
-    (
-      buffers,
-      callback,
-      callback_context,
-      flags,
-      inc_ref(),
-      NBIOSendMsgCB::STATE_WANT_WRITE
-    ).execute()
-  )
-  {
-    case NBIOSendMsgCB::STATE_COMPLETE:
-    case NBIOSendMsgCB::STATE_ERROR: Buffers::dec_ref( buffers ); return;
-    default: break; // To appease gcc
-  }
-
-  // Next try to offload the sendmsg to an IOQueue
   if ( get_bio_queue() != NULL )
   {
-    get_bio_queue()->submit
-    (
-      *new BIOSendMsgCB
-           (
-             buffers,
-             callback,
-             callback_context,
-             flags,
-             inc_ref()
-           )
-    );
-
-    return;
+    BIOCB* biocb
+      = new BIOSendMsgCB( buffers, callback, callback_context, flags, *this );
+    get_bio_queue()->submit( *biocb );
   }
-  else if ( get_nbio_queue() != NULL )
+  else
   {
-    get_nbio_queue()->submit
-    (
-      *new NBIOSendMsgCB
-           (
-             buffers,
-             callback,
-             callback_context,
-             flags,
-             inc_ref(),
-             want_send()
-               ? NBIOSendCB::STATE_WANT_WRITE
-               : NBIOSendCB::STATE_WANT_READ
-           )
-    );
+    NBIOQueue* nbio_queue = get_nbio_queue();
+    if ( nbio_queue != NULL )
+    {
+      NBIOCB* nbiocb
+      = new NBIOSendMsgCB( buffers, callback, callback_context, flags, *this );
 
-    return;
+      if ( nbio_queue->get_thread_count() > 1 )
+      {
+        nbiocb->execute();
+
+        switch ( nbiocb->get_state() )
+        {
+          case NBIOSendMsgCB::STATE_COMPLETE:
+          case NBIOSendMsgCB::STATE_ERROR: delete nbiocb; return;
+          default: break; // To appease gcc
+        }
+      }
+
+      nbio_queue->submit( *nbiocb );
+    }
+    else
+    {
+      BIOSendMsgCB
+      (
+        buffers,
+        callback,
+        callback_context,
+        flags,
+        *this
+      ).execute();
+    }
   }
-
-  // Finally, try a blocking sendmsg
-  BIOSendMsgCB
-  (
-    buffers,
-    callback,
-    callback_context,
-    flags,
-    inc_ref()
-  ).execute();
 }
 
 void
@@ -7610,7 +7491,8 @@ bool Socket::connect( const SocketAddress& peername )
       else
       {
 #ifdef _WIN32
-        switch ( WSAGetLastError() )
+        DWORD dwLastError = WSAGetLastError();
+        switch ( dwLastError )
         {
           case WSAEISCONN: return true;
           case WSAEAFNOSUPPORT:
@@ -7849,15 +7731,6 @@ string Socket::gethostname()
 #endif
 }
 
-uint32_t Socket::get_last_error()
-{
-#ifdef _WIN32
-  return static_cast<uint32_t>( WSAGetLastError() );
-#else
-  return static_cast<uint32_t>( errno );
-#endif
-}
-
 NBIOQueue* Socket::get_nbio_queue() const
 {
   if ( io_queue != NULL && io_queue->get_type_id() == NBIOQueue::TYPE_ID )
@@ -7868,6 +7741,11 @@ NBIOQueue* Socket::get_nbio_queue() const
 
 SocketAddress* Socket::getpeername() const
 {
+  return getpeername( *this );
+}
+
+SocketAddress* Socket::getpeername( socket_t socket_ )
+{
   struct sockaddr_storage peername_sockaddr_storage;
   memset( &peername_sockaddr_storage, 0, sizeof( peername_sockaddr_storage ) );
   socklen_t peername_sockaddr_storage_len = sizeof( peername_sockaddr_storage );
@@ -7875,7 +7753,7 @@ SocketAddress* Socket::getpeername() const
   (
     ::getpeername
     (
-      *this,
+      socket_,
       reinterpret_cast<struct sockaddr*>( &peername_sockaddr_storage ),
       &peername_sockaddr_storage_len
     ) != -1
@@ -7935,6 +7813,11 @@ int Socket::get_platform_send_flags( int flags )
 
 SocketAddress* Socket::getsockname() const
 {
+  return getsockname( *this );
+}
+
+SocketAddress* Socket::getsockname( socket_t socket_ )
+{
   struct sockaddr_storage sockname_sockaddr_storage;
   memset( &sockname_sockaddr_storage, 0, sizeof( sockname_sockaddr_storage ) );
   socklen_t sockname_sockaddr_storage_len = sizeof( sockname_sockaddr_storage );
@@ -7942,7 +7825,7 @@ SocketAddress* Socket::getsockname() const
   (
     ::getsockname
     (
-      *this,
+      socket_,
       reinterpret_cast<struct sockaddr*>( &sockname_sockaddr_storage ),
       &sockname_sockaddr_storage_len
     ) != -1
@@ -8039,6 +7922,10 @@ ssize_t Socket::recv( Buffer& buffer, int flags )
 ssize_t Socket::recv( void* buf, size_t buflen, int flags )
 {
   flags = get_platform_recv_flags( flags );
+
+#ifdef _DEBUG
+  if ( buflen == 0 ) DebugBreak();
+#endif
 
 #ifdef _WIN32
   return ::recv
@@ -8174,34 +8061,40 @@ void Socket::set_io_queue( IOQueue& io_queue )
 
 bool Socket::setsockopt( Option option, bool onoff )
 {
-  if ( option == OPTION_SO_KEEPALIVE )
+  switch ( option )
   {
-    int optval = onoff ? 1 : 0;
-    return ::setsockopt
-           (
-             *this,
-             SOL_SOCKET,
-             SO_KEEPALIVE,
-             reinterpret_cast<char*>( &optval ),
-             static_cast<int>( sizeof( optval ) )
-           ) == 0;
+    case OPTION_SO_KEEPALIVE:
+    {
+      int optval = onoff ? 1 : 0;
+      return ::setsockopt
+             (
+               *this,
+               SOL_SOCKET,
+               SO_KEEPALIVE,
+               reinterpret_cast<char*>( &optval ),
+               static_cast<int>( sizeof( optval ) )
+             ) == 0;
+    }
+    break;
+
+    case OPTION_SO_LINGER:
+    {
+      linger optval;
+      optval.l_onoff = onoff ? 1 : 0;
+      optval.l_linger = 0;
+      return ::setsockopt
+             (
+               *this,
+               SOL_SOCKET,
+               SO_LINGER,
+               reinterpret_cast<char*>( &optval ),
+               static_cast<int>( sizeof( optval ) )
+             ) == 0;
+    }
+    break;
+
+    default: return false; break;
   }
-  else if ( option == OPTION_SO_LINGER )
-  {
-    linger optval;
-    optval.l_onoff = onoff ? 1 : 0;
-    optval.l_linger = 0;
-    return ::setsockopt
-           (
-             *this,
-             SOL_SOCKET,
-             SO_LINGER,
-             reinterpret_cast<char*>( &optval ),
-             static_cast<int>( sizeof( optval ) )
-           ) == 0;
-  }
-  else
-    return false;
 }
 
 bool Socket::shutdown( bool shut_rd, bool shut_wr )
@@ -8573,6 +8466,15 @@ uint16_t SocketAddress::get_port() const
   }
 }
 
+SocketAddress::operator string() const
+{
+  string hostname;
+  getnameinfo( hostname );
+  ostringstream repr;
+  repr << hostname << ":" << get_port();
+  return repr.str();
+}
+
 bool SocketAddress::operator==( const SocketAddress& other ) const
 {
   if ( addrinfo_list != NULL )
@@ -8624,6 +8526,11 @@ bool SocketAddress::operator==( const SocketAddress& other ) const
            ) == 0;
   else
     return false;
+}
+
+bool SocketAddress::operator!=( const SocketAddress& other ) const
+{
+  return !operator==( other );
 }
 
 
@@ -9686,6 +9593,27 @@ void* StreamSocket::lpfnConnectEx = NULL;
 
 class StreamSocket::IOAcceptCB : public IOCB<AIOAcceptCallback>
 {
+public:
+  void onAcceptCompletion( StreamSocket& accepted_stream_socket )
+  {
+    get_callback().onAcceptCompletion
+    (
+      accepted_stream_socket,
+      get_callback_context(),
+      recv_buffer
+    );
+  }
+
+  void onAcceptError()
+  {
+    onAcceptError( Exception::get_last_error() );
+  }
+
+  void onAcceptError( uint32_t error_code )
+  {
+    get_callback().onAcceptError( error_code, get_callback_context() );
+  }
+
 protected:
   IOAcceptCB
   (
@@ -9695,7 +9623,7 @@ protected:
     Buffer* recv_buffer
   )
     : IOCB<AIOAcceptCallback>( callback, callback_context ),
-      listen_stream_socket( listen_stream_socket ),
+      listen_stream_socket( listen_stream_socket.inc_ref() ),
       recv_buffer( recv_buffer )
   { }
 
@@ -9751,26 +9679,6 @@ protected:
   StreamSocket& get_listen_stream_socket() const { return listen_stream_socket; }
   Buffer* get_recv_buffer() const { return recv_buffer; }
 
-  void onAcceptCompletion( StreamSocket& accepted_stream_socket )
-  {
-    get_callback().onAcceptCompletion
-    (
-      accepted_stream_socket,
-      get_callback_context(),
-      recv_buffer
-    );
-  }
-
-  void onAcceptError()
-  {
-    onAcceptError( get_last_error() );
-  }
-
-  void onAcceptError( uint32_t error_code )
-  {
-    get_callback().onAcceptError( error_code, get_callback_context() );
-  }
-
 private:
   StreamSocket& listen_stream_socket;
   Buffer* recv_buffer;
@@ -9779,6 +9687,26 @@ private:
 
 class StreamSocket::IOConnectCB : public IOCB<AIOConnectCallback>
 {
+public:
+  void onConnectCompletion()
+  {
+    get_callback().onConnectCompletion
+    (
+      send_buffer != NULL ? send_buffer->size() : 0,
+      get_callback_context()
+    );
+  }
+
+  void onConnectError()
+  {
+    onConnectError( Exception::get_last_error() );
+  }
+
+  void onConnectError( uint32_t error_code )
+  {
+    get_callback().onConnectError( error_code, get_callback_context() );
+  }
+
 protected:
   IOConnectCB
   (
@@ -9791,7 +9719,7 @@ protected:
     : IOCB<AIOConnectCallback>( callback, callback_context ),
       peername( peername.inc_ref() ),
       send_buffer( send_buffer ),
-      stream_socket( stream_socket )
+      stream_socket( stream_socket.inc_ref() )
   {
     partial_send_len = 0;
   }
@@ -9846,25 +9774,6 @@ protected:
   Buffer* get_send_buffer() const { return send_buffer; }
   StreamSocket& get_stream_socket() const { return stream_socket; }
 
-  void onConnectCompletion()
-  {
-    get_callback().onConnectCompletion
-    (
-      send_buffer != NULL ? send_buffer->size() : 0,
-      get_callback_context()
-    );
-  }
-
-  void onConnectError()
-  {
-    onConnectError( get_last_error() );
-  }
-
-  void onConnectError( uint32_t error_code )
-  {
-    get_callback().onConnectError( error_code, get_callback_context() );
-  }
-
 private:
   size_t partial_send_len;
   SocketAddress& peername;
@@ -9873,7 +9782,7 @@ private:
 };
 
 
-class StreamSocket::BIOAcceptCB : public BIOCB, private IOAcceptCB
+class StreamSocket::BIOAcceptCB : public BIOCB, public IOAcceptCB
 {
 public:
   BIOAcceptCB
@@ -9882,22 +9791,28 @@ public:
     void* callback_context,
     StreamSocket& listen_stream_socket,
     Buffer* recv_buffer
-  ) : IOAcceptCB( callback, callback_context, listen_stream_socket, recv_buffer )
+  ) : IOAcceptCB
+      (
+        callback,
+        callback_context,
+        listen_stream_socket,
+        recv_buffer
+      )
   { }
 
   // BIOCB
-  bool execute()
+  void execute()
   {
     StreamSocket* accepted_stream_socket = IOAcceptCB::execute( true );
     if ( accepted_stream_socket != NULL )
     {
+      set_state( STATE_COMPLETE );
       onAcceptCompletion( *accepted_stream_socket );
-      return true;
     }
     else
     {
+      set_state( STATE_ERROR );
       onAcceptError();
-      return false;
     }
   }
 };
@@ -9925,23 +9840,23 @@ public:
   { }
 
   // BIOCB
-  bool execute()
+  void execute()
   {
     if ( IOConnectCB::execute( true ) )
     {
+      set_state( STATE_COMPLETE );
       onConnectCompletion();
-      return true;
     }
     else
     {
+      set_state( STATE_ERROR );
       onConnectError();
-      return false;
     }
   }
 };
 
 
-class StreamSocket::NBIOAcceptCB : public NBIOCB, private IOAcceptCB
+class StreamSocket::NBIOAcceptCB : public NBIOCB, public IOAcceptCB
 {
 public:
   NBIOAcceptCB
@@ -9950,12 +9865,18 @@ public:
     void* callback_context,
     StreamSocket& listen_stream_socket,
     Buffer* recv_buffer
-  ) : NBIOCB( STATE_WANT_READ ),
-      IOAcceptCB( callback, callback_context, listen_stream_socket, recv_buffer )
+  )
+    : IOAcceptCB
+      (
+        callback,
+        callback_context,
+        listen_stream_socket,
+        recv_buffer
+      )
   { }
 
   // NBIOCB
-  State execute()
+  void execute()
   {
     StreamSocket* accepted_stream_socket = IOAcceptCB::execute( false );
 
@@ -9971,15 +9892,13 @@ public:
       set_state( STATE_ERROR );
       onAcceptError();
     }
-
-    return get_state();
   }
 
   socket_t get_fd() const { return get_listen_stream_socket(); }
 };
 
 
-class StreamSocket::NBIOConnectCB : public NBIOCB, private IOConnectCB
+class StreamSocket::NBIOConnectCB : public NBIOCB, public IOConnectCB
 {
 public:
   NBIOConnectCB
@@ -9990,12 +9909,19 @@ public:
     Buffer* send_buffer,
     StreamSocket& stream_socket
   )
-  : NBIOCB( STATE_WANT_CONNECT ),
-    IOConnectCB( callback, callback_context, peername, send_buffer, stream_socket )
+  :
+    IOConnectCB
+    (
+      callback,
+      callback_context,
+      peername,
+      send_buffer,
+      stream_socket
+    )
   { }
 
   // NBIOCB
-  State execute()
+  void execute()
   {
     if ( IOConnectCB::execute( false ) )
     {
@@ -10011,8 +9937,6 @@ public:
       set_state( STATE_ERROR );
       onConnectError();
     }
-
-    return get_state();
   }
 
   socket_t get_fd() const { return get_stream_socket(); }
@@ -10020,7 +9944,7 @@ public:
 
 
 #ifdef _WIN32
-class StreamSocket::Win32AIOAcceptCB : public Win32AIOCB, private IOAcceptCB
+class StreamSocket::Win32AIOAcceptCB : public Win32AIOCB, public IOAcceptCB
 {
 public:
   Win32AIOAcceptCB
@@ -10030,7 +9954,14 @@ public:
     void* callback_context,
     StreamSocket& listen_stream_socket,
     Buffer* recv_buffer
-  ) : IOAcceptCB( callback, callback_context, listen_stream_socket, recv_buffer ),
+  )
+    : IOAcceptCB
+      (
+        callback,
+        callback_context,
+        listen_stream_socket,
+        recv_buffer
+      ),
       accepted_stream_socket( accepted_stream_socket )
   { }
 
@@ -10065,7 +9996,7 @@ private:
 };
 
 
-class StreamSocket::Win32AIOConnectCB : public Win32AIOCB, private IOConnectCB
+class StreamSocket::Win32AIOConnectCB : public Win32AIOCB, public IOConnectCB
 {
 public:
   Win32AIOConnectCB
@@ -10094,16 +10025,18 @@ public:
         DebugBreak();
 #endif
 
+    set_state( STATE_COMPLETE );
     onConnectCompletion();
   }
 
   void onError( DWORD dwErrorCode )
   {
+    set_state( STATE_ERROR );
     onConnectError( static_cast<uint32_t>( dwErrorCode ) );
   }
 };
 
-class StreamSocket::Win32AIORecvCB : public Win32AIOCB, private IORecvCB
+class StreamSocket::Win32AIORecvCB : public Win32AIOCB, public IORecvCB
 {
 public:
   Win32AIORecvCB
@@ -10112,8 +10045,7 @@ public:
     AIORecvCallback& callback,
     void* callback_context,
     StreamSocket& stream_socket
-  )
-    : IORecvCB( buffer, callback, callback_context, 0, stream_socket )
+  ) : IORecvCB( buffer, callback, callback_context, 0, stream_socket )
   { }
 
   // Win32AIOCB
@@ -10122,6 +10054,7 @@ public:
     if ( dwNumberOfBytesTransferred > 0 )
     {
       get_buffer().resize( get_buffer().size() + dwNumberOfBytesTransferred );
+      set_state( STATE_COMPLETE );
       onRecvCompletion();
     }
     else
@@ -10130,12 +10063,13 @@ public:
 
   void onError( DWORD dwErrorCode )
   {
+    set_state( STATE_ERROR );
     onRecvError( static_cast<uint32_t>( dwErrorCode ) );
   }
 };
 
 
-class StreamSocket::Win32AIOSendCB : public Win32AIOCB, private IOSendCB
+class StreamSocket::Win32AIOSendCB : public Win32AIOCB, public IOSendCB
 {
 public:
   Win32AIOSendCB
@@ -10144,29 +10078,28 @@ public:
     AIOSendCallback& callback,
     void* callback_context,
     StreamSocket& stream_socket
-  )
-    : IOSendCB( buffer, callback, callback_context, 0, stream_socket )
+  ) : IOSendCB( buffer, callback, callback_context, 0, stream_socket )
   { }
 
   // Win32AIOCB
   void onCompletion( DWORD dwNumberOfBytesTransferred )
   {
 #ifdef _WIN32
-    if ( dwNumberOfBytesTransferred != get_buffer().size() )
-      DebugBreak();
+    if ( dwNumberOfBytesTransferred != get_buffer().size() ) DebugBreak();
 #endif
-
+    set_state( STATE_COMPLETE );
     onSendCompletion();
   }
 
   void onError( DWORD dwErrorCode )
   {
+    set_state( STATE_ERROR );
     onSendError( dwErrorCode );
   }
 };
 
 
-class StreamSocket::Win32AIOSendMsgCB : public Win32AIOCB, private IOSendMsgCB
+class StreamSocket::Win32AIOSendMsgCB : public Win32AIOCB, public IOSendMsgCB
 {
 public:
   Win32AIOSendMsgCB
@@ -10175,8 +10108,7 @@ public:
     AIOSendCallback& callback,
     void* callback_context,
     StreamSocket& stream_socket
-  )
-    : IOSendMsgCB( buffers, callback, callback_context, 0, stream_socket )
+  ) : IOSendMsgCB( buffers, callback, callback_context, 0, stream_socket )
   { }
 
   // Win32AIOCB
@@ -10186,12 +10118,13 @@ public:
     if ( dwNumberOfBytesTransferred < get_buffers_len() )
       DebugBreak();
 #endif
-
+    set_state( STATE_COMPLETE );
     onSendMsgCompletion();
   }
 
   void onError( DWORD dwErrorCode )
   {
+    set_state( STATE_ERROR );
     onSendMsgError( dwErrorCode );
   }
 };
@@ -10258,7 +10191,7 @@ StreamSocket::aio_accept
                 *accepted_stream_socket,
                 callback,
                 callback_context,
-                inc_ref(),
+                *this,
                 recv_buffer
               );
 
@@ -10268,20 +10201,24 @@ StreamSocket::aio_accept
       else
         sockaddrlen = sizeof( sockaddr_in );
 
-      PVOID lpOutputBuffer;
-      DWORD dwReceiveDataLength;
+      PVOID lpOutputBuffer = NULL;
+      DWORD dwReceiveDataLength = 0;
+
       if ( recv_buffer != NULL )
       {
-        size_t recv_buffer_left = recv_buffer->capacity() - recv_buffer->size();
+        size_t recv_buffer_left
+          = recv_buffer->capacity() - recv_buffer->size();
+
         if ( recv_buffer_left >= ( sockaddrlen + 16 ) * 2 )
         {
-          lpOutputBuffer = static_cast<char*>( *recv_buffer ) + recv_buffer->size();
+          lpOutputBuffer
+            = static_cast<char*>( *recv_buffer ) + recv_buffer->size();
           dwReceiveDataLength = recv_buffer_left - ( sockaddrlen + 16 ) * 2;
         }
-        else
+        else if ( get_win32_aio_queue()->get_thread_count() > 1 )
         {
-          StreamSocket::dec_ref( *accepted_stream_socket );
-          callback.onAcceptError( WSAENOBUFS, callback_context );
+          aiocb->onAcceptError();
+          delete aiocb;
           return;
         }
       }
@@ -10310,56 +10247,66 @@ StreamSocket::aio_accept
         WSAGetLastError() == WSA_IO_PENDING
       )
         return;
-      else
+      else if ( get_win32_aio_queue()->get_thread_count() > 1 )
+      {
+        aiocb->onAcceptError();
         delete aiocb;
+      }
+      else
+      {
+        aiocb->set_state( Win32AIOCB::STATE_ERROR );
+        get_win32_aio_queue()->post( *aiocb, 0, WSAGetLastError() );
+      }
     }
-    // else the StreamSocket::create failed
-
-    callback.onAcceptError( get_last_error(), callback_context );
-
-    return;
+    else // accepted_stream_socket == NULL, socket creation failed
+    {
+      if ( get_win32_aio_queue()->get_thread_count() > 1 )
+        callback.onAcceptError( WSAGetLastError(), callback_context );
+      else
+        DebugBreak();
+    }
   }
+  else
 #endif
-
-  // Try a non-blocking accept first
-  switch
-  (
-    NBIOAcceptCB
-    (
-      callback,
-      callback_context,
-      inc_ref(),
-      Object::inc_ref( recv_buffer )
-    ).execute()
-  )
-  {
-    case NBIOAcceptCB::STATE_COMPLETE:
-    case NBIOAcceptCB::STATE_ERROR: Buffer::dec_ref( recv_buffer ); return;
-    default: break; // To appease gcc
-  }
-
-  // Next try to offload the accept to an IOQueue
   if ( get_bio_queue() != NULL )
   {
-    get_bio_queue()->submit
-    (
-      *new BIOAcceptCB( callback, callback_context, inc_ref(), recv_buffer )
-    );
-
-    return;
+    BIOCB* biocb
+      = new BIOAcceptCB( callback, callback_context, *this, recv_buffer );
+    get_bio_queue()->submit( *biocb );
   }
-  else if ( get_nbio_queue() != NULL )
+  else
   {
-    get_nbio_queue()->submit
-    (
-      *new NBIOAcceptCB( callback, callback_context, inc_ref(), recv_buffer )
-    );
+    NBIOQueue* nbio_queue = get_nbio_queue();
+    if ( nbio_queue == NULL )
+    {
+      nbio_queue = NBIOQueue::create();
+      if ( nbio_queue != NULL && associate( *nbio_queue ) )
+        NBIOQueue::dec_ref( *nbio_queue );
+      else
+      {
+        Buffer::dec_ref( recv_buffer );
+        callback.onAcceptError( Exception::get_last_error(), callback_context );
+        return;
+      }
+    }
 
-    return;
+    NBIOCB* nbiocb
+      = new NBIOAcceptCB( callback, callback_context, *this, recv_buffer );
+
+    if ( nbio_queue->get_thread_count() > 1 )
+    {
+      nbiocb->execute();
+
+      switch ( nbiocb->get_state() )
+      {
+        case NBIOAcceptCB::STATE_COMPLETE:
+        case NBIOAcceptCB::STATE_ERROR: delete nbiocb; return;
+        default: break; // To appease gcc
+      }
+    }
+
+    nbio_queue->submit( *nbiocb );
   }
-
-  // Give up instead of blocking on accept
-  callback.onAcceptError( get_last_error(), callback_context );
 }
 
 void
@@ -10392,6 +10339,16 @@ StreamSocket::aio_connect
       );
     }
 
+    Win32AIOConnectCB* aiocb
+      = new Win32AIOConnectCB
+            (
+              callback,
+              callback_context,
+              peername,
+              send_buffer,
+              *this
+            );
+
     for ( ;; )
     {
       struct sockaddr* name; socklen_t namelen;
@@ -10414,16 +10371,6 @@ StreamSocket::aio_connect
 
           DWORD dwBytesSent;
 
-          Win32AIOConnectCB* aiocb
-            = new Win32AIOConnectCB
-                  (
-                    callback,
-                    callback_context,
-                    peername.inc_ref(),
-                    send_buffer,
-                    inc_ref()
-                  );
-
           if
           (
             static_cast<LPFN_CONNECTEX>( lpfnConnectEx )
@@ -10440,92 +10387,82 @@ StreamSocket::aio_connect
             WSAGetLastError() == WSA_IO_PENDING
           )
             return;
-          else
-          {
-            delete aiocb;
-            break;
-          }
         }
-        else
-          break;
       }
-      else if ( get_domain() == AF_INET6 )
-      {
-        if ( recreate( AF_INET ) )
-          continue;
-        else
-          break;
-      }
-      else
-        break;
+      else if ( get_domain() == AF_INET6 && recreate( AF_INET ) )
+        continue;
+
+      break;
     }
 
-    Buffer::dec_ref( send_buffer );
-    callback.onConnectError( get_last_error(), callback_context );
-
-    return;
+    if ( get_win32_aio_queue()->get_thread_count() > 1 )
+    {
+      aiocb->onConnectError();
+      delete aiocb;
+    }
+    else
+    {
+      aiocb->set_state( Win32AIOCB::STATE_ERROR );
+      get_win32_aio_queue()->post( *aiocb, 0, WSAGetLastError() );
+    }
   }
+  else
 #endif
-
-  // Try a non-blocking connect (for e.g. localhost)
-  switch
-  (
-    NBIOConnectCB
-    (
-      callback,
-      callback_context,
-      peername,
-      Object::inc_ref( send_buffer ),
-      inc_ref()
-    ).execute()
-  )
-  {
-    case NBIOConnectCB::STATE_COMPLETE:
-    case NBIOConnectCB::STATE_ERROR: Buffer::dec_ref( send_buffer ); return;
-    default: break; // To appease gcc
-  }
-
   if ( get_bio_queue() != NULL )
   {
-    get_bio_queue()->submit
-    (
-      *new BIOConnectCB
+    BIOCB* biocb
+      = new BIOConnectCB
            (
              callback,
              callback_context,
-             peername.inc_ref(),
+             peername,
              send_buffer,
-             inc_ref()
-           )
-    );
+             *this
+           );
 
-    return;
+    get_bio_queue()->submit( *biocb );
   }
-  else if ( get_nbio_queue() != NULL )
+  else
   {
-    get_nbio_queue()->submit
-    (
-      *new NBIOConnectCB
-            (
-              callback,
-              callback_context,
-              peername.inc_ref(),
-              send_buffer,
-              inc_ref()
-            )
-    );
+    NBIOQueue* nbio_queue = get_nbio_queue();
+    if ( nbio_queue != NULL )
+    {
+      NBIOCB* nbiocb
+        = new NBIOConnectCB
+              (
+                callback,
+                callback_context,
+                peername,
+                send_buffer,
+                *this
+              );
 
-    return;
+      if ( nbio_queue->get_thread_count() > 1 )
+      {
+        nbiocb->execute();
+
+        switch ( nbiocb->get_state() )
+        {
+          case NBIOConnectCB::STATE_COMPLETE:
+          case NBIOConnectCB::STATE_ERROR: delete nbiocb; return;
+          default: break; // To appease gcc
+        }
+      }
+
+      nbio_queue->submit( *nbiocb );
+    }
+    else
+    {
+      BIOConnectCB
+      (
+        callback,
+        callback_context,
+        peername,
+        send_buffer,
+        *this
+      ).execute();
+    }
   }
-
-  BIOConnectCB
-  (
-    callback,
-    callback_context,
-    peername,
-    send_buffer,
-    inc_ref()
-  ).execute();
 }
 
 void StreamSocket::aio_recv
@@ -10542,45 +10479,31 @@ void StreamSocket::aio_recv
     WSABUF wsabuf[1];
     wsabuf[0].buf = static_cast<char*>( buffer ) + buffer.size();
     wsabuf[0].len = static_cast<ULONG>( buffer.capacity() - buffer.size() );
-
-    DWORD dwNumberOfBytesReceived,
-          dwFlags = static_cast<DWORD>( get_platform_recv_flags( flags ) );
-
+#ifdef _DEBUG
+    if ( wsabuf[0].len == 0 ) DebugBreak();
+#endif
+    DWORD dwFlags = static_cast<DWORD>( get_platform_recv_flags( flags ) );
     Win32AIORecvCB* aiocb
-      = new Win32AIORecvCB
-            (
-              buffer,
-              callback,
-              callback_context,
-              inc_ref()
-            );
+      = new Win32AIORecvCB( buffer, callback, callback_context, *this );
 
-    if
-    (
-      WSARecv
-      (
-        *this,
-        wsabuf,
-        1,
-        &dwNumberOfBytesReceived,
-        &dwFlags,
-        *aiocb,
-        NULL // Win32AIORecvCB::WSAOverlappedCompletionRoutine
-      ) == 0
-      ||
-      WSAGetLastError() == WSA_IO_PENDING
-    )
+    if ( WSARecv( *this, wsabuf, 1, NULL, &dwFlags, *aiocb, NULL ) == 0 )
       return;
+    else if ( WSAGetLastError() == WSA_IO_PENDING )
+      return;
+    else if ( get_win32_aio_queue()->get_thread_count() > 1 )
+    {
+      aiocb->onRecvError();
+      delete aiocb;
+    }
     else
     {
-      delete aiocb;
-      callback.onReadError( get_last_error(), callback_context );
-      return;
+      aiocb->set_state( Win32AIOCB::STATE_ERROR );
+      get_win32_aio_queue()->post( *aiocb, 0, WSAGetLastError() );
     }
   }
+  else
 #endif
-
-  Socket::aio_recv( buffer, flags, callback, callback_context );
+    Socket::aio_recv( buffer, flags, callback, callback_context );
 }
 
 void
@@ -10603,44 +10526,29 @@ StreamSocket::aio_send
 #else
     struct iovec64 wsabuf = buffer;
 #endif
-
-    DWORD dwNumberOfBytesSent;
-
+    LPWSABUF lpBuffers = reinterpret_cast<LPWSABUF>( &wsabuf );
+    DWORD dwFlags = static_cast<DWORD>( get_platform_send_flags( flags ) );
     Win32AIOSendCB* aiocb
-      = new Win32AIOSendCB
-            (
-              buffer,
-              callback,
-              callback_context,
-              inc_ref()
-            );
+      = new Win32AIOSendCB( buffer, callback, callback_context, *this );
 
-    if
-    (
-      WSASend
-      (
-        *this,
-        reinterpret_cast<LPWSABUF>( &wsabuf ),
-        1,
-        &dwNumberOfBytesSent,
-        static_cast<DWORD>( get_platform_send_flags( flags ) ),
-        *aiocb,
-        NULL // Win32AIOSendCB::WSAOverlappedCompletionRoutine
-      ) == 0
-      ||
-      WSAGetLastError() == WSA_IO_PENDING
-    )
+    if ( WSASend( *this, lpBuffers, 1, NULL, dwFlags, *aiocb, NULL ) == 0 )
       return;
+    else if ( WSAGetLastError() == WSA_IO_PENDING )
+      return;
+    else if ( get_win32_aio_queue()->get_thread_count() > 1 )
+    {
+      aiocb->onSendError();
+      delete aiocb;
+    }
     else
     {
-      delete aiocb;
-      callback.onWriteError( get_last_error(), callback_context );
-      return;
+      aiocb->set_state( Win32AIOCB::STATE_ERROR );
+      get_win32_aio_queue()->post( *aiocb, 0, WSAGetLastError() );
     }
   }
+  else
 #endif
-
-  Socket::aio_send( buffer, flags, callback, callback_context );
+    Socket::aio_send( buffer, flags, callback, callback_context );
 }
 
 void
@@ -10658,52 +10566,47 @@ StreamSocket::aio_sendmsg
 #ifdef _WIN32
   if ( get_win32_aio_queue() != NULL )
   {
-    DWORD dwNumberOfBytesSent;
-
-    Win32AIOSendMsgCB* aiocb
-      = new Win32AIOSendMsgCB( buffers, callback, callback_context, inc_ref() );
-
+    LPWSABUF lpBuffers;
 #ifdef _WIN64
     vector<iovec64> wsabufs( buffers->get_iovecs_len() );
     iovecs_to_wsabufs( buffers->get_iovecs(), wsabufs );
+    lpBuffers = reinterpret_cast<LPWSABUF>( &wsabufs[0] );
+#else
+    lpBuffers = reinterpret_cast<LPWSABUF>
+                (
+                  const_cast<struct iovec*>
+                  (
+                    static_cast<const struct iovec*>( buffers )
+                  )
+                );
 #endif
+    DWORD dwBufferCount = buffers.size();
+    DWORD dwFlags = static_cast<DWORD>( get_platform_send_flags( flags ) );
+    Win32AIOSendMsgCB* aiocb
+      = new Win32AIOSendMsgCB( buffers, callback, callback_context, inc_ref() );
 
     if
     (
-      WSASend
-      (
-        *this,
-#ifdef _WIN64
-        reinterpret_cast<LPWSABUF>( &wsabufs[0] ),
-#else
-        reinterpret_cast<LPWSABUF>
-        (
-          const_cast<struct iovec*>
-          (
-            static_cast<const struct iovec*>( buffers )
-          )
-        ),
-#endif
-        buffers.size(),
-        &dwNumberOfBytesSent,
-        static_cast<DWORD>( get_platform_send_flags( flags ) ),
-        *aiocb,
-        NULL // Win32AIOSendMsgCB::WSAOverlappedCompletionRoutine
-      ) == 0
-      ||
-      WSAGetLastError() == WSA_IO_PENDING
+      WSASend( *this, lpBuffers, dwBufferCount, NULL, dwFlags, *aiocb, NULL )
+      == 0
     )
       return;
+    else if ( WSAGetLastError() == WSA_IO_PENDING )
+      return;
+    else if ( get_win32_aio_queue()->get_thread_count() > 1 )
+    {
+      aiocb->onSendMsgError();
+      delete aiocb;
+    }
     else
     {
-      delete aiocb;
-      callback.onWriteError( get_last_error(), callback_context );
-      return;
+      aiocb->set_state( Win32AIOCB::STATE_ERROR );
+      get_win32_aio_queue()->post( *aiocb, 0, WSAGetLastError() );
     }
   }
+  else
 #endif
-
-  Socket::aio_sendmsg( buffers, flags, callback, callback_context );
+    Socket::aio_sendmsg( buffers, flags, callback, callback_context );
 }
 
 bool StreamSocket::associate( IOQueue& io_queue )
@@ -10715,10 +10618,7 @@ bool StreamSocket::associate( IOQueue& io_queue )
 #ifdef _WIN32
       case Win32AIOQueue::TYPE_ID:
       {
-        if
-        (
-          static_cast<Win32AIOQueue&>( io_queue ).associate( *this )
-        )
+        if ( static_cast<Win32AIOQueue&>( io_queue ).associate( *this ) )
         {
           set_io_queue( io_queue );
           return true;
@@ -10793,6 +10693,23 @@ bool StreamSocket::want_connect() const
 
 
 // string_buffer.cpp
+StringBuffer::StringBuffer( size_t capacity )
+{
+  reserve( capacity );
+}
+
+StringBuffer::StringBuffer( const string& buf )
+  : string( buf )
+{ }
+
+StringBuffer::StringBuffer( const char* buf )
+  : string( buf )
+{ }
+
+StringBuffer::StringBuffer( const char* buf, size_t len ) \
+  : string( buf, len )
+{ }
+
 StringBuffer::StringBuffer( Buffer& buf )
   : string
     (
@@ -10830,6 +10747,29 @@ size_t StringBuffer::put( const void* buf, size_t len )
   return len;
 }
 
+void StringBuffer::resize( size_t n )
+{
+  if ( n > size() )
+  {
+    // We assume data has already been modified in place
+    if ( n <= capacity() )
+    {
+      // This is just a size update.
+      // "append" data that's already there
+      string::append( data() + size(), n - size() );
+    }
+    else
+    {
+      // This is a size update and a capacity increase.
+      // "append" data that's already there, then fill
+      // the remaining bytes up to n with 0's
+      string::append( data() + size(), capacity() - size() );
+      string::append( n - capacity(), 0 );
+    }
+  }
+  else if ( n < size() )
+    string::resize( n );
+}
 
 
 // tcp_socket.cpp
@@ -11909,27 +11849,7 @@ int UDPSocket::TYPE = SOCK_DGRAM;
 
 class UDPSocket::IORecvFromCB : public IOCB<AIORecvFromCallback>
 {
-protected:
-  IORecvFromCB
-  (
-    Buffer& buffer,
-    AIORecvFromCallback& callback,
-    void* callback_context,
-    int flags,
-    UDPSocket& udp_socket
-  )
-  : IOCB<AIORecvFromCallback>( callback, callback_context ),
-    buffer( buffer ),
-    flags( flags ),
-    udp_socket( udp_socket )
-  { }
-
-  ~IORecvFromCB()
-  {
-    Buffer::dec_ref( buffer );
-    UDPSocket::dec_ref( udp_socket );
-  }
-
+public:
   Buffer& get_buffer() const { return buffer; }
   int get_flags() const { return flags; }
   UDPSocket& get_udp_socket() const { return udp_socket; }
@@ -11950,12 +11870,41 @@ protected:
 
   void onRecvFromError()
   {
-    onRecvFromError( get_last_error() );
+    onRecvFromError( Exception::get_last_error() );
   }
 
   void onRecvFromError( uint32_t error_code )
   {
     get_callback().onRecvFromError( error_code, get_callback_context() );
+  }
+
+protected:
+  IORecvFromCB
+  (
+    Buffer& buffer,
+    AIORecvFromCallback& callback,
+    void* callback_context,
+    int flags,
+    UDPSocket& udp_socket
+  )
+  : IOCB<AIORecvFromCallback>( callback, callback_context ),
+    buffer( buffer ),
+    flags( flags ),
+    udp_socket( udp_socket.inc_ref() )
+  { }
+
+  ~IORecvFromCB()
+  {
+    Buffer::dec_ref( buffer );
+    UDPSocket::dec_ref( udp_socket );
+  }
+
+  ssize_t execute( bool blocking_mode, struct sockaddr_storage& peername )
+  {
+    if ( get_udp_socket().set_blocking_mode( blocking_mode ) )
+      return get_udp_socket().recvfrom( get_buffer(), get_flags(), peername );
+    else
+      return -1;
   }
 
 private:
@@ -11980,25 +11929,20 @@ public:
   { }
 
   // BIOCB
-  bool execute()
+  void execute()
   {
-    if ( get_udp_socket().set_blocking_mode( true ) )
+    struct sockaddr_storage peername;
+    ssize_t recvfrom_ret = IORecvFromCB::execute( true, peername );
+    if ( recvfrom_ret > 0 )
     {
-      struct sockaddr_storage peername;
-      ssize_t recvfrom_ret
-        = get_udp_socket().recvfrom( get_buffer(), get_flags(), peername );
-      if ( recvfrom_ret > 0 )
-      {
-        onRecvFromCompletion( peername );
-        return true;
-      }
-      else
-        onRecvFromError();
+      set_state( STATE_COMPLETE );
+      onRecvFromCompletion( peername );
     }
     else
+    {
+      set_state( STATE_ERROR );
       onRecvFromError();
-
-    return false;
+    }
   }
 };
 
@@ -12014,39 +11958,26 @@ public:
     void* callback_context,
     int flags,
     UDPSocket& udp_socket
-  ) : NBIOCB( STATE_WANT_READ ),
-      IORecvFromCB( buffer, callback, callback_context, flags, udp_socket )
+  ) : IORecvFromCB( buffer, callback, callback_context, flags, udp_socket )
   { }
 
   // NBIOCB
-  State execute()
+  void execute()
   {
-    if ( get_udp_socket().set_blocking_mode( false ) )
+    struct sockaddr_storage peername;
+    ssize_t recvfrom_ret = IORecvFromCB::execute( false, peername );
+    if ( recvfrom_ret > 0 )
     {
-      struct sockaddr_storage peername;
-      ssize_t recvfrom_ret
-        = get_udp_socket().recvfrom( get_buffer(), get_flags(), peername );
-
-      if ( recvfrom_ret > 0 )
-      {
-        set_state( STATE_COMPLETE );
-        onRecvFromCompletion( peername );
-      }
-      else if ( get_udp_socket().want_recv() )
-        set_state( STATE_WANT_READ );
-      else
-      {
-        set_state( STATE_ERROR );
-        onRecvFromError();
-      }
+      set_state( STATE_COMPLETE );
+      onRecvFromCompletion( peername );
     }
+    else if ( get_udp_socket().want_recv() )
+      set_state( STATE_WANT_READ );
     else
     {
       set_state( STATE_ERROR );
       onRecvFromError();
     }
-
-    return get_state();
   }
 
   socket_t get_fd() const { return get_udp_socket(); }
@@ -12099,12 +12030,7 @@ UDPSocket::aio_recvfrom
 )
 {
 #ifdef _WIN32
-  if
-  (
-    get_io_queue() != NULL
-    &&
-    get_io_queue()->get_type_id() == Win32AIOQueue::TYPE_ID
-  )
+  if ( get_win32_aio_queue() != NULL )
   {
     WSABUF wsabuf;
     wsabuf.buf = static_cast<CHAR*>( buffer ) + buffer.size();
@@ -12142,70 +12068,61 @@ UDPSocket::aio_recvfrom
       WSAGetLastError() == WSA_IO_PENDING
     )
       return;
+    else if ( get_win32_aio_queue()->get_thread_count() > 1 )
+    {
+      aiocb->onRecvFromError();
+      delete aiocb;
+    }
     else
     {
-      delete aiocb;
-      callback.onRecvFromError( get_last_error(), callback_context );
-      return;
+      aiocb->set_state( Win32AIOCB::STATE_ERROR );
+      get_win32_aio_queue()->post( *aiocb, 0, WSAGetLastError() );
     }
   }
+  else
 #endif
-
-  // Try a non-blocking recvfrom first
-  switch
-  (
-    NBIORecvFromCB
-    (
-      buffer.inc_ref(),
-      callback,
-      callback_context,
-      flags,
-      inc_ref()
-    ).execute()
-  )
-  {
-    case NBIORecvFromCB::STATE_COMPLETE:
-    case NBIORecvFromCB::STATE_ERROR: Buffer::dec_ref( buffer ); return;
-    default: break; // To appease gcc
-  }
-
-  // Next try to offload the recvfrom to an IOQueue
   if ( get_bio_queue() != NULL )
   {
-    get_bio_queue()->submit
-    (
-      *new BIORecvFromCB
-           (
-             buffer,
-             callback,
-             callback_context,
-             flags,
-             inc_ref()
-           )
-    );
-
-    return;
+    BIOCB* biocb
+      = new BIORecvFromCB( buffer, callback, callback_context, flags, *this );
+    get_bio_queue()->submit( *biocb );
   }
-  else if ( get_nbio_queue() != NULL )
+  else
   {
-    get_nbio_queue()->submit
-    (
-       *new NBIORecvFromCB
-            (
-              buffer,
-              callback,
-              callback_context,
-              flags,
-              inc_ref()
-            )
-    );
+    NBIOQueue* nbio_queue = get_nbio_queue();
+    if ( nbio_queue == NULL )
+    {
+      nbio_queue = NBIOQueue::create();
+      if ( nbio_queue != NULL && associate( *nbio_queue ) )
+        NBIOQueue::dec_ref( *nbio_queue );
+      else
+      {
+        Buffer::dec_ref( buffer );
+        callback.onRecvFromError
+        (
+          Exception::get_last_error(),
+          callback_context
+        );
+      }
+    }
 
-    return;
+    NBIOCB* nbiocb
+      = new NBIORecvFromCB( buffer, callback, callback_context, flags, *this );
+
+    if ( nbio_queue->get_thread_count() > 1 )
+    {
+      nbiocb->execute();
+
+      switch ( nbiocb->get_state() )
+      {
+        case NBIORecvFromCB::STATE_COMPLETE:
+        case NBIORecvFromCB::STATE_ERROR: delete nbiocb; return;
+        default: break; // To appease gcc
+      }
+    }
+
+    nbio_queue->submit( *nbiocb );
   }
-
-  // Give up instead of blocking on recvfrom
-  callback.onRecvFromError( get_last_error(), callback_context );
-  Buffer::dec_ref( buffer );
 }
 
 UDPSocket* UDPSocket::create( int domain )
@@ -12223,7 +12140,7 @@ UDPSocket::recvfrom
   Buffer& buffer,
   int flags,
   struct sockaddr_storage& peername
-) const
+)
 {
   ssize_t recvfrom_ret
     = recvfrom
@@ -12247,7 +12164,7 @@ UDPSocket::recvfrom
   size_t buflen,
   int flags,
   struct sockaddr_storage& peername
-) const
+)
 {
   socklen_t peername_len = sizeof( peername );
   return ::recvfrom
@@ -12268,7 +12185,7 @@ UDPSocket::sendmsg
   uint32_t iovlen,
   const SocketAddress& peername,
   int flags
-) const
+)
 {
   flags = get_platform_send_flags( flags );
 
@@ -12325,7 +12242,7 @@ UDPSocket::sendto
   size_t buflen,
   int flags,
   const SocketAddress& _peername
-) const
+)
 {
   struct sockaddr* peername; socklen_t peername_len;
   if ( _peername.as_struct_sockaddr( get_domain(), peername, peername_len ) )
@@ -13232,13 +13149,18 @@ public:
       )
       {
         Win32AIOCB* aiocb = Win32AIOCB::from_OVERLAPPED( lpOverlapped );
-        aiocb->onCompletion( dwBytesTransferred );
+
+        if ( aiocb->get_state() != Win32AIOCB::STATE_ERROR )
+          aiocb->onCompletion( dwBytesTransferred );
+        else
+          aiocb->onError( ulCompletionKey );
+
         delete aiocb;
       }
       else if ( lpOverlapped != NULL )
       {
         Win32AIOCB* aiocb = Win32AIOCB::from_OVERLAPPED( lpOverlapped );
-        aiocb->onError( ::GetLastError() );
+        aiocb->onError( GetLastError() );
         delete aiocb;
       }
       else
@@ -13288,7 +13210,7 @@ bool Win32AIOQueue::associate( HANDLE handle )
          ) != INVALID_HANDLE_VALUE;
 }
 
-Win32AIOQueue& Win32AIOQueue::create( int16_t thread_count )
+Win32AIOQueue* Win32AIOQueue::create( int16_t thread_count )
 {
   HANDLE hIoCompletionPort
     = CreateIoCompletionPort
@@ -13312,10 +13234,15 @@ Win32AIOQueue& Win32AIOQueue::create( int16_t thread_count )
       thread->start();
     }
 
-    return *new Win32AIOQueue( hIoCompletionPort, threads );
+    return new Win32AIOQueue( hIoCompletionPort, threads );
   }
   else
-    throw Exception();
+    return NULL;
+}
+
+uint16_t Win32AIOQueue::get_thread_count() const
+{
+  return static_cast<uint16_t>( threads.size() );
 }
 
 bool
@@ -13675,8 +13602,8 @@ void XDRUnmarshaller::read( Buffer& value )
 
   if ( size > 0 )
   {
-    read( static_cast<void*>( value ), size );
-    value.resize( size );
+    read( static_cast<char*>( value ) + value.size(), size );
+    value.resize( value.size() + size );
 
     if ( size % 4 != 0 )
     {
@@ -13690,7 +13617,7 @@ Buffer* XDRUnmarshaller::read_buffer()
 {
   size_t size = read_int32();
 
-  HeapBuffer* value = new HeapBuffer( size );
+  StringBuffer* value = new StringBuffer( size );
 
   read( static_cast<void*>( value ), size );
   value->resize( size );
@@ -13764,8 +13691,18 @@ XDRUnmarshaller::Key* XDRUnmarshaller::read( Key::Type key_type )
 void XDRUnmarshaller::read( Map& value )
 {
   size_t size = read_int32();
-  for ( size_t i = 0; i < size; i++ )
-    value.unmarshal( *this );
+  if ( size < UINT16_MAX )
+  {
+    for ( size_t i = 0; i < size; i++ )
+      value.unmarshal( *this );
+  }
+#ifdef _DEBUG
+  else
+  {
+    cerr << "XDRUnmarshaller: tried to read oversized map with size=" <<
+            size << "." << endl;
+  }
+#endif
 }
 
 void XDRUnmarshaller::read( MarshallableObject& value )
@@ -13777,24 +13714,43 @@ void XDRUnmarshaller::read( Sequence& value )
 {
   size_t size = read_int32();
   if ( size <= UINT16_MAX )
+  {
     for ( size_t i = 0; i < size; i++ )
       value.unmarshal( *this );
+  }
+#ifdef _DEBUG
+  else
+  {
+    cerr << "XDRUnmarshaller: tried to read oversized sequence with size=" <<
+            size << "." << endl;
+  }
+#endif
 }
 
 void XDRUnmarshaller::read( string& value )
 {
   size_t size = read_int32();
-  if ( size > 0 && size < UINT16_MAX )
+  if ( size > 0  )
   {
-    size_t padded_size = size % 4;
-    if ( padded_size == 0 )
-      padded_size = size;
-    else
-      padded_size = size + 4 - padded_size;
+    if ( size < UINT16_MAX )
+    {
+      size_t padded_size = size % 4;
+      if ( padded_size == 0 )
+        padded_size = size;
+      else
+        padded_size = size + 4 - padded_size;
 
-    value.resize( padded_size );
-    read( const_cast<char*>( value.c_str() ), padded_size );
-    value.resize( size );
+      value.resize( padded_size );
+      read( const_cast<char*>( value.c_str() ), padded_size );
+      value.resize( size );
+    }
+#ifdef _DEBUG
+    else
+    {
+      cerr << "XDRUnmarshaller: tried to read oversized string with size=" <<
+              size << "." << endl;
+    }
+#endif
   }
 }
 

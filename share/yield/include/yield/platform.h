@@ -55,7 +55,6 @@
 
 #ifdef _WIN32
 typedef int ssize_t;
-extern "C" { __declspec( dllimport ) unsigned long __stdcall GetLastError(); }
 #include <string>
 using std::wstring;
 #else
@@ -547,12 +546,14 @@ namespace yield
 
       virtual uint32_t get_error_code() const { return error_code; }
       virtual const char* get_error_message() const throw();
+      static uint32_t get_last_error();
 
       operator const char*() const throw() { return get_error_message(); }
 
       void set_error_code( uint32_t error_code );
       void set_error_message( const char* error_message );
       void set_error_message( const string& error_message );
+      static void set_last_error( uint32_t error_code );
 
       // std::exception
       const char* what() const throw();
@@ -766,29 +767,6 @@ namespace yield
     };
 
 
-    class HeapBuffer : public Buffer
-    {
-    public:
-      HeapBuffer( void* buffer, size_t capacity, size_t size );
-      HeapBuffer( size_t capacity );
-      HeapBuffer( Buffer& buffer );
-      virtual ~HeapBuffer();
-
-      // RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( HeapBuffer, 1 );
-
-      // Buffer
-      size_t capacity() const { return _capacity; }
-      operator void*() const { return buffer; }
-      void resize( size_t n ) { _size = ( n <= _capacity ? n : _capacity ); }
-      size_t size() const { return _size; }
-
-    private:
-      uint8_t* buffer;
-      size_t _capacity, _size;
-    };
-
-
 #ifndef htons
     // htons is a macro on OS X.
     static inline uint16_t htons( uint16_t x )
@@ -888,9 +866,30 @@ namespace yield
 
     class IOCB : public Object
     {
-    protected:
-      IOCB() { }
+    public:
+      enum State 
+      { 
+        STATE_UNKNOWN,
+        STATE_WANT_CONNECT, 
+        STATE_WANT_READ, 
+        STATE_WANT_WRITE, 
+        STATE_COMPLETE, 
+        STATE_ERROR 
+      };
+
+    public:
       virtual ~IOCB() { }
+
+      State get_state() const { return state; }
+      void set_state( State state ) { this->state = state; }
+
+    protected:
+      IOCB() 
+        : state( STATE_UNKNOWN )
+      { }
+
+    private:
+      State state;
     };
 
 
@@ -911,14 +910,15 @@ namespace yield
     {
     public:
       virtual ~BIOCB() { }
-      virtual bool execute() = 0;
+
+      virtual void execute() = 0;
     };
 
 
     class BIOQueue : public IOQueue
     {
     public:
-      static BIOQueue& create();
+      static BIOQueue* create();
       void submit( BIOCB& biocb ); // Takes ownership of biocb
 
       // RTTIObject
@@ -1153,37 +1153,15 @@ namespace yield
     class NBIOCB : public IOCB 
     {
     public:
-      enum State 
-      { 
-        STATE_WANT_CONNECT, 
-        STATE_WANT_READ, 
-        STATE_WANT_WRITE, 
-        STATE_COMPLETE, 
-        STATE_ERROR 
-      };
-
-    public:
       virtual ~NBIOCB() { }
 
-      virtual State execute() = 0;
+      virtual void execute() = 0;
 
 #ifdef _WIN32
       virtual socket_t get_fd() const = 0;
 #else
       virtual int get_fd() const = 0;
 #endif
-
-      State get_state() const { return state; }
-
-    protected:
-      NBIOCB( State state )
-        : state( state )
-      { }
-
-      void set_state( State state ) { this->state = state; }
-
-    private:
-      State state;
     };
 
 
@@ -1192,8 +1170,9 @@ namespace yield
     public:
       ~NBIOQueue();
 
-      static NBIOQueue& create( int16_t thread_count = 1 );
+      static NBIOQueue* create( int16_t thread_count = 1 );
 
+      uint16_t get_thread_count() const;
       void submit( NBIOCB& nbiocb ); // Takes ownership of nbiocb
       
       // RTTIObject
@@ -1776,8 +1755,10 @@ namespace yield
       static string getfqdn();
       static string gethostname();
       SocketAddress* getpeername() const;
+      static SocketAddress* getpeername( socket_t );
       int get_protocol() const { return protocol; }
       SocketAddress* getsockname() const;
+      static SocketAddress* getsockname( socket_t );
       int get_type() const { return type; }
       bool operator==( const Socket& other ) const;
       inline operator socket_t() const { return socket_; }
@@ -1815,7 +1796,6 @@ namespace yield
 
       BIOQueue* get_bio_queue() const; // Tries to cast, can return NULL
       IOQueue* get_io_queue() const { return io_queue; }
-      static uint32_t get_last_error(); // WSAGetLastError / errno
       NBIOQueue* get_nbio_queue() const; // Tries to cast, can return NULL
       static int get_platform_recv_flags( int flags );
       static int get_platform_send_flags( int flags );
@@ -1831,6 +1811,10 @@ namespace yield
       template <class AIOCallbackType>
       class IOCB
       {
+      public:
+        AIOCallbackType& get_callback() const { return callback; }
+        void* get_callback_context() const { return callback_context; }
+
       protected:
         IOCB( AIOCallbackType& callback, void* callback_context )
           : callback( callback.inc_ref() ),
@@ -1842,9 +1826,6 @@ namespace yield
           AIOCallbackType::dec_ref( callback );
         }
 
-        AIOCallbackType& get_callback() const { return callback; }
-        void* get_callback_context() const { return callback_context; }
-
       private:
         AIOCallbackType& callback;
         void* callback_context;
@@ -1853,6 +1834,15 @@ namespace yield
 
       class IORecvCB : public IOCB<AIORecvCallback>
       {
+      public:
+        Buffer& get_buffer() const { return buffer; }
+        int get_flags() const { return flags; }
+        Socket& get_socket() const { return socket_; }
+
+        void onRecvCompletion();
+        void onRecvError();
+        void onRecvError( uint32_t error_code );
+
       protected:
         IORecvCB
         ( 
@@ -1866,13 +1856,6 @@ namespace yield
         virtual ~IORecvCB();
 
         bool execute( bool blocking_mode );
-        Buffer& get_buffer() const { return buffer; }
-        int get_flags() const { return flags; }
-        Socket& get_socket() const { return socket_; }
-
-        void onRecvCompletion();
-        void onRecvError();
-        void onRecvError( uint32_t error_code );
 
       private:
         Buffer& buffer;
@@ -1883,6 +1866,15 @@ namespace yield
 
       class IOSendCB : public IOCB<AIOSendCallback>
       {
+      public:
+        const Buffer& get_buffer() const { return buffer; }
+        int get_flags() const { return flags; }
+        Socket& get_socket() const { return socket_; }
+
+        void onSendCompletion();
+        void onSendError();
+        void onSendError( uint32_t error_code );
+
       protected:
         IOSendCB
         ( 
@@ -1897,14 +1889,6 @@ namespace yield
 
         bool execute( bool blocking_mode );
 
-        const Buffer& get_buffer() const { return buffer; }
-        int get_flags() const { return flags; }
-        Socket& get_socket() const { return socket_; }
-
-        void onSendCompletion();
-        void onSendError();
-        void onSendError( uint32_t error_code );
-
       private:
         Buffer& buffer;
         int flags;
@@ -1915,6 +1899,16 @@ namespace yield
 
       class IOSendMsgCB : public IOCB<AIOSendCallback>
       {
+      public:
+        Buffers& get_buffers() const { return buffers; }
+        size_t get_buffers_len() const { return buffers_len; }
+        int get_flags() const { return flags; }
+        Socket& get_socket() const { return socket_; }
+
+        void onSendMsgCompletion();
+        void onSendMsgError();
+        void onSendMsgError( uint32_t error_code );
+
       protected:
         IOSendMsgCB
         ( 
@@ -1928,15 +1922,6 @@ namespace yield
         virtual ~IOSendMsgCB();
 
         bool execute( bool blocking_mode );
-
-        Buffers& get_buffers() const { return buffers; }
-        size_t get_buffers_len() const { return buffers_len; }
-        int get_flags() const { return flags; }
-        Socket& get_socket() const { return socket_; }
-
-        void onSendMsgCompletion();
-        void onSendMsgError();
-        void onSendMsgError( uint32_t error_code );
 
       private:
         Buffers& buffers;
@@ -2009,12 +1994,9 @@ namespace yield
       ) const;
 
       uint16_t get_port() const;
+      operator string() const;
       bool operator==( const SocketAddress& ) const;
-
-      bool operator!=( const SocketAddress& other ) const
-      {
-        return !operator==( other );
-      }
+      bool operator!=( const SocketAddress& other ) const;
 
       // Object
       SocketAddress& inc_ref() { return Object::inc_ref( *this ); }
@@ -2163,7 +2145,7 @@ namespace yield
       static int TYPE; // SOCK_STREAM
 
     public:
-      StreamSocket* accept();
+      virtual StreamSocket* accept();
 
       class AIOAcceptCallback : public virtual Object
       {
@@ -2314,14 +2296,14 @@ namespace yield
     {
     public:
       StringBuffer() { }
-      StringBuffer( size_t capacity ) { reserve( capacity ); }
-      StringBuffer( const string& buf ) : string( buf ) { }
-      StringBuffer( const char* buf ) : string( buf ) { }
-      StringBuffer( const char* buf, size_t len ) : string( buf, len ) { }
+      StringBuffer( size_t capacity );
+      StringBuffer( const string& buf );
+      StringBuffer( const char* buf );
+      StringBuffer( const char* buf, size_t len );
       StringBuffer( Buffer& buf );
 
       // Buffer
-      operator void*() const { return const_cast<char*>( c_str() ); }
+      operator void*() const { return const_cast<char*>( data() ); }
 
       // RTTIObject
       YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( StringBuffer, 3 );
@@ -2332,7 +2314,7 @@ namespace yield
       size_t get( void* buf, size_t len );
       size_t put( char buf, size_t repeat_count );
       size_t put( const void* buf, size_t len );
-      void resize( size_t n ) { string::resize( n ); }
+      void resize( size_t n );
       size_t size() const { return string::size(); }
     };
 
@@ -2578,6 +2560,9 @@ namespace yield
     protected:
       SSLSocket( int domain, socket_t, SSL*, SSLContext& );
 
+      SSLContext& get_ssl_context() const { return ssl_context; }
+      
+    private:
       // StreamSocket
       virtual StreamSocket* dup2( socket_t );
 
@@ -2751,7 +2736,7 @@ namespace yield
       ( 
         Buffer& buffer,
         struct sockaddr_storage& peername 
-      ) const
+      )
       {
         return recvfrom( buffer, 0, peername );
       }
@@ -2761,7 +2746,7 @@ namespace yield
         Buffer& buffer,
         int flags,
         struct sockaddr_storage& peername
-      ) const;
+      );
 
       ssize_t
       recvfrom
@@ -2769,20 +2754,19 @@ namespace yield
         void* buf,
         size_t buflen,
         struct sockaddr_storage& peername
-      ) const
+      )
       {
         return recvfrom( buf, buflen, 0, peername );
       }
 
-      // The real recvfrom method
-      ssize_t
+      virtual ssize_t
       recvfrom
       (
         void* buf,
         size_t buflen,
         int flags,
         struct sockaddr_storage& peername
-      ) const;
+      );
 
       ssize_t
       sendmsg
@@ -2790,27 +2774,27 @@ namespace yield
         Buffers& buffers,
         const SocketAddress& peername,
         int flags = 0
-      ) const
+      )
       {
         return sendmsg( buffers, buffers.size(), peername, flags );
       }
 
       // sendmsg analog to sendto
-      ssize_t
+      virtual ssize_t
       sendmsg
       (
         const struct iovec* iov,
         uint32_t iovlen,
         const SocketAddress& peername,
         int flags = 0
-      ) const;
+      );
 
       ssize_t 
       sendto
       ( 
         const Buffer& buffer, 
         const SocketAddress& peername 
-      ) const
+      )
       {
         return sendto( buffer, 0, peername );
       }
@@ -2821,7 +2805,7 @@ namespace yield
         const Buffer& buffer,
         int flags,
         const SocketAddress& peername
-      ) const
+      )
       {
         return sendto( buffer, buffer.size(), flags, peername );
       }
@@ -2831,24 +2815,24 @@ namespace yield
         const void* buf,
         size_t buflen,
         const SocketAddress& peername
-      ) const
+      )
       {
         return sendto( buf, buflen, 0, peername );
       }
 
-      ssize_t
+      virtual ssize_t
       sendto
       (
         const void* buf,
         size_t buflen,
         int flags,
         const SocketAddress& peername
-      ) const;
+      );
 
       // Object
       UDPSocket& inc_ref() { return Object::inc_ref( *this ); }
 
-    private:
+    protected:
       UDPSocket( int domain, socket_t );
 
     private:
@@ -3244,10 +3228,12 @@ namespace yield
     public:
       ~Win32AIOQueue();
 
-      static Win32AIOQueue& create( int16_t thread_count = 1 );
-
       bool associate( socket_t socket_ );
       bool associate( void* handle );
+
+      static Win32AIOQueue* create( int16_t thread_count = 1 );
+
+      uint16_t get_thread_count() const;
 
       bool 
       post // PostQueuedCompletionStatus

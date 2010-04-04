@@ -95,12 +95,12 @@ namespace yield
 
       Buffer& get_read_buffer() const
       {
-        return *new HeapBuffer( 1024 );
+        return *new StringBuffer( 1024 );
       }
 
       Buffer& get_write_buffer() const
       {
-        Buffer* buffer = new HeapBuffer( 1024 );
+        Buffer* buffer = new StringBuffer( 1024 );
         buffer->resize( 512 );
         return *buffer;
       }

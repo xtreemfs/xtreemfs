@@ -72,21 +72,25 @@ using yield::platform::TimerQueue;
 class File::Buffer : public yidl::runtime::Buffer
 {
 public:
-  Buffer( void* buf, size_t len )
-    : buf( buf ), len( len )
+  Buffer( void* buffer, size_t capacity, size_t size )
+    : buffer( buffer ), _capacity( capacity ), _size( size )
   { }
+
+  ~Buffer() { }
 
   // yidl::runtime::RTTIObject
   YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( File::Buffer, 0 );
 
   // yidl::runtime::Buffer
-  size_t capacity() const { return len; }
-  operator void*() const { return buf; }
-  void resize( size_t n ) { len = n; }
-  size_t size() const { return len; }
+  size_t capacity() const { return _capacity; }
+  operator void*() const { return buffer; }
+  void resize( size_t n ) { _size = ( n <= _capacity ? n : _capacity ); }
+  size_t size() const { return _size; }
 
 private:
-  void* buf; size_t len;
+  void* buffer;
+  size_t _capacity;
+  size_t _size;
 };
 
 
@@ -296,7 +300,9 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     uint32_t stripe_size = xlocs.get_replicas()[0].get_striping_policy().
                              get_stripe_size() * 1024;
 
-    ResponseQueue<OSDInterfaceMessages::readResponse> read_response_queue;
+    auto_Object< ResponseQueue<OSDInterfaceMessages::readResponse> >
+      read_response_queue 
+        = new ResponseQueue<OSDInterfaceMessages::readResponse>;
     size_t expected_read_response_count = 0;
 
     while ( rbuf_p < rbuf_end )
@@ -340,13 +346,14 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
           0,
           object_offset,
           static_cast<uint32_t>( object_size ),
-          ObjectData( 0, 0, 0, new Buffer( rbuf_p, object_size ) )
+          ObjectData( 0, 0, 0, new Buffer( rbuf_p, object_size, 0 ) )
         );
-      read_request->set_response_handler( read_response_queue );
+
+      read_request->set_response_handler( *read_response_queue );
 
       osd_proxy->handle( *read_request );
-      expected_read_response_count++;
 
+      expected_read_response_count++;
       rbuf_p += object_size;
       current_file_offset += object_size;
     }
@@ -367,7 +374,8 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       read_response_i++
     )
     {
-      OSDInterfaceMessages::readResponse& read_response = read_response_queue.dequeue();
+      OSDInterfaceMessages::readResponse& read_response 
+        = read_response_queue->dequeue();
       // Object::dec_ref( read_response );
       read_responses.push_back( &read_response );
 
@@ -550,8 +558,10 @@ bool File::truncate( uint64_t new_size )
       new_size 
     );
 
-  ResponseQueue<OSDInterfaceMessages::truncateResponse> truncate_response_queue;
-  truncate_request.set_response_handler( &truncate_response_queue );
+  auto_Object< ResponseQueue<OSDInterfaceMessages::truncateResponse> >
+    truncate_response_queue 
+      = new ResponseQueue<OSDInterfaceMessages::truncateResponse>;
+  truncate_request.set_response_handler( *truncate_response_queue );
 
   for
   (
@@ -578,7 +588,7 @@ bool File::truncate( uint64_t new_size )
   )
   {
     OSDInterfaceMessages::truncateResponse& truncate_response 
-      = truncate_response_queue.dequeue();
+      = truncate_response_queue->dequeue();
 
     if 
     ( 
@@ -658,14 +668,16 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
     uint32_t stripe_size = xlocs.get_replicas()[0].get_striping_policy().
                              get_stripe_size() * 1024;
 
+    auto_Object< ResponseQueue<OSDInterfaceMessages::writeResponse> >
+      write_response_queue 
+        = new ResponseQueue<OSDInterfaceMessages::writeResponse>;
     size_t expected_write_response_count = 0;
-    ResponseQueue<OSDInterfaceMessages::writeResponse> write_response_queue;
 
     while ( wbuf_p < wbuf_end )
     {
       uint64_t object_number = current_file_offset / stripe_size;
       uint32_t object_offset = current_file_offset % stripe_size;
-      uint64_t object_size = static_cast<size_t>( wbuf_end - wbuf_p );
+      size_t object_size = static_cast<size_t>( wbuf_end - wbuf_p );
       if ( object_offset + object_size > stripe_size )
         object_size = stripe_size - object_offset;
 
@@ -682,11 +694,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
         0,
         false,
         0,
-        new Buffer
-            ( 
-              const_cast<char*>( wbuf_p ),
-              static_cast<uint32_t>( object_size ) 
-            )
+        new Buffer( const_cast<char*>( wbuf_p ), object_size, object_size )
       );
 
       OSDInterfaceMessages::writeRequest* write_request =
@@ -701,7 +709,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
           object_data
         );
 
-      write_request->set_response_handler( &write_response_queue );
+      write_request->set_response_handler( *write_response_queue );
 
 #ifdef _DEBUG
       if ( parent_volume.get_trace_log() != NULL )
@@ -719,8 +727,8 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 #endif
 
       osd_proxy->handle( *write_request );
-      expected_write_response_count++;
 
+      expected_write_response_count++;
       wbuf_p += object_size;
       current_file_offset += object_size;
     }
@@ -735,8 +743,8 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
       write_response_i++
     )
     {
-      OSDInterfaceMessages::writeResponse& write_response =
-        write_response_queue.dequeue();
+      OSDInterfaceMessages::writeResponse& write_response
+        = write_response_queue->dequeue();
 
 #ifdef _DEBUG
       if ( parent_volume.get_trace_log() != NULL )

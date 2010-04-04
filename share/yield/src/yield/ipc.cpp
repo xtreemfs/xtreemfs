@@ -1,4 +1,4 @@
-// Revision: 2166
+// Revision: 2172
 
 #include "yield/concurrency.h"
 #include "yield/ipc.h"
@@ -8815,11 +8815,6 @@ using yield::platform::File;
 using yield::platform::Stat;
 using yield::platform::Volume;
 
-#ifdef _WIN32
-#include <WinError.h>
-#define ESHUTDOWN WSAESHUTDOWN
-#endif
-
 
 HTTPClient::HTTPClient
 (
@@ -8857,39 +8852,16 @@ HTTPClient::create
 
   SocketAddress& peername = createSocketAddress( absolute_uri_with_port );
 
-#ifdef _WIN32
-  IOQueue& io_queue = yield::platform::Win32AIOQueue::create();
-#else
-  IOQueue& io_queue = yield::platform::NBIOQueue::create();
-#endif
+  TCPSocket& tcp_socket = createTCPSocket( trace_log );
 
-  TCPSocket* tcp_socket;
-  if ( trace_log != NULL )
-    tcp_socket = TracingTCPSocket::create( *trace_log );
-  else
-    tcp_socket = TCPSocket::create();
-
-  if ( tcp_socket != NULL && tcp_socket->associate( io_queue ) )
-  {
-    IOQueue::dec_ref( io_queue );
-
-    return *new HTTPClient
-                (
-                  peername,
-                  *tcp_socket,
-                  configuration,
-                  error_log,
-                  trace_log
-                );
-  }
-  else
-  {
-    TCPSocket::dec_ref( tcp_socket );
-    IOQueue::dec_ref( io_queue );
-    SocketAddress::dec_ref( peername );
-  }
-
-  throw Exception();
+  return *new HTTPClient
+              (
+                peername,
+                tcp_socket,
+                configuration,
+                error_log,
+                trace_log
+              );
 }
 
 HTTPResponse& HTTPClient::GET( const URI& absolute_uri )
@@ -8962,7 +8934,7 @@ HTTPClient::PUT
     {
       size_t file_size = static_cast<size_t>( stbuf->get_size() );
       Stat::dec_ref( *stbuf );
-      Buffer* body = new HeapBuffer( file_size );
+      Buffer* body = new StringBuffer( file_size );
       file->read( *body );
       File::dec_ref( *file );
       return PUT( absolute_uri, *body );
@@ -8984,11 +8956,6 @@ HTTPClient::Connection::Connection
     connection_queue( http_client.connection_queue )
 { }
 
-HTTPClient::Connection::~Connection()
-{
-  close();
-}
-
 void HTTPClient::Connection::handle( HTTPRequest& http_request )
 {
   aio_sendmsg( http_request.marshal(), 0, &http_request );
@@ -8998,44 +8965,78 @@ void HTTPClient::Connection::onError( uint32_t error_code, void* context )
 {
   TCPSocketClient::Connection::onError( error_code, context );
 
-  if ( context != NULL )
+  if ( get_remaining_connect_tries() > 0 )
   {
-    HTTPRequest* http_request = static_cast<HTTPRequest*>( context );
-    http_request_queue.enqueue_unwritten( *http_request );
-  }
+    if ( !live_http_requests.empty() )
+    {
+      Buffers* pipelined_http_request_buffers = NULL;
+      queue<HTTPRequest*> temp_live_http_requests;
 
-  if ( error_code != ESHUTDOWN && get_remaining_connect_tries() > 0 )
-  {
-    HTTPRequest* http_request = http_request_queue.dequeue_unwritten();
-    if ( http_request != NULL )
-      handle( *http_request );
+      do
+      {
+        HTTPRequest* http_request = live_http_requests.front();
+        live_http_requests.pop();
+
+        if ( pipelined_http_request_buffers == NULL )
+          pipelined_http_request_buffers = &http_request->marshal();
+        else
+        {
+          Buffers& http_request_buffers = http_request->marshal();
+          pipelined_http_request_buffers->extend( http_request_buffers );
+          Buffers::dec_ref( http_request_buffers );
+        }
+
+        temp_live_http_requests.push( http_request );
+      } while ( !live_http_requests.empty() );
+
+      live_http_requests = temp_live_http_requests;
+
+      aio_sendmsg( *pipelined_http_request_buffers );
+    }
   }
   else
   {
-    http_request_queue.drain( error_code );
+    if ( !live_http_requests.empty() )
+    {
+      Exception* exception = new Exception( error_code );
+
+      do
+      {
+        HTTPRequest* http_request = live_http_requests.front();
+        live_http_requests.pop();
+        http_request->respond( exception->inc_ref() );
+      } while ( !live_http_requests.empty() );
+
+      Exception::dec_ref( *exception );
+    }
+
+    reset_connect_tries();
+
     connection_queue.enqueue( *this );
   }
 }
 
 void HTTPClient::Connection::onReadCompletion( Buffer& buffer, void* context )
 {
-  RTTIObject* object = HTTPResponseParser::parse( buffer );
-  while ( object != NULL )
+  RTTIObject* object;
+  while ( ( object = HTTPResponseParser::parse( buffer ) ) != NULL )
   {
     if ( object->get_type_id() == HTTPResponse::TYPE_ID )
     {
       HTTPResponse* http_response = static_cast<HTTPResponse*>( object );
-      HTTPRequest& http_request = http_request_queue.dequeue_written();
-      http_request.respond( *http_response );
-      HTTPRequest::dec_ref( http_request );
+#ifdef _DEBUG
+      if ( live_http_requests.empty() ) DebugBreak();
+#endif
+      HTTPRequest* http_request = live_http_requests.front();
+      live_http_requests.pop();
+      http_request->respond( *http_response );
+      HTTPRequest::dec_ref( *http_request );
     }
     else
     {
-      aio_recv( *static_cast<Buffer*>( object ), 0, NULL );
+      aio_recv( *static_cast<Buffer*>( object ) );
       return;
     }
-
-    object = HTTPResponseParser::parse( buffer );
   }
 
   onReadError( 0, NULL );
@@ -9048,13 +9049,16 @@ HTTPClient::Connection::onWriteCompletion
   void* context
 )
 {
-  http_request_queue.enqueue_written( *static_cast<HTTPRequest*>( context ) );
+  if ( context != NULL )
+    live_http_requests.push( static_cast<HTTPRequest*>( context ) );
+  connection_queue.enqueue( *this );
+}
 
-  HTTPRequest* http_request = http_request_queue.dequeue_unwritten();
-  if ( http_request != NULL )
-    aio_sendmsg( http_request->marshal(), 0, http_request );
-  else
-    connection_queue.enqueue( *this );
+void HTTPClient::Connection::onWriteError( uint32_t error_code, void* context )
+{
+  if ( context != NULL )
+    live_http_requests.push( static_cast<HTTPRequest*>( context ) );
+  TCPSocketClient::Connection::onWriteError( error_code, context );
 }
 
 
@@ -9448,11 +9452,26 @@ HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::parse_body
 )
 {
 #ifdef _DEBUG
-  if ( body->size() == body->capacity() ) DebugBreak();
   if ( header == NULL || field_offsets.empty() ) DebugBreak();
 #endif
 
-  if ( chunked_body )
+  if ( content_length < SIZE_MAX ) // Normal body
+  {
+#ifdef _WIN32
+    if ( &buffer != body ) DebugBreak();
+    if ( body->size() >= content_length ) DebugBreak();
+#endif
+
+    if ( body->size() == content_length )
+    {
+      HTTPMessageType* http_message = createHTTPMessage( body );
+      reset();
+      return http_message;
+    }
+    else
+      return &body->inc_ref();
+  }
+  else // Chunked body
   {
     body->put( buffer );
 
@@ -9948,21 +9967,6 @@ _again:
     else // The chunk wasn't completely parsed
       return new StackBuffer<1024>;
   }
-  else // !chunked_body
-  {
-#ifdef _WIN32
-    if ( &buffer != body ) DebugBreak();
-#endif
-
-    if ( body->size() == body->capacity() )
-    {
-      HTTPMessageType* http_message = createHTTPMessage( body );
-      reset();
-      return http_message;
-    }
-    else
-      return &body->inc_ref();
-  }
 }
 
 template <class HTTPMessageParserType, class HTTPMessageType>
@@ -10011,7 +10015,7 @@ HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::parse_header
   // set to the header buffer. This is a "new" reference that must be
   // dec_ref'd.
 
-  size_t content_length = get_content_length();
+  content_length = get_content_length();
 
   if ( content_length == 0 ) // No body, done reading this message
   {
@@ -10047,7 +10051,7 @@ HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::parse_header
     {
       // header stays set
       body = new StringBuffer;
-      chunked_body = true;
+      content_length = SIZE_MAX;
 
       if ( header->position() == header->size() ) // header was consumed
         return new StackBuffer<1024>;
@@ -10071,10 +10075,8 @@ HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::parse_header
     else
       return NULL;
   }
-  else // Have a body
+  else // content_length > 0, have a body
   {
-    chunked_body = false;
-
     if ( header->position() < header->size() )
     {
       // At least some of the body is in header
@@ -10118,7 +10120,7 @@ HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::parse_header
       else
       {
         // Only part of the body is in header
-        body = new HeapBuffer( content_length );
+        body = new StringBuffer( content_length );
         body->put( *header ); // Copies from position()
         // header and field_offsets stay set
         return &body->inc_ref();
@@ -10126,7 +10128,7 @@ HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::parse_header
     }
     else // None of the body is in header
     {
-      body = new HeapBuffer( content_length );
+      body = new StringBuffer( content_length );
       // header and field_offsets stay set
       return &body->inc_ref();
     }
@@ -10769,6 +10771,7 @@ template <class HTTPMessageParserType, class HTTPMessageType>
 void HTTPMessageParser<HTTPMessageParserType, HTTPMessageType>::reset()
 {
   body = NULL;
+  content_length = 0;
   field_offsets.clear();
   Buffer::dec_ref( *header );
   header = NULL;
@@ -11624,7 +11627,7 @@ public:
       else
       {
         Buffer* next_buffer = static_cast<Buffer*>( object );
-        get_stream_socket().aio_recv( *next_buffer, 0, *this, NULL );
+        aio_recv( *next_buffer );
         return;
       }
 
@@ -11640,31 +11643,12 @@ public:
     if ( response.get_type_id() == HTTPResponse::TYPE_ID )
     {
       HTTPResponse& http_response = static_cast<HTTPResponse&>( response );
-      get_stream_socket().aio_sendmsg
-      (
-        http_response.marshal(),
-        0,
-        *this,
-        &http_response
-      );
+      Buffers& buffers = http_response.marshal();
+      HTTPResponse::dec_ref( http_response );
+      aio_sendmsg( buffers );
     }
     else
       DebugBreak();
-  }
-
-private:
-  // TCPSocket::AIOSendCallback
-  virtual void onWriteCompletion( size_t bytes_written, void* context )
-  {
-    HTTPResponse* http_response = static_cast<HTTPResponse*>( context );
-    HTTPResponse::dec_ref( *http_response );
-  }
-
-  virtual void onWriteError( uint32_t error_code, void* context )
-  {
-    HTTPResponse* http_response = static_cast<HTTPResponse*>( context );
-    HTTPResponse::dec_ref( *http_response );
-    TCPSocketServer::Connection::onWriteError( error_code, context );
   }
 
 private:
@@ -11909,6 +11893,52 @@ HTTPServer::AccessLog::open
       throw Exception();
   }
 }
+
+
+// https_client.cpp
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+
+HTTPSClient::HTTPSClient
+(
+  SocketAddress& peername,
+  SSLSocket& ssl_socket,
+  Configuration* configuration,
+  Log* error_log,
+  Log* trace_log
+)
+  : HTTPClient( peername, ssl_socket, configuration, error_log, trace_log )
+{ }
+
+HTTPSClient&
+HTTPSClient::create
+(
+  const URI& absolute_uri,
+  Configuration* configuration,
+  Log* error_log,
+  Log* trace_log,
+  SSLContext* ssl_context
+)
+{
+  URI absolute_uri_with_port( absolute_uri );
+  if ( absolute_uri_with_port.get_port() == 0 )
+    absolute_uri_with_port.set_port( 443 );
+
+  SocketAddress& peername = createSocketAddress( absolute_uri_with_port );
+
+  SSLSocket& ssl_socket
+    = SSLSocketClient::createSSLSocket( ssl_context, trace_log );
+
+  return *new HTTPSClient
+              (
+                peername,
+                ssl_socket,
+                configuration,
+                error_log,
+                trace_log
+              );
+}
+
+#endif
 
 
 // https_server.cpp
@@ -12547,41 +12577,18 @@ JSONRPCClient::create
 )
 {
   SocketAddress& peername = createSocketAddress( absolute_uri );
+  TCPSocket& tcp_socket = createTCPSocket( trace_log );
 
-//#ifdef _WIN32
-//  IOQueue& io_queue = yield::platform::Win32AIOQueue::create();
-//#else
-  IOQueue& io_queue = yield::platform::NBIOQueue::create();
-//#endif
-
-  TCPSocket* tcp_socket;
-  if ( trace_log!= NULL )
-    tcp_socket = TracingTCPSocket::create( *trace_log );
-  else
-    tcp_socket = TCPSocket::create();
-
-  if ( tcp_socket != NULL && tcp_socket->associate( io_queue ) )
-  {
-    IOQueue::dec_ref( io_queue );
-
-    return *new JSONRPCClient
-                (
-                  message_factory,
-                  peername,
-                  absolute_uri,
-                  *tcp_socket,
-                  configuration,
-                  error_log,
-                  trace_log
-                );
-  }
-  else
-  {
-    IOQueue::dec_ref( io_queue );
-    TCPSocket::dec_ref( tcp_socket );
-    SocketAddress::dec_ref( peername );
-    throw Exception();
-  }
+  return *new JSONRPCClient
+              (
+                message_factory,
+                peername,
+                absolute_uri,
+                tcp_socket,
+                configuration,
+                error_log,
+                trace_log
+              );
 }
 
 void JSONRPCClient::handle( Request& request )
@@ -12627,11 +12634,6 @@ JSONRPCClient::Connection::Connection
     connection_queue( json_rpc_client.connection_queue )
 { }
 
-JSONRPCClient::Connection::~Connection()
-{
-  close();
-}
-
 void JSONRPCClient::Connection::handle( JSONRPCRequest& json_rpc_request )
 {
   aio_sendmsg( json_rpc_request.marshal(), 0, &json_rpc_request );
@@ -12641,22 +12643,53 @@ void JSONRPCClient::Connection::onError( uint32_t error_code, void* context )
 {
   TCPSocketClient::Connection::onError( error_code, context );
 
-  if ( context != NULL )
-  {
-    JSONRPCRequest* json_rpc_request = static_cast<JSONRPCRequest*>( context );
-    json_rpc_request_queue.enqueue_unwritten( *json_rpc_request );
-  }
-
   if ( error_code != ESHUTDOWN && get_remaining_connect_tries() > 0 )
   {
-    JSONRPCRequest* json_rpc_request
-      = json_rpc_request_queue.dequeue_unwritten();
-    if ( json_rpc_request != NULL )
-      handle( *json_rpc_request );
+    if ( !live_json_rpc_requests.empty() )
+    {
+      Buffers* pipelined_json_rpc_request_buffers = NULL;
+      queue<JSONRPCRequest*> temp_live_json_rpc_requests;
+
+      do
+      {
+        JSONRPCRequest* json_rpc_request = live_json_rpc_requests.front();
+        live_json_rpc_requests.pop();
+
+        if ( pipelined_json_rpc_request_buffers == NULL )
+          pipelined_json_rpc_request_buffers = &json_rpc_request->marshal();
+        else
+        {
+          Buffers& json_rpc_request_buffers = json_rpc_request->marshal();
+          pipelined_json_rpc_request_buffers->extend( json_rpc_request_buffers );
+          Buffers::dec_ref( json_rpc_request_buffers );
+        }
+
+        temp_live_json_rpc_requests.push( json_rpc_request );
+      } while ( !live_json_rpc_requests.empty() );
+
+      live_json_rpc_requests = temp_live_json_rpc_requests;
+
+      aio_sendmsg( *pipelined_json_rpc_request_buffers );
+    }
   }
   else
   {
-    json_rpc_request_queue.drain( error_code );
+    if ( !live_json_rpc_requests.empty() )
+    {
+      Exception* exception = new Exception( error_code );
+
+      do
+      {
+        JSONRPCRequest* json_rpc_request = live_json_rpc_requests.front();
+        live_json_rpc_requests.pop();
+        json_rpc_request->respond( exception->inc_ref() );
+      } while ( !live_json_rpc_requests.empty() );
+
+      Exception::dec_ref( *exception );
+    }
+
+    reset_connect_tries();
+
     connection_queue.enqueue( *this );
   }
 }
@@ -12668,34 +12701,33 @@ JSONRPCClient::Connection::onReadCompletion
   void* context
 )
 {
-  RTTIObject* object = HTTPResponseParser::parse( buffer );
-  while ( object != NULL )
+  RTTIObject* object;
+  while ( ( object = HTTPResponseParser::parse( buffer ) ) != NULL )
   {
     if ( object->get_type_id() == HTTPResponse::TYPE_ID )
     {
       HTTPResponse* http_response = static_cast<HTTPResponse*>( object );
-
-      JSONRPCRequest& json_rpc_request
-        = json_rpc_request_queue.dequeue_written();
+#ifdef _DEBUG
+      if ( live_json_rpc_requests.empty() ) DebugBreak();
+#endif
+      JSONRPCRequest* json_rpc_request = live_json_rpc_requests.front();
+      live_json_rpc_requests.pop();
 
       JSONRPCResponse* json_rpc_response
-        = JSONRPCResponseParser::parse( *http_response );
+        = JSONRPCResponseParser::parse( *http_response, *json_rpc_request );
 
       if ( json_rpc_response != NULL )
-        json_rpc_request.respond( *json_rpc_response );
+        json_rpc_request->respond( *json_rpc_response );
       else
         HTTPResponse::dec_ref( *http_response);
 
-      JSONRPCRequest::dec_ref( json_rpc_request );
+      JSONRPCRequest::dec_ref( *json_rpc_request );
     }
     else
     {
-      Buffer* next_buffer = static_cast<Buffer*>( object );
-      get_stream_socket().aio_recv( *next_buffer, 0, *this, NULL );
+      aio_recv( *static_cast<Buffer*>( object ) );
       return;
     }
-
-    object = HTTPResponseParser::parse( buffer );
   }
 
   onReadError( 0, NULL );
@@ -12708,14 +12740,23 @@ JSONRPCClient::Connection::onWriteCompletion
   void* context
 )
 {
-  JSONRPCRequest* json_rpc_request = static_cast<JSONRPCRequest*>( context );
-  json_rpc_request_queue.enqueue_written( *json_rpc_request );
+  if ( context != NULL )
+    live_json_rpc_requests.push( static_cast<JSONRPCRequest*>( context ) );
 
-  json_rpc_request = json_rpc_request_queue.dequeue_unwritten();
-  if ( json_rpc_request != NULL )
-    aio_sendmsg( json_rpc_request->marshal(), 0, json_rpc_request );
-  else
-    connection_queue.enqueue( *this );
+  connection_queue.enqueue( *this );
+}
+
+void
+JSONRPCClient::Connection::onWriteError
+(
+  uint32_t error_code,
+  void* context
+)
+{
+  if ( context != NULL )
+    live_json_rpc_requests.push( static_cast<JSONRPCRequest*>( context ) );
+
+  TCPSocketClient::Connection::onWriteError( error_code, context );
 }
 
 
@@ -12794,20 +12835,6 @@ JSONRPCRequest* JSONRPCRequestParser::parse( HTTPRequest& http_request )
     return parse( *http_request.get_body(), http_request.inc_ref() );
   else
     return NULL;
-}
-
-JSONRPCRequest* JSONRPCRequestParser::parse( const string& buffer )
-{
-  StringBuffer* string_buffer = new StringBuffer( buffer );
-  JSONRPCRequest* json_rpc_request
-    = parse( static_cast<Buffer&>( *string_buffer ) );
-  Buffer::dec_ref( *string_buffer );
-  return json_rpc_request;
-}
-
-JSONRPCRequest* JSONRPCRequestParser::parse( Buffer& buffer )
-{
-  return parse( buffer, *new HTTPRequest( "POST", "/JSONRPC" ) );
 }
 
 JSONRPCRequest*
@@ -12917,93 +12944,132 @@ JSONRPCResponseParser::JSONRPCResponseParser( MessageFactory& message_factory )
   : JSONRPCMessageParser( message_factory )
 { }
 
-JSONRPCResponse* JSONRPCResponseParser::parse( HTTPResponse& http_response )
-{
-  if ( http_response.get_body() != NULL )
-    return parse( *http_response.get_body(), http_response.inc_ref() );
-  else
-    return NULL;
-}
-
-JSONRPCResponse* JSONRPCResponseParser::parse( const string& buffer )
-{
-  StringBuffer* string_buffer = new StringBuffer( buffer );
-  JSONRPCResponse* json_rpc_response
-    = parse( static_cast<Buffer&>( *string_buffer ) );
-  Buffer::dec_ref( *string_buffer );
-  return json_rpc_response;
-}
-
-JSONRPCResponse* JSONRPCResponseParser::parse( Buffer& buffer )
-{
-  return parse( buffer, *new HTTPResponse( 200 ) );
-}
-
 JSONRPCResponse*
 JSONRPCResponseParser::parse
 (
-  Buffer& buffer,
-  HTTPResponse& http_response
+  HTTPResponse& http_response,
+  JSONRPCRequest& json_rpc_request
 )
 {
-  JSONValue* json_value = JSONParser().parse( buffer );
-  if
-  (
-    json_value != NULL
-    &&
-    json_value->get_type() == JSONValue::TYPE_OBJECT
-  )
+  if ( http_response.get_body() != NULL )
   {
-    JSONObject* json_object = static_cast<JSONObject*>( json_value );
-
-    JSONValue* error = ( *json_object )["error"];
-    JSONValue* result = ( *json_object )["result"];
-    JSONValue* id = ( *json_object )["id"];
-
-    if ( error != NULL && result != NULL && id != NULL )
+    JSONValue* json_value = JSONParser().parse( *http_response.get_body() );
+    if
+    (
+      json_value != NULL
+      &&
+      json_value->get_type() == JSONValue::TYPE_OBJECT
+    )
     {
-      Response* body;
+      JSONObject* json_object = static_cast<JSONObject*>( json_value );
 
-      if ( error->get_type() != JSONValue::TYPE_NULL )
+      JSONValue* error = ( *json_object )["error"];
+      JSONValue* result = ( *json_object )["result"];
+      JSONValue* id = ( *json_object )["id"];
+
+      if ( error != NULL && result != NULL && id != NULL )
       {
-        if ( error->get_type() == JSONValue::TYPE_STRING )
-          body = new Exception( *static_cast<JSONString*>( error ) );
-        else
-          body = new Exception;
+        Response* body;
 
-        return new JSONRPCResponse( *body, http_response, *id );
-      }
-      else if ( result->get_type() != JSONValue::TYPE_NULL )
-      {
-        if ( id->get_type() == JSONValue::TYPE_NUMBER )
+        if ( error->get_type() != JSONValue::TYPE_NULL )
         {
-          uint32_t response_type_id
-            = static_cast<uint32_t>( static_cast<JSONNumber&>( *id ) );
-          body = get_message_factory().createResponse( response_type_id );
-        }
-        else if ( id->get_type() == JSONValue::TYPE_STRING )
-        {
-          const char* response_type_name = static_cast<JSONString&>( *id );
-          body = get_message_factory().createResponse( response_type_name );
-        }
-        else
-          body = NULL;
+          switch ( error->get_type() )
+          {
+            case JSONValue::TYPE_NUMBER:
+            {
+              double error_code = *static_cast<JSONNumber*>( error ) ;
+              body = new Exception( static_cast<uint32_t>( error_code ) );
+            }
+            break;
 
-        if ( body != NULL )
+            case JSONValue::TYPE_STRING:
+            {
+              const char* error_message = *static_cast<JSONString*>( error );
+              body = new Exception( error_message );
+            }
+            break;
+
+            default: body = new Exception;
+          }
+
+          return new JSONRPCResponse( *body, http_response, *id );
+        }
+        else if ( result->get_type() != JSONValue::TYPE_NULL )
         {
+          body = json_rpc_request.get_body().createDefaultResponse();
+#ifdef _DEBUG
+          if ( body == NULL ) DebugBreak();
+#endif
           JSONUnmarshaller json_unmarshaller( *result );
           body->unmarshal( json_unmarshaller );
           return new JSONRPCResponse( *body, http_response, *id );
         }
       }
     }
+
+    JSONValue::dec_ref( json_value );
   }
 
   HTTPResponse::dec_ref( http_response );
-  JSONValue::dec_ref( json_value );
 
   return NULL;
 }
+
+
+
+// json_rpc_s_client.cpp
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+
+JSONRPCSClient::JSONRPCSClient
+(
+  MessageFactory& message_factory,
+  SocketAddress& peername,
+  const URI& post_uri,
+  SSLSocket& ssl_socket,
+  Configuration* configuration,
+  Log* error_log,
+  Log* trace_log
+)
+  : JSONRPCClient
+    (
+      message_factory,
+      peername,
+      post_uri,
+      ssl_socket,
+      configuration,
+      error_log,
+      trace_log
+    )
+{ }
+
+JSONRPCSClient&
+JSONRPCSClient::create
+(
+  const URI& absolute_uri,
+  MessageFactory& message_factory,
+  Configuration* configuration,
+  Log* error_log,
+  SSLContext* ssl_context,
+  Log* trace_log
+)
+{
+  SocketAddress& peername = createSocketAddress( absolute_uri );
+  SSLSocket& ssl_socket
+    = SSLSocketClient::createSSLSocket( ssl_context, trace_log );
+
+  return *new JSONRPCSClient
+              (
+                message_factory,
+                peername,
+                absolute_uri,
+                ssl_socket,
+                configuration,
+                error_log,
+                trace_log
+              );
+}
+
+#endif
 
 
 // json_rpc_s_server.cpp
@@ -13151,8 +13217,7 @@ public:
       }
       else
       {
-        Buffer* next_buffer = static_cast<Buffer*>( object );
-        get_stream_socket().aio_recv( *next_buffer, 0, *this, NULL );
+        aio_recv( *static_cast<Buffer*>( object ) );
         return;
       }
 
@@ -13170,13 +13235,7 @@ public:
       JSONRPCResponse& json_rpc_response
         = static_cast<JSONRPCResponse&>( response );
 
-      get_stream_socket().aio_sendmsg
-      (
-        json_rpc_response.marshal(),
-        0,
-        *this,
-        &json_rpc_response
-      );
+      aio_sendmsg( json_rpc_response.marshal(), 0, &json_rpc_response );
     }
     else
       DebugBreak();
@@ -13466,17 +13525,107 @@ void ONCRPCMessage::marshal_opaque_auth
 
 
 // onc_rpc_message_parser.cpp
-ONCRPCMessageParser::ONCRPCMessageParser( MessageFactory& message_factory )
-  : message_factory( message_factory.inc_ref() )
+using yield::platform::ntohl;
+
+
+template <class ONCRPCMessageParserType>
+ONCRPCMessageParser<ONCRPCMessageParserType>::ONCRPCMessageParser
+(
+  MessageFactory& message_factory,
+  bool parse_records
+)
+  : message_factory( message_factory.inc_ref() ),
+    parse_records( parse_records )
 { }
 
-ONCRPCMessageParser::~ONCRPCMessageParser()
+template <class ONCRPCMessageParserType>
+ONCRPCMessageParser<ONCRPCMessageParserType>::~ONCRPCMessageParser()
 {
   MessageFactory::dec_ref( message_factory );
 }
 
+template <class ONCRPCMessageParserType>
+RTTIObject*
+ONCRPCMessageParser<ONCRPCMessageParserType>::
+parse
+(
+  Buffer& buffer
+)
+{
+  if ( parse_records )
+  {
+    if ( buffer.size() - buffer.position() >= sizeof( uint32_t ) )
+    {
+      uint32_t record_fragment_marker;
+      buffer.get( &record_fragment_marker, sizeof( record_fragment_marker ) );
+      record_fragment_marker = ntohl( record_fragment_marker );
+
+      bool is_last_record_fragment
+        = ( ( record_fragment_marker ) & ( 1UL << 31UL ) ) == ( 1UL << 31UL );
+      if ( !is_last_record_fragment ) DebugBreak();
+
+      uint32_t record_fragment_length
+        = ( record_fragment_marker ) ^ ( 1 << 31UL );
+
+      if ( buffer.size() - buffer.position() >= record_fragment_length )
+      {
+        size_t buffer_start_position = buffer.position();
+
+        XDRUnmarshaller xdr_unmarshaller( buffer );
+        Message* onc_rpc_message
+          = static_cast<ONCRPCMessageParserType*>( this )
+              ->unmarshalONCRPCMessage( xdr_unmarshaller );
+
+        size_t buffer_consumed = buffer.position() - buffer_start_position;
+
+        if ( buffer_consumed < record_fragment_length )
+        {
+          buffer.position
+          (
+            buffer.position()
+            +
+            record_fragment_length - buffer_consumed
+          );
+        }
+
+        return onc_rpc_message;
+      }
+      else
+      {
+        buffer.rewind( sizeof( record_fragment_marker ) );
+        Buffer* new_buffer
+          = new StringBuffer
+                (
+                  sizeof( record_fragment_marker ) + record_fragment_length
+                );
+        new_buffer->put( buffer );
+        return new_buffer;
+      }
+    }
+    else if ( buffer.size() == 0 && buffer.capacity() > 0 )
+      return &buffer.inc_ref();
+    else
+    {
+      Buffer* new_buffer = new StackBuffer<1024>;
+      if ( buffer.size() - buffer.position() > 0 )
+        new_buffer->put( buffer );
+      return new_buffer;
+    }
+  }
+  else
+  {
+    XDRUnmarshaller xdr_unmarshaller( buffer );
+    Message* onc_rpc_message
+      = static_cast<ONCRPCMessageParserType*>( this )
+          ->unmarshalONCRPCMessage( xdr_unmarshaller );
+    return onc_rpc_message;
+  }
+}
+
+template <class ONCRPCMessageParserType>
 MarshallableObject*
-ONCRPCMessageParser::unmarshal_opaque_auth
+ONCRPCMessageParser<ONCRPCMessageParserType>::
+unmarshal_opaque_auth
 (
   XDRUnmarshaller& xdr_unmarshaller
 )
@@ -13501,8 +13650,14 @@ ONCRPCMessageParser::unmarshal_opaque_auth
   return NULL;
 }
 
+template class ONCRPCMessageParser<ONCRPCRequestParser>;
+template class ONCRPCMessageParser<ONCRPCResponseParser>;
+
 
 // onc_rpc_request.cpp
+using yield::platform::htonl;
+
+
 ONCRPCRequest::ONCRPCRequest
 (
   Request& body,
@@ -13522,11 +13677,26 @@ ONCRPCRequest::ONCRPCRequest
   set_credentials( cred );
 }
 
-Buffers& ONCRPCRequest::marshal() const
+Buffers& ONCRPCRequest::marshal( bool in_record ) const
 {
   XDRMarshaller xdr_marshaller;
   marshal( xdr_marshaller );
-  return xdr_marshaller.get_buffers().inc_ref();
+  Buffers& buffers = xdr_marshaller.get_buffers().inc_ref();
+
+  if ( in_record )
+  {
+    uint32_t record_fragment_length = buffers.join_size();
+    uint32_t record_fragment_marker = record_fragment_length | ( 1 << 31UL );
+    record_fragment_marker = htonl( record_fragment_marker );
+    buffers.insert
+    (
+      0,
+      &record_fragment_marker,
+      sizeof( record_fragment_marker )
+    );
+  }
+
+  return buffers;
 }
 
 void ONCRPCRequest::marshal( Marshaller& marshaller ) const
@@ -13572,14 +13742,24 @@ void ONCRPCRequestHandler::handle( Request& request )
 
 
 // onc_rpc_request_parser.cpp
-ONCRPCRequestParser::ONCRPCRequestParser( MessageFactory& message_factory )
-  : ONCRPCMessageParser( message_factory )
+ONCRPCRequestParser::ONCRPCRequestParser
+(
+  MessageFactory& message_factory,
+  bool parse_records
+) : ONCRPCMessageParser<ONCRPCRequestParser>( message_factory, parse_records )
 { }
 
-Message* ONCRPCRequestParser::parse( Buffer& buffer )
+RTTIObject* ONCRPCRequestParser::parse( Buffer& buffer )
 {
-  XDRUnmarshaller xdr_unmarshaller( buffer );
+  return ONCRPCMessageParser::parse( buffer );
+}
 
+Message*
+ONCRPCRequestParser::unmarshalONCRPCMessage
+(
+  XDRUnmarshaller& xdr_unmarshaller
+)
+{
   uint32_t xid = xdr_unmarshaller.read_uint32();
 
   uint32_t msg_type = xdr_unmarshaller.read_uint32();
@@ -13624,6 +13804,9 @@ Message* ONCRPCRequestParser::parse( Buffer& buffer )
 
 
 // onc_rpc_response.cpp
+using yield::platform::htonl;
+
+
 ONCRPCResponse::ONCRPCResponse
 (
   Response& body,
@@ -13681,11 +13864,26 @@ ONCRPCResponse::ONCRPCResponse( auth_stat auth_stat_, uint32_t xid )
   memset( &mismatch_info_, 0, sizeof( mismatch_info_ ) );
 }
 
-Buffers& ONCRPCResponse::marshal() const
+Buffers& ONCRPCResponse::marshal( bool in_record ) const
 {
   XDRMarshaller xdr_marshaller;
   marshal( xdr_marshaller );
-  return xdr_marshaller.get_buffers().inc_ref();
+  Buffers& buffers = xdr_marshaller.get_buffers().inc_ref();
+
+  if ( in_record )
+  {
+    uint32_t record_fragment_length = buffers.join_size();
+    uint32_t record_fragment_marker = record_fragment_length | ( 1 << 31UL );
+    record_fragment_marker = htonl( record_fragment_marker );
+    buffers.insert
+    (
+      0,
+      &record_fragment_marker,
+      sizeof( record_fragment_marker )
+    );
+  }
+
+  return buffers;
 }
 
 void ONCRPCResponse::marshal( Marshaller& marshaller ) const
@@ -13714,34 +13912,38 @@ void ONCRPCResponse::marshal( Marshaller& marshaller ) const
 
 
 // onc_rpc_response_parser.cpp
-ONCRPCResponseParser::ONCRPCResponseParser( MessageFactory& message_factory )
-  : ONCRPCMessageParser( message_factory )
-{ }
+ONCRPCResponseParser::ONCRPCResponseParser
+(
+  MessageFactory& message_factory,
+  bool parse_records
+) : ONCRPCMessageParser<ONCRPCResponseParser>( message_factory, parse_records )
+{
+  onc_rpc_request = NULL;
+}
 
-ONCRPCResponse*
+RTTIObject*
 ONCRPCResponseParser::parse
 (
   Buffer& buffer,
   ONCRPCRequest& onc_rpc_request
 )
 {
-  return parse
-         (
-           buffer,
-           onc_rpc_request.get_body().get_type_id(),
-           onc_rpc_request.get_xid()
-         );
+  this->onc_rpc_request = &onc_rpc_request;
+  RTTIObject* ret = ONCRPCMessageParser<ONCRPCResponseParser>::parse( buffer );
+  this->onc_rpc_request = NULL;
+  return ret;
 }
 
 ONCRPCResponse*
-ONCRPCResponseParser::parse
+ONCRPCResponseParser::unmarshalONCRPCMessage
 (
-  Buffer& buffer,
-  uint32_t default_body_type_id,
-  uint32_t xid
+  XDRUnmarshaller& xdr_unmarshaller
 )
 {
-  XDRUnmarshaller xdr_unmarshaller( buffer );
+  uint32_t xid = xdr_unmarshaller.read_uint32();
+#ifdef _DEBUG
+  if ( xid != onc_rpc_request->get_xid() ) DebugBreak();
+#endif
 
   uint32_t msg_type = xdr_unmarshaller.read_uint32();
   if ( msg_type == ONCRPCMessage::REPLY )
@@ -13756,23 +13958,17 @@ ONCRPCResponseParser::parse
       {
         case ONCRPCResponse::SUCCESS:
         {
-          Response* body
-            = get_message_factory().createResponse( default_body_type_id );
-
-          if ( body != NULL )
-          {
-            xdr_unmarshaller.read( *body );
-            return new ONCRPCResponse( *body, xid, verf );
-          }
-          else
-          {
-            return new ONCRPCResponse
-                       (
-                         *new ONCRPCProcedureUnavailableError,
-                         xid,
-                         verf
-                       );
-          }
+          Response* body = onc_rpc_request->get_body().createDefaultResponse();
+#ifdef _DEBUG
+          if ( body == NULL ) DebugBreak();
+#endif
+          xdr_unmarshaller.read( *body );
+          return new ONCRPCResponse
+                     (
+                       *body,
+                       xid,
+                       Object::inc_ref( onc_rpc_request->get_verf() )
+                     );
         }
         break;
 
@@ -13913,41 +14109,30 @@ ONCRPCSSLSocketClient::create
 (
   const URI& absolute_uri,
   MessageFactory& message_factory,
-  SSLContext& ssl_context,
   uint32_t prog,
   uint32_t vers,
   Configuration* configuration,
   Log* error_log,
+  SSLContext* ssl_context,
   Log* trace_log
 )
 {
   SocketAddress& peername = createSocketAddress( absolute_uri );
-  IOQueue& io_queue = yield::platform::NBIOQueue::create();
-  SSLSocket* ssl_socket = SSLSocket::create( ssl_context );
 
-  if ( ssl_socket != NULL && ssl_socket->associate( io_queue ) )
-  {
-    IOQueue::dec_ref( io_queue );
+  SSLSocket& ssl_socket
+    = SSLSocketClient::createSSLSocket( ssl_context, trace_log );
 
-    return *new ONCRPCSSLSocketClient
-                (
-                  message_factory,
-                  peername,
-                  prog,
-                  *ssl_socket,
-                  vers,
-                  configuration,
-                  error_log,
-                  trace_log
-                );
-  }
-  else
-  {
-    SSLSocket::dec_ref( ssl_socket );
-    IOQueue::dec_ref( io_queue );
-    SocketAddress::dec_ref( peername );
-    throw Exception();
-  }
+  return *new ONCRPCSSLSocketClient
+              (
+                message_factory,
+                peername,
+                prog,
+                ssl_socket,
+                vers,
+                configuration,
+                error_log,
+                trace_log
+              );
 }
 
 #endif
@@ -14003,13 +14188,7 @@ ONCRPCSSLSocketServer::create
 
 
 // onc_rpc_stream_socket_client.cpp
-using yield::platform::htonl;
 using yield::platform::ntohl;
-
-#ifdef _WIN32
-#include <WinError.h>
-#define ESHUTDOWN WSAESHUTDOWN
-#endif
 
 
 template <class StreamSocketType>
@@ -14072,15 +14251,13 @@ ONCRPCStreamSocketClient<StreamSocketType>::Connection::Connection
     stream_socket,
     onc_rpc_stream_socket_client
   ),
-  ONCRPCResponseParser( onc_rpc_stream_socket_client.get_message_factory() ),
+  ONCRPCResponseParser
+  (
+    onc_rpc_stream_socket_client.get_message_factory(),
+    true
+  ),
   connection_queue( onc_rpc_stream_socket_client.connection_queue )
 { }
-
-template <class StreamSocketType>
-ONCRPCStreamSocketClient<StreamSocketType>::Connection::~Connection()
-{
-  close();
-}
 
 template <class StreamSocketType>
 void
@@ -14090,30 +14267,7 @@ handle
   ONCRPCRequest& onc_rpc_request
 )
 {
-  Buffers& buffers = onc_rpc_request.marshal();
-  uint32_t record_fragment_length = buffers.join_size();
-  uint32_t record_fragment_marker = record_fragment_length | ( 1 << 31UL );
-  record_fragment_marker = htonl( record_fragment_marker );
-  buffers.insert
-  (
-    0,
-    &record_fragment_marker,
-    sizeof( record_fragment_marker )
-  );
-
-  aio_sendmsg( buffers, 0, &onc_rpc_request );
-}
-
-template <class StreamSocketType>
-void
-ONCRPCStreamSocketClient<StreamSocketType>::Connection::
-onConnectCompletion
-(
-  size_t bytes_sent,
-  void* context
-)
-{
-  onWriteCompletion( bytes_sent, context );
+  this->aio_sendmsg( onc_rpc_request.marshal( true ), 0, &onc_rpc_request );
 }
 
 template <class StreamSocketType>
@@ -14131,49 +14285,55 @@ onError
     context
   );
 
-  if ( context != NULL )
+  if ( this->get_remaining_connect_tries() > 0 )
   {
-    ONCRPCRequest* onc_rpc_request = static_cast<ONCRPCRequest*>( context );
-
-    map<uint32_t, ONCRPCRequest*>::iterator onc_rpc_request_i
-      = written_onc_rpc_requests.find( onc_rpc_request->get_xid() );
-    if ( onc_rpc_request_i != written_onc_rpc_requests.end() )
-      written_onc_rpc_requests.erase( onc_rpc_request_i );
-
-    unwritten_onc_rpc_requests.push( onc_rpc_request );
-  }
-
-  if ( error_code != ESHUTDOWN && get_remaining_connect_tries() > 0 )
-  {
-    if ( !unwritten_onc_rpc_requests.empty() )
+    if ( !live_onc_rpc_requests.empty() )
     {
-      ONCRPCRequest* onc_rpc_request = unwritten_onc_rpc_requests.front();
-      unwritten_onc_rpc_requests.pop();
-      handle( *onc_rpc_request );
+      Buffers* pipelined_onc_rpc_request_buffers = NULL;
+
+      for
+      (
+        map<uint32_t, ONCRPCRequest*>::const_iterator
+          onc_rpc_request_i = live_onc_rpc_requests.begin();
+        onc_rpc_request_i != live_onc_rpc_requests.end();
+        ++onc_rpc_request_i
+      )
+      {
+        ONCRPCRequest* onc_rpc_request = onc_rpc_request_i->second;
+        if ( pipelined_onc_rpc_request_buffers == NULL )
+         pipelined_onc_rpc_request_buffers = &onc_rpc_request->marshal( true );
+        else
+        {
+          Buffers& buffers = onc_rpc_request->marshal( true );
+          pipelined_onc_rpc_request_buffers->extend( buffers );
+          Buffers::dec_ref( buffers );
+        }
+      }
+
+      this->aio_sendmsg( *pipelined_onc_rpc_request_buffers );
     }
   }
   else
   {
-    Exception* exception = new Exception( error_code );
-
-    for
-    (
-      map<uint32_t, ONCRPCRequest*>::const_iterator
-        onc_rpc_request_i = written_onc_rpc_requests.begin();
-      onc_rpc_request_i != written_onc_rpc_requests.end();
-      ++onc_rpc_request_i
-    )
-      onc_rpc_request_i->second->respond( exception->inc_ref() );
-
-    written_onc_rpc_requests.clear();
-
-    while ( !unwritten_onc_rpc_requests.empty() )
+    if ( !live_onc_rpc_requests.empty() )
     {
-      unwritten_onc_rpc_requests.front()->respond( exception->inc_ref() );
-      unwritten_onc_rpc_requests.pop();
+      Exception* exception = new Exception( error_code );
+
+      for
+      (
+        map<uint32_t, ONCRPCRequest*>::const_iterator
+          onc_rpc_request_i = live_onc_rpc_requests.begin();
+        onc_rpc_request_i != live_onc_rpc_requests.end();
+        ++onc_rpc_request_i
+      )
+        onc_rpc_request_i->second->respond( exception->inc_ref() );
+
+      live_onc_rpc_requests.clear();
+
+      Exception::dec_ref( *exception );
     }
 
-    Exception::dec_ref( *exception );
+    this->reset_connect_tries();
 
     connection_queue.enqueue( *this );
   }
@@ -14188,77 +14348,63 @@ onReadCompletion
   void* context
 )
 {
-  if ( buffer.size() == buffer.capacity() )
+  while ( buffer.size() - buffer.position() >= sizeof( uint32_t ) * 2 )
   {
-    ONCRPCRequest* onc_rpc_request = static_cast<ONCRPCRequest*>( context );
+    // Skip the record fragment marker
+    buffer.position( buffer.position() + sizeof( uint32_t ) );
 
-    if ( onc_rpc_request == NULL )
+    uint32_t xid;
+    buffer.get( &xid, sizeof( xid ) );
+    xid = ntohl( xid );
+
+    map<uint32_t, ONCRPCRequest*>::iterator onc_rpc_request_i
+      = live_onc_rpc_requests.find( xid );
+
+    if ( onc_rpc_request_i != live_onc_rpc_requests.end() )
     {
-      uint32_t record_fragment_marker;
-      buffer.get( &record_fragment_marker, sizeof( uint32_t ) );
-      record_fragment_marker = ntohl( record_fragment_marker );
+      ONCRPCRequest* onc_rpc_request = onc_rpc_request_i->second;
 
-      uint32_t xid;
-      buffer.get( &xid, sizeof( xid ) );
-      xid = ntohl( xid );
+      buffer.rewind( sizeof( uint32_t ) * 2 );
 
-      map<uint32_t, ONCRPCRequest*>::iterator onc_rpc_request_i
-        = written_onc_rpc_requests.find( xid );
-
-      if ( onc_rpc_request_i != written_onc_rpc_requests.end() )
-      {
-        onc_rpc_request = onc_rpc_request_i->second;
-
-        bool is_last_record_fragment
-          = ( ( record_fragment_marker ) & ( 1 << 31UL ) ) == ( 1 << 31UL );
-        if ( !is_last_record_fragment ) DebugBreak();
-
-        uint32_t record_fragment_length
-          = ( record_fragment_marker ) ^ ( 1 << 31UL );
-
-        HeapBuffer* record_fragment = new HeapBuffer( record_fragment_length );
-        record_fragment->put( &xid, sizeof( xid ) );
-        record_fragment->position( record_fragment->position() + sizeof( xid ) );
-
-        aio_recv( *record_fragment, 0, onc_rpc_request );
-      }
-      else
-        DebugBreak();
-    }
-    else
-    {
-      map<uint32_t, ONCRPCRequest*>::iterator onc_rpc_request_i
-        = written_onc_rpc_requests.find( onc_rpc_request->get_xid() );
-      if ( onc_rpc_request_i != written_onc_rpc_requests.end() )
-        written_onc_rpc_requests.erase( onc_rpc_request_i );
-      else
-        DebugBreak();
-
-      ONCRPCResponse* onc_rpc_response
+      RTTIObject* object
         = ONCRPCResponseParser::parse( buffer, *onc_rpc_request );
 
-      if ( onc_rpc_response != NULL )
+      if ( object != NULL )
       {
-        onc_rpc_request->respond( *onc_rpc_response );
-        ONCRPCRequest::dec_ref( *onc_rpc_request );
-
-        if ( !unwritten_onc_rpc_requests.empty() )
+        if ( object->get_type_id() == ONCRPCResponse::TYPE_ID )
         {
-          ONCRPCRequest* onc_rpc_request = unwritten_onc_rpc_requests.front();
-          unwritten_onc_rpc_requests.pop();
-          handle( *onc_rpc_request );
+          ONCRPCResponse* onc_rpc_response
+            = static_cast<ONCRPCResponse*>( object );
+          onc_rpc_request->respond( *onc_rpc_response );
+          ONCRPCRequest::dec_ref( *onc_rpc_request );
+          live_onc_rpc_requests.erase( onc_rpc_request_i );
         }
         else
-          connection_queue.enqueue( *this );
+        {
+          this->aio_recv( *static_cast<Buffer*>( object ) );
+          return;
+        }
       }
       else
+      {
         onReadError( 0, NULL );
+        return;
+      }
     }
+    else
+      DebugBreak();
   }
-  else // buffer.size() < buffer.capacity()
-    aio_recv( buffer.inc_ref(), 0, context );
-}
 
+  if ( buffer.size() == 0 && buffer.capacity() > 0 )
+    this->aio_recv( buffer.inc_ref() );
+  else
+  {
+    Buffer* new_buffer = new StackBuffer<1024>;
+    if ( buffer.size() - buffer.position() > 0 )
+      new_buffer->put( buffer );
+    this->aio_recv( *new_buffer );
+  }
+}
 
 template <class StreamSocketType>
 void
@@ -14270,20 +14416,52 @@ onWriteCompletion
 )
 {
   ONCRPCRequest* onc_rpc_request = static_cast<ONCRPCRequest*>( context );
+  if ( onc_rpc_request != NULL )
+  {
+#ifdef _DEBUG
+    if
+    (
+      live_onc_rpc_requests.find( onc_rpc_request->get_xid() )
+      !=
+      live_onc_rpc_requests.end()
+    )
+      DebugBreak();
+#endif
+    live_onc_rpc_requests[onc_rpc_request->get_xid()] = onc_rpc_request;
+  }
 
+  connection_queue.enqueue( *this );
+}
+
+template <class StreamSocketType>
+void
+ONCRPCStreamSocketClient<StreamSocketType>::Connection::
+onWriteError
+(
+  uint32_t error_code,
+  void* context
+)
+{
+  ONCRPCRequest* onc_rpc_request = static_cast<ONCRPCRequest*>( context );
+  if ( onc_rpc_request >= NULL )
+  {
 #ifdef _DEBUG
   if
-  (
-    written_onc_rpc_requests.find( onc_rpc_request->get_xid() )
-    !=
-    written_onc_rpc_requests.end()
-  )
-    DebugBreak();
+    (
+      live_onc_rpc_requests.find( onc_rpc_request->get_xid() )
+      !=
+      live_onc_rpc_requests.end()
+    )
+      DebugBreak();
 #endif
+    live_onc_rpc_requests[onc_rpc_request->get_xid()] = onc_rpc_request;
+  }
 
-  written_onc_rpc_requests[onc_rpc_request->get_xid()] = onc_rpc_request;
-
-  aio_recv( *new StackBuffer<8>, 0, NULL );
+  StreamSocketClient<StreamSocketType>::Connection::onWriteError
+  (
+    error_code,
+    context
+  );
 }
 
 template class ONCRPCStreamSocketClient<StreamSocket>;
@@ -14294,10 +14472,6 @@ template class ONCRPCStreamSocketClient<SSLSocket>;
 
 
 // onc_rpc_stream_socket_server.cpp
-using yield::platform::htonl;
-using yield::platform::ntohl;
-
-
 template <class StreamSocketType>
 ONCRPCStreamSocketServer<StreamSocketType>::ONCRPCStreamSocketServer
 (
@@ -14315,7 +14489,7 @@ ONCRPCStreamSocketServer<StreamSocketType>::ONCRPCStreamSocketServer
       trace_log
     )
 {
-  this->get_listen_stream_socket().aio_accept( *this );
+  this->get_listen_stream_socket().aio_accept( *this, NULL, new StackBuffer<1024> );
 }
 
 
@@ -14336,11 +14510,13 @@ public:
       stream_socket,
       onc_rpc_stream_socket_server
     ),
-    ONCRPCRequestParser( onc_rpc_stream_socket_server.get_message_factory() ),
+    ONCRPCRequestParser
+    (
+      onc_rpc_stream_socket_server.get_message_factory(),
+      true
+    ),
     onc_rpc_stream_socket_server( onc_rpc_stream_socket_server )
-  {
-    stream_socket.aio_read( *new StackBuffer<4>, *this );
-  }
+  { }
 
   // RTTIObject
   virtual const char* get_type_name() const
@@ -14348,60 +14524,29 @@ public:
     return "ONCRPCStreamSocketServer::Connection";
   }
 
-private:
   // StreamSocket::AIORecvCallback
   void onReadCompletion( Buffer& buffer, void* context )
   {
-    if ( buffer.size() == buffer.capacity() )
+    RTTIObject* object;
+    while ( ( object = ONCRPCRequestParser::parse( buffer ) ) != NULL )
     {
-      if ( buffer.get_type_id() == StackBuffer<4>::TYPE_ID )
+      if ( object->get_type_id() == ONCRPCRequest::TYPE_ID )
       {
-        uint32_t record_fragment_marker;
-        buffer.get( &record_fragment_marker, sizeof( record_fragment_marker ) );
-        record_fragment_marker = ntohl( record_fragment_marker );
-
-        bool is_last_record_fragment
-          = ( ( record_fragment_marker ) & ( 1 << 31UL ) ) == ( 1 << 31UL );
-        if ( !is_last_record_fragment ) DebugBreak();
-
-        uint32_t record_fragment_length
-          = ( record_fragment_marker ) ^ ( 1 << 31UL );
-
-        HeapBuffer* record_fragment = new HeapBuffer( record_fragment_length );
-
-        this->get_stream_socket().aio_recv( *record_fragment, 0, *this, NULL );
+        ONCRPCRequest* onc_rpc_request
+          = static_cast<ONCRPCRequest*>( object );
+        onc_rpc_request->set_response_handler( *this );
+        onc_rpc_stream_socket_server.handle( *onc_rpc_request );
       }
-      else if ( buffer.get_type_id() == HeapBuffer::TYPE_ID )
-      {
-        Message* message = ONCRPCRequestParser::parse( buffer );
-        if ( message != NULL )
-        {
-          if ( message->get_type_id() == ONCRPCRequest::TYPE_ID )
-          {
-            ONCRPCRequest* onc_rpc_request
-              = static_cast<ONCRPCRequest*>( message );
-            onc_rpc_request->set_response_handler( *this );
-            onc_rpc_stream_socket_server.handle( *onc_rpc_request );
-          }
-          else if ( message->get_type_id() == ONCRPCResponse::TYPE_ID )
-            handle( *static_cast<ONCRPCResponse*>( message ) );
-          else
-            DebugBreak();
-        }
-        else
-          DebugBreak();
-      }
+      else if ( object->get_type_id() == ONCRPCResponse::TYPE_ID )
+        handle( *static_cast<ONCRPCResponse*>( object ) );
       else
-        DebugBreak();
+      {
+        this->aio_recv( *static_cast<Buffer*>( object ) );
+        return;
+      }
     }
-    else // buffer.size() < buffer.capacity()
-      this->get_stream_socket().aio_recv( buffer, 0, *this, context );
-  }
 
-  // StreamSocket::AIOSendCallback
-  void onWriteCompletion( size_t bytes_written, void* context )
-  {
-    this->get_stream_socket().aio_recv( *new StackBuffer<4>, 0, *this, NULL );
+    onReadError( 0, NULL );
   }
 
   // ResponseHandler
@@ -14411,21 +14556,9 @@ private:
     {
       ONCRPCResponse& onc_rpc_response
         = static_cast<ONCRPCResponse&>( response );
-
-      Buffers& buffers = onc_rpc_response.marshal();
-      uint32_t record_fragment_length = buffers.join_size();
-      uint32_t record_fragment_marker = record_fragment_length | ( 1 << 31UL );
-      record_fragment_marker = htonl( record_fragment_marker );
-      buffers.insert
-      (
-        0,
-        &record_fragment_marker,
-        sizeof( record_fragment_marker )
-      );
-
+      Buffers& buffers = onc_rpc_response.marshal( true );
       ONCRPCResponse::dec_ref( onc_rpc_response );
-
-      this->get_stream_socket().aio_sendmsg( buffers, 0, *this, NULL );
+      this->aio_sendmsg( buffers );
     }
     else
       DebugBreak();
@@ -14445,9 +14578,10 @@ ONCRPCStreamSocketServer<StreamSocketType>::onAcceptCompletion
   Buffer* recv_buffer
 )
 {
-  new Connection( *this, accepted_stream_socket );
+  Connection* connection = new Connection( *this, accepted_stream_socket );
+  connection->onReadCompletion( *recv_buffer, NULL );
 
-  this->get_listen_stream_socket().aio_accept( *this );
+  this->get_listen_stream_socket().aio_accept( *this, NULL, new StackBuffer<1024> );
 }
 
 template class ONCRPCStreamSocketServer<StreamSocket>;
@@ -14495,42 +14629,19 @@ ONCRPCTCPSocketClient::create
 )
 {
   SocketAddress& peername = createSocketAddress( absolute_uri );
+  TCPSocket& tcp_socket = TCPSocketClient::createTCPSocket( trace_log );
 
-//#ifdef _WIN32
-//  IOQueue& io_queue = yield::platform::Win32AIOQueue::create();
-//#else
-  IOQueue& io_queue = yield::platform::NBIOQueue::create();
-//#endif
-
-  TCPSocket* tcp_socket;
-  if ( trace_log!= NULL )
-    tcp_socket = TracingTCPSocket::create( *trace_log );
-  else
-    tcp_socket = TCPSocket::create();
-
-  if ( tcp_socket != NULL && tcp_socket->associate( io_queue ) )
-  {
-    IOQueue::dec_ref( io_queue );
-
-    return *new ONCRPCTCPSocketClient
-                (
-                  message_factory,
-                  peername,
-                  prog,
-                  *tcp_socket,
-                  vers,
-                  configuration,
-                  error_log,
-                  trace_log
-                );
-  }
-  else
-  {
-    TCPSocket::dec_ref( tcp_socket );
-    IOQueue::dec_ref( io_queue );
-    SocketAddress::dec_ref( peername );
-    throw Exception();
-  }
+  return *new ONCRPCTCPSocketClient
+              (
+                message_factory,
+                peername,
+                prog,
+                tcp_socket,
+                vers,
+                configuration,
+                error_log,
+                trace_log
+              );
 }
 
 
@@ -14800,6 +14911,71 @@ SocketPeer::~SocketPeer()
 }
 
 
+// ssl_socket_client.cpp
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+
+SSLSocketClient::SSLSocketClient
+(
+  SocketAddress& peername,
+  Configuration* configuration,
+  Log* error_log,
+  Log* trace_log
+)
+  : TCPSocketClient
+    (
+      peername,
+      configuration,
+      error_log,
+      trace_log
+    )
+{ }
+
+
+SSLSocket&
+SSLSocketClient::createSSLSocket
+(
+  SSLContext* ssl_context,
+  Log* trace_log
+)
+{
+  if ( ssl_context != NULL )
+    ssl_context->inc_ref();
+  else
+    ssl_context = &SSLContext::create( SSLv23_client_method() );
+
+  IOQueue* io_queue = yield::platform::NBIOQueue::create();
+
+  SSLSocket* ssl_socket;
+  if ( trace_log != NULL )
+    ssl_socket = TracingSSLSocket::create( *trace_log, *ssl_context );
+  else
+    ssl_socket = SSLSocket::create( *ssl_context );
+
+  SSLContext::dec_ref( *ssl_context );
+
+  if
+  (
+    io_queue != NULL
+    &&
+    ssl_socket != NULL
+    &&
+    ssl_socket->associate( *io_queue )
+  )
+  {
+    IOQueue::dec_ref( io_queue );
+    return *ssl_socket;
+  }
+  else
+  {
+    SSLSocket::dec_ref( ssl_socket );
+    IOQueue::dec_ref( io_queue );
+    throw Exception();
+  }
+}
+
+#endif
+
+
 // ssl_socket_server.cpp
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
 
@@ -14824,25 +15000,15 @@ SSLSocketServer::createListenSSLSocket
   Log* trace_log
 )
 {
-  IOQueue& io_queue = yield::platform::NBIOQueue::create();
-  SSLSocket* listen_ssl_socket = SSLSocket::create( ssl_context );
+  IOQueue* io_queue = yield::platform::NBIOQueue::create();
 
-  if
-  (
-    listen_ssl_socket != NULL
-    &&
-    listen_ssl_socket->associate( io_queue )
-    &&
-    listen_ssl_socket->bind( sockname )
-    &&
-    listen_ssl_socket->listen()
-    &&
-    listen_ssl_socket->setsockopt( Socket::OPTION_SO_KEEPALIVE, true )
-    &&
-    listen_ssl_socket->setsockopt( Socket::OPTION_SO_LINGER, true )
-    &&
-    listen_ssl_socket->setsockopt( SSLSocket::OPTION_TCP_NODELAY, true )
-  )
+  SSLSocket* listen_ssl_socket;
+  if ( trace_log != NULL )
+    listen_ssl_socket = TracingSSLSocket::create( *trace_log, ssl_context );
+  else
+    listen_ssl_socket = SSLSocket::create( ssl_context );
+
+  if ( initListenTCPSocket( io_queue, listen_ssl_socket, sockname ) )
   {
     IOQueue::dec_ref( io_queue );
     return *listen_ssl_socket;
@@ -14917,6 +15083,7 @@ StreamSocketClient<StreamSocketType>::Connection::Connection
 template <class StreamSocketType>
 StreamSocketClient<StreamSocketType>::Connection::~Connection()
 {
+  close();
   Log::dec_ref( error_log );
   SocketAddress::dec_ref( peername );
   StreamSocket::dec_ref( stream_socket );
@@ -14974,12 +15141,20 @@ void StreamSocketClient<StreamSocketType>::Connection::close()
 {
   get_stream_socket().shutdown();
   get_stream_socket().close();
-  onError( ESHUTDOWN, NULL );
+}
+
+template <class StreamSocketType>
+uint16_t
+StreamSocketClient<StreamSocketType>::Connection::
+get_remaining_connect_tries()
+{
+  return connect_tries + reconnect_tries_max;
 }
 
 template <class StreamSocketType>
 void
-StreamSocketClient<StreamSocketType>::Connection::onConnectCompletion
+StreamSocketClient<StreamSocketType>::Connection::
+onConnectCompletion
 (
   size_t bytes_sent,
   void* context
@@ -15002,14 +15177,15 @@ StreamSocketClient<StreamSocketType>::Connection::onConnectCompletion
   //}
 
   if ( bytes_sent > 0 )
-    onWriteCompletion( bytes_sent, context );
+    this->onWriteCompletion( bytes_sent, context );
 
   aio_recv( *new StackBuffer<1024>, 0, NULL );
 }
 
 template <class StreamSocketType>
 void
-StreamSocketClient<StreamSocketType>::Connection::onConnectError
+StreamSocketClient<StreamSocketType>::Connection::
+onConnectError
 (
   uint32_t error_code,
   void* context
@@ -15030,7 +15206,8 @@ StreamSocketClient<StreamSocketType>::Connection::onConnectError
 
 template <class StreamSocketType>
 void
-StreamSocketClient<StreamSocketType>::Connection::onError
+StreamSocketClient<StreamSocketType>::Connection::
+onError
 (
   uint32_t error_code,
   void* context
@@ -15045,7 +15222,8 @@ StreamSocketClient<StreamSocketType>::Connection::onError
 
 template <class StreamSocketType>
 void
-StreamSocketClient<StreamSocketType>::Connection::onReadError
+StreamSocketClient<StreamSocketType>::Connection::
+onReadError
 (
   uint32_t error_code,
   void* context
@@ -15068,7 +15246,8 @@ StreamSocketClient<StreamSocketType>::Connection::onReadError
 
 template <class StreamSocketType>
 void
-StreamSocketClient<StreamSocketType>::Connection::onWriteError
+StreamSocketClient<StreamSocketType>::Connection::
+onWriteError
 (
   uint32_t error_code,
   void* context
@@ -15088,6 +15267,14 @@ StreamSocketClient<StreamSocketType>::Connection::onWriteError
   }
 
   onError( error_code, context );
+}
+
+template <class StreamSocketType>
+void
+StreamSocketClient<StreamSocketType>::Connection::
+reset_connect_tries()
+{
+  this->connect_tries = 0;
 }
 
 template class StreamSocketClient<StreamSocket>;
@@ -15168,6 +15355,32 @@ StreamSocketServer<StreamSocketType>::Connection::~Connection()
 }
 
 template <class StreamSocketType>
+void
+StreamSocketServer<StreamSocketType>::Connection::
+aio_recv
+(
+  Buffer& buffer,
+  int flags,
+  void* context
+)
+{
+  get_stream_socket().aio_recv( buffer, flags, *this, context );
+}
+
+template <class StreamSocketType>
+void
+StreamSocketServer<StreamSocketType>::Connection::
+aio_sendmsg
+(
+  Buffers& buffers,
+  int flags,
+  void* context
+)
+{
+  get_stream_socket().aio_sendmsg( buffers, flags, *this, context );
+}
+
+template <class StreamSocketType>
 void StreamSocketServer<StreamSocketType>::Connection::onReadError
 (
   uint32_t error_code,
@@ -15178,6 +15391,15 @@ void StreamSocketServer<StreamSocketType>::Connection::onReadError
   stream_socket.close();
   stream_socket_server.onReadError( *this, error_code );
 }
+
+template <class StreamSocketType>
+void
+StreamSocketServer<StreamSocketType>::Connection::onWriteCompletion
+(
+  size_t bytes_sent,
+  void*
+)
+{ }
 
 template <class StreamSocketType>
 void
@@ -15197,6 +15419,63 @@ template class StreamSocketServer<TCPSocket>;
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
 template class StreamSocketServer<SSLSocket>;
 #endif
+
+
+// tcp_socket_client.cpp
+TCPSocketClient::TCPSocketClient
+(
+  SocketAddress& peername,
+  Configuration* configuration,
+  Log* error_log,
+  Log* trace_log
+)
+  : StreamSocketClient<TCPSocket>
+    (
+      peername,
+      configuration,
+      error_log,
+      trace_log
+    )
+{ }
+
+TCPSocket& TCPSocketClient::createTCPSocket( Log* trace_log )
+{
+  IOQueue* io_queue;
+  TCPSocket* tcp_socket;
+  if ( trace_log != NULL )
+  {
+    io_queue = yield::platform::NBIOQueue::create();
+    tcp_socket = TracingTCPSocket::create( *trace_log );
+  }
+  else
+  {
+#ifdef _WIN32
+    io_queue = yield::platform::Win32AIOQueue::create();
+#else
+    io_queue = yield::platform::NBIOQueue::create();
+#endif
+    tcp_socket = TCPSocket::create();
+  }
+
+  if
+  (
+    io_queue != NULL
+    &&
+    tcp_socket != NULL
+    &&
+    tcp_socket->associate( *io_queue )
+  )
+  {
+    IOQueue::dec_ref( *io_queue );
+    return *tcp_socket;
+  }
+  else
+  {
+    TCPSocket::dec_ref( tcp_socket );
+    IOQueue::dec_ref( *io_queue );
+    throw Exception();
+  }
+}
 
 
 // tcp_socket_server.cpp
@@ -15221,34 +15500,24 @@ TCPSocketServer::createListenTCPSocket
   Log* trace_log
 )
 {
-#ifdef _WIN32
-  IOQueue& io_queue = yield::platform::Win32AIOQueue::create();
-#else
-  IOQueue& io_queue = yield::platform::NBIOQueue::create();
-#endif
-
+  IOQueue* io_queue;
   TCPSocket* listen_tcp_socket;
   if ( trace_log != NULL )
+  {
+    io_queue = yield::platform::NBIOQueue::create();
     listen_tcp_socket = TracingTCPSocket::create( *trace_log );
+  }
   else
+  {
+#ifdef _WIN32
+    io_queue = yield::platform::Win32AIOQueue::create();
+#else
+    io_queue = yield::platform::NBIOQueue::create();
+#endif
     listen_tcp_socket = TCPSocket::create();
+  }
 
-  if
-  (
-    listen_tcp_socket != NULL
-    &&
-    listen_tcp_socket->associate( io_queue )
-    &&
-    listen_tcp_socket->bind( sockname )
-    &&
-    listen_tcp_socket->listen()
-    &&
-    listen_tcp_socket->setsockopt( Socket::OPTION_SO_KEEPALIVE, true )
-    &&
-    listen_tcp_socket->setsockopt( Socket::OPTION_SO_LINGER, true )
-    &&
-    listen_tcp_socket->setsockopt( TCPSocket::OPTION_TCP_NODELAY, true )
-  )
+  if ( initListenTCPSocket( io_queue, listen_tcp_socket, sockname ) )
   {
     IOQueue::dec_ref( io_queue );
     return *listen_tcp_socket;
@@ -15261,21 +15530,487 @@ TCPSocketServer::createListenTCPSocket
   }
 }
 
+bool
+TCPSocketServer::initListenTCPSocket
+(
+  IOQueue* io_queue,
+  TCPSocket* listen_tcp_socket,
+  const SocketAddress& sockname
+)
+{
+  return io_queue != NULL
+         &&
+         listen_tcp_socket != NULL
+         &&
+         listen_tcp_socket->associate( *io_queue )
+         &&
+         listen_tcp_socket->bind( sockname )
+         &&
+         listen_tcp_socket->listen()
+         &&
+         listen_tcp_socket->setsockopt( Socket::OPTION_SO_KEEPALIVE, true )
+         &&
+         listen_tcp_socket->setsockopt( Socket::OPTION_SO_LINGER, true )
+         &&
+         listen_tcp_socket->setsockopt( TCPSocket::OPTION_TCP_NODELAY, true );
+}
 
-// tracing_tcp_socket.cpp
+
+// tracing_socket.cpp
 #ifdef _WIN32
-#pragma warning( 4 : 4365 )
+#include <WinError.h>
 #endif
 
 
-TracingTCPSocket::TracingTCPSocket( int domain, Log& log, socket_t socket_ )
-  : TCPSocket( domain, socket_ ),
-    log( log.inc_ref() )
-{ }
+TracingSocket::TracingSocket( Log& log, socket_t socket_ )
+  : log( log.inc_ref() ), socket_( socket_ )
+{
+  SocketAddress* peername = Socket::getpeername( socket_ );
+  if ( peername != NULL )
+  {
+    set_peername( *peername );
+    SocketAddress::dec_ref( *peername );
+  }
+  else
+    this->peername = "(unknown)";
 
-TracingTCPSocket::~TracingTCPSocket()
+  SocketAddress* sockname = Socket::getsockname( socket_ );
+  if ( sockname != NULL )
+  {
+    set_sockname( *sockname );
+    SocketAddress::dec_ref( *sockname );
+  }
+  else
+  {
+    ostringstream sockname;
+    sockname << "socket #" << socket_;
+    this->sockname = sockname.str();
+  }
+}
+
+TracingSocket::~TracingSocket()
 {
   Log::dec_ref( log );
+}
+
+void TracingSocket::set_peername( const SocketAddress& peername )
+{
+  this->peername = peername;
+}
+
+void TracingSocket::set_sockname( const SocketAddress& sockname )
+{
+  this->sockname = sockname;
+}
+
+StreamSocket* TracingSocket::trace_accept( StreamSocket* ret )
+{
+  uint32_t last_error = Exception::get_last_error();
+
+  if ( ret != NULL )
+  {
+    string peername;
+    SocketAddress* peername_sockaddr = ret->getpeername();
+    if ( peername_sockaddr != NULL )
+    {
+      peername = *peername_sockaddr;
+      SocketAddress::dec_ref( *peername_sockaddr );
+    }
+    else
+    {
+      ostringstream peername_oss;
+      peername_oss << "(socket #" << static_cast<socket_t>( *ret ) << ")";
+      peername = peername_oss.str();
+    }
+
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << this->sockname << "):" <<
+      " accepted connection from " << peername << ".";
+  }
+#ifdef _WIN32
+  else if ( last_error == WSAEWOULDBLOCK )
+#else
+  else if ( last_error == EWOULDBLOCK )
+#endif
+  {
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << sockname << "):" <<
+      " accept() would block.";
+  }
+  else
+  {
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << sockname << "):"
+      " encountered error on accept(): " <<
+      yield::platform::Exception( last_error ) << ".";
+  }
+
+  Exception::set_last_error( last_error );
+
+  return ret;
+}
+
+bool TracingSocket::trace_bind( const SocketAddress& sockname, bool ret )
+{
+  uint32_t last_error = Exception::get_last_error();
+
+  if ( ret )
+  {
+    // Try getsockname in case it was an ephemeral bind
+    SocketAddress* real_sockname = Socket::getsockname( socket_ );
+    if ( real_sockname != NULL )
+    {
+      set_sockname( *real_sockname );
+      SocketAddress::dec_ref( *real_sockname );
+    }
+    else
+      set_sockname( sockname );
+  }
+  else
+  {
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket: failed to bind " << this->sockname <<
+      " to " << static_cast<string>( sockname ) <<
+      ": " << yield::platform::Exception( last_error ) << ".";
+  }
+
+  Exception::set_last_error( last_error );
+
+  return ret;
+}
+
+bool TracingSocket::trace_connect( const SocketAddress& peername, bool ret )
+{
+  uint32_t last_error = Exception::get_last_error();
+
+  set_peername( peername );
+
+  if ( ret )
+  {
+    SocketAddress* sockname = Socket::getsockname( socket_ );
+    if ( sockname != NULL )
+    {
+      set_sockname( *sockname );
+      SocketAddress::dec_ref( *sockname );
+    }
+
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << this->sockname << "):" <<
+      " successfully connected to " << this->peername << ".";
+  }
+#ifdef _WIN32
+  else if ( last_error == WSAEWOULDBLOCK )
+#else
+  else if ( last_error == EWOULDBLOCK )
+#endif
+  {
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << this->sockname << "):" <<
+      " connect() to " << this->peername << " would block.";
+  }
+  else
+  {
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << this->sockname << "):" <<
+      " connect() to " << this->peername <<
+      " failed: " << yield::platform::Exception( last_error ) << ".";
+  }
+
+  Exception::set_last_error( last_error );
+
+  return ret;
+}
+
+ssize_t TracingSocket::trace_recv( void* buf, size_t buflen, ssize_t ret )
+{
+  uint32_t last_error = Exception::get_last_error();
+
+  if ( ret > 0 )
+  {
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << sockname << "):"
+      " received " << ret << "/" << buflen <<
+      " bytes from " << peername << ".";
+
+    log.write( buf, static_cast<size_t>( ret ), Log::LOG_DEBUG );
+    log.write("\n", Log::LOG_DEBUG );
+  }
+  else if ( ret == 0 )
+  {
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << sockname << "):"
+      " lost connection while trying to recv(" << buflen << ")"
+      " from " << peername << ".";
+  }
+#ifdef _WIN32
+  else if ( last_error == WSAEWOULDBLOCK )
+#else
+  else if ( last_error == EWOULDBLOCK )
+#endif
+  {
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << sockname << "):" <<
+      " recv(" << buflen << ") from " << peername << " would block.";
+  }
+  else
+  {
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << sockname << "):"
+      " encountered error while trying to recv(" << buflen << ")" <<
+      " from " << peername <<
+      ": " << yield::platform::Exception( last_error ) << ".";
+  }
+
+  Exception::set_last_error( last_error );
+
+  return ret;
+}
+
+ssize_t TracingSocket::trace_send( const void* buf, size_t buflen, ssize_t ret )
+{
+  uint32_t last_error = Exception::get_last_error();
+
+  if ( ret >= 0 )
+  {
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << sockname << "):" <<
+      " sent " << ret << "/" << buflen <<
+      " bytes to " << peername << ".";
+
+    log.write( buf, buflen, Log::LOG_DEBUG );
+    log.write("\n", Log::LOG_DEBUG );
+  }
+#ifdef _WIN32
+  else if ( last_error == WSAEWOULDBLOCK )
+#else
+  else if ( last_error == EWOULDBLOCK )
+#endif
+  {
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << sockname << "):" <<
+      " send(" << buflen << ") to " << peername << " would block.";
+  }
+  else
+  {
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << sockname << "):" <<
+      " encountered error while trying to send(" << buflen << ")"
+      " to " << peername <<
+      ": " << yield::platform::Exception( last_error ) << ".";
+  }
+
+  Exception::set_last_error( last_error );
+
+  return ret;
+}
+
+ssize_t
+TracingSocket::trace_sendmsg
+(
+  const struct iovec* iov,
+  uint32_t iovlen,
+  ssize_t ret
+)
+{
+  uint32_t last_error = Exception::get_last_error();
+
+  ssize_t buflen = 0;
+  for ( uint32_t iov_i = 0; iov_i < iovlen; iov_i++ )
+    buflen += iov[iov_i].iov_len;
+
+  if ( ret >= 0 )
+  {
+    size_t temp_ret = static_cast<size_t>( ret );
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << sockname << "):" <<
+      " sent " << ret << "/" << buflen <<
+      " bytes to " << peername << ".";
+
+    for ( uint32_t iov_i = 0; iov_i < iovlen; iov_i++ )
+    {
+      if ( iov[iov_i].iov_len <= temp_ret )
+      {
+        log.write( iov[iov_i].iov_base, iov[iov_i].iov_len, Log::LOG_DEBUG );
+        temp_ret -= iov[iov_i].iov_len;
+      }
+      else
+      {
+        log.write( iov[iov_i].iov_base, temp_ret, Log::LOG_DEBUG );
+        break;
+      }
+    }
+
+    log.write("\n", Log::LOG_DEBUG );
+  }
+#ifdef _WIN32
+  else if ( last_error == WSAEWOULDBLOCK )
+#else
+  else if ( last_error == EWOULDBLOCK )
+#endif
+  {
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << sockname << "):" <<
+      " sendmsg(" << buflen << ") to " << peername << " would block.";
+  }
+  else
+  {
+    log.get_stream( Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket(" << sockname << "):" <<
+      " encountered error while trying to sendmsg(" << buflen << ")" <<
+      " to" << peername <<
+      ": " << yield::platform::Exception( last_error ) << ".";
+  }
+
+  Exception::set_last_error( last_error );
+
+  return ret;
+}
+
+
+// tracing_ssl_socket.cpp
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+
+TracingSSLSocket::TracingSSLSocket
+(
+  int domain,
+  Log& log,
+  socket_t socket_,
+  SSL* ssl,
+  SSLContext& ssl_context
+) : SSLSocket( domain, socket_, ssl, ssl_context ),
+    TracingSocket( log, socket_ )
+{ }
+
+StreamSocket* TracingSSLSocket::accept()
+{
+  return trace_accept( SSLSocket::accept() );
+}
+
+bool TracingSSLSocket::bind( const SocketAddress& to_sockaddr )
+{
+  return trace_bind( to_sockaddr, SSLSocket::bind( to_sockaddr ) );
+}
+
+bool TracingSSLSocket::connect( const SocketAddress& peername )
+{
+  return trace_connect( peername, SSLSocket::connect( peername ) );
+}
+
+TracingSSLSocket* TracingSSLSocket::create( Log& log, SSLContext& ssl_context )
+{
+  return create( DOMAIN_DEFAULT, log, ssl_context );
+}
+
+TracingSSLSocket*
+TracingSSLSocket::create
+(
+  int domain,
+  Log& log,
+  SSLContext& ssl_context
+)
+{
+  SSL* ssl = SSL_new( ssl_context );
+  if ( ssl != NULL )
+  {
+    socket_t socket_ = Socket::create( &domain, TYPE, PROTOCOL );
+    if ( socket_ != -1 )
+    {
+      return new TracingSSLSocket
+                 (
+                   domain,
+                   log,
+                   socket_,
+                   ssl,
+                   ssl_context
+                 );
+    }
+    else
+    {
+      SSL_free( ssl );
+      return NULL;
+    }
+  }
+  else
+    return NULL;
+}
+
+SSLSocket* TracingSSLSocket::dup()
+{
+  return StreamSocket::dup2
+         (
+           create
+           (
+             get_domain(),
+             get_log(),
+             get_ssl_context()
+           )
+         );
+}
+
+StreamSocket* TracingSSLSocket::dup2( socket_t socket_ )
+{
+  SSL* ssl = SSL_new( get_ssl_context() );
+  if ( ssl != NULL )
+  {
+    return StreamSocket::dup2
+           (
+             new TracingSSLSocket
+                 (
+                   get_domain(),
+                   get_log(),
+                   socket_,
+                   ssl,
+                   get_ssl_context()
+                 )
+           );
+  }
+  else
+    return NULL;
+}
+
+ssize_t TracingSSLSocket::recv( void* buf, size_t buflen, int flags )
+{
+  return trace_recv( buf, buflen, SSLSocket::recv( buf, buflen, flags ) );
+}
+
+ssize_t TracingSSLSocket::send( const void* buf, size_t buflen, int flags )
+{
+  return trace_send( buf, buflen, SSLSocket::send( buf, buflen, flags ) );
+}
+
+ssize_t
+TracingSSLSocket::sendmsg
+(
+  const struct iovec* iov,
+  uint32_t iovlen,
+  int flags
+)
+{
+  return trace_sendmsg( iov, iovlen, SSLSocket::sendmsg( iov, iovlen, flags ) );
+}
+
+#endif
+
+
+// tracing_tcp_socket.cpp
+TracingTCPSocket::TracingTCPSocket( int domain, Log& log, socket_t socket_ )
+  : TCPSocket( domain, socket_ ),
+    TracingSocket( log, socket_ )
+{ }
+
+StreamSocket* TracingTCPSocket::accept()
+{
+  return trace_accept( TCPSocket::accept() );
+}
+
+bool TracingTCPSocket::bind( const SocketAddress& to_sockaddr )
+{
+  return trace_bind( to_sockaddr, TCPSocket::bind( to_sockaddr ) );
+}
+
+bool TracingTCPSocket::connect( const SocketAddress& peername )
+{
+  return trace_connect( peername, TCPSocket::connect( peername ) );
 }
 
 TracingTCPSocket* TracingTCPSocket::create( Log& log )
@@ -15292,169 +16027,144 @@ TracingTCPSocket* TracingTCPSocket::create( int domain, Log& log )
     return NULL;
 }
 
-bool TracingTCPSocket::connect( const SocketAddress& peername )
-{
-  string to_hostname;
-  if ( peername.getnameinfo( to_hostname ) )
-  {
-    log.get_stream( Log::LOG_INFO ) <<
-      "yield::ipc::TracingTCPSocket: connecting socket #" <<
-      static_cast<uint64_t>( *this ) <<
-      " to " << to_hostname << ".";
-  }
-
-  return TCPSocket::connect( peername );
-}
-
 TCPSocket* TracingTCPSocket::dup()
 {
-  return StreamSocket::dup2( create( get_domain(), log ) );
+  return StreamSocket::dup2( create( get_domain(), get_log() ) );
 }
 
 StreamSocket* TracingTCPSocket::dup2( socket_t socket_ )
 {
-  return StreamSocket::dup2( new TracingTCPSocket( get_domain(), log, socket_ ) );
+  return StreamSocket::dup2
+         (
+           new TracingTCPSocket( get_domain(), get_log(), socket_ )
+         );
 }
 
 ssize_t TracingTCPSocket::recv( void* buf, size_t buflen, int flags )
 {
-  log.get_stream( Log::LOG_INFO ) <<
-    "yield::ipc::TracingTCPSocket: trying to read " << buflen <<
-    " bytes from socket #" << static_cast<uint64_t>( *this ) << ".";
-
-  ssize_t recv_ret = TCPSocket::recv( buf, buflen, flags );
-
-  if ( recv_ret > 0 )
-  {
-    log.get_stream( Log::LOG_INFO ) <<
-      "yield::ipc::TracingTCPSocket: read " << recv_ret <<
-      " bytes from socket #" << static_cast<uint64_t>( *this ) << ".";
-    log.write( buf, static_cast<size_t>( recv_ret ), Log::LOG_DEBUG );
-    log.write( "\n", Log::LOG_DEBUG );
-  }
-  else if
-  (
-    recv_ret == 0
-    ||
-    ( !TCPSocket::want_recv() && !TCPSocket::want_send() )
-  )
-    log.get_stream( Log::LOG_INFO ) <<
-      "yield::ipc::TracingTCPSocket: lost connection while trying to read " <<
-      "socket #" << static_cast<uint64_t>( *this ) << ".";
-
-  return recv_ret;
+  return trace_recv( buf, buflen, TCPSocket::recv( buf, buflen, flags ) );
 }
 
 ssize_t TracingTCPSocket::send( const void* buf, size_t buflen, int flags )
 {
-  ssize_t send_ret = TCPSocket::send( buf, buflen, flags );
-  if ( send_ret >= 0 )
-  {
-    log.get_stream( Log::LOG_INFO ) <<
-      "yield::ipc::TracingTCPSocket: wrote " << send_ret <<
-      " bytes to socket #" << static_cast<uint64_t>( *this ) << ".";
-    log.write( buf, buflen, Log::LOG_DEBUG );
-  }
-  else if ( !TCPSocket::want_recv() && !TCPSocket::want_send() )
-  {
-    log.get_stream( Log::LOG_DEBUG ) <<
-      "yield::ipc::TracingTCPSocket: lost connection while trying to write to " <<
-      "socket #" << static_cast<uint64_t>( *this ) << ".";
-  }
-
-  return send_ret;
+  return trace_send( buf, buflen, TCPSocket::send( buf, buflen, flags ) );
 }
 
-ssize_t TracingTCPSocket::sendmsg
+ssize_t
+TracingTCPSocket::sendmsg
 (
   const struct iovec* iov,
   uint32_t iovlen,
   int flags
 )
 {
-  size_t buffers_len = 0;
-  for ( uint32_t iov_i = 0; iov_i < iovlen; iov_i++ )
-    buffers_len += iov[iov_i].iov_len;
-
-  log.get_stream( Log::LOG_INFO ) <<
-    "yield::ipc::TracingTCPSocket: trying to write " << buffers_len <<
-    " bytes to socket #" << static_cast<uint64_t>( *this ) << ".";
-
-  ssize_t sendmsg_ret = TCPSocket::sendmsg( iov, iovlen, flags );
-
-  if ( sendmsg_ret >= 0 )
-  {
-    size_t temp_sendmsg_ret = static_cast<size_t>( sendmsg_ret );
-    log.get_stream( Log::LOG_INFO ) <<
-      "yield::ipc::TracingTCPSocket: wrote " << sendmsg_ret <<
-      " bytes to socket #" << static_cast<uint64_t>( *this ) << ".";
-
-    for ( uint32_t iov_i = 0; iov_i < iovlen; iov_i++ )
-    {
-      if ( iov[iov_i].iov_len <= temp_sendmsg_ret )
-      {
-        log.write( iov[iov_i].iov_base, iov[iov_i].iov_len, Log::LOG_DEBUG );
-        temp_sendmsg_ret -= iov[iov_i].iov_len;
-      }
-      else
-      {
-        log.write( iov[iov_i].iov_base, temp_sendmsg_ret, Log::LOG_DEBUG );
-        break;
-      }
-    }
-
-    log.write( "\n", Log::LOG_DEBUG );
-  }
-  else if ( !TCPSocket::want_recv() && !TCPSocket::want_send() )
-  {
-    log.get_stream( Log::LOG_DEBUG ) <<
-      "yield::ipc::TracingTCPSocket: lost connection while trying to write to " <<
-      "socket #" << static_cast<uint64_t>( *this ) << ".";
-  }
-
-  return sendmsg_ret;
+  return trace_sendmsg( iov, iovlen, TCPSocket::sendmsg( iov, iovlen, flags ) );
 }
 
-bool TracingTCPSocket::want_connect() const
+
+// tracing_udp_socket.cpp
+TracingUDPSocket::TracingUDPSocket( int domain, Log& log, socket_t socket_ )
+  : UDPSocket( domain, socket_ ),
+    TracingSocket( log, socket_ )
+{ }
+
+bool TracingUDPSocket::bind( const SocketAddress& to_sockaddr )
 {
-  bool want_connect_ret = TCPSocket::want_connect();
-
-  if ( want_connect_ret )
-  {
-    log.get_stream( Log::LOG_INFO ) <<
-      "yield::ipc::TracingTCPSocket: would block on connect on socket #" <<
-      static_cast<uint64_t>( *this ) << ".";
-  }
-
-  return want_connect_ret;
+  return trace_bind( to_sockaddr, UDPSocket::bind( to_sockaddr ) );
 }
 
-bool TracingTCPSocket::want_recv() const
+bool TracingUDPSocket::connect( const SocketAddress& peername )
 {
-  bool want_recv_ret = TCPSocket::want_recv();
-
-  if ( want_recv_ret )
-  {
-    log.get_stream( Log::LOG_INFO ) <<
-      "yield::ipc::TracingTCPSocket: would block on read on socket #" <<
-      static_cast<uint64_t>( *this ) << ".";
-  }
-
-  return want_recv_ret;
+  return trace_connect( peername, UDPSocket::connect( peername ) );
 }
 
-bool TracingTCPSocket::want_send() const
+TracingUDPSocket* TracingUDPSocket::create( Log& log )
 {
-  bool want_send_ret = TCPSocket::want_send();
+  return create( DOMAIN_DEFAULT, log );
+}
 
-  if ( want_send_ret )
-  {
-    log.get_stream( Log::LOG_INFO ) <<
-      "yield::ipc::TracingTCPSocket: would block on write on socket #" <<
-      static_cast<uint64_t>( *this ) << ".";
-  }
+TracingUDPSocket* TracingUDPSocket::create( int domain, Log& log )
+{
+  socket_t socket_ = Socket::create( &domain, TYPE, PROTOCOL );
+  if ( socket_ != -1 )
+    return new TracingUDPSocket( domain, log, socket_ );
+  else
+    return NULL;
+}
 
-  return want_send_ret;
+ssize_t TracingUDPSocket::recv( void* buf, size_t buflen, int flags )
+{
+  return trace_recv( buf, buflen, UDPSocket::recv( buf, buflen, flags ) );
+}
+
+ssize_t
+TracingUDPSocket::recvfrom
+(
+  void* buf,
+  size_t buflen,
+  int flags,
+  struct sockaddr_storage& peername
+)
+{
+  set_peername( peername );
+  return trace_recv
+         (
+           buf,
+           buflen,
+           UDPSocket::recvfrom( buf, buflen, flags, peername )
+         );
+}
+
+ssize_t TracingUDPSocket::send( const void* buf, size_t buflen, int flags )
+{
+  return trace_send( buf, buflen, UDPSocket::send( buf, buflen, flags ) );
+}
+
+ssize_t
+TracingUDPSocket::sendmsg
+(
+  const struct iovec* iov,
+  uint32_t iovlen,
+  int flags
+)
+{
+  return trace_sendmsg( iov, iovlen, Socket::sendmsg( iov, iovlen, flags ) );
+}
+
+ssize_t
+TracingUDPSocket::sendmsg
+(
+  const struct iovec* iov,
+  uint32_t iovlen,
+  const SocketAddress& peername,
+  int flags
+)
+{
+  set_peername( peername );
+  return trace_sendmsg
+         (
+           iov,
+           iovlen,
+           UDPSocket::sendmsg( iov, iovlen, peername, flags )
+         );
+}
+
+ssize_t
+TracingUDPSocket::sendto
+(
+  const void* buf,
+  size_t buflen,
+  int flags,
+  const SocketAddress& peername
+)
+{
+  set_peername( peername );
+  return trace_send
+         (
+           buf,
+           buflen,
+           UDPSocket::sendto( buf, buflen, flags, peername )
+         );
 }
 
 
@@ -15487,18 +16197,21 @@ UDPSocket& UDPSocketClient::createUDPSocket
 {
   SocketAddress& peername = createSocketAddress( absolute_uri );
 
+  IOQueue* io_queue;
 #ifdef _WIN32
-  IOQueue& io_queue = Win32AIOQueue::create();
+  io_queue = Win32AIOQueue::create();
 #else
-  IOQueue& io_queue = NBIOQueue::create();
+  io_queue = NBIOQueue::create();
 #endif
 
   UDPSocket* udp_socket = UDPSocket::create();
   if
   (
+    io_queue != NULL
+    &&
     udp_socket != NULL
     &&
-    udp_socket->associate( io_queue )
+    udp_socket->associate( *io_queue )
     &&
     udp_socket->connect( peername )
   )
@@ -15554,18 +16267,21 @@ UDPSocket& UDPSocketServer::createUDPSocket
   Log* trace_log
 )
 {
+  IOQueue* io_queue;
 #ifdef _WIN32
-  IOQueue& io_queue = Win32AIOQueue::create();
+  io_queue = Win32AIOQueue::create();
 #else
-  IOQueue& io_queue = NBIOQueue::create();
+  io_queue = NBIOQueue::create();
 #endif
 
   UDPSocket* udp_socket = UDPSocket::create();
   if
   (
+    io_queue != NULL
+    &&
     udp_socket != NULL
     &&
-    udp_socket->associate( io_queue )
+    udp_socket->associate( *io_queue )
     &&
     udp_socket->bind( sockname )
   )

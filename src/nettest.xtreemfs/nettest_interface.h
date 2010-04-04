@@ -1,5 +1,5 @@
-#ifndef _501049470_H_
-#define _501049470_H_
+#ifndef _2105579095_H_
+#define _2105579095_H_
 
 
 #include "yield/concurrency.h"
@@ -80,9 +80,22 @@ namespace org
         class nopRequest : public ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
-          nopRequest() { }
           virtual ~nopRequest() {  }
 
+          bool operator==( const nopRequest& ) const { return true; }
+
+          // yidl::runtime::RTTIObject
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( nopRequest, 2010031317 );
+
+          // yidl::runtime::MarshallableObject
+          void marshal( ::yidl::runtime::Marshaller& ) const { }
+          void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
+
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new nopResponse;
+          }
 
           virtual void respond()
           {
@@ -93,22 +106,12 @@ namespace org
           {
             Request::respond( response );
           }
-
-          bool operator==( const nopRequest& ) const { return true; }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( nopRequest, 2010031317 );
-
-          // yidl::runtime::MarshallableObject
-          void marshal( ::yidl::runtime::Marshaller& ) const { }
-          void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
 
 
         class nopResponse : public ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
-          nopResponse() { }
           virtual ~nopResponse() {  }
 
           bool operator==( const nopResponse& ) const { return true; }
@@ -133,21 +136,14 @@ namespace org
             : data( ::yidl::runtime::Object::inc_ref( data ) )
           { }
 
+          send_bufferRequest( const send_bufferRequest& other )
+            : data( ::yidl::runtime::Object::inc_ref( other.get_data() ) )
+          { }
+
           virtual ~send_bufferRequest() { ::yidl::runtime::Buffer::dec_ref( data ); }
 
           ::yidl::runtime::Buffer* get_data() const { return data; }
           void set_data( ::yidl::runtime::Buffer* data ) { ::yidl::runtime::Buffer::dec_ref( this->data ); this->data = ::yidl::runtime::Object::inc_ref( data ); }
-
-
-          virtual void respond()
-          {
-            respond( *new send_bufferResponse() );
-          }
-
-          virtual void respond( ::yield::concurrency::Response& response )
-          {
-            Request::respond( response );
-          }
 
           bool operator==( const send_bufferRequest& other ) const
           {
@@ -168,6 +164,22 @@ namespace org
             if ( data != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ), *data ); else data = unmarshaller.read_buffer( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ) );
           }
 
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new send_bufferResponse;
+          }
+
+          virtual void respond()
+          {
+            respond( *new send_bufferResponse() );
+          }
+
+          virtual void respond( ::yield::concurrency::Response& response )
+          {
+            Request::respond( response );
+          }
+
         protected:
           ::yidl::runtime::Buffer* data;
         };
@@ -176,7 +188,6 @@ namespace org
         class send_bufferResponse : public ORG_XTREEMFS_INTERFACES_NETTESTINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
-          send_bufferResponse() { }
           virtual ~send_bufferResponse() {  }
 
           bool operator==( const send_bufferResponse& ) const { return true; }
@@ -201,23 +212,17 @@ namespace org
             : size( size ), data( ::yidl::runtime::Object::inc_ref( data ) )
           { }
 
+          recv_bufferRequest( const recv_bufferRequest& other )
+            : size( other.get_size() ),
+              data( ::yidl::runtime::Object::inc_ref( other.get_data() ) )
+          { }
+
           virtual ~recv_bufferRequest() { ::yidl::runtime::Buffer::dec_ref( data ); }
 
           uint32_t get_size() const { return size; }
           ::yidl::runtime::Buffer* get_data() const { return data; }
           void set_size( uint32_t size ) { this->size = size; }
           void set_data( ::yidl::runtime::Buffer* data ) { ::yidl::runtime::Buffer::dec_ref( this->data ); this->data = ::yidl::runtime::Object::inc_ref( data ); }
-
-
-          virtual void respond( ::yidl::runtime::Buffer* data )
-          {
-            respond( *new recv_bufferResponse( data ) );
-          }
-
-          virtual void respond( ::yield::concurrency::Response& response )
-          {
-            Request::respond( response );
-          }
 
           bool operator==( const recv_bufferRequest& other ) const
           {
@@ -242,6 +247,25 @@ namespace org
             if ( data != NULL ) unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ), *data ); else data = unmarshaller.read_buffer( ::yidl::runtime::Unmarshaller::StringLiteralKey( "data", 0 ) );
           }
 
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new recv_bufferResponse
+                       (
+                         get_data()
+                       );
+          }
+
+          virtual void respond( ::yidl::runtime::Buffer* data )
+          {
+            respond( *new recv_bufferResponse( data ) );
+          }
+
+          virtual void respond( ::yield::concurrency::Response& response )
+          {
+            Request::respond( response );
+          }
+
         protected:
           uint32_t size;
           ::yidl::runtime::Buffer* data;
@@ -257,6 +281,10 @@ namespace org
 
           recv_bufferResponse( ::yidl::runtime::Buffer* data )
             : data( ::yidl::runtime::Object::inc_ref( data ) )
+          { }
+
+          recv_bufferResponse( const recv_bufferResponse& other )
+            : data( ::yidl::runtime::Object::inc_ref( other.get_data() ) )
           { }
 
           virtual ~recv_bufferResponse() { ::yidl::runtime::Buffer::dec_ref( data ); }

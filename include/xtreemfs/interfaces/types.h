@@ -1,5 +1,5 @@
-#ifndef _698985593_H_
-#define _698985593_H_
+#ifndef _442085358_H_
+#define _442085358_H_
 
 
 #include "yidl.h"
@@ -58,6 +58,12 @@ namespace org
           const string& password
         )
           : user_id( user_id ), group_ids( group_ids ), password( password )
+        { }
+
+        UserCredentials( const UserCredentials& other )
+          : user_id( other.get_user_id() ),
+            group_ids( other.get_group_ids() ),
+            password( other.get_password() )
         { }
 
         virtual ~UserCredentials() {  }

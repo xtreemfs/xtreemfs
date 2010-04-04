@@ -1,5 +1,5 @@
-#ifndef _235498586_H_
-#define _235498586_H_
+#ifndef _224677218_H_
+#define _224677218_H_
 
 
 #include "types.h"
@@ -28,6 +28,11 @@ namespace org
 
         NewFileSize( uint64_t size_in_bytes, uint32_t truncate_epoch )
           : size_in_bytes( size_in_bytes ), truncate_epoch( truncate_epoch )
+        { }
+
+        NewFileSize( const NewFileSize& other )
+          : size_in_bytes( other.get_size_in_bytes() ),
+            truncate_epoch( other.get_truncate_epoch() )
         { }
 
         virtual ~NewFileSize() {  }
@@ -111,6 +116,10 @@ namespace org
           : new_file_size( new_file_size )
         { }
 
+        OSDWriteResponse( const OSDWriteResponse& other )
+          : new_file_size( other.get_new_file_size() )
+        { }
+
         virtual ~OSDWriteResponse() {  }
 
         const org::xtreemfs::interfaces::NewFileSizeSet& get_new_file_size() const { return new_file_size; }
@@ -153,6 +162,12 @@ namespace org
           uint32_t width
         )
           : type( type ), stripe_size( stripe_size ), width( width )
+        { }
+
+        StripingPolicy( const StripingPolicy& other )
+          : type( other.get_type() ),
+            stripe_size( other.get_stripe_size() ),
+            width( other.get_width() )
         { }
 
         virtual ~StripingPolicy() {  }
@@ -213,6 +228,12 @@ namespace org
           : osd_uuids( osd_uuids ),
             replication_flags( replication_flags ),
             striping_policy( striping_policy )
+        { }
+
+        Replica( const Replica& other )
+          : osd_uuids( other.get_osd_uuids() ),
+            replication_flags( other.get_replication_flags() ),
+            striping_policy( other.get_striping_policy() )
         { }
 
         virtual ~Replica() {  }
@@ -309,6 +330,12 @@ namespace org
             local_error( local_error )
         { }
 
+        VivaldiCoordinates( const VivaldiCoordinates& other )
+          : x_coordinate( other.get_x_coordinate() ),
+            y_coordinate( other.get_y_coordinate() ),
+            local_error( other.get_local_error() )
+        { }
+
         virtual ~VivaldiCoordinates() {  }
 
         double get_x_coordinate() const { return x_coordinate; }
@@ -387,6 +414,19 @@ namespace org
             truncate_epoch( truncate_epoch ),
             snap_config( snap_config ),
             snap_timestamp( snap_timestamp )
+        { }
+
+        XCap( const XCap& other )
+          : access_mode( other.get_access_mode() ),
+            client_identity( other.get_client_identity() ),
+            expire_time_s( other.get_expire_time_s() ),
+            expire_timeout_s( other.get_expire_timeout_s() ),
+            file_id( other.get_file_id() ),
+            replicate_on_close( other.get_replicate_on_close() ),
+            server_signature( other.get_server_signature() ),
+            truncate_epoch( other.get_truncate_epoch() ),
+            snap_config( other.get_snap_config() ),
+            snap_timestamp( other.get_snap_timestamp() )
         { }
 
         virtual ~XCap() {  }
@@ -500,6 +540,13 @@ namespace org
             version( version )
         { }
 
+        XLocSet( const XLocSet& other )
+          : read_only_file_size( other.get_read_only_file_size() ),
+            replicas( other.get_replicas() ),
+            replica_update_policy( other.get_replica_update_policy() ),
+            version( other.get_version() )
+        { }
+
         virtual ~XLocSet() {  }
 
         uint64_t get_read_only_file_size() const { return read_only_file_size; }
@@ -560,6 +607,11 @@ namespace org
           const org::xtreemfs::interfaces::XLocSet& xlocs
         )
           : xcap( xcap ), xlocs( xlocs )
+        { }
+
+        FileCredentials( const FileCredentials& other )
+          : xcap( other.get_xcap() ),
+            xlocs( other.get_xlocs() )
         { }
 
         virtual ~FileCredentials() {  }

@@ -1,5 +1,5 @@
-#ifndef _1378938071_H_
-#define _1378938071_H_
+#ifndef _1804198200_H_
+#define _1804198200_H_
 
 
 #include "constants.h"
@@ -43,6 +43,17 @@ namespace org
             match_network( match_network ),
             ttl_s( ttl_s ),
             uri( uri )
+        { }
+
+        AddressMapping( const AddressMapping& other )
+          : uuid( other.get_uuid() ),
+            version( other.get_version() ),
+            protocol( other.get_protocol() ),
+            address( other.get_address() ),
+            port( other.get_port() ),
+            match_network( other.get_match_network() ),
+            ttl_s( other.get_ttl_s() ),
+            uri( other.get_uri() )
         { }
 
         virtual ~AddressMapping() {  }
@@ -220,6 +231,15 @@ namespace org
             data( data )
         { }
 
+        Service( const Service& other )
+          : type( other.get_type() ),
+            uuid( other.get_uuid() ),
+            version( other.get_version() ),
+            name( other.get_name() ),
+            last_updated_s( other.get_last_updated_s() ),
+            data( other.get_data() )
+        { }
+
         virtual ~Service() {  }
 
         org::xtreemfs::interfaces::ServiceType get_type() const { return type; }
@@ -335,6 +355,13 @@ namespace org
             port( port ),
             protocol( protocol ),
             interface_version( interface_version )
+        { }
+
+        DirService( const DirService& other )
+          : address( other.get_address() ),
+            port( other.get_port() ),
+            protocol( other.get_protocol() ),
+            interface_version( other.get_interface_version() )
         { }
 
         virtual ~DirService() {  }
@@ -567,11 +594,39 @@ namespace org
             : uuid( uuid )
           { }
 
+          xtreemfs_address_mappings_getRequest( const xtreemfs_address_mappings_getRequest& other )
+            : uuid( other.get_uuid() )
+          { }
+
           virtual ~xtreemfs_address_mappings_getRequest() {  }
 
           const string& get_uuid() const { return uuid; }
           void set_uuid( const string& uuid ) { this->uuid = uuid; }
 
+          bool operator==( const xtreemfs_address_mappings_getRequest& other ) const
+          {
+            return get_uuid() == other.get_uuid();
+          }
+
+          // yidl::runtime::RTTIObject
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_address_mappings_getRequest, 2010031017 );
+
+          // yidl::runtime::MarshallableObject
+          void marshal( ::yidl::runtime::Marshaller& marshaller ) const
+          {
+            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "uuid", 0 ), get_uuid() );
+          }
+
+          void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
+          {
+            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "uuid", 0 ), uuid );
+          }
+
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new xtreemfs_address_mappings_getResponse;
+          }
 
           virtual void
           respond
@@ -593,25 +648,6 @@ namespace org
             Request::respond( response );
           }
 
-          bool operator==( const xtreemfs_address_mappings_getRequest& other ) const
-          {
-            return get_uuid() == other.get_uuid();
-          }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_address_mappings_getRequest, 2010031017 );
-
-          // yidl::runtime::MarshallableObject
-          void marshal( ::yidl::runtime::Marshaller& marshaller ) const
-          {
-            marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "uuid", 0 ), get_uuid() );
-          }
-
-          void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
-          {
-            unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "uuid", 0 ), uuid );
-          }
-
         protected:
           string uuid;
         };
@@ -627,6 +663,10 @@ namespace org
             const org::xtreemfs::interfaces::AddressMappingSet& address_mappings
           )
             : address_mappings( address_mappings )
+          { }
+
+          xtreemfs_address_mappings_getResponse( const xtreemfs_address_mappings_getResponse& other )
+            : address_mappings( other.get_address_mappings() )
           { }
 
           virtual ~xtreemfs_address_mappings_getResponse() {  }
@@ -667,21 +707,14 @@ namespace org
             : uuid( uuid )
           { }
 
+          xtreemfs_address_mappings_removeRequest( const xtreemfs_address_mappings_removeRequest& other )
+            : uuid( other.get_uuid() )
+          { }
+
           virtual ~xtreemfs_address_mappings_removeRequest() {  }
 
           const string& get_uuid() const { return uuid; }
           void set_uuid( const string& uuid ) { this->uuid = uuid; }
-
-
-          virtual void respond()
-          {
-            respond( *new xtreemfs_address_mappings_removeResponse() );
-          }
-
-          virtual void respond( ::yield::concurrency::Response& response )
-          {
-            Request::respond( response );
-          }
 
           bool operator==( const xtreemfs_address_mappings_removeRequest& other ) const
           {
@@ -702,6 +735,22 @@ namespace org
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "uuid", 0 ), uuid );
           }
 
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new xtreemfs_address_mappings_removeResponse;
+          }
+
+          virtual void respond()
+          {
+            respond( *new xtreemfs_address_mappings_removeResponse() );
+          }
+
+          virtual void respond( ::yield::concurrency::Response& response )
+          {
+            Request::respond( response );
+          }
+
         protected:
           string uuid;
         };
@@ -710,7 +759,6 @@ namespace org
         class xtreemfs_address_mappings_removeResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
-          xtreemfs_address_mappings_removeResponse() { }
           virtual ~xtreemfs_address_mappings_removeResponse() {  }
 
           bool operator==( const xtreemfs_address_mappings_removeResponse& ) const { return true; }
@@ -736,21 +784,14 @@ namespace org
             : address_mappings( address_mappings )
           { }
 
+          xtreemfs_address_mappings_setRequest( const xtreemfs_address_mappings_setRequest& other )
+            : address_mappings( other.get_address_mappings() )
+          { }
+
           virtual ~xtreemfs_address_mappings_setRequest() {  }
 
           const org::xtreemfs::interfaces::AddressMappingSet& get_address_mappings() const { return address_mappings; }
           void set_address_mappings( const org::xtreemfs::interfaces::AddressMappingSet&  address_mappings ) { this->address_mappings = address_mappings; }
-
-
-          virtual void respond( uint64_t _return_value )
-          {
-            respond( *new xtreemfs_address_mappings_setResponse( _return_value ) );
-          }
-
-          virtual void respond( ::yield::concurrency::Response& response )
-          {
-            Request::respond( response );
-          }
 
           bool operator==( const xtreemfs_address_mappings_setRequest& other ) const
           {
@@ -771,6 +812,22 @@ namespace org
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "address_mappings", 0 ), address_mappings );
           }
 
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new xtreemfs_address_mappings_setResponse;
+          }
+
+          virtual void respond( uint64_t _return_value )
+          {
+            respond( *new xtreemfs_address_mappings_setResponse( _return_value ) );
+          }
+
+          virtual void respond( ::yield::concurrency::Response& response )
+          {
+            Request::respond( response );
+          }
+
         protected:
           org::xtreemfs::interfaces::AddressMappingSet address_mappings;
         };
@@ -785,6 +842,10 @@ namespace org
 
           xtreemfs_address_mappings_setResponse( uint64_t _return_value )
             : _return_value( _return_value )
+          { }
+
+          xtreemfs_address_mappings_setResponse( const xtreemfs_address_mappings_setResponse& other )
+            : _return_value( other.get__return_value() )
           { }
 
           virtual ~xtreemfs_address_mappings_setResponse() {  }
@@ -819,9 +880,22 @@ namespace org
         class xtreemfs_checkpointRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
-          xtreemfs_checkpointRequest() { }
           virtual ~xtreemfs_checkpointRequest() {  }
 
+          bool operator==( const xtreemfs_checkpointRequest& ) const { return true; }
+
+          // yidl::runtime::RTTIObject
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_checkpointRequest, 2010031020 );
+
+          // yidl::runtime::MarshallableObject
+          void marshal( ::yidl::runtime::Marshaller& ) const { }
+          void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
+
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new xtreemfs_checkpointResponse;
+          }
 
           virtual void respond()
           {
@@ -832,22 +906,12 @@ namespace org
           {
             Request::respond( response );
           }
-
-          bool operator==( const xtreemfs_checkpointRequest& ) const { return true; }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_checkpointRequest, 2010031020 );
-
-          // yidl::runtime::MarshallableObject
-          void marshal( ::yidl::runtime::Marshaller& ) const { }
-          void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
 
 
         class xtreemfs_checkpointResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
-          xtreemfs_checkpointResponse() { }
           virtual ~xtreemfs_checkpointResponse() {  }
 
           bool operator==( const xtreemfs_checkpointResponse& ) const { return true; }
@@ -864,9 +928,22 @@ namespace org
         class xtreemfs_discover_dirRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
-          xtreemfs_discover_dirRequest() { }
           virtual ~xtreemfs_discover_dirRequest() {  }
 
+          bool operator==( const xtreemfs_discover_dirRequest& ) const { return true; }
+
+          // yidl::runtime::RTTIObject
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_discover_dirRequest, 2010031021 );
+
+          // yidl::runtime::MarshallableObject
+          void marshal( ::yidl::runtime::Marshaller& ) const { }
+          void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
+
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new xtreemfs_discover_dirResponse;
+          }
 
           virtual void
           respond
@@ -887,15 +964,6 @@ namespace org
           {
             Request::respond( response );
           }
-
-          bool operator==( const xtreemfs_discover_dirRequest& ) const { return true; }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_discover_dirRequest, 2010031021 );
-
-          // yidl::runtime::MarshallableObject
-          void marshal( ::yidl::runtime::Marshaller& ) const { }
-          void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
 
 
@@ -909,6 +977,10 @@ namespace org
             const org::xtreemfs::interfaces::DirService& dir_service
           )
             : dir_service( dir_service )
+          { }
+
+          xtreemfs_discover_dirResponse( const xtreemfs_discover_dirResponse& other )
+            : dir_service( other.get_dir_service() )
           { }
 
           virtual ~xtreemfs_discover_dirResponse() {  }
@@ -943,9 +1015,22 @@ namespace org
         class xtreemfs_global_time_s_getRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
-          xtreemfs_global_time_s_getRequest() { }
           virtual ~xtreemfs_global_time_s_getRequest() {  }
 
+          bool operator==( const xtreemfs_global_time_s_getRequest& ) const { return true; }
+
+          // yidl::runtime::RTTIObject
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_global_time_s_getRequest, 2010031022 );
+
+          // yidl::runtime::MarshallableObject
+          void marshal( ::yidl::runtime::Marshaller& ) const { }
+          void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
+
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new xtreemfs_global_time_s_getResponse;
+          }
 
           virtual void respond( uint64_t _return_value )
           {
@@ -956,15 +1041,6 @@ namespace org
           {
             Request::respond( response );
           }
-
-          bool operator==( const xtreemfs_global_time_s_getRequest& ) const { return true; }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_global_time_s_getRequest, 2010031022 );
-
-          // yidl::runtime::MarshallableObject
-          void marshal( ::yidl::runtime::Marshaller& ) const { }
-          void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
 
 
@@ -977,6 +1053,10 @@ namespace org
 
           xtreemfs_global_time_s_getResponse( uint64_t _return_value )
             : _return_value( _return_value )
+          { }
+
+          xtreemfs_global_time_s_getResponse( const xtreemfs_global_time_s_getResponse& other )
+            : _return_value( other.get__return_value() )
           { }
 
           virtual ~xtreemfs_global_time_s_getResponse() {  }
@@ -1017,21 +1097,14 @@ namespace org
             : uuid( uuid )
           { }
 
+          xtreemfs_service_deregisterRequest( const xtreemfs_service_deregisterRequest& other )
+            : uuid( other.get_uuid() )
+          { }
+
           virtual ~xtreemfs_service_deregisterRequest() {  }
 
           const string& get_uuid() const { return uuid; }
           void set_uuid( const string& uuid ) { this->uuid = uuid; }
-
-
-          virtual void respond()
-          {
-            respond( *new xtreemfs_service_deregisterResponse() );
-          }
-
-          virtual void respond( ::yield::concurrency::Response& response )
-          {
-            Request::respond( response );
-          }
 
           bool operator==( const xtreemfs_service_deregisterRequest& other ) const
           {
@@ -1052,6 +1125,22 @@ namespace org
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "uuid", 0 ), uuid );
           }
 
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new xtreemfs_service_deregisterResponse;
+          }
+
+          virtual void respond()
+          {
+            respond( *new xtreemfs_service_deregisterResponse() );
+          }
+
+          virtual void respond( ::yield::concurrency::Response& response )
+          {
+            Request::respond( response );
+          }
+
         protected:
           string uuid;
         };
@@ -1060,7 +1149,6 @@ namespace org
         class xtreemfs_service_deregisterResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
-          xtreemfs_service_deregisterResponse() { }
           virtual ~xtreemfs_service_deregisterResponse() {  }
 
           bool operator==( const xtreemfs_service_deregisterResponse& ) const { return true; }
@@ -1083,21 +1171,14 @@ namespace org
             : name( name )
           { }
 
+          xtreemfs_service_get_by_nameRequest( const xtreemfs_service_get_by_nameRequest& other )
+            : name( other.get_name() )
+          { }
+
           virtual ~xtreemfs_service_get_by_nameRequest() {  }
 
           const string& get_name() const { return name; }
           void set_name( const string& name ) { this->name = name; }
-
-
-          virtual void respond( const org::xtreemfs::interfaces::ServiceSet& services )
-          {
-            respond( *new xtreemfs_service_get_by_nameResponse( services ) );
-          }
-
-          virtual void respond( ::yield::concurrency::Response& response )
-          {
-            Request::respond( response );
-          }
 
           bool operator==( const xtreemfs_service_get_by_nameRequest& other ) const
           {
@@ -1118,6 +1199,22 @@ namespace org
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "name", 0 ), name );
           }
 
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new xtreemfs_service_get_by_nameResponse;
+          }
+
+          virtual void respond( const org::xtreemfs::interfaces::ServiceSet& services )
+          {
+            respond( *new xtreemfs_service_get_by_nameResponse( services ) );
+          }
+
+          virtual void respond( ::yield::concurrency::Response& response )
+          {
+            Request::respond( response );
+          }
+
         protected:
           string name;
         };
@@ -1133,6 +1230,10 @@ namespace org
             const org::xtreemfs::interfaces::ServiceSet& services
           )
             : services( services )
+          { }
+
+          xtreemfs_service_get_by_nameResponse( const xtreemfs_service_get_by_nameResponse& other )
+            : services( other.get_services() )
           { }
 
           virtual ~xtreemfs_service_get_by_nameResponse() {  }
@@ -1178,21 +1279,14 @@ namespace org
             : type( type )
           { }
 
+          xtreemfs_service_get_by_typeRequest( const xtreemfs_service_get_by_typeRequest& other )
+            : type( other.get_type() )
+          { }
+
           virtual ~xtreemfs_service_get_by_typeRequest() {  }
 
           org::xtreemfs::interfaces::ServiceType get_type() const { return type; }
           void set_type( org::xtreemfs::interfaces::ServiceType type ) { this->type = type; }
-
-
-          virtual void respond( const org::xtreemfs::interfaces::ServiceSet& services )
-          {
-            respond( *new xtreemfs_service_get_by_typeResponse( services ) );
-          }
-
-          virtual void respond( ::yield::concurrency::Response& response )
-          {
-            Request::respond( response );
-          }
 
           bool operator==( const xtreemfs_service_get_by_typeRequest& other ) const
           {
@@ -1213,6 +1307,22 @@ namespace org
             type = static_cast<org::xtreemfs::interfaces::ServiceType>( unmarshaller.read_int32( ::yidl::runtime::Unmarshaller::StringLiteralKey( "type", 0 ) ) );
           }
 
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new xtreemfs_service_get_by_typeResponse;
+          }
+
+          virtual void respond( const org::xtreemfs::interfaces::ServiceSet& services )
+          {
+            respond( *new xtreemfs_service_get_by_typeResponse( services ) );
+          }
+
+          virtual void respond( ::yield::concurrency::Response& response )
+          {
+            Request::respond( response );
+          }
+
         protected:
           org::xtreemfs::interfaces::ServiceType type;
         };
@@ -1228,6 +1338,10 @@ namespace org
             const org::xtreemfs::interfaces::ServiceSet& services
           )
             : services( services )
+          { }
+
+          xtreemfs_service_get_by_typeResponse( const xtreemfs_service_get_by_typeResponse& other )
+            : services( other.get_services() )
           { }
 
           virtual ~xtreemfs_service_get_by_typeResponse() {  }
@@ -1268,21 +1382,14 @@ namespace org
             : uuid( uuid )
           { }
 
+          xtreemfs_service_get_by_uuidRequest( const xtreemfs_service_get_by_uuidRequest& other )
+            : uuid( other.get_uuid() )
+          { }
+
           virtual ~xtreemfs_service_get_by_uuidRequest() {  }
 
           const string& get_uuid() const { return uuid; }
           void set_uuid( const string& uuid ) { this->uuid = uuid; }
-
-
-          virtual void respond( const org::xtreemfs::interfaces::ServiceSet& services )
-          {
-            respond( *new xtreemfs_service_get_by_uuidResponse( services ) );
-          }
-
-          virtual void respond( ::yield::concurrency::Response& response )
-          {
-            Request::respond( response );
-          }
 
           bool operator==( const xtreemfs_service_get_by_uuidRequest& other ) const
           {
@@ -1303,6 +1410,22 @@ namespace org
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "uuid", 0 ), uuid );
           }
 
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new xtreemfs_service_get_by_uuidResponse;
+          }
+
+          virtual void respond( const org::xtreemfs::interfaces::ServiceSet& services )
+          {
+            respond( *new xtreemfs_service_get_by_uuidResponse( services ) );
+          }
+
+          virtual void respond( ::yield::concurrency::Response& response )
+          {
+            Request::respond( response );
+          }
+
         protected:
           string uuid;
         };
@@ -1318,6 +1441,10 @@ namespace org
             const org::xtreemfs::interfaces::ServiceSet& services
           )
             : services( services )
+          { }
+
+          xtreemfs_service_get_by_uuidResponse( const xtreemfs_service_get_by_uuidResponse& other )
+            : services( other.get_services() )
           { }
 
           virtual ~xtreemfs_service_get_by_uuidResponse() {  }
@@ -1358,21 +1485,14 @@ namespace org
             : uuid( uuid )
           { }
 
+          xtreemfs_service_offlineRequest( const xtreemfs_service_offlineRequest& other )
+            : uuid( other.get_uuid() )
+          { }
+
           virtual ~xtreemfs_service_offlineRequest() {  }
 
           const string& get_uuid() const { return uuid; }
           void set_uuid( const string& uuid ) { this->uuid = uuid; }
-
-
-          virtual void respond()
-          {
-            respond( *new xtreemfs_service_offlineResponse() );
-          }
-
-          virtual void respond( ::yield::concurrency::Response& response )
-          {
-            Request::respond( response );
-          }
 
           bool operator==( const xtreemfs_service_offlineRequest& other ) const
           {
@@ -1393,6 +1513,22 @@ namespace org
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "uuid", 0 ), uuid );
           }
 
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new xtreemfs_service_offlineResponse;
+          }
+
+          virtual void respond()
+          {
+            respond( *new xtreemfs_service_offlineResponse() );
+          }
+
+          virtual void respond( ::yield::concurrency::Response& response )
+          {
+            Request::respond( response );
+          }
+
         protected:
           string uuid;
         };
@@ -1401,7 +1537,6 @@ namespace org
         class xtreemfs_service_offlineResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
-          xtreemfs_service_offlineResponse() { }
           virtual ~xtreemfs_service_offlineResponse() {  }
 
           bool operator==( const xtreemfs_service_offlineResponse& ) const { return true; }
@@ -1427,21 +1562,14 @@ namespace org
             : service( service )
           { }
 
+          xtreemfs_service_registerRequest( const xtreemfs_service_registerRequest& other )
+            : service( other.get_service() )
+          { }
+
           virtual ~xtreemfs_service_registerRequest() {  }
 
           const org::xtreemfs::interfaces::Service& get_service() const { return service; }
           void set_service( const org::xtreemfs::interfaces::Service&  service ) { this->service = service; }
-
-
-          virtual void respond( uint64_t _return_value )
-          {
-            respond( *new xtreemfs_service_registerResponse( _return_value ) );
-          }
-
-          virtual void respond( ::yield::concurrency::Response& response )
-          {
-            Request::respond( response );
-          }
 
           bool operator==( const xtreemfs_service_registerRequest& other ) const
           {
@@ -1462,6 +1590,22 @@ namespace org
             unmarshaller.read( ::yidl::runtime::Unmarshaller::StringLiteralKey( "service", 0 ), service );
           }
 
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new xtreemfs_service_registerResponse;
+          }
+
+          virtual void respond( uint64_t _return_value )
+          {
+            respond( *new xtreemfs_service_registerResponse( _return_value ) );
+          }
+
+          virtual void respond( ::yield::concurrency::Response& response )
+          {
+            Request::respond( response );
+          }
+
         protected:
           org::xtreemfs::interfaces::Service service;
         };
@@ -1476,6 +1620,10 @@ namespace org
 
           xtreemfs_service_registerResponse( uint64_t _return_value )
             : _return_value( _return_value )
+          { }
+
+          xtreemfs_service_registerResponse( const xtreemfs_service_registerResponse& other )
+            : _return_value( other.get__return_value() )
           { }
 
           virtual ~xtreemfs_service_registerResponse() {  }
@@ -1510,9 +1658,22 @@ namespace org
         class xtreemfs_shutdownRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
-          xtreemfs_shutdownRequest() { }
           virtual ~xtreemfs_shutdownRequest() {  }
 
+          bool operator==( const xtreemfs_shutdownRequest& ) const { return true; }
+
+          // yidl::runtime::RTTIObject
+          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 2010031030 );
+
+          // yidl::runtime::MarshallableObject
+          void marshal( ::yidl::runtime::Marshaller& ) const { }
+          void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
+
+          // yield::concurrency::Request
+          virtual ::yield::concurrency::Response* createDefaultResponse()
+          {
+            return new xtreemfs_shutdownResponse;
+          }
 
           virtual void respond()
           {
@@ -1523,22 +1684,12 @@ namespace org
           {
             Request::respond( response );
           }
-
-          bool operator==( const xtreemfs_shutdownRequest& ) const { return true; }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 2010031030 );
-
-          // yidl::runtime::MarshallableObject
-          void marshal( ::yidl::runtime::Marshaller& ) const { }
-          void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
 
 
         class xtreemfs_shutdownResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
-          xtreemfs_shutdownResponse() { }
           virtual ~xtreemfs_shutdownResponse() {  }
 
           bool operator==( const xtreemfs_shutdownResponse& ) const { return true; }

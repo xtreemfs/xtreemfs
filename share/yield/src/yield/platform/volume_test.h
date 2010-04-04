@@ -329,7 +329,7 @@ namespace yield
 
       if ( file != NULL )
       {
-        file->write( "test", 4 );
+        file->write( "test", 4, 0 );
         File::dec_ref( *file );
 
         Stat* stbuf = get_volume().getattr( get_test_file_name() );
