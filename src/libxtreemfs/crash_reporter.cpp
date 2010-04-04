@@ -111,7 +111,11 @@ CrashReporter::MinidumpCallback
     dump_file_path = dump_file_path + dump_file_name;
 
     string put_crash_dump_uri( put_crash_dump_uri );
+#ifdef _WIN32
     put_crash_dump_uri += dump_file_name;
+#else
+    put_crash_dump_uri += static_cast<const string&>( dump_file_name );
+#endif
 
     if ( log != NULL )
     {

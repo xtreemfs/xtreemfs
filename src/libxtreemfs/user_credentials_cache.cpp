@@ -28,6 +28,7 @@
 
 
 #include "user_credentials_cache.h"
+using org::xtreemfs::interfaces::StringSet;
 using namespace xtreemfs;
 
 #include "yield.h"
@@ -285,7 +286,7 @@ UserCredentialsCache::getpasswdFromUserCredentials
 
   user_credentials_to_passwd_cache_lock.acquire();
 
-  map<string,map<string,pair<uid_t, gid_t>*>*>::iterator
+  map<string,map<string,pair<uid_t,gid_t>*>*>::iterator
     group_i = user_credentials_to_passwd_cache.find( group_id );
 
   if ( group_i != user_credentials_to_passwd_cache.end() )
@@ -435,7 +436,7 @@ UserCredentialsCache::getpasswdFromUserCredentials
   {
     group_i->second->insert
     (
-      std::make_pair
+      make_pair
       (
         user_id,
         new pair<uid_t,gid_t>( out_uid, out_gid )
@@ -449,19 +450,19 @@ UserCredentialsCache::getpasswdFromUserCredentials
 
     user_credentials_to_passwd_cache[group_id]->insert
     (
-      std::make_pair( user_id, new pair<uid_t,gid_t>( out_uid, out_gid ) )
+      make_pair( user_id, new pair<uid_t,gid_t>( out_uid, out_gid ) )
     );
   }
 
   user_credentials_to_passwd_cache_lock.release();
 }
 
-bool
+
+UserCredentials*
 UserCredentialsCache::getUserCredentialsFrompasswd
 (
   uid_t uid,
-  gid_t gid,
-  UserCredentials& out_user_credentials
+  gid_t gid
 )
 {
 //#ifdef _DEBUG
@@ -477,17 +478,17 @@ UserCredentialsCache::getUserCredentialsFrompasswd
 
   passwd_to_user_credentials_cache_lock.acquire();
 
-  map<gid_t,map<uid_t,UserCredentials*>*>
-    ::iterator group_i = passwd_to_user_credentials_cache.find( gid );
+  map<gid_t,map<uid_t,UserCredentials*>*>::const_iterator group_i 
+    = passwd_to_user_credentials_cache.find( gid );
 
   if ( group_i != passwd_to_user_credentials_cache.end() )
   {
-    map<uid_t,UserCredentials*>::iterator
-      user_i = group_i->second->find( uid );
+    map<uid_t,UserCredentials*>::const_iterator user_i 
+      = group_i->second->find( uid );
 
     if ( user_i != group_i->second->end() )
     {
-      out_user_credentials = *user_i->second;
+      UserCredentials* user_credentials = &user_i->second->inc_ref();
 
       passwd_to_user_credentials_cache_lock.release();
 
@@ -499,16 +500,15 @@ UserCredentialsCache::getUserCredentialsFrompasswd
 //      )
 //        log->get_stream( Log::LOG_DEBUG ) <<
 //          "xtreemfs::Proxy: found UserCredentials in cache, " <<
-//          uid << "=" << out_user_credentials.get_user_id() << ", " <<
-//          gid << "=" << out_user_credentials.get_group_ids()[0] << ".";
+//          uid << "=" << user_credentials->get_user_id() << ", " <<
+//          gid << "=" << user_credentials->get_group_ids()[0] << ".";
 //#endif
 
-      return true;
+      return user_credentials;
     }
   }
 
-  passwd_to_user_credentials_cache_lock.release();
-
+  UserCredentials* user_credentials = new UserCredentials;
 
   if ( get_user_credentials_from_passwd )
   {
@@ -534,6 +534,7 @@ UserCredentialsCache::getUserCredentialsFrompasswd
           NULL,
           &group_ids_len
         );
+
     if ( get_user_credentials_from_passwd_ret >= 0 )
     {
 //#ifdef _DEBUG
@@ -564,9 +565,10 @@ UserCredentialsCache::getUserCredentialsFrompasswd
             group_ids,
             &group_ids_len
           );
+
         if ( get_user_credentials_from_passwd_ret >= 0 )
         {
-          out_user_credentials.set_user_id( user_id );
+          user_credentials->set_user_id( user_id );
 
           if ( group_ids_len > 0 )
           {
@@ -581,13 +583,10 @@ UserCredentialsCache::getUserCredentialsFrompasswd
               group_ids_p += group_ids_ss.back().size() + 1;
             }
 
-            out_user_credentials.set_group_ids( group_ids_ss );
+            user_credentials->set_group_ids( group_ids_ss );
           }
           else
-            out_user_credentials.set_group_ids
-            (
-              StringSet( "" )
-            );
+            user_credentials->set_group_ids( StringSet( "" ) );
 
 //#ifdef _DEBUG
 //          if
@@ -598,18 +597,26 @@ UserCredentialsCache::getUserCredentialsFrompasswd
 //          )
 //            log->get_stream( Log::LOG_DEBUG ) <<
 //              "xtreemfs::Proxy: get_user_credentials_from_passwd succeeded, " <<
-//              uid << "=" << out_user_credentials.get_user_id() << ", " <<
-//              gid << "=" << out_user_credentials.get_group_ids()[0] << ".";
+//              uid << "=" << user_credentials->get_user_id() << ", " <<
+//              gid << "=" << user_credentials->get_group_ids()[0] << ".";
 //#endif
 
           // Drop down to insert the credentials into the cache
         }
         else
-          return false;
+        {
+          passwd_to_user_credentials_cache_lock.release();
+          delete user_credentials;
+          return NULL;
+        }
       }
     }
     else
-      return false;
+    {
+      passwd_to_user_credentials_cache_lock.release();
+      delete user_credentials;
+      return NULL;
+    }
   }
   else
   {
@@ -624,23 +631,27 @@ UserCredentialsCache::getUserCredentialsFrompasswd
       {
         if ( pwd_res != NULL && pwd_res->pw_name != NULL )
         {
-          out_user_credentials.set_user_id( pwd_res->pw_name );
+          user_credentials->set_user_id( pwd_res->pw_name );
           delete [] pwd_buf;
         }
         else
         {
+          passwd_to_user_credentials_cache_lock.release();
           delete [] pwd_buf;
-          return false;
+          delete user_credentials; 
+          return NULL;
         }
       }
       else
       {
+        passwd_to_user_credentials_cache_lock.release();
         delete [] pwd_buf;
-        return false;
+        delete user_credentials;
+        return NULL;
       }
     }
     else
-      out_user_credentials.set_user_id( "" );
+      user_credentials->set_user_id( "" );
 
     if ( gid != static_cast<gid_t>( -1 ) )
     {
@@ -653,63 +664,42 @@ UserCredentialsCache::getUserCredentialsFrompasswd
       {
         if ( grp_res != NULL && grp_res->gr_name != NULL )
         {
-          out_user_credentials.set_group_ids
-          (
-            StringSet( grp_res->gr_name )
-          );
+          user_credentials->set_group_ids( StringSet( grp_res->gr_name ) );
           delete [] grp_buf;
           // Drop down to insert the credentials into the cache
         }
         else
         {
+          passwd_to_user_credentials_cache_lock.release();
           delete [] grp_buf;
-          return false;
+          delete user_credentials;
+          return NULL;
         }
       }
       else
       {
+        passwd_to_user_credentials_cache_lock.release();
         delete [] grp_buf;
-        return false;
+        delete user_credentials;
+        return NULL;
       }
     }
     else
-      out_user_credentials.set_group_ids
-      (
-        StringSet( "" )
-      );
+      user_credentials->set_group_ids( StringSet( "" ) );
       // Drop down to insert the credentials into the cache
   }
 
-  passwd_to_user_credentials_cache_lock.acquire();
-
   if ( group_i != passwd_to_user_credentials_cache.end() )
-  {
-    group_i->second->insert
-    (
-      std::make_pair
-      (
-        uid,
-        new UserCredentials( out_user_credentials )
-      )
-    );
-  }
+    group_i->second->insert( make_pair( uid, &user_credentials->inc_ref() ) );
   else
   {
-    passwd_to_user_credentials_cache[gid] =
-      new map<uid_t,UserCredentials*>;
-
-    passwd_to_user_credentials_cache[gid]->insert
-    (
-      std::make_pair
-      (
-        uid,
-        new UserCredentials( out_user_credentials )
-      )
-    );
+    passwd_to_user_credentials_cache[gid] = new map<uid_t,UserCredentials*>;
+    ( *passwd_to_user_credentials_cache[gid] )[uid] = &user_credentials->inc_ref();
   }
 
   passwd_to_user_credentials_cache_lock.release();
 
-  return true;
+  return user_credentials;
 }
+
 #endif

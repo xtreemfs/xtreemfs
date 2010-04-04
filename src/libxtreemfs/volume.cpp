@@ -199,7 +199,7 @@ void Volume::close( File& file )
 {
   file_state_map_lock.acquire();
 
-  FileStateMap::const_iterator file_state_i 
+  FileStateMap::iterator file_state_i 
     = file_state_map.find( file.get_xcap().get_file_id() );
 
   if ( file_state_i != file_state_map.end() )
@@ -760,12 +760,11 @@ Volume::setattr
       ( to_set & SETATTR_GID ) == SETATTR_GID
     )
     {
-      UserCredentials user_credentials
-        = user_credentials_cache->getUserCredentialsFrompasswd
+      UserCredentials* user_credentials
+        = user_credentials_cache.getUserCredentialsFrompasswd
           (
             stbuf.get_uid(),
-            stbuf.get_gid(),
-            user_credentials
+            stbuf.get_gid()
           );
 
       if ( user_credentials != NULL )
@@ -779,12 +778,11 @@ Volume::setattr
     }
     else if ( ( to_set & SETATTR_UID ) == SETATTR_UID )
     {
-      UserCredentials user_credentials
-        = user_credentials_cache->getUserCredentialsFrompasswd
+      UserCredentials* user_credentials
+        = user_credentials_cache.getUserCredentialsFrompasswd
           (
             stbuf.get_uid(),
-            stbuf.get_gid(),
-            user_credentials
+            stbuf.get_gid()
           );
 
       if ( user_credentials != NULL )
@@ -797,12 +795,11 @@ Volume::setattr
     }
     else if ( ( to_set & SETATTR_GID ) == SETATTR_GID )
     {
-      UserCredentials user_credentials
-        = user_credentials_cache->getUserCredentialsFrompasswd
+      UserCredentials* user_credentials
+        = user_credentials_cache.getUserCredentialsFrompasswd
           (
             stbuf.get_uid(),
-            stbuf.get_gid(),
-            user_credentials
+            stbuf.get_gid()
           );
 
       if ( user_credentials != NULL )

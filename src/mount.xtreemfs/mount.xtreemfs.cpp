@@ -30,12 +30,6 @@
 #include <memory>
 using std::auto_ptr;
 
-#ifndef _WIN32
-#define FUSE_USE_VERSION 26
-#include <fuse.h>
-#include <unistd.h>
-#endif
-
 #include "xtreemfs.h"
 using namespace xtreemfs;
 
@@ -57,6 +51,12 @@ using yieldfs::FUSE;
 
 #include "yunit.h"
 using yunit::TestRunner;
+
+#ifndef _WIN32
+#define FUSE_USE_VERSION 26
+#include <fuse.h>
+#include <unistd.h>
+#endif
 
 
 int main( int argc, char** argv )
@@ -226,12 +226,9 @@ int main( int argc, char** argv )
           fuse_o_args.append( ",big_writes" );
 #endif
         fuse_argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
-        get_log()->get_stream( Log::LOG_INFO ) <<
-            get_program_name() << ": passing -o " << fuse_o_args <<
-            " to FUSE.";
         fuse_argvv.push_back( NULL );
-        struct fuse_args fuse_args_ =
-          FUSE_ARGS_INIT( fuse_argvv.size() - 1 , &fuse_argvv[0] );
+        struct fuse_args fuse_args_
+          = FUSE_ARGS_INIT( fuse_argvv.size() - 1 , &fuse_argvv[0] );
 
         ::close( STDIN_FILENO );
         ::close( STDOUT_FILENO );
@@ -251,7 +248,14 @@ int main( int argc, char** argv )
       child_argv.push_back( "-f" );
 
       child_argv.push_back( "--log-file-path" );
+#ifdef _WIN32
       string log_file_path( options.get_error_log_file_path() );
+#else
+      string log_file_path
+             (
+               static_cast<const string&>( options.get_error_log_file_path() ) 
+             );
+#endif
       if ( log_file_path.empty() )
       {
         ostringstream log_file_path_oss;

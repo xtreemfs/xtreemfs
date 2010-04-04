@@ -98,7 +98,7 @@ public:
       this->stbuf->set_nlink( static_cast<nlink_t>( stbuf.get_nlink() ) );
 
 #ifndef _WIN32
-      if ( !have_write_back_attr( Volume::SETATTR_GID )
+      if ( !have_write_back_attr( Volume::SETATTR_GID ) )
         this->stbuf->set_group_id( stbuf.get_group_id() );
 
       if ( !have_write_back_attr(  Volume::SETATTR_UID ) )
@@ -318,7 +318,7 @@ Stat* StatCache::getattr( const Path& path )
 #ifndef _WIN32
     // Translate the user_id and group_id from the server Stat to uid and gid
     uid_t uid; gid_t gid;
-    user_credentials_cache->getpasswdFromUserCredentials
+    user_credentials_cache.getpasswdFromUserCredentials
     (
       if_stbuf[0].get_user_id(),
       if_stbuf[0].get_group_id(),

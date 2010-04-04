@@ -1,5 +1,3 @@
-// Revision: 2172
-
 #include "yield/concurrency.h"
 #include "yield/ipc.h"
 #include "yield/platform.h"
@@ -13667,8 +13665,8 @@ ONCRPCRequest::ONCRPCRequest
   MarshallableObject* cred,
   MarshallableObject* verf
 )
-  : ONCRPCMessage( verf, xid ),
-    RPCRequest( body ),
+  : RPCRequest( body ),
+    ONCRPCMessage( verf, xid ),
     prog( prog ),
     vers( vers )
 {
@@ -13751,7 +13749,7 @@ ONCRPCRequestParser::ONCRPCRequestParser
 
 RTTIObject* ONCRPCRequestParser::parse( Buffer& buffer )
 {
-  return ONCRPCMessageParser::parse( buffer );
+  return ONCRPCMessageParser<ONCRPCRequestParser>::parse( buffer );
 }
 
 Message*
@@ -13813,8 +13811,8 @@ ONCRPCResponse::ONCRPCResponse
   uint32_t xid,
   MarshallableObject* verf
 )
-  : ONCRPCMessage( verf, xid ),
-    RPCResponse( body ),
+  : RPCResponse( body ),
+    ONCRPCMessage( verf, xid ),
     accept_stat_( SUCCESS ),
     auth_stat_( AUTH_OK ),
     reject_stat_( RPC_MISMATCH ),
@@ -13829,8 +13827,8 @@ ONCRPCResponse::ONCRPCResponse
   uint32_t xid,
   MarshallableObject* verf
 )
-  : ONCRPCMessage( verf, xid ),
-    RPCResponse( body ),
+  : RPCResponse( body ),
+    ONCRPCMessage( verf, xid ),
     accept_stat_( body.get_type_id() ),
     auth_stat_( AUTH_OK ),
     reject_stat_( RPC_MISMATCH ),
@@ -13844,8 +13842,8 @@ ONCRPCResponse::ONCRPCResponse
   const struct mismatch_info& mismatch_info_,
   uint32_t xid
 )
- : ONCRPCMessage( NULL, xid ),
-   RPCResponse( *new ONCRPCRPCMismatchError ),
+ : RPCResponse( *new ONCRPCRPCMismatchError ),
+   ONCRPCMessage( NULL, xid ),
    accept_stat_( SYSTEM_ERR ),
    auth_stat_( AUTH_OK ),
    mismatch_info_( mismatch_info_ ),
@@ -13854,8 +13852,8 @@ ONCRPCResponse::ONCRPCResponse
 { }
 
 ONCRPCResponse::ONCRPCResponse( auth_stat auth_stat_, uint32_t xid )
-  : ONCRPCMessage( NULL, xid ),
-    RPCResponse( *new ONCRPCAuthError( auth_stat_ ) ),
+  : RPCResponse( *new ONCRPCAuthError( auth_stat_ ) ),
+    ONCRPCMessage( NULL, xid ),
     accept_stat_( SYSTEM_ERR ),
     auth_stat_( auth_stat_ ),
     reject_stat_( AUTH_ERROR ),
@@ -14387,7 +14385,7 @@ onReadCompletion
       }
       else
       {
-        onReadError( 0, NULL );
+        this->onReadError( 0, NULL );
         return;
       }
     }
@@ -14546,7 +14544,7 @@ public:
       }
     }
 
-    onReadError( 0, NULL );
+    this->onReadError( 0, NULL );
   }
 
   // ResponseHandler

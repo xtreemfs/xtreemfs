@@ -73,8 +73,8 @@ namespace xtreemfs
   private:
     bool closed;
     vector<Lock> locks;
-    Path path;
     Volume& parent_volume;
+    Path path;
     size_t selected_file_replica_i;
     XCap xcap;
     XCapTimer* xcap_timer;

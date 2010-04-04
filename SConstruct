@@ -3,7 +3,6 @@ SConscript( "proj/mkfs.xtreemfs/mkfs.xtreemfs.SConscript" )
 SConscript( "proj/mount.xtreemfs/mount.xtreemfs.SConscript" )
 SConscript( "proj/nettest.xtreemfs/nettest.xtreemfs.SConscript" )
 SConscript( "proj/rmfs.xtreemfs/rmfs.xtreemfs.SConscript" )
-SConscript( "proj/xtfs_vivaldi/xtfs_vivaldi.SConscript" )
 
 Import( "build_env", "build_conf" )
 
