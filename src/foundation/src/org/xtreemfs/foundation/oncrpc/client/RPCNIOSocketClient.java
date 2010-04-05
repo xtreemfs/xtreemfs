@@ -40,6 +40,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -270,7 +271,11 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 }
 
             }
-            checkForTimers();
+            try {
+                checkForTimers();
+            } catch (ConcurrentModificationException ce) {
+                Logging.logError(Logging.LEVEL_CRIT, this, ce);
+            }
         }
         
         synchronized (connections) {
