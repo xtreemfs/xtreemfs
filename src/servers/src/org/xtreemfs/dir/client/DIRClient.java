@@ -336,8 +336,8 @@ public class DIRClient extends DIRClientBackend implements TimeServerClient {
             } catch (InvalidArgumentException e) {
                 // giving up
                 Logging.logMessage(Logging.LEVEL_ERROR, root, 
-                        "Request could not be processed, because: "+e.getMessage());
-                Logging.logError(Logging.LEVEL_INFO, this, e);
+                        "Request could not be processed, because: "+e.getError_message());
+                Logging.logError(Logging.LEVEL_DEBUG, this, e);
                 
             // an internal server error occurred
             } catch (ONCRPCException e) {
@@ -364,7 +364,7 @@ public class DIRClient extends DIRClientBackend implements TimeServerClient {
                     Logging.logMessage(Logging.LEVEL_ERROR, root, 
                             "Could not connect to the server and no alternative" +
                             " servers are available.");
-                    Logging.logError(Logging.LEVEL_INFO, this, e);
+                    Logging.logError(Logging.LEVEL_DEBUG, this, e);
                 }
             } 
             result.fill(r);
