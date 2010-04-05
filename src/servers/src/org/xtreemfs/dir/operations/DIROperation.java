@@ -33,7 +33,6 @@ import static org.xtreemfs.babudb.BabuDBException.ErrorCode.SNAP_EXISTS;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ConcurrentModificationException;
 
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBRequestListener;
@@ -42,6 +41,7 @@ import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
+import org.xtreemfs.interfaces.DIRInterface.ConcurrentModificationException;
 import org.xtreemfs.interfaces.DIRInterface.InvalidArgumentException;
 import org.xtreemfs.interfaces.DIRInterface.RedirectException;
 
@@ -105,7 +105,7 @@ public abstract class DIROperation {
                     ((BabuDBException) error).getErrorCode().equals(NO_ACCESS)
                   ) || (
                     error instanceof ConcurrentModificationException && 
-                    dbsReplicationManager.isMaster())
+                    !dbsReplicationManager.isMaster())
                   )
             ) {
             
