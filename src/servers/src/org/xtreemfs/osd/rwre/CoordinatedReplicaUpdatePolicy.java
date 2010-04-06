@@ -278,6 +278,9 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
             final int maxErrors, final int numAcksRequired, final String fileId, final Operation operation) {
 
         assert(numAcksRequired <= this.remoteOSDs.size());
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"new response listener for %s (acks %d, errs %d)",fileId,numAcksRequired,maxErrors);
+
         assert(maxErrors >= 0);
         RPCResponseAvailableListener listener = new RPCResponseAvailableListener() {
             int numAcks = 0;
