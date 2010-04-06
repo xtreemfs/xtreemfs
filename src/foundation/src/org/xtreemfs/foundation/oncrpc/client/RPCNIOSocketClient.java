@@ -132,28 +132,28 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     }
     
     public void sendRequest(RPCResponseListener listener, InetSocketAddress server, int programId,
-        int versionId, int procedureId, yidl.runtime.Object message) {
-        sendRequest(listener, server, programId, versionId, procedureId, message, null);
+        int versionId, int procedureId, yidl.runtime.Object message, boolean highPriority) {
+        sendRequest(listener, server, programId, versionId, procedureId, message, null, highPriority);
     }
     
     public void sendRequest(RPCResponseListener listener, InetSocketAddress server, int programId,
-        int versionId, int procedureId, yidl.runtime.Object message, Object attachment) {
-        sendRequest(listener, server, programId, versionId, procedureId, message, attachment, null);
+        int versionId, int procedureId, yidl.runtime.Object message, Object attachment, boolean highPriority) {
+        sendRequest(listener, server, programId, versionId, procedureId, message, attachment, null, highPriority);
     }
     
     public void sendRequest(RPCResponseListener listener, InetSocketAddress server, int programId,
-        int versionId, int procedureId, yidl.runtime.Object message, Object attachment, yidl.runtime.Object credentials) {
+        int versionId, int procedureId, yidl.runtime.Object message, Object attachment, yidl.runtime.Object credentials, boolean highPriority) {
         ONCRPCRequest rec = new ONCRPCRequest(listener, this.transactionId.getAndIncrement(), programId,
             versionId, procedureId, message, attachment, credentials);
         try {
-            sendRequest(server, rec);
+            sendRequest(server, rec, highPriority);
         } catch (Throwable e) { // CancelledKeyException, RuntimeException (caused by missing TimeSyncThread)
             //e.printStackTrace();
             listener.requestFailed(rec, new IOException(e));
         } 
     }
     
-    private void sendRequest(InetSocketAddress server, ONCRPCRequest request) {
+    private void sendRequest(InetSocketAddress server, ONCRPCRequest request, boolean highPriority) {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "sending request %s no %d", request
                     .toString(), transactionId.get());
@@ -171,7 +171,11 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             boolean isEmpty = con.getSendQueue().isEmpty();
             request.queued();
             con.useConnection();
-            con.getSendQueue().add(request);
+            if (highPriority)
+                con.getSendQueue().add(0, request);
+            else
+                con.getSendQueue().add(request);
+            
             if (!con.isConnected()) {
                 establishConnection(server, con);
 
@@ -527,12 +531,13 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                         ONCRPCRequest send = con.getSendRequest();
                         if (send == null) {
                             synchronized (con) {
-                                send = con.getSendQueue().poll();
-                                if (send == null) {
+                                if (con.getSendQueue().isEmpty()) {
                                     // no more responses, stop writing...
                                     key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
                                     break;
                                 }
+                                send = con.getSendQueue().remove(0);
+                                assert(send != null);
                                 con.setSendRequest(send);
                             }
                             // send request as single fragment

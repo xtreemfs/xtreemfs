@@ -36,6 +36,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -65,7 +66,7 @@ public class ServerConnection {
 
     private final Map<Integer,ONCRPCRequest>  requests;
 
-    private final Queue<ONCRPCRequest>        sendQueue;
+    private final List<ONCRPCRequest>        sendQueue;
 
     private long lastUsed;
 
@@ -93,7 +94,7 @@ public class ServerConnection {
         lastUsed = TimeSync.getLocalSystemTime();
         numConnectAttempts = 0;
         nextReconnectTime = 0;
-        sendQueue = new ConcurrentLinkedQueue<ONCRPCRequest>();
+        sendQueue = new LinkedList<ONCRPCRequest>();
         requestFragHdr = ByteBuffer.allocateDirect(ONCRPCRecordFragmentHeader.getFragmentHeaderSize());
         responseFragHdr = ByteBuffer.allocateDirect(ONCRPCRecordFragmentHeader.getFragmentHeaderSize());
         clearResponseFragments();
@@ -158,7 +159,7 @@ public class ServerConnection {
         return this.requests;
     }
 
-    Queue<ONCRPCRequest> getSendQueue() {
+    List<ONCRPCRequest> getSendQueue() {
         return sendQueue;
     }
 

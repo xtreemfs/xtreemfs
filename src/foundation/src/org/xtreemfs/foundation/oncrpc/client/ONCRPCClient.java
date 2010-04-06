@@ -87,13 +87,18 @@ public abstract class ONCRPCClient {
         return sendRequest(server, procId, request, decoder, null);
     }
 
-    @SuppressWarnings("unchecked")
     protected RPCResponse sendRequest(InetSocketAddress server, int procId, yidl.runtime.Object request, RPCResponseDecoder decoder, yidl.runtime.Object credentials) {
+        return sendRequest(server, procId, request, decoder, credentials, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected RPCResponse sendRequest(InetSocketAddress server, int procId, yidl.runtime.Object request, RPCResponseDecoder decoder, yidl.runtime.Object credentials,
+            boolean highPriority) {
         RPCResponse rpcresp = new RPCResponse(decoder);
         if ((server == null) && (defaultServer == null))
             throw new IllegalArgumentException("must specify a server address if no default server is defined");
         final InetSocketAddress srvAddr = (server == null) ? defaultServer : server;
-        client.sendRequest(rpcresp, srvAddr, programId, versionNumber, procId, request,null,credentials);
+        client.sendRequest(rpcresp, srvAddr, programId, versionNumber, procId, request,null,credentials,highPriority);
         return rpcresp;
     }
 
