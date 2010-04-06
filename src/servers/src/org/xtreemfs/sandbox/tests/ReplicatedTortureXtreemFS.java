@@ -159,6 +159,10 @@ public class ReplicatedTortureXtreemFS {
                 if (addReplica) {
                     for (int fsize = MIN_FS; fsize <= MAX_FS; fsize = fsize * 2) {
                         for (int recsize = MIN_REC; recsize <= MAX_REC; recsize = recsize * 2) {
+                            final int numRecs = fsize / recsize;
+                            if (numRecs == 0) {
+                                break;
+                            }
                             File f = v.getFile(path+"."+fsize+"-"+recsize);
                             f.addReplica(1, f.getSuitableOSDs(1), 0);
                         }
