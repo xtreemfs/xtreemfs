@@ -278,7 +278,8 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             try {
                 checkForTimers();
             } catch (ConcurrentModificationException ce) {
-                Logging.logError(Logging.LEVEL_CRIT, this, ce);
+                Logging.logMessage(Logging.LEVEL_CRIT, this, 
+                        OutputUtils.getThreadDump());
             }
         }
         

@@ -232,7 +232,7 @@ public final class OutputUtils {
         return value;
     }
 
-    public static String getThreadDump() throws Exception {
+    public static String getThreadDump() {
         StringBuilder sb = new StringBuilder();
         sb.append("<HTML><BODY><H1>THREAD STATES</H1><PRE>");
         final Map<Thread,StackTraceElement[]> traces =  Thread.getAllStackTraces();

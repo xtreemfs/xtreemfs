@@ -87,7 +87,10 @@ public abstract class ONCRPCClient {
         return sendRequest(server, procId, request, decoder, null);
     }
 
-    protected RPCResponse sendRequest(InetSocketAddress server, int procId, yidl.runtime.Object request, RPCResponseDecoder decoder, yidl.runtime.Object credentials) {
+    protected RPCResponse<?> sendRequest(InetSocketAddress server, int procId, 
+            yidl.runtime.Object request, RPCResponseDecoder<?> decoder, 
+            yidl.runtime.Object credentials) {
+        
         return sendRequest(server, procId, request, decoder, credentials, false);
     }
 
