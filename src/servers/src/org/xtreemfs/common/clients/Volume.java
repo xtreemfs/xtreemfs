@@ -74,21 +74,24 @@ public class Volume {
 
     private final OpenFileList ofl;
 
+    private final int          maxRetries;
+
     /*private final LRUCache<String,CachedXAttr> xattrCache;
 
     private final int mdCacheTimeout_ms;*/
 
     Volume(OSDClient osdClient, MRCClient client, String volumeName, UUIDResolver uuidResolver, UserCredentials userCreds) {
-        this(osdClient, client, volumeName, uuidResolver, userCreds, 0);
+        this(osdClient, client, volumeName, uuidResolver, userCreds, 0, 5);
     }
 
     Volume(OSDClient osdClient, MRCClient client, String volumeName, UUIDResolver uuidResolver, UserCredentials userCreds,
-           int mdCacheTimeout_ms) {
+           int mdCacheTimeout_ms, int maxRetries) {
         this.mrcClient = client;
         this.volumeName = volumeName.endsWith("/") ? volumeName : volumeName+"/";
         this.uuidResolver = uuidResolver;
         this.userCreds = userCreds;
         this.osdClient = osdClient;
+        this.maxRetries = maxRetries;
         this.ofl = new OpenFileList(client);
         /*this.xattrCache = new LRUCache<String, CachedXAttr>(2048);
         this.mdCacheTimeout_ms = mdCacheTimeout_ms;*/
@@ -703,6 +706,13 @@ public class Volume {
     
     void shutdown() {
         ofl.shutdown();
+    }
+
+    /**
+     * @return the maxRetries
+     */
+    public int getMaxRetries() {
+        return maxRetries;
     }
 
 }

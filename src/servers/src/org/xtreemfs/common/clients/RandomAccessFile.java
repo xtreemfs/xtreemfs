@@ -288,7 +288,7 @@ public class RandomAccessFile {
             }
             switchToNextReplica();
 
-        } while (numTries < numReplicas);
+        } while (numTries < numReplicas+parentVolume.getMaxRetries());
         throw cause;
     }
 
@@ -458,7 +458,7 @@ public class RandomAccessFile {
                     Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
                 throw new IOException("operation aborted", ex);
             }
-        } while (numTries < numReplicas);
+        } while (numTries < numReplicas+parentVolume.getMaxRetries());
         throw cause;
     }
 

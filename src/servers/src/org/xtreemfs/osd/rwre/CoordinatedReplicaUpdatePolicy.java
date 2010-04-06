@@ -343,7 +343,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
             } else {
                 if ((lease == null) || (lease.isEmptyLease()) || (!lease.isValid())) {
                     Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"unknown lease state for %s: %s",this.cellId,lease);
-                    throw new OSDException(ErrorCodes.LEASE_TIMED_OUT, "unknown lease state, can't redirect to master", "");
+                    throw new OSDException(ErrorCodes.LEASE_TIMED_OUT, "unknown lease state for cell "+this.cellId+", can't redirect to master", "");
                 } else
                     throw new RedirectException(lease.getLeaseHolder().toString());
             }
