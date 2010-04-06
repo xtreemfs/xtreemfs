@@ -27,6 +27,7 @@ package org.xtreemfs.osd.operations;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCException;
@@ -98,6 +99,7 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
 
             @Override
             public void failed(Exception ex) {
+                BufferPool.free(args.getObject_data().getData());
                 sendResult(rq,ex);
             }
         }, rq);

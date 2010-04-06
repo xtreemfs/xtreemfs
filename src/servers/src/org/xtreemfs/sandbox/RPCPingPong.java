@@ -106,7 +106,7 @@ public class RPCPingPong {
                     System.out.println("failed: "+reason);
                     System.exit(1);
                 }
-            }, srv, 0, 0, 0, data);
+            }, srv, 0, 0, 0, data,false);
 
             synchronized (lock) {
                 if (lock.get() == false)

@@ -151,7 +151,7 @@ public final class WriteOperation extends OSDOperation {
 
             @Override
             public void failed(Exception ex) {
-                //BufferPool.free(args.getObject_data().getData());
+                BufferPool.free(args.getObject_data().getData());
                 sendResult(rq, null, ex);
             }
         }, rq);

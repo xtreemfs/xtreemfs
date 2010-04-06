@@ -142,7 +142,7 @@ public class SSLRPCClientServerTest extends TestCase {
         xtreemfs_address_mappings_getRequest amr = new xtreemfs_address_mappings_getRequest("Yagga");
 
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
-                amr.getTag(),amr);
+                amr.getTag(),amr,false);
 
         synchronized (result) {
             if (result.get() == null)
@@ -224,7 +224,7 @@ public class SSLRPCClientServerTest extends TestCase {
         xtreemfs_address_mappings_getRequest amr = new xtreemfs_address_mappings_getRequest("Yagga");
 
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
-                amr.getTag(),amr);
+                amr.getTag(),amr,false);
 
         synchronized (result) {
             if (result.get() == null)
@@ -301,7 +301,7 @@ public class SSLRPCClientServerTest extends TestCase {
         xtreemfs_address_mappings_getRequest amr = new xtreemfs_address_mappings_getRequest("Yagga");
 
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
-                amr.getTag(),amr);
+                amr.getTag(),amr,false);
 
         synchronized (result) {
             if (result.get() == null)
@@ -388,7 +388,7 @@ public class SSLRPCClientServerTest extends TestCase {
         od.setData(buf);
 
         client.sendRequest(rListener, new InetSocketAddress("localhost", TEST_PORT), 1, DIRInterface.getVersion(),
-                0,od);
+                0,od,false);
 
         synchronized (result) {
             if (result.get() == null)

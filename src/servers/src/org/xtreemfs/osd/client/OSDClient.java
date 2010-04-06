@@ -476,7 +476,7 @@ public class OSDClient extends ONCRPCClient {
             public Object getResult(ReusableBuffer data) {
                 return null;
             }
-        });
+        },null,true);
         r.registerListener(new RPCResponseAvailableListener() {
 
             @Override

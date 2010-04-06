@@ -1018,7 +1018,7 @@ public class HashStorageLayout extends StorageLayout {
                     if (ch != null && ch.isDirectory()) {
                         l.status.push(currentDir + "/" + ch.getName());
                         // get informations from the objects
-                    } else if (ch != null && ch.isFile() && !ch.getName().startsWith(".")
+                    } else if (ch != null && ch.isFile() && !ch.getName().contains(".")
                         && !ch.getName().endsWith(".ser")) {
                         // get the file metadata
                         try {
