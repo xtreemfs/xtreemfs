@@ -23,6 +23,14 @@ module org
 
       typedef sequence<AddressMapping> AddressMappingSet # 31;
 
+      struct DirService #36
+      {
+        string address;
+        uint16_t port;
+        string protocol;
+        uint32_t interface_version;
+      };
+
       typedef map<string, string> ServiceDataMap # 32;
 
       enum ServiceType
@@ -44,14 +52,6 @@ module org
       };
 
       typedef sequence<Service> ServiceSet # 35;
-
-      struct DirService #35
-      {
-        string address;
-        uint16_t port;
-        string protocol;
-        uint32_t interface_version;
-      };
 
 
       interface DIRInterface # 100
