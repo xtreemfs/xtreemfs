@@ -1,5 +1,5 @@
-#ifndef _854705532_H_
-#define _854705532_H_
+#ifndef _2048554652_H_
+#define _2048554652_H_
 
 
 #include "yidl.h"
@@ -25,10 +25,11 @@ namespace org
         // yidl::runtime::Object
         StringSet& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( StringSet, 2010030917 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030917 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "StringSet"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           size_type value_i_max = size();
@@ -90,10 +91,11 @@ namespace org
         // yidl::runtime::Object
         UserCredentials& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( UserCredentials, 2010030918 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030918 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "UserCredentials"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "user_id", 0 ), get_user_id() );

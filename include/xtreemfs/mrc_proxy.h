@@ -37,7 +37,7 @@
 namespace xtreemfs
 {
   class Options;
-  class UserCredentialsCache;
+  class UserDatabase;
   using yield::concurrency::Request;
 
 
@@ -50,7 +50,7 @@ namespace xtreemfs
     (
       EventHandler& request_handler, // Steals this reference
       const char* password = NULL,
-      UserCredentialsCache* user_credentials_cache = NULL
+      UserDatabase* user_database = NULL
     );
 
     virtual ~MRCProxy();
@@ -73,7 +73,7 @@ namespace xtreemfs
       SSLContext* ssl_context = NULL,
 #endif
       Log* trace_log = NULL,
-      UserCredentialsCache* user_credentials_cache = NULL
+      UserDatabase* user_database = NULL
     );
 
     // yidl::runtime::Object
@@ -84,7 +84,7 @@ namespace xtreemfs
 
   private:
     string password;
-    UserCredentialsCache* user_credentials_cache;
+    UserDatabase* user_database;
   };
 };
 

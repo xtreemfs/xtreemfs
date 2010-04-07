@@ -29,7 +29,7 @@
 
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/options.h"
-#include "user_credentials_cache.h"
+#include "user_database.h"
 using namespace xtreemfs;
 
 
@@ -38,19 +38,19 @@ MRCProxy::MRCProxy
 (
   EventHandler& request_handler,
   const char* password,
-  UserCredentialsCache* user_credentials_cache
+  UserDatabase* user_database
 ) : MRCInterfaceProxy( request_handler ),
     password( password )
 {
-  if ( user_credentials_cache != NULL )
-    this->user_credentials_cache = Object::inc_ref( user_credentials_cache );
+  if ( user_database != NULL )
+    this->user_database = Object::inc_ref( user_database );
   else
-    this->user_credentials_cache = new UserCredentialsCache;
+    this->user_database = new UserDatabase;
 }
 
 MRCProxy::~MRCProxy()
 {
-  UserCredentialsCache::dec_ref( *user_credentials_cache );
+  UserDatabase::dec_ref( *user_database );
 }
 
 MRCProxy& 
@@ -83,7 +83,7 @@ MRCProxy::create
   SSLContext* ssl_context,
 #endif
   Log* trace_log,
-  UserCredentialsCache* user_credentials_cache
+  UserDatabase* user_database
 )
 {
   return *new MRCProxy
@@ -102,7 +102,7 @@ MRCProxy::create
                   trace_log
                 ),
                 password,  
-                user_credentials_cache
+                user_database
               );
 }
 
@@ -111,7 +111,7 @@ void MRCProxy::handle( Request& request )
   if ( request.get_credentials() == NULL )
   {
     UserCredentials* user_credentials
-      = user_credentials_cache->getCurrentUserCredentials();
+      = user_database->getCurrentUserCredentials();
 
     if ( user_credentials != NULL )
       user_credentials->set_password( password );

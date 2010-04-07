@@ -66,13 +66,6 @@ void TestSuiteName##_##TestCaseName##Test::runTest()
 
 #define TEST_CASE( TestSuiteName, TestCaseName ) TEST_CASE_EX( TestSuiteName, TestCaseName, yunit::TestCase )
 
-#ifdef BUILDING_STANDALONE_TEST
-#define TEST_MAIN( TestSuiteName ) \
-  int main( int argc, char** argv ) { return yunit::TestRunner().run( TestSuiteName##TestSuite() ); }
-#else
-#define TEST_MAIN( TestSuiteName )
-#endif
-
 
 namespace yunit
 {

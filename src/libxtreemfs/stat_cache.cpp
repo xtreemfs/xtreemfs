@@ -29,7 +29,7 @@
 
 #include "stat_cache.h"
 #include "stat.h"
-#include "user_credentials_cache.h"
+#include "user_database.h"
 #include "xtreemfs/mrc_proxy.h"
 using org::xtreemfs::interfaces::MRCInterfaceMessages;
 using org::xtreemfs::interfaces::StatSet;
@@ -171,13 +171,13 @@ StatCache::StatCache
 (
   MRCProxy& mrc_proxy,
   const Time& read_ttl,
-  UserCredentialsCache& user_credentials_cache,
+  UserDatabase& user_database,
   const string& volume_name_utf8,
   uint32_t write_back_attrs
 )
 : mrc_proxy( mrc_proxy.inc_ref() ),
   read_ttl( read_ttl ),
-  user_credentials_cache( user_credentials_cache.inc_ref() ),
+  user_database( user_database.inc_ref() ),
   volume_name_utf8( volume_name_utf8 ),
   write_back_attrs( write_back_attrs )
 { }
@@ -193,7 +193,7 @@ StatCache::~StatCache()
     delete entry_i->second;
 
   MRCProxy::dec_ref( mrc_proxy );
-  UserCredentialsCache::dec_ref( user_credentials_cache );
+  UserDatabase::dec_ref( user_database );
 }
 
 void StatCache::evict( const Path& path )
@@ -318,7 +318,7 @@ Stat* StatCache::getattr( const Path& path )
 #ifndef _WIN32
     // Translate the user_id and group_id from the server Stat to uid and gid
     uid_t uid; gid_t gid;
-    user_credentials_cache.getpasswdFromUserCredentials
+    user_database.getpasswdFromUserCredentials
     (
       if_stbuf[0].get_user_id(),
       if_stbuf[0].get_group_id(),

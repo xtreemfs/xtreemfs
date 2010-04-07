@@ -472,11 +472,11 @@
     >
 </File>
 <File
-    RelativePath="..\..\src\libxtreemfs\user_credentials_cache.cpp"
+    RelativePath="..\..\src\libxtreemfs\user_database.cpp"
     >
 </File>
 <File
-    RelativePath="..\..\src\libxtreemfs\user_credentials_cache.h"
+    RelativePath="..\..\src\libxtreemfs\user_database.h"
     >
 </File>
 <File

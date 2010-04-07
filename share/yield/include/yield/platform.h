@@ -67,6 +67,9 @@ using std::wstring;
 #else
 #include <semaphore.h>
 #endif
+#if defined(__FreeBSD__) || defined(__MACH__) || defined(__OpenBSD__)
+#define YIELD_PLATFORM_HAVE_KQUEUE 1
+#endif
 #ifdef __sun
 #include <libcpc.h>
 // #define YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS 1
@@ -82,6 +85,8 @@ using std::wstring;
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
 #include <openssl/ssl.h>
 #endif
+
+#include <algorithm> // for std::pop_heap and std::push_heap
 
 #include <exception> // for std::exception
 
@@ -135,141 +140,181 @@ using std::pair;
 #endif
 #endif
 
-#define YIELD_PLATFORM_DIRECTORY_PROTOTYPES \
-  virtual yield::platform::Directory::Entry* readdir();
+#define YIELD_PLATFORM_CHANNEL_PROTOTYPES\
+  virtual void\
+  aio_read\
+  (\
+    YRO_NEW_REF Buffer& buffer,\
+    AIOReadCallback& callback,\
+    void* callback_context = NULL,\
+    const Time& timeout = TIMEOUT_INFINITE\
+  );\
+  \
+  virtual void\
+  aio_write\
+  (\
+    YRO_NEW_REF Buffer& buffer,\
+    AIOWriteCallback& callback,\
+    void* callback_context = NULL,\
+    const Time& timeout = TIMEOUT_INFINITE\
+  );\
+  \
+  virtual void \
+  aio_writev\
+  (\
+    YRO_NEW_REF Buffers& buffers,\
+    AIOWriteCallback& callback,\
+    void* callback_context = NULL,\
+    const Time& timeout = TIMEOUT_INFINITE\
+  );\
+  \
+  virtual ssize_t read( Buffer& buffer );\
+  virtual ssize_t read( void* buf, size_t buflen );\
+  virtual ssize_t write( const Buffer& buffer );\
+  virtual ssize_t write( const void* buf, size_t buflen );\
+  virtual ssize_t writev( Buffers& buffers );\
+  virtual ssize_t writev( const struct iovec* iov, uint32_t iovlen );
 
-#define YIELD_PLATFORM_EXCEPTION_SUBCLASS( ClassName ) \
-  class ClassName : public yield::platform::Exception \
-  { \
-  public: \
+#define YIELD_PLATFORM_DIRECTORY_PROTOTYPES\
+  virtual YRO_NEW_REF yield::platform::Directory::Entry* read();
+
+#define YIELD_PLATFORM_EXCEPTION_SUBCLASS( ClassName )\
+  class ClassName : public yield::platform::Exception\
+  {\
+  public:\
     ClassName() { }\
-    ClassName( uint32_t error_code ) : Exception( error_code ) { } \
-    ClassName( const char* error_message ) : Exception( error_message ) { } \
-    ClassName( const string& error_message ) : Exception( error_message ) { } \
-    ClassName( uint32_t error_code, const char* error_message ) \
-      : Exception( error_code, error_message ) \
-    { } \
-    ClassName( uint32_t error_code, const string& error_message ) \
-      : Exception( error_code, error_message ) \
-    { } \
-    ClassName( const ClassName& other ) : Exception( other ) { } \
+    ClassName( uint32_t error_code ) : Exception( error_code ) { }\
+    ClassName( const char* error_message ) : Exception( error_message ) { }\
+    ClassName( const string& error_message ) : Exception( error_message ) { }\
+    ClassName( uint32_t error_code, const char* error_message )\
+      : Exception( error_code, error_message )\
+    { }\
+    ClassName( uint32_t error_code, const string& error_message )\
+      : Exception( error_code, error_message )\
+    { }\
+    ClassName( const ClassName& other ) : Exception( other ) { }\
   }; 
 
-#define YIELD_PLATFORM_FILE_PROTOTYPES \
-  virtual bool close(); \
-  virtual bool datasync(); \
-  virtual yield::platform::Stat* getattr(); \
-  virtual bool getlk( bool exclusive, uint64_t offset, uint64_t length ); \
-  virtual bool getxattr( const string& name, string& out_value ); \
-  virtual bool listxattr( vector<string>& out_names ); \
-  virtual ssize_t read( void* buf, size_t buflen, uint64_t offset ); \
-  virtual bool removexattr( const string& name ); \
-  virtual bool setlk( bool exclusive, uint64_t offset, uint64_t length ); \
-  virtual bool setlkw( bool exclusive, uint64_t offset, uint64_t length ); \
-  virtual bool \
-  setxattr \
-  ( \
-    const string& name, \
-    const string& value, \
-    int flags \
-  ); \
-  virtual bool sync(); \
-  virtual bool truncate( uint64_t offset ); \
-  virtual bool unlk( uint64_t offset, uint64_t length ); \
+#define YIELD_PLATFORM_FILE_PROTOTYPES\
+  virtual bool close();\
+  virtual bool datasync();\
+  virtual YRO_NEW_REF yield::platform::Stat* getattr();\
+  virtual bool getlk( bool exclusive, uint64_t offset, uint64_t length );\
+  virtual bool getxattr( const string& name, string& out_value );\
+  virtual bool listxattr( vector<string>& out_names );\
+  virtual ssize_t read( void* buf, size_t buflen, uint64_t offset );\
+  virtual bool removexattr( const string& name );\
+  virtual bool setlk( bool exclusive, uint64_t offset, uint64_t length );\
+  virtual bool setlkw( bool exclusive, uint64_t offset, uint64_t length );\
+  virtual bool\
+  setxattr\
+  (\
+    const string& name,\
+    const string& value,\
+    int flags\
+  );\
+  virtual bool sync();\
+  virtual bool truncate( uint64_t offset );\
+  virtual bool unlk( uint64_t offset, uint64_t length );\
   virtual ssize_t write( const void* buf, size_t buflen, uint64_t offset );
 
-#define YIELD_PLATFORM_VOLUME_PROTOTYPES \
-    virtual bool access( const yield::platform::Path& path, int amode ); \
-    virtual yield::platform::Stat* \
-    getattr \
-    ( \
-      const yield::platform::Path& path \
-    ); \
-    virtual bool \
-    getxattr \
-    ( \
-      const yield::platform::Path& path, \
-      const string& name, \
-      string& out_value \
-    ); \
-    virtual bool \
-    link \
-    ( \
-      const yield::platform::Path& old_path, \
-      const yield::platform::Path& new_path \
-    ); \
-    virtual bool \
-    listxattr \
-    ( \
-      const yield::platform::Path& path, \
-      vector<string>& out_names \
-    ); \
-    virtual bool mkdir( const yield::platform::Path& path, mode_t mode ); \
-    virtual yield::platform::File* \
-    open \
-    ( \
-      const yield::platform::Path& path, \
-      uint32_t flags, \
-      mode_t mode, \
-      uint32_t attributes \
-    ); \
-    virtual yield::platform::Directory* \
-    opendir \
-    ( \
-      const yield::platform::Path& path \
-    ); \
-    virtual yield::platform::Path* \
-    readlink \
-    ( \
-      const yield::platform::Path& path \
-    ); \
-    virtual bool \
-    removexattr \
-    ( \
-      const yield::platform::Path& path, \
-      const string& name \
-    ); \
-    virtual bool \
-    rename \
-    ( \
-      const yield::platform::Path& from_path, \
-      const yield::platform::Path& to_path \
-    ); \
-    virtual bool rmdir( const yield::platform::Path& path ); \
-    virtual bool \
-    setattr \
-    ( \
-      const yield::platform::Path& path, \
-      const yield::platform::Stat& stbuf, \
-      uint32_t to_set \
-    ); \
-    virtual bool \
-    setxattr \
-    ( \
-      const yield::platform::Path& path, \
-      const string& name, \
-      const string& value, \
-      int flags \
-    ); \
-    virtual bool \
-    statvfs \
-    ( \
-      const yield::platform::Path& path, \
-      struct statvfs& \
-    ); \
-    virtual bool \
-    symlink \
-    ( \
-      const yield::platform::Path& old_path, \
-      const yield::platform::Path& new_path \
-    ); \
-    virtual bool \
-    truncate \
-    ( \
-      const yield::platform::Path& path, \
-      uint64_t new_size \
-    ); \
-    virtual bool unlink( const yield::platform::Path& path ); \
+#define YIELD_PLATFORM_SOCKET_RECV_SEND_PROTOTYPES\
+  virtual ssize_t recv( void* buf, size_t len, int flags = 0 );\
+  virtual ssize_t send( const void* buf, size_t len, int flags = 0 );\
+  virtual ssize_t sendmsg( const struct iovec*, uint32_t, int flags = 0 );\
+
+#define YIELD_PLATFORM_VOLUME_PROTOTYPES\
+    virtual bool access( const yield::platform::Path& path, int amode );\
+    virtual YRO_NEW_REF yield::platform::Stat*\
+    getattr\
+    (\
+      const yield::platform::Path& path\
+    );\
+    virtual bool\
+    getxattr\
+    (\
+      const yield::platform::Path& path,\
+      const string& name,\
+      string& out_value\
+    );\
+    virtual bool\
+    link\
+    (\
+      const yield::platform::Path& old_path,\
+      const yield::platform::Path& new_path\
+    );\
+    virtual bool\
+    listxattr\
+    (\
+      const yield::platform::Path& path,\
+      vector<string>& out_names\
+    );\
+    virtual bool mkdir( const yield::platform::Path& path, mode_t mode );\
+    virtual YRO_NEW_REF yield::platform::File*\
+    open\
+    (\
+      const yield::platform::Path& path,\
+      uint32_t flags,\
+      mode_t mode,\
+      uint32_t attributes\
+    );\
+    virtual YRO_NEW_REF yield::platform::Directory*\
+    opendir\
+    (\
+      const yield::platform::Path& path\
+    );\
+    virtual YRO_NEW_REF yield::platform::Path*\
+    readlink\
+    (\
+      const yield::platform::Path& path\
+    );\
+    virtual bool\
+    removexattr\
+    (\
+      const yield::platform::Path& path,\
+      const string& name\
+    );\
+    virtual bool\
+    rename\
+    (\
+      const yield::platform::Path& from_path,\
+      const yield::platform::Path& to_path\
+    );\
+    virtual bool rmdir( const yield::platform::Path& path );\
+    virtual bool\
+    setattr\
+    (\
+      const yield::platform::Path& path,\
+      const yield::platform::Stat& stbuf,\
+      uint32_t to_set\
+    );\
+    virtual bool\
+    setxattr\
+    (\
+      const yield::platform::Path& path,\
+      const string& name,\
+      const string& value,\
+      int flags\
+    );\
+    virtual bool\
+    statvfs\
+    (\
+      const yield::platform::Path& path,\
+      struct statvfs&\
+    );\
+    virtual bool\
+    symlink\
+    (\
+      const yield::platform::Path& old_path,\
+      const yield::platform::Path& new_path\
+    );\
+    virtual bool\
+    truncate\
+    (\
+      const yield::platform::Path& path,\
+      uint64_t new_size\
+    );\
+    virtual bool unlink( const yield::platform::Path& path );\
     virtual yield::platform::Path volname( const yield::platform::Path& path );
 
 
@@ -330,6 +375,13 @@ struct sockaddr_storage;
 struct timeval;
 
 
+#ifdef _WIN32
+extern "C" { __declspec(dllimport) void __stdcall DebugBreak(); };
+#else
+static inline void DebugBreak() { *reinterpret_cast<int*>( 0 ) = 0xabadcafe; }
+#endif
+
+
 namespace yield
 {
   namespace platform
@@ -360,22 +412,267 @@ namespace yield
 
     class BIOQueue;
     class IOQueue;
-    class Path;
+    class NBIOQueue;
     class SocketAddress;
     class Stat;
-    class Time;
+    class TimerCallback;
 #ifdef _WIN32
     class Win32AIOQueue;
 #endif
+
     using std::stack;
+
+    using yidl::runtime::auto_Object;
     using yidl::runtime::Buffer;
     using yidl::runtime::Map;
     using yidl::runtime::MarshallableObject;
     using yidl::runtime::Marshaller;
     using yidl::runtime::Object;
-    using yidl::runtime::RTTIObject;
     using yidl::runtime::Sequence;
     using yidl::runtime::Unmarshaller;
+
+
+    class iconv : public Object
+    {
+    public:
+      enum Code { CODE_CHAR, CODE_ISO88591, CODE_UTF8 };
+
+    public:
+      ~iconv();
+
+#ifdef _WIN32
+      static unsigned int Code_to_win32_code_page( Code code );
+#else
+      static const char* Code_to_iconv_code( Code code );
+#endif
+
+      static YRO_NEW_REF iconv* open( Code tocode, Code fromcode );
+
+      // Returns ( size_t )-1 on failure, like iconv.3
+      size_t
+      operator()
+      (
+        const char** inbuf,
+        size_t* inbytesleft,
+        char** outbuf,
+        size_t* outbytesleft
+      );
+
+      // Other operator()'s return false on failure
+      bool operator()( const string& inbuf, string& outbuf );
+#ifdef _WIN32
+      bool operator()( const string& inbuf, wstring& outbuf );
+      bool operator()( const wstring& inbuf, string& outbuf );
+#endif
+
+    private:
+#ifdef _WIN32
+      iconv( unsigned int from_code_page, unsigned int to_code_page );
+#else
+      iconv( void* cd );
+      bool reset();
+#endif
+
+    private:
+#ifdef _WIN32
+      unsigned int from_code_page, to_code_page;
+#else
+      void* cd;
+#endif
+    };
+
+
+    class Path : public Object
+    {
+      // Path objects are currently immutable
+    public:
+#ifdef _WIN32
+      typedef wstring string_type;
+      const static wchar_t SEPARATOR = L'\\';
+#else
+      typedef string string_type;
+      const static char SEPARATOR = '/';
+#endif
+
+    public:
+      Path();
+      Path( char path, iconv::Code = iconv::CODE_CHAR );
+      Path( const char* path, iconv::Code = iconv::CODE_CHAR );
+      Path( const string& path, iconv::Code = iconv::CODE_CHAR );
+      Path( const char* path, size_t, iconv::Code = iconv::CODE_CHAR );
+#ifdef _WIN32
+      Path( wchar_t path );
+      Path( const wchar_t* path );
+      Path( const wchar_t* path, size_t path_len );
+      Path( const wstring& path );
+#endif
+      Path( const Path& path );      
+
+      Path abspath() const;
+      bool empty() const { return path.empty(); }
+      string encode( iconv::Code tocode = iconv::CODE_CHAR ) const;
+      Path extension() const;
+      Path filename() const;
+      operator const string_type&() const { return path; }
+      operator const string_type::value_type*() const { return path.c_str(); }
+#ifdef _WIN32
+      operator string() const { return encode( iconv::CODE_CHAR ); }
+#endif
+      string_type::value_type operator[]( string_type::size_type i ) const;
+      bool operator==( const Path& path ) const;
+      bool operator==( const string_type& path ) const;
+      bool operator==( string_type::value_type path ) const;
+      bool operator==( const string_type::value_type* path ) const;
+      bool operator!=( const Path& path ) const;
+      bool operator!=( const string_type& path ) const;
+      bool operator!=( string_type::value_type path ) const;
+      bool operator!=( const string_type::value_type* path ) const;
+      bool operator<( const Path& path ) const; // For sorting
+      Path operator+( const Path& path ) const; // Appends without adding a sep
+      Path operator+( const string_type& path ) const;
+      Path operator+( string_type::value_type path ) const;
+      Path operator+( const string_type::value_type* path ) const;
+      Path parent_path() const;
+      Path root_path() const;
+      size_t size() const { return path.size(); }
+      pair<Path, Path> split() const; // head, tail
+      void splitall( vector<Path>& ) const; // parts between separator
+      pair<Path, Path> splitext() const;
+      Path stem();
+
+    private:
+      void init( const char*, size_t, iconv::Code );
+
+    private:
+      string_type path; // wide path on Win32, host charset path elsewhere
+    };
+
+
+    class Time
+    {
+    public:
+      const static uint64_t INVALID_TIME = static_cast<uint64_t>( -1 );
+      const static uint64_t NS_IN_US = 1000ULL;
+      const static uint64_t NS_IN_MS = 1000000ULL;
+      const static uint64_t NS_IN_S = 1000000000ULL;
+
+    public:
+      Time(); // Current time
+      Time( uint64_t unix_time_ns ) : unix_time_ns( unix_time_ns ) { }
+      Time( double unix_time_s );
+      Time( const struct timeval& );
+#ifdef _WIN32
+      Time( const FILETIME& );
+      Time( const FILETIME* );
+      Time( const SYSTEMTIME&, bool local = true );
+#else
+      Time( const struct timespec& );
+      Time( const struct tm&, bool local = true );
+#endif      
+      Time( const Time& other ) : unix_time_ns( other.unix_time_ns ) { }
+
+      Time
+      (
+        int tm_sec, // seconds after the minute	0-61*
+        int tm_min, // minutes after the hour	0-59
+        int tm_hour, //	hours since midnight 0-23
+        int tm_mday, //	day of the month 1-31
+        int tm_mon, // months since January	0-11
+        int tm_year, //	years since 1900
+        bool local = true
+      );
+
+#ifdef _WIN32
+      SYSTEMTIME as_local_SYSTEMTIME() const;
+      SYSTEMTIME as_utc_SYSTEMTIME() const;
+#else
+      struct tm as_local_struct_tm() const;
+      struct tm as_utc_struct_tm() const;
+#endif
+
+      inline double as_unix_time_ms() const
+      {
+        return static_cast<double>( unix_time_ns ) / NS_IN_MS;
+      }
+
+      inline uint64_t as_unix_time_ns() const { return unix_time_ns; }
+
+      inline double as_unix_time_s() const
+      {
+        return static_cast<double>( unix_time_ns ) / NS_IN_S;
+      }
+
+      inline double as_unix_time_us() const
+      {
+        return static_cast<double>( unix_time_ns ) / NS_IN_US;
+      }
+
+      inline operator uint64_t() const { return as_unix_time_ns(); }
+      inline operator double() const { return as_unix_time_s(); }
+      operator struct timeval() const;
+#ifdef _WIN32
+      operator FILETIME() const;
+      operator SYSTEMTIME() const; // as_local_SYSTEMTIME
+#else
+      operator struct timespec() const;
+      operator struct tm() const; // as_local_struct_tm
+#endif
+      operator string() const;
+
+      Time& operator=( const Time& );
+      Time& operator=( uint64_t unix_time_ns );
+      Time& operator=( double unix_time_s );
+      Time operator+( const Time& ) const;
+      Time operator+( uint64_t unix_time_ns ) const;
+      Time operator+( double unix_time_s ) const;
+      Time& operator+=( const Time& );
+      Time& operator+=( uint64_t unix_time_ns );
+      Time& operator+=( double unix_time_s );
+      Time operator-( const Time& ) const;
+      Time operator-( uint64_t unix_time_ns ) const;
+      Time operator-( double unix_time_s ) const;
+      Time& operator-=( const Time& );
+      Time& operator-=( uint64_t unix_time_ns );
+      Time& operator-=( double unix_time_s );
+      Time& operator*=( const Time& );
+      bool operator==( const Time& ) const;
+      bool operator==( uint64_t unix_time_ns ) const;
+      bool operator==( double unix_time_s ) const;
+      bool operator!=( const Time& ) const;
+      bool operator!=( uint64_t unix_time_ns ) const;
+      bool operator!=( double unix_time_s ) const;
+      bool operator<( const Time& ) const;
+      bool operator<( uint64_t unix_time_ns ) const;
+      bool operator<( double unix_time_s ) const;
+      bool operator<=( const Time& ) const;
+      bool operator<=( uint64_t unix_time_ns ) const;
+      bool operator<=( double unix_time_s ) const;
+      bool operator>( const Time& ) const;
+      bool operator>( uint64_t unix_time_ns ) const;
+      bool operator>( double unix_time_s ) const;
+      bool operator>=( const Time& ) const;
+      bool operator>=( uint64_t unix_time_ns ) const;
+      bool operator>=( double unix_time_s ) const;
+
+    private:
+#ifdef _WIN32
+      void init( const FILETIME& );
+      void init( const SYSTEMTIME&, bool local );
+#else
+      void init( struct tm&, bool local );
+#endif
+
+    private:
+      // The time is stored internally as a Unix epoch time, i.e.
+      // nanoseconds since January 1, 1970
+      uint64_t unix_time_ns;
+    };
+
+    static inline ostream& operator<<( ostream& os, const Time& time )
+    {
+      os << static_cast<string>( time );
+      return os;
+    }
 
 
     class Buffers : public Object, private vector<struct iovec>
@@ -391,14 +688,14 @@ namespace yield
       void extend( const Buffers& other );
       size_t get( void* buf, size_t len );
       void insert( size_t i, Buffer& buffer );
-      void insert( size_t i, Buffer* buffer ); // Steals this reference
+      void insert( size_t i, YRO_NEW_REF Buffer* buffer );
       void insert( size_t i, char* buf ); // Copies
       void insert( size_t i, const char* buf );
       void insert( size_t i, const string& buf ); // Copies
       void insert( size_t i, void* buf, size_t len ); // Copies
       void insert( size_t i, const void* buf, size_t len );
       void insert( size_t i, const struct iovec& iov );
-      Buffer& join();
+      YRO_NEW_REF Buffer& join();
       size_t join_size() const;
       struct iovec operator[]( int iov_i ) const;
       operator const struct iovec*();
@@ -407,7 +704,7 @@ namespace yield
       size_t position() const { return _position; }
       void position( size_t new_position );
       void push_back( Buffer& buffer );
-      void push_back( Buffer* buffer ); // Steals this reference
+      void push_back( YRO_NEW_REF Buffer* buffer );
       void push_back( char* buf ); // Copies
       void push_back( const char* buf );
       void push_back( const string& buf ); // Copies
@@ -459,13 +756,12 @@ namespace yield
     class Channel : public Object
     {
     public:
-      virtual ~Channel() { }
+      const static uint64_t TIMEOUT_INFINITE = static_cast<uint64_t>( -1 );
 
+    public:
       class AIOReadCallback : public virtual Object
       {
       public:
-        // buffer is not a new reference; callees should inc_ref() their own
-        // references as necessary
         virtual void onReadCompletion( Buffer& buffer, void* context ) = 0;
         virtual void onReadError( uint32_t error_code, void* context ) = 0;
 
@@ -473,21 +769,9 @@ namespace yield
         AIOReadCallback& inc_ref() { return Object::inc_ref( *this ); }
       };
 
-      virtual void 
-      aio_read
-      ( 
-        Buffer& buffer, // Steals this reference
-        AIOReadCallback& callback,
-        void* callback_context = NULL
-      );
-
       class AIOWriteCallback : public virtual Object
       {
       public:
-        // Completed writes/writev are guaranteed to have transferred
-        // the full buffer into the kernel
-        // The bytes_written passed to the callback is only for logging
-        // or statistics
         virtual void
         onWriteCompletion
         ( 
@@ -501,33 +785,160 @@ namespace yield
         AIOWriteCallback& inc_ref() { return Object::inc_ref( *this ); }
       };
 
+    public:
+      virtual ~Channel() { }
+
+      YIELD_PLATFORM_CHANNEL_PROTOTYPES;
+    };
+
+
+    class Directory : public Object
+    {
+    public:
+      class AIOReadChangesCallback : public Object
+      {
+      public:
+        virtual void onDeletion( const Path& path, void* context ) { }
+
+        // onDirectory*
+        virtual void onDirectoryAddition( const Path& path, void* context ) { }
+
+        virtual void
+        onDirectoryModification
+        ( 
+          const Path& path,
+          void* context
+        )
+        { }
+
+        virtual void
+        onDirectoryRename
+        (
+          const Path& old_path,
+          const Path& new_path,
+          void* context
+        )
+        { }
+
+        virtual void onError( uint32_t error_code, void* context ) { }
+
+        // onFile*
+        virtual void onFileAddition( const Path& path, void* context ) { }
+        virtual void onFileModification( const Path& path, void* context ) { }
+
+        virtual void
+        onFileRename
+        ( 
+          const Path& old_path,
+          const Path& new_path,
+          void* context
+        ) 
+        { }
+
+        // Object
+        AIOReadChangesCallback& inc_ref() { return Object::inc_ref( *this ); }
+      };
+
+
+      class Entry : public Object
+      {
+        // has-a Stat instead of is-a Stat because
+        // (1) readdir on Unix returns a struct dirent,
+        //     which is only a subset of struct stat ->
+        //     the Stat member will be NULL
+        // (2) subclasses of Directory can attach their own
+        //     subclasses of Stat
+      public:
+        Entry( const Path& name );
+        Entry( const Path& name, YRO_NEW_REF Stat& stbuf );
+        ~Entry();
+
+        const Path& get_name() const { return name; }
+        Stat* get_stat() const { return stbuf; }
+
+      private:
+        Path name;
+        Stat* stbuf;
+
+        // This class used to have ISDIR(), ISREG(), etc. 
+        // methods like Stat to take advantage of Linux's d_type
+        // struct dirent member for optimizing things like
+        // rmtree (which reads a directory and branches according
+        // to the Entry type). d_type is not in POSIX's struct dirent
+        // and more strict POSIX implementations (like Sun's), so
+        // it's been removed here.
+      };
+
+    public:
+      virtual ~Directory();
+
       virtual void
-      aio_write
+      aio_read_changes
       ( 
-        Buffer& buffer, // Steals this reference
-        AIOWriteCallback& callback,
+        AIOReadChangesCallback& callback,
         void* callback_context = NULL
       );
 
-      virtual void 
-      aio_writev
-      ( 
-        Buffers& buffers, // Steals this reference
-        AIOWriteCallback& callback,
-        void* callback_context = NULL
-      );
+      virtual bool associate( BIOQueue& bio_queue );
+#if defined(YIELD_PLATFORM_HAVE_LINUX_INOTIFY)
+      virtual bool associate( NBIOQueue& nbio_queue );
+#elif defined(_WIN32)
+      virtual bool associate( Win32AIOQueue& win32_aio_queue );
+#endif
+      virtual bool close();
+      const Path& get_path() const { return path; }
+#ifdef _WIN32
+      operator void*() const { return hDirectory; }
+#endif
+      YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
 
-      virtual ssize_t read( Buffer& buffer );
-      virtual ssize_t read( void* buf, size_t buflen ) = 0;
+      // Object
+      Directory& inc_ref() { return Object::inc_ref( *this ); }
 
-      // Unlike aio_write/aio_writev, write and writev are not guaranteed
-      // to write the full buffer(s), even in non-blocking mode, i.e.
-      // they have POSIX semantics.
-      virtual ssize_t write( const Buffer& buffer );
-      // All non-pure virtual *write* methods delegate to the pure write
-      virtual ssize_t write( const void* buf, size_t buflen ) = 0;
-      virtual ssize_t writev( Buffers& buffers );
-      virtual ssize_t writev( const struct iovec* iov, uint32_t iovlen );
+    protected:
+      Directory();
+      Directory( const Path& path );
+
+      BIOQueue* get_bio_queue() const { return bio_queue; }
+#if defined(YIELD_PLATFORM_HAVE_LINUX_INOTIFY)
+      NBIOQueue* get_nbio_queue() const { return nbio_queue; }
+#elif defined(_WIN32)
+      Win32AIOQueue* get_win32_aio_queue() const { return win32_aio_queue; }
+#endif
+      bool have_io_queue() const;
+
+    private:
+      friend class Volume;
+#ifdef _WIN32
+      Directory( void* hDirectory, const Path& path );
+#else
+      Directory( void* dirp, const Path& path );
+#endif
+      void init();
+
+    private:
+      BIOQueue* bio_queue;
+#ifdef _WIN32
+      void *hDirectory, *hFindFile;
+#else
+      void* dirp;
+#endif
+#ifdef YIELD_PLATFORM_HAVE_LINUX_INOTIFY
+      NBIOQueue* nbio_queue;
+#endif
+      Path path;
+#ifdef _WIN32
+      Win32AIOQueue* win32_aio_queue;
+#endif
+
+    private:
+      class IOReadChangesCB;
+      class BIOReadChangesCB;
+#if defined(YIELD_PLATFORM_HAVE_LINUX_INOTIFY)
+      class inotifyReadChangesCB;
+#elif defined(_WIN32)
+      class Win32AIOReadChangesCB;
+#endif
     };
 
 
@@ -564,57 +975,46 @@ namespace yield
     };
 
 
+    class FDEvent
+    {
+    public:
+      const static int TYPE_IN =  0x001; // POLLIN
+      const static int TYPE_OUT = 0x004; // POLLOUT
+      const static int TYPE_ERR =   0x008; // POLLERR
+      const static int TYPE_HUP =   0x010; // POLLHUP
+
+    public:
+      FDEvent() : context( NULL ), fd( INVALID_FD ), type( TYPE_IN ) { }
+      inline void* get_context() const { return context; }
+      inline fd_t get_fd() const { return fd; }
+      inline int get_type() const { return type; }
+      inline void set_context( void* context ) { this->context = context; }
+      inline void set_fd( fd_t fd ) { this->fd = fd; }
+      inline void set_type( int type ) { this->type = type; }
+
+    private:
+      void* context;
+      fd_t fd;
+      int type;
+    };
+
+
     class FDEventPoller : public Object
     {
     public:
-#ifdef _WIN32
-      typedef socket_t fd_t;
-#endif
-
-    public:
-      class FDEvent
-      {
-      public:
-        inline void* get_context() const { return context; }
-        inline fd_t get_fd() const { return fd; }
-        // want_read and want_write can be true at the same time
-        inline bool want_read() const { return want_read_; }
-        inline bool want_write() const { return want_write_; }
-
-        void fill( void* context, fd_t fd, bool want_read_, bool want_write_ )
-        {
-          this->context = context;
-          this->fd = fd;
-          this->want_read_ = want_read_;
-          this->want_write_ = want_write_;
-        }
-
-      private:
-        void* context;
-        fd_t fd;
-        bool want_read_, want_write_;
-      };
-
-    public:
       virtual ~FDEventPoller() { }
 
-      static FDEventPoller& create();
-
-      bool associate( fd_t fd, bool want_read = true, bool want_write = false )
-      {
-        return associate( fd, NULL, want_read, want_write );
-      }
+      static YRO_NEW_REF FDEventPoller& create();
 
       virtual bool
       associate
-      (        
+      ( 
         fd_t fd,
-        void* context,
-        bool want_read = true,
-        bool want_write = false
+        void* context = NULL,
+        int type = FDEvent::TYPE_IN
       ) = 0;
 
-      virtual bool dissociate( fd_t fd ) = 0;
+      virtual void dissociate( fd_t fd ) = 0;
 
       // poll methods do not cache any state, i.e.
       // they always make a new system call
@@ -643,8 +1043,6 @@ namespace yield
         const Time& timeout 
       );
 
-      virtual bool toggle( fd_t fd, bool want_read, bool want_write ) = 0;
-
       // Non-blocking poll to check if any FD is active
       bool try_poll();
 
@@ -655,17 +1053,20 @@ namespace yield
       int try_poll( FDEvent* fd_events, int fd_events_len );
 
     protected:
-      FDEventPoller()
-      { }
+      FDEventPoller() { }
+      
+      virtual int poll( FDEvent*, int, const Time* timeout ) = 0;
 
-      // The real poll for implementations to override
-      virtual int
-      poll
-      ( 
-        FDEvent* fd_events, 
-        int fd_events_len, 
-        const Time* timeout // NULL for a blocking poll
-      ) = 0;
+    protected:
+      class FDToContextMap : public map<fd_t, void*>
+      {
+      public:
+        void erase( fd_t fd );
+        void* find( fd_t fd );
+        void insert( fd_t fd, void* context );
+      };
+
+      FDToContextMap fd_to_context_map;
     };
 
     
@@ -678,45 +1079,51 @@ namespace yield
 
     public:
       File( fd_t fd ); // Takes ownership of the fd
-      virtual ~File() { close(); }
+      virtual ~File();
 
       YIELD_PLATFORM_FILE_PROTOTYPES;
 
       virtual void
       aio_read
       (
-        Buffer& buffer,
+        YRO_NEW_REF Buffer& buffer,
         uint64_t offset,
         AIOReadCallback& callback,
-        void* callback_context = NULL
+        void* callback_context = NULL,
+        const Time& timeout = TIMEOUT_INFINITE
       );
 
       virtual void
       aio_write
       (
-        Buffer& buffer,
+        YRO_NEW_REF Buffer& buffer,
         uint64_t offset,
         AIOWriteCallback& callback,
-        void* callback_context = NULL
+        void* callback_context = NULL,
+        const Time& timeout = TIMEOUT_INFINITE
       );
 
       virtual void
       aio_writev
       (
-        Buffers& buffers,
+        YRO_NEW_REF Buffers& buffers,
         uint64_t offset,
         AIOWriteCallback& callback,
-        void* callback_context = NULL
+        void* callback_context = NULL,
+        const Time& timeout = TIMEOUT_INFINITE
       );
 
-      virtual bool associate( IOQueue& io_queue );
+      virtual bool associate( BIOQueue& bio_queue );
+#ifdef _WIN32
+      virtual bool associate( Win32AIOQueue& win32_aio_queue );
+#endif
       static bool close( fd_t fd );
       virtual size_t getpagesize();
       inline operator fd_t() const { return fd; }
       virtual ssize_t read( Buffer& buffer, uint64_t offset );
       virtual bool seek( uint64_t offset ); // SEEK_SET
       virtual bool seek( uint64_t offset, unsigned char whence );
-      Stat* stat() { return getattr(); }
+      YRO_NEW_REF Stat* stat() { return getattr(); }
       virtual uint64_t tell();
       virtual ssize_t write( const Buffer& buffer, uint64_t offset );
       virtual ssize_t writev( Buffers& buffers, uint64_t offset );
@@ -724,33 +1131,29 @@ namespace yield
 
       // Channel
       // read/write write from/to the current file position
-      virtual void aio_read( Buffer&, AIOReadCallback&, void* = NULL );
-      virtual void aio_write( Buffer&, AIOWriteCallback&, void* = NULL );
-      virtual void aio_writev( Buffers& buffers, AIOWriteCallback&, void* );
-      virtual ssize_t read( Buffer& buffer );
-      virtual ssize_t read( void* buf, size_t buflen );     
-      virtual ssize_t write( const Buffer& buffer );
-      virtual ssize_t write( const void* buf, size_t buflen );
-      virtual ssize_t writev( Buffers& buffers );
-      virtual ssize_t writev( const struct iovec* iov, uint32_t iovlen );
+      YIELD_PLATFORM_CHANNEL_PROTOTYPES;
 
       // Object
       File& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
-      File();      
+      File();
+
+      BIOQueue* get_bio_queue() const { return bio_queue; }
+#ifdef _WIN32
+      Win32AIOQueue* get_win32_aio_queue() const { return win32_aio_queue; }
+#endif
+      bool have_io_queue() const;
 
     private:
       File( const File& ) { DebugBreak(); } // Prevent copying
 
-      BIOQueue* get_bio_queue() const;
-#ifdef _WIN32
-      Win32AIOQueue* get_win32_aio_queue() const;
-#endif
-
     private:
       fd_t fd;
-      IOQueue* io_queue;
+      BIOQueue* bio_queue;
+#ifdef _WIN32
+      Win32AIOQueue* win32_aio_queue;
+#endif
 
     private:
       template <class> class IOCB;
@@ -810,60 +1213,6 @@ namespace yield
     }
 
 
-    class iconv : public Object
-    {
-    public:
-      ~iconv();
-
-      enum Code
-      {
-        CODE_CHAR,
-        CODE_ISO88591,
-        CODE_UTF8
-      };
-
-#ifdef _WIN32
-      static unsigned int Code_to_win32_code_page( Code code );
-#else
-      static const char* Code_to_iconv_code( Code code );
-#endif
-
-      static iconv* open( Code tocode, Code fromcode );
-
-      // Returns ( size_t )-1 on failure, like iconv.3
-      size_t
-      operator()
-      (
-        const char** inbuf,
-        size_t* inbytesleft,
-        char** outbuf,
-        size_t* outbytesleft
-      );
-
-      // Other operator()'s return false on failure
-      bool operator()( const string& inbuf, string& outbuf );
-#ifdef _WIN32
-      bool operator()( const string& inbuf, wstring& outbuf );
-      bool operator()( const wstring& inbuf, string& outbuf );
-#endif
-
-    private:
-#ifdef _WIN32
-      iconv( unsigned int from_code_page, unsigned int to_code_page );
-#else
-      iconv( void* cd );
-      bool reset();
-#endif
-
-    private:
-#ifdef _WIN32
-      unsigned int from_code_page, to_code_page;
-#else
-      void* cd;
-#endif
-    };
-
-
     class IOCB : public Object
     {
     public:
@@ -877,29 +1226,31 @@ namespace yield
         STATE_ERROR 
       };
 
+      const static uint64_t TIMEOUT_INFINITE = static_cast<uint64_t>( -1 );      
+
     public:
       virtual ~IOCB() { }
 
       State get_state() const { return state; }
+      const Time& get_timeout() const { return timeout; }
       void set_state( State state ) { this->state = state; }
 
     protected:
-      IOCB() 
-        : state( STATE_UNKNOWN )
+      IOCB( const Time& timeout = TIMEOUT_INFINITE )
+        : state( STATE_UNKNOWN ),
+          timeout( timeout )
       { }
 
     private:
       State state;
+      Time timeout;
     };
 
 
-    class IOQueue : public RTTIObject
+    class IOQueue : public Object
     {
     public:
       virtual ~IOQueue() { }
-
-      // Object
-      IOQueue& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
       IOQueue() { }      
@@ -912,22 +1263,40 @@ namespace yield
       virtual ~BIOCB() { }
 
       virtual void execute() = 0;
+
+    protected:
+      BIOCB( const Time& timeout = TIMEOUT_INFINITE )
+        : IOCB( timeout )
+      { }
     };
 
 
     class BIOQueue : public IOQueue
     {
     public:
-      static BIOQueue* create();
-      void submit( BIOCB& biocb ); // Takes ownership of biocb
+      static YRO_NEW_REF BIOQueue* create();
+      void submit( YRO_NEW_REF BIOCB& biocb );
 
-      // RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( BIOQueue, 0 );
+      // Object
+      BIOQueue& inc_ref() { return Object::inc_ref( *this ); }
       
     private:
       BIOQueue() { }
 
-      class WorkerThread;
+    private:
+      class Thread;
+    };
+
+
+    template <class LockType>
+    class LockHolder
+    {
+    public:
+      LockHolder( LockType& lock ) : lock( lock ) { lock.acquire(); }
+      ~LockHolder() { lock.release(); }
+
+    private:
+      LockType& lock;
     };
 
 
@@ -1018,9 +1387,9 @@ namespace yield
 
     public:
       virtual ~Log() { }
-      static Log& open( ostream&, const Level& level = LOG_ERR );
+      static YRO_NEW_REF Log& open( ostream&, const Level& level = LOG_ERR );
 
-      static Log& 
+      static YRO_NEW_REF Log& 
       open
       ( 
         const Path& file_path, 
@@ -1057,10 +1426,10 @@ namespace yield
     public:
       virtual ~MemoryMappedFile();
 
-      static MemoryMappedFile* open( const Path& path );
-      static MemoryMappedFile* open( const Path& path, uint32_t flags );
+      static YRO_NEW_REF MemoryMappedFile* open( const Path& );
+      static YRO_NEW_REF MemoryMappedFile* open( const Path&, uint32_t flags );
 
-      static MemoryMappedFile*
+      static YRO_NEW_REF MemoryMappedFile*
       open
       (
         const Path& path,
@@ -1080,7 +1449,7 @@ namespace yield
       virtual bool sync( void* ptr, size_t length );
 
     protected:
-      MemoryMappedFile( File& underlying_file, uint32_t open_flags );      
+      MemoryMappedFile( YRO_NEW_REF File&, uint32_t open_flags );
 
     private:
       File& underlying_file;
@@ -1100,12 +1469,9 @@ namespace yield
       Mutex();
       ~Mutex();
 
-      // These calls are modeled after the pthread calls they delegate to
-      // Have a separate function for timeout == 0 (never block) to
-      // avoid an if branch on a critical path
-      bool acquire(); // Blocking
-      bool acquire( const Time& timeout ); // May block for timeout
-      bool try_acquire(); // Never blocks
+      bool acquire();
+      bool acquire( const Time& timeout );
+      bool try_acquire();
       void release();
 
     private:
@@ -1122,7 +1488,7 @@ namespace yield
     public:
       ~NamedPipe() { }
 
-      static NamedPipe*
+      static YRO_NEW_REF NamedPipe*
       open
       (
         const Path& path,
@@ -1139,13 +1505,14 @@ namespace yield
     private:
 #ifdef WIN32
       NamedPipe( fd_t fd, bool connected );
+      bool connect();
 #else
       NamedPipe( fd_t fd );
 #endif      
 
+    private:
 #ifdef _WIN32
       bool connected;
-      bool connect();
 #endif
     };
 
@@ -1156,12 +1523,13 @@ namespace yield
       virtual ~NBIOCB() { }
 
       virtual void execute() = 0;
+      virtual fd_t get_fd() const = 0;
+      virtual void onError( uint32_t error_code ) = 0;
 
-#ifdef _WIN32
-      virtual socket_t get_fd() const = 0;
-#else
-      virtual int get_fd() const = 0;
-#endif
+    protected:
+      NBIOCB( const Time& timeout = TIMEOUT_INFINITE )
+        : IOCB( timeout )
+      { }
     };
 
 
@@ -1170,13 +1538,13 @@ namespace yield
     public:
       ~NBIOQueue();
 
-      static NBIOQueue* create( int16_t thread_count = 1 );
+      static YRO_NEW_REF NBIOQueue* create( int16_t thread_count = 1 );
 
       uint16_t get_thread_count() const;
-      void submit( NBIOCB& nbiocb ); // Takes ownership of nbiocb
+      void submit( YRO_NEW_REF NBIOCB& nbiocb );
       
-      // RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( NBIOQueue, 2 );
+      // Object
+      NBIOQueue& inc_ref() { return Object::inc_ref( *this ); }
 
     private:
       class Thread;
@@ -1184,16 +1552,6 @@ namespace yield
 
     private:
       vector<Thread*> threads;
-    };
-
-
-    class NOPLock
-    {
-    public:
-      inline bool acquire() { return true; }
-      inline bool acquire( const Time& ) { return true; }
-      inline void release() { }
-      inline bool try_acquire() { return true; }      
     };
 
 
@@ -1337,91 +1695,6 @@ namespace yield
     };
 
 
-    class Path : public Object
-    {
-      // Path objects are currently immutable
-    public:
-#ifdef _WIN32
-      typedef wstring string_type;
-      const static wchar_t SEPARATOR = L'\\';
-#else
-      typedef string string_type;
-      const static char SEPARATOR = '/';
-#endif
-
-      Path() { }
-
-      Path
-      ( 
-        char narrow_path,
-        iconv::Code narrow_path_code = iconv::CODE_CHAR
-      );
-
-      Path
-      ( 
-        const char* narrow_path, 
-        iconv::Code narrow_path_code = iconv::CODE_CHAR
-      );
-
-      Path
-      ( 
-        const char* narrow_path, 
-        size_t narrow_path_len, 
-        iconv::Code narrow_path_code = iconv::CODE_CHAR
-      );
-
-      Path
-      ( 
-        const string& narrow_path, 
-        iconv::Code narrow_path_code = iconv::CODE_CHAR
-      );
-#ifdef _WIN32
-      Path( wchar_t wide_path );
-      Path( const wchar_t* wide_path );
-      Path( const wchar_t* wide_path, size_t wide_path_len );
-      Path( const wstring& wide_path );
-#endif
-      Path( const Path& path );      
-
-      Path abspath() const;
-      bool empty() const { return path.empty(); }
-      string encode( iconv::Code tocode = iconv::CODE_CHAR ) const;
-      Path extension() const;
-      Path filename() const;
-      operator const string_type&() const { return path; }
-      operator const string_type::value_type*() const { return path.c_str(); }
-#ifdef _WIN32
-      operator string() const { return encode( iconv::CODE_CHAR ); }
-#endif
-      string_type::value_type operator[]( string_type::size_type i ) const;
-      bool operator==( const Path& path ) const;
-      bool operator==( const string_type& path ) const;
-      bool operator==( string_type::value_type path ) const;
-      bool operator==( const string_type::value_type* path ) const;
-      bool operator!=( const Path& path ) const;
-      bool operator!=( const string_type& path ) const;
-      bool operator!=( string_type::value_type path ) const;
-      bool operator!=( const string_type::value_type* path ) const;
-      bool operator<( const Path& path ) const; // For sorting
-      Path operator+( const Path& path ) const; // Appends without adding a sep
-      Path operator+( const string_type& path ) const;
-      Path operator+( string_type::value_type path ) const;
-      Path operator+( const string_type::value_type* path ) const;
-      Path parent_path() const;
-      Path root_path() const;
-      size_t size() const { return path.size(); }
-      pair<Path, Path> split() const; // head, tail
-      void splitall( vector<Path>& ) const; // parts between separator
-      pair<Path, Path> splitext() const;
-      Path stem();
-
-    private:
-      void init( const char*, size_t, iconv::Code );
-
-    private:
-      string_type path; // wide path on Win32, host charset path elsewhere
-    };
-
     static inline ostream& operator<<( ostream& os, const Path& path )
     {
 #ifdef _WIN32
@@ -1482,12 +1755,12 @@ namespace yield
     public:
       ~PerformanceCounterSet();
 
-      static PerformanceCounterSet* create();
+      static YRO_NEW_REF PerformanceCounterSet* create();
 
-      bool addEvent( Event event );
-      bool addEvent( const char* name );
-      void startCounting();
-      void stopCounting( uint64_t* counts );
+      bool add( Event event );
+      bool add( const char* name );
+      void start_counting();
+      void stop_counting( uint64_t* counts );
 
     private:
 #if defined(__sun)
@@ -1513,9 +1786,8 @@ namespace yield
     public:
       ~Pipe();
 
-      static Pipe& create(); 
-
       bool close();
+      static YRO_NEW_REF Pipe& create();
       fd_t get_read_end() const { return ends[0]; }
       fd_t get_write_end() const { return ends[1]; }
       fd_t operator[]( size_t n ) const { return ends[n]; }
@@ -1541,11 +1813,11 @@ namespace yield
     public:
       ~Process();
 
-      static Process& create( const Path& executable_file_path );
-      static Process& create( int argc, char** argv );
-      static Process& create( const vector<char*>& argv );
+      static YRO_NEW_REF Process& create( const Path& executable_file_path );
+      static YRO_NEW_REF Process& create( int argc, char** argv );
+      static YRO_NEW_REF Process& create( const vector<char*>& argv );
 
-      static Process&
+      static YRO_NEW_REF Process&
       create
       (
         const Path& executable_file_path,
@@ -1571,9 +1843,9 @@ namespace yield
 #else
         pid_t child_pid,
 #endif
-        Pipe* child_stdin,
-        Pipe* child_stdout,
-        Pipe* child_stderr
+        YRO_NEW_REF Pipe* child_stdin,
+        YRO_NEW_REF Pipe* child_stdout,
+        YRO_NEW_REF Pipe* child_stderr
       );
 
     private:
@@ -1626,10 +1898,10 @@ namespace yield
       Semaphore();
       ~Semaphore();
 
-      bool acquire(); // Blocking
-      bool acquire( const Time& timeout ); // May block for timeout
+      bool acquire();
+      bool acquire( const Time& timeout );
       void release();
-      bool try_acquire(); // Never blocks
+      bool try_acquire();
 
     private:
 #if defined(_WIN32)
@@ -1654,39 +1926,18 @@ namespace yield
     public:
       ~SharedLibrary();
 
-      static SharedLibrary*
-      open
-      ( 
-        const Path& file_prefix, 
-        const char* argv0 = 0 
-      );
-
-      void*
-      getFunction
-      (
-        const char* function_name,
-        void* missing_function_return_value = NULL
-      );
-
-      template <typename FunctionType>
-      FunctionType
-      getFunction
-      (
-        const char* function_name,
-        FunctionType missing_function_return_value = NULL
-      )
-      {
-        return static_cast<FunctionType>
-        (
-          getFunction( function_name, missing_function_return_value )
-        );
-      }
+      static YRO_NEW_REF SharedLibrary* open( const Path& filename );
+      void* sym( const char* symbol );
 
     private:
       SharedLibrary( void* handle );
       
     private:
+#ifdef _WIN32
+      void* hModule;
+#else
       void* handle;
+#endif
     };
 
 
@@ -1710,66 +1961,74 @@ namespace yield
       const static int SEND_FLAG_MSG_OOB = 2;
 
     public:
+      typedef AIOReadCallback AIORecvCallback;
+      typedef AIOWriteCallback AIOSendCallback;
+    
+    public:
       Socket( int domain, int type, int protocol, socket_t socket_ );
       virtual ~Socket();      
-
-      typedef AIOReadCallback AIORecvCallback;
 
       virtual void
       aio_recv
       ( 
-        Buffer& buffer, // Steals this reference
-        int flags,
+        YRO_NEW_REF Buffer& buffer,
         AIORecvCallback& callback,
-        void* callback_context = NULL
+        void* callback_context = NULL,
+        int flags = 0,
+        const Time& timeout = TIMEOUT_INFINITE
       );
-
-      typedef AIOWriteCallback AIOSendCallback;
 
       virtual void 
       aio_send
       (
-        Buffer& buffer, // Steals this reference
-        int flags,
+        YRO_NEW_REF Buffer& buffer,
         AIOSendCallback& callback,
-        void* callback_context = NULL
+        void* callback_context = NULL,
+        int flags = 0,
+        const Time& timeout = TIMEOUT_INFINITE 
       );
 
       virtual void
       aio_sendmsg
       (
-        Buffers& buffers, // Steals this reference
-        int flags,
+        YRO_NEW_REF Buffers& buffers,
         AIOSendCallback& callback,
-        void* callback_context = NULL
+        void* callback_context = NULL,
+        int flags = 0,
+        const Time& timeout = TIMEOUT_INFINITE
       );
 
-      virtual bool associate( IOQueue& io_queue );
+      virtual bool associate( BIOQueue& bio_queue );
+      virtual bool associate( NBIOQueue& nbio_queue );
+#ifdef _WIN32
+      virtual bool associate( Win32AIOQueue& win32_aio_queue );
+#endif
       virtual bool bind( const SocketAddress& to_sockaddr );
       virtual bool close();
       static bool close( socket_t );
       virtual bool connect( const SocketAddress& peername );
-      static Socket* create( int domain, int type, int protocol );
+      static YRO_NEW_REF Socket* create( int domain, int type, int protocol );
       virtual bool get_blocking_mode() const;
       int get_domain() const { return domain; }
       static string getfqdn();
       static string gethostname();
-      SocketAddress* getpeername() const;
-      static SocketAddress* getpeername( socket_t );
+      YRO_NEW_REF SocketAddress* getpeername() const;
+      static YRO_NEW_REF SocketAddress* getpeername( socket_t );
       int get_protocol() const { return protocol; }
-      SocketAddress* getsockname() const;
-      static SocketAddress* getsockname( socket_t );
+      YRO_NEW_REF SocketAddress* getsockname() const;
+      static YRO_NEW_REF SocketAddress* getsockname( socket_t );
       int get_type() const { return type; }
       bool operator==( const Socket& other ) const;
+#ifdef _WIN32
+      operator fd_t() const { return reinterpret_cast<fd_t>( socket_ ); }
+#endif
       inline operator socket_t() const { return socket_; }
       bool recreate();
       bool recreate( int domain );
       ssize_t recv( Buffer& buffer, int flags = 0 );
-      virtual ssize_t recv( void* buf, size_t buflen, int flags = 0 );
       ssize_t send( const Buffer& buffer, int flags = 0 );
-      virtual ssize_t send( const void* buf, size_t len, int flags = 0 );
       ssize_t sendmsg( Buffers& buffers, int flags = 0 );
-      virtual ssize_t sendmsg( const struct iovec*, uint32_t, int flags = 0 );
+      YIELD_PLATFORM_SOCKET_RECV_SEND_PROTOTYPES;
       virtual bool set_blocking_mode( bool blocking );
       static bool set_blocking_mode( bool blocking, socket_t );
       virtual bool setsockopt( Option option, bool onoff );
@@ -1781,44 +2040,42 @@ namespace yield
       Socket& inc_ref() { return Object::inc_ref( *this ); }
 
       // Channel
-      void aio_read( Buffer&, AIOReadCallback&, void* = NULL );
-      void aio_write( Buffer&, AIOWriteCallback&, void* = NULL );
-      void aio_writev( Buffers&, AIOWriteCallback&, void* = NULL );
-      ssize_t read( Buffer& buffer );
-      ssize_t read( void* buf, size_t buflen );
-      ssize_t write( const Buffer& buffer );
-      ssize_t write( const void* buf, size_t buflen );
-      ssize_t writev( Buffers& buffers );
-      ssize_t writev( const struct iovec* iov, uint32_t iovlen );
+      YIELD_PLATFORM_CHANNEL_PROTOTYPES;
 
     protected:
       static socket_t create( int* domain, int type, int protocol );
 
-      BIOQueue* get_bio_queue() const; // Tries to cast, can return NULL
-      IOQueue* get_io_queue() const { return io_queue; }
-      NBIOQueue* get_nbio_queue() const; // Tries to cast, can return NULL
+      BIOQueue* get_bio_queue() const { return bio_queue; }
+      NBIOQueue* get_nbio_queue() const { return nbio_queue; }
       static int get_platform_recv_flags( int flags );
       static int get_platform_send_flags( int flags );
 #ifdef _WIN32
-      Win32AIOQueue* get_win32_aio_queue() const;
+      Win32AIOQueue* get_win32_aio_queue() const { return win32_aio_queue; }
 #endif
+      bool have_io_queue() const;
 #ifdef _WIN64
       void iovecs_to_wsabufs( const iovec*, vector<iovec64>& );
 #endif
-      void set_io_queue( IOQueue& io_queue );
 
     protected:
-      template <class AIOCallbackType>
+      template <class AIOCallbackType, class SocketType = Socket>
       class IOCB
       {
       public:
         AIOCallbackType& get_callback() const { return callback; }
         void* get_callback_context() const { return callback_context; }
+        SocketType& get_socket() const { return socket_; }
 
       protected:
-        IOCB( AIOCallbackType& callback, void* callback_context )
-          : callback( callback.inc_ref() ),
-            callback_context( callback_context )
+        IOCB
+        ( 
+          AIOCallbackType& callback,
+          void* callback_context,
+          SocketType& socket_
+        )
+        : callback( callback.inc_ref() ),
+          callback_context( callback_context ),
+          socket_( socket_.inc_ref() )
         { }
 
         virtual ~IOCB()
@@ -1829,6 +2086,7 @@ namespace yield
       private:
         AIOCallbackType& callback;
         void* callback_context;
+        SocketType& socket_;
       };
 
 
@@ -1837,7 +2095,6 @@ namespace yield
       public:
         Buffer& get_buffer() const { return buffer; }
         int get_flags() const { return flags; }
-        Socket& get_socket() const { return socket_; }
 
         void onRecvCompletion();
         void onRecvError();
@@ -1846,7 +2103,7 @@ namespace yield
       protected:
         IORecvCB
         ( 
-          Buffer& buffer, 
+          YRO_NEW_REF Buffer& buffer, 
           AIORecvCallback& callback, 
           void* callback_context,
           int flags, 
@@ -1860,7 +2117,6 @@ namespace yield
       private:
         Buffer& buffer;
         int flags;
-        Socket& socket_;
       };
 
 
@@ -1869,7 +2125,6 @@ namespace yield
       public:
         const Buffer& get_buffer() const { return buffer; }
         int get_flags() const { return flags; }
-        Socket& get_socket() const { return socket_; }
 
         void onSendCompletion();
         void onSendError();
@@ -1878,7 +2133,7 @@ namespace yield
       protected:
         IOSendCB
         ( 
-          Buffer& buffer,
+          YRO_NEW_REF Buffer& buffer,
           AIOSendCallback& callback, 
           void* callback_context,
           int flags, 
@@ -1893,7 +2148,6 @@ namespace yield
         Buffer& buffer;
         int flags;
         size_t partial_send_len;
-        Socket& socket_;
       };
 
 
@@ -1903,7 +2157,6 @@ namespace yield
         Buffers& get_buffers() const { return buffers; }
         size_t get_buffers_len() const { return buffers_len; }
         int get_flags() const { return flags; }
-        Socket& get_socket() const { return socket_; }
 
         void onSendMsgCompletion();
         void onSendMsgError();
@@ -1912,7 +2165,7 @@ namespace yield
       protected:
         IOSendMsgCB
         ( 
-          Buffers& buffers,
+          YRO_NEW_REF Buffers& buffers,
           AIOSendCallback& callback,
           void* callback_context,
           int flags, 
@@ -1928,7 +2181,6 @@ namespace yield
         size_t buffers_len;
         int flags;
         size_t partial_send_len;
-        Socket& socket_;
       };
 
     private:
@@ -1938,8 +2190,12 @@ namespace yield
       int domain, type, protocol;
       socket_t socket_;
 
+      BIOQueue* bio_queue;
       bool blocking_mode;
-      IOQueue* io_queue;
+      NBIOQueue* nbio_queue;
+#ifdef _WIN32
+      Win32AIOQueue* win32_aio_queue;
+#endif
 
     private:
       class BIORecvCB;
@@ -1960,8 +2216,12 @@ namespace yield
       SocketAddress( const struct sockaddr_storage& ); // Copies
       ~SocketAddress();
 
-      static SocketAddress* create( const char* hostname );
-      static SocketAddress* create( const char* hostname, uint16_t port );
+      static YRO_NEW_REF SocketAddress* 
+      getaddrinfo
+      (
+        const char* hostname,
+        uint16_t port = 0
+      );
 
 #ifdef _WIN32
       bool as_struct_sockaddr
@@ -1979,12 +2239,7 @@ namespace yield
       ) const;
 #endif
 
-      bool
-      getnameinfo
-      (
-        string& out_hostname,
-        bool numeric = true
-      ) const;
+      bool getnameinfo( string& out_hostname, bool numeric = true ) const;
 
       bool getnameinfo
       (
@@ -2002,21 +2257,18 @@ namespace yield
       SocketAddress& inc_ref() { return Object::inc_ref( *this ); }
 
     private:
-      SocketAddress( const SocketAddress& ) 
-      { 
-        DebugBreak(); // Prevent copying
-      }      
+      SocketAddress( const SocketAddress& ) { DebugBreak(); } // Prevent copies
+
+      static struct addrinfo* _getaddrinfo( const char*, uint16_t );
 
     private:
       // Linked sockaddr's obtained from getaddrinfo(3)
       // Will be NULL if _sockaddr_storage is used
-      struct addrinfo* addrinfo_list;
+      struct addrinfo* _addrinfo;
 
       // A single sockaddr passed in the constructor and copied
       // Will be NULL if addrinfo_list is used
       struct sockaddr_storage* _sockaddr_storage;
-
-      static struct addrinfo* getaddrinfo( const char* hostname, uint16_t port );
     };
 
 
@@ -2025,13 +2277,13 @@ namespace yield
     public:
       ~SocketPair();
 
-      static SocketPair& create();
+      static YRO_NEW_REF SocketPair& create();
 
       Socket& first() const { return first_socket; }
       Socket& second() const { return second_socket; }
 
     private:
-      SocketPair( Socket& first_socket, Socket& second_socket );      
+      SocketPair( YRO_NEW_REF Socket&, YRO_NEW_REF Socket& );      
 
     private:
       Socket &first_socket, &second_socket;
@@ -2044,7 +2296,7 @@ namespace yield
     public:
       ~SSLContext();
 
-      static SSLContext&
+      static YRO_NEW_REF SSLContext&
       create
       (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
@@ -2053,7 +2305,7 @@ namespace yield
         SSL_METHOD* method = SSLv23_client_method()
       );
 
-      static SSLContext&
+      static YRO_NEW_REF SSLContext&
       create
       (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
@@ -2065,7 +2317,7 @@ namespace yield
         const string& pem_private_key_passphrase
       );
 
-      static SSLContext&
+      static YRO_NEW_REF SSLContext&
       create
       (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
@@ -2077,7 +2329,7 @@ namespace yield
         const string& pem_private_key_passphrase
       );
 
-      static SSLContext&
+      static YRO_NEW_REF SSLContext&
       create
       (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
@@ -2113,19 +2365,7 @@ namespace yield
     class StackBuffer : public Buffer
     {
     public:
-      StackBuffer() 
-      { 
-        _size = 0; 
-      }
-
-      StackBuffer( const void* buf )
-      {
-        memcpy_s( buffer, Capacity, buf, Capacity );
-        _size = 0;
-      }
-
-      // RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( StackBuffer, 2 );
+      StackBuffer() { _size = 0; }
 
       // Buffer
       size_t capacity() const { return Capacity; }
@@ -2145,13 +2385,9 @@ namespace yield
       static int TYPE; // SOCK_STREAM
 
     public:
-      virtual StreamSocket* accept();
-
       class AIOAcceptCallback : public virtual Object
       {
       public:
-        // accepted_stream_socket is not a new reference; 
-        // callees should inc_ref() their own references as necessary
         virtual void 
         onAcceptCompletion
         ( 
@@ -2165,17 +2401,6 @@ namespace yield
         // Object
         AIOAcceptCallback& inc_ref() { return Object::inc_ref( *this ); }
       };
-
-      virtual void 
-      aio_accept
-      ( 
-        AIOAcceptCallback& callback,
-        void* callback_context = NULL,
-        Buffer* recv_buffer = NULL // Steals this reference
-        // recv_buffer must be at least 88 bytes long if it's not NULL
-        // ( sizeof( sockaddr_in6 ) + 16 ) * 2 = 88 to store the 
-        // peername on Win32 (position() will be set at 89 on the callback).
-      );
 
       class AIOConnectCallback : public virtual Object
       {
@@ -2193,18 +2418,33 @@ namespace yield
         AIOConnectCallback& inc_ref() { return Object::inc_ref( *this ); }
       };
 
+    public:
+      virtual YRO_NEW_REF StreamSocket* accept();
+
+      virtual void 
+      aio_accept
+      ( 
+        AIOAcceptCallback& callback,
+        void* callback_context = NULL,
+        YRO_NEW_REF Buffer* recv_buffer = NULL,
+        // recv_buffer must be at least 88 bytes long if it's not NULL
+        // ( sizeof( sockaddr_in6 ) + 16 ) * 2 = 88 to store the 
+        // peername on Win32 (position() will be set at 89 on the callback).,
+        const Time& timeout = TIMEOUT_INFINITE
+      );
+
       virtual void 
       aio_connect
       ( 
         SocketAddress& peername,
         AIOConnectCallback& callback,
         void* callback_context = NULL,
-        Buffer* send_buffer = NULL // Steals this reference
+        YRO_NEW_REF Buffer* send_buffer = NULL,
+        const Time& timeout = TIMEOUT_INFINITE
       );
 
-      static StreamSocket* create( int domain, int protocol );
-
-      virtual StreamSocket* dup();
+      static YRO_NEW_REF StreamSocket* create( int domain, int protocol );
+      virtual YRO_NEW_REF StreamSocket* dup();
       virtual bool listen();
       virtual bool want_accept() const;
       virtual bool want_connect() const;
@@ -2216,64 +2456,68 @@ namespace yield
       virtual void
       aio_recv
       ( 
-        Buffer& buffer, // Steals this reference
-        int flags,
+        YRO_NEW_REF Buffer& buffer,
         AIORecvCallback& callback,
-        void* callback_context = NULL
+        void* callback_context = NULL,
+        int flags = 0,
+        const Time& timeout = TIMEOUT_INFINITE
       );
 
       virtual void 
       aio_send
       (
-        Buffer& buffer, // Steals this reference
-        int flags,
+        YRO_NEW_REF Buffer& buffer,
         AIOSendCallback& callback,
-        void* callback_context = NULL
+        void* callback_context = NULL,
+        int flags = 0,
+        const Time& timeout = TIMEOUT_INFINITE
       );
 
       virtual void
       aio_sendmsg
       (
-        Buffers& buffers, // Steals this reference
-        int flags,
+        YRO_NEW_REF Buffers& buffers,
         AIOSendCallback& callback,
-        void* callback_context = NULL
+        void* callback_context = NULL,
+        int flags = 0,
+        const Time& timeout = TIMEOUT_INFINITE
       );
-
-      virtual bool associate( IOQueue& io_queue );
 
     protected:
       StreamSocket( int domain, int protocol, socket_t socket_ );
 
-      virtual StreamSocket* dup2( socket_t ); // Called by accept
+      virtual YRO_NEW_REF StreamSocket* dup2( socket_t ); // Called by accept
 
       // Called by dup2 in subclasses
       template <class StreamSocketType>
-      StreamSocketType* dup2( StreamSocketType* stream_socket )
+      YRO_NEW_REF StreamSocketType* dup2( StreamSocketType* stream_socket )
       {
         if ( stream_socket != NULL )
         {
-          if ( get_io_queue() != NULL )
-          {
-            if ( stream_socket->associate( *get_io_queue() ) )
-              return stream_socket;
-            else
-            {
-              StreamSocket::dec_ref( *stream_socket );
-              return NULL;
-            }
-          }
+          Socket* socket_ = static_cast<Socket*>( stream_socket );
+          bool associate_ret;
+          if ( get_bio_queue() != NULL )
+            associate_ret = socket_->associate( *get_bio_queue() );
+          else if ( get_nbio_queue() != NULL )
+            associate_ret = socket_->associate( *get_nbio_queue() );
+#ifdef _WIN32
+          else if ( get_win32_aio_queue() != NULL )
+            associate_ret = socket_->associate( *get_win32_aio_queue() );
+#endif
           else
+            associate_ret = true;
+
+          if ( associate_ret )
             return stream_socket;
+          else
+          {
+            StreamSocket::dec_ref( *stream_socket );
+            return NULL;
+          }
         }
         else
           return NULL;
       }
-
-    private:
-#ifdef _WIN32
-      static void *lpfnAcceptEx, *lpfnConnectEx;
-#endif
 
     private:
       class BIOAcceptCB;
@@ -2288,643 +2532,6 @@ namespace yield
       class Win32AIORecvCB;
       class Win32AIOSendCB;
       class Win32AIOSendMsgCB;
-#endif
-    };
-
-
-    class StringBuffer : public Buffer, public string
-    {
-    public:
-      StringBuffer() { }
-      StringBuffer( size_t capacity );
-      StringBuffer( const string& buf );
-      StringBuffer( const char* buf );
-      StringBuffer( const char* buf, size_t len );
-      StringBuffer( Buffer& buf );
-
-      // Buffer
-      operator void*() const { return const_cast<char*>( data() ); }
-
-      // RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( StringBuffer, 3 );
-
-      // Buffer
-      size_t capacity() const { return string::capacity(); }
-      bool empty() const { return string::empty(); }
-      size_t get( void* buf, size_t len );
-      size_t put( char buf, size_t repeat_count );
-      size_t put( const void* buf, size_t len );
-      void resize( size_t n );
-      size_t size() const { return string::size(); }
-    };
-
-
-    class Time
-    {
-    public:
-      static Time INVALID_TIME;
-      const static uint64_t NS_IN_US = 1000ULL;
-      const static uint64_t NS_IN_MS = 1000000ULL;
-      const static uint64_t NS_IN_S = 1000000000ULL;
-
-    public:
-      Time(); // Current time
-      Time( uint64_t unix_time_ns ) : unix_time_ns( unix_time_ns ) { }
-      Time( double unix_time_s );
-      Time( const struct timeval& );
-#ifdef _WIN32
-      Time( const FILETIME& );
-      Time( const FILETIME* );
-      Time( const SYSTEMTIME&, bool local = true );
-#else
-      Time( const struct timespec& );
-      Time( const struct tm&, bool local = true );
-#endif      
-      Time( const Time& other ) : unix_time_ns( other.unix_time_ns ) { }
-
-      Time
-      (
-        int tm_sec, // seconds after the minute	0-61*
-        int tm_min, // minutes after the hour	0-59
-        int tm_hour, //	hours since midnight 0-23
-        int tm_mday, //	day of the month 1-31
-        int tm_mon, // months since January	0-11
-        int tm_year, //	years since 1900
-        bool local = true
-      );
-
-#ifdef _WIN32
-      SYSTEMTIME as_local_SYSTEMTIME() const;
-      SYSTEMTIME as_utc_SYSTEMTIME() const;
-#else
-      struct tm as_local_struct_tm() const;
-      struct tm as_utc_struct_tm() const;
-#endif
-
-      inline double as_unix_time_ms() const
-      {
-        return static_cast<double>( unix_time_ns ) / NS_IN_MS;
-      }
-
-      inline uint64_t as_unix_time_ns() const { return unix_time_ns; }
-
-      inline double as_unix_time_s() const
-      {
-        return static_cast<double>( unix_time_ns ) / NS_IN_S;
-      }
-
-      inline double as_unix_time_us() const
-      {
-        return static_cast<double>( unix_time_ns ) / NS_IN_US;
-      }
-
-      inline operator uint64_t() const { return as_unix_time_ns(); }
-      inline operator double() const { return as_unix_time_s(); }
-      operator struct timeval() const;
-#ifdef _WIN32
-      operator FILETIME() const;
-      operator SYSTEMTIME() const; // as_local_SYSTEMTIME
-#else
-      operator struct timespec() const;
-      operator struct tm() const; // as_local_struct_tm
-#endif
-      operator string() const;
-
-      Time& operator=( const Time& );
-      Time& operator=( uint64_t unix_time_ns );
-      Time& operator=( double unix_time_s );
-      Time operator+( const Time& ) const;
-      Time operator+( uint64_t unix_time_ns ) const;
-      Time operator+( double unix_time_s ) const;
-      Time& operator+=( const Time& );
-      Time& operator+=( uint64_t unix_time_ns );
-      Time& operator+=( double unix_time_s );
-      Time operator-( const Time& ) const;
-      Time operator-( uint64_t unix_time_ns ) const;
-      Time operator-( double unix_time_s ) const;
-      Time& operator-=( const Time& );
-      Time& operator-=( uint64_t unix_time_ns );
-      Time& operator-=( double unix_time_s );
-      Time& operator*=( const Time& );
-      bool operator==( const Time& ) const;
-      bool operator==( uint64_t unix_time_ns ) const;
-      bool operator==( double unix_time_s ) const;
-      bool operator!=( const Time& ) const;
-      bool operator!=( uint64_t unix_time_ns ) const;
-      bool operator!=( double unix_time_s ) const;
-      bool operator<( const Time& ) const;
-      bool operator<( uint64_t unix_time_ns ) const;
-      bool operator<( double unix_time_s ) const;
-      bool operator<=( const Time& ) const;
-      bool operator<=( uint64_t unix_time_ns ) const;
-      bool operator<=( double unix_time_s ) const;
-      bool operator>( const Time& ) const;
-      bool operator>( uint64_t unix_time_ns ) const;
-      bool operator>( double unix_time_s ) const;
-      bool operator>=( const Time& ) const;
-      bool operator>=( uint64_t unix_time_ns ) const;
-      bool operator>=( double unix_time_s ) const;
-
-    private:
-#ifdef _WIN32
-      void init( const FILETIME& );
-      void init( const SYSTEMTIME&, bool local );
-#else
-      void init( struct tm&, bool local );
-#endif
-
-    private:
-      // The time is stored internally as a Unix epoch time, i.e.
-      // nanoseconds since January 1, 1970
-      uint64_t unix_time_ns;
-    };
-
-    static inline ostream& operator<<( ostream& os, const Time& time )
-    {
-      os << static_cast<string>( time );
-      return os;
-    }
-
-
-    class TCPSocket : public StreamSocket
-    {
-    public:
-      static int DOMAIN_DEFAULT; // AF_INET6
-      const static Option OPTION_TCP_NODELAY = 4;
-      static int PROTOCOL; // IPPROTO_TCP
-
-    public:
-      virtual ~TCPSocket() { }
-
-      static TCPSocket* create( int domain = DOMAIN_DEFAULT );
-      virtual TCPSocket* dup();
-
-      // Object
-      TCPSocket& inc_ref() { return Object::inc_ref( *this ); }
-
-      // Socket
-      virtual bool setsockopt( Option option, bool onoff );
-
-      // StreamSocket
-      class AIOAcceptCallback : public StreamSocket::AIOAcceptCallback
-      {
-      public:
-        virtual void 
-        onAcceptCompletion
-        ( 
-          TCPSocket& accepted_tcp_socket,
-          void* context,
-          Buffer* recv_buffer
-        ) = 0;
-
-        // StreamSocket::AIOAcceptCallback
-        void 
-        onAcceptCompletion
-        ( 
-          StreamSocket& accepted_stream_socket,
-          void* context,
-          Buffer* recv_buffer
-        )
-        {
-          onAcceptCompletion
-          (
-            static_cast<TCPSocket&>( accepted_stream_socket ),
-            context,
-            recv_buffer
-          );
-        }
-      };
-
-    protected:
-      TCPSocket( int domain, socket_t );
-
-      // StreamSocket
-      virtual StreamSocket* dup2( socket_t );
-    };
-
-
-#ifdef YIELD_PLATFORM_HAVE_OPENSSL
-    class SSLSocket : public TCPSocket
-    {
-    public:
-      virtual ~SSLSocket();
-
-      static SSLSocket* create( SSLContext& ); // Steals this ref
-      static SSLSocket* create( int domain, SSLContext& ); // Steals this ref
-      virtual SSLSocket* dup();
-      operator SSL*() const { return ssl; }
-
-      // Socket
-      // Will only associate with BIO or NBIO queues
-      virtual bool associate( IOQueue& io_queue );
-      virtual bool connect( const SocketAddress& peername );
-      virtual ssize_t recv( void* buf, size_t buflen, int );
-      virtual ssize_t send( const void* buf, size_t buflen, int );
-      virtual ssize_t sendmsg( const struct iovec* iov, uint32_t iovlen, int );
-      virtual bool want_send() const;
-      virtual bool want_recv() const;
-      
-      // StreamSocket
-      class AIOAcceptCallback : public StreamSocket::AIOAcceptCallback
-      {
-      public:
-        virtual void
-        onAcceptCompletion
-        ( 
-          SSLSocket& accepted_ssl_socket,
-          void* context,
-          Buffer* recv_buffer
-        ) = 0;
-
-        // StreamSocket::AIOAcceptCallback
-        void 
-        onAcceptCompletion
-        ( 
-          StreamSocket& accepted_stream_socket,
-          void* context,
-          Buffer* recv_buffer
-        )
-        {
-          onAcceptCompletion
-          (
-            static_cast<SSLSocket&>( accepted_stream_socket ),
-            context,
-            recv_buffer
-          );
-        }
-      };
-
-      virtual bool listen(); 
-      virtual bool shutdown();
-
-    protected:
-      SSLSocket( int domain, socket_t, SSL*, SSLContext& );
-
-      SSLContext& get_ssl_context() const { return ssl_context; }
-      
-    private:
-      // StreamSocket
-      virtual StreamSocket* dup2( socket_t );
-
-    private:
-      SSL* ssl;
-      SSLContext& ssl_context;
-    };
-#endif
-
-
-    class Thread : public Object
-    {
-    public:
-      Thread();
-      virtual ~Thread();
-
-      unsigned long get_id() const { return id; }
-      static void* getspecific( unsigned long key ); // Get TLS
-      static unsigned long gettid(); // Get current thread ID
-      inline bool is_running() const { return state == STATE_RUNNING; }
-      bool join(); // See pthread_join
-      static unsigned long key_create(); // Create TLS key
-      static void nanosleep( const Time& );
-      virtual void run() = 0;
-      void set_name( const char* name );
-      bool set_processor_affinity( unsigned short logical_processor_i );
-      bool set_processor_affinity( const ProcessorSet& logical_processor_set );
-      static void setspecific( unsigned long key, void* value ); // Set TLS
-      virtual void start(); // Only returns after run() has been called
-      static void yield();
-
-    private:
-#ifdef _WIN32
-      static unsigned long __stdcall thread_stub( void* );
-#else
-      static void* thread_stub( void* );
-#endif
-
-    private:
-#if defined(_WIN32)
-      void* handle;
-#else
-      pthread_t handle;
-#endif
-      unsigned long id;
-      enum { STATE_READY, STATE_RUNNING, STATE_STOPPED } state;
-    };
-
-
-    class TimerQueue : public Object
-    {
-#ifndef _WIN32
-    private:
-      class Thread;
-#endif
-
-    public:
-      class Timer : public Object
-      {
-      public:
-        Timer( const Time& timeout );
-        Timer( const Time& timeout, const Time& period );
-        virtual ~Timer();
-
-        void delete_();
-        const Time& get_period() const { return period; }
-        const Time& get_timeout() const { return timeout; }
-        virtual void fire() = 0;
-
-        // Object
-        Timer& inc_ref() { return Object::inc_ref( *this ); }
-
-      private:
-        friend class TimerQueue;
-#ifndef _WIN32
-        friend class TimerQueue::Thread;
-#endif
-
-        Time period, timeout;
-
-#ifdef _WIN32
-        void *hTimer, *hTimerQueue;
-        static void __stdcall WaitOrTimerCallback( void*, unsigned char );
-#else
-        bool deleted;
-#endif
-        Time last_fire_time;
-      };
-
-    public:
-      TimerQueue();
-      ~TimerQueue();
-
-      void addTimer( Timer& timer );
-      static void destroyDefaultTimerQueue();
-      static TimerQueue& getDefaultTimerQueue();
-
-    private:
-#ifdef _WIN32
-      TimerQueue( void* hTimerQueue );
-#endif
-
-   private:
-      static TimerQueue* default_timer_queue;
-#ifdef _WIN32
-      void* hTimerQueue;
-#else
-      Thread* thread;
-#endif
-    };
-
-
-    class UDPSocket : public Socket
-    {
-    public:
-      static int DOMAIN_DEFAULT; // AF_INET6
-      static int PROTOCOL; // IPPROTO_UDP
-      static int TYPE; // SOCK_DGRAM
-
-    public:
-      virtual ~UDPSocket() { }
-
-      class AIORecvFromCallback : public virtual Object
-      {
-      public:
-        // buffer and peername are not new references; 
-        // callees should inc_ref() their own references as necessary
-        virtual void
-        onRecvFromCompletion
-        ( 
-          Buffer& buffer, 
-          SocketAddress& peername,
-          void* context 
-        ) = 0;
-
-        virtual void
-        onRecvFromError
-        (
-          uint32_t error_code,
-          void* context
-        ) = 0;
-
-        // Object
-        AIORecvFromCallback& inc_ref() { return Object::inc_ref( *this ); }
-      };
-
-      void 
-      aio_recvfrom
-      ( 
-        Buffer& buffer, // Steals this reference
-        AIORecvFromCallback& callback,
-        void* callback_context = NULL
-      )
-      {
-        aio_recvfrom( buffer, 0, callback, callback_context );
-      }
-
-      void 
-      aio_recvfrom
-      ( 
-        Buffer& buffer, // Steals this reference
-        int flags,
-        AIORecvFromCallback& callback,
-        void* callback_context = NULL
-      );
-
-      static UDPSocket* create( int domain = DOMAIN_DEFAULT );
-
-      ssize_t
-      recvfrom
-      ( 
-        Buffer& buffer,
-        struct sockaddr_storage& peername 
-      )
-      {
-        return recvfrom( buffer, 0, peername );
-      }
-
-      ssize_t recvfrom
-      (
-        Buffer& buffer,
-        int flags,
-        struct sockaddr_storage& peername
-      );
-
-      ssize_t
-      recvfrom
-      (
-        void* buf,
-        size_t buflen,
-        struct sockaddr_storage& peername
-      )
-      {
-        return recvfrom( buf, buflen, 0, peername );
-      }
-
-      virtual ssize_t
-      recvfrom
-      (
-        void* buf,
-        size_t buflen,
-        int flags,
-        struct sockaddr_storage& peername
-      );
-
-      ssize_t
-      sendmsg
-      (
-        Buffers& buffers,
-        const SocketAddress& peername,
-        int flags = 0
-      )
-      {
-        return sendmsg( buffers, buffers.size(), peername, flags );
-      }
-
-      // sendmsg analog to sendto
-      virtual ssize_t
-      sendmsg
-      (
-        const struct iovec* iov,
-        uint32_t iovlen,
-        const SocketAddress& peername,
-        int flags = 0
-      );
-
-      ssize_t 
-      sendto
-      ( 
-        const Buffer& buffer, 
-        const SocketAddress& peername 
-      )
-      {
-        return sendto( buffer, 0, peername );
-      }
-
-      ssize_t 
-      sendto
-      (
-        const Buffer& buffer,
-        int flags,
-        const SocketAddress& peername
-      )
-      {
-        return sendto( buffer, buffer.size(), flags, peername );
-      }
-
-      ssize_t sendto
-      (
-        const void* buf,
-        size_t buflen,
-        const SocketAddress& peername
-      )
-      {
-        return sendto( buf, buflen, 0, peername );
-      }
-
-      virtual ssize_t
-      sendto
-      (
-        const void* buf,
-        size_t buflen,
-        int flags,
-        const SocketAddress& peername
-      );
-
-      // Object
-      UDPSocket& inc_ref() { return Object::inc_ref( *this ); }
-
-    protected:
-      UDPSocket( int domain, socket_t );
-
-    private:
-      class BIORecvFromCB;
-      class IORecvFromCB;
-      class NBIORecvFromCB;
-#ifdef _WIN32
-      class Win32AIORecvFromCB;
-#endif
-    };
-
-
-    class UUID : public Object
-    {
-    public:
-      UUID();
-      UUID( const string& uuid_from_string );
-      ~UUID();
-
-      bool operator==( const UUID& ) const;
-      operator string() const;
-
-    private:
-#if defined(_WIN32)
-      void* win32_uuid;
-#elif defined(YIELD_PLATFORM_HAVE_LINUX_LIBUUID)
-      void* linux_libuuid_uuid;
-#elif defined(__sun)
-      void* sun_uuid;
-#else
-      char generic_uuid[256];
-#endif
-    };
-
-
-    class Directory : public Object
-    {
-    public:
-      class Entry : public Object
-      {
-        // has-a Stat instead of is-a Stat because
-        // (1) readdir on Unix returns a struct dirent,
-        //     which is only a subset of struct stat ->
-        //     the Stat member will be NULL
-        // (2) subclasses of Directory can attach their own
-        //     subclasses of Stat
-      public:
-        Entry( const Path& name );
-        Entry( const Path& name, Stat& stbuf ); // Steals reference to Stat
-        ~Entry();
-
-        const Path& get_name() const { return name; }
-        Stat* get_stat() const { return stbuf; }
-
-      private:
-        Path name;
-        Stat* stbuf;
-
-        // This class used to have ISDIR(), ISREG(), etc. 
-        // methods like Stat to take advantage of Linux's d_type
-        // struct dirent member for optimizing things like
-        // rmtree (which reads a directory and branches according
-        // to the Entry type). d_type is not in POSIX's struct dirent
-        // and more strict POSIX implementations (like Sun's), so
-        // it's been removed here.
-      };
-
-    public:
-      virtual ~Directory();
-
-      YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
-
-      // Object
-      Directory& inc_ref() { return Object::inc_ref( *this ); }
-
-    protected:
-      Directory();      
-
-    private:
-      friend class Volume;
-#ifdef _WIN32
-      Directory( void* hDirectory, const WIN32_FIND_DATA& first_find_data );
-#else
-      Directory( void* dirp );
-#endif
-
-    private:
-#ifdef _WIN32
-      void* hDirectory;
-      WIN32_FIND_DATA* first_find_data;
-#else
-      void* dirp;
 #endif
     };
 
@@ -3072,6 +2679,492 @@ namespace yield
     };
 
 
+    class StringBuffer : public Buffer, public string
+    {
+    public:
+      StringBuffer() { }
+      StringBuffer( size_t capacity );
+      StringBuffer( const string& buf );
+      StringBuffer( const char* buf );
+      StringBuffer( const char* buf, size_t len );
+      StringBuffer( Buffer& buf );
+
+      // Buffer
+      size_t capacity() const { return string::capacity(); }      
+      bool empty() const { return string::empty(); }
+      size_t get( void* buf, size_t len );
+      operator void*() const { return const_cast<char*>( data() ); }
+      size_t put( char buf, size_t repeat_count );
+      size_t put( const void* buf, size_t len );
+      void resize( size_t n );
+      size_t size() const { return string::size(); }
+    };
+
+
+    class TCPSocket : public StreamSocket
+    {
+    public:
+      static int DOMAIN_DEFAULT; // AF_INET6
+      const static Option OPTION_TCP_NODELAY = 4;
+      static int PROTOCOL; // IPPROTO_TCP
+
+    public:
+      virtual ~TCPSocket() { }
+
+      static TCPSocket* YRO_NEW_REF create( int domain = DOMAIN_DEFAULT );
+      virtual YRO_NEW_REF TCPSocket* dup();
+
+      // Object
+      TCPSocket& inc_ref() { return Object::inc_ref( *this ); }
+
+      // Socket
+      virtual bool setsockopt( Option option, bool onoff );
+
+      // StreamSocket
+      class AIOAcceptCallback : public StreamSocket::AIOAcceptCallback
+      {
+      public:
+        virtual void 
+        onAcceptCompletion
+        ( 
+          TCPSocket& accepted_tcp_socket,
+          void* context,
+          Buffer* recv_buffer
+        ) = 0;
+
+        // StreamSocket::AIOAcceptCallback
+        void 
+        onAcceptCompletion
+        ( 
+          StreamSocket& accepted_stream_socket,
+          void* context,
+          Buffer* recv_buffer
+        )
+        {
+          onAcceptCompletion
+          (
+            static_cast<TCPSocket&>( accepted_stream_socket ),
+            context,
+            recv_buffer
+          );
+        }
+      };
+
+    protected:
+      TCPSocket( int domain, socket_t );
+
+      // StreamSocket
+      virtual StreamSocket* dup2( socket_t );
+    };
+
+
+#ifdef YIELD_PLATFORM_HAVE_OPENSSL
+    class SSLSocket : public TCPSocket
+    {
+    public:
+      virtual ~SSLSocket();
+
+      static YRO_NEW_REF SSLSocket* create( SSLContext& );
+      static YRO_NEW_REF SSLSocket* create( int domain, SSLContext& );
+      virtual YRO_NEW_REF SSLSocket* dup();
+      operator SSL*() const { return ssl; }
+
+      // Socket
+#ifdef _WIN32
+      virtual bool associate( Win32AIOQueue& ) { return false; }
+#endif
+      virtual bool connect( const SocketAddress& peername );
+      virtual ssize_t recv( void* buf, size_t buflen, int );
+      virtual ssize_t send( const void* buf, size_t buflen, int );
+      virtual ssize_t sendmsg( const struct iovec* iov, uint32_t iovlen, int );
+      virtual bool want_send() const;
+      virtual bool want_recv() const;
+      
+      // StreamSocket
+      class AIOAcceptCallback : public StreamSocket::AIOAcceptCallback
+      {
+      public:
+        virtual void
+        onAcceptCompletion
+        ( 
+          SSLSocket& accepted_ssl_socket,
+          void* context,
+          Buffer* recv_buffer
+        ) = 0;
+
+        // StreamSocket::AIOAcceptCallback
+        void 
+        onAcceptCompletion
+        ( 
+          StreamSocket& accepted_stream_socket,
+          void* context,
+          Buffer* recv_buffer
+        )
+        {
+          onAcceptCompletion
+          (
+            static_cast<SSLSocket&>( accepted_stream_socket ),
+            context,
+            recv_buffer
+          );
+        }
+      };
+
+      virtual bool listen(); 
+      virtual bool shutdown();
+
+    protected:
+      SSLSocket( int domain, socket_t, SSL*, SSLContext& );
+
+      SSLContext& get_ssl_context() const { return ssl_context; }
+      
+    private:
+      // StreamSocket
+      virtual YRO_NEW_REF StreamSocket* dup2( socket_t );
+
+    private:
+      SSL* ssl;
+      SSLContext& ssl_context;
+    };
+#endif
+
+
+    class Thread : public Object
+    {
+    public:
+      Thread();
+      virtual ~Thread();
+
+      unsigned long get_id() const { return id; }
+      static void* getspecific( unsigned long key );
+      static unsigned long gettid();
+      inline bool is_running() const { return state == STATE_RUNNING; }
+      bool join();
+      static unsigned long key_create();
+      static void nanosleep( const Time& );
+      virtual void run() = 0;
+      void set_name( const char* name );
+      bool set_processor_affinity( unsigned short logical_processor_i );
+      bool set_processor_affinity( const ProcessorSet& logical_processor_set );
+      static void setspecific( unsigned long key, void* value );
+      virtual void start();
+      static void yield();
+
+    private:
+#ifdef _WIN32
+      static unsigned long __stdcall thread_stub( void* );
+#else
+      static void* thread_stub( void* );
+#endif
+
+    private:
+#if defined(_WIN32)
+      void* handle;
+#else
+      pthread_t handle;
+#endif
+      unsigned long id;
+      enum { STATE_READY, STATE_RUNNING, STATE_STOPPED } state;
+    };
+
+
+    class Timer : public Object
+    {
+    public:
+      const static uint64_t INVALID_PERIOD = static_cast<uint64_t>( 0 );
+
+    public:
+      virtual ~Timer();
+
+      void fire();
+      virtual void cancel() = 0;
+      const Time& get_period() const { return period; }
+      const Time& get_timeout() const { return timeout; }
+
+      // Object
+      Timer& inc_ref() { return Object::inc_ref( *this ); }
+
+    protected:
+      Timer
+      ( 
+        TimerCallback& callback,
+        void* callback_context,
+        const Time& timeout,
+        const Time& period
+      );
+
+    private:
+      TimerCallback& callback;
+      void* callback_context;
+      Time last_fire_time, period, timeout;
+    };
+
+
+    class TimerCallback : public Object
+    {
+    public:
+      virtual void operator()( void* context ) = 0;
+
+      // Object
+      TimerCallback& inc_ref() { return Object::inc_ref( *this ); }
+    };
+
+
+    template <class TimerType>
+    class TimerHeap : public vector< pair<Time, TimerType> >
+    {
+    public:
+      void push( const Time& time, TimerType timer )
+      {
+        push_back( make_pair( time, timer ) );
+        std::push_heap( begin(), end(), CompareTimes );
+      }
+
+      void pop()
+      {
+        std::pop_heap( begin(), end(), CompareTimes );
+        pop_back();
+      }
+
+      const pair<Time, TimerType>& top() const
+      {
+        return front();
+      }
+
+    private:
+      static bool
+      CompareTimes
+      (
+        const pair<Time, TimerType>& left,
+        const pair<Time, TimerType>& right 
+      )
+      {
+        return left.first < right.first;
+      }
+    };
+
+
+    class TimerQueue : public Object
+    {
+    public:
+      class Timer : public yield::platform::Timer
+      {
+      public:
+        bool is_cancelled() const { return cancelled; }
+
+        // Object
+        Timer& inc_ref() { return Object::inc_ref( *this ); }
+
+        // Timer
+        void cancel();
+
+      private:
+        friend class TimerQueue;
+
+        Timer
+        ( 
+          TimerCallback& callback,
+          void* callback_context,
+#ifdef _WIN32
+          void* hTimerQueue,
+#endif
+          const Time& period,
+          const Time& timeout
+        );
+
+#ifdef _WIN32
+        static void __stdcall WaitOrTimerCallback( void*, unsigned char );
+#endif
+
+      private:
+        bool cancelled;
+#ifdef _WIN32
+        void *hTimer, *hTimerQueue;
+#endif
+      };
+
+    public:
+      ~TimerQueue();
+
+      YRO_NEW_REF auto_Object<Timer>
+      add
+      ( 
+        const Time& timeout,
+        TimerCallback& callback,
+        void* callback_context = NULL
+      );
+
+      YRO_NEW_REF auto_Object<Timer>
+      add
+      (
+        const Time& timeout,
+        const Time& period,
+        TimerCallback& callback,
+        void* callback_context = NULL
+      );
+
+      static YRO_NEW_REF TimerQueue& create();
+
+    private:
+#ifndef _WIN32
+      class Thread;
+#endif
+
+    private:
+#ifdef _WIN32
+      TimerQueue( void* hTimerQueue );
+#else
+      TimerQueue( Thread* thread );
+#endif
+
+   private:
+#ifdef _WIN32
+      void* hTimerQueue;
+#else
+      Thread& thread;
+#endif
+    };
+
+
+    class UDPSocket : public Socket
+    {
+    public:
+      static int DOMAIN_DEFAULT; // AF_INET6
+      static int PROTOCOL; // IPPROTO_UDP
+      static int TYPE; // SOCK_DGRAM
+
+    public:
+      virtual ~UDPSocket() { }
+
+      class AIORecvFromCallback : public virtual Object
+      {
+      public:
+        // buffer and peername are not new references; 
+        // callees should inc_ref() their own references as necessary
+        virtual void
+        onRecvFromCompletion
+        ( 
+          Buffer& buffer, 
+          SocketAddress& peername,
+          void* context 
+        ) = 0;
+
+        virtual void
+        onRecvFromError
+        (
+          uint32_t error_code,
+          void* context
+        ) = 0;
+
+        // Object
+        AIORecvFromCallback& inc_ref() { return Object::inc_ref( *this ); }
+      };
+
+      void 
+      aio_recvfrom
+      ( 
+        YRO_NEW_REF Buffer& buffer,
+        AIORecvFromCallback& callback,
+        void* callback_context = NULL,
+        int flags = 0,
+        const Time& timeout = TIMEOUT_INFINITE
+      );
+
+      static UDPSocket* create( int domain = DOMAIN_DEFAULT );
+
+      // recvfrom
+      ssize_t
+      recvfrom
+      ( 
+        Buffer& buffer,
+        struct sockaddr_storage& peername,
+        int flags = 0 
+      );
+
+      virtual ssize_t 
+      recvfrom
+      (
+        void* buf,
+        size_t len,
+        struct sockaddr_storage& peername,
+        int flags = 0 
+      );
+
+      // sendmsg
+      ssize_t
+      sendmsg
+      ( 
+        Buffers& buffers,
+        const SocketAddress& peername,
+        int flags = 0 
+      );
+
+      virtual ssize_t
+      sendmsg
+      (
+        const struct iovec* iov,
+        uint32_t iovlen,
+        const SocketAddress& peername,
+        int flags = 0
+      );
+
+      // sendto
+      ssize_t
+      sendto
+      (
+        const Buffer& buffer,
+        const SocketAddress& peername,
+        int flags = 0 
+      );
+
+      virtual ssize_t
+      sendto
+      ( 
+        const void* buf,
+        size_t len,
+        const SocketAddress& peername,
+        int flags = 0 
+      );
+
+      // Object
+      UDPSocket& inc_ref() { return Object::inc_ref( *this ); }
+
+    protected:
+      UDPSocket( int domain, socket_t );
+
+    private:
+      class BIORecvFromCB;
+      class IORecvFromCB;
+      class NBIORecvFromCB;
+#ifdef _WIN32
+      class Win32AIORecvFromCB;
+#endif
+    };
+
+
+    class UUID : public Object
+    {
+    public:
+      UUID();
+      UUID( const string& uuid_from_string );
+      ~UUID();
+
+      bool operator==( const UUID& ) const;
+      operator string() const;
+
+    private:
+#if defined(_WIN32)
+      void* win32_uuid;
+#elif defined(YIELD_PLATFORM_HAVE_LINUX_LIBUUID)
+      void* linux_libuuid_uuid;
+#elif defined(__sun)
+      void* sun_uuid;
+#else
+      char generic_uuid[256];
+#endif
+    };
+
+
     class Volume : public Object
     {
     public:
@@ -3110,8 +3203,8 @@ namespace yield
 #endif
 
       // Delegate to open
-      virtual File* creat( const Path& path );
-      virtual File* creat( const Path& path, mode_t mode );
+      virtual YRO_NEW_REF File* creat( const Path& path );
+      virtual YRO_NEW_REF File* creat( const Path& path, mode_t mode );
 
       // Delegate to getattr
       virtual bool exists( const Path& path );
@@ -3126,15 +3219,22 @@ namespace yield
       virtual bool mktree( const Path& path, mode_t mode );
 
       // Delegate to full open
-      virtual File* open( const Path& path );
-      virtual File* open( const Path& path, uint32_t flags );
-      virtual File* open( const Path& path, uint32_t flags, mode_t mode );
+      virtual YRO_NEW_REF File* open( const Path& path );
+      virtual YRO_NEW_REF File* open( const Path& path, uint32_t flags );
+
+      virtual YRO_NEW_REF File*
+      open
+      ( 
+        const Path& path,
+        uint32_t flags,
+        mode_t mode 
+      );
 
       // Recursive rmdir + unlink
       virtual bool rmtree( const Path& path );
 
       // Delegates to getattr
-      virtual Stat* stat( const Path& path );
+      virtual YRO_NEW_REF Stat* stat( const Path& path );
 
       // Delegates to open
       bool touch( const Path& path ); 
@@ -3168,36 +3268,26 @@ namespace yield
     public:
       virtual ~Win32AIOCB() { }
 
-      // LPOVERLAPPED_COMPLETION_ROUTINE
-      static void __stdcall 
-      OverlappedCompletionRoutine
-      (
-        unsigned long dwErrorCode,
-        unsigned long dwNumberOfBytesTransferred,
-        ::OVERLAPPED* lpOverlapped
-      );
-
-      // LPWSAOVERLAPPED_COMPLETION_ROUTINE
-      static void __stdcall
-      WSAOverlappedCompletionRoutine
-      (
-        unsigned long dwErrorCode,
-        unsigned long dwNumberOfBytesTransferred,
-        ::OVERLAPPED* lpOverlapped,
-        unsigned long dwFlags
-      );
-
+      bool cancel();
+      virtual void execute() = 0;
       static Win32AIOCB* from_OVERLAPPED( ::OVERLAPPED* overlapped );
+      virtual fd_t get_fd() const = 0;
       operator ::OVERLAPPED*();
-
-      virtual void onCompletion( unsigned long dwNumberOfBytesTransferred ) =0;
+      virtual void onCompletion( unsigned long dwBytesTransferred ) = 0;
       virtual void onError( unsigned long dwErrorCode ) = 0;
 
     protected:
-      Win32AIOCB();
-      Win32AIOCB( uint64_t offset );
+      Win32AIOCB( const Time& timeout = TIMEOUT_INFINITE );
+      Win32AIOCB( uint64_t offset, const Time& timeout = TIMEOUT_INFINITE );
 
     private:
+      void init( uint64_t offset, const Time& timeout );
+
+    private:
+      friend class Win32AIOQueue;
+      void* hTimer;
+      Mutex lock;
+
       typedef struct 
       {
         unsigned long Internal;
@@ -3228,27 +3318,20 @@ namespace yield
     public:
       ~Win32AIOQueue();
 
-      bool associate( socket_t socket_ );
       bool associate( void* handle );
-
-      static Win32AIOQueue* create( int16_t thread_count = 1 );
-
+      static YRO_NEW_REF Win32AIOQueue* create( int16_t thread_count = 1 );
       uint16_t get_thread_count() const;
+      void submit( YRO_NEW_REF Win32AIOCB& win32_aiocb );
 
-      bool 
-      post // PostQueuedCompletionStatus
-      ( 
-        Win32AIOCB& win32_aiocb, // Takes ownership of win32_aiocb
-        unsigned long dwNumberOfBytesTransferred = 0,
-        unsigned long dwCompletionKey = 0
-      );
-
-      // RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( Win32AIOQueue, 3 );
+      // Object
+      Win32AIOQueue& inc_ref() { return Object::inc_ref( *this ); }
 
     private:      
       class Thread;
       Win32AIOQueue( void* hIoCompletionPort, const vector<Thread*>& threads );      
+
+      static void execute( Win32AIOCB& win32_aiocb );
+      static void __stdcall WaitOrTimerCallback( void*, unsigned char );
 
     private:
       void* hIoCompletionPort;

@@ -1,5 +1,5 @@
-#ifndef _1645138936_H_
-#define _1645138936_H_
+#ifndef _691977587_H_
+#define _691977587_H_
 
 
 #include "yield/concurrency.h"
@@ -87,10 +87,11 @@ namespace org
           // yidl::runtime::Object
           nopRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( nopRequest, 2010031317 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031317 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "nopRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
 
@@ -122,10 +123,11 @@ namespace org
           // yidl::runtime::Object
           nopResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( nopResponse, 2010031317 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031317 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "nopResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
@@ -159,10 +161,11 @@ namespace org
           // yidl::runtime::Object
           send_bufferRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( send_bufferRequest, 2010031318 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031318 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "send_bufferRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             if ( get_data() != NULL ) marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "data", 0 ), *get_data() );
@@ -204,10 +207,11 @@ namespace org
           // yidl::runtime::Object
           send_bufferResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( send_bufferResponse, 2010031318 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031318 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "send_bufferResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
@@ -246,10 +250,11 @@ namespace org
           // yidl::runtime::Object
           recv_bufferRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( recv_bufferRequest, 2010031319 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031319 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "recv_bufferRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "size", 0 ), get_size() );
@@ -315,10 +320,11 @@ namespace org
           // yidl::runtime::Object
           recv_bufferResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( recv_bufferResponse, 2010031319 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031319 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "recv_bufferResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             if ( get_data() != NULL ) marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "data", 0 ), *get_data() );
@@ -412,12 +418,6 @@ namespace org
         virtual ~NettestInterfaceRequestHandler()
         {
           delete _interface;
-        }
-
-        // yidl::runtime::RTTIObject
-        virtual const char* get_type_name() const
-        {
-          return "NettestInterface";
         }
 
         // yield::concurrency::RequestHandler

@@ -29,7 +29,7 @@
 
 #include "directory.h"
 #include "stat.h"
-#include "user_credentials_cache.h"
+#include "user_database.h"
 #include "xtreemfs/volume.h"
 using namespace xtreemfs;
 using org::xtreemfs::interfaces::DirectoryEntry;
@@ -123,7 +123,7 @@ yield::platform::Directory::Entry* Directory::readdir()
     Stat* stbuf = new Stat( read_directory_entry.get_stbuf()[0] );
 #ifndef _WIN32
     uid_t uid; gid_t gid;
-    parent_volume.get_user_credentials_cache().getpasswdFromUserCredentials
+    parent_volume.get_user_database().getpasswdFromUserCredentials
     (
       read_directory_entry.get_stbuf()[0].get_user_id(),
       read_directory_entry.get_stbuf()[0].get_group_id(),

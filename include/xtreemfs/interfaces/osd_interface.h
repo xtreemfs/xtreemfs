@@ -1,5 +1,5 @@
-#ifndef _1000665608_H_
-#define _1000665608_H_
+#ifndef _1185009465_H_
+#define _1185009465_H_
 
 
 #include "constants.h"
@@ -53,10 +53,11 @@ namespace org
         // yidl::runtime::Object
         InternalGmax& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( InternalGmax, 2010030966 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030966 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "InternalGmax"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "epoch", 0 ), get_epoch() );
@@ -129,10 +130,11 @@ namespace org
         // yidl::runtime::Object
         Lock& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( Lock, 2010030970 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030970 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "Lock"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "client_pid", 0 ), get_client_pid() );
@@ -211,10 +213,11 @@ namespace org
         // yidl::runtime::Object
         ObjectData& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ObjectData, 2010030967 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030967 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "ObjectData"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "checksum", 0 ), get_checksum() );
@@ -283,10 +286,11 @@ namespace org
         // yidl::runtime::Object
         ObjectList& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ObjectList, 2010030971 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030971 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "ObjectList"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           if ( get_set() != NULL ) marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "set", 0 ), *get_set() );
@@ -320,10 +324,11 @@ namespace org
         // yidl::runtime::Object
         ObjectListSet& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ObjectListSet, 2010030972 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030972 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "ObjectListSet"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           size_type value_i_max = size();
@@ -377,10 +382,11 @@ namespace org
         // yidl::runtime::Object
         ObjectVersion& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ObjectVersion, 2010030973 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030973 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "ObjectVersion"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "object_number", 0 ), get_object_number() );
@@ -411,10 +417,11 @@ namespace org
         // yidl::runtime::Object
         ObjectVersionList& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ObjectVersionList, 2010030974 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030974 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "ObjectVersionList"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           size_type value_i_max = size();
@@ -487,10 +494,11 @@ namespace org
         // yidl::runtime::Object
         ReplicaStatus& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ReplicaStatus, 2010030975 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030975 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "ReplicaStatus"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "truncate_epoch", 0 ), get_truncate_epoch() );
@@ -549,10 +557,11 @@ namespace org
         // yidl::runtime::Object
         InternalReadLocalResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( InternalReadLocalResponse, 2010030968 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030968 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "InternalReadLocalResponse"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "data", 0 ), get_data() );
@@ -1141,10 +1150,11 @@ namespace org
           // yidl::runtime::Object
           readRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( readRequest, 2010031226 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031226 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "readRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -1233,10 +1243,11 @@ namespace org
           // yidl::runtime::Object
           readResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( readResponse, 2010031226 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031226 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "readResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "object_data", 0 ), get_object_data() );
@@ -1297,10 +1308,11 @@ namespace org
           // yidl::runtime::Object
           truncateRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( truncateRequest, 2010031227 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031227 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "truncateRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -1377,10 +1389,11 @@ namespace org
           // yidl::runtime::Object
           truncateResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( truncateResponse, 2010031227 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031227 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "truncateResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "osd_write_response", 0 ), get_osd_write_response() );
@@ -1431,10 +1444,11 @@ namespace org
           // yidl::runtime::Object
           unlinkRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( unlinkRequest, 2010031228 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031228 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "unlinkRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -1479,10 +1493,11 @@ namespace org
           // yidl::runtime::Object
           unlinkResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( unlinkResponse, 2010031228 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031228 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "unlinkResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
@@ -1564,10 +1579,11 @@ namespace org
           // yidl::runtime::Object
           writeRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( writeRequest, 2010031229 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031229 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "writeRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -1656,10 +1672,11 @@ namespace org
           // yidl::runtime::Object
           writeResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( writeResponse, 2010031229 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031229 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "writeResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "osd_write_response", 0 ), get_osd_write_response() );
@@ -1729,10 +1746,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_broadcast_gmaxRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_broadcast_gmaxRequest, 2010031236 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031236 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_broadcast_gmaxRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_id", 0 ), get_file_id() );
@@ -1783,10 +1801,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_broadcast_gmaxResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_broadcast_gmaxResponse, 2010031236 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031236 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_broadcast_gmaxResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
@@ -1844,10 +1863,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_check_objectRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_check_objectRequest, 2010031237 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031237 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_check_objectRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -1927,10 +1947,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_check_objectResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_check_objectResponse, 2010031237 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031237 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_check_objectResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "_return_value", 0 ), get__return_value() );
@@ -1956,10 +1977,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_cleanup_get_resultsRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_cleanup_get_resultsRequest, 2010031246 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031246 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_cleanup_get_resultsRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
 
@@ -2010,10 +2032,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_cleanup_get_resultsResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_cleanup_get_resultsResponse, 2010031246 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031246 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_cleanup_get_resultsResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "results", 0 ), get_results() );
@@ -2039,10 +2062,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_cleanup_is_runningRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_cleanup_is_runningRequest, 2010031247 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031247 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_cleanup_is_runningRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
 
@@ -2092,10 +2116,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_cleanup_is_runningResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_cleanup_is_runningResponse, 2010031247 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031247 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_cleanup_is_runningResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "is_running", 0 ), get_is_running() );
@@ -2158,10 +2183,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_cleanup_startRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_cleanup_startRequest, 2010031248 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031248 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_cleanup_startRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "remove_zombies", 0 ), get_remove_zombies() );
@@ -2209,10 +2235,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_cleanup_startResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_cleanup_startResponse, 2010031248 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031248 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_cleanup_startResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
@@ -2228,10 +2255,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_cleanup_statusRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_cleanup_statusRequest, 2010031249 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031249 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_cleanup_statusRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
 
@@ -2279,10 +2307,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_cleanup_statusResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_cleanup_statusResponse, 2010031249 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031249 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_cleanup_statusResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "status", 0 ), get_status() );
@@ -2308,10 +2337,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_cleanup_stopRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_cleanup_stopRequest, 2010031250 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031250 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_cleanup_stopRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
 
@@ -2343,10 +2373,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_cleanup_stopResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_cleanup_stopResponse, 2010031250 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031250 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_cleanup_stopResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
@@ -2404,10 +2435,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_rwr_fetchRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rwr_fetchRequest, 2010031289 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031289 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_rwr_fetchRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -2487,10 +2519,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_rwr_fetchResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rwr_fetchResponse, 2010031289 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031289 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_rwr_fetchResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "object_data", 0 ), get_object_data() );
@@ -2551,10 +2584,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_rwr_flease_msgRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rwr_flease_msgRequest, 2010031287 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031287 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_rwr_flease_msgRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             if ( get_fleaseMessage() != NULL ) marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "fleaseMessage", 0 ), *get_fleaseMessage() );
@@ -2602,10 +2636,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_rwr_flease_msgResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rwr_flease_msgResponse, 2010031287 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031287 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_rwr_flease_msgResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
@@ -2646,10 +2681,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_rwr_notifyRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rwr_notifyRequest, 2010031291 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031291 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_rwr_notifyRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -2694,10 +2730,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_rwr_notifyResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rwr_notifyResponse, 2010031291 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031291 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_rwr_notifyResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
@@ -2748,10 +2785,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_rwr_statusRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rwr_statusRequest, 2010031292 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031292 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_rwr_statusRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -2828,10 +2866,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_rwr_statusResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rwr_statusResponse, 2010031292 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031292 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_rwr_statusResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "local_state", 0 ), get_local_state() );
@@ -2899,10 +2938,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_rwr_truncateRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rwr_truncateRequest, 2010031290 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031290 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_rwr_truncateRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -2953,10 +2993,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_rwr_truncateResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rwr_truncateResponse, 2010031290 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031290 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_rwr_truncateResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
@@ -3030,10 +3071,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_rwr_updateRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rwr_updateRequest, 2010031288 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031288 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_rwr_updateRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -3090,10 +3132,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_rwr_updateResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_rwr_updateResponse, 2010031288 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031288 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_rwr_updateResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
@@ -3134,10 +3177,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_internal_get_gmaxRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_internal_get_gmaxRequest, 2010031256 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031256 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_internal_get_gmaxRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -3211,10 +3255,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_internal_get_gmaxResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_internal_get_gmaxResponse, 2010031256 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031256 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_internal_get_gmaxResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "_return_value", 0 ), get__return_value() );
@@ -3275,10 +3320,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_internal_truncateRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_internal_truncateRequest, 2010031257 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031257 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_internal_truncateRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -3355,10 +3401,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_internal_truncateResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_internal_truncateResponse, 2010031257 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031257 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_internal_truncateResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "osd_write_response", 0 ), get_osd_write_response() );
@@ -3409,10 +3456,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_internal_get_file_sizeRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_internal_get_file_sizeRequest, 2010031258 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031258 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_internal_get_file_sizeRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -3475,10 +3523,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_internal_get_file_sizeResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_internal_get_file_sizeResponse, 2010031258 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031258 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_internal_get_file_sizeResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "_return_value", 0 ), get__return_value() );
@@ -3578,10 +3627,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_internal_read_localRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_internal_read_localRequest, 2010031259 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031259 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_internal_read_localRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -3673,10 +3723,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_internal_read_localResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_internal_read_localResponse, 2010031259 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031259 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_internal_read_localResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "_return_value", 0 ), get__return_value() );
@@ -3727,10 +3778,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_internal_get_object_setRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_internal_get_object_setRequest, 2010031260 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031260 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_internal_get_object_setRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -3804,10 +3856,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_internal_get_object_setResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_internal_get_object_setResponse, 2010031260 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031260 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_internal_get_object_setResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "_return_value", 0 ), get__return_value() );
@@ -3899,10 +3952,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_lock_acquireRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_lock_acquireRequest, 2010031266 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031266 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_lock_acquireRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -3981,10 +4035,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_lock_acquireResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_lock_acquireResponse, 2010031266 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031266 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_lock_acquireResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "_return_value", 0 ), get__return_value() );
@@ -4076,10 +4131,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_lock_checkRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_lock_checkRequest, 2010031267 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031267 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_lock_checkRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -4158,10 +4214,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_lock_checkResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_lock_checkResponse, 2010031267 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031267 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_lock_checkResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "_return_value", 0 ), get__return_value() );
@@ -4218,10 +4275,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_lock_releaseRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_lock_releaseRequest, 2010031268 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031268 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_lock_releaseRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "file_credentials", 0 ), get_file_credentials() );
@@ -4269,10 +4327,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_lock_releaseResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_lock_releaseResponse, 2010031268 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031268 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_lock_releaseResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
@@ -4307,10 +4366,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_pingRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_pingRequest, 2010031276 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031276 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_pingRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "coordinates", 0 ), get_coordinates() );
@@ -4381,10 +4441,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_pingResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_pingResponse, 2010031276 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031276 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_pingResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "remote_coordinates", 0 ), get_remote_coordinates() );
@@ -4410,10 +4471,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_shutdownRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 2010031286 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031286 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_shutdownRequest"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
 
@@ -4445,10 +4507,11 @@ namespace org
           // yidl::runtime::Object
           xtreemfs_shutdownResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 2010031286 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031286 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "xtreemfs_shutdownResponse"; }
+
           void marshal( ::yidl::runtime::Marshaller& ) const { }
           void unmarshal( ::yidl::runtime::Unmarshaller& ) { }
         };
@@ -4464,13 +4527,10 @@ namespace org
           const string& get_stack_trace() const { return stack_trace; }
           void set_stack_trace( const string& stack_trace ) { this->stack_trace = stack_trace; }
 
-          // yidl::runtime::Object
-          ConcurrentModificationException& inc_ref() { return Object::inc_ref( *this ); }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ConcurrentModificationException, 2010031217 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031217 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "ConcurrentModificationException"; }
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "stack_trace", 0 ), get_stack_trace() );
@@ -4512,13 +4572,10 @@ namespace org
           const string& get_stack_trace() const { return stack_trace; }
           void set_stack_trace( const string& stack_trace ) { this->stack_trace = stack_trace; }
 
-          // yidl::runtime::Object
-          errnoException& inc_ref() { return Object::inc_ref( *this ); }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( errnoException, 2010031218 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031218 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "errnoException"; }
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_code", 0 ), get_error_code() );
@@ -4557,13 +4614,10 @@ namespace org
           InvalidArgumentException( const string& error_message ) : ORG_XTREEMFS_INTERFACES_OSDINTERFACE_EXCEPTION_PARENT_CLASS( error_message ) { }
           virtual ~InvalidArgumentException() throw() { ; }
 
-          // yidl::runtime::Object
-          InvalidArgumentException& inc_ref() { return Object::inc_ref( *this ); }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( InvalidArgumentException, 2010031219 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031219 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "InvalidArgumentException"; }
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_message", 0 ), get_error_message() );
@@ -4602,13 +4656,10 @@ namespace org
           const string& get_stack_trace() const { return stack_trace; }
           void set_stack_trace( const string& stack_trace ) { this->stack_trace = stack_trace; }
 
-          // yidl::runtime::Object
-          OSDException& inc_ref() { return Object::inc_ref( *this ); }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( OSDException, 2010031220 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031220 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "OSDException"; }
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "error_code", 0 ), get_error_code() );
@@ -4652,13 +4703,10 @@ namespace org
           const string& get_stack_trace() const { return stack_trace; }
           void set_stack_trace( const string& stack_trace ) { this->stack_trace = stack_trace; }
 
-          // yidl::runtime::Object
-          ProtocolException& inc_ref() { return Object::inc_ref( *this ); }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ProtocolException, 2010031221 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031221 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "ProtocolException"; }
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "accept_stat", 0 ), get_accept_stat() );
@@ -4700,13 +4748,10 @@ namespace org
           const string& get_to_uuid() const { return to_uuid; }
           void set_to_uuid( const string& to_uuid ) { this->to_uuid = to_uuid; }
 
-          // yidl::runtime::Object
-          RedirectException& inc_ref() { return Object::inc_ref( *this ); }
-
-          // yidl::runtime::RTTIObject
-          YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( RedirectException, 2010031222 );
-
           // yidl::runtime::MarshallableObject
+          const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010031222 );
+          uint32_t get_type_id() const { return TYPE_ID; }
+          const char* get_type_name() const { return "RedirectException"; }
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const
           {
             marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "to_uuid", 0 ), get_to_uuid() );
@@ -5001,12 +5046,6 @@ namespace org
         virtual ~OSDInterfaceRequestHandler()
         {
           delete _interface;
-        }
-
-        // yidl::runtime::RTTIObject
-        virtual const char* get_type_name() const
-        {
-          return "OSDInterface";
         }
 
         // yield::concurrency::RequestHandler

@@ -99,7 +99,7 @@ void close_gridmap( int fd, char* gridmap, char* gridmap_end )
 }
 
 
-DLLEXPORT int get_passwd_from_user_credentials
+DLLEXPORT int get_passwd
 ( 
   const char* user_id, 
   const char* group_ids, 
@@ -166,7 +166,7 @@ DLLEXPORT int get_passwd_from_user_credentials
  return -1;
 }
 
-DLLEXPORT int get_user_credentials_from_passwd
+DLLEXPORT int get_user_credentials
 ( 
   uid_t uid, 
   gid_t gid, 

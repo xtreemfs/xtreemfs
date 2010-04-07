@@ -1,5 +1,3 @@
-// Revision: 2162
-
 #include "yield/concurrency.h"
 using namespace yield::concurrency;
 
@@ -166,8 +164,10 @@ void MessageHandler::handle( Event& event )
     handle( static_cast<Message&>( event ) );
   else
   {
-    cerr << get_type_name() << ": received non-Message event: " <<
+    cerr << "MessageHandler: received non-Message event: " <<
             event.get_type_name() << "." << endl;
+
+    Event::dec_ref( event );
   }
 }
 
@@ -533,8 +533,10 @@ void RequestHandler::handle( Message& message )
     handle( static_cast<Request&>( message ) );
   else
   {
-    cerr << get_type_name() << ": received non-Request message: " <<
+    cerr << "RequestHandler: received non-Request message: " <<
             message.get_type_name() << "." << endl;
+
+    Message::dec_ref( message );
   }
 }
 
@@ -579,7 +581,7 @@ public:
   // Thread
   void run()
   {
-    Thread::set_name( stage.get_event_handler().get_type_name() );
+    // Thread::set_name( stage.get_event_handler().get_type_name() );
 
     while ( should_run )
       stage.visit();
@@ -628,50 +630,50 @@ void SEDAStageGroup::startThreads( Stage& stage, int16_t thread_count )
 using yield::platform::TimerQueue;
 
 
-class Stage::StatisticsTimer : public TimerQueue::Timer
-{
-public:
-  StatisticsTimer( Stage& stage )
-    : Timer( 5.0, 5.0 ),
-      stage( stage.inc_ref() ),
-      last_fire_time( static_cast<uint64_t>( 0 ) )
-  { }
-
-  ~StatisticsTimer()
-  {
-    Stage::dec_ref( stage );
-  }
-
-  // TimerQueue::Timer
-  void fire()
-  {
-    if ( stage.event_queue_arrival_count > 0 )
-    {
-      Time
-        elapsed_time( Time() - last_fire_time );
-
-      stage.arrival_rate_s
-        = static_cast<double>( stage.event_queue_arrival_count ) /
-          elapsed_time.as_unix_time_s();
-
-      stage.event_queue_arrival_count = 0;
-
-      stage.service_rate_s
-        = static_cast<double>( Time::NS_IN_S ) /
-          stage.event_processing_time_sampler
-            .get_percentile( 0.95 );
-
-      stage.rho = stage.arrival_rate_s / stage.service_rate_s;
-
-      last_fire_time = Time();
-    }
-  }
-
-private:
-  Stage& stage;
-
-  Time last_fire_time;
-};
+//class Stage::StatisticsTimer : public TimerQueue::Timer
+//{
+//public:
+//  StatisticsTimer( Stage& stage )
+//    : Timer( 5.0, 5.0 ),
+//      stage( stage.inc_ref() ),
+//      last_fire_time( static_cast<uint64_t>( 0 ) )
+//  { }
+//
+//  ~StatisticsTimer()
+//  {
+//    Stage::dec_ref( stage );
+//  }
+//
+//  // TimerQueue::Timer
+//  void fire()
+//  {
+//    if ( stage.event_queue_arrival_count > 0 )
+//    {
+//      Time
+//        elapsed_time( Time() - last_fire_time );
+//
+//      stage.arrival_rate_s
+//        = static_cast<double>( stage.event_queue_arrival_count ) /
+//          elapsed_time.as_unix_time_s();
+//
+//      stage.event_queue_arrival_count = 0;
+//
+//      stage.service_rate_s
+//        = static_cast<double>( Time::NS_IN_S ) /
+//          stage.event_processing_time_sampler
+//            .get_percentile( 0.95 );
+//
+//      stage.rho = stage.arrival_rate_s / stage.service_rate_s;
+//
+//      last_fire_time = Time();
+//    }
+//  }
+//
+//private:
+//  Stage& stage;
+//
+//  Time last_fire_time;
+//};
 
 
 Stage::Stage()
@@ -692,7 +694,7 @@ Stage::Stage()
   memset( performance_counter_totals, 0, sizeof( performance_counter_totals ) );
 #endif
 
-  TimerQueue::getDefaultTimerQueue().addTimer( *new StatisticsTimer( *this ) );
+  // TimerQueue::getDefaultTimerQueue().addTimer( *new StatisticsTimer( *this ) );
 }
 
 Stage::~Stage()

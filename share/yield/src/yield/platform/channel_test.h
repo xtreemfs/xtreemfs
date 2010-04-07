@@ -39,9 +39,6 @@ namespace yield
 {
   namespace platform
   {
-    using yidl::runtime::auto_Object;
-
-
     class ChannelTestCase
       : public yunit::TestCase,
         public Channel::AIOReadCallback,

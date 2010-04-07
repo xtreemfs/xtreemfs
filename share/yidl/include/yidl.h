@@ -33,6 +33,7 @@
 #define __STDC_LIMIT_MACROS
 
 #ifdef _WIN32
+
 // msstdint.h
 // ISO C9x  compliant stdint.h for Microsoft Visual Studio
 // Based on ISO/IEC 9899:TC2 Committee draft (May 6, 2005) WG14/N1124
@@ -253,77 +254,6 @@ typedef uint64_t  uintmax_t;
 
 #endif // __STDC_CONSTANT_MACROS ]
 
-#else // !_WIN32
-
-#include <cstring>
-using std::memcmp;
-using std::memcpy;
-using std::strlen;
-
-#include <stdint.h>
-#include <sys/uio.h> // For struct iovec
-
-#ifdef __linux__
-#include <string.h> // For strnlen
-#endif
-
-#endif // _WIN32
-
-#include <string>
-using std::string;
-
-#include <map> // For Map subclasses to use
-using std::map;
-
-#include <vector>
-using std::vector;
-
-
-#if defined(_WIN64)
-extern "C"
-{
-  __declspec( dllimport ) void __stdcall DebugBreak();
-
-  __int64 _InterlockedCompareExchange64
-  (
-    volatile __int64* current_value,
-    __int64 new_value,
-    __int64 old_value
-  );
-
-  __int64 _InterlockedIncrement64( volatile __int64* current_value );
-  __int64 _InterlockedDecrement64( volatile __int64* current_value );
-}
-#elif defined(_WIN32)
-extern "C"
-{
-  __declspec( dllimport ) void __stdcall DebugBreak();
-
-  __declspec( dllimport ) long __stdcall
-  InterlockedCompareExchange
-  (
-    volatile long* current_value,
-    long new_value,
-    long old_value
-  );
-
-  __declspec( dllimport ) long __stdcall
-  InterlockedIncrement
-  (
-    volatile long* current_value
-  );
-
-  __declspec( dllimport ) long __stdcall
-  InterlockedDecrement
-  (
-    volatile long* current_value
-  );
-}
-#endif // _WIN32
-
-
-#ifdef _WIN32
-
 struct iovec // a WSABUF on 32-bit systems
 {
   size_t iov_len;
@@ -345,12 +275,21 @@ struct iovec64 // a WSABUF on 64-bit systems
 
 #else // !_WIN32
 
-static inline void DebugBreak()
-{
-  *reinterpret_cast<int*>( 0 ) = 0xabadcafe;
-}
+#include <cstring>
+using std::memcmp;
+using std::strlen;
 
-inline void memcpy_s
+#include <stdint.h>
+#include <sys/uio.h> // For struct iovec
+
+#ifdef __linux__
+#include <string.h> // For strnlen
+#else
+inline size_t strnlen( const char* s, size_t maxlen ) { return strlen( s ); }
+#endif
+
+inline void
+memcpy_s
 (
   void* dest,
   size_t dest_size,
@@ -358,26 +297,56 @@ inline void memcpy_s
   size_t count
 )
 {
-  memcpy( dest, src, count );
+  std::memcpy( dest, src, count );
 }
 
-#ifndef __linux__
-inline size_t strnlen( const char* s, size_t maxlen )
-{
-  return strlen( s );
-}
 #endif
 
-#if defined(__sun)
+#include <map> // For Map subclasses to use
+using std::map;
+
+#include <string>
+using std::string;
+
+#include <vector> // For Sequence subclasses to use
+using std::vector;
+
+
+#if defined(_WIN64)
+extern "C"
+{
+  __int64 _InterlockedCompareExchange64
+  (
+    volatile __int64* cur_value,
+    __int64 new_value,
+    __int64 old_value
+  );
+
+  __int64 _InterlockedIncrement64( volatile __int64* cur_value );
+  __int64 _InterlockedDecrement64( volatile __int64* cur_value );
+}
+#elif defined(_WIN32)
+extern "C"
+{
+  __declspec(dllimport) long __stdcall
+  InterlockedCompareExchange
+  (
+    volatile long* cur_value,
+    long new_value,
+    long old_value
+  );
+
+  __declspec(dllimport) long __stdcall InterlockedIncrement( volatile long* );
+  __declspec(dllimport) long __stdcall InterlockedDecrement( volatile long* );
+}
+#elif defined(__sun)
 #include <atomic.h>
 #elif defined(__arm__)
 // gcc atomic builtins are not defined on ARM
 #elif defined(__GNUC__) && \
       ( ( __GNUC__ == 4 && __GNUC_MINOR__ >= 1 ) || __GNUC__ > 4 )
-#define __HAVE_GNUC_ATOMIC_BUILTINS 1
+#define YIDL_RUNTIME_HAVE_GNUC_ATOMIC_BUILTINS 1
 #endif
-
-#endif // _WIN32
 
 
 namespace yidl
@@ -397,33 +366,33 @@ namespace yidl
     static inline atomic_t
     atomic_cas
     (
-      volatile atomic_t* current_value,
+      volatile atomic_t* cur_value,
       atomic_t new_value,
       atomic_t old_value
     )
     {
 #if defined(_WIN64)
-      return _InterlockedCompareExchange64( current_value, new_value, old_value );
+      return _InterlockedCompareExchange64( cur_value, new_value, old_value );
 #elif defined(_WIN32)
-      return InterlockedCompareExchange( current_value, new_value, old_value );
+      return InterlockedCompareExchange( cur_value, new_value, old_value );
 #elif defined(__sun)
 #if defined(__LLP64__) || defined(__LP64)
       return atomic_cas_64
              (
-               reinterpret_cast<volatile uint64_t*>( current_value ),
+               reinterpret_cast<volatile uint64_t*>( cur_value ),
                static_cast<uint64_t>( old_value ),
                static_cast<uint64_t>( new_value )
              );
 #else
       return atomic_cas_32
              (
-               reinterpret_cast<volatile uint32_t*>( current_value ),
+               reinterpret_cast<volatile uint32_t*>( cur_value ),
                static_cast<uint32_t>( old_value ),
                static_cast<uint32_t>( new_value )
              );
 #endif
-#elif defined(__HAVE_GNUC_ATOMIC_BUILTINS)
-      return __sync_val_compare_and_swap( current_value, old_value, new_value );
+#elif defined(YIDL_RUNTIME_HAVE_GNUC_ATOMIC_BUILTINS)
+      return __sync_val_compare_and_swap( cur_value, old_value, new_value );
 #elif defined(__arm__)
 #if __ARM_ARCH__ >= 6
       atomic_t prev;
@@ -433,24 +402,24 @@ namespace yidl
                     "teq    %1, %3\n"
                     "strexeq %0, %4, [%2]\n"
                      : "=&r" ( prev), "=&r" ( old_value )
-                     : "r" ( current_value ), "Ir" ( old_value ), "r" ( new_value )
+                     : "r" ( cur_value ), "Ir" ( old_value ), "r" ( new_value )
                      : "cc" );
       return prev;
 #else // ARM architectures < 6 are uniprocessor only
-      if ( *current_value == old_value )
+      if ( *cur_value == old_value )
       {
-        *current_value = new_value;
+        *cur_value = new_value;
         return old_value;
       }
       else
-        return *current_value;
+        return *cur_value;
 #endif
 #elif defined(__i386__)
       atomic_t prev;
       asm volatile(  "lock\n"
               "cmpxchgl %1,%2\n"
             : "=a" ( prev )
-                  : "r" ( new_value ), "m" ( *current_value ) , "0" ( old_value )
+                  : "r" ( new_value ), "m" ( *cur_value ) , "0" ( old_value )
                   : "memory"
                 );
       return prev;
@@ -464,9 +433,9 @@ namespace yidl
               bne-    1b    \n\
               sync\n"
               "2:"
-            : "=&r" ( prev ), "=m" ( *current_value )
-                  : "r" ( current_value ), "r" ( old_value ), "r" ( new_value ),
-                    "m" ( *current_value )
+            : "=&r" ( prev ), "=m" ( *cur_value )
+                  : "r" ( cur_value ), "r" ( old_value ), "r" ( new_value ),
+                    "m" ( *cur_value )
                   : "cc", "memory"
                 );
       return prev;
@@ -475,94 +444,88 @@ namespace yidl
       asm volatile(  "lock\n"
               "cmpxchgq %1,%2\n"
             : "=a" ( prev )
-                  : "r" ( new_value ), "m" ( *current_value ) , "0" ( old_value )
+                  : "r" ( new_value ), "m" ( *cur_value ) , "0" ( old_value )
                   : "memory"
                 );
       return prev;
 #endif
     }
 
-    static inline atomic_t atomic_dec( volatile atomic_t* current_value )
+    static inline atomic_t atomic_dec( volatile atomic_t* cur_value )
     {
 #if defined(_WIN64)
-      return _InterlockedDecrement64( current_value );
+      return _InterlockedDecrement64( cur_value );
 #elif defined(_WIN32)
-      return InterlockedDecrement( current_value );
+      return InterlockedDecrement( cur_value );
 #elif defined(__sun)
 #if defined(__LLP64__) || defined(__LP64)
       return atomic_dec_64_nv
              (
-               reinterpret_cast<volatile uint64_t*>( current_value )
+               reinterpret_cast<volatile uint64_t*>( cur_value )
              );
 #else
       return atomic_dec_32_nv
              (
-               reinterpret_cast<volatile uint32_t*>( current_value )
+               reinterpret_cast<volatile uint32_t*>( cur_value )
              );
 #endif
-#elif defined(__HAVE_GNUC_ATOMIC_BUILTINS)
-      return __sync_sub_and_fetch( current_value, 1 );
+#elif defined(YIDL_RUNTIME_HAVE_GNUC_ATOMIC_BUILTINS)
+      return __sync_sub_and_fetch( cur_value, 1 );
 #else
       atomic_t old_value, new_value;
 
       do
       {
-        old_value = *current_value;
+        old_value = *cur_value;
         new_value = old_value - 1;
       }
-      while ( atomic_cas( current_value, new_value, old_value ) != old_value );
+      while ( atomic_cas( cur_value, new_value, old_value ) != old_value );
 
       return new_value;
 #endif
     }
 
-    static inline atomic_t atomic_inc( volatile atomic_t* current_value )
+    static inline atomic_t atomic_inc( volatile atomic_t* cur_value )
     {
 #if defined(_WIN64)
-      return _InterlockedIncrement64( current_value );
+      return _InterlockedIncrement64( cur_value );
 #elif defined(_WIN32)
-      return InterlockedIncrement( current_value );
+      return InterlockedIncrement( cur_value );
 #elif defined(__sun)
 #if defined(__LLP64__) || defined(__LP64)
       return atomic_inc_64_nv
              (
-               reinterpret_cast<volatile uint64_t*>( current_value )
+               reinterpret_cast<volatile uint64_t*>( cur_value )
              );
 #else
       return atomic_inc_32_nv
              (
-               reinterpret_cast<volatile uint32_t*>( current_value )
+               reinterpret_cast<volatile uint32_t*>( cur_value )
              );
 #endif
-#elif defined(__HAVE_GNUC_ATOMIC_BUILTINS)
-      return __sync_add_and_fetch( current_value, 1 );
+#elif defined(YIDL_RUNTIME_HAVE_GNUC_ATOMIC_BUILTINS)
+      return __sync_add_and_fetch( cur_value, 1 );
 #else
       atomic_t old_value, new_value;
 
       do
       {
-        old_value = *current_value;
+        old_value = *cur_value;
         new_value = old_value + 1;
       }
-      while ( atomic_cas( current_value, new_value, old_value ) != old_value );
+      while ( atomic_cas( cur_value, new_value, old_value ) != old_value );
 
       return new_value;
 #endif
     }
 
-    // Atomic reference-counted objects
-    // Conventions for Objects:
-    // Object* method( ... ) -> Object* is a new reference
-    //   where method is usually a factory method.
-    //   Factory methods that return Object& throw exceptions;
-    //     those that return Object* return NULL instead.
-    //   The exception to this rule are getters that return an Object*
-    //   that is not a new reference
-    // method( const Object& ) -> Object is on stack, not a new reference
-    // method( Object* or Object* ) -> Object is on heap, but not a
-    //   new reference; callee should inc_ref() references for itself
-    //   as necessary
-    // Exceptions to these conventions will be marked.
+
+    class Marshaller;
+    class Unmarshaller;
+    class Sequence;
+    class Struct;
+
+
     class Object
     {
     public:
@@ -610,6 +573,10 @@ namespace yidl
       volatile atomic_t refcnt;
     };
 
+    // Macro indicating a new Object reference should be passed to a
+    // function/method or is returned by a function/method
+    #define YRO_NEW_REF
+
 
     // Similar to auto_ptr, but using object references instead of delete
     // Unlike auto_ptr auto_Object is immutable, so there is no release(),
@@ -620,63 +587,24 @@ namespace yidl
     class auto_Object
     {
     public:
-      auto_Object( ObjectType* object )
-        : object( *object )
-      {
-        if ( object == NULL )
-          DebugBreak();
-      }
-
-      auto_Object( ObjectType& object )
-        : object( object )
-      { }
+      auto_Object( YRO_NEW_REF ObjectType* object ) : object( *object ) { }
+      auto_Object( YRO_NEW_REF ObjectType& object ) : object( object ) { }
+      ~auto_Object() { Object::dec_ref( object ); }
 
       auto_Object( const auto_Object<ObjectType>& other )
         : object( Object::inc_ref( other.object ) )
       { }
 
-      ~auto_Object()
-      {
-        Object::dec_ref( object );
-      }
-
-      ObjectType& get() const
-      {
-        return object;
-      }
-
-      inline ObjectType* operator->() const
-      {
-        return &object;
-      }
-
-      inline ObjectType& operator*() const
-      {
-        return object;
-      }
+      inline ObjectType& get() const { return object; }
+      inline ObjectType* operator->() const { return &object; }
+      inline ObjectType& operator*() const { return object; }
 
     private:
       ObjectType& object;
     };
 
 
-    class RTTIObject : public Object
-    {
-    public:
-      virtual uint32_t get_type_id() const = 0;
-      virtual const char* get_type_name() const = 0;
-
-      // Object
-      RTTIObject& inc_ref() { return Object::inc_ref( *this ); }
-    };
-
-#define YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( type_name, type_id ) \
-    const static uint32_t TYPE_ID = static_cast<uint32_t>( type_id ); \
-    virtual uint32_t get_type_id() const { return TYPE_ID; } \
-    virtual const char* get_type_name() const { return #type_name; }
-
-
-    class Buffer : public RTTIObject
+    class Buffer : public Object
     {
     public:
       virtual ~Buffer() { }
@@ -851,12 +779,11 @@ namespace yidl
     };
 
 
-    class Marshaller;
-    class Unmarshaller;
-
-    class MarshallableObject : public RTTIObject
+    class MarshallableObject : public Object
     {
     public:
+      virtual uint32_t get_type_id() const = 0;
+      virtual const char* get_type_name() const = 0;
       virtual void marshal( Marshaller& marshaller ) const = 0;
       virtual void unmarshal( Unmarshaller& unmarshaller ) = 0;
 
@@ -868,7 +795,7 @@ namespace yidl
     class MarshallableObjectFactory : public Object
     {
     public:
-      virtual MarshallableObject*
+      virtual YRO_NEW_REF MarshallableObject*
       createMarshallableObject
       ( 
         uint32_t type_id
@@ -877,7 +804,7 @@ namespace yidl
         return NULL; 
       }
 
-      virtual MarshallableObject*
+      virtual YRO_NEW_REF MarshallableObject*
       createMarshallableObject
       (
         const char* type_name
@@ -886,7 +813,7 @@ namespace yidl
         return createMarshallableObject( type_name, strlen( type_name ) );
       }
 
-      virtual MarshallableObject*
+      virtual YRO_NEW_REF MarshallableObject*
       createMarshallableObject
       (
         const char* type_name,
@@ -934,6 +861,7 @@ namespace yidl
         uint32_t tag;
       };
 
+
       class StringKey : public Key, public string
       {
       public:
@@ -956,7 +884,7 @@ namespace yidl
         Type get_type() const { return TYPE_STRING; }
       };
 
-#define YIDL_RUNTIME_KEY_TYPE( ClassPrefix, CPPName, TYPE )\
+#define YIDL_RUNTIME_MARSHALLER_KEY_TYPE( ClassPrefix, CPPName, TYPE )\
       class ClassPrefix ## Key : public Key\
       {\
       public:\
@@ -970,14 +898,17 @@ namespace yidl
         CPPName key;\
       };
 
-      YIDL_RUNTIME_KEY_TYPE( Double, double, DOUBLE );
-      YIDL_RUNTIME_KEY_TYPE( Int32, int32_t, INT32 );
-      YIDL_RUNTIME_KEY_TYPE( Int64, int64_t, INT64 );
-      YIDL_RUNTIME_KEY_TYPE( StringLiteral, const char*, STRING_LITERAL );
+      YIDL_RUNTIME_MARSHALLER_KEY_TYPE( Double, double, DOUBLE );
+      YIDL_RUNTIME_MARSHALLER_KEY_TYPE( Int32, int32_t, INT32 );
+      YIDL_RUNTIME_MARSHALLER_KEY_TYPE( Int64, int64_t, INT64 );
+      YIDL_RUNTIME_MARSHALLER_KEY_TYPE
+      ( 
+        StringLiteral,
+        const char*,
+        STRING_LITERAL
+      );
     };
 
-    class Sequence;
-    class Struct;
 
     class Marshaller : public Object, public MarshallerKeyTypes
     {
@@ -1214,12 +1145,12 @@ namespace yidl
 
       virtual void read( const Key& key, Buffer& value ) { }
 
-      Buffer* read_buffer( const char* key )
+      YRO_NEW_REF Buffer* read_buffer( const char* key )
       {
         return read_buffer( StringLiteralKey( key ) );
       }
 
-      virtual Buffer* read_buffer( const Key& key ) { return NULL; }
+      virtual YRO_NEW_REF Buffer* read_buffer( const Key& ) { return NULL; }
 
       // float and double
       float read_float( const char* key )
@@ -1285,7 +1216,7 @@ namespace yidl
       virtual void read( const Key& key, int64_t& value ) { value = 0; }
 
       // Key
-      virtual Key* read( Key::Type ) { return NULL; }
+      virtual YRO_NEW_REF Key* read( Key::Type ) { return NULL; }
 
       // Map
       void read( const char* key, Map& value )

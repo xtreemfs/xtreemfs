@@ -107,5 +107,5 @@ build_env.Library( "../../lib/xtreemfs", (
     r"../../src/libxtreemfs/proxy.cpp",
     r"../../src/libxtreemfs/stat.cpp",
     r"../../src/libxtreemfs/stat_cache.cpp",
-    r"../../src/libxtreemfs/user_credentials_cache.cpp",
+    r"../../src/libxtreemfs/user_database.cpp",
     r"../../src/libxtreemfs/volume.cpp" ) )

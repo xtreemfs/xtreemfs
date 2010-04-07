@@ -106,7 +106,7 @@ namespace xtreemfs
     const string& get_name() const { return name_utf8; }
     OSDProxies& get_osd_proxies() const { return osd_proxies; }
     Log* get_trace_log() const { return trace_log; }
-    UserCredentialsCache& get_user_credentials_cache() const;
+    UserDatabase& get_user_database() const;
     const string& get_uuid() const { return uuid; }
     VivaldiCoordinates get_vivaldi_coordinates() const;
     void metadatasync( const Path& path, const XCap& write_xcap );    
@@ -130,7 +130,7 @@ namespace xtreemfs
       OSDProxies& osd_proxies,
       StageGroup& stage_group,
       Log* trace_log,
-      UserCredentialsCache& user_credentials_cache,
+      UserDatabase& user_database,
       const Path& vivaldi_coordinates_file_path
     );
 
@@ -151,7 +151,7 @@ namespace xtreemfs
     string uuid;
     StatCache* stat_cache;
     Log* trace_log;
-    UserCredentialsCache& user_credentials_cache;
+    UserDatabase& user_database;
     Path vivaldi_coordinates_file_path;
   };
 };

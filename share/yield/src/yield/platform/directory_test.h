@@ -103,14 +103,19 @@ namespace yield
       inline void Directory_##TestCaseName##Test::runTest()
 
 
-    YIELD_PLATFORM_DIRECTORY_TEST_CASE( readdir )
+    YIELD_PLATFORM_DIRECTORY_TEST_CASE( close )
     {
-      Directory::Entry* dirent = get_directory().readdir();
+      if ( !get_directory().close() ) throw Exception();
+    }
+
+    YIELD_PLATFORM_DIRECTORY_TEST_CASE( read )
+    {
+      Directory::Entry* dirent = get_directory().read();
       ASSERT_NOTEQUAL( dirent, NULL );
       ASSERT_EQUAL( dirent->get_name(), "." );
-      dirent = get_directory().readdir();
+      dirent = get_directory().read();
       ASSERT_EQUAL( dirent->get_name(), ".." );
-      dirent = get_directory().readdir();
+      dirent = get_directory().read();
       ASSERT_EQUAL( dirent->get_name(), get_test_file_name() );
       Directory::Entry::dec_ref( *dirent );
     }
@@ -125,7 +130,7 @@ namespace yield
         if ( volume == NULL )
           volume = new Volume;
 
-        addTest( new Directory_readdirTest( &volume->inc_ref() ) );
+        addTest( new Directory_readTest( &volume->inc_ref() ) );
 
         Volume::dec_ref( *volume );
       }

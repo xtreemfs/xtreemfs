@@ -32,7 +32,7 @@
 #include "file.h"
 #include "stat.h"
 #include "stat_cache.h"
-#include "user_credentials_cache.h"
+#include "user_database.h"
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/options.h"
 #include "xtreemfs/osd_proxy.h"
@@ -121,7 +121,7 @@ Volume::Volume
   OSDProxies& osd_proxies,
   StageGroup& stage_group,
   Log* trace_log,
-  UserCredentialsCache& user_credentials_cache,
+  UserDatabase& user_database,
   const Path& vivaldi_coordinates_file_path
 )
   : dir_proxy( dir_proxy ),
@@ -132,7 +132,7 @@ Volume::Volume
     osd_proxies( osd_proxies ),
     stage_group( stage_group ),
     trace_log( Object::inc_ref( trace_log ) ),
-    user_credentials_cache( user_credentials_cache ),
+    user_database( user_database ),
     vivaldi_coordinates_file_path( vivaldi_coordinates_file_path )
 {
   double stat_cache_read_ttl_s;
@@ -164,7 +164,7 @@ Volume::Volume
           (
             mrc_proxy,
             stat_cache_read_ttl_s,
-            user_credentials_cache,
+            user_database,
             name_utf8,
             stat_cache_write_back_attrs
           );
@@ -187,7 +187,7 @@ Volume::~Volume()
   StageGroup::dec_ref( stage_group );
   delete stat_cache;
   Log::dec_ref( trace_log );
-  UserCredentialsCache::dec_ref( user_credentials_cache );
+  UserDatabase::dec_ref( user_database );
 }
 
 bool Volume::access( const Path&, int )
@@ -289,7 +289,7 @@ Volume::create
   const Path& vivaldi_coordinates_file_path
 )
 {
-  UserCredentialsCache* user_credentials_cache = new UserCredentialsCache;
+  UserDatabase* user_database = new UserDatabase;
 
   DIRProxy& dir_proxy
     = DIRProxy::create
@@ -319,7 +319,7 @@ Volume::create
         proxy_ssl_context,
 #endif
         trace_log,
-        user_credentials_cache
+        user_database
       );
 
   StatSet stbuf;
@@ -351,7 +351,7 @@ Volume::create
                 *osd_proxies,
                 *stage_group,
                 trace_log,
-                *user_credentials_cache,
+                *user_database,
                 vivaldi_coordinates_file_path
               );
 }
@@ -384,9 +384,9 @@ yield::platform::Stat* Volume::getattr( const Path& path )
   return NULL;
 }
 
-UserCredentialsCache& Volume::get_user_credentials_cache() const
+UserDatabase& Volume::get_user_database() const
 {
-  return user_credentials_cache;
+  return user_database;
 }
 
 VivaldiCoordinates
@@ -761,7 +761,7 @@ Volume::setattr
     )
     {
       UserCredentials* user_credentials
-        = user_credentials_cache.getUserCredentialsFrompasswd
+        = user_database.getUserCredentialsFrompasswd
           (
             stbuf.get_uid(),
             stbuf.get_gid()
@@ -779,7 +779,7 @@ Volume::setattr
     else if ( ( to_set & SETATTR_UID ) == SETATTR_UID )
     {
       UserCredentials* user_credentials
-        = user_credentials_cache.getUserCredentialsFrompasswd
+        = user_database.getUserCredentialsFrompasswd
           (
             stbuf.get_uid(),
             stbuf.get_gid()
@@ -796,7 +796,7 @@ Volume::setattr
     else if ( ( to_set & SETATTR_GID ) == SETATTR_GID )
     {
       UserCredentials* user_credentials
-        = user_credentials_cache.getUserCredentialsFrompasswd
+        = user_database.getUserCredentialsFrompasswd
           (
             stbuf.get_uid(),
             stbuf.get_gid()

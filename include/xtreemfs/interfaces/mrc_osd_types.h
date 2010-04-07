@@ -1,5 +1,5 @@
-#ifndef _1252488516_H_
-#define _1252488516_H_
+#ifndef _1052962945_H_
+#define _1052962945_H_
 
 
 #include "types.h"
@@ -52,10 +52,11 @@ namespace org
         // yidl::runtime::Object
         NewFileSize& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( NewFileSize, 2010030927 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030927 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "NewFileSize"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "size_in_bytes", 0 ), get_size_in_bytes() );
@@ -86,10 +87,11 @@ namespace org
         // yidl::runtime::Object
         NewFileSizeSet& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( NewFileSizeSet, 2010030928 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030928 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "NewFileSizeSet"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           size_type value_i_max = size();
@@ -139,10 +141,11 @@ namespace org
         // yidl::runtime::Object
         OSDWriteResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( OSDWriteResponse, 2010030933 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030933 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "OSDWriteResponse"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "new_file_size", 0 ), get_new_file_size() );
@@ -200,10 +203,11 @@ namespace org
         // yidl::runtime::Object
         StripingPolicy& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( StripingPolicy, 2010030935 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030935 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "StripingPolicy"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "type", 0 ), static_cast<int32_t>( get_type() ) );
@@ -269,10 +273,11 @@ namespace org
         // yidl::runtime::Object
         Replica& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( Replica, 2010030936 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030936 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "Replica"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "osd_uuids", 0 ), get_osd_uuids() );
@@ -306,10 +311,11 @@ namespace org
         // yidl::runtime::Object
         ReplicaSet& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ReplicaSet, 2010030937 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030937 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "ReplicaSet"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           size_type value_i_max = size();
@@ -375,10 +381,11 @@ namespace org
         // yidl::runtime::Object
         VivaldiCoordinates& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( VivaldiCoordinates, 2010030938 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030938 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "VivaldiCoordinates"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "x_coordinate", 0 ), get_x_coordinate() );
@@ -499,10 +506,11 @@ namespace org
         // yidl::runtime::Object
         XCap& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( XCap, 2010030939 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030939 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "XCap"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "access_mode", 0 ), get_access_mode() );
@@ -596,10 +604,11 @@ namespace org
         // yidl::runtime::Object
         XLocSet& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( XLocSet, 2010030940 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030940 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "XLocSet"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "read_only_file_size", 0 ), get_read_only_file_size() );
@@ -658,10 +667,11 @@ namespace org
         // yidl::runtime::Object
         FileCredentials& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( FileCredentials, 2010030941 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030941 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "FileCredentials"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           marshaller.write( ::yidl::runtime::Marshaller::StringLiteralKey( "xcap", 0 ), get_xcap() );
@@ -692,10 +702,11 @@ namespace org
         // yidl::runtime::Object
         FileCredentialsSet& inc_ref() { return Object::inc_ref( *this ); }
 
-        // yidl::runtime::RTTIObject
-        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( FileCredentialsSet, 2010030942 );
-
         // yidl::runtime::MarshallableObject
+        const static uint32_t TYPE_ID = static_cast<uint32_t>( 2010030942 );
+        uint32_t get_type_id() const { return TYPE_ID; }
+        const char* get_type_name() const { return "FileCredentialsSet"; }
+
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const
         {
           size_type value_i_max = size();

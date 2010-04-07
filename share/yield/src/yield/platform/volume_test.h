@@ -42,9 +42,6 @@ namespace yield
 {
   namespace platform
   {
-    using yidl::runtime::auto_Object;
-
-
     class VolumeTestCase : public yunit::TestCase
     {
     public:

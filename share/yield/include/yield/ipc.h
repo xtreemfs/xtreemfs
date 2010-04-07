@@ -74,7 +74,6 @@ namespace yield
     using yidl::runtime::MarshallableObject;
     using yidl::runtime::Marshaller;
     using yidl::runtime::Object;
-    using yidl::runtime::RTTIObject;
     using yidl::runtime::Sequence;
     using yidl::runtime::Unmarshaller;
 
@@ -90,7 +89,6 @@ namespace yield
 
     using yield::platform::Buffers;
     using yield::platform::BufferedMarshaller;
-    using yield::platform::IOQueue;
     using yield::platform::Log;
     using yield::platform::Mutex;
     using yield::platform::Path;
@@ -115,7 +113,7 @@ namespace yield
     class RPCPeer
     {
     protected:
-      RPCPeer( MessageFactory& message_factory ) // Steals this reference
+      RPCPeer( YRO_NEW_REF MessageFactory& message_factory )
         : message_factory( message_factory )
       { }
 
@@ -135,7 +133,7 @@ namespace yield
     class RPCClient : public RPCPeer, public RequestHandler
     {
     protected:
-      RPCClient( MessageFactory& message_factory )
+      RPCClient( YRO_NEW_REF MessageFactory& message_factory )
         : RPCPeer( message_factory )
       { }
 
@@ -145,11 +143,11 @@ namespace yield
       class RPCResponseHandler : public ResponseHandler
       {
       public:
-        RPCResponseHandler( Request& request ) : request( request ) { }
-        ~RPCResponseHandler() { Request::dec_ref( request ); }
+        RPCResponseHandler( YRO_NEW_REF Request& request ) 
+          : request( request ) 
+        { }
 
-        // RTTIObject
-        const char* get_type_name() const { return "RPCResponseHandler"; }
+        ~RPCResponseHandler() { Request::dec_ref( request ); }
 
         // ResponseHandler
         void handle( Response& response )
@@ -179,7 +177,7 @@ namespace yield
       Request& get_body() const { return body; }
 
     protected:
-      RPCRequest( Request& body ) : body( body ) { }
+      RPCRequest( YRO_NEW_REF Request& body ) : body( body ) { }
       virtual ~RPCRequest() { Request::dec_ref( body ); }
 
     private:
@@ -193,7 +191,7 @@ namespace yield
       Response& get_body() const { return body; }
 
     protected:
-      RPCResponse( Response& body ) : body( body ) { }
+      RPCResponse( YRO_NEW_REF Response& body ) : body( body ) { }
       virtual ~RPCResponse() { Response::dec_ref( body ); }
 
     private:
@@ -207,8 +205,8 @@ namespace yield
     protected:
       RPCServer
       (
-        MessageFactory& message_factory, // Steals this reference
-        EventHandler& request_handler // Steals this reference
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF EventHandler& request_handler
       )
         : RPCPeer( message_factory ),
           request_handler( request_handler )
@@ -223,7 +221,7 @@ namespace yield
       class RPCResponseHandler : public ResponseHandler
       {
       public:
-        RPCResponseHandler( RPCRequestType& rpc_request )
+        RPCResponseHandler( YRO_NEW_REF RPCRequestType& rpc_request )
           : rpc_request( &rpc_request )
         { }
 
@@ -231,9 +229,6 @@ namespace yield
         {
           RPCRequestType::dec_ref( rpc_request );
         }
-
-        // RTTIObject
-        const char* get_type_name() const { return "ONCRPCResponseHandler"; }
 
         // ResponseHandler
         void handle( Response& response )
@@ -248,7 +243,7 @@ namespace yield
       };
 
     protected:
-      void handle( RPCRequestType& rpc_request )
+      void handle( YRO_NEW_REF RPCRequestType& rpc_request )
       {
         Request& request = rpc_request.get_body();
         request.set_response_handler( new RPCResponseHandler( rpc_request ) );
@@ -283,14 +278,12 @@ namespace yield
     protected:
       SocketClient
       (
-        SocketAddress& peername, // Steals this reference
+        YRO_NEW_REF SocketAddress& peername,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
 
       virtual ~SocketClient();
-
-      static SocketAddress& createSocketAddress( const URI& absolute_uri );
 
     private:
       SocketAddress& peername;
@@ -356,14 +349,20 @@ namespace yield
           public StreamSocketType::AIOSendCallback
       {
       public:
-        Connection( StreamSocketType&, StreamSocketClient& );
+        Connection( YRO_NEW_REF StreamSocketType&, StreamSocketClient& );
         virtual ~Connection();
 
         void close();
 
       protected:
-        void aio_recv( Buffer& buffer, int flags = 0, void* context = 0 );
-        void aio_sendmsg( Buffers& buffers, int flags = 0, void* context = 0 );
+        void aio_recv( YRO_NEW_REF Buffer&, void* = 0, int flags = 0 );
+        void aio_sendmsg( YRO_NEW_REF Buffers&, void* = 0, int flags = 0 );
+
+#ifdef _DEBUG
+        void assert_single_threaded();
+#else
+        inline void assert_single_threaded() const { }
+#endif
 
         Log* get_error_log() const { return error_log; }
         SocketAddress& get_peername() const { return peername; }
@@ -391,6 +390,9 @@ namespace yield
         uint16_t reconnect_tries_max;
         Time recv_timeout;
         Time send_timeout;
+#ifdef _DEBUG
+        unsigned long single_thread_id;
+#endif
         StreamSocketType& stream_socket;
         Log* trace_log;
       };
@@ -441,8 +443,8 @@ namespace yield
     protected:
       StreamSocketClient
       (
-        SocketAddress& peername, // Steals this reference
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF SocketAddress& peername,
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -462,7 +464,7 @@ namespace yield
     protected:
       StreamSocketServer
       ( 
-        StreamSocketType& listen_stream_socket, // Steals this reference
+        YRO_NEW_REF StreamSocketType& listen_stream_socket,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -493,11 +495,11 @@ namespace yield
         virtual void onWriteError( uint32_t error_code, void* context );
 
       protected:
-        Connection( StreamSocketType&, StreamSocketServer& );
+        Connection( YRO_NEW_REF StreamSocketType&, StreamSocketServer& );
         virtual ~Connection();
 
-        void aio_recv( Buffer& buffer, int flags = 0, void* context = 0 );
-        void aio_sendmsg( Buffers& buffers, int flags = 0, void* context = 0 );
+        void aio_recv( YRO_NEW_REF Buffer&, void* = 0, int flags = 0 );
+        void aio_sendmsg( YRO_NEW_REF Buffers&, void* = 0, int flags = 0 );
 
       private:
         StreamSocketType& stream_socket;
@@ -516,13 +518,13 @@ namespace yield
     class TCPSocketClient : public StreamSocketClient<TCPSocket>
     {
     public:
-      static TCPSocket& createTCPSocket( Log* trace_log = NULL );
+      static YRO_NEW_REF TCPSocket& createTCPSocket( Log* trace_log = NULL );
 
     protected:
       TCPSocketClient
       (
-        SocketAddress& peername, // Steals this reference
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF SocketAddress& peername,
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -534,7 +536,7 @@ namespace yield
     class TCPSocketServer : public StreamSocketServer<TCPSocket>
     {
     public:
-      static TCPSocket&
+      static YRO_NEW_REF TCPSocket&
       createListenTCPSocket
       (
         const SocketAddress& sockname,
@@ -544,25 +546,15 @@ namespace yield
     protected:
       TCPSocketServer
       ( 
-        TCPSocket& listen_tcp_socket, // Steals this reference
+        YRO_NEW_REF TCPSocket& listen_tcp_socket,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
 
       virtual ~TCPSocketServer() { }
 
-      TCPSocket& get_listen_tcp_socket() const
-      {
-        return StreamSocketServer<TCPSocket>::get_listen_stream_socket();
-      }
-
-      static bool
-      initListenTCPSocket
-      (
-        IOQueue* io_queue,
-        TCPSocket* listen_tcp_socket,
-        const SocketAddress& sockname
-      );
+      TCPSocket& get_listen_tcp_socket() const;
+      static bool init_listen_tcp_socket( TCPSocket&, const SocketAddress& );
     };
 
 
@@ -570,7 +562,7 @@ namespace yield
     class SSLSocketClient : public TCPSocketClient
     {
     public:
-      static SSLSocket&
+      static YRO_NEW_REF SSLSocket&
       createSSLSocket
       (         
         SSLContext* ssl_context = NULL,
@@ -580,8 +572,8 @@ namespace yield
     protected:
       SSLSocketClient
       (
-        SocketAddress& peername, // Steals this reference
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF SocketAddress& peername,
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -593,7 +585,7 @@ namespace yield
     class SSLSocketServer : public TCPSocketServer
     {
     public:
-      static SSLSocket&
+      static YRO_NEW_REF SSLSocket&
       createListenSSLSocket
       (
         const SocketAddress& sockname,
@@ -604,7 +596,7 @@ namespace yield
     protected:
       SSLSocketServer
       ( 
-        SSLSocket& listen_ssl_socket, // Steals this reference
+        YRO_NEW_REF SSLSocket& listen_ssl_socket,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -620,23 +612,27 @@ namespace yield
       const static uint64_t RECV_TIMEOUT_DEFAULT = 5 * Time::NS_IN_S;
 
     public:
+      static YRO_NEW_REF UDPSocket&
+      createConnectedUDPSocket
+      ( 
+        const URI& absolute_uri,
+        Log* trace_log = NULL
+      );
+
+      static YRO_NEW_REF UDPSocket& createUDPSocket( Log* trace_log = NULL );
+
       const Time& get_recv_timeout() const { return recv_timeout; }
 
     protected:
       UDPSocketClient
       (
-        SocketAddress& peername, // Steals this reference
-        UDPSocket& udp_socket, // Steals this reference
+        YRO_NEW_REF SocketAddress& peername,
+        YRO_NEW_REF UDPSocket& udp_socket,
         Log* error_log = NULL,
         const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
         Log* trace_log = NULL
       );
 
-      static UDPSocket& createUDPSocket
-      ( 
-        const URI& absolute_uri,
-        Log* trace_log
-      );
 
       UDPSocket& get_udp_socket() const { return udp_socket; }
 
@@ -654,21 +650,23 @@ namespace yield
       : public SocketServer,
         public UDPSocket::AIORecvFromCallback        
     {
+    public:
+      static YRO_NEW_REF UDPSocket&
+      createBoundUDPSocket
+      ( 
+        const SocketAddress& sockname,
+        Log* trace_log = NULL
+      );
+
     protected:
       UDPSocketServer
       ( 
-        UDPSocket& udp_socket, // Steals this reference
+        YRO_NEW_REF UDPSocket& udp_socket,
         Log* error_log,
         Log* trace_log
       );
 
       virtual ~UDPSocketServer();
-
-      static UDPSocket& createUDPSocket
-      ( 
-        const SocketAddress& sockname,
-        Log* trace_log = NULL
-      );
 
       UDPSocket& get_udp_socket() const { return udp_socket; }
 
@@ -712,7 +710,7 @@ namespace yield
 
       const char* operator[]( const char* name ) { return get_field( name ); }
 
-      void set_body( Buffer* body ); // Steals this reference
+      void set_body( YRO_NEW_REF Buffer* body );
       // set_field: char* copies into a buffer, const char* does not
       void set_field( const char* name, const char* value );
       void set_field( const char* name, char* value );
@@ -721,22 +719,20 @@ namespace yield
       void set_field( const char* name, const Time& value );
 
     protected:
-      HTTPMessage();
+      HTTPMessage( YRO_NEW_REF Buffer* body = NULL );
 
       HTTPMessage
       ( 
-        Buffer& header,
+        YRO_NEW_REF Buffer& header,
         const FieldOffsets& field_offsets, 
-        Buffer* body = NULL 
+        YRO_NEW_REF Buffer* body = NULL 
       );
-
-      HTTPMessage( Buffer& body );
 
       virtual ~HTTPMessage();
       
       Buffers& get_header() const { return *header; }
 
-      virtual Buffers& marshal() const;
+      virtual YRO_NEW_REF Buffers& marshal() const;
 
     private:
       template <class, class> friend class HTTPMessageParser;
@@ -751,7 +747,7 @@ namespace yield
       );
 
     private:
-      Buffer* body;      
+      Buffer* body;
       FieldOffsets field_offsets;
       Buffers* header;
     };
@@ -761,8 +757,15 @@ namespace yield
     class HTTPMessageParser
     {
     public:
-      RTTIObject* parse( const string& buffer );
-      RTTIObject* parse( Buffer& buffer );
+      HTTPMessageType* parse( const string& buffer ); // For testing
+
+      bool
+      parse
+      ( 
+        Buffer& buffer,
+        HTTPMessageType*& out_http_message,
+        Buffer** out_next_buffer = NULL
+      );
 
       static Time parse_http_date( const char* http_date );
 
@@ -771,12 +774,11 @@ namespace yield
       virtual ~HTTPMessageParser();
 
     private:
-      HTTPMessageType* createHTTPMessage( Buffer* body = NULL );
+      YRO_NEW_REF HTTPMessageType* createHTTPMessage( Buffer* body = NULL );
       size_t get_content_length();
-      const char* get_transfer_encoding();
-      RTTIObject* parse_header( Buffer& buffer );
-      bool parse_header( char** inout_p, const char* pe );      
-      RTTIObject* parse_body( Buffer& buffer );
+      bool parse_body( Buffer&, HTTPMessageType*&, Buffer** );
+      bool parse_header( Buffer&, HTTPMessageType*&, Buffer** );
+      bool parse_header( char** inout_p, const char* pe );
       void reset();
 
     private:
@@ -791,10 +793,20 @@ namespace yield
     class HTTPRequest : public Request, public HTTPMessage
     {
     public:
-      HTTPRequest( const char* method, const char* uri );
-      HTTPRequest( const char* method, const char* uri, Buffer& body );
-      HTTPRequest( const char* method, const URI& uri );
-      HTTPRequest( const char* method, const URI& uri, Buffer& body );     
+      HTTPRequest
+      ( 
+        const char* method,
+        const char* uri,
+        YRO_NEW_REF Buffer* body = NULL
+      );
+
+      HTTPRequest
+      ( 
+        const char* method,
+        const URI& uri,
+        YRO_NEW_REF Buffer* body = NULL
+      );
+
       virtual ~HTTPRequest();
 
       const Time& get_creation_time() const { return creation_time; }
@@ -803,19 +815,18 @@ namespace yield
       URI& get_parsed_uri();
       const char* get_uri() const;
 
-      Buffers& marshal() const { return HTTPMessage::marshal(); }
-      void respond( HTTPResponse& http_response ); // Steals this reference
-      void respond( uint16_t status_code );
-      void respond( uint16_t status_code, Buffer& body ); // Steals this ref
-      void respond( Exception& exception ); // Steals this ref
+      YRO_NEW_REF Buffers& marshal() const { return HTTPMessage::marshal(); }
+      void respond( YRO_NEW_REF HTTPResponse& http_response );
+      void respond( uint16_t status_code, YRO_NEW_REF Buffer* body = NULL );
+      void respond( YRO_NEW_REF Exception& exception );
 
       // Object
       HTTPRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-      // RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( HTTPRequest, 205 );
-
       // MarshallableObject
+      const static uint32_t TYPE_ID = 205;
+      uint32_t get_type_id() const { return TYPE_ID; }
+      const char* get_type_name() const { return "HTTPRequest"; }
       void marshal( Marshaller& marshaller ) const { }
       void unmarshal( Unmarshaller& ) { }
 
@@ -824,12 +835,12 @@ namespace yield
 
       HTTPRequest
       (
-        Buffer& header,
+        YRO_NEW_REF Buffer& header,
         uint16_t method_offset, // Into header
         uint16_t uri_offset,
         uint16_t http_version_offset,
         const FieldOffsets& field_offsets,
-        Buffer* body = NULL
+        YRO_NEW_REF Buffer* body = NULL
       );
 
       HTTPRequest( const HTTPRequest& ) { DebugBreak(); } // Prevent copying
@@ -846,10 +857,10 @@ namespace yield
     class HTTPRequestHandler : public RequestHandler
     {
     public:
-      virtual void handle( HTTPRequest& http_request ) = 0;
+      virtual void handle( YRO_NEW_REF HTTPRequest& http_request ) = 0;
 
       // RequestHandler
-      virtual void handle( Request& request );
+      virtual void handle( YRO_NEW_REF Request& request );
     };
 
 
@@ -863,12 +874,12 @@ namespace yield
       template <class, class> friend class HTTPMessageParser;
 
       // HTTPMessageParser downcalls
-      HTTPRequest*
+      YRO_NEW_REF HTTPRequest*
       createHTTPMessage
       (
         Buffer& header,
         const HTTPMessage::FieldOffsets& field_offsets,
-        Buffer* body = NULL
+        YRO_NEW_REF Buffer* body = NULL
       );
 
       bool parse_first_header_line( char** inout_p, const char* pe );
@@ -881,21 +892,24 @@ namespace yield
     class HTTPResponse : public Response, public HTTPMessage
     {
     public:
-      HTTPResponse( uint16_t status_code = 200 );
-      HTTPResponse( uint16_t status_code, Buffer& body ); // Steals this ref
+      HTTPResponse
+      ( 
+        uint16_t status_code = 200,
+        YRO_NEW_REF Buffer* body = NULL
+      );
 
       virtual ~HTTPResponse() { }
 
       uint16_t get_status_code() const { return status_code; }
-      Buffers& marshal() const { return HTTPMessage::marshal(); }
+      YRO_NEW_REF Buffers& marshal() const { return HTTPMessage::marshal(); }
 
       // Object
       HTTPResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-      // RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( HTTPResponse, 206 );
-
       // MarshallableObject
+      const static uint32_t TYPE_ID = 206;
+      uint32_t get_type_id() const { return TYPE_ID; }
+      const char* get_type_name() const { return "HTTPResponse"; }
       void marshal( Marshaller& marshaller ) const { }
       void unmarshal( Unmarshaller& ) { }
 
@@ -932,12 +946,12 @@ namespace yield
       template <class, class> friend class HTTPMessageParser;
 
       // HTTPMessageParser downcalls
-      HTTPResponse*
+      YRO_NEW_REF HTTPResponse*
       createHTTPMessage
       (
         Buffer& header,
         const HTTPMessage::FieldOffsets& field_offsets,
-        Buffer* body = NULL
+        YRO_NEW_REF Buffer* body = NULL
       );
 
       bool parse_first_header_line( char** inout_p, const char* pe );
@@ -952,36 +966,36 @@ namespace yield
     public:
       HTTPClient
       (
-        SocketAddress& peername, // Steals this reference
-        TCPSocket& tcp_socket, // Steals this reference
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF SocketAddress& peername,
+        YRO_NEW_REF TCPSocket& tcp_socket,
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
 
       virtual ~HTTPClient() { }
 
-      static HTTPClient&
+      static YRO_NEW_REF HTTPClient&
       create
       (
         const URI& absolute_uri,
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
 
-      static HTTPResponse& GET( const URI& absolute_uri );
+      static YRO_NEW_REF HTTPResponse& GET( const URI& absolute_uri );
 
-      static 
-      HTTPResponse& 
+      static
+      YRO_NEW_REF HTTPResponse& 
       PUT
       ( 
         const URI& absolute_uri,
-        Buffer& body // Steals this reference
+        YRO_NEW_REF Buffer& body
       );
 
-      static
-      HTTPResponse&
+      static 
+      YRO_NEW_REF HTTPResponse&
       PUT
       (
         const URI& absolute_uri,
@@ -990,9 +1004,6 @@ namespace yield
 
       // Object
       HTTPClient& inc_ref() { return Object::inc_ref( *this ); }
-
-      // RTTIObject
-      const char* get_type_name() const { return "HTTPClient"; }
 
       // HTTPRequestHandler
       void handle( HTTPRequest& request );
@@ -1003,12 +1014,9 @@ namespace yield
           private HTTPResponseParser
       {
       public:
-        Connection( HTTPClient& http_client, TCPSocket& tcp_socket );
+        Connection( HTTPClient&, YRO_NEW_REF TCPSocket& );
 
-        void handle( HTTPRequest& http_request );
-
-        // RTTIObject
-        const char* get_type_name() const { return "HTTPClient::Connection"; }
+        void handle( YRO_NEW_REF HTTPRequest& http_request );
 
       private:
         // TCPSocketClient::Connection
@@ -1037,9 +1045,9 @@ namespace yield
     public:
       HTTPSClient
       (
-        SocketAddress& peername, // Steals this reference
-        SSLSocket& ssl_socket, // Steals this reference
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF SocketAddress& peername,
+        YRO_NEW_REF SSLSocket& ssl_socket,
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -1050,7 +1058,7 @@ namespace yield
       create
       (
         const URI& absolute_uri,
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL,
         SSLContext* ssl_context = NULL
@@ -1125,9 +1133,9 @@ namespace yield
     public:
       HTTPServer
       (
-        EventHandler& http_request_handler, // Steals this reference
-        TCPSocket& listen_tcp_socket,
-        AccessLog* access_log = NULL,
+        YRO_NEW_REF EventHandler& http_request_handler,
+        YRO_NEW_REF TCPSocket& listen_tcp_socket,
+        YRO_NEW_REF AccessLog* access_log = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -1137,9 +1145,9 @@ namespace yield
       static HTTPServer&
       create
       (
-        EventHandler& http_request_handler, // Steals this reference
+        YRO_NEW_REF EventHandler& http_request_handler,
         const SocketAddress& sockname,
-        AccessLog* access_log = NULL,
+        YRO_NEW_REF AccessLog* access_log = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -1168,9 +1176,9 @@ namespace yield
     public:
       HTTPSServer
       (
-        EventHandler& http_request_handler, // Steals this reference
-        SSLSocket& listen_ssl_socket,
-        AccessLog* access_log = NULL,
+        YRO_NEW_REF EventHandler& http_request_handler,
+        YRO_NEW_REF SSLSocket& listen_ssl_socket,
+        YRO_NEW_REF AccessLog* access_log = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -1178,10 +1186,10 @@ namespace yield
       static HTTPSServer&
       create
       (
-        EventHandler& http_request_handler, // Steals this reference
+        YRO_NEW_REF EventHandler& http_request_handler,
         const SocketAddress& sockname,
         SSLContext& ssl_context,
-        AccessLog* access_log = NULL,
+        YRO_NEW_REF AccessLog* access_log = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -1335,7 +1343,7 @@ namespace yield
       JSONParser();
       ~JSONParser();
 
-      JSONValue* parse( Buffer& buffer );
+      YRO_NEW_REF JSONValue* parse( Buffer& buffer );
 
     private:
       void handleJSONValue( JSONValue& json_value );
@@ -1399,27 +1407,27 @@ namespace yield
     public:
       JSONRPCRequest
       ( 
-        Request& body, // Steals this reference
-        HTTPRequest& http_request, // Steals this reference
-        JSONValue& id // Steals this reference
+        YRO_NEW_REF Request& body,
+        YRO_NEW_REF HTTPRequest& http_request,
+        YRO_NEW_REF JSONValue& id
       );
 
       virtual ~JSONRPCRequest();
 
       HTTPRequest& get_http_request() const { return http_request; }
       
-      Buffers& marshal() const;
+      YRO_NEW_REF Buffers& marshal() const;
       void marshal( JSONMarshaller& json_marshaller ) const;
-      void respond( JSONRPCResponse& response ); // Steals this reference
-      void respond( Response& response ); // Steals this reference
+      void respond( YRO_NEW_REF JSONRPCResponse& response );
+      void respond( YRO_NEW_REF Response& response );
 
       // Object
       JSONRPCRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-      // RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( JSONRPCRequest, 313 );
-
       // MarshallableObject
+      const static uint32_t TYPE_ID = 313;
+      uint32_t get_type_id() const { return TYPE_ID; }
+      const char* get_type_name() const { return "JSONRPCRequest"; }
       void marshal( Marshaller& marshaller ) const { }
       void unmarshal( Unmarshaller& unmarshaller ) { }
 
@@ -1431,10 +1439,10 @@ namespace yield
     class JSONRPCRequestHandler : public RequestHandler
     {
     public:
-      virtual void handle( JSONRPCRequest& json_rpc_request ) = 0;
+      virtual void handle( YRO_NEW_REF JSONRPCRequest& json_rpc_request ) = 0;
 
       // RequestHandler
-      virtual void handle( Request& request );
+      virtual void handle( YRO_NEW_REF Request& request );
     };
 
 
@@ -1444,10 +1452,10 @@ namespace yield
       JSONRPCRequestParser( MessageFactory& message_factory );
       virtual ~JSONRPCRequestParser() { }
 
-      JSONRPCRequest* parse( HTTPRequest& http_request );
+      YRO_NEW_REF JSONRPCRequest* parse( YRO_NEW_REF HTTPRequest& );
 
     private:
-      JSONRPCRequest* parse( Buffer& buffer, HTTPRequest& http_request );
+      YRO_NEW_REF JSONRPCRequest* parse( Buffer&, YRO_NEW_REF HTTPRequest& );
     };
 
 
@@ -1456,24 +1464,24 @@ namespace yield
     public:
       JSONRPCResponse
       ( 
-        Response& body, // Steals this reference
-        HTTPResponse& http_response, // Steals this reference
-        JSONValue& id // Steals this reference
+        YRO_NEW_REF Response& body,
+        YRO_NEW_REF HTTPResponse& http_response,
+        YRO_NEW_REF JSONValue& id
       );
           
       virtual ~JSONRPCResponse();
 
       HTTPResponse& get_http_response() const { return http_response; }
-      Buffers& marshal() const;
+      YRO_NEW_REF Buffers& marshal() const;
       void marshal( JSONMarshaller& json_marshaller ) const;
 
       // Object
       JSONRPCResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-      // RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( JSONRPCResponse, 313 );
-
       // MarshallableObject
+      const static uint32_t TYPE_ID = 314;
+      uint32_t get_type_id() const { return TYPE_ID; }
+      const char* get_type_name() const { return "JSONRPCResponse"; }
       void marshal( Marshaller& marshaller ) const { }
       void unmarshal( Unmarshaller& unmarshaller ) { }
 
@@ -1499,11 +1507,11 @@ namespace yield
     public:
       JSONRPCClient
       (
-        MessageFactory& message_factory,
-        SocketAddress& peername, // Steals this reference
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF SocketAddress& peername,
         const URI& post_uri, // e.g. /JSONRPC
-        TCPSocket& tcp_socket, // Steals this reference
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF TCPSocket& tcp_socket,
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -1514,17 +1522,14 @@ namespace yield
       create
       (
         const URI& absolute_uri,
-        MessageFactory& message_factory,
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
 
-      // RTTIObject
-      const char* get_type_name() const { return "JSONRPCClient"; }
-
       // RequestHandler
-      virtual void handle( Request& request );
+      virtual void handle( YRO_NEW_REF Request& request );
 
     private:
       class Connection 
@@ -1533,12 +1538,9 @@ namespace yield
           public JSONRPCResponseParser
       {
       public:
-        Connection( JSONRPCClient& json_rpc_client, TCPSocket& tcp_socket );
+        Connection( JSONRPCClient&, YRO_NEW_REF TCPSocket& );
 
-        void handle( JSONRPCRequest& json_rpc_request );
-
-        // RTTIObject
-        const char* get_type_name() const { return "HTTPClient::Connection"; }
+        void handle( YRO_NEW_REF JSONRPCRequest& );
 
       private:
         // TCPSocket::AIORecvCallback
@@ -1569,11 +1571,11 @@ namespace yield
     public:
       JSONRPCSClient
       (
-        MessageFactory& message_factory,
-        SocketAddress& peername, // Steals this reference
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF SocketAddress& peername,
         const URI& post_uri, // e.g. /JSONRPC
-        SSLSocket& ssl_socket, // Steals this reference
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF SSLSocket& ssl_socket,
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -1584,8 +1586,8 @@ namespace yield
       create
       (
         const URI& absolute_uri,
-        MessageFactory& message_factory,
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         SSLContext* ssl_context = NULL,
         Log* trace_log = NULL
@@ -1601,10 +1603,10 @@ namespace yield
     public:
       JSONRPCServer
       (
-        MessageFactory& message_factory, // Steals this reference
-        TCPSocket& listen_tcp_socket,
-        EventHandler& request_handler, // Steals this reference
-        HTTPServer::AccessLog* access_log = NULL,
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF TCPSocket& listen_tcp_socket,
+        YRO_NEW_REF EventHandler& request_handler,
+        YRO_NEW_REF HTTPServer::AccessLog* access_log = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -1617,7 +1619,7 @@ namespace yield
         MessageFactory& message_factory, // Steals this reference
         EventHandler& request_handler, // Steals this reference
         const SocketAddress& sockname,
-        HTTPServer::AccessLog* access_log = NULL,
+        YRO_NEW_REF HTTPServer::AccessLog* access_log = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -1640,10 +1642,10 @@ namespace yield
     public:
       JSONRPCSServer
       (
-        MessageFactory& message_factory, // Steals this reference
-        SSLSocket& listen_ssl_socket,
-        EventHandler& request_handler, // Steals this reference
-        HTTPServer::AccessLog* access_log = NULL,
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF SSLSocket& listen_ssl_socket,
+        YRO_NEW_REF EventHandler& request_handler,
+        YRO_NEW_REF HTTPServer::AccessLog* access_log = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -1653,11 +1655,11 @@ namespace yield
       static JSONRPCSServer&
       create
       (
-        MessageFactory& message_factory, // Steals this reference
-        EventHandler& request_handler, // Steals this reference
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF EventHandler& request_handler,
         const SocketAddress& sockname,
         SSLContext& ssl_context,
-        HTTPServer::AccessLog* access_log = NULL,
+        YRO_NEW_REF HTTPServer::AccessLog* access_log = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -1716,7 +1718,7 @@ namespace yield
       uint32_t get_xid() const { return xid; }
 
     protected:
-      ONCRPCMessage( MarshallableObject* verf, uint32_t xid );
+      ONCRPCMessage( YRO_NEW_REF MarshallableObject* verf, uint32_t xid );
 
       void marshal_opaque_auth( Marshaller&, MarshallableObject* ) const;
 
@@ -1726,7 +1728,7 @@ namespace yield
     };
 
 
-    template <class ONCRPCMessageParserType>
+    template <class ONCRPCMessageParserType, class ONCRPCMessageType>
     class ONCRPCMessageParser
     {
     protected:
@@ -1734,7 +1736,15 @@ namespace yield
       virtual ~ONCRPCMessageParser();
 
       MessageFactory& get_message_factory() const { return message_factory; }
-      RTTIObject* parse( Buffer& buffer );
+
+      bool
+      parse
+      (
+        Buffer& buffer,
+        ONCRPCMessageType*& out_onc_rpc_message,
+        Buffer** out_next_buffer = NULL
+      );
+
       MarshallableObject* unmarshal_opaque_auth( XDRUnmarshaller& );
 
     private:
@@ -1748,30 +1758,30 @@ namespace yield
     public:
       ONCRPCRequest
       (
-        Request& body, // Steals this reference
+        YRO_NEW_REF Request& body,
         uint32_t prog,
         uint32_t vers,
         uint32_t xid,
-        MarshallableObject* cred = NULL, // = AUTH_NONE, steals this reference
-        MarshallableObject* verf = NULL // = AUTH_NONE, steals this reference
+        YRO_NEW_REF MarshallableObject* cred = NULL, // = AUTH_NONE
+        YRO_NEW_REF MarshallableObject* verf = NULL // = AUTH_NONE
       );
 
       MarshallableObject* get_cred() const { return get_credentials(); }
       uint32_t get_proc() const { return get_body().get_type_id(); }      
       uint32_t get_prog() const { return prog; }
       uint32_t get_vers() const { return vers; }
-      Buffers& marshal( bool in_record = false ) const;
-      void respond( ONCRPCResponse& response ); // Steals this reference
-      void respond( Response& response ); // Steals this reference
-      void respond( Exception& response ); // Steals this reference
+      YRO_NEW_REF Buffers& marshal( bool in_record = false ) const;
+      void respond( YRO_NEW_REF ONCRPCResponse& response );
+      void respond( YRO_NEW_REF Response& response );
+      void respond( YRO_NEW_REF Exception& response );
 
       // Object
       ONCRPCRequest& inc_ref() { return Object::inc_ref( *this ); }
 
-      // RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ONCRPCRequest, 213 );
-
       // MarshallableObject
+      const static uint32_t TYPE_ID = 213;
+      uint32_t get_type_id() const { return TYPE_ID; }
+      const char* get_type_name() const { return "ONCRPCRequest"; }
       void marshal( Marshaller& marshaller ) const;
       void unmarshal( Unmarshaller& unmarshaller ) { }
 
@@ -1783,22 +1793,29 @@ namespace yield
     class ONCRPCRequestHandler : public RequestHandler
     {
     public:
-      virtual void handle( ONCRPCRequest& onc_rpc_request ) = 0;
+      virtual void handle( YRO_NEW_REF ONCRPCRequest& onc_rpc_request ) = 0;
 
       // RequestHandler
-      virtual void handle( Request& request );
+      virtual void handle( YRO_NEW_REF Request& request );
     };
 
 
-    class ONCRPCRequestParser : public ONCRPCMessageParser<ONCRPCRequestParser>
+    class ONCRPCRequestParser 
+      : public ONCRPCMessageParser<ONCRPCRequestParser, Message>
     {
     public:
       ONCRPCRequestParser( MessageFactory&, bool parse_records = false );
 
-      RTTIObject* parse( Buffer& buffer );
+      bool
+      parse
+      (
+        Buffer& buffer,        
+        Message*& out_onc_rpc_message,
+        Buffer** out_next_buffer = NULL
+      );
 
     private:
-      template <class> friend class ONCRPCMessageParser;
+      template <class, class> friend class ONCRPCMessageParser;
       // ONCRPCMessageParser
       Message* unmarshalONCRPCMessage( XDRUnmarshaller& );
     };
@@ -1842,17 +1859,17 @@ namespace yield
       // Accepted reply (MSG_ACCEPTED) - SUCCESS accept_stat
       ONCRPCResponse
       ( 
-        Response& body, // Steals this reference
+        YRO_NEW_REF Response& body,
         uint32_t xid,
-        MarshallableObject* verf = NULL // = AUTH_NONE, steals this reference
+        YRO_NEW_REF MarshallableObject* verf = NULL // = AUTH_NONE
       );
 
       // Accepted reply (MSG_ACCEPTED) - other accept_stat = body.get_type_id()
       ONCRPCResponse
       (
-        Exception& body, // Steals this reference
+        YRO_NEW_REF Exception& body,
         uint32_t xid,
-        MarshallableObject* verf = NULL // = AUTH_NONE, steals this reference
+        YRO_NEW_REF MarshallableObject* verf = NULL // = AUTH_NONE
       );
 
       // Rejected reply (MSG_DENIED) - RPC_MISMATCH
@@ -1861,15 +1878,15 @@ namespace yield
       // Rejected reply (MSG_DENIED ) - AUTH_ERROR
       ONCRPCResponse( auth_stat, uint32_t xid );
 
-      Buffers& marshal( bool in_record = false ) const;
+      YRO_NEW_REF Buffers& marshal( bool in_record = false ) const;
 
       // Object
       ONCRPCResponse& inc_ref() { return Object::inc_ref( *this ); }
 
-      // RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ONCRPCResponse, 208 );
-
       // MarshallableObject
+      const static uint32_t TYPE_ID = 214;
+      uint32_t get_type_id() const { return TYPE_ID; }
+      const char* get_type_name() const { return "ONCRPCResponse"; }
       void marshal( Marshaller& marshaller ) const;
       void unmarshal( Unmarshaller& unmarshaller ) { }
 
@@ -1883,15 +1900,22 @@ namespace yield
 
 
     class ONCRPCResponseParser 
-      : public ONCRPCMessageParser<ONCRPCResponseParser>
+      : public ONCRPCMessageParser<ONCRPCResponseParser, ONCRPCResponse>
     {
     public:
       ONCRPCResponseParser( MessageFactory&, bool parse_records = false );
 
-      RTTIObject* parse( Buffer& buffer, ONCRPCRequest& onc_rpc_request );
+      bool
+      parse
+      (
+        Buffer& buffer,
+        ONCRPCRequest& onc_rpc_request,
+        ONCRPCResponse*& out_onc_rpc_response,
+        Buffer** out_next_buffer = NULL
+      );
 
     private:
-      template <class> friend class ONCRPCMessageParser;
+      template <class, class> friend class ONCRPCMessageParser;
       // ONCRPCMessageParser
       ONCRPCResponse* unmarshalONCRPCMessage( XDRUnmarshaller& );
 
@@ -1925,15 +1949,15 @@ namespace yield
       uint32_t get_prog() const { return prog; }
       uint32_t get_vers() const { return vers; }
 
-      virtual void handle( ONCRPCRequest& onc_rpc_request ) = 0;
+      virtual void handle( YRO_NEW_REF ONCRPCRequest& onc_rpc_request ) = 0;
 
       // RequestHandler
-      virtual void handle( Request& request );
+      virtual void handle( YRO_NEW_REF Request& request );
 
     protected:
       ONCRPCClient
       (
-        MessageFactory& message_factory, // Steals this reference
+        YRO_NEW_REF MessageFactory& message_factory,
         uint32_t prog,
         uint32_t vers
       );
@@ -1957,27 +1981,21 @@ namespace yield
 
       ONCRPCStreamSocketClient
       (
-        MessageFactory& message_factory, // Steals this reference
-        SocketAddress& peername, // Steals this reference
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF SocketAddress& peername,
         uint32_t prog,
-        StreamSocketType& stream_socket, // Steals this reference
+        YRO_NEW_REF StreamSocketType& stream_socket,
         uint32_t vers,
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
 
       virtual ~ONCRPCStreamSocketClient() { }
-
-      // RTTIObject
-      virtual const char* get_type_name() const
-      { 
-        return "ONCRPCStreamSocketClient"; 
-      }
    
     private:
       // ONCRPCClient
-      virtual void handle( ONCRPCRequest& onc_rpc_request );
+      virtual void handle( YRO_NEW_REF ONCRPCRequest& onc_rpc_request );
 
     private:
      class Connection 
@@ -1987,17 +2005,11 @@ namespace yield
       public:
         Connection
         ( 
-          ONCRPCStreamSocketClient<StreamSocketType>&, 
-          StreamSocketType& stream_socket
+          ONCRPCStreamSocketClient<StreamSocketType>&,
+          YRO_NEW_REF StreamSocketType& stream_socket
         );
 
-        void handle( ONCRPCRequest& onc_rpc_request );
-
-        // RTTIObject
-        const char* get_type_name() const
-        { 
-          return "ONCRPCStreamSocketClient::Connection"; 
-        }
+        void handle( YRO_NEW_REF ONCRPCRequest& onc_rpc_request );
 
       private:
         // StreamSocket::AIORecvCallback
@@ -2032,20 +2044,14 @@ namespace yield
     public:
       ONCRPCStreamSocketServer
       ( 
-        StreamSocketType& listen_stream_socket, // Steals this reference
-        MessageFactory& message_factory, // Steals this reference
-        EventHandler& request_handler, // Steals this reference
+        YRO_NEW_REF StreamSocketType& listen_stream_socket,
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF EventHandler& request_handler,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
 
       virtual ~ONCRPCStreamSocketServer() { }
-
-      // RTTIObject
-      virtual const char* get_type_name() const
-      { 
-        return "ONCRPCStreamSocketServer"; 
-      }
 
     private:
       // StreamSocketType::AIOAcceptCallback
@@ -2062,12 +2068,12 @@ namespace yield
     public:
       ONCRPCSSLSocketClient
       (
-        MessageFactory& message_factory, // Steals this reference
-        SocketAddress& peername, // Steals this reference
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF SocketAddress& peername,
         uint32_t prog,
-        SSLSocket& ssl_socket, // Steals this reference
+        YRO_NEW_REF SSLSocket& ssl_socket,
         uint32_t vers,
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -2078,20 +2084,14 @@ namespace yield
       create
       (
         const URI& absolute_uri,
-        MessageFactory& message_factory, // Steals this reference
+        YRO_NEW_REF MessageFactory& message_factory,
         uint32_t prog,
         uint32_t vers,
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         SSLContext* ssl_context = NULL,
         Log* trace_log = NULL
       );
-
-      // RTTIObject
-      virtual const char* get_type_name() const
-      { 
-        return "ONCRPCSSLSocketClient"; 
-      }    
     };
 
 
@@ -2100,9 +2100,9 @@ namespace yield
     public:
       ONCRPCSSLSocketServer
       ( 
-        SSLSocket& listen_ssl_socket, // Steals this reference
-        MessageFactory& message_factory, // Steals this reference
-        EventHandler& request_handler, // Steals this reference
+        YRO_NEW_REF SSLSocket& listen_ssl_socket,
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF EventHandler& request_handler,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -2110,19 +2110,13 @@ namespace yield
       static ONCRPCSSLSocketServer&
       create
       (        
-        MessageFactory& message_factory,
-        EventHandler& request_handler,
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF EventHandler& request_handler,
         const SocketAddress& sockname,
         SSLContext& ssl_context,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
-
-      // RTTIObject
-      virtual const char* get_type_name() const
-      { 
-        return "ONCRPCSSLSocketServer"; 
-      }
     };
 #endif
 
@@ -2132,12 +2126,12 @@ namespace yield
     public:
       ONCRPCTCPSocketClient
       (
-        MessageFactory& message_factory, // Steals this reference
-        SocketAddress& peername, // Steals this reference
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF SocketAddress& peername,
         uint32_t prog,
-        TCPSocket& tcp_socket, // Steals this reference
+        YRO_NEW_REF TCPSocket& tcp_socket,
         uint32_t vers,
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -2148,19 +2142,13 @@ namespace yield
       create
       (
         const URI& absolute_uri,
-        MessageFactory& message_factory, // Steals this reference
+        YRO_NEW_REF MessageFactory& message_factory,
         uint32_t prog,
         uint32_t vers,
-        Configuration* configuration = NULL, // Steals this reference
+        YRO_NEW_REF Configuration* configuration = NULL,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
-
-      // RTTIObject
-      virtual const char* get_type_name() const
-      { 
-        return "ONCRPCTCPSocketClient"; 
-      }    
     };
 
 
@@ -2169,9 +2157,9 @@ namespace yield
     public:
       ONCRPCTCPSocketServer
       ( 
-        TCPSocket& listen_tcp_socket, // Steals this reference
-        MessageFactory& message_factory, // Steals this reference
-        EventHandler& request_handler, // Steals this reference
+        YRO_NEW_REF TCPSocket& listen_tcp_socket,
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF EventHandler& request_handler,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -2179,18 +2167,12 @@ namespace yield
       static ONCRPCTCPSocketServer&
       create
       (
-        MessageFactory& message_factory,
-        EventHandler& request_handler,
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF EventHandler& request_handler,
         const SocketAddress& sockname,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
-
-      // RTTIObject
-      virtual const char* get_type_name() const
-      { 
-        return "ONCRPCTCPSocketServer"; 
-      }
     };
 
 
@@ -2202,10 +2184,10 @@ namespace yield
     public:
       ONCRPCUDPSocketClient
       (
-        MessageFactory& message_factory, // Steals this reference
-        SocketAddress& peername, // Steals this reference
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF SocketAddress& peername,
         uint32_t prog,
-        UDPSocket& udp_socket, // Steals this reference
+        YRO_NEW_REF UDPSocket& udp_socket,
         uint32_t vers,
         Log* error_log = NULL,
         const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
@@ -2216,16 +2198,13 @@ namespace yield
       create
       (
         const URI& absolute_uri,
-        MessageFactory& message_factory, // Steals this reference
+        YRO_NEW_REF MessageFactory& message_factory,
         uint32_t prog,
         uint32_t vers,
         Log* error_log = NULL,        
         const Time& recv_timeout = RECV_TIMEOUT_DEFAULT,
         Log* trace_log = NULL
       );
-
-      // RTTIObject
-      const char* get_type_name() const { return "ONCRPCUDPSocketClient"; }
 
     protected:
       // ONCRPCClient
@@ -2245,9 +2224,9 @@ namespace yield
     public:
       ONCRPCUDPSocketServer
       ( 
-        MessageFactory& message_factory,
-        EventHandler& request_handler,
-        UDPSocket& udp_socket,
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF EventHandler& request_handler,
+        YRO_NEW_REF UDPSocket& udp_socket,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
@@ -2255,15 +2234,12 @@ namespace yield
       static ONCRPCUDPSocketServer&
       create
       (
-        MessageFactory& message_factory,
-        EventHandler& request_handler,
+        YRO_NEW_REF MessageFactory& message_factory,
+        YRO_NEW_REF EventHandler& request_handler,
         const SocketAddress& sockname,
         Log* error_log = NULL,
         Log* trace_log = NULL
       );
-
-      // RTTIObject
-      const char* get_type_name() const { return "ONCRPCUDPSocketServer"; }
 
     private:
       // UDPSocket::AIORecvFromCallback
@@ -2286,7 +2262,7 @@ namespace yield
       void set_peername( const SocketAddress& peername );
       void set_sockname( const SocketAddress& sockname );
 
-      StreamSocket* trace_accept( StreamSocket* ret );
+      YRO_NEW_REF StreamSocket* trace_accept( YRO_NEW_REF StreamSocket* );
       bool trace_bind( const SocketAddress& sockname, bool ret );
       bool trace_connect( const SocketAddress& peername, bool ret );
       ssize_t trace_recv( void* buf, size_t buflen, ssize_t ret );
@@ -2299,36 +2275,40 @@ namespace yield
       string peername, sockname;
     };
 
+#define YIELD_IPC_TRACING_SOCKET_PROTOTYPES\
+      bool bind( const SocketAddress& to_sockaddr );\
+      bool connect( const SocketAddress& peername );\
+      YIELD_PLATFORM_SOCKET_RECV_SEND_PROTOTYPES;
 
-    // The underlying_X pattern doesn't work as well with Sockets as it does
-    // with Files, since Sockets have more state (like blocking mode,
-    // bins, etc.). Thus TracingXSocket inherits from XSocket instead of trying
-    // to delegate everything.
+
 #ifdef YIELD_PLATFORM_HAVE_OPENSSL
     class TracingSSLSocket : public SSLSocket, private TracingSocket
     {
     public:
-      static TracingSSLSocket* create( Log&, SSLContext& );
-      static TracingSSLSocket* create( int domain, Log&, SSLContext& );
+      static YRO_NEW_REF TracingSSLSocket* create( Log&, SSLContext& );
+
+      static YRO_NEW_REF TracingSSLSocket*
+      create
+      ( 
+        int domain,
+        Log&,
+        SSLContext&
+      );
 
       // Socket
-      bool bind( const SocketAddress& to_sockaddr );
-      bool connect( const SocketAddress& peername );
-      ssize_t recv( void* buf, size_t buflen, int );
-      ssize_t send( const void* buf, size_t buflen, int );
-      ssize_t sendmsg( const struct iovec* iov, uint32_t iovlen, int );
+      YIELD_IPC_TRACING_SOCKET_PROTOTYPES;
 
       // StreamSocket
-      StreamSocket* accept();
+      YRO_NEW_REF StreamSocket* accept();
 
       // SSLSocket
-      virtual SSLSocket* dup();
+      virtual YRO_NEW_REF SSLSocket* dup();
 
     private:
       TracingSSLSocket( int domain, Log&, socket_t, SSL*, SSLContext& );
 
       // StreamSocket
-      StreamSocket* dup2( socket_t );
+      YRO_NEW_REF StreamSocket* dup2( socket_t );
     };
 #endif
 
@@ -2336,21 +2316,17 @@ namespace yield
     class TracingTCPSocket : public TCPSocket, private TracingSocket
     {
     public:
-      static TracingTCPSocket* create( Log& log );
-      static TracingTCPSocket* create( int domain, Log& log );
+      static YRO_NEW_REF TracingTCPSocket* create( Log& log );
+      static YRO_NEW_REF TracingTCPSocket* create( int domain, Log& log );
 
       // Socket      
-      bool bind( const SocketAddress& to_sockaddr );
-      bool connect( const SocketAddress& peername );
-      ssize_t recv( void* buf, size_t buflen, int );
-      ssize_t send( const void* buf, size_t buflen, int );
-      ssize_t sendmsg( const struct iovec* iov, uint32_t iovlen, int );
+      YIELD_IPC_TRACING_SOCKET_PROTOTYPES;
 
       // StreamSocket
-      StreamSocket* accept();
+      YRO_NEW_REF StreamSocket* accept();
 
       // TCPSocket
-      virtual TCPSocket* dup();
+      virtual YRO_NEW_REF TCPSocket* dup();
 
     private:
       TracingTCPSocket( int domain, Log&, socket_t );
@@ -2363,24 +2339,20 @@ namespace yield
     class TracingUDPSocket : public UDPSocket, private TracingSocket
     {
     public:
-      static TracingUDPSocket* create( Log& log );
-      static TracingUDPSocket* create( int domain, Log& log );
+      static YRO_NEW_REF TracingUDPSocket* create( Log& log );
+      static YRO_NEW_REF TracingUDPSocket* create( int domain, Log& log );
 
       // Socket
-      bool bind( const SocketAddress& to_sockaddr );
-      bool connect( const SocketAddress& peername );
-      ssize_t recv( void* buf, size_t buflen, int );
-      ssize_t send( const void* buf, size_t buflen, int );
-      ssize_t sendmsg( const struct iovec* iov, uint32_t iovlen, int );
+      YIELD_IPC_TRACING_SOCKET_PROTOTYPES;
 
       // UDPSocket
-      ssize_t
+      ssize_t 
       recvfrom
       (
         void* buf,
-        size_t buflen,
-        int flags,
-        struct sockaddr_storage& peername
+        size_t len,
+        struct sockaddr_storage& peername,
+        int flags = 0 
       );
 
       ssize_t
@@ -2394,11 +2366,11 @@ namespace yield
 
       ssize_t
       sendto
-      (
+      ( 
         const void* buf,
-        size_t buflen,
-        int flags,
-        const SocketAddress& peername
+        size_t len,
+        const SocketAddress& peername,
+        int flags = 0 
       );
 
     private:
@@ -2441,17 +2413,14 @@ namespace yield
 
       URI& operator=( const URI& );
       operator string() const;
+      operator YRO_NEW_REF SocketAddress*() const;
+      operator YRO_NEW_REF SocketAddress&() const; // throws exceptions
 
-      static URI* parse( const char* uri );
-      static URI* parse( const string& uri );
-      static URI* parse( const char* uri, size_t uri_len );
+      static YRO_NEW_REF URI* parse( const char* uri );
+      static YRO_NEW_REF URI* parse( const string& uri );
+      static YRO_NEW_REF URI* parse( const char* uri, size_t uri_len );
 
-      void set_scheme( const string& scheme ) { this->scheme = scheme; }
-      void set_host( const string& host ) { this->host = host; }
-      void set_user( const string& user ) { this->user = user; }
-      void set_password( const string& password );
       void set_port( uint16_t port ) { this->port = port; }
-      void set_resource( const string& resource );
 
     private:
       URI( UriUriStructA& parsed_uri );
@@ -2467,6 +2436,5 @@ namespace yield
     };
   };
 };
-
 
 #endif

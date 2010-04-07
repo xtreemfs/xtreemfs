@@ -48,7 +48,7 @@ namespace xtreemfs
 {
   class MRCProxy;
   class Stat;
-  class UserCredentialsCache;
+  class UserDatabase;
   using org::xtreemfs::interfaces::XCap;
   using yield::platform::Path;
   using yield::platform::Time;
@@ -61,7 +61,7 @@ namespace xtreemfs
     (
       MRCProxy& mrc_proxy,
       const Time& read_ttl,
-      UserCredentialsCache& user_credentials_cache,
+      UserDatabase& user_database,
       const string& volume_name_utf8,
       uint32_t write_back_attrs = yield::platform::Volume::SETATTR_SIZE
     );
@@ -97,7 +97,7 @@ namespace xtreemfs
   private:
     MRCProxy& mrc_proxy;
     Time read_ttl; // Time to keep Stats read from the server
-    UserCredentialsCache& user_credentials_cache;
+    UserDatabase& user_database;
     string volume_name_utf8;
     uint32_t write_back_attrs; // SETATTR_ types to write back
 
