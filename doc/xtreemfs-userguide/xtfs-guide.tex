@@ -277,7 +277,7 @@ $> export JAVA_HOME=/usr/java6
 \end{verbatim}
 
 
-Both RPM and Debian-based packages will install \texttt{init.d} scripts for an automatic start-up of the services. Use \texttt{insserv xtreemfs-dir}, \texttt{insserv xtreemfs-mrc} and \texttt{insserv xtreemfs-osd}, respectively, to automatically start the services during boot.
+Both RPM and Debian-based packages will install three \texttt{init.d} scripts to start up the services (\texttt{xtreemfs-dir}, \texttt{xtreemfs-mrc}, \texttt{xtreemfs-osd}). If you want the services to be started automatically when booting up the system, you can execute \texttt{insserv <init.d script>} (SuSE), \texttt{chkconfig --add <init.d script>} (Mandriva, RedHat) or \texttt{update-rc.d <init.d script> defaults} (Ubuntu, Debian).
 
 \subsection{Installing from Sources}
 
@@ -1235,7 +1235,7 @@ $> mkfs.xtreemfs -a POSIX -p RAID0 -s 256 -w 1 \
    my-mrc-host.com:32636/myVolume
 \end{verbatim}
 
-Creating a volume may require privileged access, which depends on whether an administrator password required by the MRC. To pass an administrator password, add \texttt{----password <password>} to the \texttt{mkfs.xtreemfs} command.
+Creating a volume may require privileged access, which depends on whether an administrator password is required by the MRC. To pass an administrator password, add \texttt{----password <password>} to the \texttt{mkfs.xtreemfs} command.
 
 For a complete list of parameters, please refer to the \texttt{mkfs.xtreemfs} man pages.
 
@@ -1269,7 +1269,7 @@ Once a volume has been created, it needs to be mounted in order to be accessed.
 
 \subsection{Mounting and Un-mounting}
 
-Before mounting XtreemFS volumes on a Linux machine, please ensure that the FUSE kernel module is loaded.\index{Volume!Mount}\index{Mount}\index{xtfs\_mount}\index{mount.xtreemfs} Please check your distribution's manual to see if users must be in a special group (e.g. \texttt{trusted} in openSuSE) to be allowed to mount FUSE.
+Before mounting XtreemFS volumes on a Linux machine, please ensure that the FUSE kernel module is loaded.\index{Volume!Mount}\index{Mount}\index{xtfs\_mount}\index{mount.xtreemfs} Please check your distribution's manual to see if users must be in a special group (e.g. \texttt{trusted} in openSuSE) to be allowed to mount FUSE file systems.
 
 
 \begin{verbatim}
@@ -1315,13 +1315,13 @@ By default, the local system cache on the client machine will be used to speed u
 
 \section{Troubleshooting}
 
-Different kinds of problems may occur when trying to create, mount or access files in a volume. If no log file was specified, the client will create a logfile called \texttt{mount.xtreemfs.log} in the current working direcory. This logile is only created in case of an error message. In case no useful error message printed on the console or in the logfile, it may help to enable client-side log output. This can be done as follows:
+Different kinds of problems may occur when trying to create, mount or access files in a volume. If no log file was specified, the client will create a logfile called \texttt{mount.xtreemfs.log} in the current working direcory. This logile is only created in case of an error message. In case no useful error message is printed on the console or in the logfile, it may help to enable client-side log output. This can be done as follows:
 
 \begin{verbatim}
 $> mount.xtreemfs -f -d INFO remote.dir.machine/myVolume /xtreemfs
 \end{verbatim}
 
-The following list contains the most common problems and the solutions.
+The following list contains the most common problems and their solutions.
 
 \begin{tabular}{lp{10cm}}
  \textbf{Problem}  & \textbf{A volume cannot be created or mounted.} \\
@@ -1334,8 +1334,8 @@ The following list contains the most common problems and the solutions.
  \textbf{Problem} & \textbf{When trying to mount a volume, \texttt{ONC-RPC exception: system error} appears on the console.}\\
  \textbf{Solution} & The most common reason are incompatible protocol versions in client and server. Please make sure that client and server have the same release version numbers. They can be determined as follows:
    \begin{itemize}
-    \item[Server:] check the status pages. Alternatively, execute \texttt{rpm -qa | grep xtreemfs-server} on RPM-based distributions, or \texttt{dpkg -l | grep xtreemfs-server} on DEB-based distributions.
-    \item[Client:] execute \texttt{rpm -qa | grep xtreemfs-client} on RPM-based distributions, or \texttt{dpkg -l | grep xtreemfs-client} on DEB-based distributions.
+    \item[Server:] check the status pages. Alternatively, execute \texttt{rpm -q xtreemfs-server} on RPM-based distributions, or \texttt{dpkg -l | grep xtreemfs-server} on DEB-based distributions.
+    \item[Client:] execute \texttt{rpm -q xtreemfs-client} on RPM-based distributions, or \texttt{dpkg -l | grep xtreemfs-client} on DEB-based distributions.
    \end{itemize}
 \end{tabular}
 
@@ -1505,7 +1505,7 @@ interactive mode. For further information see \texttt{man xtfs\_cleanup}.
 
 The service's status field is shown in the service status page as \texttt{static.status}. The status can be 0 (online), 1 (marked for removal) and 2 (dead/removed). Status 0 (online) is the regular status for all services, even if they are temporarily offline. Status 2 (dead/removed) marks an OSD as permanently failed and the scrubber will removed replicas and files from these OSDs. Status 1 (marked for removal) is for future use.
 
-The status can be set with the \texttt{xtfs_chstatus} tool:
+The status can be set with the \texttt{xtfs\_chstatus} tool:
 
 \begin{verbatim}
 $> xtfs_chstatus -dir oncrpc://localhost:32638 \
@@ -1604,7 +1604,7 @@ Once a file has been marked as read-only, replicas can be added. The tool suppor
 
 Newly created replicas are initially empty, which means that no file content has been copied from other non-empty replicas. Yet, they can be immediately used by applications. If a replica does not have the requested data, it fetches the data from a remote replica and saves it locally for future requests (on-demand replication). Such partial replicas help to save network bandwidth and disk usage. Alternatively, replicas can be triggered to fetch the whole data from remote replicas in the background, regardless of client requests (background replication).
 
-Moreover, XtreemFS supports different transfer strategies which has an big impact on the speed of the replication and the order in which objects are fetched. A transfer strategy must be chosen for each replica.
+Moreover, XtreemFS supports different transfer strategies which has a big impact on the speed of the replication and the order in which objects are fetched. A transfer strategy must be chosen for each replica.
 
 A replica can e.g.\ created as follows:
 
