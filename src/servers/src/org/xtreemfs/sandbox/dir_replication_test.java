@@ -88,7 +88,6 @@ public class dir_replication_test {
     private static List<DIRClient> participants = 
         new LinkedList<DIRClient>();
     
-    // XXX
     private static long time = 0;
     private static Map<String,Integer> t = new HashMap<String, Integer>();
     private static int viewID = 1;
@@ -109,9 +108,9 @@ public class dir_replication_test {
      * @throws Exception 
      */
     public static void main(String[] args) throws Exception {
-        System.out.println("LONGRUNTEST OF THE DIR master-slave replication");
-        
         Logging.start(Logging.LEVEL_INFO);
+    
+        Logging.logMessage(Logging.LEVEL_INFO,null,"LONGRUNTEST OF THE DIR master-slave replication");        
         try {
             TimeSync.initializeLocal(60000, 50);
         } catch (Exception ex) {
@@ -145,21 +144,21 @@ public class dir_replication_test {
         long start = System.currentTimeMillis();
         long operationCount = 0;
         long s = start;
-        System.out.println( "Test started [00:00:00]");
+        Logging.logMessage(Logging.LEVEL_INFO,masterClient, "Test started [00:00:00]");
         while (true) {
             try {
                 // perform a consistency check
                 long now = System.currentTimeMillis();
                 if ((start+CHECK_INTERVAL) < now) {
                     long diff = System.currentTimeMillis()-s;
-                    System.out.println( "Consistency-check " + getTimeStamp(diff));
-                    System.out.println("Throughput: "+((double) (operationCount/
+                    Logging.logMessage(Logging.LEVEL_INFO,masterClient, "Consistency-check " + getTimeStamp(diff) + "\n"+
+                            "Throughput: "+((double) (operationCount/
                             (CHECK_INTERVAL/1000)))+" operations/second");
                     operationCount = 0;
                                                             
                     performConsistencyCheck();
                     diff = System.currentTimeMillis()-s;
-                    System.out.println("Consistency-check finished: " + getTimeStamp(diff));
+                    Logging.logMessage(Logging.LEVEL_INFO,masterClient,"Consistency-check finished: " + getTimeStamp(diff));
                     start = System.currentTimeMillis();
                 // perform an operation on the DIR(s)
                 } else {
@@ -171,45 +170,45 @@ public class dir_replication_test {
                         }
                         operationCount++;
                     } catch (RedirectException e) {
-                        System.err.println("caught an unexpected redirect exception!" +
+                        Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"caught an unexpected redirect exception!" +
                         		"  ...@LSN("+viewID+":"+actSeq+"): "+
                         		e.getMessage());
                     } catch (IOException e) {
-                        System.err.println("request failed: "+e.getMessage());
-                        if (e.getMessage().equals("request timed out")) {
-                            System.err.println("Operation ("+kind+") on UUID: "+uuid+" timed out.");
+                        Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"request failed: "+e.getMessage());
+                        if ("request timed out".equals(e.getMessage())) {
+                            Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"Operation ("+kind+") on UUID: "+uuid+" timed out.");
                             for (DIRClient c : participants) {
                                 switch (kind) {
                                 case 0 : 
                                     try {
                                         performAddressMappingLookup(uuid, c);
-                                        System.err.println("But succeeded on "+c.getDefaultServerAddress());
+                                        Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"But succeeded on "+c.getDefaultServerAddress());
                                     } catch (Exception e1) { 
-                                        System.err.println("And failed on "+c.getDefaultServerAddress());
+                                        Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"And failed on "+c.getDefaultServerAddress());
                                     }
                                     break;
                                 case 1 : 
                                     try {
                                         performServiceLookup(uuid, c);
-                                        System.err.println("But succeeded on "+c.getDefaultServerAddress());
+                                        Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"But succeeded on "+c.getDefaultServerAddress());
                                     } catch (Exception e1) {
-                                        System.err.println("And failed on "+c.getDefaultServerAddress());
+                                        Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"And failed on "+c.getDefaultServerAddress());
                                     }
                                     break;
                                 case 2 : 
                                     try {
                                         performAddressMappingLookup(uuid, c);
-                                        System.err.println("And failed on "+c.getDefaultServerAddress());
+                                        Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"And failed on "+c.getDefaultServerAddress());
                                     } catch (Exception e1) { 
-                                        System.err.println("But succeeded on "+c.getDefaultServerAddress());
+                                        Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"But succeeded on "+c.getDefaultServerAddress());
                                     }
                                     break;
                                 case 3 : 
                                     try {
                                         performServiceLookup(uuid, c);
-                                        System.err.println("And failed on "+c.getDefaultServerAddress());
+                                        Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"And failed on "+c.getDefaultServerAddress());
                                     } catch (Exception e1) { 
-                                        System.err.println("But succeeded on "+c.getDefaultServerAddress());
+                                        Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"But succeeded on "+c.getDefaultServerAddress());
                                     }
                                     break;
                                 default : assert(false);
@@ -219,7 +218,7 @@ public class dir_replication_test {
                     }
                 }
             } catch (FailureException e) {
-                System.err.println(getTimeStamp(System.currentTimeMillis()-s)+
+                Logging.logMessage(Logging.LEVEL_ERROR,masterClient,getTimeStamp(System.currentTimeMillis()-s)+
                         " An insert ("+e.kind+"/"+t.get(e.getMessage())+
                         "/LSN("+(viewID-1)+":"+(t.get(e.getMessage())-(time-lastSeq))+
                         ")) was lost @"+time+": "+e.getMessage());
@@ -227,8 +226,8 @@ public class dir_replication_test {
                 String data = (e.kind == 0 || e.kind == 4) ? 
                     availableAddressMappings.get(e.getMessage()).toString() : 
                     availableServices.get(e.getMessage()).toString();
-                System.err.println("Data: "+data);
-                System.err.println("retrying ... ");
+                Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"Data: "+data);
+                Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"retrying ... ");
                 uuid = e.getMessage();
                 try {
                     switch (e.kind) {
@@ -245,16 +244,16 @@ public class dir_replication_test {
                             performServiceDelete(true);
                             break;
                         case 4:
-                            System.err.println("... failed (addressMappingLookup)");
+                            Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"... failed (addressMappingLookup)");
                             break;
                         case 5:
-                            System.err.println("... failed (serviceLookup)");
+                            Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"... failed (serviceLookup)");
                             break;
                         default: assert(false);
                     }
-                    System.err.println("Successful");
+                    Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"Successful");
                 } catch (Exception e2) {
-                    System.err.println("Failed");
+                    Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"Failed");
                 }
             }
         }
@@ -264,9 +263,8 @@ public class dir_replication_test {
      * <p>
      * Checks the data on synchronous slave-DIRs.
      * </p>
-     * @throws Exception 
      */
-    private static void performConsistencyCheck() throws Exception {
+    private static void performConsistencyCheck() {
         for (DIRClient participant : participants) {
             performConsistencyCheck(participant);
         }
@@ -286,12 +284,11 @@ public class dir_replication_test {
             for (String uuid : availableServices.keySet()) {
                 performServiceLookup(uuid, client);
             }
-            System.out.println("Participant '"+client.getDefaultServerAddress()+
+            Logging.logMessage(Logging.LEVEL_INFO,masterClient,"Participant '"+client.getDefaultServerAddress()+
                     "' is up-to-date and consistent.");
         } catch (Exception e) {
-            System.out.println("Participant '"+client.getDefaultServerAddress()+
-            "' is NOT up-to-date or inconsistent, because: " +
-            e.getMessage());
+            Logging.logMessage(Logging.LEVEL_INFO,masterClient,"Participant '"+client.getDefaultServerAddress()+
+            "' is NOT up-to-date or inconsistent, because: " + e.getMessage());
         }
     }
 
@@ -362,14 +359,14 @@ public class dir_replication_test {
             AddressMappingSet result = rp.get();
         
             if (result.size() == 0){
-                System.err.println("AddressMappingLookup: result.size() == 0" +
+                Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"AddressMappingLookup: result.size() == 0" +
                 		" on client: "+c.getDefaultServerAddress());
                 throw new FailureException(uuid,4);
             }
             if (result.size() > 1) throw new Exception ("UUID not unique!");
             
             if (!equals(availableAddressMappings.get(uuid), result.get(0))) {
-                System.err.println("Not the same Services! expected: "+
+                Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"Not the same Services! expected: "+
                         availableAddressMappings.get(uuid)+" received: "+result.get(0));
                 throw new FailureException(uuid,4);
             }
@@ -393,14 +390,14 @@ public class dir_replication_test {
             ServiceSet result = rp.get();
         
             if (result.size() == 0) {
-                System.out.println("ServiceGet: result.size() == 0" +
+                Logging.logMessage(Logging.LEVEL_INFO,masterClient,"ServiceGet: result.size() == 0" +
                 		" on client: "+c.getDefaultServerAddress());
                 throw new FailureException(uuid,5);
             }
             if (result.size() > 1) throw new Exception ("UUID not unique!");
             
             if (!equals(availableServices.get(uuid), result.get(0))) {
-                System.err.println("Not the same Services! expected: "+
+                Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"Not the same Services! expected: "+
                         availableServices.get(uuid)+" received: "+result.get(0));
                 throw new FailureException(uuid,5);
             }
@@ -443,7 +440,7 @@ public class dir_replication_test {
             rp = masterClient.xtreemfs_address_mappings_set(null, load);
             long result = rp.get();
             if(result != 1) {
-                System.err.println("AddressMappingSet: result != 1, result == "+result);
+                Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"AddressMappingSet: result != 1, result == "+result);
                 throw new FailureException("A previous entry was modified unexpectedly.", kind); 
             }
         } finally {
@@ -486,7 +483,7 @@ public class dir_replication_test {
             rp = masterClient.xtreemfs_service_register(null, service);
             long result = rp.get();
             if(result != 1) {
-                System.err.println("ServiceRegister: result != 1, result == "+result);
+                Logging.logMessage(Logging.LEVEL_ERROR,masterClient,"ServiceRegister: result != 1, result == "+result);
                 throw new FailureException("A previous entry was modified unexpectedly.("+result+")", kind); 
             }
         } finally {
@@ -689,7 +686,7 @@ public class dir_replication_test {
      * @param message
      */
     private static void error(String message) {
-        System.err.println(message);
+        Logging.logMessage(Logging.LEVEL_ERROR,masterClient,message);
         usage();
     }
        
@@ -697,8 +694,10 @@ public class dir_replication_test {
      *  Prints out usage informations and terminates the application.
      */
     public static void usage(){
-        System.out.println("dir_replication_test <participant_address:port>,<participant_address:port>[,<participant_address:port>]");
-        System.out.println("  "+"<participant_address:port> participants of the replication separated by ','");
+        Logging.logMessage(Logging.LEVEL_INFO,masterClient,
+                "dir_replication_test <participant_address:port>,<participant_address:port>[,<participant_address:port>]");
+        Logging.logMessage(Logging.LEVEL_INFO,masterClient,
+                "  "+"<participant_address:port> participants of the replication separated by ','");
         System.exit(1);
     }
     

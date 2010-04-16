@@ -109,10 +109,10 @@ public abstract class DIROperation {
                   )
             ) {
             
-            InetSocketAddress altMaster = dbsReplicationManager.getMaster();
+            InetAddress altMaster = dbsReplicationManager.getMaster();
             if (altMaster != null) {
                 // retrieve the correct port for the DIR mirror
-                String host = altMaster.getAddress().getHostAddress();
+                String host = altMaster.getHostAddress();
                 Integer port = this.master.getConfig().getMirrors().get(host);
                 if (port == null){ 
                     Logging.logMessage(Logging.LEVEL_ERROR, this,  "The port for " +
