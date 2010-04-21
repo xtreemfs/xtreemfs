@@ -87,7 +87,7 @@ public class Replica {
     public InetSocketAddress getOSDAddress(int osdNum) {
         int colon = osdAddresses[osdNum].indexOf(":");
         String hostname = osdAddresses[osdNum].substring(0,colon);
-        String portStr = osdAddresses[osdNum].substring(colon);
+        String portStr = osdAddresses[osdNum].substring(colon+1);
         int port = Integer.valueOf(portStr);
 
         return new InetSocketAddress(hostname,port);

@@ -28,9 +28,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.StringSet;
@@ -132,11 +134,34 @@ public class File {
      * @throws IOException
      */
     public long length() throws IOException {
-        Stat stat = volume.stat(path);
-        if (stat != null)
-            return stat.getSize();
-        else
-            return 0L;
+
+        // if the volume is a snapshot, perform a size glimpse at the OSD
+        if (volume.isSnapshot()) {
+            
+            RPCResponse<Long> fs = null;
+            try {
+                RandomAccessFile file = volume.openFile(this, Constants.SYSTEM_V_FCNTL_H_O_RDONLY, 0);
+                fs = volume.osdClient.internal_get_file_size(getReplica(0).getOSDAddress(0),
+                    file.getFileId(), file.getCredentials());
+                return fs.get();
+            } catch (Exception exc) {
+                exc.printStackTrace();
+                return 0;
+            } finally {
+                if (fs != null)
+                    fs.freeBuffers();
+            }
+            
+        }
+
+        // otherwise, fetch the file size from the MRC
+        else {
+            Stat stat = volume.stat(path);
+            if (stat != null) {
+                return stat.getSize();
+            } else
+                return 0L;
+        }
     }
 
     public void mkdir(int permissions) throws IOException {

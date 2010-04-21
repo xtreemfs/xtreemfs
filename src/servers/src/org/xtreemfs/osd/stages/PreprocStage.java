@@ -38,6 +38,7 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.util.OutputUtils;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Lock;
 import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
@@ -48,12 +49,12 @@ import org.xtreemfs.foundation.oncrpc.utils.ONCRPCRequestHeader;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCResponseHeader;
 import org.xtreemfs.osd.AdvisoryLock;
 import org.xtreemfs.osd.ErrorCodes;
-import org.xtreemfs.osd.LocationsCache;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.OpenFileTable;
 import org.xtreemfs.osd.OpenFileTable.OpenFileTableEntry;
 import org.xtreemfs.osd.operations.EventCloseFile;
+import org.xtreemfs.osd.operations.EventCreateFileVersion;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.MetadataCache;
@@ -161,18 +162,27 @@ public class PreprocStage extends Stage {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "STAGEOP OPEN");
             
+            // check if snasphots are enabled and a write operation is executed;
+            // this is required to create new snapshots when files open for
+            // writing are closed, even if the same files are still open for
+            // reading
+            boolean write = request.getCapability() != null && request.getCapability().getSnapConfig() != SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
+                && ((Constants.SYSTEM_V_FCNTL_H_O_RDWR | Constants.SYSTEM_V_FCNTL_H_O_TRUNC | Constants.SYSTEM_V_FCNTL_H_O_WRONLY) & request
+                        .getCapability().getAccessMode()) > 0;
+            
             CowPolicy cowPolicy;
             if (oft.contains(fileId)) {
-                cowPolicy = oft.refresh(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION);
+                cowPolicy = oft.refresh(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, write);
             } else {
                 
                 // find out which COW mode to use, depending on the capability
-                if (request.getCapability() == null || request.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_SNAPS_DISABLED)
+                if (request.getCapability() == null
+                    || request.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_SNAPS_DISABLED)
                     cowPolicy = CowPolicy.PolicyNoCow;
                 else
                     cowPolicy = new CowPolicy(cowMode.COW_ONCE);
                 
-                oft.openFile(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, cowPolicy);
+                oft.openFile(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, cowPolicy, write);
                 request.setFileOpen(true);
             }
             request.setCowPolicy(cowPolicy);
@@ -188,7 +198,8 @@ public class PreprocStage extends Stage {
 
         final String fileId = (String) m.getArgs()[0];
 
-        oft.refresh(fileId,TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION);
+        // TODO: check if the file was opened for writing
+        oft.refresh(fileId,TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, false);
 
     }
     
@@ -354,8 +365,10 @@ public class PreprocStage extends Stage {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "OpenFileTable clean");
             
+            long currentTime = TimeSync.getLocalSystemTime();
+            
             // do OFT clean
-            List<OpenFileTable.OpenFileTableEntry> closedFiles = oft.clean(TimeSync.getLocalSystemTime());
+            List<OpenFileTable.OpenFileTableEntry> closedFiles = oft.clean(currentTime);
             // Logging.logMessage(Logging.LEVEL_DEBUG,this,"closing
             // "+closedFiles.size()+" files");
             for (OpenFileTable.OpenFileTableEntry entry : closedFiles) {
@@ -372,6 +385,17 @@ public class PreprocStage extends Stage {
                 closeEvent.startInternalEvent(new Object[] { entry.getFileId(), entry.isDeleteOnClose(),
                     metadataCache.getFileInfo(entry.getFileId()), entry.getCowPolicy(), cachedCaps });
             }
+            
+            // check if written files need to be closed; if no files were closed
+            // completely, generate close events w/o discarding the open state
+            List<OpenFileTable.OpenFileTableEntry> closedWrittenFiles = oft.cleanWritten(currentTime);
+            if (closedFiles.size() == 0) {
+                for (OpenFileTable.OpenFileTableEntry entry : closedWrittenFiles) {
+                    OSDOperation createVersionEvent = master.getInternalEvent(EventCreateFileVersion.class);
+                    createVersionEvent.startInternalEvent(new Object[]{entry.getFileId(), metadataCache.getFileInfo(entry.getFileId())});
+                }
+            }
+            
             timeToNextOFTclean = OFT_CLEAN_INTERVAL;
         }
         lastOFTcheck = TimeSync.getLocalSystemTime();

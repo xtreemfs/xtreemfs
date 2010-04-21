@@ -39,14 +39,15 @@ import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.OSDWriteResponse;
-import org.xtreemfs.interfaces.OSDInterface.OSDException;
-import org.xtreemfs.interfaces.OSDInterface.xtreemfs_broadcast_gmaxRequest;
 import org.xtreemfs.interfaces.ObjectVersion;
 import org.xtreemfs.interfaces.ObjectVersionList;
 import org.xtreemfs.interfaces.ReplicaStatus;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_broadcast_gmaxRequest;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.ObjectSet;
@@ -83,11 +84,11 @@ public class StorageThread extends Stage {
     public static final int      STAGEOP_GET_OBJECT_SET        = 8;
     
     public static final int      STAGEOP_INSERT_PADDING_OBJECT = 9;
-
+    
     public static final int      STAGEOP_GET_MAX_OBJNO         = 10;
     
     public static final int      STAGEOP_CREATE_FILE_VERSION   = 11;
-
+    
     public static final int      STAGEOP_GET_REPLICA_STATE     = 12;
     
     private MetadataCache        cache;
@@ -157,27 +158,27 @@ public class StorageThread extends Stage {
             Logging.logError(Logging.LEVEL_ERROR, this, th);
         }
     }
-
+    
     private void processGetMaxObjNo(StageRequest rq) {
         final InternalGetMaxObjectNoCallback cback = (InternalGetMaxObjectNoCallback) rq.getCallback();
         try {
             final String fileId = (String) rq.getArgs()[0];
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
-
+            
             long currentMax = -1l;
-
+            
             for (int i = 0; i < fi.getLastObjectNumber(); i++) {
                 final long objVer = fi.getLargestObjectVersion(i);
                 if (objVer > currentMax)
                     currentMax = objVer;
             }
-
+            
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                    "getmaxobjno for fileId %s: %d", fileId, currentMax);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "getmaxobjno for fileId %s: %d",
+                    fileId, currentMax);
             }
-
+            
             cback.maxObjectNoCompleted(currentMax, fi.getFilesize(), fi.getTruncateEpoch(), null);
         } catch (Exception ex) {
             cback.maxObjectNoCompleted(0l, 0l, 0l, ex);
@@ -289,32 +290,32 @@ public class StorageThread extends Stage {
         }
         
     }
-
-
+    
     private void processGetReplicaState(StageRequest rq) {
         final InternalGetReplicaStateCallback cback = (InternalGetReplicaStateCallback) rq.getCallback();
         try {
             final String fileId = (String) rq.getArgs()[0];
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
             final long remoteMaxObjVer = (Long) rq.getArgs()[2];
-
+            
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
             // stripeSize);
-
+            
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "GET replica state: %s, remote max: %d", fileId, remoteMaxObjVer);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                    "GET replica state: %s, remote max: %d", fileId, remoteMaxObjVer);
             }
-
+            
             ReplicaStatus result = new ReplicaStatus();
-
+            
             result.setFile_size(fi.getFilesize());
             result.setTruncate_epoch(fi.getTruncateEpoch());
-
+            
             ObjectVersionList ovl = new ObjectVersionList();
-
+            
             long localMaxObjVer = 0;
-            for (Entry<Long,Long> e : fi.getLatestObjectVersions()) {
+            for (Entry<Long, Long> e : fi.getLatestObjectVersions()) {
                 if (e.getValue() > remoteMaxObjVer) {
                     ovl.add(new ObjectVersion(e.getKey(), e.getValue()));
                     if (e.getValue() > localMaxObjVer)
@@ -323,12 +324,12 @@ public class StorageThread extends Stage {
             }
             result.setObjectVersions(ovl);
             result.setMax_obj_version(localMaxObjVer);
-
+            
             cback.getReplicaStateComplete(result, null);
         } catch (IOException ex) {
             cback.getReplicaStateComplete(null, ex);
         }
-
+        
     }
     
     /**
@@ -396,12 +397,21 @@ public class StorageThread extends Stage {
         try {
             final String fileId = (String) rq.getArgs()[0];
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
+            final long snapTimestamp = (Long) rq.getArgs()[2];
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
             // stripeSize);
             
-            cback.getFileSizeComplete(fi.getFilesize(), null);
+            // in case of a previous file version, determine
+            // file size from the version table / data on disk
+            if (snapTimestamp > 0) {
+                Version v = fi.getVersionTable().getLatestVersionBefore(snapTimestamp);
+                cback.getFileSizeComplete(v.getFileSize(), null);
+            }
+
+            else
+                cback.getFileSizeComplete(fi.getFilesize(), null);
         } catch (IOException ex) {
             cback.getFileSizeComplete(-1, ex);
         }
@@ -485,8 +495,8 @@ public class StorageThread extends Stage {
             
             layout.writeObject(fileId, fi, data, objNo, offset, newVersion, syncWrite, isCow);
             
-            // update the "latest versions" file
-            if (cow.cowEnabled())
+            // if a new version was created, update the "latest versions" file
+            if (isCow || largestV == 0)
                 layout.updateCurrentObjVersion(fileId, objNo, newVersion);
             
             if (isCow)
@@ -578,9 +588,13 @@ public class StorageThread extends Stage {
             
             if (fi.getTruncateEpoch() >= epochNumber) {
                 cback.truncateComplete(new OSDWriteResponse(), null);
-                /*cback.truncateComplete(null, new OSDException(ErrorCodes.EPOCH_OUTDATED,
-                    "invalid truncate epoch for file " + fileId + ": " + epochNumber + ", current one is "
-                        + fi.getTruncateEpoch(), ""));*/
+                /*
+                 * cback.truncateComplete(null, new
+                 * OSDException(ErrorCodes.EPOCH_OUTDATED,
+                 * "invalid truncate epoch for file " + fileId + ": " +
+                 * epochNumber + ", current one is " + fi.getTruncateEpoch(),
+                 * ""));
+                 */
                 return;
             }
             
@@ -683,7 +697,7 @@ public class StorageThread extends Stage {
         
         try {
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
-            ObjectSet objectSet = layout.getObjectSet(fileId,fi);
+            ObjectSet objectSet = layout.getObjectSet(fileId, fi);
             cback.getObjectSetComplete(objectSet, null);
         } catch (Exception ex) {
             cback.getObjectSetComplete(null, ex);
@@ -730,7 +744,8 @@ public class StorageThread extends Stage {
             try {
                 fi.getVersionTable().save();
             } catch (IOException e) {
-                Logging.logError(Logging.LEVEL_ERROR, this, e);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, OutputUtils
+                        .stackTraceToString(e));
             }
             
         } catch (Exception e) {
@@ -855,15 +870,16 @@ public class StorageThread extends Stage {
             // extend the old last object to full object size
             if ((oldLastObject > -1) && (sp.isLocalObject(oldLastObject, relOsdId))) {
                 truncateObject(fileId, oldLastObject, sp, sp.getStripeSizeForObject(oldLastObject), relOsdId,
-                    cow,newObjVer);
+                    cow, newObjVer);
             }
             
             // if the new last object is a local object, create a padding
             // object to ensure that it exists
             if (sp.isLocalObject(newLastObject, relOsdId)) {
                 
-                long version = newObjVer != null ? newObjVer : (cow.isCOW((int) newLastObject) ? fi.getLargestObjectVersion(newLastObject) + 1
-                    : Math.max(1, fi.getLargestObjectVersion(newLastObject)));
+                long version = newObjVer != null ? newObjVer : (cow.isCOW((int) newLastObject) ? fi
+                        .getLargestObjectVersion(newLastObject) + 1 : Math.max(1, fi
+                        .getLargestObjectVersion(newLastObject)));
                 int objSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
                 
                 createPaddingObject(fileId, newLastObject, sp, version, objSize, fi);
@@ -876,10 +892,10 @@ public class StorageThread extends Stage {
                     if (v == 0) {
                         // does not exist
                         final boolean isCow = cow.isCOW((int) obj);
-                        final long newVersion = newObjVer != null ? newObjVer : (isCow ? fi.getLargestObjectVersion(obj) + 1
-                            : Math.max(1, fi.getLargestObjectVersion(obj)));
-                        createPaddingObject(fileId, obj, sp,newVersion , sp.getStripeSizeForObject(obj),
-                            fi);
+                        final long newVersion = newObjVer != null ? newObjVer : (isCow ? fi
+                                .getLargestObjectVersion(obj) + 1 : Math.max(1, fi
+                                .getLargestObjectVersion(obj)));
+                        createPaddingObject(fileId, obj, sp, newVersion, sp.getStripeSizeForObject(obj), fi);
                     }
                 }
             }
@@ -902,8 +918,8 @@ public class StorageThread extends Stage {
         
         final FileMetadata fi = layout.getFileMetadata(sp, fileId);
         final boolean isCow = cow.isCOW((int) objNo);
-        final long newVersion = newObjVer != null ? newObjVer : (isCow ? fi.getLargestObjectVersion(objNo) + 1 : Math.max(1, fi
-                .getLatestObjectVersion(objNo)));
+        final long newVersion = newObjVer != null ? newObjVer
+            : (isCow ? fi.getLargestObjectVersion(objNo) + 1 : Math.max(1, fi.getLatestObjectVersion(objNo)));
         
         layout.truncateObject(fileId, fi, objNo, newSize, newVersion, isCow);
         

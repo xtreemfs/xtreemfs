@@ -74,9 +74,9 @@ public class StorageStage extends Stage {
         public void readComplete(ObjectInformation result, Exception error);
     }
     
-    public void getFilesize(String fileId, StripingPolicyImpl sp, OSDRequest request,
+    public void getFilesize(String fileId, StripingPolicyImpl sp, long versionTimestamp, OSDRequest request,
         GetFileSizeCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_FILE_SIZE, new Object[] { fileId, sp },
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_FILE_SIZE, new Object[] { fileId, sp, versionTimestamp },
             request, listener);
     }
     

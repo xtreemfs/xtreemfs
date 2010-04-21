@@ -93,6 +93,7 @@ import org.xtreemfs.osd.operations.CleanupStartOperation;
 import org.xtreemfs.osd.operations.CleanupStopOperation;
 import org.xtreemfs.osd.operations.DeleteOperation;
 import org.xtreemfs.osd.operations.EventCloseFile;
+import org.xtreemfs.osd.operations.EventCreateFileVersion;
 import org.xtreemfs.osd.operations.EventGetFileSize;
 import org.xtreemfs.osd.operations.EventInsertPaddingObject;
 import org.xtreemfs.osd.operations.EventTruncate;
@@ -808,6 +809,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         op = new EventCloseFile(this);
         internalEvents.put(EventCloseFile.class, op);
+        
+        op = new EventCreateFileVersion(this);
+        internalEvents.put(EventCreateFileVersion.class, op);
         
         op = new EventWriteObject(this);
         internalEvents.put(EventWriteObject.class, op);

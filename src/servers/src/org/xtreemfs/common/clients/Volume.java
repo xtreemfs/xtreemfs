@@ -70,7 +70,7 @@ public class Volume {
 
     private final UserCredentials userCreds;
 
-    private final OSDClient osdClient;
+    protected final OSDClient osdClient;
 
     private final OpenFileList ofl;
 
@@ -228,6 +228,10 @@ public class Volume {
             return false;
         return numRepl.equals("1");
     }
+    
+    public boolean isSnapshot() {
+        return volumeName.indexOf('@') != -1;
+    }
 
     public int getDefaultReplicationFactor() throws IOException {
         String numRepl = getxattr(fixPath(volumeName),"xtreemfs.repl_factor");
@@ -275,6 +279,39 @@ public class Volume {
         } finally {
             if (response != null)
                 response.freeBuffers();
+        }
+    }
+    
+    public void enableSnapshots(boolean enable) throws IOException {
+        RPCResponse r = null;
+        try {
+            r = mrcClient.setxattr(mrcClient.getDefaultServerAddress(), userCreds,
+                volumeName.replace("/", ""), "", "xtreemfs.snapshots_enabled", enable + "", 0);
+            r.get();
+        } catch (ONCRPCException ex) {
+            throw wrapException(ex);
+        } catch (InterruptedException ex) {
+            throw wrapException(ex);
+        } finally {
+            if (r != null)
+                r.freeBuffers();
+        }
+    }
+    
+    public void snapshot(String name, boolean recursive) throws IOException {
+        RPCResponse r = null;
+        try {
+            r = mrcClient
+                    .setxattr(mrcClient.getDefaultServerAddress(), userCreds, volumeName.replace("/", ""),
+                        "", "xtreemfs.snapshots", "c" + (recursive ? "r" : "") + " " + name, 0);
+            r.get();
+        } catch (ONCRPCException ex) {
+            throw wrapException(ex);
+        } catch (InterruptedException ex) {
+            throw wrapException(ex);
+        } finally {
+            if (r != null)
+                r.freeBuffers();
         }
     }
 

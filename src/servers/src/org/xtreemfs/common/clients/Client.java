@@ -85,10 +85,16 @@ public class Client {
     public Volume getVolume(String volumeName, UserCredentials credentials) throws IOException {
         RPCResponse<ServiceSet> r = null;
         try {
-            r = dirClient.xtreemfs_service_get_by_name(null, volumeName);
+            
+            String lookupVolumeName = volumeName;
+            int snapNameIndex = volumeName.indexOf('@');
+            if(snapNameIndex != -1)
+                lookupVolumeName = volumeName.substring(0, snapNameIndex);
+                
+            r = dirClient.xtreemfs_service_get_by_name(null, lookupVolumeName);
             final ServiceSet s = r.get();
             if (s.size() == 0) {
-                throw new IOException("volume '"+volumeName+"' does not exist");
+                throw new IOException("volume '"+lookupVolumeName+"' does not exist");
             }
             final Service vol = s.get(0);
             final String mrcUUIDstr = vol.getData().get("mrc");
@@ -137,6 +143,42 @@ public class Client {
 
             MRCClient m = new MRCClient(mdClient, mrcUUID.getAddress());
             r2 = m.mkvol(null, credentials, volumeName, sp, accessCtrlPolicy, permissions);
+            r2.get();
+
+        } catch (ONCRPCException ex) {
+            throw new IOException("communication failure", ex);
+        } catch (InterruptedException ex) {
+            throw new IOException("operation was interrupted", ex);
+        } finally {
+            if (r != null)
+                r.freeBuffers();
+            if (r2 != null)
+                r2.freeBuffers();
+        }
+    }
+    
+    public void deleteVolume(String volumeName, UserCredentials credentials) throws IOException {
+        RPCResponse<ServiceSet> r = null;
+        RPCResponse r2 = null;
+        try {
+            r = dirClient.xtreemfs_service_get_by_name(null, volumeName);
+            final ServiceSet s = r.get();
+            if (s.size() == 0) {
+                throw new IOException("volume '"+volumeName+"' does not exist");
+            }
+            final Service vol = s.get(0);
+            final String mrcUUIDstr = vol.getData().get("mrc");
+            final ServiceUUID mrc = new ServiceUUID(mrcUUIDstr, uuidRes);
+
+            UserCredentials uc = credentials;
+            if (uc == null) {
+                StringSet grps = new StringSet();
+                grps.add("test");
+                uc = new UserCredentials("test", grps, "");
+            }
+            
+            MRCClient m = new MRCClient(mdClient, mrc.getAddress());
+            r2 = m.rmvol(null, credentials, volumeName);
             r2.get();
 
         } catch (ONCRPCException ex) {

@@ -265,6 +265,7 @@ public class VersionManagementTest extends TestCase {
         r.get();
         r.freeBuffers();
         
+        System.out.println("\n########## waiting " + timeoutSpan / 1000 + "s ##########\n");
         Thread.sleep(timeoutSpan);
         
         objdata = new ObjectData(0, false, 0, SetupUtils.generateData(OBJ_SIZE, (byte) 'w'));

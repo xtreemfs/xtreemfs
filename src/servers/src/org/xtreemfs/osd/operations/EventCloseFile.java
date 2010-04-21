@@ -124,16 +124,17 @@ public class EventCloseFile extends OSDOperation {
         // first, check if there are any write capabilities among the cached
         // capabilities
         boolean writeCap = false;
-        for (Capability cap : cachedCaps.values()) {
-            int accessMode = cap.getAccessMode();
-            if ((accessMode & Constants.SYSTEM_V_FCNTL_H_O_RDWR) != 0
-                || (accessMode & Constants.SYSTEM_V_FCNTL_H_O_TRUNC) != 0
-                || (accessMode & Constants.SYSTEM_V_FCNTL_H_O_WRONLY) != 0
-                || (accessMode & Constants.SYSTEM_V_FCNTL_H_O_APPEND) != 0) {
-                writeCap = true;
-                break;
+        if (cachedCaps != null)
+            for (Capability cap : cachedCaps.values()) {
+                int accessMode = cap.getAccessMode();
+                if ((accessMode & Constants.SYSTEM_V_FCNTL_H_O_RDWR) != 0
+                    || (accessMode & Constants.SYSTEM_V_FCNTL_H_O_TRUNC) != 0
+                    || (accessMode & Constants.SYSTEM_V_FCNTL_H_O_WRONLY) != 0
+                    || (accessMode & Constants.SYSTEM_V_FCNTL_H_O_APPEND) != 0) {
+                    writeCap = true;
+                    break;
+                }
             }
-        }
         
         // if there are no write capabilities, there is no need to create a new
         // version

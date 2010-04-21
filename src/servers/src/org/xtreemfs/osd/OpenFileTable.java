@@ -52,10 +52,13 @@ public final class OpenFileTable {
     
     private PriorityQueue<OpenFileTableEntry>   expTimes;
     
+    private PriorityQueue<OpenFileTableEntry>   expTimesWrite;
+    
     // constructor
     public OpenFileTable() {
         openFiles = new HashMap<String, OpenFileTableEntry>();
         expTimes = new PriorityQueue<OpenFileTableEntry>();
+        expTimesWrite = new PriorityQueue<OpenFileTableEntry>();
     }
     
     /**
@@ -66,7 +69,7 @@ public final class OpenFileTable {
      * @param expTime
      *            expiration time
      */
-    public CowPolicy refresh(String fId, long expTime) {
+    public CowPolicy refresh(String fId, long expTime, boolean write) {
         OpenFileTableEntry currEntry = openFiles.get(fId);
         
         if (currEntry != null) {
@@ -77,11 +80,19 @@ public final class OpenFileTable {
             // 'currEntry' isn't a new entry, so update it
             // if its expiration time is renewed
             if (expTime > currEntry.expTime) {
+                
                 // openFiles.remove(fId);
                 expTimes.remove(currEntry);
+                
+                if(write)
+                    expTimesWrite.remove(currEntry);
+
                 currEntry.setExpirationTime(expTime);
                 openFiles.put(fId, currEntry);
                 expTimes.add(currEntry);
+
+                if(write)
+                    expTimesWrite.add(currEntry);
             }
             return currEntry.getCowPolicy();
         } else {
@@ -106,7 +117,7 @@ public final class OpenFileTable {
      * @param expTime
      *            expiration time
      */
-    public void openFile(String fId, long expTime, CowPolicy policy) {
+    public void openFile(String fId, long expTime, CowPolicy policy, boolean write) {
         assert (openFiles.containsKey(fId) == false);
         
         if (Logging.isDebug())
@@ -114,8 +125,11 @@ public final class OpenFileTable {
         // 'currEntry' is a new entry, so
         // insert it in the table
         OpenFileTableEntry newEntry = new OpenFileTableEntry(fId, expTime, policy);
+        OpenFileTableEntry newWriteEntry = new OpenFileTableEntry(fId, expTime, policy);
         openFiles.put(fId, newEntry);
         expTimes.add(newEntry);
+        if(write)
+            expTimesWrite.add(newWriteEntry);
     }
     
     /**
@@ -157,6 +171,39 @@ public final class OpenFileTable {
             }
         }
         return closedFiles;
+    }
+    
+    /**
+     * Deletes all entries of files that were opened for writing whose
+     * expiration time is strictly less than 'toTime'.
+     * 
+     * @param toTime
+     * @return
+     */
+    public List<OpenFileTableEntry> cleanWritten(long toTime) {
+        
+        List<OpenFileTableEntry> closedFiles = new LinkedList<OpenFileTableEntry>();
+        
+        OpenFileTableEntry dummyEntry = new OpenFileTableEntry(null, toTime);
+        
+        Iterator<OpenFileTableEntry> it = expTimesWrite.iterator();
+        
+        while (it.hasNext()) {
+            
+            OpenFileTableEntry currEntry = it.next();
+            
+            if (currEntry.compareTo(dummyEntry) < 0) {
+                String fId = currEntry.fileId;
+                openFiles.remove(fId);
+                it.remove();
+                closedFiles.add(currEntry);
+            } else {
+                break;
+            }
+        }
+        
+        return closedFiles;
+        
     }
     
     /**

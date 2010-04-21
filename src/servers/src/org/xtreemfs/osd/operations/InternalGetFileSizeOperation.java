@@ -70,7 +70,7 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
 
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
-        master.getStorageStage().getFilesize(args.getFile_id(), sp, rq, new GetFileSizeCallback() {
+        master.getStorageStage().getFilesize(args.getFile_id(), sp, rq.getCapability().getSnapTimestamp(), rq, new GetFileSizeCallback() {
 
             @Override
             public void getFileSizeComplete(long fileSize, Exception error) {

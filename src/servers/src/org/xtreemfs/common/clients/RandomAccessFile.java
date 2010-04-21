@@ -669,6 +669,10 @@ public class RandomAccessFile {
                 r.freeBuffers();
         }
     }
+    
+    protected FileCredentials getCredentials() {
+        return credentials;
+    }
 
     public void flush() throws IOException {
         fsync();

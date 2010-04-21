@@ -181,8 +181,8 @@ public class HashStorageLayout extends StorageLayout {
         
         final int stripeSize = md.getStripingPolicy().getStripeSizeForObject(objNo);
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "fetching object %s-%d from disk",
-                fileId, objNo);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                "fetching object %s-%d from disk", fileId, objNo);
         }
         
         ReusableBuffer bbuf = null;
@@ -205,16 +205,15 @@ public class HashStorageLayout extends StorageLayout {
         String fileName = generateAbsoluteObjectPathFromFileId(fileId, objNo, version, oldChecksum);
         
         if (Logging.isDebug()) {
-            Logging
-                    .logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "path to object on disk: %s",
-                        fileName);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "path to object on disk: %s",
+                fileName);
         }
         
         File file = new File(fileName);
         
         if (file.exists()) {
             
-            RandomAccessFile f = new RandomAccessFile(fileName, "r");
+            RandomAccessFile f = new RandomAccessFile(file, "r");
             
             final int flength = (int) f.length();
             
@@ -274,7 +273,8 @@ public class HashStorageLayout extends StorageLayout {
         } else {
             
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "object %d does not exist", objNo);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "object %d does not exist",
+                    objNo);
             }
             
             return new ObjectInformation(ObjectInformation.ObjectStatus.DOES_NOT_EXIST, null, stripeSize);
@@ -293,10 +293,10 @@ public class HashStorageLayout extends StorageLayout {
         
         String relPath = generateRelativeFilePath(fileId);
         new File(this.storageDir + relPath).mkdirs();
-
+        
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "writing object %s-%d to disk: %s",
-                fileId, objNo,relPath);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                "writing object %s-%d to disk: %s", fileId, objNo, relPath);
         }
         
         try {
@@ -685,7 +685,7 @@ public class HashStorageLayout extends StorageLayout {
                 if (ofd.checksum != 0) {
                     
                     Map<Long, Long> checksums = objChecksums.get(ofd.objNo);
-                    if(checksums == null) {
+                    if (checksums == null) {
                         checksums = new HashMap<Long, Long>();
                         objChecksums.put(ofd.objNo, checksums);
                     }
