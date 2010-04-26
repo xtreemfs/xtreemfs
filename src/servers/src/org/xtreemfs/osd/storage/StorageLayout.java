@@ -103,10 +103,15 @@ public abstract class StorageLayout {
                     + this.getClass().getSimpleName());
             }
         }
-        
-        FileWriter out = new FileWriter(versionMetaFile);
+
+        final File tmpFile = new File(versionMetaFile+".tmp");
+
+        FileWriter out = new FileWriter(tmpFile);
         out.write(Integer.toString(getLayoutVersionTag()));
         out.close();
+        
+        tmpFile.renameTo(versionMetaFile);
+
     }
     
     /**
