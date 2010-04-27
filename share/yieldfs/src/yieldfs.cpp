@@ -3133,7 +3133,7 @@ ssize_t TracingFile::write
   size_t buffer_len,
   uint64_t offset
 )
-{
+{ 
   ssize_t write_ret = underlying_file->write( buffer, buffer_len, offset );
   TracingVolume::trace
   (

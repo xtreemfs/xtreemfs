@@ -28,9 +28,12 @@ extern "C"
 
 struct iovec // a WSABUF on 32-bit systems
 {
-  size_t iov_len; // the WSABUF .len is actually a ULONG, which is != size_t on Win64
-                  // That means that we have to copy and truncate an iovec to a WSABUF on Win64.
-                  // That's easier (in terms of warnings, use of sizeof, etc.) than making this a uint32_t, however.
+  size_t iov_len; // the WSABUF .len is actually a ULONG, 
+                  // which is != size_t on Win64
+                  // That means that we have to copy and 
+                  // truncate an iovec to a WSABUF on Win64.
+                  // That's easier (in terms of warnings, use of sizeof, etc.)
+                  // than making this a uint32_t, however.
   void* iov_base;
 };
 
@@ -41,7 +44,13 @@ static inline void DebugBreak()
   *reinterpret_cast<int*>( 0 ) = 0xabadcafe;
 }
 
-inline void memcpy_s( void* dest, size_t dest_size, const void* src, size_t count )
+inline void memcpy_s
+( 
+  void* dest, 
+  size_t dest_size, 
+  const void* src, 
+  size_t count 
+)
 {
   memcpy( dest, src, count );
 }
@@ -137,27 +146,94 @@ namespace yidl
     };
 
 
+    // auto_Object isike auto_ptr, but using Object::decRef instead of delete; 
+    // an operator delete( void* ) on Object doesn't work, because the object 
+    // is destructed before that call
     template <class ObjectType = Object>
-    class auto_Object // Like auto_ptr, but using Object::decRef instead of delete; an operator delete( void* ) on Object doesn't work, because the object is destructed before that call
+    class auto_Object 
     {
     public:
-      auto_Object() : object( 0 ) { }
-      auto_Object( ObjectType* object ) : object( object ) { }
-      auto_Object( ObjectType& object ) : object( &object ) { }
-      auto_Object( const auto_Object<ObjectType>& other ) { object = Object::incRef( other.object ); }
-      ~auto_Object() { Object::decRef( object ); }
+      auto_Object() 
+        : object( 0 ) 
+      { }
 
-      inline ObjectType* get() const { return object; }
-      auto_Object& operator=( const auto_Object<ObjectType>& other ) { Object::decRef( this->object ); object = Object::incRef( other.object ); return *this; }
-      auto_Object& operator=( ObjectType* object ) { Object::decRef( this->object ); this->object = object; return *this; }
-      inline bool operator==( const auto_Object<ObjectType>& other ) const { return object == other.object; }
-      inline bool operator==( const ObjectType* other ) const { return object == other; }
-      inline bool operator!=( const ObjectType* other ) const { return object != other; }
-      // operator ObjectType*() const { return object; } // Creates sneaky bugs
-      inline ObjectType* operator->() const { return get(); }
-      inline ObjectType& operator*() const { return *get(); }
-      inline ObjectType* release() { ObjectType* temp_object = object; object = 0; return temp_object; }
-      inline void reset( ObjectType* object ) { Object::decRef( this->object ); this->object = object; }
+      auto_Object( ObjectType* object ) 
+        : object( object ) 
+      { }
+
+      auto_Object( ObjectType& object ) 
+        : object( &object ) 
+      { }
+
+      auto_Object( const auto_Object<ObjectType>& other )
+      { 
+          object = Object::incRef( other.object ); 
+      }
+
+      ~auto_Object() 
+      { 
+          Object::decRef( object ); 
+      }
+
+      inline ObjectType* get() const 
+      { 
+          return object; 
+      }
+
+      auto_Object& operator=( const auto_Object<ObjectType>& other )
+      { 
+        Object::decRef( this->object ); 
+        object = Object::incRef( other.object ); 
+        return *this; 
+      }
+
+      auto_Object& operator=( ObjectType* object )
+      { 
+        Object::decRef( this->object ); 
+        this->object = object; 
+        return *this; 
+      }
+
+      inline bool operator==( const auto_Object<ObjectType>& other ) const 
+      { 
+        return object == other.object; 
+      }
+
+      inline bool operator==( const ObjectType* other ) const 
+      { 
+        return object == other; 
+      }
+
+      inline bool operator!=( const ObjectType* other ) const 
+      { 
+        return object != other; 
+      }
+
+      // Creates sneaky bugs
+      // operator ObjectType*() const { return object; } 
+
+      inline ObjectType* operator->() const 
+      { 
+        return get(); 
+      }
+
+      inline ObjectType& operator*() const 
+      { 
+        return *get(); 
+      }
+
+      inline ObjectType* release() 
+      { 
+        ObjectType* temp_object = object; 
+        object = 0; 
+        return temp_object; 
+      }
+
+      inline void reset( ObjectType* object ) 
+      { 
+        Object::decRef( this->object ); 
+        this->object = object; 
+      }
 
     private:
       ObjectType* object;
@@ -177,9 +253,18 @@ namespace yidl
       // get: copy out of the buffer, advancing position
       virtual size_t get( void* into_buffer, size_t into_buffer_len ) = 0;
 
-      // Casts to get at the underlying buffer; may not be implemented by some buffers
-      operator char*() const { return static_cast<char*>( static_cast<void*>( *this ) ); }
-      operator unsigned char*() const { return static_cast<unsigned char*>( static_cast<void*>( *this ) ); }
+      // Casts to get at the underlying buffer; 
+      // may not be implemented by some buffers
+      operator char*() const 
+      { 
+        return static_cast<char*>( static_cast<void*>( *this ) ); 
+      }
+
+      operator unsigned char*() const 
+      { 
+        return static_cast<unsigned char*>( static_cast<void*>( *this ) ); 
+      }
+
       virtual operator void*() const = 0;
 
       bool operator==( const Buffer& other ) const
@@ -209,9 +294,17 @@ namespace yidl
       }
 
       // put: append bytes to the buffer, increases size but not position
-      size_t put( const char* from_string ) { return put( from_string, strlen( from_string ) ); }
-      size_t put( const std::string& from_string ) { return put( from_string.c_str(), from_string.size() ); }
-      virtual size_t put( const void* from_buffer, size_t from_buffer_len ) = 0;
+      size_t put( const char* from_string ) 
+      {
+        return put( from_string, strlen( from_string ) ); 
+      }
+
+      size_t put( const std::string& from_string ) 
+      { 
+        return put( from_string.c_str(), from_string.size() ); 
+      }
+
+      virtual size_t put( const void* from_buf, size_t from_buf_len ) = 0;
 
       // size: the number of filled bytes, <= capacity
       virtual size_t size() const = 0;
@@ -249,9 +342,20 @@ namespace yidl
       {
         if ( iov.iov_len - position() < into_buffer_len )
           into_buffer_len = iov.iov_len - position();
+
         if ( into_buffer != NULL )
-          memcpy_s( into_buffer, into_buffer_len, static_cast<uint8_t*>( iov.iov_base ) + position(), into_buffer_len );
+        {
+          memcpy_s
+          ( 
+            into_buffer, 
+            into_buffer_len, 
+            static_cast<uint8_t*>( iov.iov_base ) + position(), 
+            into_buffer_len 
+          );
+        }
+
         position( position() + into_buffer_len );
+
         return into_buffer_len;
       }
 
@@ -263,8 +367,18 @@ namespace yidl
       {
         if ( capacity() - iov.iov_len < from_buffer_len )
           from_buffer_len = capacity() - iov.iov_len;
+
         if ( from_buffer != NULL && from_buffer != iov.iov_base )
-          memcpy_s( static_cast<uint8_t*>( iov.iov_base ) + iov.iov_len, capacity() - iov.iov_len, from_buffer, from_buffer_len );
+        {
+          memcpy_s
+          ( 
+            static_cast<uint8_t*>( iov.iov_base ) + iov.iov_len, 
+            capacity() - iov.iov_len, 
+            from_buffer, 
+            from_buffer_len 
+          );
+        }
+
         iov.iov_len += from_buffer_len;
         return from_buffer_len;
       }
@@ -316,35 +430,198 @@ namespace yidl
     public:
       virtual ~Marshaller() { }
 
-      virtual void writeBoolean( const char* key, uint32_t tag, bool value ) = 0;
-      virtual void writeBuffer( const char* key, uint32_t tag, auto_Object<Buffer> value ) = 0;
-      virtual void writeFloat( const char* key, uint32_t tag, float value ) { writeDouble( key, tag, value ); }
-      virtual void writeDouble( const char* key, uint32_t tag, double value ) = 0;
-      virtual void writeInt8( const char* key, uint32_t tag, int8_t value ) { writeInt16( key, tag, value ); }
-      virtual void writeInt16( const char* key, uint32_t tag, int16_t value ) { writeInt32( key, tag, value ); }
-      virtual void writeInt32( const char* key, uint32_t tag, int32_t value ) { writeInt64( key, tag, value ); }
-      virtual void writeInt64( const char* key, uint32_t tag, int64_t value ) = 0;
-      virtual void writeMap( const char* key, uint32_t tag, const Map& value ) = 0;
-      virtual void writeSequence( const char* key, uint32_t tag, const Sequence& value ) = 0;
-      virtual void writeStruct( const char* key, uint32_t tag, const Struct& value ) = 0;
-      virtual void writeString( const char* key, uint32_t tag, const std::string& value ) { writeString( key, tag, value.c_str(), value.size() ); }
-      virtual void writeString( const char* key, uint32_t tag, const char* value ) { writeString( key, tag, value, strnlen( value, UINT16_MAX ) ); }
-      virtual void writeString( const char* key, uint32_t tag, const char* value, size_t value_len ) = 0;
-      virtual void writeUint8( const char* key, uint32_t tag, uint8_t value ) { writeInt8( key, tag, static_cast<int8_t>( value ) ); }
-      virtual void writeUint16( const char* key, uint32_t tag, uint16_t value ) { writeInt16( key, tag, static_cast<int16_t>( value ) ); }
-      virtual void writeUint32( const char* key, uint32_t tag, uint32_t value ) { writeInt32( key, tag, static_cast<int32_t>( value ) ); }
-      virtual void writeUint64( const char* key, uint32_t tag, uint64_t value ) { writeInt64( key, tag, static_cast<int64_t>( value ) ); }
+      virtual void writeBoolean
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        bool value 
+      ) = 0;
+
+      virtual void writeBuffer
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        auto_Object<Buffer> value 
+      ) = 0;
+
+      virtual void writeFloat
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        float value ) 
+      { 
+        writeDouble( key, tag, value ); 
+      }
+
+      virtual void writeDouble
+      (   
+        const char* key, 
+        uint32_t tag, 
+        double value 
+      ) = 0;
+
+      virtual void writeInt8
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        int8_t value 
+      ) 
+      { 
+        writeInt16( key, tag, value ); 
+      }
+
+      virtual void writeInt16
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        int16_t value 
+      ) 
+      { 
+        writeInt32( key, tag, value ); 
+      }
+
+      virtual void writeInt32
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        int32_t value 
+      ) 
+      { 
+        writeInt64( key, tag, value ); 
+      }
+
+      virtual void writeInt64
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        int64_t value 
+      ) = 0;
+
+      virtual void writeMap
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        const Map& value 
+      ) = 0;
+
+      virtual void writeSequence
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        const Sequence& value 
+      ) = 0;
+
+      virtual void writeStruct
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        const Struct& value 
+      ) = 0;
+
+      virtual void writeString
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        const std::string& value 
+      ) 
+      { 
+        writeString( key, tag, value.c_str(), value.size() ); 
+      }
+
+      virtual void writeString
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        const char* value 
+      ) 
+      { 
+        writeString( key, tag, value, strnlen( value, UINT16_MAX ) ); 
+      }
+
+      virtual void writeString
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        const char* value, 
+        size_t value_len 
+      ) = 0;
+
+      virtual void writeUint8
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        uint8_t value 
+      ) 
+      { 
+        writeInt8( key, tag, static_cast<int8_t>( value ) ); 
+      }
+
+      virtual void writeUint16
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        uint16_t value 
+      ) 
+      { 
+        writeInt16( key, tag, static_cast<int16_t>( value ) ); 
+      }
+
+      virtual void writeUint32
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        uint32_t value 
+      ) 
+      { 
+        writeInt32( key, tag, static_cast<int32_t>( value ) ); 
+      }
+
+      virtual void writeUint64
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        uint64_t value 
+      ) 
+      { 
+        writeInt64( key, tag, static_cast<int64_t>( value ) ); 
+      }
     };
 
 #define YIDL_MARSHALLER_PROTOTYPES \
     virtual void writeBoolean( const char* key, uint32_t tag, bool value ); \
-    virtual void writeBuffer( const char* key, uint32_t tag, ::yidl::runtime::auto_Buffer value ); \
+    virtual void writeBuffer \
+    ( \
+      const char* key, \
+      uint32_t tag, \
+     ::yidl::runtime::auto_Buffer value \
+    ); \
     virtual void writeDouble( const char* key, uint32_t tag, double value ); \
     virtual void writeInt64( const char* key, uint32_t tag, int64_t value ); \
-    virtual void writeMap( const char* key, uint32_t tag, const ::yidl::runtime::Map& value ); \
-    virtual void writeSequence( const char* key, uint32_t tag, const ::yidl::runtime::Sequence& value ); \
-    virtual void writeString( const char* key, uint32_t tag, const char* value, size_t value_len ); \
-    virtual void writeStruct( const char* key, uint32_t tag, const ::yidl::runtime::Struct& value );
+    virtual void writeMap \
+    ( \
+      const char* key, \
+      uint32_t tag, \
+      const ::yidl::runtime::Map& value \
+    ); \
+    virtual void writeSequence \
+    ( \
+      const char* key, \
+      uint32_t tag, \
+      const ::yidl::runtime::Sequence& value \
+    ); \
+    virtual void writeString \
+    ( \
+      const char* key, \
+      uint32_t tag, \
+      const char* value, \
+      size_t value_len \
+    ); \
+    virtual void writeStruct \
+    ( \
+      const char* key, \
+      uint32_t tag, \
+      const ::yidl::runtime::Struct& value \
+    );
 
 
     class PrettyPrinter : public Marshaller
@@ -354,7 +631,10 @@ namespace yidl
         : os( os )
       { }
 
-      PrettyPrinter& operator=( const PrettyPrinter& ) { return *this; }
+      PrettyPrinter& operator=( const PrettyPrinter& ) 
+      { 
+        return *this; 
+      }
 
       // Marshaller
       void writeBoolean( const char*, uint32_t, bool value )
@@ -387,7 +667,13 @@ namespace yidl
 
       void writeSequence( const char*, uint32_t, const Sequence& value );
 
-      void writeString( const char*, uint32_t, const char* value, size_t value_len )
+      void writeString
+      ( 
+        const char*, 
+        uint32_t, 
+        const char* value, 
+        size_t value_len 
+      )
       {
         os.write( value, value_len );
         os << ", ";
@@ -407,7 +693,12 @@ namespace yidl
     };
 
 
-    inline void PrettyPrinter::writeSequence( const char*, uint32_t, const Sequence& value )
+    inline void PrettyPrinter::writeSequence
+    ( 
+      const char*, 
+      uint32_t, 
+      const Sequence& value 
+    )
     {
       os << "[ ";
       value.marshal( *this );
@@ -468,8 +759,16 @@ namespace yidl
       operator std::string&() { return _string; }
       operator const std::string&() const { return _string; }
       operator void*() const { return const_cast<char*>( _string.c_str() ); }
-      bool operator==( const StringBuffer& other ) const { return _string == other._string; }
-      bool operator==( const char* other ) const { return _string == other; }
+
+      bool operator==( const StringBuffer& other ) const 
+      { 
+        return _string == other._string; 
+      }
+
+      bool operator==( const char* other ) const 
+      { 
+        return _string == other; 
+      }
 
       // Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( StringBuffer, 6 );
@@ -481,14 +780,28 @@ namespace yidl
       {
         if ( size() - position() < into_buffer_len )
           into_buffer_len = size() - position();
-        memcpy_s( into_buffer, into_buffer_len, _string.c_str() + position(), into_buffer_len );
+
+        memcpy_s
+        ( 
+          into_buffer, 
+          into_buffer_len, 
+          _string.c_str() + position(), 
+          into_buffer_len 
+        );
+
         position( position() + into_buffer_len );
+
         return into_buffer_len;
       }
 
       size_t put( const void* from_buffer, size_t from_buffer_len )
       {
-        _string.append( static_cast<const char*>( from_buffer ), from_buffer_len );
+        _string.append
+        ( 
+          static_cast<const char*>( from_buffer ), 
+          from_buffer_len 
+        );
+
         return from_buffer_len;
       }
 
@@ -511,14 +824,22 @@ namespace yidl
         iov.iov_len = capacity();
       }
 
-      StringLiteralBuffer( const char* string_literal, size_t string_literal_len )
+      StringLiteralBuffer
+      ( 
+        const char* string_literal, 
+        size_t string_literal_len 
+      )
         : FixedBuffer( string_literal_len )
       {
         iov.iov_base = const_cast<char*>( string_literal );
         iov.iov_len = string_literal_len;
       }
 
-      StringLiteralBuffer( const void* string_literal, size_t string_literal_len )
+      StringLiteralBuffer
+      ( 
+        const void* string_literal, 
+        size_t string_literal_len 
+      )
         : FixedBuffer( string_literal_len )
       {
         iov.iov_base = const_cast<void*>( string_literal );
@@ -539,7 +860,12 @@ namespace yidl
     typedef auto_Object<Struct> auto_Struct;
 
 
-    inline void PrettyPrinter::writeStruct( const char*, uint32_t, const Struct& value )
+    inline void PrettyPrinter::writeStruct
+    ( 
+      const char*, 
+      uint32_t, 
+      const Struct& value 
+    )
     {
       os << value.get_type_name() << "( ";
       value.marshal( *this );
@@ -553,32 +879,116 @@ namespace yidl
       virtual ~Unmarshaller() { }
 
       virtual bool readBoolean( const char* key, uint32_t tag ) = 0;
-      virtual void readBuffer( const char* key, uint32_t tag, auto_Buffer value ) = 0;
+
+      virtual void readBuffer
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        auto_Buffer value 
+      ) = 0;
+
       virtual double readDouble( const char* key, uint32_t tag ) = 0;
-      virtual float readFloat( const char* key, uint32_t tag ) { return static_cast<float>( readDouble( key, tag ) ); }
-      virtual int8_t readInt8( const char* key, uint32_t tag ) { return static_cast<int8_t>( readInt16( key, tag ) ); }
-      virtual int16_t readInt16( const char* key, uint32_t tag ) { return static_cast<int16_t>( readInt32( key, tag ) ); }
-      virtual int32_t readInt32( const char* key, uint32_t tag ) { return static_cast<int32_t>( readInt64( key, tag ) ); }
+
+      virtual float readFloat( const char* key, uint32_t tag ) 
+      { 
+        return static_cast<float>( readDouble( key, tag ) ); 
+      }
+
+      virtual int8_t readInt8( const char* key, uint32_t tag ) 
+      { 
+        return static_cast<int8_t>( readInt16( key, tag ) ); 
+      }
+
+      virtual int16_t readInt16( const char* key, uint32_t tag ) 
+      { 
+        return static_cast<int16_t>( readInt32( key, tag ) ); 
+      }
+
+      virtual int32_t readInt32( const char* key, uint32_t tag ) 
+      { 
+        return static_cast<int32_t>( readInt64( key, tag ) ); 
+      }
+
       virtual int64_t readInt64( const char* key, uint32_t tag ) = 0;
+
       virtual void readMap( const char* key, uint32_t tag, Map& value ) = 0;
-      virtual void readSequence( const char* key, uint32_t tag, Sequence& value ) = 0;
-      virtual void readString( const char* key, uint32_t tag, std::string& value ) = 0;
-      virtual void readStruct( const char* key, uint32_t tag, Struct& value ) = 0;
-      virtual uint8_t readUint8( const char* key, uint32_t tag ) { return static_cast<uint8_t>( readInt8( key, tag ) ); }
-      virtual uint16_t readUint16( const char* key, uint32_t tag ) { return static_cast<uint16_t>( readInt16( key, tag ) ); }
-      virtual uint32_t readUint32( const char* key, uint32_t tag ) { return static_cast<uint32_t>( readInt32( key, tag ) ); }
-      virtual uint64_t readUint64( const char* key, uint32_t tag ) { return static_cast<uint64_t>( readInt64( key, tag ) ); }
+
+      virtual void readSequence
+      ( 
+        const char* key,
+        uint32_t tag, 
+        Sequence& value 
+      ) = 0;
+
+      virtual void readString
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        std::string& value 
+      ) = 0;
+
+      virtual void readStruct
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        Struct& value 
+      ) = 0;
+
+      virtual uint8_t readUint8( const char* key, uint32_t tag ) 
+      { 
+        return static_cast<uint8_t>( readInt8( key, tag ) ); 
+      }
+
+      virtual uint16_t readUint16( const char* key, uint32_t tag ) 
+      { 
+        return static_cast<uint16_t>( readInt16( key, tag ) ); 
+      }
+
+      virtual uint32_t readUint32( const char* key, uint32_t tag ) 
+      { 
+        return static_cast<uint32_t>( readInt32( key, tag ) ); 
+      }
+
+      virtual uint64_t readUint64( const char* key, uint32_t tag ) 
+      { 
+        return static_cast<uint64_t>( readInt64( key, tag ) ); 
+      }
     };
 
 #define YIDL_UNMARSHALLER_PROTOTYPES \
     virtual bool readBoolean( const char* key, uint32_t tag ); \
-    virtual void readBuffer( const char* key, uint32_t tag, ::yidl::runtime::auto_Buffer value ); \
+    virtual void readBuffer \
+    ( \
+      const char* key, \
+      uint32_t tag, \
+      ::yidl::runtime::auto_Buffer value \
+    ); \
     virtual double readDouble( const char* key, uint32_t tag ); \
     virtual int64_t readInt64( const char* key, uint32_t tag ); \
-    virtual void readMap( const char* key, uint32_t tag, ::yidl::runtime::Map& value ); \
-    virtual void readSequence( const char* key, uint32_t tag, ::yidl::runtime::Sequence& value ); \
-    virtual void readString( const char* key, uint32_t tag, std::string& value ); \
-    virtual void readStruct( const char* key, uint32_t tag, ::yidl::runtime::Struct& value );
+    virtual void readMap \
+    ( \
+      const char* key, \
+      uint32_t tag, \
+      ::yidl::runtime::Map& value \
+    ); \
+    virtual void readSequence \
+    ( \
+      const char* key, \
+      uint32_t tag, \
+      ::yidl::runtime::Sequence& value \
+    ); \
+    virtual void readString \
+    ( \
+      const char* key, \
+      uint32_t tag, \
+      std::string& value \
+    ); \
+    virtual void readStruct \
+    ( \
+      const char* key, \
+      uint32_t tag, \
+      ::yidl::runtime::Struct& value \
+    );
   };
 };
 #endif

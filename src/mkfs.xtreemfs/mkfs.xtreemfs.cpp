@@ -55,9 +55,12 @@ namespace mkfs_xtreemfs
         MKFS_XTREEMFS_OPTION_STRIPING_POLICY, 
         "-p", 
         "--striping-policy", 
-        "NONE|RAID0" 
+        //"NONE|RAID0|RAID7_1" 
+        "NONE|RAID0"
       );
       striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
+      //striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_RAID7_1;
+      //RAID7_1
 
       addOption
       ( 
@@ -67,7 +70,7 @@ namespace mkfs_xtreemfs
         "n" 
       );
       striping_policy_stripe_size = 128;
-
+      
       addOption
       ( 
         MKFS_XTREEMFS_OPTION_OWNER_USER_ID, 
@@ -186,6 +189,10 @@ namespace mkfs_xtreemfs
             if ( strcmp( arg, "RAID0" ) == 0 )
               striping_policy 
                 = org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
+            /*if ( strcmp( arg, "RAID7_1" ) == 0 )
+              striping_policy 
+                = org::xtreemfs::interfaces::STRIPING_POLICY_RAID7_1;    
+                */
           }
           break;
 

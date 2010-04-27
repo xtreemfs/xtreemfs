@@ -42,7 +42,7 @@ namespace xtreemfs
         ssl_context 
       );
     }
-
+        
     // yidl::runtime::Object
     OSDProxyMux& incRef() { return yidl::runtime::Object::incRef( *this ); }
 

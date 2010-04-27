@@ -264,7 +264,9 @@ public class Converter {
         String policy = st.nextToken();
         if (policy.equals("RAID0"))
             policy = StripingPolicyType.STRIPING_POLICY_RAID0.toString();
-        
+        /*if (policy.equals("RAID7_1"))
+            policy = StripingPolicyType.STRIPING_POLICY_RAID7_1.toString();
+        */
         int size = Integer.parseInt(st.nextToken());
         int width = Integer.parseInt(st.nextToken());
         

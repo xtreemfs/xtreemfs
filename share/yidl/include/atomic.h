@@ -15,17 +15,39 @@
 typedef __int64 atomic_t;
 extern "C"
 {
-	atomic_t _InterlockedCompareExchange64( volatile atomic_t* current_value, atomic_t new_value, atomic_t old_value );
-	atomic_t _InterlockedIncrement64( volatile atomic_t* );
-	atomic_t _InterlockedDecrement64( volatile atomic_t* );
+	atomic_t _InterlockedCompareExchange64
+  ( 
+    volatile atomic_t* current_value, 
+    atomic_t new_value, 
+    atomic_t old_value 
+  );
+
+  atomic_t _InterlockedIncrement64( volatile atomic_t* current_value );
+  atomic_t _InterlockedDecrement64( volatile atomic_t* current_value );
 }
 #elif defined(_WIN32)
 typedef long atomic_t;
 extern "C"
 {
-  __declspec( dllimport ) atomic_t __stdcall InterlockedCompareExchange( volatile atomic_t* current_value, atomic_t new_value, atomic_t old_value );
-  __declspec( dllimport ) atomic_t __stdcall InterlockedIncrement( volatile atomic_t* );
-  __declspec( dllimport ) atomic_t __stdcall InterlockedDecrement( volatile atomic_t* );
+  __declspec( dllimport ) atomic_t __stdcall 
+  InterlockedCompareExchange
+  ( 
+    volatile atomic_t* current_value, 
+    atomic_t new_value, 
+    atomic_t old_value 
+  );
+
+  __declspec( dllimport ) atomic_t __stdcall 
+  InterlockedIncrement
+  ( 
+    volatile atomic_t* current_value
+  );
+
+  __declspec( dllimport ) atomic_t __stdcall 
+  InterlockedDecrement
+  ( 
+    volatile atomic_t* current_value
+  );
 }
 #else
 #if defined(__LLP64__) || defined(__LP64__)
@@ -37,12 +59,17 @@ typedef int32_t atomic_t;
 #include <atomic.h>
 #elif defined(__arm__)
 // gcc atomic builtins are not defined on ARM
-#elif defined(__GNUC__) && ( ( __GNUC__ == 4 && __GNUC_MINOR__ >= 1 ) || __GNUC__ > 4 )
+#elif defined(__GNUC__) && ( ( __GNUC__ == 4 && __GNUC_MINOR__ >= 1 ) || __GNUC__ > 4 ) 
 #define __HAVE_GNUC_ATOMIC_BUILTINS 1
 #endif
 #endif
 
-static inline atomic_t atomic_cas( volatile atomic_t* current_value, atomic_t new_value, atomic_t old_value )
+static inline atomic_t atomic_cas
+( 
+  volatile atomic_t* current_value, 
+  atomic_t new_value, 
+  atomic_t old_value 
+)
 {
 #if defined(_WIN64)
   return _InterlockedCompareExchange64( current_value, new_value, old_value );
@@ -93,7 +120,8 @@ static inline atomic_t atomic_cas( volatile atomic_t* current_value, atomic_t ne
           sync\n"
           "2:"
         : "=&r" ( prev ), "=m" ( *current_value )
-              : "r" ( current_value ), "r" ( old_value ), "r" ( new_value ), "m" ( *current_value )
+              : "r" ( current_value ), "r" ( old_value ), "r" ( new_value ), 
+                "m" ( *current_value )
               : "cc", "memory"
             );
   return prev;

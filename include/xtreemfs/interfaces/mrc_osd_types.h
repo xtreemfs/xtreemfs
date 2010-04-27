@@ -18,7 +18,8 @@ namespace org
       enum AccessControlPolicyType { ACCESS_CONTROL_POLICY_NULL = 1, ACCESS_CONTROL_POLICY_POSIX = 2, ACCESS_CONTROL_POLICY_VOLUME = 3 };
       enum OSDSelectionPolicyType { OSD_SELECTION_POLICY_FILTER_DEFAULT = 1000, OSD_SELECTION_POLICY_FILTER_FQDN = 1001, OSD_SELECTION_POLICY_GROUP_DCMAP = 2000, OSD_SELECTION_POLICY_GROUP_FQDN = 2001, OSD_SELECTION_POLICY_SORT_DCMAP = 3000, OSD_SELECTION_POLICY_SORT_FQDN = 3001, OSD_SELECTION_POLICY_SORT_RANDOM = 3002, OSD_SELECTION_POLICY_SORT_VIVALDI = 3003 };
       enum ReplicaSelectionPolicyType { REPLICA_SELECTION_POLICY_SIMPLE = 1 };
-      enum StripingPolicyType { STRIPING_POLICY_RAID0 = 0 };
+      //enum StripingPolicyType { STRIPING_POLICY_RAID0 = 0, STRIPING_POLICY_RAID7_1 = 1 };
+      enum StripingPolicyType { STRIPING_POLICY_RAID0 = 0};
 
 
       class NewFileSize : public ::yidl::runtime::Struct
@@ -139,6 +140,7 @@ namespace org
       {
       public:
         StripingPolicy() : type( STRIPING_POLICY_RAID0 ), stripe_size( 0 ), width( 0 ) { }
+        //StripingPolicy() : type( STRIPING_POLICY_RAID7_1 ), stripe_size( 0 ), width( 0 ) { }
         StripingPolicy( org::xtreemfs::interfaces::StripingPolicyType type, uint32_t stripe_size, uint32_t width ) : type( type ), stripe_size( stripe_size ), width( width ) { }
         virtual ~StripingPolicy() { }
 

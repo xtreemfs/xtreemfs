@@ -3,7 +3,7 @@ package org.xtreemfs.interfaces;
         
 public enum StripingPolicyType 
 {
-    STRIPING_POLICY_RAID0( 0 );    
+    STRIPING_POLICY_RAID0( 0 );
 
     private int __value; 
     

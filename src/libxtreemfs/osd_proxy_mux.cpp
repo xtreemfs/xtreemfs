@@ -6,7 +6,7 @@
 using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
-
+// hier namespace, da ReadResponseTarget in OSDProxyMux deklariert; abgeleitet von EventTarget
 class OSDProxyMux::ReadResponseTarget : public YIELD::concurrency::EventTarget
 {
 public:
@@ -211,7 +211,7 @@ OSDProxyMux::~OSDProxyMux()
     yidl::runtime::Object::decRef( *osd_proxies_i->second );
 }
 
-auto_OSDProxy OSDProxyMux::getOSDProxy
+auto_OSDProxy OSDProxyMux::getOSDProxy      // first version of getOSDProxy; input is a OSDProxyRequest, file credentials and the object number, output is auto_OSDProxy Object
 ( 
   OSDProxyRequest& osd_proxy_request, 
   const FileCredentials& file_credentials, 
@@ -244,7 +244,7 @@ auto_OSDProxy OSDProxyMux::getOSDProxy
       file_replica_i++ 
     )
     {
-      if 
+    if 
       ( 
         osd_proxy_request.get_selected_file_replica() == 0 ||
         static_cast<ssize_t>( file_replica_i + 1 ) != 
@@ -268,22 +268,55 @@ auto_OSDProxy OSDProxyMux::getOSDProxy
   }
 
   const StripingPolicy& striping_policy 
-    = selected_file_replica->get_striping_policy();
+    = selected_file_replica->get_striping_policy();         // get striping policy from the selected replica
 
-  switch ( striping_policy.get_type() )
+  switch ( striping_policy.get_type() )                 // possible types: STRIPING_POLICY_RAID0, others could be STRIPING_POLICY_RAID7
   {
+  /* // unveraenderte Variante
     case STRIPING_POLICY_RAID0:
-    {      
-      size_t osd_i = object_number % striping_policy.get_width();
-      const std::string& osd_uuid = selected_file_replica->get_osd_uuids()[osd_i];
+    {                                                   // calculate the osd_uuid
+      size_t osd_i = object_number % striping_policy.get_width();       // width is the striping width: number of strips per stripe
+      const std::string& osd_uuid = selected_file_replica->get_osd_uuids()[osd_i];  // returns a list of osd_uuids, take the right one in the list      
       return getOSDProxy( osd_uuid );
     }
+    */
+    case STRIPING_POLICY_RAID0:
+    {                                                   // calculate the osd_uuid
+      size_t osd_i = object_number % (striping_policy.get_width());               // depends on object_number
+      const std::string& osd_uuid = selected_file_replica->get_osd_uuids()[osd_i];  // returns a list of osd_uuids, take the right one in the list      
+      
+      // tests
+      const org::xtreemfs::interfaces::StringSet& myOSDset = selected_file_replica->get_osd_uuids(); //array of OSD UUIDs
+      int sizeOSDset = sizeof(myOSDset)/sizeof(std::string);
+      //log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::OSDProxyMux::getOSDProxy() sizeOSDset:" << sizeOSDset << "  " << striping_policy.get_width();
+      //for (int i=0; i<striping_policy.get_width(); i++){
+      //   log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::OSDProxyMux::getOSDProxy() OSDset Element: " << i << " Value: " << myOSDset[i];
+      //}
+      // test end    
+          
+      return getOSDProxy( osd_uuid );
+    }
+    /*
+    case STRIPING_POLICY_RAID7_1:
+    {
+      size_t osd_i = object_number % (striping_policy.get_width()-1);
+      // test output of all osds involved
+      // later write possible list into the log
+      const org::xtreemfs::interfaces::StringSet& myOSDset = selected_file_replica->get_osd_uuids(); //array of OSD UUIDs
+      log->getStream( YIELD::platform::Log::LOG_INFO ) << "test von Kathrin" << myOSDset[0]  << "Kathrin*****************************Kathrin";
+      log->getStream( YIELD::platform::Log::LOG_INFO ) << "test von Kathrin" << myOSDset[1]  << "Kathrin*****************************Kathrin";
+      log->getStream( YIELD::platform::Log::LOG_INFO ) << "test von Kathrin" << myOSDset[2]  << "Kathrin*****************************Kathrin";
+ 
+      const std::string& osd_uuid = selected_file_replica->get_osd_uuids()[osd_i];  // returns a list of osd_uuids
+      return getOSDProxy( osd_uuid );
+    }
+    */
 
     default: DebugBreak(); throw YIELD::platform::Exception(); break;
   }
 }
 
-auto_OSDProxy OSDProxyMux::getOSDProxy( const std::string& osd_uuid )
+auto_OSDProxy OSDProxyMux::getOSDProxy( const std::string& osd_uuid )   // input: string of a osd_uuid, output: auto_OSDProxy osd_proxy
 {
   auto_OSDProxy osd_proxy;
 
@@ -430,7 +463,7 @@ void OSDProxyMux::handleunlinkRequest( unlinkRequest& req )
 
 void OSDProxyMux::handlewriteRequest( writeRequest& req )
 {
-  getOSDProxy
+  getOSDProxy       // returns a OSDProxy to that they can send the request
   ( 
     req, 
     req.get_file_credentials(), 

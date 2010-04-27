@@ -7,7 +7,7 @@ from time import sleep
 
 # Constants
 DEBUG_ME = True
-CLIENT_DEBUG_LEVEL_DEFAULT = "ERR"
+CLIENT_DEBUG_LEVEL_DEFAULT = "DEBUG"
 SERVER_DEBUG_LEVEL_DEFAULT = "6"
 SERVER_STOP_TRIES = 3
 
@@ -32,10 +32,14 @@ MRC_URI_DEFAULT = "oncrpc://localhost:%u/" % MRC_ONCRPC_PORT_DEFAULT
 OSD_URI_DEFAULT = "oncrpc://localhost:%u/" % OSD_ONCRPC_PORT_DEFAULT
 
 # Misc
-STRIPE_SIZE_DEFAULT = 128
+#STRIPE_SIZE_DEFAULT = 128
+#STRIPE_SIZE_DEFAULT = 512
+#STRIPE_SIZE_DEFAULT = 64
+STRIPE_SIZE_DEFAULT = 32
 STRIPING_POLICY_TYPE_DEFAULT = "RAID0"
+#STRIPING_POLICY_TYPE_DEFAULT = "RAID7_1"
 STRIPING_POLICY_TYPE_NONE = "NONE"
-      
+
 
 class Autotest:
     def __init__( 
@@ -107,7 +111,7 @@ class Autotest:
                                pkcs12_file_path=pkcs12_file_path,
                                pkcs12_passphrase=pkcs12_passphrase,
                                #stripe_width=( replicate_on_close and ( ( volume_i / 2 ) + 1 ) or 1 ),
-                               stripe_width=3                                                            
+                               stripe_width=5                                                            
                               )
             except: 
                 if DEBUG_ME:
@@ -547,7 +551,7 @@ class Volume:
                 mrc_uri=MRC_URI_DEFAULT,
                 pkcs12_file_path=None,
                 pkcs12_passphrase=None,
-                stripe_width=3,
+                stripe_width=5,
               ):
         
         mkfs_xtreemfs_file_path = os.path.abspath( os.path.join( MY_DIR_PATH, "mkfs.xtreemfs" ) )
@@ -556,8 +560,8 @@ class Volume:
             
         mkfs_xtreemfs_args = [mkfs_xtreemfs_file_path]
         mkfs_xtreemfs_args.extend( ( "-d", str( debug_level ) ) )
-        mkfs_xtreemfs_args.extend( ( "-p", str( STRIPING_POLICY_TYPE_NONE ) ) )
-        #mkfs_xtreemfs_args.extend( ( "-p", str( STRIPING_POLICY_TYPE_DEFAULT ) ) )
+        #mkfs_xtreemfs_args.extend( ( "-p", str( STRIPING_POLICY_TYPE_NONE ) ) )
+        mkfs_xtreemfs_args.extend( ( "-p", str( STRIPING_POLICY_TYPE_DEFAULT ) ) )
         if pkcs12_file_path is not None: mkfs_xtreemfs_args.extend( ( "--pkcs12-file-path", pkcs12_file_path ) )
         if pkcs12_passphrase is not None: mkfs_xtreemfs_args.extend( ( "--pkcs12-passphrase", pkcs12_passphrase ) )
         mkfs_xtreemfs_args.extend( ( "-s", str( STRIPE_SIZE_DEFAULT ) ) )
@@ -738,7 +742,7 @@ if __name__ == "__main__":
 
     option_parser = OptionParser( "usage: %prog [options] [oncrpc://]<server_host=localhost>[:server_port]" )    
     option_parser.add_option( "--autotest", action="store_true", help="start autotest clients and servers, run autotests, stop clients and servers" )
-    option_parser.add_option( "--autotest-osd-count", action="store", dest="autotest_osd_count", type="int", default=3 )
+    option_parser.add_option( "--autotest-osd-count", action="store", dest="autotest_osd_count", type="int", default=5 )
     option_parser.add_option( "-c", "--config-file-path", action="store", dest="config_file_path" )
     option_parser.add_option( "--clean-autotest", action="store_true", dest="clean_autotest", help="delete autotest directories" )
     option_parser.add_option( "--client-debug-level", action="store", dest="client_debug_level", default=None )

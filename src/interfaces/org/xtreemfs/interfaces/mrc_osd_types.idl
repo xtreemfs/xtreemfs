@@ -57,7 +57,8 @@ module org
 
       enum StripingPolicyType
       {
-        STRIPING_POLICY_RAID0 = 0
+        STRIPING_POLICY_RAID0 = 0,       // RAID 0 striping
+        //STRIPING_POLICY_RAID7_1 = 1     // RAID 5 round robin, one redundancy block per stripe
       };
 
       struct StripingPolicy # 19
