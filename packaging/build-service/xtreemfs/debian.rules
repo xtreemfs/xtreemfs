@@ -24,7 +24,7 @@ build-stamp:
 
 	# Add here commands to compile the package.
 	sed -i -e "s@.*policy_dir_paths\.push_back( \"src/policies/lib\" );.*@@g"\
-		   -e "s@/lib/xtreemfs/policies/@/usr/lib/xtreemfs/policies/@g" src/libxtreemfs/user_credentials_cache.cpp
+		   -e "s@/lib/xtreemfs/policies/@/usr/lib/xtreemfs/policies/@g" src/libxtreemfs/user_database.cpp
 	make
 	# python share/scons.py
 	# --- end custom part for compiling

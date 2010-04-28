@@ -127,7 +127,7 @@ export CCFLAGS="$CCFLAGS -fPIC"
 
 %if %{client_subpackage}
 sed -i -e "s@.*policy_dir_paths\.push_back( \"src/policies/lib\" );.*@@g"\
-       -e "s@/lib/xtreemfs/policies/@%{_libdir}/xtreemfs/policies/@g" src/libxtreemfs/user_credentials_cache.cpp
+       -e "s@/lib/xtreemfs/policies/@%{_libdir}/xtreemfs/policies/@g" src/libxtreemfs/user_database.cpp
 make %{?jobs:-j%jobs}
 %else
 make %{?jobs:-j%jobs} server
