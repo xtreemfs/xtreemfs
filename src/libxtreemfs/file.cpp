@@ -324,7 +324,9 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
   std::vector<ReadResponse*> read_responses;        //vector of read responses
   YIELD::platform::auto_Log log( parent_volume->get_log() );
   ssize_t ret = 0;
-
+  char redStrip_initialized=0;
+  int i;
+  
   try
   {
 #ifdef _DEBUG
@@ -340,9 +342,9 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 
 #endif
 
-    char *rbuf_start = static_cast<char*>( rbuf ),      // set pointers in the read buffer
-         *rbuf_p = static_cast<char*>( rbuf ), 
-         *rbuf_end = static_cast<char*>( rbuf ) + size;
+    unsigned char *rbuf_start = static_cast<unsigned char*>( rbuf ),      // set pointers in the read buffer
+         *rbuf_p = static_cast<unsigned char*>( rbuf ), 
+         *rbuf_end = static_cast<unsigned char*>( rbuf ) + size;
     uint64_t current_file_offset = offset;
     // translate strip_size from KB into Bytes
     uint32_t strip_size = file_credentials.get_xlocs().get_replicas()[0]
@@ -350,11 +352,17 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     //test
     org::xtreemfs::interfaces::StripingPolicyType stripe_type = file_credentials.get_xlocs().get_replicas()[0]
                             .get_striping_policy().get_type();      // replica has a stripingPolicy and StripingPolicy has a StripingPolicyType
-
+    unsigned char redbuf[strip_size];
+    int stripe_width =  file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_width(); // replica has a striping Policy and this has a width
+    int data_width = stripe_width-1;                                   // number of data strips
+    int red_width = 1;                                                 //  number of redundancy strips
+    //uint32_t stripe_num = offset/(strip_size*data_width);
+       
+            
     //test
 #ifdef _DEBUG
      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-       "strip_size read in this function=" << strip_size << "stripe_type in this function: " << stripe_type << " )"; 
+       "strip_size read in this function=" << strip_size << " ,stripe_type in this function: " << stripe_type << " )"; 
 #endif
 
     YIELD::concurrency::auto_ResponseQueue<ReadResponse> 
@@ -438,7 +446,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       read_responses.push_back( &read_response );
 
       yidl::runtime::auto_Buffer data( read_response.get_object_data().get_data() );
-      rbuf_p = static_cast<char*>( static_cast<void*>( *data ) );
+      rbuf_p = static_cast<unsigned char*>( static_cast<void*>( *data ) );
       uint32_t zero_padding = read_response.get_object_data().get_zero_padding();
       if ( read_response.get_selected_file_replica() != 0 )
         selected_file_replica = read_response.get_selected_file_replica();
@@ -457,7 +465,26 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
           expected_read_response_count << " parallel reads.";
       }
 #endif
-
+              
+      // recovery from the available parts
+      if (redStrip_initialized) { 
+        for (i=object_offset; i<(object_offset+object_size); i++) {
+          redbuf[i]=redbuf[i]^wbuf_p[i];
+        }      
+      } 
+      else {
+        for (i=0;i<object_offset; i++){
+          redbuf[i]=0;
+        }
+        for (i=object_offset; i<object_offset+object_size; i++) { 
+          redbuf[i]=wbuf_p[i];
+        }
+        for (i=object_offset+object_size; i<strip_size; i++){ 
+          redbuf[i]=0;
+        }
+        redStrip_initialized=1;  
+      }
+              
       ret += data->size();
 
       if ( zero_padding > 0 )
@@ -728,16 +755,17 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )       // F
 
   try
   {
-    const char *wbuf_p = static_cast<const char*>( wbuf ),              // pointer to the first element of wbuf                      
-               *wbuf_end = static_cast<const char*>( wbuf ) + size;     // pointer to the end of the wbuf
+    const unsigned char *wbuf_p = static_cast<const unsigned char*>( wbuf ),              // pointer to the first element of wbuf                      
+               *wbuf_end = static_cast<const unsigned char*>( wbuf ) + size;     // pointer to the end of the wbuf
     uint64_t current_file_offset = offset;
     uint32_t strip_size = file_credentials.get_xlocs().get_replicas()[0]
                             .get_striping_policy().get_stripe_size() * 1024;    // transform strip size in KB to strip size in Byte (default 128KB)
     // EC: declare strip for redundancy array
-    //unsigned char *redbuf = new unsigned char[strip_size];                                                        
-    char redbuf[strip_size]; // TODO: unsigned char oder char?
+    unsigned char redbuf[strip_size];                                                        
+    //char redbuf[strip_size]; 
+    
     // test
-    char redbuf_test2[] ={5,1,2,3};  
+    unsigned char redbuf_test2[] ={5,1,2,3};  
     
     org::xtreemfs::interfaces::StripingPolicyType stripe_type = file_credentials.get_xlocs().get_replicas()[0]
                             .get_striping_policy().get_type();      // replica has a stripingPolicy and StripingPolicy has a StripingPolicyTyp
@@ -756,11 +784,11 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )       // F
 #endif
 
 // char output test
-    cout << "TEST: redbuf_test2[0]" << (int)redbuf_test2[0] << "\n";
-    redbuf_test2[0]=redbuf_test2[0]^redbuf_test2[3];
-    cout << "TEST: redbuf_test2[0]=6: " << (int)redbuf_test2[0] << " redbuf_test2[3]: " << (int)redbuf_test2[3] << "\n";
-    redbuf_test2[0]=redbuf_test2[0]^redbuf_test2[2];
-    cout << "TEST: redbuf_test2[0]=4: " << (int)redbuf_test2[0] << "\n";
+//     cout << "TEST: redbuf_test2[0]" << (int)redbuf_test2[0] << "\n";
+//     redbuf_test2[0]=redbuf_test2[0]^redbuf_test2[3];
+//     cout << "TEST: redbuf_test2[0]=6: " << (int)redbuf_test2[0] << " redbuf_test2[3]: " << (int)redbuf_test2[3] << "\n";
+//     redbuf_test2[0]=redbuf_test2[0]^redbuf_test2[2];
+//     cout << "TEST: redbuf_test2[0]=4: " << (int)redbuf_test2[0] << "\n";
 
 
     YIELD::concurrency::auto_ResponseQueue<OSDInterface::writeResponse>         // create new writeResponse
@@ -797,7 +825,8 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )       // F
       if (redStrip_initialized) {      
         for (i=object_offset; i<(object_offset+object_size); i++) {
           //redbuf[i]=redbuf[i]^static_cast<unsigned char>(wbuf_p[i]);
-          redbuf[i]=redbuf[i]^static_cast<char>(wbuf_p[i]);
+          redbuf[i]=redbuf[i]^wbuf_p[i];
+          //redbuf[i]=redbuf[i]^static_cast<char>(wbuf_p[i]);
         }
 #ifdef _DEBUG
      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
@@ -814,7 +843,8 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )       // F
 #endif*/            
         for (i=object_offset; i<object_offset+object_size; i++) {
           //redbuf[i]=static_cast<unsigned char>(wbuf_p[i]);
-          redbuf[i]=static_cast<char>(wbuf_p[i]);
+          redbuf[i]=wbuf_p[i];
+          //redbuf[i]=static_cast<char>(wbuf_p[i]);
         }  
 /*#ifdef _DEBUG
      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
@@ -885,15 +915,13 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )       // F
       strip_count++;
       
       // write redundant data strip        
-      if ( strip_count==stripe_width-1){
-        //const char *redbuf_p = static_cast<const char*>( redbuf );
+      if ( (strip_count==stripe_width-1) || (wbuf_p+object_size>=wbuf_end)) {
         ObjectData red_object_data                                            // create object_data object and set all informations, specially the writeBuffer
         ( 
           0,
           false,
           0,
           new WriteBuffer( redbuf, static_cast<uint32_t>( strip_size ) )     // create a new WriteBuffer (inherits from fixedBuffer) for the object data
-          //new WriteBuffer( redbuf_p, static_cast<uint32_t>( strip_size ) )     // create a new WriteBuffer (inherits from fixedBuffer) for the object data
         );
               
         OSDInterface::writeRequest* red_write_request =                           // create a writeRequest: file_credentials, fileID, object_number, object_version, offset, lease_timeout, object_data
