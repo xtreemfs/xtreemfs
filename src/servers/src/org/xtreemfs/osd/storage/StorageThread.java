@@ -481,6 +481,7 @@ public class StorageThread extends Stage {
             
             // determine the object version to write
             final boolean isCow = cow.isCOW((int) objNo);
+            
             long newVersion = (isCow || checksumsEnabled) ? largestV + 1 : Math.max(1, largestV);
             if (newVersionArg != null) {
                 // new version passed via arg always prevails
@@ -496,7 +497,7 @@ public class StorageThread extends Stage {
             layout.writeObject(fileId, fi, data, objNo, offset, newVersion, syncWrite, isCow);
             
             // if a new version was created, update the "latest versions" file
-            if (isCow || largestV == 0)
+            if (cow.cowEnabled() && (isCow || largestV == 0))
                 layout.updateCurrentObjVersion(fileId, objNo, newVersion);
             
             if (isCow)
@@ -747,6 +748,8 @@ public class StorageThread extends Stage {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, OutputUtils
                         .stackTraceToString(e));
             }
+            
+            cback.createFileVersionComplete(fileSize, null);
             
         } catch (Exception e) {
             

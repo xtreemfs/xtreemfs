@@ -31,10 +31,10 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.Map.Entry;
-import java.util.PriorityQueue;
 
-import org.xtreemfs.foundation.ClientLease;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.osd.storage.CowPolicy;
@@ -50,15 +50,15 @@ public final class OpenFileTable {
     
     private HashMap<String, OpenFileTableEntry> openFiles;
     
-    private PriorityQueue<OpenFileTableEntry>   expTimes;
+    private SortedSet<OpenFileTableEntry> expTimes;
     
-    private PriorityQueue<OpenFileTableEntry>   expTimesWrite;
+    private SortedSet<OpenFileTableEntry> expTimesWrite;
     
     // constructor
     public OpenFileTable() {
         openFiles = new HashMap<String, OpenFileTableEntry>();
-        expTimes = new PriorityQueue<OpenFileTableEntry>();
-        expTimesWrite = new PriorityQueue<OpenFileTableEntry>();
+        expTimes = new TreeSet<OpenFileTableEntry>();
+        expTimesWrite = new TreeSet<OpenFileTableEntry>();
     }
     
     /**
@@ -89,8 +89,9 @@ public final class OpenFileTable {
 
                 currEntry.setExpirationTime(expTime);
                 openFiles.put(fId, currEntry);
-                expTimes.add(currEntry);
-
+                boolean success = expTimes.add(currEntry);
+                assert (success);
+                
                 if(write)
                     expTimesWrite.add(currEntry);
             }
@@ -154,8 +155,7 @@ public final class OpenFileTable {
         
         // since entries in 'expTimes' are sorted w.r.t. their expiration time
         // (ascending order), 'expTimes' has to be scanned until there is an
-        // entry
-        // with its 'expTimes' > 'toTime'
+        // entry with its 'expTimes' > 'toTime'
         
         while (it.hasNext()) {
             
@@ -280,7 +280,7 @@ public final class OpenFileTable {
      * @author Eugenio Cesario
      * 
      */
-    public static class OpenFileTableEntry implements Comparable {
+    public static class OpenFileTableEntry implements Comparable<OpenFileTableEntry> {
         
         private final String      fileId;
         
@@ -310,13 +310,12 @@ public final class OpenFileTable {
                 fileCowPolicy = new CowPolicy(CowPolicy.cowMode.NO_COW);
         }
         
-        public int compareTo(Object o) {
+        public int compareTo(OpenFileTableEntry e) {
             int res = 0;
-            final OpenFileTableEntry e = (OpenFileTableEntry) o;
             if (this.expTime < e.expTime) {
                 res = -1;
             } else if (this.expTime == e.expTime) {
-                res = 0;
+                res = this.fileId.compareTo(e.fileId);
             } else {
                 res = 1;
             }

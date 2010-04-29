@@ -28,8 +28,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel.MapMode;
 import java.util.NoSuchElementException;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -107,13 +105,15 @@ public class VersionTable {
         vt.clear();
         
         FileInputStream fi = new FileInputStream(vtFile);
-        MappedByteBuffer map = fi.getChannel().map(MapMode.READ_ONLY, 0, vtFile.length());
+        ReusableBuffer buf = BufferPool.allocate((int) vtFile.length());
+        fi.getChannel().read(buf.getBuffer());
+        buf.position(0);
         
-        while (map.position() < map.limit()) {
+        while (buf.position() < buf.limit()) {
             
-            final long timestamp = map.getLong();
-            final long fileSize = map.getLong();
-            final long numObjs = map.getLong();
+            final long timestamp = buf.getLong();
+            final long fileSize = buf.getLong();
+            final long numObjs = buf.getLong();
             
             assert (numObjs <= Integer.MAX_VALUE) : "number of objects: " + numObjs + ", current limit = "
                 + Integer.MAX_VALUE;
@@ -122,11 +122,12 @@ public class VersionTable {
             
             final int[] objVersions = new int[(int) numObjs];
             for (int i = 0; i < objVersions.length; i++)
-                objVersions[i] = map.getInt();
+                objVersions[i] = buf.getInt();
             
             addVersion(timestamp, objVersions, fileSize);
         }
         
+        BufferPool.free(buf);
         fi.close();
         
     }

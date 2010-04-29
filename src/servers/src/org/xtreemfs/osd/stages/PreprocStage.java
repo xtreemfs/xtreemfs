@@ -37,6 +37,8 @@ import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCRequestHeader;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCResponseHeader;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Lock;
@@ -45,8 +47,6 @@ import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
 import org.xtreemfs.interfaces.OSDInterface.errnoException;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCRequestHeader;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCResponseHeader;
 import org.xtreemfs.osd.AdvisoryLock;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
@@ -99,7 +99,7 @@ public class PreprocStage extends Stage {
     /**
      * X-Location cache
      */
-    private final LRUCache<String,XLocations>               xLocCache;
+    private final LRUCache<String, XLocations>              xLocCache;
     
     private final MetadataCache                             metadataCache;
     
@@ -166,7 +166,8 @@ public class PreprocStage extends Stage {
             // this is required to create new snapshots when files open for
             // writing are closed, even if the same files are still open for
             // reading
-            boolean write = request.getCapability() != null && request.getCapability().getSnapConfig() != SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
+            boolean write = request.getCapability() != null
+                && request.getCapability().getSnapConfig() != SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
                 && ((Constants.SYSTEM_V_FCNTL_H_O_RDWR | Constants.SYSTEM_V_FCNTL_H_O_TRUNC | Constants.SYSTEM_V_FCNTL_H_O_WRONLY) & request
                         .getCapability().getAccessMode()) > 0;
             
@@ -189,18 +190,18 @@ public class PreprocStage extends Stage {
         }
         callback.parseComplete(request, null);
     }
-
+    
     public void pingFile(String fileId) {
         this.enqueueOperation(STAGEOP_PING_FILE, new Object[] { fileId }, null, null);
     }
-
+    
     private void doPingFile(StageRequest m) {
-
+        
         final String fileId = (String) m.getArgs()[0];
-
+        
         // TODO: check if the file was opened for writing
-        oft.refresh(fileId,TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, false);
-
+        oft.refresh(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, false);
+        
     }
     
     public void checkDeleteOnClose(String fileId, DeleteOnCloseCallback listener) {
@@ -392,7 +393,8 @@ public class PreprocStage extends Stage {
             if (closedFiles.size() == 0) {
                 for (OpenFileTable.OpenFileTableEntry entry : closedWrittenFiles) {
                     OSDOperation createVersionEvent = master.getInternalEvent(EventCreateFileVersion.class);
-                    createVersionEvent.startInternalEvent(new Object[]{entry.getFileId(), metadataCache.getFileInfo(entry.getFileId())});
+                    createVersionEvent.startInternalEvent(new Object[] { entry.getFileId(),
+                        metadataCache.getFileInfo(entry.getFileId()) });
                 }
             }
             
@@ -404,15 +406,29 @@ public class PreprocStage extends Stage {
     protected void processMethod(StageRequest m) {
         
         final int requestedMethod = m.getStageMethod();
-
+        
         switch (requestedMethod) {
-            case STAGEOP_PARSE_AUTH_OFTOPEN : doPrepareRequest(m); break;
-            case STAGEOP_OFT_DELETE : doCheckDeleteOnClose(m); break;
-            case STAGEOP_ACQUIRE_LOCK : doAcquireLock(m); break;
-            case STAGEOP_CHECK_LOCK : doCheckLock(m); break;
-            case STAGEOP_UNLOCK : doUnlock(m); break;
-            case STAGEOP_PING_FILE : doPingFile(m); break;
-            default : Logging.logMessage(Logging.LEVEL_ERROR, this,"unknown stageop called: %d",requestedMethod); break;
+        case STAGEOP_PARSE_AUTH_OFTOPEN:
+            doPrepareRequest(m);
+            break;
+        case STAGEOP_OFT_DELETE:
+            doCheckDeleteOnClose(m);
+            break;
+        case STAGEOP_ACQUIRE_LOCK:
+            doAcquireLock(m);
+            break;
+        case STAGEOP_CHECK_LOCK:
+            doCheckLock(m);
+            break;
+        case STAGEOP_UNLOCK:
+            doUnlock(m);
+            break;
+        case STAGEOP_PING_FILE:
+            doPingFile(m);
+            break;
+        default:
+            Logging.logMessage(Logging.LEVEL_ERROR, this, "unknown stageop called: %d", requestedMethod);
+            break;
         }
         
     }
@@ -467,8 +483,8 @@ public class PreprocStage extends Stage {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, OutputUtils
                         .stackTraceToString(ex));
-            rpcRq.sendException(new errnoException(ErrNo.EINVAL, "invalid arguments: "+ex.toString(), OutputUtils
-                        .stackTraceToString(ex)));
+            rpcRq.sendException(new errnoException(ErrNo.EINVAL, "invalid arguments: " + ex.toString(),
+                OutputUtils.stackTraceToString(ex)));
             return false;
         }
         if (Logging.isDebug()) {
