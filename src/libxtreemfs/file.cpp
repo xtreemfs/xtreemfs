@@ -324,7 +324,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
   std::vector<ReadResponse*> read_responses;        //vector of read responses
   YIELD::platform::auto_Log log( parent_volume->get_log() );
   ssize_t ret = 0;
-  char redStrip_initialized=0;
+  int stripCount = 1;
   int i;
   
   try
@@ -356,9 +356,24 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     int stripe_width =  file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_width(); // replica has a striping Policy and this has a width
     int data_width = stripe_width-1;                                   // number of data strips
     int red_width = 1;                                                 //  number of redundancy strips
-    //uint32_t stripe_num = offset/(strip_size*data_width);
-       
+    //uint32_t stripe_num = offset/(strip_size*data_width);   
+    // EC:offset correction        
+    //current_file_offset=(offset/data_width)*stripe_width*strip_size;
+    //current_file_offset=(offset/strip_size)/data_width*stripe_width*strip_size;
             
+            
+#ifdef _DEBUG
+    if 
+    ( 
+      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+         Volume::VOLUME_FLAG_TRACE_FILE_IO 
+    )
+      log->getStream( YIELD::platform::Log::LOG_INFO ) << 
+        "xtreemfs::File::read( rbuf, size=" << size << 
+        ", corrected offset=" << current_file_offset << 
+        " )";
+#endif       
+                 
     //test
 #ifdef _DEBUG
      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
@@ -376,7 +391,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     {
       // calculate the offset and number of bytes to read from one object
       // result parameters: object_number, object_offset, object_size
-      uint64_t object_number = current_file_offset / strip_size;       // data strip number (in the file) where data starts
+      uint64_t object_number = (current_file_offset/strip_size)+(((current_file_offset/strip_size)/data_width));       // translate the physically ask offset into the distribution corresponding real data offset
       uint32_t object_offset = current_file_offset % strip_size;       // offset in the current strip
       size_t object_size = static_cast<size_t>( rbuf_end - rbuf_p );    
       if ( object_offset + object_size > strip_size )
@@ -421,6 +436,50 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 
       rbuf_p += object_size;
       current_file_offset += object_size;
+              
+      
+      // TODO: if last readRequest for data was send-> send additionally request for redundancy strip
+      if (stripCount==data_width){       
+        object_size=strip_size;
+        object_number++;
+#ifdef _DEBUG
+        if 
+        ( 
+          ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+          Volume::VOLUME_FLAG_TRACE_FILE_IO 
+        )
+        {
+          log->getStream( YIELD::platform::Log::LOG_INFO ) << 
+            "xtreemfs::File: issuing read # " << 
+            ( expected_read_response_count + 1 ) <<
+            " for " << object_size << 
+            " bytes from redundant data as object number " << object_number <<
+            " in file " << file_credentials.get_xcap().get_file_id() <<
+            " (object offset = " << object_offset <<
+            ", file offset = " << current_file_offset <<").";
+        }
+#endif
+        // build a new read request
+        ReadRequest* read_request = 
+          new ReadRequest
+          ( 
+            file_credentials, 
+            file_credentials.get_xcap().get_file_id(), 
+            object_number, 
+            0, 
+            object_offset, 
+            static_cast<uint32_t>( object_size ),
+            new ReadBuffer( redbuf, object_size ) 
+          );
+        read_request->set_response_target( read_response_queue->incRef() );
+        read_request->set_selected_file_replica( selected_file_replica );
+
+        parent_volume->get_osd_proxy_mux()->send( *read_request );
+        expected_read_response_count++;      
+                                 
+      } // end if redundancy strip        
+              
+      stripCount++;        
     } // end while (rbuf_p < rbuf_end)
 
 #ifdef _DEBUG
@@ -434,6 +493,8 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         " parallel reads.";
 #endif
 
+    // EC later: wait only until the minimal number of data strips arrived   
+    // TODO: only while loop necessary: while (read_response_i<data_width)  read_response_i++;           
     for 
     ( 
       size_t read_response_i = 0; 
@@ -445,9 +506,10 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       // Object::decRef( read_response );
       read_responses.push_back( &read_response );
 
+      // zero padding is defined by POSIX semantics
       yidl::runtime::auto_Buffer data( read_response.get_object_data().get_data() );
-      rbuf_p = static_cast<unsigned char*>( static_cast<void*>( *data ) );
-      uint32_t zero_padding = read_response.get_object_data().get_zero_padding();
+      rbuf_p = static_cast<unsigned char*>( static_cast<void*>( *data ) );          // put data into the buffer
+      uint32_t zero_padding = read_response.get_object_data().get_zero_padding();   // do zero padding
       if ( read_response.get_selected_file_replica() != 0 )
         selected_file_replica = read_response.get_selected_file_replica();
 
@@ -466,25 +528,25 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       }
 #endif
               
-      // recovery from the available parts
-      if (redStrip_initialized) { 
-        for (i=object_offset; i<(object_offset+object_size); i++) {
-          redbuf[i]=redbuf[i]^wbuf_p[i];
-        }      
-      } 
-      else {
-        for (i=0;i<object_offset; i++){
-          redbuf[i]=0;
-        }
-        for (i=object_offset; i<object_offset+object_size; i++) { 
-          redbuf[i]=wbuf_p[i];
-        }
-        for (i=object_offset+object_size; i<strip_size; i++){ 
-          redbuf[i]=0;
-        }
-        redStrip_initialized=1;  
-      }
-              
+      // recovery
+//       if (redStrip_initialized) { 
+//         for (i=object_offset; i<(object_offset+object_size); i++) {
+//           redbuf[i]=redbuf[i]^wbuf_p[i];
+//         }      
+//       } 
+//       else {
+//         for (i=0;i<object_offset; i++){
+//           redbuf[i]=0;
+//         }
+//         for (i=object_offset; i<object_offset+object_size; i++) { 
+//           redbuf[i]=wbuf_p[i];
+//         }
+//         for (i=object_offset+object_size; i<strip_size; i++){ 
+//           redbuf[i]=0;
+//         }
+//         redStrip_initialized=1;  
+//       }
+             
       ret += data->size();
 
       if ( zero_padding > 0 )
@@ -508,12 +570,25 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
           break;
         }
       }
-    }
-
+      
+    } // end for all read responses
+    // EC: correct ret (size counter)
+    ret -= strip_size; 
+    if (ret<0)
+       ret += strip_size;               
+            
+#ifdef _DEBUG
+      log->getStream( YIELD::platform::Log::LOG_INFO ) << 
+        "DEBUG TEST 1 ret:" << ret << " size: " << size ;
+#endif
+              
 #ifdef _DEBUG
     if ( static_cast<size_t>( ret ) > size ) 
       DebugBreak();
-
+      
+    log->getStream( YIELD::platform::Log::LOG_INFO ) << 
+      "DEBUG TEST 2" ;
+    
     if 
     ( 
       ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
@@ -560,7 +635,10 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 
     ret = -1;
   }
-
+#ifdef _DEBUG
+      log->getStream( YIELD::platform::Log::LOG_INFO ) << 
+        "DEBUG TEST 3" ;
+#endif
   for 
   ( 
     std::vector<ReadResponse*>::iterator read_response_i = read_responses.begin(); 
@@ -568,7 +646,10 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     read_response_i++ 
   )
     yidl::runtime::Object::decRef( **read_response_i );
-
+#ifdef _DEBUG
+      log->getStream( YIELD::platform::Log::LOG_INFO ) << 
+        "DEBUG TEST 4" ;
+#endif
   return ret;
 }
 
