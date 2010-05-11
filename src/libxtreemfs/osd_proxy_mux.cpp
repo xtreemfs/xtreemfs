@@ -288,10 +288,10 @@ auto_OSDProxy OSDProxyMux::getOSDProxy      // first version of getOSDProxy; inp
       // tests
       const org::xtreemfs::interfaces::StringSet& myOSDset = selected_file_replica->get_osd_uuids(); //array of OSD UUIDs
       int sizeOSDset = sizeof(myOSDset)/sizeof(std::string);
-      //log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::OSDProxyMux::getOSDProxy() sizeOSDset:" << sizeOSDset << "  " << striping_policy.get_width();
-      //for (int i=0; i<striping_policy.get_width(); i++){
-      //   log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::OSDProxyMux::getOSDProxy() OSDset Element: " << i << " Value: " << myOSDset[i];
-      //}
+      log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::OSDProxyMux::getOSDProxy() sizeOSDset:" << sizeOSDset << "  " << striping_policy.get_width();
+      for (int i=0; i<striping_policy.get_width(); i++){
+         log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::OSDProxyMux::getOSDProxy() OSDset Element: " << i << " Value: " << myOSDset[i];
+      }
       // test end    
           
       return getOSDProxy( osd_uuid );
