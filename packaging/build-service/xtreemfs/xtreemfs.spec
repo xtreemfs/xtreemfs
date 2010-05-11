@@ -1,6 +1,6 @@
 # norootforbuild
 
-%if 0%{?centos_version} == 501 || 0%{?mandriva_version} == 2007 || 0%{?mdkversion} == 200700 || 0%{?rhel_version} == 501 || 0%{?sles_version} == 10
+%if 0%{?mandriva_version} == 2007 || 0%{?mdkversion} == 200700 || 0%{?rhel_version} == 501 || 0%{?sles_version} == 10
 %define client_subpackage 0
 %else
 %define client_subpackage 1
@@ -18,7 +18,10 @@ Source0:        XtreemFS-%{version}.tar.gz
 #requires for any distribution
 BuildRequires:  ant >= 1.6.5 java-devel >= 1.6.0
 %if %{client_subpackage}
-BuildRequires:  python >= 2.4 gcc-c++ >= 4.2 fuse >= 2.6 fuse-devel >= 2.6 openssl-devel >= 0.9.8
+BuildRequires:  python >= 2.4 gcc-c++ >= 4.1 fuse >= 2.6 fuse-devel >= 2.6 openssl-devel >= 0.9.8
+%if 0%{?centos_version} == 501 && 0%{?opensuse_bs}
+BuildRequires:  kernel
+%endif
 %endif
 
 # openSUSE >=10.2
@@ -121,7 +124,7 @@ export ANT_OPTS=-D"file.encoding=UTF-8"
 export CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing"
 export CXXFLAGS=$CFLAGS
 
-%if 0%{?mandriva_version} == 2008
+%if 0%{?mandriva_version} == 2008 || 0%{?centos_version} == 501
 export CCFLAGS="$CCFLAGS -fPIC"
 %endif
 
