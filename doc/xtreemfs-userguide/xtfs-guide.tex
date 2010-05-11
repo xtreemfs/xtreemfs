@@ -488,16 +488,32 @@ $> cp \textit{service}.p12 /etc/xos/xtreemfs/truststore/certs
 	\texttt{ssl.trusted\_certs.container = jks}
  \item Start up the XtreemFS services (see Sec. \ref{sec:startstopservice}).
  \item Create a new volume (see Sec. \ref{sec:create_volume} for details).
+
+	Use
 	\begin{verbatim}
 	$> mkfs.xtreemfs --pkcs12-file-path=\
-	   /etc/xos/xtreemfs/truststore/certs/client.p12 localhost/test
+	   /etc/xos/xtreemfs/truststore/certs/client.p12 oncrpcs://localhost/test
 	\end{verbatim}
+	for SSL-enabled servers, or
+	\begin{verbatim}
+	$> mkfs.xtreemfs --pkcs12-file-path=\
+	   /etc/xos/xtreemfs/truststore/certs/client.p12 oncrpcg://localhost/test
+	\end{verbatim}
+	for Grid-SSL-enabled servers.
 
  \item Mount the volume (see Sec. \ref{sec:mount_vol} for details).
+
+	Use
 	\begin{verbatim}
 	$> mount.xtreemfs --pkcs12-file-path=\
-	   /etc/xos/xtreemfs/truststore/certs/client.p12 localhost/test /mnt
+	   /etc/xos/xtreemfs/truststore/certs/client.p12 oncrpcs://localhost/test /mnt
 	\end{verbatim}
+	for SSL-enabled servers, or
+	\begin{verbatim}
+	$> mount.xtreemfs --pkcs12-file-path=\
+	   /etc/xos/xtreemfs/truststore/certs/client.p12 oncrpcg://localhost/test /mnt
+	\end{verbatim}
+	for Grid-SSL-enabled servers.
 
 \end{enumerate}
 
@@ -1237,7 +1253,7 @@ $> mkfs.xtreemfs -a POSIX -p RAID0 -s 256 -w 1 \
 
 Creating a volume may require privileged access, which depends on whether an administrator password is required by the MRC. To pass an administrator password, add \texttt{----password <password>} to the \texttt{mkfs.xtreemfs} command.
 
-For a complete list of parameters, please refer to the \texttt{mkfs.xtreemfs} man pages.
+For a complete list of parameters, please refer to the \texttt{mkfs.xtreemfs} man page.
 
 \subsection{Deleting Volumes}
 
