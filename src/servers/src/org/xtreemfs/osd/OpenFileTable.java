@@ -315,7 +315,7 @@ public final class OpenFileTable {
             if (this.expTime < e.expTime) {
                 res = -1;
             } else if (this.expTime == e.expTime) {
-                res = this.fileId.compareTo(e.fileId);
+                res = e.fileId == null? -1: this.fileId.compareTo(e.fileId);
             } else {
                 res = 1;
             }
