@@ -139,10 +139,14 @@ public class xtfs_repl {
     
     public final static String  OPTION_SSL_TRUSTED_CA_PASSWORD            = "tpass";
     
-    public final static int     DEFAULT_REPLICATION_FLAGS                 = ReplicationFlags
+    /* Modified jgonz (5-3-10)
+     public final static int     DEFAULT_REPLICATION_FLAGS                 = ReplicationFlags
                                                                                   .setPartialReplica(ReplicationFlags
                                                                                           .setRandomStrategy(0));
-    
+    */
+    public final static int     DEFAULT_REPLICATION_FLAGS                 = ReplicationFlags
+                                                                                  .setPartialReplica(0);
+
     private String              volName;
     
     private String              volPath;
