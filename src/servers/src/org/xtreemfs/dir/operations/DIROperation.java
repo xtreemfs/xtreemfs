@@ -104,9 +104,9 @@ public abstract class DIROperation {
                     error instanceof BabuDBException && 
                     ((BabuDBException) error).getErrorCode().equals(NO_ACCESS)
                   ) || (
-                    error instanceof ConcurrentModificationException && 
-                    !dbsReplicationManager.isMaster())
-                  )
+                          // TODO better exception handling
+                    error instanceof ConcurrentModificationException)
+                  ) // && !dbsReplicationManager.isMaster() ... removed for testing
             ) {
             
             InetAddress altMaster = dbsReplicationManager.getMaster();

@@ -315,12 +315,20 @@ public class DIRClient extends DIRClientBackend implements TimeServerClient {
                             e.getAddress(),e.getPort());
                     
                     if (!newAddress.equals(this.address)) {
+                        this.otherServers.add(this.address);
                         redirect(newAddress);
                     } else {
                         Logging.logMessage(Logging.LEVEL_INFO, this.root, 
                                 "'%s' seems to perform a handover at the " +
                                 "moment.", this.address.toString());
-                        reconnect();
+                        
+                        if (this.otherServers != null && 
+                            this.otherServers.size() != 0) {
+                            reconnect();
+                        } else {
+                            result.fill(r);
+                            return;
+                        }
                     }
                     
                     if (r != null) r.freeBuffers();
@@ -384,7 +392,7 @@ public class DIRClient extends DIRClientBackend implements TimeServerClient {
          * for the replicated DIR could be found
          */
         private void reconnect() {
-            long delay = (ReplicationConfig.LEASE_TIMEOUT + 1) /
+            long delay = (ReplicationConfig.LEASE_TIMEOUT * 2) /
                                     otherServers.size();
             try {
                 Thread.sleep(delay);
