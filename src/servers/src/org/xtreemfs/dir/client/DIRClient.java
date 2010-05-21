@@ -315,7 +315,9 @@ public class DIRClient extends DIRClientBackend implements TimeServerClient {
                             e.getAddress(),e.getPort());
                     
                     if (!newAddress.equals(this.address)) {
-                        this.otherServers.add(this.address);
+                        if (this.address != null) 
+                            this.otherServers.add(this.address);
+                        
                         redirect(newAddress);
                     } else {
                         Logging.logMessage(Logging.LEVEL_INFO, this.root, 
