@@ -95,8 +95,18 @@ public class utils {
         Process p = Runtime.getRuntime().exec(
             new String[] { "setfattr", "-n", attrname, "-v", attrvalue, f.getAbsolutePath() });
         p.waitFor();
-        if (p.exitValue() != 0)
-            throw new IOException("a problem occurred when setting '" + attrname + "': " + p.exitValue());
+        if (p.exitValue() != 0) {
+            String err = "a problem occurred when setting '" + attrname + "'\n";
+            BufferedReader in = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            for (;;) {
+                String line = in.readLine();
+                if (line == null)
+                    break;
+                
+                err += line + "\n";
+            }
+            throw new IOException(err);
+        }
     }
     
     public static String expandPath(String path) {
