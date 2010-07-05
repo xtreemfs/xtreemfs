@@ -1,4 +1,4 @@
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2009 NEC HPC Europe, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #ifndef _YIELD_MAIN_H_

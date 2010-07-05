@@ -28,7 +28,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 /*
- * AUTHORS: Minor Gordon (NEC)
+ * AUTHORS: NEC HPC Europe
  */
 
 package org.xtreemfs.foundation.oncrpc.utils;
