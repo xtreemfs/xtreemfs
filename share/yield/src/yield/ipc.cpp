@@ -6122,7 +6122,7 @@ YIELD::ipc::SSLContext::create
       STACK_OF( X509 )* ca = NULL;
       if ( PKCS12_parse( p12, pkcs12_passphrase.c_str(), &pkey, &cert, &ca ) )
       {
-        if ( pkey != NULL && cert != NULL && ca != NULL )
+        if ( pkey != NULL && cert != NULL )
         {
           SSL_CTX_use_certificate( ctx, cert );
           SSL_CTX_use_PrivateKey( ctx, pkey );
