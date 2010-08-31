@@ -124,7 +124,7 @@ export ANT_OPTS=-D"file.encoding=UTF-8"
 export CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing"
 export CXXFLAGS=$CFLAGS
 
-%if 0%{?mandriva_version} == 2008 || 0%{?centos_version} == 501
+%if 0%{?mandriva_version} == 2008 || 0%{?centos_version} == 501 || 0%{?suse_version} == 1030
 export CCFLAGS="$CCFLAGS -fPIC"
 %endif
 
