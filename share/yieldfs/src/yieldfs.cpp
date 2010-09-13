@@ -816,8 +816,8 @@ namespace yieldfs
       options.ThreadCount = 4;
       if ( ( flags & FUSE::FUSE_FLAG_DEBUG ) == FUSE::FUSE_FLAG_DEBUG )
       {
-        options.DebugMode = 1;
-        options.UseStdErr = 1;
+		options.Options &= DOKAN_OPTION_DEBUG;
+        options.Options &= DOKAN_OPTION_STDERR;
       }
       options.GlobalContext = ( ULONG64 )this;
 
@@ -840,6 +840,7 @@ namespace yieldfs
 	      DeleteDirectory,
 	      MoveFile,
 	      SetEndOfFile,
+		  NULL, // SetAllocationSize
 	      LockFile,
 	      UnlockFile,
 	      GetDiskFreeSpace,
