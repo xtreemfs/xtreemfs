@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C++ Express 2008
+# Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "google-breakpad", "proj\google-breakpad\google-breakpad.vcproj", "{AF7AE548-AC85-424F-87CD-417ECBC12291}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxtreemfs", "proj\libxtreemfs\libxtreemfs.vcproj", "{FFA69254-B8BC-4E99-B60C-F4B96511124A}"
@@ -34,6 +34,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rmfs.xtreemfs", "proj\rmfs.
 		{AF7AE548-AC85-424F-87CD-417ECBC12291} = {AF7AE548-AC85-424F-87CD-417ECBC12291}
 		{FFA69254-B8BC-4E99-B60C-F4B96511124A} = {FFA69254-B8BC-4E99-B60C-F4B96511124A}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtreemfs-client-utillity", "packaging\windows\XtreemFS client utillity\XtreemFS client utillity.vcproj", "{AF07DB69-BFAB-4018-9004-EB24C5059AF5}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "xtreemfs-client-setup", "packaging\windows\XtreemFS Client Setup\XtreemFS Client Setup.vdproj", "{4124373C-93A9-407D-A13F-D3837CC63A80}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,6 +73,14 @@ Global
 		{F7BCFCF3-E465-4557-A8D4-C23CE23B2400}.Debug|Win32.Build.0 = Debug|Win32
 		{F7BCFCF3-E465-4557-A8D4-C23CE23B2400}.Release|Win32.ActiveCfg = Release|Win32
 		{F7BCFCF3-E465-4557-A8D4-C23CE23B2400}.Release|Win32.Build.0 = Release|Win32
+		{AF07DB69-BFAB-4018-9004-EB24C5059AF5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AF07DB69-BFAB-4018-9004-EB24C5059AF5}.Debug|Win32.Build.0 = Debug|Win32
+		{AF07DB69-BFAB-4018-9004-EB24C5059AF5}.Release|Win32.ActiveCfg = Release|Win32
+		{AF07DB69-BFAB-4018-9004-EB24C5059AF5}.Release|Win32.Build.0 = Release|Win32
+		{4124373C-93A9-407D-A13F-D3837CC63A80}.Debug|Win32.ActiveCfg = Debug
+		{4124373C-93A9-407D-A13F-D3837CC63A80}.Debug|Win32.Build.0 = Debug
+		{4124373C-93A9-407D-A13F-D3837CC63A80}.Release|Win32.ActiveCfg = Release
+		{4124373C-93A9-407D-A13F-D3837CC63A80}.Release|Win32.Build.0 = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -622,7 +622,7 @@ namespace XtreemFSclientutillity {
 			this->createProcess->EnableRaisingEvents = true;
 			this->createProcess->StartInfo->Domain = L"";
 			this->createProcess->StartInfo->ErrorDialog = true;
-			this->createProcess->StartInfo->FileName = L"xtfs_mkvol";
+			this->createProcess->StartInfo->FileName = L"mkfs.xtreemfs.exe";
 			this->createProcess->StartInfo->LoadUserProfile = false;
 			this->createProcess->StartInfo->Password = nullptr;
 			this->createProcess->StartInfo->StandardErrorEncoding = nullptr;
@@ -637,7 +637,7 @@ namespace XtreemFSclientutillity {
 			this->mountProcess->EnableRaisingEvents = true;
 			this->mountProcess->StartInfo->Domain = L"";
 			this->mountProcess->StartInfo->ErrorDialog = true;
-			this->mountProcess->StartInfo->FileName = L"xtfs_mount";
+			this->mountProcess->StartInfo->FileName = L"mount.xtreemfs.exe";
 			this->mountProcess->StartInfo->LoadUserProfile = false;
 			this->mountProcess->StartInfo->Password = nullptr;
 			this->mountProcess->StartInfo->StandardErrorEncoding = nullptr;
@@ -667,7 +667,7 @@ namespace XtreemFSclientutillity {
 			this->deleteProcess->EnableRaisingEvents = true;
 			this->deleteProcess->StartInfo->Domain = L"";
 			this->deleteProcess->StartInfo->ErrorDialog = true;
-			this->deleteProcess->StartInfo->FileName = L"xtfs_rmvol";
+			this->deleteProcess->StartInfo->FileName = L"rmfs.xtreemfs.exe";
 			this->deleteProcess->StartInfo->LoadUserProfile = false;
 			this->deleteProcess->StartInfo->Password = nullptr;
 			this->deleteProcess->StartInfo->StandardErrorEncoding = nullptr;
@@ -681,7 +681,7 @@ namespace XtreemFSclientutillity {
 			this->listProcess->EnableRaisingEvents = true;
 			this->listProcess->StartInfo->Domain = L"";
 			this->listProcess->StartInfo->ErrorDialog = true;
-			this->listProcess->StartInfo->FileName = L"xtfs_lsvol";
+			this->listProcess->StartInfo->FileName = L"lsfs.xtreemfs.exe";
 			this->listProcess->StartInfo->LoadUserProfile = false;
 			this->listProcess->StartInfo->Password = nullptr;
 			this->listProcess->StartInfo->StandardErrorEncoding = nullptr;
@@ -728,20 +728,20 @@ private: System::Void createProceedButton_Click(System::Object^  sender, System:
 				 this->mrcInputBoxC->Text+"/"+this->volInputBoxC->Text;
 			 this->mrcInputBoxC->ResetText();
 			 this->volInputBoxC->ResetText();
-			 this->createProcess->Start();
 			 this->toolStripStatusLabel1->Text = "executed: "+this->createProcess->StartInfo->FileName+" "+this->createProcess->StartInfo->Arguments;
+			 this->createProcess->Start();
 		 }
 private: System::Void mountProceedButton_Click(System::Object^  sender, System::EventArgs^  e) {
 			 this->mountProcess->StartInfo->Arguments = 
 				 this->dirInputBoxM->Text+"/"+this->volInputBoxM->Text+" "+this->mountPoint->SelectedItem;
 			 this->dirInputBoxM->ResetText();
 			 this->volInputBoxM->ResetText();
-			 this->mountProcess->Start();
 			 this->toolStripStatusLabel1->Text = "executed: "+this->mountProcess->StartInfo->FileName+" "+this->mountProcess->StartInfo->Arguments;
+			 this->mountProcess->Start();
 		 }
 private: System::Void listProceedButton_Click(System::Object^  sender, System::EventArgs^  e) {
-			 this->listProcess->Start();
 			 this->toolStripStatusLabel1->Text = "executed: "+this->listProcess->StartInfo->FileName+" "+this->listProcess->StartInfo->Arguments;
+			 this->listProcess->Start();
 		 }
 private: System::Void unmountProceedButton_Click(System::Object^  sender, System::EventArgs^  e) {
 			 this->unmountProcess->StartInfo->Arguments = "/u "+this->umountPoint->SelectedItem;
@@ -753,8 +753,8 @@ private: System::Void deleteProceedButton_Click(System::Object^  sender, System:
 				  this->mrcInputBoxD->Text+"/"+this->volInputBoxD->Text;
 			 this->mrcInputBoxD->ResetText();
 			 this->volInputBoxD->ResetText();
-			 this->deleteProcess->Start();
 			 this->toolStripStatusLabel1->Text = "executed: "+this->deleteProcess->StartInfo->FileName+" "+this->deleteProcess->StartInfo->Arguments;
+			 this->deleteProcess->Start();
 		 }
 private: System::Void createButton_Click(System::Object^  sender, System::EventArgs^  e) {
 			 this->createButton->Enabled = false;

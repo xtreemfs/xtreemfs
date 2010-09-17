@@ -46,7 +46,7 @@
         "Entry"
         {
         "MsmKey" = "8:_13793C01461F339109A5263EA2A05103"
-        "OwnerKey" = "8:_62097A22EAD342D89A71DD8BDEFF5DAF"
+        "OwnerKey" = "8:_6663C4F6E978481D8A9F8136B5A90537"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -63,36 +63,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_2539652531B4431885CC00A9BA084F3D"
-        "OwnerKey" = "8:_030F3F58D4C84BB0BA2D98BC9A0F291F"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_2539652531B4431885CC00A9BA084F3D"
-        "OwnerKey" = "8:_F174E0C5AA1F41EF823B26CCCC60C433"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_2539652531B4431885CC00A9BA084F3D"
-        "OwnerKey" = "8:_D7E3E18AEAD748A984D29AC7E0F107A7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_2539652531B4431885CC00A9BA084F3D"
-        "OwnerKey" = "8:_813FC4DBF3BF49FA8891E893A805EBBB"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_2539652531B4431885CC00A9BA084F3D"
-        "OwnerKey" = "8:_62097A22EAD342D89A71DD8BDEFF5DAF"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_2AC0821EC04BE735757A1CF7C5E64740"
         "OwnerKey" = "8:_030F3F58D4C84BB0BA2D98BC9A0F291F"
         "MsmSig" = "8:_UNDEFINED"
@@ -118,7 +88,7 @@
         "Entry"
         {
         "MsmKey" = "8:_2AC0821EC04BE735757A1CF7C5E64740"
-        "OwnerKey" = "8:_62097A22EAD342D89A71DD8BDEFF5DAF"
+        "OwnerKey" = "8:_6663C4F6E978481D8A9F8136B5A90537"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -141,37 +111,13 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_5A2DBFE685657D2E9310109BDCB5EE17"
-        "OwnerKey" = "8:_D7E3E18AEAD748A984D29AC7E0F107A7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_5A2DBFE685657D2E9310109BDCB5EE17"
-        "OwnerKey" = "8:_813FC4DBF3BF49FA8891E893A805EBBB"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_5A2DBFE685657D2E9310109BDCB5EE17"
-        "OwnerKey" = "8:_62097A22EAD342D89A71DD8BDEFF5DAF"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_5A2DBFE685657D2E9310109BDCB5EE17"
-        "OwnerKey" = "8:_030F3F58D4C84BB0BA2D98BC9A0F291F"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_5B6D903177C641AB8DA3D5E59B48AC4B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_62097A22EAD342D89A71DD8BDEFF5DAF"
+        "MsmKey" = "8:_6663C4F6E978481D8A9F8136B5A90537"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -202,7 +148,7 @@
         "Entry"
         {
         "MsmKey" = "8:_7D41E6E0D906FE29F9C3E2E383F344A7"
-        "OwnerKey" = "8:_62097A22EAD342D89A71DD8BDEFF5DAF"
+        "OwnerKey" = "8:_6663C4F6E978481D8A9F8136B5A90537"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -219,20 +165,56 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_BE8F69050C474F6882B84F1E7C864999"
+        "OwnerKey" = "8:_030F3F58D4C84BB0BA2D98BC9A0F291F"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_BE8F69050C474F6882B84F1E7C864999"
+        "OwnerKey" = "8:_F174E0C5AA1F41EF823B26CCCC60C433"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_BE8F69050C474F6882B84F1E7C864999"
+        "OwnerKey" = "8:_D7E3E18AEAD748A984D29AC7E0F107A7"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_BE8F69050C474F6882B84F1E7C864999"
+        "OwnerKey" = "8:_813FC4DBF3BF49FA8891E893A805EBBB"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_BE8F69050C474F6882B84F1E7C864999"
+        "OwnerKey" = "8:_6663C4F6E978481D8A9F8136B5A90537"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_C0D2BB9D8D074B00AEE80E76DF374E95"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_D530F0DE72B04DF8BAE304E6F3369DB0"
-        "OwnerKey" = "8:_2539652531B4431885CC00A9BA084F3D"
+        "MsmKey" = "8:_D7E3E18AEAD748A984D29AC7E0F107A7"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_D7E3E18AEAD748A984D29AC7E0F107A7"
-        "OwnerKey" = "8:_UNDEFINED"
+        "MsmKey" = "8:_DA7D08E3A35476A75F85B31ECBAE1E02"
+        "OwnerKey" = "8:_F174E0C5AA1F41EF823B26CCCC60C433"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EA96D7FB083B4B928CDC2ECB16A88807"
+        "OwnerKey" = "8:_BE8F69050C474F6882B84F1E7C864999"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -462,7 +444,7 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:TRUE"
+            "Exclude" = "11:FALSE"
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
@@ -526,6 +508,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_DA7D08E3A35476A75F85B31ECBAE1E02"
+            {
+            "SourcePath" = "8:RPCRT4.dll"
+            "TargetName" = "8:RPCRT4.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
         }
         "FileType"
         {
@@ -580,13 +582,6 @@
         }
         "LaunchCondition"
         {
-            "{836E08B8-0285-4809-BA42-01DB6754A45D}:_856FA47D2C59403584504247C7EC715B"
-            {
-            "Name" = "8:dokanCondition"
-            "Condition" = "8:DOKANEXISTS1 OR DOKANEXISTS2 OR DOKANEXISTS3"
-            "Message" = "8:The DokanLibrary release 0.42 (x86) does not exist! Do you want to download and install it now?"
-            "InstallUrl" = "8:http://dokan-dev.net/en/"
-            }
         }
         "Locator"
         {
@@ -618,14 +613,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:XtreemFS client"
-        "ProductCode" = "8:{BB0A6B75-6FFF-4BDD-B786-10D2C1E23337}"
-        "PackageCode" = "8:{9319C206-55D1-4E0F-89BB-7EE4E0BEB5B6}"
+        "ProductCode" = "8:{E9EEE95A-C4F5-42F9-9913-93075B31FC9A}"
+        "PackageCode" = "8:{9F0D30DD-7D59-461B-AE1C-49C12890F02A}"
         "UpgradeCode" = "8:{2A86374A-0526-47B2-B1E8-02CBE9E2AC01}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.0"
+        "ProductVersion" = "8:1.2.3"
         "Manufacturer" = "8:Zuse Institute Berlin"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://www.xtreemfs.org/"
@@ -1319,11 +1314,11 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_2539652531B4431885CC00A9BA084F3D"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_BE8F69050C474F6882B84F1E7C864999"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_9_0_Microsoft_VC90_DebugCRT_x86.msm"
+            "SourcePath" = "8:policy_9_0_Microsoft_VC90_CRT_x86.msm"
                 "Properties"
                 {
                 }
@@ -1333,11 +1328,11 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_D530F0DE72B04DF8BAE304E6F3369DB0"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_EA96D7FB083B4B928CDC2ECB16A88807"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:microsoft_vc90_debugcrt_x86.msm"
+            "SourcePath" = "8:microsoft_vc90_crt_x86.msm"
                 "Properties"
                 {
                 }
@@ -1352,7 +1347,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_030F3F58D4C84BB0BA2D98BC9A0F291F"
             {
-            "SourcePath" = "8:..\\..\\..\\src\\client\\bin\\xtfs_lsvol.exe"
+            "SourcePath" = "8:..\\..\\..\\bin\\lsfs.xtreemfs.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
@@ -1380,7 +1375,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_24852FEEA9F04548802A909D0CB49B27"
             {
-            "SourcePath" = "8:..\\..\\..\\src\\client\\lib\\xtreemfs-client.lib"
+            "SourcePath" = "8:..\\..\\..\\lib\\xtreemfs.lib"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
@@ -1408,7 +1403,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_4F37B9A4C3BD44D480307F676F6FB0CB"
             {
-            "SourcePath" = "8:..\\..\\..\\src\\client\\lib\\google-breakpad.lib"
+            "SourcePath" = "8:..\\..\\..\\lib\\google-breakpad.lib"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
@@ -1436,7 +1431,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_5B6D903177C641AB8DA3D5E59B48AC4B"
             {
-            "SourcePath" = "8:..\\..\\..\\src\\client\\Release\\xtreemfs-client-utillity.exe"
+            "SourcePath" = "8:..\\..\\..\\Release\\xtreemfs-client-utillity.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_228D917002644B3BBD28F16D482D8378"
@@ -1462,9 +1457,9 @@
                 {
                 }
             }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_62097A22EAD342D89A71DD8BDEFF5DAF"
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_6663C4F6E978481D8A9F8136B5A90537"
             {
-            "SourcePath" = "8:..\\..\\..\\src\\client\\bin\\xtfs_stat.exe"
+            "SourcePath" = "8:..\\..\\..\\bin\\xtfs_vivaldi.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
@@ -1473,7 +1468,7 @@
             "Vital" = "11:TRUE"
             "ReadOnly" = "11:FALSE"
             "Hidden" = "11:FALSE"
-            "System" = "11:TRUE"
+            "System" = "11:FALSE"
             "Permanent" = "11:FALSE"
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
@@ -1484,7 +1479,7 @@
             "ProjectOutputGroupRegister" = "3:1"
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{A6E92EC2-8CFD-4F32-80BE-67BFB275AB9D}"
+            "OutputProjectGuid" = "8:{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {
@@ -1492,7 +1487,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_813FC4DBF3BF49FA8891E893A805EBBB"
             {
-            "SourcePath" = "8:..\\..\\..\\src\\client\\bin\\xtfs_rmvol.exe"
+            "SourcePath" = "8:..\\..\\..\\bin\\rmfs.xtreemfs.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
@@ -1520,7 +1515,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_D7E3E18AEAD748A984D29AC7E0F107A7"
             {
-            "SourcePath" = "8:..\\..\\..\\src\\client\\bin\\xtfs_mkvol.exe"
+            "SourcePath" = "8:..\\..\\..\\bin\\mkfs.xtreemfs.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
@@ -1548,7 +1543,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_F174E0C5AA1F41EF823B26CCCC60C433"
             {
-            "SourcePath" = "8:..\\..\\..\\src\\client\\bin\\xtfs_mount.exe"
+            "SourcePath" = "8:..\\..\\..\\bin\\mount.xtreemfs.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
