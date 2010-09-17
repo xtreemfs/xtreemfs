@@ -93,6 +93,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_451931F2DB2348FA90E7AA3BF8F26F20"
+        "OwnerKey" = "8:_935F470258674BD1A7A6DD3F9F177DD3"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_4F37B9A4C3BD44D480307F676F6FB0CB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -159,38 +165,38 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_97862E0BE00C485DB2C0E167DCA10D6D"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_BE8F69050C474F6882B84F1E7C864999"
+        "MsmKey" = "8:_935F470258674BD1A7A6DD3F9F177DD3"
         "OwnerKey" = "8:_030F3F58D4C84BB0BA2D98BC9A0F291F"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_BE8F69050C474F6882B84F1E7C864999"
+        "MsmKey" = "8:_935F470258674BD1A7A6DD3F9F177DD3"
         "OwnerKey" = "8:_F174E0C5AA1F41EF823B26CCCC60C433"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_BE8F69050C474F6882B84F1E7C864999"
+        "MsmKey" = "8:_935F470258674BD1A7A6DD3F9F177DD3"
         "OwnerKey" = "8:_D7E3E18AEAD748A984D29AC7E0F107A7"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_BE8F69050C474F6882B84F1E7C864999"
+        "MsmKey" = "8:_935F470258674BD1A7A6DD3F9F177DD3"
         "OwnerKey" = "8:_813FC4DBF3BF49FA8891E893A805EBBB"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_BE8F69050C474F6882B84F1E7C864999"
+        "MsmKey" = "8:_935F470258674BD1A7A6DD3F9F177DD3"
         "OwnerKey" = "8:_6663C4F6E978481D8A9F8136B5A90537"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_97862E0BE00C485DB2C0E167DCA10D6D"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -209,12 +215,6 @@
         {
         "MsmKey" = "8:_DA7D08E3A35476A75F85B31ECBAE1E02"
         "OwnerKey" = "8:_F174E0C5AA1F41EF823B26CCCC60C433"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_EA96D7FB083B4B928CDC2ECB16A88807"
-        "OwnerKey" = "8:_BE8F69050C474F6882B84F1E7C864999"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -613,14 +613,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:XtreemFS client"
-        "ProductCode" = "8:{E9EEE95A-C4F5-42F9-9913-93075B31FC9A}"
-        "PackageCode" = "8:{9F0D30DD-7D59-461B-AE1C-49C12890F02A}"
+        "ProductCode" = "8:{E3E62DD6-6155-4481-BEF7-7D90519DFCDF}"
+        "PackageCode" = "8:{E2001E6B-AF9F-449D-BF47-5D965451B0F6}"
         "UpgradeCode" = "8:{2A86374A-0526-47B2-B1E8-02CBE9E2AC01}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.2.3"
+        "ProductVersion" = "8:1.2.2"
         "Manufacturer" = "8:Zuse Institute Berlin"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://www.xtreemfs.org/"
@@ -1314,11 +1314,11 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_BE8F69050C474F6882B84F1E7C864999"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_451931F2DB2348FA90E7AA3BF8F26F20"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_9_0_Microsoft_VC90_CRT_x86.msm"
+            "SourcePath" = "8:microsoft_vc90_crt_x86.msm"
                 "Properties"
                 {
                 }
@@ -1328,11 +1328,11 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_EA96D7FB083B4B928CDC2ECB16A88807"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_935F470258674BD1A7A6DD3F9F177DD3"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:microsoft_vc90_crt_x86.msm"
+            "SourcePath" = "8:policy_9_0_Microsoft_VC90_CRT_x86.msm"
                 "Properties"
                 {
                 }
