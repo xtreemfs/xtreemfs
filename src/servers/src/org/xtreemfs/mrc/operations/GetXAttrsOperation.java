@@ -95,7 +95,7 @@ public class GetXAttrsOperation extends MRCOperation {
         for (SysAttrs attr : SysAttrs.values()) {
             String key = "xtreemfs." + attr.toString();
             Object value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(),
-                res.toString(), file, attr.toString());
+                master.getFileAccessManager(), res.toString(), file, attr.toString());
             if (!value.equals(""))
                 attrNames.add(key);
         }

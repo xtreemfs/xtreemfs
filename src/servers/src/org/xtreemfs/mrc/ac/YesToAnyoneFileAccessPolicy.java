@@ -89,16 +89,14 @@ public class YesToAnyoneFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
-        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update) throws MRCException,
-        UserException {
+    public void updateACLEntries(StorageManager sMan, FileMetadata file, long parentId,
+        Map<String, Object> entries, AtomicDBUpdate update) throws MRCException, UserException {
         // do nothing
     }
     
     @Override
-    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
-        List<String> groupIds, List<Object> entities, AtomicDBUpdate update) throws MRCException,
-        UserException {
+    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
+        List<Object> entities, AtomicDBUpdate update) throws MRCException, UserException {
         // do nothing
     }
     

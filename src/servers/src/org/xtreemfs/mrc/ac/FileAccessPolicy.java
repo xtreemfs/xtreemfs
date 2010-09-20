@@ -77,8 +77,8 @@ public interface FileAccessPolicy {
      * @throws MRCException
      *             if an error occurs while trying to get permissions
      */
-    public void checkPermission(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, String accessMode) throws UserException, MRCException;
+    public void checkPermission(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, String accessMode) throws UserException, MRCException;
     
     /**
      * Checks whether search permission is granted on the given path. The method
@@ -173,9 +173,9 @@ public interface FileAccessPolicy {
      * @throws UserException
      *             if access is denied
      */
-    public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, int posixAccessRights, AtomicDBUpdate update)
-        throws MRCException, UserException;
+    public void setPosixAccessRights(StorageManager sMan, FileMetadata file, long parentId, String userId,
+        List<String> groupIds, int posixAccessRights, AtomicDBUpdate update) throws MRCException,
+        UserException;
     
     /**
      * Creates or changes a set of entries the current ACL of a file.
@@ -186,10 +186,6 @@ public interface FileAccessPolicy {
      *            the file
      * @param parentId
      *            the file's parent ID
-     * @param userId
-     *            the user ID
-     * @param groupIds
-     *            a list of group IDs
      * @param entries
      *            a mapping from entity names (ac entities) to long values
      *            (rights masks) representing the ACL entries to add/modify
@@ -200,9 +196,8 @@ public interface FileAccessPolicy {
      * @throws UserException
      *             if access is denied
      */
-    public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
-        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update)
-        throws MRCException, UserException;
+    public void updateACLEntries(StorageManager sMan, FileMetadata file, long parentId,
+        Map<String, Object> entries, AtomicDBUpdate update) throws MRCException, UserException;
     
     /**
      * Returns the ACL of a file.
@@ -213,8 +208,7 @@ public interface FileAccessPolicy {
      *            the file
      * @return the ACL of the given file
      */
-    public Map<String, Object> getACLEntries(StorageManager sMan, FileMetadata file)
-        throws MRCException;
+    public Map<String, Object> getACLEntries(StorageManager sMan, FileMetadata file) throws MRCException;
     
     /**
      * Creates or changes an entry in the current ACL of a file.
@@ -225,10 +219,6 @@ public interface FileAccessPolicy {
      *            the file
      * @param parentId
      *            the file's parent ID
-     * @param userId
-     *            the user ID
-     * @param groupIds
-     *            a list of group IDs
      * @param entities
      *            a list of access control entity names to delete from the ACL
      * @param update
@@ -239,8 +229,7 @@ public interface FileAccessPolicy {
      *             if access is denied
      */
     public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
-        String userId, List<String> groupIds, List<Object> entities, AtomicDBUpdate update)
-        throws MRCException, UserException;
+        List<Object> entities, AtomicDBUpdate update) throws MRCException, UserException;
     
     /**
      * Returns the default ACL for the root directory. The method is invoked in

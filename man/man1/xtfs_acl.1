@@ -1,0 +1,60 @@
+.TH xtfs_acl 1 "September 2010" "The XtreemFS Distributed File System" "XtreemFS client"
+.SH NAME
+xtfs_acl \- get and set POSIX access control lists of an XtreemFS file or directory.
+.SH SYNOPSIS
+xtfs_acl <path>
+.br
+xtfs_acl -m|--modify u|g|m|o:[<name>]:[<rwx>|<octal>] <path>
+.br
+xtfs_acl -x|--remove u|g|m|o:<name> <path>
+.br
+
+.SH DESCRIPTION
+.I xtfs_acl
+prints and updates the access control lists of a file or directory stored within an XtreemFS volume. POSIX ACLs allow for a fine-grained access control model that supports individual access rights for single users and groups. The tool is a replacement for the \fIgetfacl\fP and \fIsetfacl\fP tools in common Unix environments, which is required because XtreemFS cannot process numeric IDs of groups and users. The semantics of XtreemFS ACLs are the equivalent to POSIX ACLs. A detailed description can be found at \fihttp://www.suse.de/~agruen/acl/linux-acls/online\fP.
+
+.SH OPTIONS
+
+.TP
+\fB\-h/\-\-help
+print usage info
+.TP
+\fB\-m/\-\-modify \fItype:name:rights
+the updated ACL entry
+.TP
+\fB\-x/\-\-remove \fItype:name
+the ACL entry to remove
+
+.SH EXAMPLE USAGE
+
+.B xtfs_acl ./xtfs_dir
+.PP
+Lists the ACL attached to the directory \fB./xtfs-dir\fP. All ACL entries will be displayed.
+
+.B xtfs_acl -m u:userx:r ./xtfs-dir
+.PP
+Grants user \fBuserx\fP read access to the directory \fB./xtfs-dir\fP.
+
+.B xtfs_acl -x g:friends ./xtfs_dir
+.PP
+Removes the ACL entry of the directory \fB./xtfs-dir\fP for the group \fB./friends\fP.
+
+.SH "SEE ALSO"
+.BR setfacl (1),
+.BR getfacl (1),
+.BR lsfs.xtreemfs (1),
+.BR mkfs.xtreemfs (1),
+.BR mount.xtreemfs (1),
+.BR rmfs.xtreemfs (1),
+.BR umount.xtreemfs (1),
+.BR xtfs_cleanup (1),
+.BR xtfs_mrcdbtool (1),
+.BR xtfs_repl (1),
+.BR xtfs_scrub (1),
+.BR xtfs_sp (1),
+.BR xtfs_stat (1)
+.BR
+
+
+.SH AVAILABILITY
+The xtfs_acl command is part of the XtreemFS-tools package and is available from http://www.XtreemFS.org

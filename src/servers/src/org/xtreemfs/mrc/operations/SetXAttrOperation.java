@@ -113,8 +113,8 @@ public class SetXAttrOperation extends MRCOperation {
             faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser,
                 rq.getDetails().groupIds);
             
-            MRCHelper.setSysAttrValue(sMan, vMan, res.getParentDirId(), file, attrKey
-                    .substring(StorageManager.SYS_ATTR_KEY_PREFIX.length()), attrVal, update);
+            MRCHelper.setSysAttrValue(sMan, vMan, master.getFileAccessManager(), res.getParentDirId(), file,
+                attrKey.substring(StorageManager.SYS_ATTR_KEY_PREFIX.length()), attrVal, update);
         }
 
         // set a user attribute

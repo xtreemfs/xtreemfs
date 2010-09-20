@@ -25,6 +25,7 @@ package org.xtreemfs.mrc.utils;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -32,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
@@ -55,6 +57,7 @@ import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.UserException;
+import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -118,7 +121,8 @@ public class MRCHelper {
             repl_factor,
             repl_full,
             snapshots,
-            mark_replica_complete
+            mark_replica_complete,
+            acl
     }
     
     public enum FileType {
@@ -239,8 +243,10 @@ public class MRCHelper {
      * Checks whether all service UUIDs from the list can be resolved, i.e.
      * refer to valid services.
      * 
-     * @param newOSDs the list of OSDs
-     * @return <tt>true</tt>, if all OSDs are resolvable, <tt>false</tt>, otherwise
+     * @param newOSDs
+     *            the list of OSDs
+     * @return <tt>true</tt>, if all OSDs are resolvable, <tt>false</tt>,
+     *         otherwise
      */
     public static boolean isResolvable(List<String> newOSDs) {
         if (newOSDs != null)
@@ -288,8 +294,8 @@ public class MRCHelper {
     }
     
     public static String getSysAttrValue(MRCConfig config, StorageManager sMan, OSDStatusManager osdMan,
-        String path, FileMetadata file, String keyString) throws DatabaseException, UserException,
-        JSONException, UnknownUUIDException {
+        FileAccessManager faMan, String path, FileMetadata file, String keyString) throws DatabaseException,
+        UserException, JSONException, UnknownUUIDException {
         
         if (keyString.startsWith(POLICY_ATTR_PREFIX.toString() + "."))
             return getPolicyValue(sMan, keyString);
@@ -398,16 +404,44 @@ public class MRCHelper {
                 
                 return sb.toString();
             }
+            case acl:
+
+                Map<String, Object> acl;
+                try {
+                    acl = faMan.getACLEntries(sMan, file);
+                } catch (MRCException e) {
+                    Logging.logError(Logging.LEVEL_ERROR, null, e);
+                    throw new UserException(ErrNo.EINVAL);
+                }
                 
+                if (acl != null) {
+                    
+                    StringBuilder sb = new StringBuilder();
+                    
+                    int i = 0;
+                    for (Entry<String, Object> entry : acl.entrySet()) {
+                        
+                        sb.append(entry.getKey());
+                        sb.append(":");
+                        sb.append(entry.getValue());
+                        
+                        if (i < acl.size() - 1)
+                            sb.append(", ");
+                        
+                        i++;
+                    }
+                    
+                    return sb.toString();
+                }
             }
         }
         
         return "";
     }
     
-    public static void setSysAttrValue(StorageManager sMan, VolumeManager vMan, long parentId,
-        FileMetadata file, String keyString, String value, AtomicDBUpdate update) throws UserException,
-        DatabaseException {
+    public static void setSysAttrValue(StorageManager sMan, VolumeManager vMan, FileAccessManager faMan,
+        long parentId, FileMetadata file, String keyString, String value, AtomicDBUpdate update)
+        throws UserException, DatabaseException {
         
         // handle policy-specific values
         if (keyString.startsWith(POLICY_ATTR_PREFIX.toString() + ".")) {
@@ -595,6 +629,45 @@ public class MRCHelper {
                     .getVersion());
             file.setXLocList(newXLocList);
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
+            
+            break;
+        
+        case acl:
+
+            // parse the modification command
+            index = value.indexOf(" ");
+            try {
+                command = value.substring(0, index);
+                String params = value.substring(index + 1);
+                
+                // modify an ACL entry
+                if (command.equals("m")) {
+                    
+                    int index2 = params.lastIndexOf(':');
+                    
+                    String entity = params.substring(0, index2);
+                    String rights = params.substring(index2 + 1);
+                    
+                    Map<String, Object> entries = new HashMap<String, Object>();
+                    entries.put(entity, rights);
+                    faMan.updateACLEntries(sMan, file, parentId, entries, update);
+                }
+
+                // remove an ACL entry
+                else if (command.equals("x")) {
+                    List<Object> entries = new ArrayList<Object>(1);
+                    entries.add(params);
+                    faMan.removeACLEntries(sMan, file, parentId, entries, update);
+                    
+                } else
+                    throw new UserException(ErrNo.EINVAL, "invalid ACL modification command: " + command);
+                
+            } catch (MRCException e) {
+                Logging.logError(Logging.LEVEL_ERROR, null, e);
+                throw new UserException(ErrNo.EINVAL);
+            } catch (Exception exc) {
+                throw new UserException(ErrNo.EINVAL, "malformed ACL modification request");
+            }
             
             break;
         

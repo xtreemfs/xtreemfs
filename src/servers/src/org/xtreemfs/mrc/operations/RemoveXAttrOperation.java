@@ -107,8 +107,8 @@ public class RemoveXAttrOperation extends MRCOperation {
             faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser,
                 rq.getDetails().groupIds);
             
-            MRCHelper.setSysAttrValue(sMan, vMan, res.getParentDirId(), file, attrKey.substring(9), "",
-                update);
+            MRCHelper.setSysAttrValue(sMan, vMan, master.getFileAccessManager(), res.getParentDirId(), file,
+                attrKey.substring(9), "", update);
         }
 
         // set a user attribute
