@@ -147,6 +147,14 @@ public class File {
         volume.setxattr(path, name, value);
     }
 
+    void chmod(String path, int mode) throws IOException {
+        volume.chmod(path, mode);
+    }
+
+    void chown(String path, String uid, String gid) throws IOException {
+        volume.chown(path, uid, gid);
+    }
+
     public RandomAccessFile open(String openMode, int permissions) throws IOException {
         int flags = 0;
         if (openMode.equals("r")) {

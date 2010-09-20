@@ -323,6 +323,40 @@ public class Volume {
         }
     }
 
+     void chmod(String path, int mode) throws IOException {
+        RPCResponse response = null;
+        try {
+            response = mrcClient.chmod(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path), mode);
+            response.get();
+        } catch (MRCException ex) {
+            throw wrapException(ex);
+        } catch (ONCRPCException ex) {
+            throw wrapException(ex);
+        } catch (InterruptedException ex) {
+            throw wrapException(ex);
+        } finally {
+            if (response != null)
+                response.freeBuffers();
+        }
+    }
+
+    void chown(String path, String uid, String gid) throws IOException {
+        RPCResponse response = null;
+        try {
+            response = mrcClient.chown(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path), uid,gid);
+            response.get();
+        } catch (MRCException ex) {
+            throw wrapException(ex);
+        } catch (ONCRPCException ex) {
+            throw wrapException(ex);
+        } catch (InterruptedException ex) {
+            throw wrapException(ex);
+        } finally {
+            if (response != null)
+                response.freeBuffers();
+        }
+    }
+
     void mkdir(String path, int permissions) throws IOException {
         RPCResponse response = null;
         try {
