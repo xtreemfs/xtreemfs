@@ -31,10 +31,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.xtreemfs.common.VersionManagement;
+import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.ErrNo;
-import org.xtreemfs.include.common.logging.Logging;
-import org.xtreemfs.include.common.logging.Logging.Category;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_dump_databaseResponse;
 import org.xtreemfs.mrc.MRCRequest;

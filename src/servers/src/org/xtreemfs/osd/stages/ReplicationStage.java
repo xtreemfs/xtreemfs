@@ -30,7 +30,7 @@ import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.include.foundation.json.JSONException;
+import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;

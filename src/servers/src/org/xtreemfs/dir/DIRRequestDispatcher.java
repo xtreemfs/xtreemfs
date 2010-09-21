@@ -86,8 +86,8 @@ import com.sun.net.httpserver.HttpServer;
  * 
  * @author bjko
  */
-public class DIRRequestDispatcher extends LifeCycleThread 
-    implements RPCServerRequestListener, LifeCycleListener {
+public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRequestListener,
+    LifeCycleListener {
     
     /**
      * index for address mappings, stores uuid -> AddressMappingSet
@@ -98,8 +98,8 @@ public class DIRRequestDispatcher extends LifeCycleThread
      * index for service registries, stores uuid -> ServiceRegistry
      */
     public static final int                    INDEX_ID_SERVREG  = 1;
-
-    public static final int                    DB_VERSION = 2009082718;
+    
+    public static final int                    DB_VERSION        = 2009082718;
     
     private final HttpServer                   httpServ;
     
@@ -118,15 +118,15 @@ public class DIRRequestDispatcher extends LifeCycleThread
     private final DatabaseManager              dbMan;
     
     private final DiscoveryMsgThread           discoveryThr;
-
+    
     private final MonitoringThread             monThr;
     
     private final DIRConfig                    config;
-        
+    
     public static final String                 DB_NAME           = "dirdb";
     
-    public DIRRequestDispatcher(final DIRConfig config, 
-            final BabuDBConfig dbsConfig) throws IOException, BabuDBException {
+    public DIRRequestDispatcher(final DIRConfig config, final BabuDBConfig dbsConfig) throws IOException,
+        BabuDBException {
         super("DIR RqDisp");
         this.config = config;
         
@@ -137,16 +137,13 @@ public class DIRRequestDispatcher extends LifeCycleThread
         
         // start up babudb
         if (dbsConfig instanceof ReplicationConfig)
-            database = BabuDBFactory
-                        .createReplicatedBabuDB((ReplicationConfig) dbsConfig);
+            database = BabuDBFactory.createReplicatedBabuDB((ReplicationConfig) dbsConfig, null);
         else
             database = BabuDBFactory.createBabuDB(dbsConfig);
-            
+        
         dbMan = database.getDatabaseManager();
         
-        database.disableSlaveCheck();
         initializeDatabase();
-        database.enableSlaveCheck();
         
         registerOperations();
         
@@ -172,7 +169,7 @@ public class DIRRequestDispatcher extends LifeCycleThread
                 scheme = Constants.ONCRPCG_SCHEME;
             else if (config.isUsingSSL())
                 scheme = Constants.ONCRPCS_SCHEME;
-
+            
             discoveryThr = new DiscoveryMsgThread(InetAddress.getLocalHost().getCanonicalHostName(), config
                     .getPort(), scheme);
             discoveryThr.setLifeCycleListener(this);
@@ -199,20 +196,20 @@ public class DIRRequestDispatcher extends LifeCycleThread
                 
             }
         });
-
+        
         if (config.getAdminPassword().length() > 0) {
             ctx.setAuthenticator(new BasicAuthenticator("XtreemFS DIR") {
                 @Override
                 public boolean checkCredentials(String arg0, String arg1) {
-                    return (arg0.equals("admin")&& arg1.equals(config.getAdminPassword()));
+                    return (arg0.equals("admin") && arg1.equals(config.getAdminPassword()));
                 }
             });
         }
-
+        
         httpServ.start();
         
         numRequests = 0;
-
+        
         if (config.isMonitoringEnabled()) {
             monThr = new MonitoringThread(config, this);
             monThr.setLifeCycleListener(this);
@@ -234,7 +231,8 @@ public class DIRRequestDispatcher extends LifeCycleThread
         } catch (InterruptedException ex) {
             quit = true;
         } catch (Exception ex) {
-            final String report = CrashReporter.createCrashReport("DIR", VersionManagement.RELEASE_VERSION, ex);
+            final String report = CrashReporter.createCrashReport("DIR", VersionManagement.RELEASE_VERSION,
+                ex);
             System.out.println(report);
             CrashReporter.reportXtreemFSCrash(report);
             notifyCrashed(ex);
@@ -242,24 +240,24 @@ public class DIRRequestDispatcher extends LifeCycleThread
         }
         notifyStopped();
     }
-
+    
     public ServiceRecords getServices() throws Exception {
-
+        
         synchronized (database) {
             Database db = getDirDatabase();
-            Iterator<Entry<byte[], byte[]>> iter = db.prefixLookup(
-                DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
-
+            Iterator<Entry<byte[], byte[]>> iter = db.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG,
+                new byte[0], null).get();
+            
             ServiceRecords services = new ServiceRecords();
-
+            
             while (iter.hasNext()) {
-                final Entry<byte[],byte[]> e = iter.next();
+                final Entry<byte[], byte[]> e = iter.next();
                 final ServiceRecord servEntry = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));
                 services.add(servEntry);
             }
             return services;
         }
-
+        
     }
     
     public void startup() throws Exception {
@@ -272,7 +270,7 @@ public class DIRRequestDispatcher extends LifeCycleThread
             discoveryThr.start();
             discoveryThr.waitForStartup();
         }
-
+        
         if (monThr != null) {
             monThr.start();
             monThr.waitForStartup();
@@ -289,7 +287,7 @@ public class DIRRequestDispatcher extends LifeCycleThread
             discoveryThr.shutdown();
             discoveryThr.waitForShutdown();
         }
-
+        
         if (monThr != null) {
             monThr.shutdown();
             monThr.waitForShutdown();
@@ -309,13 +307,14 @@ public class DIRRequestDispatcher extends LifeCycleThread
                 byte[] keyData = new byte[4];
                 rb = ReusableBuffer.wrap(keyData);
                 rb.putInt(DB_VERSION);
-                db.singleInsert(0, versionKey, keyData,null).get();
+                db.singleInsert(0, versionKey, keyData, null).get();
             } catch (Exception ex) {
                 ex.printStackTrace();
                 System.err.println("cannot initialize database");
                 System.exit(1);
             } finally {
-                if (rb != null) BufferPool.free(rb);
+                if (rb != null)
+                    BufferPool.free(rb);
             }
         } catch (BabuDBException ex) {
             // database exists: check version
@@ -324,7 +323,7 @@ public class DIRRequestDispatcher extends LifeCycleThread
                 try {
                     Database db = dbMan.getDatabase("dirdbver");
                     
-                    byte[] value = db.lookup(0, versionKey,null).get();
+                    byte[] value = db.lookup(0, versionKey, null).get();
                     int ver = -1;
                     if ((value != null) && (value.length == 4)) {
                         rb = ReusableBuffer.wrap(value);
@@ -347,7 +346,8 @@ public class DIRRequestDispatcher extends LifeCycleThread
                     System.err.println("cannot initialize database");
                     System.exit(1);
                 } finally {
-                    if (rb != null) BufferPool.free(rb);
+                    if (rb != null)
+                        BufferPool.free(rb);
                 }
             } else {
                 ex.printStackTrace();
@@ -427,8 +427,8 @@ public class DIRRequestDispatcher extends LifeCycleThread
         
         if (hdr.getInterfaceVersion() != DIRInterface.getVersion()) {
             rq.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,
-                ErrNo.EINVAL, "invalid version requested (requested: "+hdr.getInterfaceVersion()+" installed: "+
-                 DIRInterface.getVersion()+")"));
+                ErrNo.EINVAL, "invalid version requested (requested: " + hdr.getInterfaceVersion()
+                    + " installed: " + DIRInterface.getVersion() + ")"));
             return;
         }
         
@@ -469,7 +469,8 @@ public class DIRRequestDispatcher extends LifeCycleThread
     
     @Override
     public void crashPerformed(Throwable cause) {
-        final String report = CrashReporter.createCrashReport("DIR", VersionManagement.RELEASE_VERSION, cause);
+        final String report = CrashReporter
+                .createCrashReport("DIR", VersionManagement.RELEASE_VERSION, cause);
         System.out.println(report);
         CrashReporter.reportXtreemFSCrash(report);
         try {

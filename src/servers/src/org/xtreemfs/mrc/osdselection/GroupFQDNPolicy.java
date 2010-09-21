@@ -28,10 +28,10 @@ import java.net.InetAddress;
 import java.util.Collections;
 import java.util.Comparator;
 
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.NetUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
-import org.xtreemfs.include.common.logging.Logging;
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;

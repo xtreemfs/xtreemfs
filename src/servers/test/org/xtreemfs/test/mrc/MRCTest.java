@@ -260,7 +260,8 @@ public class MRCTest extends TestCase {
         invokeSync(client.setxattr(mrcAddress, uc, volumeName + "/repl", "xtreemfs.read_only", "true", 0));
         val = invokeSync(client.getxattr(mrcAddress, uc, volumeName + "/repl", "xtreemfs.read_only"));
         assertEquals("true", val);
-        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/repl", FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates()));
+        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/repl", FileAccessManager.O_CREAT, 0, 0,
+            new VivaldiCoordinates()));
         assertEquals(Constants.REPL_UPDATE_PC_RONLY, creds.getXlocs().getReplica_update_policy());
     }
     
@@ -365,13 +366,16 @@ public class MRCTest extends TestCase {
         invokeSync(client.create(mrcAddress, uc, volumeName + "/test.txt", 0774));
         
         // open w/ O_RDWR; should not fail
-        invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt", FileAccessManager.O_RDWR, 0, 0, new VivaldiCoordinates()));
+        invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt", FileAccessManager.O_RDWR, 0, 0,
+            new VivaldiCoordinates()));
         
         // open w/ O_RDONLY; should not fail
-        invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt", FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()));
+        invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt", FileAccessManager.O_RDONLY, 0, 0,
+            new VivaldiCoordinates()));
         
         // create a new file w/ O_CREAT; should implicitly create a new file
-        invokeSync(client.open(mrcAddress, uc, volumeName + "/test2.txt", FileAccessManager.O_CREAT, 256, 0, new VivaldiCoordinates()));
+        invokeSync(client.open(mrcAddress, uc, volumeName + "/test2.txt", FileAccessManager.O_CREAT, 256, 0,
+            new VivaldiCoordinates()));
         invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test2.txt"));
         
         // open w/ O_WRONLY; should fail
@@ -385,7 +389,8 @@ public class MRCTest extends TestCase {
         
         // open a directory; should fail
         try {
-            invokeSync(client.open(mrcAddress, uc, volumeName + "/dir", FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()));
+            invokeSync(client.open(mrcAddress, uc, volumeName + "/dir", FileAccessManager.O_RDONLY, 0, 0,
+                new VivaldiCoordinates()));
             fail("opened directory");
         } catch (MRCException exc) {
         }
@@ -408,18 +413,20 @@ public class MRCTest extends TestCase {
         
         // test redirect
         try {
-            invokeSync(client.open(mrcAddress, uc, volumeName + "/link2", FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()));
+            invokeSync(client.open(mrcAddress, uc, volumeName + "/link2", FileAccessManager.O_RDONLY, 0, 0,
+                new VivaldiCoordinates()));
             fail("should have been redirected");
         } catch (MRCException exc) {
         }
         
         // open w/ truncate flag; check whether the epoch number is incremented
-        invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_CREAT, 0777, 0, new VivaldiCoordinates()));
-        creds = invokeSync(client
-                .open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_TRUNC, 0, 0, new VivaldiCoordinates()));
+        invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_CREAT, 0777, 0,
+            new VivaldiCoordinates()));
+        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_TRUNC, 0,
+            0, new VivaldiCoordinates()));
         assertEquals(1, creds.getXcap().getTruncate_epoch());
-        creds = invokeSync(client
-                .open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_TRUNC, 0, 0, new VivaldiCoordinates()));
+        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_TRUNC, 0,
+            0, new VivaldiCoordinates()));
         assertEquals(2, creds.getXcap().getTruncate_epoch());
         
         // TODO: check open w/ ACLs set
@@ -427,7 +434,8 @@ public class MRCTest extends TestCase {
         // test truncate
         
         // open w/ write cap and truncate
-        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_RDWR, 0, 0, new VivaldiCoordinates()));
+        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_RDWR, 0, 0,
+            new VivaldiCoordinates()));
         invokeSync(client.ftruncate(mrcAddress, creds.getXcap()));
         
         creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_RDONLY, 0,
@@ -645,8 +653,6 @@ public class MRCTest extends TestCase {
         } catch (MRCException exc) {
         }
         
-        // TODO: test getting/setting ACL entries
-        
         // change the access mode
         invokeSync(client.chmod(mrcAddress, uc1, posixVolName + "/newDir", 0));
         
@@ -749,6 +755,53 @@ public class MRCTest extends TestCase {
         invokeSync(client.rename(mrcAddress, uc2, posixVolName + "/stickyDir/newfile.txt", posixVolName
             + "/stickyDir/newfile3.txt"));
         invokeSync(client.unlink(mrcAddress, uc2, posixVolName + "/stickyDir/newfile3.txt"));
+        
+        // POSIX ACLs
+        
+        // create a POSIX ACL new volume and test POSIX ACLs
+        invokeSync(client.rmvol(mrcAddress, uc1, posixVolName));
+        invokeSync(client.mkvol(mrcAddress, uc1, posixVolName, getDefaultStripingPolicy(),
+            POSIXFileAccessPolicy.POLICY_ID, 0775));
+        
+        // create a new file without access to anyone
+        invokeSync(client.create(mrcAddress, uc1, posixVolName + "/newFile", 0));
+        
+        // normal user should have no read permissions
+        assertFalse(invokeSync(client.access(mrcAddress, uc3, posixVolName + "/newFile",
+            FileAccessManager.O_RDONLY)));
+        
+        // grant read permissions to user 'uid3'
+        invokeSync(client.setxattr(mrcAddress, uc1, posixVolName + "/newFile", "xtreemfs.acl", "m u:" + uid3
+            + ":r", 0));
+        
+        // 'uid1' should have read permissions now
+        assertTrue(invokeSync(client.access(mrcAddress, uc3, posixVolName + "/newFile",
+            FileAccessManager.O_RDONLY)));
+        
+        // other users should have no read permissions
+        assertFalse(invokeSync(client.access(mrcAddress, uc2, posixVolName + "/newFile",
+            FileAccessManager.O_RDONLY)));
+        
+        // remove read permissions for user 'uid3'
+        invokeSync(client.setxattr(mrcAddress, uc1, posixVolName + "/newFile", "xtreemfs.acl", "x u:" + uid3,
+            0));
+        
+        // 'uid3' should have no read permissions anymore
+        assertFalse(invokeSync(client.access(mrcAddress, uc3, posixVolName + "/newFile",
+            FileAccessManager.O_RDONLY)));
+        
+        // grant read permissions to group 'gid3'
+        invokeSync(client.setxattr(mrcAddress, uc1, posixVolName + "/newFile", "xtreemfs.acl", "m g:"
+            + gids3.get(0) + ":r", 0));
+        
+        // 'uid1' should have read permissions now
+        assertTrue(invokeSync(client.access(mrcAddress, uc3, posixVolName + "/newFile",
+            FileAccessManager.O_RDONLY)));
+        
+        // other users should have no read permissions
+        assertFalse(invokeSync(client.access(mrcAddress, uc2, posixVolName + "/newFile",
+            FileAccessManager.O_RDONLY)));
+        
     }
     
     public void testFileSizeUpdate() throws Exception {
@@ -762,10 +815,12 @@ public class MRCTest extends TestCase {
         // create a new file in a new volume
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, getDefaultStripingPolicy(),
             YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
-        invokeSync(client.open(mrcAddress, uc, fileName, FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates()));
+        invokeSync(client.open(mrcAddress, uc, fileName, FileAccessManager.O_CREAT, 0, 0,
+            new VivaldiCoordinates()));
         
         // check and update file sizes repeatedly
-        XCap cap = invokeSync(client.open(mrcAddress, uc, fileName, FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()))
+        XCap cap = invokeSync(
+            client.open(mrcAddress, uc, fileName, FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()))
                 .getXcap();
         Stat stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
         assertEquals(0L, stat.getSize());
@@ -846,38 +901,45 @@ public class MRCTest extends TestCase {
         invokeSync(client.mkvol(mrcAddress, uc, volumeName, sp1, YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
         
         invokeSync(client.mkdir(mrcAddress, uc, dirName, 0));
-        invokeSync(client.open(mrcAddress, uc, fileName1, FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates()));
-        invokeSync(client.open(mrcAddress, uc, fileName2, FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates()));
+        invokeSync(client.open(mrcAddress, uc, fileName1, FileAccessManager.O_CREAT, 0, 0,
+            new VivaldiCoordinates()));
+        invokeSync(client.open(mrcAddress, uc, fileName2, FileAccessManager.O_CREAT, 0, 0,
+            new VivaldiCoordinates()));
         
         // check if the striping policy assigned to the file matches the default
         // striping policy
-        XLocSet xLoc = invokeSync(client.open(mrcAddress, uc, fileName1, FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()))
-                .getXlocs();
+        XLocSet xLoc = invokeSync(
+            client
+                    .open(mrcAddress, uc, fileName1, FileAccessManager.O_RDONLY, 0, 0,
+                        new VivaldiCoordinates())).getXlocs();
         
         StripingPolicy sp = xLoc.getReplicas().get(0).getStriping_policy();
         assertEquals(sp1.getType().name(), sp.getType().name());
         assertEquals(sp1.getWidth(), sp.getWidth());
         assertEquals(sp1.getStripe_size(), sp.getStripe_size());
-
-        //check block size in Stat
+        
+        // check block size in Stat
         Stat stat = invokeSync(client.getattr(mrcAddress, uc, fileName1));
-        assertEquals(sp1.getStripe_size()*1024,stat.getBlksize());
-
+        assertEquals(sp1.getStripe_size() * 1024, stat.getBlksize());
+        
         stat = invokeSync(client.getattr(mrcAddress, uc, dirName));
-        assertEquals(0,stat.getBlksize());
+        assertEquals(0, stat.getBlksize());
         
         // TODO set the default striping policy of the parent directory via an
         // extended attribute (not working at the moment)
-//        invokeSync(client.setxattr(mrcAddress, uc, dirName, "xtreemfs.default_sp", Converter
-//                .stripingPolicyToJSONString(new BufferBackedStripingPolicy(sp2.getType().name(), sp2
-//                        .getStripe_size(), sp2.getWidth())), 0));
-//        xLoc = invokeSync(client.open(mrcAddress, uc, fileName2, FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()))
-//                .getXlocs();
-//        
-//        sp = xLoc.getReplicas().get(0).getStriping_policy();
-//        assertEquals(sp2.getType().name(), sp.getType().name());
-//        assertEquals(sp2.getWidth(), sp.getWidth());
-//        assertEquals(sp2.getStripe_size(), sp.getStripe_size());
+        // invokeSync(client.setxattr(mrcAddress, uc, dirName,
+        // "xtreemfs.default_sp", Converter
+        // .stripingPolicyToJSONString(new
+        // BufferBackedStripingPolicy(sp2.getType().name(), sp2
+        // .getStripe_size(), sp2.getWidth())), 0));
+        // xLoc = invokeSync(client.open(mrcAddress, uc, fileName2,
+        // FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()))
+        // .getXlocs();
+        //        
+        // sp = xLoc.getReplicas().get(0).getStriping_policy();
+        // assertEquals(sp2.getType().name(), sp.getType().name());
+        // assertEquals(sp2.getWidth(), sp.getWidth());
+        // assertEquals(sp2.getStripe_size(), sp.getStripe_size());
     }
     
     public void testReplicateOnClose() throws Exception {

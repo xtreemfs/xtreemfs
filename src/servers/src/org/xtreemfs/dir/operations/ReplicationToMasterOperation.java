@@ -24,7 +24,7 @@
 
 package org.xtreemfs.dir.operations;
 
-import org.xtreemfs.babudb.replication.SlavesStates.NotEnoughAvailableSlavesException;
+import org.xtreemfs.babudb.replication.service.accounting.ParticipantsStates.NotEnoughAvailableParticipantsException;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.ErrorCodes;
@@ -61,11 +61,7 @@ public class ReplicationToMasterOperation extends DIROperation {
                 throw new DIRException(ErrorCodes.AUTH_FAILED, 
                         "this operation requires an admin password", "");
             
-            dbsReplicationManager.declareToMaster();
             requestFinished(null, rq);
-        } catch (NotEnoughAvailableSlavesException e) {
-            requestFailed(new DIRException(ErrorCodes.NOT_ENOUGH_PARTICIPANTS, 
-                    e.getMessage(), ""), rq);
         } catch (Exception e) {
             requestFailed(e,rq);
         } 

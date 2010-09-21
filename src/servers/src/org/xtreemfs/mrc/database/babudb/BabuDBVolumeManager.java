@@ -103,7 +103,7 @@ public class BabuDBVolumeManager implements VolumeManager {
             
             // try to create a new database
             if (config instanceof ReplicationConfig) {
-                database = BabuDBFactory.createReplicatedBabuDB((ReplicationConfig) config);
+                database = BabuDBFactory.createReplicatedBabuDB((ReplicationConfig) config, null);
                 replMan = new BabuDBReplicationManger(database);
             } else
                 database = BabuDBFactory.createBabuDB(config);
@@ -113,7 +113,6 @@ public class BabuDBVolumeManager implements VolumeManager {
         }
         
         try {
-            database.disableSlaveCheck();
             Database volDB = database.getDatabaseManager().createDatabase(VERSION_DB_NAME, 3);
             
             // if the creation succeeds, set the version number to the current
@@ -199,8 +198,6 @@ public class BabuDBVolumeManager implements VolumeManager {
                 
             } else
                 Logging.logError(Logging.LEVEL_ERROR, this, e);
-        } finally {
-            database.enableSlaveCheck();
         }
     }
     

@@ -17,7 +17,7 @@
 
     You should have received a copy of the GNU General Public License
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * AUTHORS: Felix Langner (ZIB)
  */
@@ -35,35 +35,29 @@ import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.ReplicationManager;
 
 /**
- *
+ * 
  * @author flangner
  * @since 10/09/2009
  */
 public class ReplicationToMasterOperation extends MRCOperation {
     
     private final ReplicationManager dbsReplicationManager;
-
+    
     public ReplicationToMasterOperation(MRCRequestDispatcher master) {
         super(master);
         dbsReplicationManager = master.getDBSReplicationService();
     }
-
+    
     @Override
     public void startRequest(MRCRequest rq) throws Throwable {
-        try {
-            
-            // check password to ensure that user is authorized
-            if (master.getConfig().getAdminPassword() != null
-                && !master.getConfig().getAdminPassword().equals(
-                rq.getDetails().password))
-                    throw new UserException(ErrNo.EPERM, "invalid password");
-            
-            dbsReplicationManager.declareToMaster();
-            rq.setResponse(new xtreemfs_replication_to_masterResponse());
-            finishRequest(rq);
-        } catch (DatabaseException e) {
-            finishRequest(rq, new ErrorRecord(ErrorClass.REPLICATION, 
-                    e.getMessage()));
-        } 
+        
+        // check password to ensure that user is authorized
+        if (master.getConfig().getAdminPassword() != null
+            && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
+            throw new UserException(ErrNo.EPERM, "invalid password");
+        
+        rq.setResponse(new xtreemfs_replication_to_masterResponse());
+        finishRequest(rq);
+        
     }
 }

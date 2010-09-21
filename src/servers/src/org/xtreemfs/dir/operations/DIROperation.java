@@ -24,14 +24,25 @@
 
 package org.xtreemfs.dir.operations;
 
+import static org.xtreemfs.babudb.BabuDBException.ErrorCode.DB_EXISTS;
+import static org.xtreemfs.babudb.BabuDBException.ErrorCode.NO_ACCESS;
+import static org.xtreemfs.babudb.BabuDBException.ErrorCode.NO_SUCH_DB;
+import static org.xtreemfs.babudb.BabuDBException.ErrorCode.NO_SUCH_INDEX;
+import static org.xtreemfs.babudb.BabuDBException.ErrorCode.NO_SUCH_SNAPSHOT;
+import static org.xtreemfs.babudb.BabuDBException.ErrorCode.SNAP_EXISTS;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBRequestListener;
-import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.DIRInterface.ConcurrentModificationException;
+import org.xtreemfs.interfaces.DIRInterface.InvalidArgumentException;
 import org.xtreemfs.interfaces.DIRInterface.RedirectException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 
@@ -99,15 +110,70 @@ public abstract class DIROperation {
      * @param rq - original {@link DIRRequest}.
      */
     void requestFailed(Exception error, DIRRequest rq) {
-        Logging.logError(Logging.LEVEL_ERROR, this, error);
-        if (error != null && error instanceof BabuDBException && 
-                ((BabuDBException) error).getErrorCode() == ErrorCode.NO_ACCESS && 
-                dbsReplicationManager != null)
-            rq.sendRedirectException(dbsReplicationManager.getMaster());
-        else if (error != null && error instanceof ONCRPCException)
+        // handle connection errors caused by being not the replication master
+        if (error != null && dbsReplicationManager != null && 
+           (
+                 (
+                    error instanceof BabuDBException && 
+                    ((BabuDBException) error).getErrorCode().equals(NO_ACCESS)
+                  ) || (
+                          // TODO better exception handling
+                    error instanceof ConcurrentModificationException)
+                  ) // && !dbsReplicationManager.isMaster() ... removed for testing
+            ) {
+            
+            InetAddress altMaster = dbsReplicationManager.getMaster();
+            if (altMaster != null) {
+                // retrieve the correct port for the DIR mirror
+                String host = altMaster.getHostAddress();
+                Integer port = this.master.getConfig().getMirrors().get(host);
+                if (port == null){ 
+                    Logging.logMessage(Logging.LEVEL_ERROR, this,  "The port for " +
+                    		"the mirror DIR '%s' could not be retrieved.",
+                    		host);
+                    
+                    rq.sendInternalServerError(error);
+                } else {
+                    rq.sendRedirectException(new InetSocketAddress(host, port));
+                }
+            } else {
+                // if there is a handover in progress, redirect to the local
+                // server to notify the client about this process
+                InetAddress host = this.master.getConfig().getAddress();
+                int port = this.master.getConfig().getPort();
+                InetSocketAddress address = 
+                        (host == null) ? 
+                        new InetSocketAddress(port) : 
+                        new InetSocketAddress(host,port);
+                
+                rq.sendRedirectException(address);
+            }
+        // handle errors caused by ServerExceptions
+        } else if (error != null && error instanceof ONCRPCException) {
+            Logging.logError(Logging.LEVEL_ERROR, this, error);
             rq.sendException((ONCRPCException) error);
-        else
+        // handle user errors
+        } else if (error != null && 
+                   error instanceof BabuDBException &&
+                  (((BabuDBException)error).getErrorCode().equals(NO_SUCH_DB) ||
+                   ((BabuDBException)error).getErrorCode().equals(DB_EXISTS) ||
+                   ((BabuDBException)error).getErrorCode().equals(NO_SUCH_INDEX) ||
+                   ((BabuDBException)error).getErrorCode().equals(NO_SUCH_SNAPSHOT) ||
+                   ((BabuDBException)error).getErrorCode().equals(SNAP_EXISTS)                   
+                  )) 
+        { // blame the client
+            Logging.logError(Logging.LEVEL_ERROR, this, error);
+            rq.sendException(new InvalidArgumentException(error.getMessage()));
+        // handle unknown errors
+        } else {
+            if (error != null && !(error instanceof BabuDBException))
+                Logging.logError(Logging.LEVEL_ERROR, this, error);
+            
+            if (error != null)
+                Logging.logError(Logging.LEVEL_ERROR, this, error);
+            
             rq.sendInternalServerError(error);
+        }
     }
     
     /**

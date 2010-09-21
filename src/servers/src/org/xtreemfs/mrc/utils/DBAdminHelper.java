@@ -25,7 +25,6 @@ package org.xtreemfs.mrc.utils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -34,7 +33,7 @@ import java.util.Map;
 
 import org.xml.sax.Attributes;
 import org.xtreemfs.common.util.OutputUtils;
-import org.xtreemfs.include.foundation.json.JSONException;
+import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.UserException;
