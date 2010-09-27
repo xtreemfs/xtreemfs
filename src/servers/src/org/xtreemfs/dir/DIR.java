@@ -27,8 +27,8 @@ import java.io.IOException;
 
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.babudb.config.ReplicationConfig;
-import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 
 /**
  * This class can be used to start a new instance of the Directory Service.
@@ -71,7 +71,8 @@ public class DIR {
             }
         }
         
-        Logging.start(config.getDebugLevel(), config.getDebugCategories());
+        org.xtreemfs.common.logging.Logging.start(config.getDebugLevel());
+        org.xtreemfs.foundation.logging.Logging.start(config.getDebugLevel(), config.getDebugCategories());
 
         if (Logging.isInfo())
             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "JAVA_HOME=%s", System

@@ -100,7 +100,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
                 BabuDBStorageManager.AUTO_REPL_FACTOR_ATTR_NAME));
             replFull = "true".equalsIgnoreCase(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
                 BabuDBStorageManager.AUTO_REPL_FULL_ATTR_NAME));
-        } catch (NumberFormatException exc) {
+        } catch (Exception exc) {
             Logging.logError(Logging.LEVEL_ERROR, this, exc);
             throw new DatabaseException("currpted MRC database", ExceptionType.INTERNAL_DB_ERROR);
         }

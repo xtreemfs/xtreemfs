@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.mrc.MRCException;
@@ -261,6 +263,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         } catch (UserException exc) {
             throw exc;
         } catch (Exception exc) {
+            Logging.logError(Logging.LEVEL_ERROR, Category.auth, exc);
             throw new MRCException(exc);
         }
         
@@ -484,6 +487,8 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
                 
                 // get the parent directory
                 FileMetadata parent = sMan.getMetadata(parentId);
+                
+                assert (parent != null): "cannot resolve metadata for file ID " + parentId;
                 
                 // evaluate the parent's sticky bit
                 if ((parent.getPerms() & POSIX_STICKY) != 0)

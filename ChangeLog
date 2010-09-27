@@ -100,3 +100,9 @@
 
 22-JAN-2010
     * added client support for Fedora 12
+    
+27-SEP-2010
+    * fixed client bug w/ openSSL 1.0
+    * added 'xtfs_acl' tool for getting and setting POSIX ACLs
+    * added 'chmod' and 'chown' operations to Java MRC client
+    * updated BabuDB version in MRC/DIR storage backend to 0.4.4

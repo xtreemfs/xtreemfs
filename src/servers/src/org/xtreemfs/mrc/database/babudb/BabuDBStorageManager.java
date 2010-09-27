@@ -554,9 +554,7 @@ public class BabuDBStorageManager implements StorageManager {
         try {
             
             // create the key for the file ID index lookup
-            byte[] key = BabuDBStorageHelper.createFileIdIndexKey(fileId, (byte) -1);
-            ByteBuffer.wrap(key).putLong(fileId);
-            
+            byte[] key = BabuDBStorageHelper.createFileIdIndexKey(fileId, (byte) -1);            
             byte[][] valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
             
             // retrieve the metadata from the link index

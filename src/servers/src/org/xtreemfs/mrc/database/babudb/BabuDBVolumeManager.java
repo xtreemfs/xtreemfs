@@ -179,6 +179,8 @@ public class BabuDBVolumeManager implements VolumeManager {
                         if (dbEntry.getKey().equals("V"))
                             continue;
                         
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this, "initializing volume database %s", dbEntry.getKey());
+                        
                         BabuDBStorageManager sMan = new BabuDBStorageManager(database, dbEntry.getValue());
                         VolumeInfo vol = sMan.getVolumeInfo();
                         
