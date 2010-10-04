@@ -119,25 +119,33 @@ status() {
 case "$1" in
     start)
         start
+        result=$?
         ;;
     stop)
         stop
+        result=$?
         ;;
     status)
         status
+        result=$?
         ;;
     reload)
+        result=0
         ;;
     restart)
-        stop
-        sleep 1
-        start
+        stop && sleep 1 && start
+        result=$?
+        ;;
+    try-restart)
+        ## Stop the service and if this succeeds (i.e. the
+        ## service was running before), start it again.
+        $0 status >/dev/null && $0 restart
+        result=$?
         ;;
     *)
-        echo -e "Usage: $0 {start|stop|restart|reload|status}\n"
-        exit 1
+        echo -e "Usage: $0 {start|stop|restart|reload|status|try-restart}\n"
+        result=1
         ;;
 esac
 
-exit 0
-
+exit $result

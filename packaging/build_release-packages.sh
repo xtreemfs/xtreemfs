@@ -61,7 +61,15 @@ build_source_tarball() {
 	# delete all .svn directories
 	delete_svn $PACKAGE_PATH
 
-	# create archiv
+	# delete UUID from config-files
+	grep -v '^uuid\W*=\W*\w\+' $PACKAGE_PATH/etc/xos/xtreemfs/dirconfig.properties > $PACKAGE_PATH/etc/xos/xtreemfs/dirconfig.properties_new
+	grep -v '^uuid\W*=\W*\w\+' $PACKAGE_PATH/etc/xos/xtreemfs/mrcconfig.properties > $PACKAGE_PATH/etc/xos/xtreemfs/mrcconfig.properties_new
+	grep -v '^uuid\W*=\W*\w\+' $PACKAGE_PATH/etc/xos/xtreemfs/osdconfig.properties > $PACKAGE_PATH/etc/xos/xtreemfs/osdconfig.properties_new
+	mv $PACKAGE_PATH/etc/xos/xtreemfs/dirconfig.properties_new $PACKAGE_PATH/etc/xos/xtreemfs/dirconfig.properties
+	mv $PACKAGE_PATH/etc/xos/xtreemfs/mrcconfig.properties_new $PACKAGE_PATH/etc/xos/xtreemfs/mrcconfig.properties
+	mv $PACKAGE_PATH/etc/xos/xtreemfs/osdconfig.properties_new $PACKAGE_PATH/etc/xos/xtreemfs/osdconfig.properties
+
+	# create archive
 	tar -czf "$SOURCE_TARBALL_NAME.tar.gz" -C $TMP_PATH $SOURCE_TARBALL_NAME
 }
 
@@ -157,7 +165,9 @@ function prepare_build_files() {
     cp -r $BUILD_FILES_DIR/xtreemfs $TARGET_DIR/xtreemfs
     cp -r $BUILD_FILES_DIR/xtreemfs $TARGET_DIR/xtreemfs-testing
     find $TARGET_DIR -type f -exec sed -i "s/_VERSION_/$VERSION/g" {} \;
-    
+    # write contents of postinstall_setup.sh into the packages' spec files:
+    find $TARGET_DIR -type f -exec sed -i -e "/_POSTINSTALL_/r $BUILD_FILES_DIR/../postinstall_setup.sh" -e '/_POSTINSTALL_/d' {} \;
+
     cp $BUILD_FILES_DIR/meta.xml $TARGET_DIR/
     sed -i "s/_VERSION_/$VERSION/g" $TARGET_DIR/meta.xml
 }
