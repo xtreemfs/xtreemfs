@@ -19,8 +19,10 @@ Source0:        XtreemFS-%{version}.tar.gz
 BuildRequires:  ant >= 1.6.5 java-devel >= 1.6.0
 %if %{client_subpackage}
 BuildRequires:  python >= 2.4 gcc-c++ >= 4.1 fuse >= 2.6 fuse-devel >= 2.6 openssl-devel >= 0.9.8
-%if (0%{?centos_version} >= 501 || 0%{?rhel_version} >= 501) && 0%{?opensuse_bs}
+%if 0%{?opensuse_bs}
+%if 0%{?centos_version} >= 501 || 0%{?rhel_version} >= 501
 BuildRequires:  kernel
+%endif
 %endif
 %endif
 
