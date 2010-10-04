@@ -40,8 +40,8 @@ if [ -e $XTREEMFS_ETC ]; then
         echo "directory $XTREEMFS_ETC is not owned by $XTREEMFS_GROUP, executing chmod (may take some time)"
         chgrp -R $XTREEMFS_GROUP $XTREEMFS_ETC
     fi
-    propertiesExist=`ls $XTREEMFS_ETC/*.properties`
-    if [ $? -eq 0 ]; then
+    propertiesExist=`ls $XTREEMFS_ETC/*.properties 2> /dev/null`
+    if [ $propertiesExist -eq 0 ]; then
         echo "setting $XTREEMFS_ETC/*.properties 0750, executing chmod"
         chmod 0750 $XTREEMFS_ETC/*.properties
     fi
