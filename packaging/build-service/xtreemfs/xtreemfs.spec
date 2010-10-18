@@ -11,7 +11,7 @@ Version:        _VERSION_
 Release:        1
 License:        GPL
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-Group:          Networking
+Group:          System/Filesystems
 Summary:        XtreemFS base package
 Source0:        XtreemFS-%{version}.tar.gz
 
@@ -50,7 +50,7 @@ XtreemFS is a distributed and replicated file system for the internet. For more 
 %if %{client_subpackage}
 %package client
 Summary:        XtreemFS client
-Group:          Networking
+Group:          System/Filesystems
 #Requires:       %{name} == %{version}-%{release}
 Requires:       fuse >= 2.6
 Provides:       XtreemFS-client = %{version}
@@ -63,7 +63,7 @@ This package contains the XtreemFS client module.
 
 %package client-policies-gridmap-flog
 Summary:        XtreemFS client gridmap_flog policy
-Group:          Networking
+Group:          System/Filesystems
 Requires:       %{name}-client == %{version}-%{release}
 
 %description client-policies-gridmap-flog
@@ -74,7 +74,7 @@ This package contains the gridmap_flog policy for the XtreemFS client.
 
 %package backend
 Summary:        XtreemFS backend modules and libraries
-Group:          Networking
+Group:          System/Filesystems
 #Requires:       %{name} == %{version}-%{release}
 Requires:       jre >= 1.6.0
 
@@ -85,7 +85,7 @@ This package contains the backend modules and libraries shared between the serve
 
 %package server
 Summary:        XtreemFS server components (DIR, MRC, OSD)
-Group:          Networking
+Group:          System/Filesystems
 Requires:       %{name}-backend == %{version}-%{release}
 Requires:       grep sudo
 Requires:       jre >= 1.6.0
@@ -101,7 +101,7 @@ To run the XtreemFS services, a SUN JAVA 6 RUNTIME ENVIROMENT IS REQUIRED! Make 
 
 %package tools
 Summary:        XtreemFS administration tools
-Group:          Networking
+Group:          System/Filesystems
 Requires:       %{name}-backend == %{version}-%{release}
 Requires:       python >= 2.6
 Requires:       attr
