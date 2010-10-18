@@ -1,6 +1,6 @@
 # norootforbuild
 
-%if 0%{?mandriva_version} == 2007 || 0%{?mdkversion} == 200700 || 0%{?rhel_version} == 501 || 0%{?centos_version} == 501 || 0%{?sles_version} == 10
+%if 0%{?mandriva_version} == 2007 || 0%{?mdkversion} == 200700 || 0%{?rhel_version} == 501 || 0%{?sles_version} == 10
 %define client_subpackage 0
 %else
 %define client_subpackage 1
@@ -11,7 +11,7 @@ Version:        _VERSION_
 Release:        1
 License:        GPL
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
-Group:          Networking
+Group:          System/Filesystems
 Summary:        XtreemFS base package
 Source0:        XtreemFS-%{version}.tar.gz
 
@@ -19,10 +19,8 @@ Source0:        XtreemFS-%{version}.tar.gz
 BuildRequires:  ant >= 1.6.5 java-devel >= 1.6.0
 %if %{client_subpackage}
 BuildRequires:  python >= 2.4 gcc-c++ >= 4.1 fuse >= 2.6 fuse-devel >= 2.6 openssl-devel >= 0.9.8
-%if 0%{?opensuse_bs}
-%if 0%{?centos_version} >= 501 || 0%{?rhel_version} >= 501
+%if 0%{?centos_version} == 501 && 0%{?opensuse_bs}
 BuildRequires:  kernel
-%endif
 %endif
 %endif
 
@@ -52,7 +50,7 @@ XtreemFS is a distributed and replicated file system for the internet. For more 
 %if %{client_subpackage}
 %package client
 Summary:        XtreemFS client
-Group:          Networking
+Group:          System/Filesystems
 #Requires:       %{name} == %{version}-%{release}
 Requires:       fuse >= 2.6
 Provides:       XtreemFS-client = %{version}
@@ -65,7 +63,7 @@ This package contains the XtreemFS client module.
 
 %package client-policies-gridmap-flog
 Summary:        XtreemFS client gridmap_flog policy
-Group:          Networking
+Group:          System/Filesystems
 Requires:       %{name}-client == %{version}-%{release}
 
 %description client-policies-gridmap-flog
@@ -76,7 +74,7 @@ This package contains the gridmap_flog policy for the XtreemFS client.
 
 %package backend
 Summary:        XtreemFS backend modules and libraries
-Group:          Networking
+Group:          System/Filesystems
 #Requires:       %{name} == %{version}-%{release}
 Requires:       jre >= 1.6.0
 
@@ -87,7 +85,7 @@ This package contains the backend modules and libraries shared between the serve
 
 %package server
 Summary:        XtreemFS server components (DIR, MRC, OSD)
-Group:          Networking
+Group:          System/Filesystems
 Requires:       %{name}-backend == %{version}-%{release}
 Requires:       grep sudo
 Requires:       jre >= 1.6.0
@@ -103,7 +101,7 @@ To run the XtreemFS services, a SUN JAVA 6 RUNTIME ENVIROMENT IS REQUIRED! Make 
 
 %package tools
 Summary:        XtreemFS administration tools
-Group:          Networking
+Group:          System/Filesystems
 Requires:       %{name}-backend == %{version}-%{release}
 Requires:       python >= 2.6
 Requires:       attr
@@ -126,7 +124,7 @@ export ANT_OPTS=-D"file.encoding=UTF-8"
 export CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing"
 export CXXFLAGS=$CFLAGS
 
-%if 0%{?mandriva_version} == 2008 || 0%{?centos_version} >= 501 || 0%{?rhel_version} >= 501 || 0%{?suse_version} == 1030
+%if 0%{?mandriva_version} == 2008 || 0%{?centos_version} == 501 || 0%{?suse_version} == 1030
 export CCFLAGS="$CCFLAGS -fPIC"
 %endif
 
