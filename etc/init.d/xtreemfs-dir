@@ -2,8 +2,8 @@
 
 ### BEGIN INIT INFO
 # Provides:          xtreemfs-dir
-# Required-Start:    $network
-# Required-Stop:     $network
+# Required-Start:    $network $remote_fs
+# Required-Stop:     $network $remote_fs
 # Default-Start:     3 4 5
 # Default-Stop:
 # Short-Description: XtreemFS DIR
