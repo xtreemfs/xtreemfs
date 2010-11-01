@@ -144,6 +144,7 @@ case "$1" in
         else
           true # not running is not a failure!
         fi
+        result=$?
         ;;
     *)
         echo -e "Usage: $0 {start|stop|restart|reload|status|try-restart}\n"
