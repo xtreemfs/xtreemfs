@@ -34,6 +34,8 @@
 package org.xtreemfs.foundation.config;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -62,6 +64,16 @@ abstract public class Config {
         props.load(new FileInputStream(filename));
     }
 
+    /**
+     * Writes out a properties-compatible file at the given location.
+     * @param filename
+     * @throws IOException 
+     * @throws FileNotFoundException 
+     */
+    protected void write(String filename) throws FileNotFoundException, IOException {
+        props.store(new FileOutputStream(filename), "");
+    }
+    
     protected int readRequiredInt(String paramName) {
         String tmp = props.getProperty(paramName);
         if (tmp == null)
