@@ -139,8 +139,12 @@ case "$1" in
     try-restart)
         ## Stop the service and if this succeeds (i.e. the
         ## service was running before), start it again.
-        $0 status >/dev/null && $0 restart
-        result=$?
+        $0 status >/dev/null
+        if [ $? = 0 ]; then
+          $0 restart
+        else
+          true # not running is not a failure!
+        fi
         ;;
     *)
         echo -e "Usage: $0 {start|stop|restart|reload|status|try-restart}\n"
