@@ -135,6 +135,16 @@ abstract public class Config {
         else
             return InetAddress.getByName(tmp);
     }
+    
+    protected InetSocketAddress readOptionalInetSocketAddr(String hostName,
+            String portParam, InetSocketAddress defaultValue) {
+            String host = readOptionalString(hostName, null);
+            int port = readOptionalInt(portParam, -1);
+            if (host==null || port==-1)
+                return defaultValue;
+            else
+                return new InetSocketAddress(host,port);
+    }
 
     protected String readOptionalString(String paramName, String defaultValue) {
         return props.getProperty(paramName, defaultValue);
