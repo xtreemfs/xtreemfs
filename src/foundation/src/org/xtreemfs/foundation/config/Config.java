@@ -42,6 +42,8 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Properties;
 
+import org.xtreemfs.foundation.logging.Logging;
+
 /**
  *
  * @author bjko
@@ -148,6 +150,43 @@ abstract public class Config {
 
     protected String readOptionalString(String paramName, String defaultValue) {
         return props.getProperty(paramName, defaultValue);
+    }
+    
+    protected int readOptionalDebugLevel() {
+        String level = props.getProperty("debug.level");
+        if (level == null)
+            return Logging.LEVEL_WARN;
+        else {
+            
+            level = level.trim().toUpperCase();
+            
+            if (level.equals("EMERG")) {
+                return Logging.LEVEL_EMERG;
+            } else if (level.equals("ALERT")) {
+                return Logging.LEVEL_ALERT;
+            } else if (level.equals("CRIT")) {
+                return Logging.LEVEL_CRIT;
+            } else if (level.equals("ERR")) {
+                return Logging.LEVEL_ERROR;
+            } else if (level.equals("WARNING")) {
+                return Logging.LEVEL_WARN;
+            } else if (level.equals("NOTICE")) {
+                return Logging.LEVEL_NOTICE;
+            } else if (level.equals("INFO")) {
+                return Logging.LEVEL_INFO;
+            } else if (level.equals("DEBUG")) {
+                return Logging.LEVEL_DEBUG;
+            } else {
+                
+                try {
+                    int levelInt = Integer.valueOf(level);
+                    return levelInt;
+                } catch (NumberFormatException ex) {
+                    throw new RuntimeException("'" + level + 
+                            "' is not a valid level name nor an integer");
+                }
+            }
+        }
     }
 
     public Properties getProps() {
