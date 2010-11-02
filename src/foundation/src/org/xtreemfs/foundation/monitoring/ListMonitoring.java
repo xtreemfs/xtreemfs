@@ -48,11 +48,12 @@ public class ListMonitoring<V> extends Monitoring<List<V>> {
      * @param value
      * @return
      */
-    public List<V> put(String key, V value) {
+    @Override
+    public List<V> put(String key, List<V> value) {
         List<V> list = super.get(key);
         if (list == null)
             list = new CopyOnWriteArrayList<V>();
-        list.add(value);
+        list.addAll(value);
         return super.put(key, list);
     }
 }

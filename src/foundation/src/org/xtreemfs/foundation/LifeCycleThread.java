@@ -38,13 +38,13 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 
 /**
  * A base class for threads representing a life cycle. It offers methods for
- * blocking other threads until a certain life cycle event has occured. It
+ * blocking other threads until a certain life cycle event has occurred. It
  * currently supports two life cycle-related events: startup and shutdown.
  * 
  * @author stender
  * 
  */
-public class LifeCycleThread extends Thread {
+public abstract class LifeCycleThread extends Thread {
     
     private final Object      startLock;
     
@@ -63,6 +63,12 @@ public class LifeCycleThread extends Thread {
         startLock = new Object();
         stopLock = new Object();
     }
+    
+    /**
+     * This method has to be implemented by a superclass for signaling the 
+     * thread to stop execution gracefully.
+     */
+    public abstract void shutdown();
     
     /**
      * This method should be invoked by subclasses when the startup procedure
