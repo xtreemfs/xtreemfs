@@ -12,6 +12,8 @@ then
     then
         UUID=$RANDOM"-"$RANDOM"-"$RANDOM"-"$RANDOM
         echo "WARNING: uuidgen is not available, the generated UUID contains just random numbers. THIS UUID IS PROBABLY NOT UNIQUE, PLEASE CREATE A REAL UUID OF YOU INTEND TO USE THIS SERVICE IN A MULTI-SERVER ENVIRONMENT."
+    else
+        UUID=`$UUID`
     fi
 
     echo "" >> $CFGFILE
