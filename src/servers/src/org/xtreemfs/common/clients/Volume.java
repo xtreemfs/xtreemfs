@@ -555,28 +555,29 @@ public class Volume {
 
         RPCResponse<FileCredentials> response1 = null;
         RPCResponse response3 = null;
+        RPCResponse<String> response2 = null;
         final String fullPath = fixPath(volumeName+file.getPath());
         try {
             if (file.isReadOnly()) {
                 org.xtreemfs.common.clients.Replica r = file.getReplica(0);
                 StripingPolicy sp = new StripingPolicy(r.getStripingPolicy(), r.getStripeSize(), width);
                 org.xtreemfs.interfaces.Replica newReplica = new org.xtreemfs.interfaces.Replica(osdSet,
-                    flags | Constants.REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING, sp);
-
-                response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fullPath, 0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0,new VivaldiCoordinates());
-                FileCredentials oldCreds = response1.get();
-                response1.freeBuffers();
-                response1 = null;
+                    flags, sp);
+                
+                response2 = mrcClient.getxattr(mrcClient.getDefaultServerAddress(), userCreds, fullPath, "xtreemfs.file_id");
+                String fileId = response2.get();
+                response2.freeBuffers();
+                response2 = null;
 
                 response3 = mrcClient.xtreemfs_replica_add(mrcClient.getDefaultServerAddress(), userCreds,
-                        oldCreds.getXcap().getFile_id(), newReplica);
+                    fileId, newReplica);
                 response3.get();
                 response3.freeBuffers();
                 response3 = null;
 
                 if ((flags & Constants.REPL_FLAG_FULL_REPLICA) > 0) {
 
-                    response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fullPath, 0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0,new VivaldiCoordinates());
+                    response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fullPath, Constants.SYSTEM_V_FCNTL_H_O_RDONLY, 0, 0,new VivaldiCoordinates());
                     FileCredentials newCreds = response1.get();
                     for (int objNo = 0; objNo < width; objNo++) {
                         ServiceUUID osd = new ServiceUUID(osdSet.get(objNo), uuidResolver);
@@ -602,6 +603,8 @@ public class Volume {
         } finally {
             if (response1 != null)
                 response1.freeBuffers();
+            if (response2 != null)
+                response2.freeBuffers();
             if (response3 != null)
                 response3.freeBuffers();
         }

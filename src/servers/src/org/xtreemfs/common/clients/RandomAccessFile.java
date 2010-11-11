@@ -476,7 +476,7 @@ public class RandomAccessFile {
                 return true;
             }
             StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(replica, 0);
-            long lastObjectNo = sp.getObjectNoForOffset(this.credentials.getXlocs().getRead_only_file_size());
+            long lastObjectNo = sp.getObjectNoForOffset(this.credentials.getXlocs().getRead_only_file_size() - 1);
             int osdRelPos = 0;
             for (String osdUUID : replica.getOsd_uuids()) {
                 ServiceUUID osd = new ServiceUUID(osdUUID, parentVolume.uuidResolver);

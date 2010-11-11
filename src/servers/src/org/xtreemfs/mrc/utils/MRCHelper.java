@@ -194,7 +194,7 @@ public class MRCHelper {
         StringSet osds = new StringSet();
         
         ServiceSet usableOSDs = osdMan.getUsableOSDs(volume.getId(), clientAddress, clientCoordinates,
-            currentXLoc, stripingPolicy.getStripeSize());
+            currentXLoc, stripingPolicy.getWidth());
         
         if (usableOSDs == null || usableOSDs.size() == 0) {
             

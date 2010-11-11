@@ -276,9 +276,6 @@ public class xtfs_repl {
             if (stripeWidth == 0) // not set => policy from replica 1
                 stripeWidth = osds.size();
             
-            StripingPolicy sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, raFile
-                    .getCurrentReplicaStripeSize(), stripeWidth);
-            
             String[] osdArray = new String[osds.size()];
             int i = 0;
             for (ServiceUUID osd : osds) {
