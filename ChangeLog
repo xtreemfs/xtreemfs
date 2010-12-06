@@ -88,7 +88,7 @@
     * version 1.2. release
 
 16-DEC-2009
-    *fixed issue #109
+    * fixed issue #109
 
 08-JAN-2010
     * status of servers can now be set by admins (online, offline, etc.)
@@ -106,3 +106,7 @@
     * added 'xtfs_acl' tool for getting and setting POSIX ACLs
     * added 'chmod' and 'chown' operations to Java MRC client
     * updated BabuDB version in MRC/DIR storage backend to 0.4.4
+    
+06-DEC-2010
+    * fixed issue with symbolic link resolution
+    * fixed issue with remaining space reported by the statVFS() call

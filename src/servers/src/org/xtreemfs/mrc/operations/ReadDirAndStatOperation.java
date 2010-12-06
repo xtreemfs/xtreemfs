@@ -26,17 +26,14 @@ package org.xtreemfs.mrc.operations;
 
 import java.util.Iterator;
 
-import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.MRCInterface.readdirRequest;
 import org.xtreemfs.interfaces.MRCInterface.readdirResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -82,26 +79,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
         res.checkIfFileDoesNotExist();
         
         FileMetadata file = res.getFile();
-        
-        // if the file refers to a symbolic link, resolve the link
-        String target = sMan.getSoftlinkTarget(file.getId());
-        if (target != null) {
-            rqArgs.setPath(target);
-            p = new Path(target);
-            
-            // if the local MRC is not responsible, send a redirect
-            if (!vMan.hasVolume(p.getComp(0))) {
-                finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
-                    + target + " does not exist"));
-                return;
-            }
-            
-            sMan = vMan.getStorageManagerByName(p.getComp(0));
-            volume = sMan.getVolumeInfo();
-            res = new PathResolver(sMan, p);
-            file = res.getFile();
-        }
-        
+                
         // check whether the directory grants read access
         faMan.checkPermission(FileAccessManager.O_RDONLY, sMan, file, res.getParentDirId(),
             rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);

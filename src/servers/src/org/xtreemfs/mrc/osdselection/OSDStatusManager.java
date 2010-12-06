@@ -326,4 +326,20 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         return free;
     }
     
+    public long getTotalSpace(String volumeId) {
+        
+        long free = 0;
+        
+        ServiceSet usableOSDs = getUsableOSDs(volumeId);
+        if (usableOSDs == null)
+            return 0;
+        
+        for (Service entry : usableOSDs) {
+            String freeStr = entry.getData().get("total");
+            if (freeStr != null)
+                free += Long.valueOf(freeStr);
+        }
+        return free;
+    }
+    
 }

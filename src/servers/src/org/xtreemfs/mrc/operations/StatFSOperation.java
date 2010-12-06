@@ -54,8 +54,8 @@ public class StatFSOperation extends MRCOperation {
         
         int blockSize = sMan.getDefaultStripingPolicy(1).getStripeSize() * 1024;
         long bavail = master.getOSDStatusManager().getFreeSpace(volume.getId()) / blockSize;
-        long used_blocks = volume.getVolumeSize() / blockSize;
-        long blocks = bavail + used_blocks;
+        //long used_blocks = volume.getVolumeSize() / blockSize;
+        long blocks = master.getOSDStatusManager().getTotalSpace(volume.getId()) / blockSize;
         
         StatVFS statfs = new StatVFS(blockSize, bavail, blocks, volume.getId(), 1024);
         

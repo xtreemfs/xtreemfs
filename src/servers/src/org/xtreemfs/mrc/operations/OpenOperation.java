@@ -24,7 +24,6 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
@@ -39,11 +38,9 @@ import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.interfaces.MRCInterface.openRequest;
 import org.xtreemfs.interfaces.MRCInterface.openResponse;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -62,7 +59,7 @@ import org.xtreemfs.mrc.utils.PathResolver;
  */
 public class OpenOperation extends MRCOperation {
     
-    private PrintWriter logfile;
+//    private PrintWriter logfile;
     
     public OpenOperation(MRCRequestDispatcher master) {
         super(master);
@@ -112,26 +109,7 @@ public class OpenOperation extends MRCOperation {
                 res.checkIfFileExistsAlready();
             
             file = res.getFile();
-            
-            // if the file refers to a symbolic link, resolve the link
-            String target = sMan.getSoftlinkTarget(file.getId());
-            if (target != null) {
-                rqArgs.setPath(target);
-                p = new Path(target);
-                
-                // if the local MRC is not responsible, send a redirect
-                if (!vMan.hasVolume(p.getComp(0))) {
-                    finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
-                        + target + " does not exist"));
-                    return;
-                }
-                
-                sMan = vMan.getStorageManagerByName(p.getComp(0));
-                volume = sMan.getVolumeInfo();
-                res = new PathResolver(sMan, p);
-                file = res.getFile();
-            }
-            
+
             if (file.isDirectory())
                 throw new UserException(ErrNo.EISDIR, "open is restricted to files");
             

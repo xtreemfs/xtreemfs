@@ -74,24 +74,6 @@ public class ChangeAccessModeOperation extends MRCOperation {
         
         FileMetadata file = res.getFile();
         
-        // if the file refers to a symbolic link, resolve the link
-        String target = sMan.getSoftlinkTarget(file.getId());
-        if (target != null) {
-            rqArgs.setPath(target);
-            p = new Path(target);
-            
-            // if the local MRC is not responsible, send a redirect
-            if (!vMan.hasVolume(p.getComp(0))) {
-                finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
-                    + target + " does not exist"));
-                return;
-            }
-            
-            sMan = vMan.getStorageManagerByName(p.getComp(0));
-            res = new PathResolver(sMan, p);
-            file = res.getFile();
-        }
-        
         // check whether the access mode may be changed
         faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser, rq
                 .getDetails().groupIds);
