@@ -29,10 +29,14 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -59,6 +63,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
+import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.DirService;
 import org.xtreemfs.interfaces.Service;
@@ -100,7 +105,8 @@ import com.sun.net.httpserver.HttpServer;
  * 
  * @author bjko
  */
-public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycleListener, DBAccessResultListener<Object> {
+public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
+    DBAccessResultListener<Object> {
     
     private static final int               RPC_TIMEOUT        = 10000;
     
@@ -134,8 +140,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     private final OSDClient                osdClient;
     
-    public MRCRequestDispatcher(final MRCConfig config, BabuDBConfig dbConfig) throws IOException, ClassNotFoundException,
-        IllegalAccessException, InstantiationException, DatabaseException {
+    public MRCRequestDispatcher(final MRCConfig config, BabuDBConfig dbConfig) throws IOException,
+        ClassNotFoundException, IllegalAccessException, InstantiationException, DatabaseException {
         
         Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS Metadata Service version "
             + VersionManagement.RELEASE_VERSION);
@@ -162,7 +168,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
-                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config.isGRIDSSLmode()) : null;
+                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
+                .isGRIDSSLmode()) : null;
         
         clientStage = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT);
         clientStage.setLifeCycleListener(this);
@@ -256,16 +263,16 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 
             }
         });
-
+        
         if (config.getAdminPassword().length() > 0) {
-            ctx.setAuthenticator(new BasicAuthenticator("XtreemFS MRC "+config.getUUID()) {
+            ctx.setAuthenticator(new BasicAuthenticator("XtreemFS MRC " + config.getUUID()) {
                 @Override
                 public boolean checkCredentials(String arg0, String arg1) {
-                    return (arg0.equals("admin")&& arg1.equals(config.getAdminPassword()));
+                    return (arg0.equals("admin") && arg1.equals(config.getAdminPassword()));
                 }
             });
         }
-
+        
         httpServ.start();
         
         heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen,
@@ -300,8 +307,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public void startup() {
         
         try {
-            HeartbeatThread.waitForDIR(config.getDirectoryService(),config.getWaitForDIR());
-
+            HeartbeatThread.waitForDIR(config.getDirectoryService(), config.getWaitForDIR());
+            
             TimeSync.initializeLocal(config.getRemoteTimeSync(), config.getLocalClockRenew());
             
             clientStage.start();
@@ -512,10 +519,24 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         try {
             StringBuffer volTableBuf = new StringBuffer();
             Collection<StorageManager> sMans = volumeManager.getStorageManagers();
-            for (StorageManager sMan : sMans) {
+            
+            List<VolumeInfo> volumes = new ArrayList<VolumeInfo>(sMans.size());
+            for (StorageManager sMan : sMans)
+                volumes.add(sMan.getVolumeInfo());
+            
+            Collections.sort(volumes, new Comparator<VolumeInfo>() {
+                public int compare(VolumeInfo o1, VolumeInfo o2) {
+                    return o1.getName().compareTo(o2.getName());
+                }
+            });
+            
+            boolean first = true;
+            for(VolumeInfo v: volumes) {
                 
-                VolumeInfo v = sMan.getVolumeInfo();
                 ServiceSet osdList = osdMonitor.getUsableOSDs(v.getId());
+                
+                if (!first)
+                    volTableBuf.append("<tr><td colspan=\"2\"><hr style=\"height:1px\"/></td></tr>");
                 
                 volTableBuf.append("<tr><td align=\"left\">");
                 volTableBuf.append(v.getName());
@@ -533,10 +554,12 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 StripingPolicy defaultSP = volumeManager.getStorageManager(v.getId())
                         .getDefaultStripingPolicy(1);
                 
+                AccessControlPolicyType policy = AccessControlPolicyType.parseInt(v.getAcPolicyId());
+                
                 volTableBuf.append("</td></tr><tr><td class=\"subtitle\">striping policy</td><td>");
                 volTableBuf.append(Converter.stripingPolicyToString(defaultSP));
                 volTableBuf.append("</td></tr><tr><td class=\"subtitle\">access policy</td><td>");
-                volTableBuf.append(v.getAcPolicyId());
+                volTableBuf.append(policy != null ? policy.name() : v.getAcPolicyId());
                 volTableBuf.append("</td></tr><tr><td class=\"subtitle\">osd policy</td><td>");
                 volTableBuf.append(Converter.shortArrayToString(v.getOsdPolicy()));
                 volTableBuf.append("</td></tr><tr><td class=\"subtitle\">replica policy</td><td>");
@@ -550,6 +573,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 volTableBuf.append("</td></tr><tr><td class=\"subtitle\">occupied disk space:</td><td>");
                 volTableBuf.append(OutputUtils.formatBytes(v.getVolumeSize()));
                 volTableBuf.append("</td></tr></table></td></tr>");
+                
+                first = false;
             }
             
             data.put(Vars.VOLUMES, volTableBuf.toString());
@@ -605,7 +630,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     }
     
     public void crashPerformed(Throwable cause) {
-        final String report = CrashReporter.createCrashReport("MRC", VersionManagement.RELEASE_VERSION, cause);
+        final String report = CrashReporter
+                .createCrashReport("MRC", VersionManagement.RELEASE_VERSION, cause);
         System.out.println(report);
         CrashReporter.reportXtreemFSCrash(report);
         try {
@@ -615,7 +641,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             System.exit(1);
         }
     }
-        
+    
     @Override
     public void receiveRecord(ONCRPCRequest rq) {
         
@@ -635,11 +661,11 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         // no callback, special stage which executes the operatios
         procStage.enqueueOperation(new MRCRequest(rq), ProcessingStage.STAGEOP_PARSE_AND_EXECUTE, null);
     }
-
+    
     public ReplicationManager getDBSReplicationService() {
         return volumeManager.getReplicationManager();
     }
-
+    
     @Override
     public void failed(Throwable error, Object context) {
         MRCRequest request = (MRCRequest) context;
@@ -648,11 +674,11 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         final ONCRPCRequest rpcRequest = request.getRPCRequest();
         assert (rpcRequest != null);
         
-        if (request.getError() == null) request.setError(
-                new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, error.getMessage()));
+        if (request.getError() == null)
+            request.setError(new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, error.getMessage()));
         requestFinished(request);
     }
-
+    
     @Override
     public void finished(Object result, Object context) {
         requestFinished((MRCRequest) context);

@@ -105,82 +105,82 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     public static final short   POLICY_ID          = (short) AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX
                                                            .intValue();
     
-    private static final String OWNER              = "u:";
+    protected static final String OWNER              = "u:";
     
-    private static final String OWNER_GROUP        = "g:";
+    protected static final String OWNER_GROUP        = "g:";
     
-    private static final String OTHER              = "o:";
+    protected static final String OTHER              = "o:";
     
-    private static final String MASK               = "m:";
+    protected static final String MASK               = "m:";
     
-    private static final String NAMED_USER_PREFIX  = "u:";
+    protected static final String NAMED_USER_PREFIX  = "u:";
     
-    private static final String NAMED_GROUP_PREFIX = "g:";
+    protected static final String NAMED_GROUP_PREFIX = "g:";
     
-    private static final String STICKY_BIT         = "sticky";
+    protected static final String STICKY_BIT         = "sticky";
     
-    private static final String AM_WRITE           = "w";
+    protected static final String AM_WRITE           = "w";
     
-    private static final String AM_READ            = "r";
+    protected static final String AM_READ            = "r";
     
-    private static final String AM_EXECUTE         = "x";
+    protected static final String AM_EXECUTE         = "x";
     
-    private static final String AM_DELETE          = "d";
+    protected static final String AM_DELETE          = "d";
     
-    private static final String AM_MV_RM_IN_DIR    = "m";
+    protected static final String AM_MV_RM_IN_DIR    = "m";
     
-    private static final int    POSIX_OTHER_EXEC   = 1 << 0;
+    protected static final int    POSIX_OTHER_EXEC   = 1 << 0;
     
-    private static final int    POSIX_OTHER_WRITE  = 1 << 1;
+    protected static final int    POSIX_OTHER_WRITE  = 1 << 1;
     
-    private static final int    POSIX_OTHER_READ   = 1 << 2;
+    protected static final int    POSIX_OTHER_READ   = 1 << 2;
     
-    private static final int    POSIX_GROUP_EXEC   = 1 << 3;
+    protected static final int    POSIX_GROUP_EXEC   = 1 << 3;
     
-    private static final int    POSIX_GROUP_WRITE  = 1 << 4;
+    protected static final int    POSIX_GROUP_WRITE  = 1 << 4;
     
-    private static final int    POSIX_GROUP_READ   = 1 << 5;
+    protected static final int    POSIX_GROUP_READ   = 1 << 5;
     
-    private static final int    POSIX_OWNER_EXEC   = 1 << 6;
+    protected static final int    POSIX_OWNER_EXEC   = 1 << 6;
     
-    private static final int    POSIX_OWNER_WRITE  = 1 << 7;
+    protected static final int    POSIX_OWNER_WRITE  = 1 << 7;
     
-    private static final int    POSIX_OWNER_READ   = 1 << 8;
+    protected static final int    POSIX_OWNER_READ   = 1 << 8;
     
-    private static final int    POSIX_STICKY       = 1 << 9;
+    protected static final int    POSIX_STICKY       = 1 << 9;
     
-    private static final int    POSIX_SGID         = 1 << 10;
+    protected static final int    POSIX_SGID         = 1 << 10;
     
-    private static final int    POSIX_SUID         = 1 << 11;
+    protected static final int    POSIX_SUID         = 1 << 11;
     
-    private static final short  PERM_READ          = 1 << 0;
+    protected static final short  PERM_READ          = 1 << 0;
     
-    private static final short  PERM_WRITE         = 1 << 1;
+    protected static final short  PERM_WRITE         = 1 << 1;
     
-    private static final short  PERM_EXECUTE       = 1 << 2;
+    protected static final short  PERM_EXECUTE       = 1 << 2;
     
-    private static final short  PERM_APPEND        = 1 << 3;
+    protected static final short  PERM_APPEND        = 1 << 3;
     
-    private static final short  PERM_GFS_APPEND    = 1 << 4;
+    protected static final short  PERM_GFS_APPEND    = 1 << 4;
     
-    private static final short  PERM_CREATE        = 1 << 5;
+    protected static final short  PERM_CREATE        = 1 << 5;
     
-    private static final short  PERM_TRUNCATE      = 1 << 6;
+    protected static final short  PERM_TRUNCATE      = 1 << 6;
     
-    private static final short  PERM_STRICT_READ   = 1 << 7;
+    protected static final short  PERM_STRICT_READ   = 1 << 7;
     
-    private static final short  PERM_DELETE        = 1 << 8;
+    protected static final short  PERM_DELETE        = 1 << 8;
     
-    private static final short  PERM_SUID_SGID     = 1 << 14;
+    protected static final short  PERM_SUID_SGID     = 1 << 14;
     
-    private static final short  READ_MASK          = PERM_READ | PERM_STRICT_READ;
+    protected static final short  READ_MASK          = PERM_READ | PERM_STRICT_READ;
     
-    private static final short  WRITE_MASK         = PERM_WRITE | PERM_APPEND | PERM_GFS_APPEND | PERM_CREATE
+    protected static final short  WRITE_MASK         = PERM_WRITE | PERM_APPEND | PERM_GFS_APPEND | PERM_CREATE
                                                        | PERM_TRUNCATE | PERM_DELETE;
     
-    private static final short  EXEC_MASK          = PERM_EXECUTE;
+    protected static final short  EXEC_MASK          = PERM_EXECUTE;
     
-    private static final short  READ_ONLY_MASK     = (-1 & 365);
+    protected static final short  READ_ONLY_MASK     = (-1 & 365);
     
     public POSIXFileAccessPolicy() {
     }
@@ -616,7 +616,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         return entry;
     }
     
-    private Map<String, Object> convertToACL(long mode) throws MRCException {
+    protected static Map<String, Object> convertToACL(long mode) throws MRCException {
         
         try {
             
