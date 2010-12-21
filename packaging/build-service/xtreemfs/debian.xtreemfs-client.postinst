@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # this scripts uses the tool 'uuidgen'
 
 #XTREEMFS_CONFIG_DIR=/etc/xos/xtreemfs/
