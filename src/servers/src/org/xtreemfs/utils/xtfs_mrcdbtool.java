@@ -55,7 +55,7 @@ public class xtfs_mrcdbtool {
         
         Logging.start(Logging.LEVEL_ERROR);
         try {
-            TimeSync.initialize(null, 60000, 50);
+            TimeSync.initializeLocal(60000, 50);
         } catch (Exception ex) {
             ex.printStackTrace();
             System.exit(1);
@@ -124,7 +124,7 @@ public class xtfs_mrcdbtool {
         
         try {
             
-            SSLOptions sslOptions = protocol.startsWith("https") ? new SSLOptions(new FileInputStream(
+            SSLOptions sslOptions = protocol.startsWith("oncrpcs") ? new SSLOptions(new FileInputStream(
                 c.stringValue), cp.stringValue, new FileInputStream(t.stringValue), tp.stringValue) : null;
             rpcClient = new RPCNIOSocketClient(sslOptions, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE);
             rpcClient.start();
