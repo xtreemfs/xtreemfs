@@ -140,7 +140,6 @@ To run the tools, a SUN JAVA 6 RUNTIME ENVIROMENT IS REQUIRED! Make sure that Ja
 
 
 %build
-export ANT_OPTS=-D"file.encoding=UTF-8"
 export CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing"
 export CXXFLAGS=$CFLAGS
 
