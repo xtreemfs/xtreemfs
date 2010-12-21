@@ -249,7 +249,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/xtfs_vivaldi
 %dir %{_libdir}/xtreemfs
 %dir %{_libdir}/xtreemfs/policies
-/etc/init.d/xtreemfs-vivaldi
+%config /etc/init.d/xtreemfs-vivaldi
 /usr/share/man/man1/*.xtreemfs*
 %dir /etc/xos/
 %dir /etc/xos/xtreemfs/
@@ -271,7 +271,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files server
 %defattr(-,root,root)
-/etc/init.d/xtreemfs-*
+%config /etc/init.d/xtreemfs-*
 %exclude /etc/init.d/xtreemfs-vivaldi
 %dir /etc/xos/
 %dir /etc/xos/xtreemfs/
