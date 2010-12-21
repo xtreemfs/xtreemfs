@@ -69,8 +69,12 @@ install: build
 	mkdir -p $(BUILD_DIR)-client/usr/bin
 	mv    -t $(BUILD_DIR)-client/usr/bin \
 	         $(BUILD_DIR)/usr/bin/*.xtreemfs \
-	         $(BUILD_DIR)/usr/bin/xtfs_*mount \
-	         $(BUILD_DIR)/usr/bin/xtfs_vivaldi
+	         $(BUILD_DIR)/usr/bin/xtfs_mount \
+	         $(BUILD_DIR)/usr/bin/xtfs_umount \
+	         $(BUILD_DIR)/usr/bin/xtfs_vivaldi \
+	         $(BUILD_DIR)/usr/bin/xtfs_lsvol \
+	         $(BUILD_DIR)/usr/bin/xtfs_mkvol \
+	         $(BUILD_DIR)/usr/bin/xtfs_rmvol
 	mkdir -p $(BUILD_DIR)-client/etc/init.d
 	mv    -t $(BUILD_DIR)-client/etc/init.d \
 	         $(BUILD_DIR)/etc/init.d/xtreemfs-vivaldi
