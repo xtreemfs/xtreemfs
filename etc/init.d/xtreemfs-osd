@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# chkconfig:   - 20 80
+# description: XtreemFS OSD. http://www.xtreemfs.org/
+
 ### BEGIN INIT INFO
 # Provides:          xtreemfs-osd
 # Required-Start:    $network $remote_fs
@@ -138,7 +141,7 @@ case "$1" in
         stop && sleep 1 && start
         result=$?
         ;;
-    try-restart)
+    condrestart|try-restart)
         ## Stop the service and if this succeeds (i.e. the
         ## service was running before), start it again.
         $0 status >/dev/null
@@ -154,7 +157,7 @@ case "$1" in
         result=$?
         ;;
     *)
-        echo -e "Usage: $0 {start|stop|restart|reload|status|try-restart|force-reload}\n"
+        echo -e "Usage: $0 {start|stop|restart|reload|status|condrestart|try-restart|force-reload}\n"
         result=1
         ;;
 esac
