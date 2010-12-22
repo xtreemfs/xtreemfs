@@ -173,11 +173,11 @@ client_distclean: check_client
 
 .PHONY: server server_clean server_distclean
 server: check_server
-	$(ANT_BIN) -f src/servers/build.xml jar
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f src/servers/build.xml jar
 server_clean: check_server
-	$(ANT_BIN) -f src/servers/build.xml clean || exit 1;
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f src/servers/build.xml clean || exit 1;
 server_distclean: check_server
-	$(ANT_BIN) -f src/servers/build.xml clean || exit 1;
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f src/servers/build.xml clean || exit 1;
 
 test: check_test client server
 	$(XTFS_BINDIR)/xctl --autotest

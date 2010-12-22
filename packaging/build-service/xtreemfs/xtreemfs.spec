@@ -23,21 +23,18 @@ BuildRequires:  python >= 2.4 gcc-c++ >= 4.1 fuse >= 2.6 fuse-devel >= 2.6 opens
 
 # openSUSE >=10.2
 %if 0%{?suse_version} >= 1020
-PreReq:         /usr/sbin/groupadd /usr/sbin/useradd /bin/mkdir /usr/bin/grep /bin/chmod /bin/chown /bin/chgrp /usr/bin/stat
-#BuildRequires:  libopenssl-devel >= 0.8
+%define init_script_requires_pre /usr/sbin/groupadd /usr/sbin/useradd /bin/mkdir /usr/bin/grep /bin/chmod /bin/chown /bin/chgrp /usr/bin/stat %insserv_prereq
 BuildRequires:  pwdutils >= 3
 %endif
 
 # Mandriva >=2008
 %if 0%{?mandriva_version} >= 2007
-Requires(pre):  /usr/sbin/groupadd /usr/sbin/useradd /bin/mkdir /bin/grep /bin/chmod /bin/chown /bin/chgrp /bin/stat
-#BuildRequires:  libopenssl-devel >= 0.8
+%define init_script_requires_pre /usr/sbin/groupadd /usr/sbin/useradd /bin/mkdir /bin/grep /bin/chmod /bin/chown /bin/chgrp /bin/stat
 %endif
 
 # Fedora >=7 with Extras
 %if 0%{?fedora_version} >= 7
-Requires(pre):  /usr/sbin/groupadd /usr/sbin/useradd /bin/mkdir /bin/grep /bin/chmod /bin/chown /bin/chgrp /usr/bin/stat
-#BuildRequires:  openssl-devel >= 0.8
+%define init_script_requires_pre /usr/sbin/groupadd /usr/sbin/useradd /bin/mkdir /bin/grep /bin/chmod /bin/chown /bin/chgrp /usr/bin/stat
 BuildRequires:  kernel redhat-rpm-config
 %endif
 
@@ -46,12 +43,26 @@ XtreemFS is a distributed and replicated file system for the internet. For more 
 
 %if %{client_subpackage}
 %package client
-Summary:        XtreemFS client
-Group:          System/Filesystems
-#Requires:       %{name} == %{version}-%{release}
-Requires:       fuse >= 2.6
-Provides:       XtreemFS-client = %{version}
-Obsoletes:      XtreemFS-client < %{version}
+Summary:          XtreemFS client
+Group:            System/Filesystems
+#Requires:         %{name} == %{version}-%{release}
+Requires:         fuse >= 2.6
+Provides:         XtreemFS-client = %{version}
+Obsoletes:        XtreemFS-client < %{version}
+%if 0%{?suse_version}
+PreReq:           %init_script_requires_pre
+%endif
+%if 0%{?mandriva_version}
+Requires(pre):    %init_script_requires_pre
+Requires(preun):  rpm-helper
+Requires(post):   rpm-helper
+%endif
+%if 0%{?fedora_version}
+Requires(pre):    %init_script_requires_pre
+Requires(preun):  chkconfig initscripts
+Requires(post):   chkconfig
+Requires(postun): initscripts
+%endif
 
 %description client
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
@@ -59,9 +70,9 @@ XtreemFS is a distributed and replicated file system for the internet. For more 
 This package contains the XtreemFS client module.
 
 %package client-policies-gridmap-flog
-Summary:        XtreemFS client gridmap_flog policy
-Group:          System/Filesystems
-Requires:       %{name}-client == %{version}-%{release}
+Summary:          XtreemFS client gridmap_flog policy
+Group:            System/Filesystems
+Requires:         %{name}-client == %{version}-%{release}
 
 %description client-policies-gridmap-flog
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
@@ -70,10 +81,10 @@ This package contains the gridmap_flog policy for the XtreemFS client.
 %endif
 
 %package backend
-Summary:        XtreemFS backend modules and libraries
-Group:          System/Filesystems
-#Requires:       %{name} == %{version}-%{release}
-Requires:       jre >= 1.6.0
+Summary:          XtreemFS backend modules and libraries
+Group:            System/Filesystems
+#Requires:         %{name} == %{version}-%{release}
+Requires:         jre >= 1.6.0
 
 %description backend
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
@@ -81,14 +92,28 @@ XtreemFS is a distributed and replicated file system for the internet. For more 
 This package contains the backend modules and libraries shared between the server and tools sub-packages.
 
 %package server
-Summary:        XtreemFS server components (DIR, MRC, OSD)
-Group:          System/Filesystems
-Requires:       %{name}-backend == %{version}-%{release}
-Requires:       grep sudo
-Requires:       jre >= 1.6.0
-Provides:       XtreemFS-server = %{version}
-Obsoletes:      XtreemFS-server < %{version}
-Requires(post): util-linux
+Summary:          XtreemFS server components (DIR, MRC, OSD)
+Group:            System/Filesystems
+Requires:         %{name}-backend == %{version}-%{release}
+Requires:         grep sudo
+Requires:         jre >= 1.6.0
+Provides:         XtreemFS-server = %{version}
+Obsoletes:        XtreemFS-server < %{version}
+Requires(post):   util-linux
+%if 0%{?suse_version}
+PreReq:           %init_script_requires_pre
+%endif
+%if 0%{?mandriva_version}
+Requires(pre):    %init_script_requires_pre
+Requires(preun):  rpm-helper
+Requires(post):   rpm-helper
+%endif
+%if 0%{?fedora_version}
+Requires(pre):    %init_script_requires_pre
+Requires(preun):  chkconfig initscripts
+Requires(post):   chkconfig
+Requires(postun): initscripts
+%endif
 
 %description server
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
@@ -97,14 +122,12 @@ This package contains the XtreemFS server components (DIR, MRC, OSD).
 To run the XtreemFS services, a SUN JAVA 6 RUNTIME ENVIROMENT IS REQUIRED! Make sure that Java is installed in /usr/bin, or $JAVA_HOME is set.
 
 %package tools
-Summary:        XtreemFS administration tools
-Group:          System/Filesystems
-Requires:       %{name}-backend == %{version}-%{release}
-Requires:       python >= 2.6
-Requires:       attr
-Requires:       jre >= 1.6.0
-Provides:       XtreemFS-tools = %{version}
-Obsoletes:      XtreemFS-tools < %{version}
+Summary:          XtreemFS administration tools
+Group:            System/Filesystems
+Requires:         %{name}-backend == %{version}-%{release}
+Requires:         python >= 2.6 attr jre >= 1.6.0
+Provides:         XtreemFS-tools = %{version}
+Obsoletes:        XtreemFS-tools < %{version}
 
 %description tools
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
@@ -117,7 +140,6 @@ To run the tools, a SUN JAVA 6 RUNTIME ENVIROMENT IS REQUIRED! Make sure that Ja
 
 
 %build
-export ANT_OPTS=-D"file.encoding=UTF-8"
 export CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing"
 export CXXFLAGS=$CFLAGS
 
@@ -177,33 +199,47 @@ fi
 #$XTREEMFS_CONFIG_DIR/postinstall_setup.sh
 _POSTINSTALL_
 
+%if 0%{?suse_version}
+%fillup_and_insserv -f xtreemfs-dir xtreemfs-mrc xtreemfs-osd
+%restart_on_update xtreemfs-dir xtreemfs-mrc xtreemfs-osd
+%endif
+%if 0%{?fedora_version}
+/sbin/chkconfig --add xtreemfs-dir xtreemfs-mrc xtreemfs-osd
+%endif
+%if 0%{?mandriva_version}
+%_post_service xtreemfs-dir xtreemfs-mrc xtreemfs-osd
+%endif
+
 %preun server
 %if 0%{?suse_version}
 %stop_on_removal xtreemfs-dir xtreemfs-mrc xtreemfs-osd
-%else
-  test -n "$FIRST_ARG" || FIRST_ARG=$1
-  if test "$FIRST_ARG" = "0" ; then
-#   number of instances after the uninstall will be 0
-#   -> the package is about to be removed
-    /etc/init.d/xtreemfs-dir stop
-    /etc/init.d/xtreemfs-mrc stop
-    /etc/init.d/xtreemfs-osd stop
+%endif
+%if 0%{?fedora_version}
+# 0 packages after uninstall -> pkg is about to be removed
+  if [ "$1" = "0" ] ; then
+    /sbin/service xtreemfs-dir stop >/dev/null 2>&1
+    /sbin/service xtreemfs-mrc stop >/dev/null 2>&1
+    /sbin/service xtreemfs-osd stop >/dev/null 2>&1
+    /sbin/chkconfig --del xtreemfs-dir xtreemfs-mrc xtreemfs-osd
   fi
+%endif
+%if 0%{?mandriva_version}
+%_preun_service xtreemfs-dir xtreemfs-mrc xtreemfs-osd
 %endif
 
 %postun server
 %if 0%{?suse_version}
-%restart_on_update xtreemfs-dir xtreemfs-mrc xtreemfs-osd
 %insserv_cleanup
-%else
-  test -n "$FIRST_ARG" || FIRST_ARG=$1
-  if test "$FIRST_ARG" -ge 1 ; then
-#   number of instances after the uninstall will be >=1
-#   -> the package has been replaced
-    /etc/init.d/xtreemfs-dir try-restart
-    /etc/init.d/xtreemfs-mrc try-restart
-    /etc/init.d/xtreemfs-osd try-restart
-  fi
+%endif
+%if 0%{?fedora_version}
+# >=1 packages after uninstall -> pkg was updated -> restart
+if [ "$1" -ge "1" ] ; then
+  /sbin/service xtreemfs-dir condrestart >/dev/null 2>&1 || :
+  /sbin/service xtreemfs-mrc condrestart >/dev/null 2>&1 || :
+  /sbin/service xtreemfs-osd condrestart >/dev/null 2>&1 || :
+fi
+%endif
+%if 0%{?mandriva_version}
 %endif
 
 %if %{client_subpackage}
@@ -212,29 +248,43 @@ _POSTINSTALL_
 #$XTREEMFS_CONFIG_DIR/postinstall_setup.sh
 _POSTINSTALL_
 
+%if 0%{?suse_version}
+%fillup_and_insserv -f xtreemfs-vivaldi
+%restart_on_update xtreemfs-vivaldi
+%endif
+%if 0%{?fedora_version}
+/sbin/chkconfig --add xtreemfs-vivaldi
+%endif
+%if 0%{?mandriva_version}
+%_post_service xtreemfs-vivaldi
+%endif
+
 %preun client
 %if 0%{?suse_version}
 %stop_on_removal xtreemfs-vivaldi
-%else
-  test -n "$FIRST_ARG" || FIRST_ARG=$1
-  if test "$FIRST_ARG" = "0" ; then
-#   number of instances after the uninstall will be 0
-#   -> the package is about to be removed
-    /etc/init.d/xtreemfs-vivaldi stop
+%endif
+%if 0%{?fedora_version}
+# 0 packages after uninstall -> pkg is about to be removed
+  if [ "$1" = "0" ] ; then
+    /sbin/service xtreemfs-vivaldi stop >/dev/null 2>&1
+    /sbin/chkconfig --del xtreemfs-vivaldi
   fi
+%endif
+%if 0%{?mandriva_version}
+%_preun_service xtreemfs-vivaldi
 %endif
 
 %postun client
 %if 0%{?suse_version}
-%restart_on_update xtreemfs-vivaldi
 %insserv_cleanup
-%else
-  test -n "$FIRST_ARG" || FIRST_ARG=$1
-  if test "$FIRST_ARG" -ge 1 ; then
-#   number of instances after the uninstall will be >=1
-#   -> the package has been replaced
-    /etc/init.d/xtreemfs-vivaldi try-restart
-  fi
+%endif
+%if 0%{?fedora_version}
+# >=1 packages after uninstall -> pkg was updated -> restart
+if [ "$1" -ge "1" ] ; then
+  /sbin/service xtreemfs-vivaldi condrestart >/dev/null 2>&1 || :
+fi
+%endif
+%if 0%{?mandriva_version}
 %endif
 %endif
 
@@ -245,11 +295,15 @@ rm -rf $RPM_BUILD_ROOT
 %files client
 %defattr(-,root,root)
 /usr/bin/*.xtreemfs
-/usr/bin/xtfs_*mount
+/usr/bin/xtfs_mount
+/usr/bin/xtfs_umount
 /usr/bin/xtfs_vivaldi
+/usr/bin/xtfs_lsvol
+/usr/bin/xtfs_mkvol
+/usr/bin/xtfs_rmvol
 %dir %{_libdir}/xtreemfs
 %dir %{_libdir}/xtreemfs/policies
-/etc/init.d/xtreemfs-vivaldi
+%config /etc/init.d/xtreemfs-vivaldi
 /usr/share/man/man1/*.xtreemfs*
 %dir /etc/xos/
 %dir /etc/xos/xtreemfs/
@@ -271,7 +325,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files server
 %defattr(-,root,root)
-/etc/init.d/xtreemfs-*
+%config /etc/init.d/xtreemfs-*
 %exclude /etc/init.d/xtreemfs-vivaldi
 %dir /etc/xos/
 %dir /etc/xos/xtreemfs/
@@ -285,12 +339,14 @@ rm -rf $RPM_BUILD_ROOT
 
 %files tools
 %defattr(-,root,root)
-%if %{client_subpackage}
-# these files only appear if the client package is built
-%exclude /usr/bin/xtfs_*mount
-%exclude /usr/bin/xtfs_vivaldi
-%endif
-/usr/bin/xtfs_*
+/usr/bin/xtfs_acl
+/usr/bin/xtfs_chstatus
+/usr/bin/xtfs_cleanup
+/usr/bin/xtfs_mrcdbtool
+/usr/bin/xtfs_repl
+/usr/bin/xtfs_scrub
+/usr/bin/xtfs_sp
+/usr/bin/xtfs_stat
 /usr/share/man/man1/xtfs_*
 #/usr/share/doc/xtreemfs-tools/
 %doc COPYING

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 XTREEMFS_LOG_DIR=/var/log/xtreemfs
 XTREEMFS_HOME=/var/lib/xtreemfs
@@ -6,12 +7,12 @@ XTREEMFS_ETC=/etc/xos/xtreemfs
 XTREEMFS_USER=xtreemfs
 XTREEMFS_GROUP=xtreemfs
 
-exists=`grep -c $XTREEMFS_USER /etc/passwd`
-group_exists=`grep -c $XTREEMFS_GROUP /etc/group`
+group_exists=`grep -c 1$XTREEMFS_GROUP /etc/group || true`
 if [ $group_exists -eq 0 ]; then
     groupadd $XTREEMFS_GROUP
     echo "created group $XTREEMFS_GROUP"
 fi
+exists=`grep -c $XTREEMFS_USER /etc/passwd || true`
 if [ $exists -eq 0 ]; then
     mkdir $XTREEMFS_HOME
     useradd -r --home $XTREEMFS_HOME -g $XTREEMFS_GROUP $XTREEMFS_USER
@@ -40,8 +41,7 @@ if [ -e $XTREEMFS_ETC ]; then
         echo "directory $XTREEMFS_ETC is not owned by $XTREEMFS_GROUP, executing chmod (may take some time)"
         chgrp -R $XTREEMFS_GROUP $XTREEMFS_ETC
     fi
-    propertiesExist=`ls $XTREEMFS_ETC/*.properties`
-    if [ $? -eq 0 ]; then
+    if [ -f $XTREEMFS_ETC/*.properties ]; then
         echo "setting $XTREEMFS_ETC/*.properties 0750, executing chmod"
         chmod 0750 $XTREEMFS_ETC/*.properties
     fi
