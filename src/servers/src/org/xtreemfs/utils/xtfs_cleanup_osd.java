@@ -138,6 +138,16 @@ public class xtfs_cleanup_osd {
                 if (Constants.ONCRPCG_SCHEME.equals(dirURL.getProtocol())) {
                     gridSSL = true;
                 }
+                
+                if (serviceCredsFile == null) {
+                    System.out.println("SSL requires '-c' parameter to be specified");
+                    usage();
+                    return;
+                } else if (trustedCAsFile == null) {
+                    System.out.println("SSL requires '-t' parameter to be specified");
+                    usage();
+                    return;
+                }
             }
 
             

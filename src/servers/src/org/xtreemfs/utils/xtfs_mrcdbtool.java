@@ -124,8 +124,23 @@ public class xtfs_mrcdbtool {
         
         try {
             
-            SSLOptions sslOptions = protocol.startsWith("oncrpcs") ? new SSLOptions(new FileInputStream(
-                c.stringValue), cp.stringValue, new FileInputStream(t.stringValue), tp.stringValue) : null;
+            SSLOptions sslOptions = null;
+            if (protocol.startsWith("oncrpcs")) {
+                
+                if (c.stringValue == null) {
+                    System.out.println("SSL requires '-c' parameter to be specified");
+                    usage();
+                    return;
+                } else if (t.stringValue == null) {
+                    System.out.println("SSL requires '-t' parameter to be specified");
+                    usage();
+                    return;
+                }
+                
+                sslOptions = new SSLOptions(new FileInputStream(c.stringValue), cp.stringValue, new FileInputStream(
+                    t.stringValue), tp.stringValue);
+            }
+            
             rpcClient = new RPCNIOSocketClient(sslOptions, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE);
             rpcClient.start();
             MRCClient client = new MRCClient(rpcClient, new InetSocketAddress(host, port));

@@ -47,7 +47,7 @@ import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
  * 
- *
+ * 
  * @since 09/16/2009
  * @author flangner
  */
@@ -128,9 +128,24 @@ public class xtfs_dirreplicationtool {
         
         try {
             
-            SSLOptions sslOptions = protocol.startsWith("https") ? new SSLOptions(new FileInputStream(
-                c.stringValue), cp.stringValue, new FileInputStream(t.stringValue), tp.stringValue) : null;
-            rpcClient = new RPCNIOSocketClient(sslOptions, 2*60*1000, 5*60*1000);
+            SSLOptions sslOptions = null;
+            if (protocol.startsWith("oncrpcs")) {
+                
+                if (c.stringValue == null) {
+                    System.out.println("SSL requires '-c' parameter to be specified");
+                    usage();
+                    return;
+                } else if (t.stringValue == null) {
+                    System.out.println("SSL requires '-t' parameter to be specified");
+                    usage();
+                    return;
+                }
+                
+                sslOptions = new SSLOptions(new FileInputStream(c.stringValue), cp.stringValue,
+                    new FileInputStream(t.stringValue), tp.stringValue);
+            }
+            
+            rpcClient = new RPCNIOSocketClient(sslOptions, 2 * 60 * 1000, 5 * 60 * 1000);
             rpcClient.start();
             DIRClient client = new DIRClient(rpcClient, new InetSocketAddress(host, port));
             
@@ -154,8 +169,7 @@ public class xtfs_dirreplicationtool {
             if (exc.getError_code() == ErrorCodes.AUTH_FAILED)
                 System.out.println("permission denied: invalid administrator password");
             else if (exc.getError_code() == ErrorCodes.NOT_ENOUGH_PARTICIPANTS)
-                System.out.println("there where not enough participants to perform" +
-                		" this operation");
+                System.out.println("there where not enough participants to perform" + " this operation");
             else
                 exc.printStackTrace();
         } catch (Exception exc) {
