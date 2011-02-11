@@ -822,14 +822,16 @@ public class HashStorageLayout extends StorageLayout {
         }
     }
 
+    
+    @Override
     public FileList getFileList(FileList l, int maxNumEntries) {
-
+        
         if (l == null) {
             l = new FileList(new Stack<String>(), new HashMap<String, FileData>());
             l.status.push("");
         }
         l.files.clear();
-
+        
         try {
             do {
                 int PREVIEW_LENGTH = 15;
@@ -837,40 +839,49 @@ public class HashStorageLayout extends StorageLayout {
                 File dir = new File(storageDir + currentDir);
                 assert (dir.listFiles() != null) : storageDir + currentDir + " is not a valid directory!";
                 FileReader fReader;
-
+                
                 File newestFirst = null;
                 File newestLast = null;
                 Long objectSize = 0L;
-
+                
                 for (File ch : dir.listFiles()) {
                     // handle the directories (hash and fileName)
                     if (ch != null && ch.isDirectory()) {
                         l.status.push(currentDir + "/" + ch.getName());
                         // get informations from the objects
-                    } else if (ch != null && ch.isFile() && !ch.getName().startsWith(".") && !ch.getName().endsWith(".ser")) {
+                    } else if (ch != null && ch.isFile() && !ch.getName().contains(".")
+                        && !ch.getName().endsWith(".ser")) {
                         // get the file metadata
                         try {
+                            long version = getVersion(ch);
+                            long objNum = getObjectNo(ch);
+                            
                             if (newestFirst == null) {
+                                
                                 newestFirst = newestLast = ch;
                                 objectSize = ch.length();
-                            } else if (getVersion(ch) > getVersion(newestFirst)) {
+                            } else if (version > getVersion(newestFirst)) {
+                                
                                 newestFirst = newestLast = ch;
                                 objectSize = (objectSize >= ch.length()) ? objectSize : ch.length();
-                            } else if (getVersion(ch) == getVersion(newestFirst)) {
-                                if (getObjectNo(ch) < getObjectNo(newestFirst)) {
+                            } else if (version == getVersion(newestFirst)) {
+                                
+                                if (objNum < getObjectNo(newestFirst)) {
                                     newestFirst = ch;
-                                } else if (getObjectNo(ch) > getObjectNo(newestLast)) {
+                                } else if (objNum > getObjectNo(newestLast)) {
                                     newestLast = ch;
                                 }
                                 objectSize = (objectSize >= ch.length()) ? objectSize : ch.length();
                             }
-                        } catch (NumberFormatException ne) {
-                            Logging.logMessage(Logging.LEVEL_ERROR, Category.db, this,
-                                    "CleanUp: an illegal file was discovered and ignored.");
+                        } catch (Exception e) {
+                            
+                            Logging.logMessage(Logging.LEVEL_WARN, Category.stage, this,
+                                "CleanUp: an illegal file (" + ch.getAbsolutePath() + 
+                                ") was discovered and ignored.");
                         }
                     }
                 }
-
+                
                 // dir is a fileName-directory
                 if (newestFirst != null) {
                     // get a preview from the file
@@ -883,19 +894,20 @@ public class HashStorageLayout extends StorageLayout {
                     } catch (Exception e) {
                         assert (false);
                     }
-
+                    
                     // get the metaInfo from the root-directory
                     long stripCount = getObjectNo(newestLast);
-                    long fileSize = (stripCount == 1) ? newestFirst.length() : (objectSize * stripCount) + newestLast.length();
-
+                    long fileSize = (stripCount == 1) ? newestFirst.length() : (objectSize * stripCount)
+                        + newestLast.length();
+                    
                     // insert the data into the FileList
-                    l.files.put((WIN) ? dir.getName().replace('_', ':') : dir.getName(),
-                            new FileData(fileSize, (int) (objectSize / 1024)));
+                    l.files.put((WIN) ? dir.getName().replace('_', ':') : dir.getName(), new FileData(
+                        fileSize, (int) (objectSize / 1024)));
                 }
             } while (l.files.size() < maxNumEntries);
             l.hasMore = true;
             return l;
-
+            
         } catch (EmptyStackException ex) {
             // done
             l.hasMore = false;
