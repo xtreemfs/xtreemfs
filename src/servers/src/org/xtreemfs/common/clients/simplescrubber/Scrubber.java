@@ -222,9 +222,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
                             tPool.submit(fi);
                             numInFlight++;
                         } catch (Exception ex) {
-                            ex.printStackTrace();
-                            finish(1);
-                            return;
+                            Logging.logError(Logging.LEVEL_WARN, this, ex);
                         }
                     } catch (EmptyStackException ex) {
                         //fetch next dir
