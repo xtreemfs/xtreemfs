@@ -155,6 +155,10 @@ public class MoveOperation extends MRCOperation {
             throw new UserException(ErrNo.ENOTDIR, "'" + tp.getComps(0, tp.getCompCount() - 2)
                 + "' is not a directory");
         
+        // check if file name is empty
+        if ("".equals(tRes.getFileName()))
+            throw new UserException(ErrNo.EINVAL, "target file name must not be empty");
+        
         FileMetadata target = tRes.getFile();
         
         // find out what the target path refers to (0 = does not exist, 1 =

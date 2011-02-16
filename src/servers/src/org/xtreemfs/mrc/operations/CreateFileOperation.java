@@ -78,6 +78,10 @@ public class CreateFileOperation extends MRCOperation {
         
         // check whether the file/directory exists already
         res.checkIfFileExistsAlready();
+
+        // check if file name is empty
+        if ("".equals(res.getFileName()))
+            throw new UserException(ErrNo.EINVAL, "file name must not be empty");
         
         // prepare file creation in database
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);

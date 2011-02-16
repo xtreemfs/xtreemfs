@@ -26,6 +26,7 @@ package org.xtreemfs.mrc.operations;
 
 import java.util.Iterator;
 
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
@@ -79,7 +80,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
         res.checkIfFileDoesNotExist();
         
         FileMetadata file = res.getFile();
-                
+        
         // check whether the directory grants read access
         faMan.checkPermission(FileAccessManager.O_RDONLY, sMan, file, res.getParentDirId(),
             rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
@@ -97,10 +98,17 @@ public class ReadDirAndStatOperation extends MRCOperation {
             
             FileMetadata child = it.next();
             
-//            // ignore the .fuse-hidden directory
-//            if (res.getFile().getId() == 1 && child.getFileName().equals(".fuse-hidden"))
-//                continue;
-//            
+            if (child.getFileName().equals("")) {
+                Logging.logMessage(Logging.LEVEL_WARN, this, "'%s' contains a %s with an empty name", p
+                        .toString(), child.isDirectory() ? "directory" : "file");
+                continue;
+            }
+            
+            // // ignore the .fuse-hidden directory
+            // if (res.getFile().getId() == 1 &&
+            // child.getFileName().equals(".fuse-hidden"))
+            // continue;
+            //            
             String linkTarget = sMan.getSoftlinkTarget(child.getId());
             int mode = faMan
                     .getPosixAccessMode(sMan, child, rq.getDetails().userId, rq.getDetails().groupIds);

@@ -136,6 +136,10 @@ public class OpenOperation extends MRCOperation {
                         .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser, rq
                         .getDetails().groupIds);
                 
+                // check if file name is empty
+                if ("".equals(res.getFileName()))
+                    throw new UserException(ErrNo.EINVAL, "file name must not be empty");
+                
                 // get the next free file ID
                 long fileId = sMan.getNextFileId();
                 
