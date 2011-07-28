@@ -1,0 +1,46 @@
+.TH xtfs_chstatus 1 "July 2011" "The XtreemFS Distributed File System" "XtreemFS Admin Tools"
+.SH NAME
+xtfs_chstatus \- changes the status flag of an OSD.
+.SH SYNOPSIS
+\fBxtfs_chstatus [ \fIoptions\fB ] \fI<osd_uuid> online|removed\fB
+.br
+
+.SH DESCRIPTION
+.I xtfs_chstatus
+displays and changes the status flag of an OSD. The status can be 0 (online), 1 (locked) and 2 (permanently dead/removed). The status flag is used by the scrubber to identify dead OSDs. Files and replicas on dead OSDs are removed by the scrubber tool.
+
+.SH EXAMPLE USAGE
+.TP
+.B "xtfs_chstatus -dir pbrpc://localhost:32638 2e3d-424b-b3d2 removed
+Changes the status of the OSD with UUID 2e3d-424b-b3d2 registered at the Directory Service 'pbrpc://localhost:32638' to 2 (removed)
+
+.SH OPTIONS
+.TP
+\fB-c \fI<creds_file>
+Path to a PKCS#12 credentials file (private key + certificate) to use for SSL authentication. Must be present when MRC URL starts with pbrpcs:// or pbrpcg://.
+.TP
+\fB-cpass \fI<creds_passphrase>
+An optional passphrase to access the credentials file.
+.TP
+\fB-dir \fI<uri>
+Specifies the directory service to use (e.g. 'pbrpc://localhost:32638'). If no URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'. In case of a secured URI ('pbrpcs://...' or 'pbrpcg://...'), it is necessary to also specify SSL settings.
+.TP
+\fB-h/--help
+Show usage info.
+.TP
+\fB-t \fI<trusted_CAs>
+Path to a PKCS#12 file containing a set of certificates from trusted certification authorities. These certificates will be used to authenticate the MRC. Must be present when MRC URL starts with pbrpcs:// or pbrpcg://.
+.TP
+\fB-tpass \fI<trusted_passphrase>
+An optional passphrase to access the truststore file.
+
+.SH "SEE ALSO"
+.BR xtfs_cleanup (1),
+.BR xtfs_mrcdbtool (1),
+.BR xtfs_remove_osd (1),
+.BR xtfs_scrub (1),
+.BR xtfs_snap (1)
+.BR
+
+.SH AVAILABILITY
+The xtfs_chstatus command is part of the XtreemFS-tools package and is available from \fIhttp://www.xtreemfs.org\fP.

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="java/servers/test"/>
+	<classpathentry kind="src" path="java/foundation/src"/>
+	<classpathentry kind="src" path="java/servers/src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="java/lib/BabuDB.jar" sourcepath="/BabuDB/java/src"/>
+	<classpathentry kind="lib" path="java/lib/Flease.jar"/>
+	<classpathentry kind="lib" path="java/lib/protobuf-java-2.3.0.jar"/>
+	<classpathentry kind="lib" path="java/lib/test/commons-codec-1.3.jar"/>
+	<classpathentry kind="lib" path="java/lib/test/commons-httpclient-3.0.1-contrib.jar"/>
+	<classpathentry kind="lib" path="java/lib/test/commons-httpclient-3.0.1.jar"/>
+	<classpathentry kind="lib" path="java/lib/test/commons-logging-1.1.jar"/>
+	<classpathentry kind="lib" path="java/lib/test/junit-4.3.1.jar"/>
+	<classpathentry kind="output" path="classfiles"/>
+</classpath>

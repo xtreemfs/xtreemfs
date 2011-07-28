@@ -1,0 +1,74 @@
+.TH xtfs_snap 1 "July 2011" "The XtreemFS Distributed File System" "XtreemFS Admin Tools"
+.SH NAME
+xtfs_snap \- tool for the management of snapshots.
+.SH SYNOPSIS
+.TP
+\fBxtfs_snap -c [-r] [-d \fI<path>\fP] [\fI<name>\fP]
+.P
+\fBxtfs_snap -x [-d \fI<path>\fP] \fI<name>\fP
+.P
+\fBxtfs_snap -l [-d \fI<path>\fP]
+.P
+\fBxtfs_snap --enable [-d \fI<root-dir>\fP]
+.P
+\fBxtfs_snap --disable [-d \fI<root-dir>\fP]
+.P
+\fBxtfs_snap --is_enabled [-d \fI<root-dir>\fP]
+.P
+\fBxtfs_snap -h|--help
+
+.br
+
+.SH DESCRIPTION
+.I xtfs_snap
+enables, disables, creates, deletes and lists snapshots on a mounted XtreemFS volume.
+
+
+.SH EXAMPLE USAGE
+.TP
+.B "xtfs_snap --enable ./xtreemfs"
+Enables snapshot support on the volume mounted at \fI./xtreemfs\fP.
+.TP
+.B "xtfs_snap -c -r mySnap"
+Takes a new snapshot named \fImySnap\fP of the current directory and all subdirectories.
+
+.SH OPTIONS
+.TP
+.TP
+\fB-c
+Creates a new snapshot.
+.TP
+\fB-d
+Specifies the path to the directory or mount point to which the operation is applied.
+.TP
+\fB-h/--help
+Shows usage info.
+.TP
+\fB-l
+Lists all existing snapshots.
+.TP
+\fB-r 
+Recursively includes subdirectories in the newly created snapshot.
+.TP
+\fB-x \fI<name>
+Deletes the existing snapshot with the name \fIname\fP.
+.TP
+\fB--disable
+Disables snapshot support. If snapshot support is disabled, snapshots cannot be taken anymore.
+.TP
+\fB--enable
+Enables snapshot support. Note that this has to be done before snapshots can be taken.
+.TP
+\fB--is_enabled
+Checks if snapshot support is enabled.
+
+.SH "SEE ALSO"
+.BR xtfs_chstatus (1),
+.BR xtfs_cleanup (1),
+.BR xtfs_mrcdbtool (1),
+.BR xtfs_remove_osd (1),
+.BR xtfs_scrub (1)
+.BR
+
+.SH AVAILABILITY
+The xtfs_snap command is part of the XtreemFS-tools package and is available from \fIhttp://www.xtreemfs.org\fP.

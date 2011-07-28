@@ -1,0 +1,31 @@
+The Object Storage Device (OSD)\index{OSD} is responsible for reading and writing objects from/to disk. In addition, it also implements the replication (which is transparent to clients). In this section, we first describe the stages and components of the OSD\index{OSD}. We then describe the interaction between OSDs\index{OSD} for striped files and for read-only replication.
+
+\begin{itemize}
+ \item \textbf{\texttt{StorageStage} and \texttt{StorageThread}}\\
+ The StorageStage distributes the request onto a pool of StorageThreads. The allocation of requests is based on the fileID to ensure that all requests for a single file are handled by the same thread. This is necessary to avoid sharing of file metadata across multiple threads.
+
+The StorageThread implements the actual file I/O to access objects on disk. It uses a StorageLayout which is responsible for arranging the objects into files and directories in the underlying file system.
+
+ \item \textbf{\texttt{PreprocStage}}\\
+Analyzes the incoming RPC requests and starts the matching Operation for the requests. It also parses the request arguments (RPC message) based on the Operation. In addition, it parses and validates the signed capability and ensures that the client is authorized to execute the operation. To enhance performance, the PreprocStage keeps a cache of validated Capabilities and XLocation lists.
+The PreprocStage also keeps a list of open files which is updated whenever a file (i.e. a file's object) is accessed. The list is regularly checked ( approx. every mminute) for last access times and files which have timed out will be closed. This close event is sent to the other stages, to allow them to clean their caches. As POSIX\index{POSIX} requires that a file which is deleted while still opened can still be read or written to, the close event is also used to finally remove data of deleted files.
+
+ \item \textbf{\texttt{DeletionStage}}\\
+This stage is removing the objects on disk for files which have been deleted. This is done directly when the unlink RPC is received or when the file is closed (see PreprocStage).
+
+ \item \textbf{\texttt{VivaldiStage}}\\
+Implements the OSD's\index{OSD} Vivaldi component and regularly updates its coordinates. See Sec. \ref{sec:xtreemfs_rms} for details on Vivaldi.
+
+ \item \textbf{\texttt{ReplicationStage}}\\
+Fetches data from remote OSDs\index{OSD} for files which are replicated. For more details about the read-only replication see Sec. \ref{sec:xtreemfs_ronly_replication}.
+
+ \item \textbf{\texttt{CleanupThread}}\\
+This is not a regular stage, but a background task to scan for orphaned files. If a file is deleted on the MRC\index{MRC} but the client fails to delete the file at the OSD\index{OSD}, we get so called zombies. To remove them, the OSD\index{OSD} has to scan its file system from time to time and check the files at the MRC\index{MRC}. How often and when these cleanup operations should be executed depends on the usage pattern of the system (e.g. client's often disconnecting during operations).
+\end{itemize}
+
+\subsubsection{Striping}
+XtreemFS allows files to be striped (distributed) over several OSDs\index{OSD}. To ensure correct POSIX\index{POSIX} semantics in this distributed case, OSDs\index{OSD} need to exchange additional information on some write and read operations. We use additional UDP\index{UDP} datagrams on write to disseminate file size update hints among OSDs\index{OSD}. See \cite{StripingLasco} for a detailed description of the algorithms used in XtreemFS.
+
+\subsubsection{Read-only replication}
+\label{sec:xtreemfs_ronly_replication}
+The read-only replication allows users to replicate their immutable files with very low overhead. Users can set a file to read-only which means that it cannot be modified anymore. This allows users to add replicas on other OSDs\index{OSD} which can either be a ``full'' or a ``lazy'' replica. For a ``full'' replica the OSD\index{OSD} will automatically fetch all objects of that file. For a ``lazy'' replica the OSD\index{OSD} only fetches the objects when a client tries to read them. Additional prefetching for ``lazy'' replicas will be added.

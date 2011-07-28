@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+# stop before remove
+#if [ "$1" = "remove" -o "$1" = "deconfigure" ]; then
+#  echo "Stopping vivaldi service..."
+#  if which invoke-rc.d >/dev/null 2>&1; then
+#    invoke-rc.d xtreemfs-vivaldi stop
+#  else
+#    /etc/init.d/xtreemfs-vivaldi stop
+#  fi
+#fi
+
+exit 0

@@ -1,0 +1,5 @@
+The Directory Service (DIR) is the central service registry of XtreemFS. All services register and regularly update their registration at the DIR. In addition, it keeps all address mappings which the services need to translate UUIDs to hostname and port. The directory service is also used by the MRCs and OSDs to synchronize their clocks.
+
+Currently, the directory service is a single instance. In the future, this service will be replicated and and divided into a hierarchy of DIR services.
+
+Persistent data is stored in BabuDB\footnote{\url{http://babudb.googlecode.com}}, a non-transactional key-value-store. The service and address mapping records are stored in their XDR representation. This means that the DIR database must be deleted or converted if data structures change.

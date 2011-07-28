@@ -1,0 +1,273 @@
+//
+// Copyright (c) 2009-2011, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+//
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// Redistributions of source code must retain the above copyright notice, this
+// list of conditions and the following disclaimer.
+// Redistributions in binary form must reproduce the above copyright notice,
+// this list of conditions and the following disclaimer in the documentation
+// and/or other materials provided with the distribution.
+// Neither the name of the Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+// nor the names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// AUTHORS: Bjoern Kolbeck (ZIB), Jan Stender (ZIB)
+//
+
+option java_package="org.xtreemfs.pbrpc.generatedinterfaces";
+package xtreemfs.pbrpc;
+import "include/PBRPC.proto";
+import "include/Common.proto";
+import "xtreemfs/GlobalTypes.proto";
+
+// For each server UUID, at least one address mapping must exist.
+// Each record maps a UUID to one FQDN or IP address and port.
+message AddressMapping {
+  // UUID being mapped.
+  required string uuid = 1;
+  // Version of this record.
+  required fixed64 version = 2;
+  // Protocol, see org.xtreemfs.foundation.pbrpc.Schemes for values.
+  required string protocol = 3;
+  // FQDN or IP address of the server.
+  required string address = 4;
+  // TCP/UDP port number.
+  required fixed32 port = 5;
+  // Matching network, unused at the moment.
+  // Must be "*".
+  required string match_network = 6;
+  // Time to live in seconds before the
+  // entry should be evicted from caches.
+  required fixed32 ttl_s = 7;
+  // URI, obsolete.
+  required string uri = 8;
+}
+
+// Set of mappings for a UUID.
+message AddressMappingSet {
+  repeated AddressMapping mappings = 1;
+}
+
+// DIR service address, used for auto discovery.
+message DirService {
+  required string address = 1;
+  required fixed32 port = 2;
+  required string protocol = 3;
+  required fixed32 interface_version = 4;
+}
+
+// Key/Value pairs for a service.
+message ServiceDataMap {
+  repeated KeyValuePair data = 1;
+}
+
+enum ServiceType {
+  // Returns a list of all service types.
+  SERVICE_TYPE_MIXED = 0;
+  SERVICE_TYPE_MRC = 1;
+  SERVICE_TYPE_OSD = 2;
+  SERVICE_TYPE_VOLUME = 3;
+}
+
+enum ServiceStatus {
+  // Service is available.
+  SERVICE_STATUS_AVAIL = 0;
+  // Service (OSD) will be removed, new files are
+  // not allocated to this OSD.
+  SERVICE_STATUS_TO_BE_REMOVED = 1;
+  // Service was removed permanently, data is lost.
+  SERVICE_STATUS_REMOVED = 2;
+}
+
+// Service data in DIR.
+message Service {
+    required ServiceType type = 1;
+    // Service uuid, e.g. volume UUID.
+    required string uuid = 2;
+    // Version of this record, assigned by the DIR on write.
+    required fixed64 version = 3;
+    // Service name, e.g. volume name.
+    required string name = 4;
+    // Timestamp of last update in global XtreemFS time, assigned
+    // by the DIR on write.
+    required fixed64 last_updated_s = 5;
+    // Service details including service state.
+    required ServiceDataMap data = 6;
+}
+
+message ServiceSet {
+  repeated Service services = 1;
+}
+
+// Service configuration stored in the DIR.
+message Configuration {
+  // Service UUID.
+  required string uuid = 1;
+  // Configuration options.
+  repeated KeyValuePair parameter = 2;
+  // Version of this record, assigned by the DIR on write.
+  required fixed64 version = 3;
+}
+
+
+message addressMappingGetRequest {
+  // UUID of the service for which mapping should be returned.
+  required string uuid = 1;
+}
+
+message addressMappingGetResponse {
+  // List of matching mappings, might be empty.
+  optional AddressMappingSet result = 1;
+}
+
+message addressMappingSetResponse {
+  // New version number assigned to the address mapping
+  // by the DIR.
+  optional fixed64 new_version = 1;
+}
+
+message globalTimeSGetResponse {
+  // Global XtreemFS time in seconds.
+  required fixed64 time_in_seconds = 1;
+}
+
+message serviceDeregisterRequest {
+  // UUID of the service that should be dregistered.
+  required string uuid = 1;
+}
+
+message serviceGetByNameRequest {
+  // Service name to search for.
+  required string name = 1;
+}
+
+message serviceGetByUUIDRequest {
+  // UUID to search for.
+  required string name = 1;
+}
+
+message serviceGetByTypeRequest {
+  // Service types to search for.
+  required ServiceType type = 1;
+}
+
+message serviceRegisterRequest {
+  // Service data to be registered.
+  // Old data for the service with the same UUID is
+  // overwritten.
+  required Service service = 1;
+}
+
+message serviceRegisterResponse {
+  // New version assigned to the service record by the DIR.
+  required fixed64 new_version = 1;
+}
+
+message configurationGetRequest {
+  // UUID of the servic for which the configuration is requested.
+  required string uuid = 1;
+}
+
+message configurationSetResponse {
+  // New version assigned to the configuration record by the DIR.
+  optional fixed64 new_version = 1;
+}
+
+
+service DIRService {
+  
+  option(interface_id)=10001;
+
+  // Returns the address mappings for a UUID stored on the DIR.
+  rpc xtreemfs_address_mappings_get(addressMappingGetRequest) returns(AddressMappingSet) {
+    option(proc_id)=1;
+  };
+  // Removes all address mappings for a UUID.
+  rpc xtreemfs_address_mappings_remove(addressMappingGetRequest) returns(emptyResponse) {
+    option(proc_id)=2;
+  };
+  // Sets (updates or adds) the address mappings for a UUID. All records must have the same
+  // UUID and the same version. The version must be the latest returned by the DIR, otherwise
+  // the DIR will return an error.
+  rpc xtreemfs_address_mappings_set(AddressMappingSet) returns(addressMappingSetResponse) {
+    option(proc_id)=3;
+  };
+  
+  // DIR discovery requests are sent via UDP. DIRs in the same net answer with a
+  // DirService response.
+  rpc xtreemfs_discover_dir(emptyRequest) returns(DirService) {
+    option(proc_id)=4;
+  };
+  
+  // Returns the global XtreemFS time in seconds since Unix epoch.
+  rpc xtreemfs_global_time_s_get(emptyRequest) returns(globalTimeSGetResponse) {
+    option(proc_id)=5;
+  };
+  
+  // Deregisters a service (deletes the service record).
+  rpc xtreemfs_service_deregister(serviceDeregisterRequest) returns(emptyResponse) {
+    option(proc_id)=6;
+  };
+  
+  // Returns a list of services with a matching name.
+  rpc xtreemfs_service_get_by_name(serviceGetByNameRequest) returns(ServiceSet) {
+    option(proc_id)=7;
+  };
+  
+  // Returns a list of services with a matching type. Use MIXED to get all types.
+  rpc xtreemfs_service_get_by_type(serviceGetByTypeRequest) returns(ServiceSet) {
+    option(proc_id)=8;
+  };
+  
+  // Returns a list of services with a matching UUID.
+  rpc xtreemfs_service_get_by_uuid(serviceGetByUUIDRequest) returns(ServiceSet) {
+    option(proc_id)=9;
+  };
+  
+  // Sets the status of the service with UUID to offline.
+  rpc xtreemfs_service_offline(serviceGetByUUIDRequest) returns(emptyResponse) {
+    option(proc_id)=10;
+  };
+  
+  // Registers (or updates) a service record. Version should be 0 for new records and the
+  // previous version returned by the DIR for updates.
+  rpc xtreemfs_service_register(serviceRegisterRequest) returns(serviceRegisterResponse) {
+    option(proc_id)=11;
+  };
+  
+  // Triggers a BabuDB database snapshot.
+  rpc xtreemfs_checkpoint(emptyRequest) returns(emptyResponse) {
+    option(proc_id)=20;
+  };
+  
+  // Shuts the service down, requires AUTH_PASSWORD.
+  rpc xtreemfs_shutdown(emptyRequest) returns(emptyResponse) {
+    option(proc_id)=21;
+  };
+
+  // Returns the configuration for the service with UUID.
+  rpc xtreemfs_configuration_get(configurationGetRequest) returns(Configuration) {
+        option(proc_id)=22;
+  };
+  
+  // Updates the configuration for the service.
+  rpc xtreemfs_configuration_set(Configuration) returns(configurationSetResponse) {
+        option(proc_id)=23;
+  };
+}

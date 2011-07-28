@@ -1,0 +1,785 @@
+//
+// Copyright (c) 2009-2011, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+//
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// Redistributions of source code must retain the above copyright notice, this
+// list of conditions and the following disclaimer.
+// Redistributions in binary form must reproduce the above copyright notice,
+// this list of conditions and the following disclaimer in the documentation
+// and/or other materials provided with the distribution.
+// Neither the name of the Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+// nor the names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// AUTHORS: Bjoern Kolbeck (ZIB), Jan Stender (ZIB)
+//
+
+option java_package="org.xtreemfs.pbrpc.generatedinterfaces";
+package xtreemfs.pbrpc;
+import "include/PBRPC.proto";
+import "include/Common.proto";
+import "xtreemfs/GlobalTypes.proto";
+
+// information about a single file or directory; relevant for the 'stat' call
+message Stat {
+
+    // POSIX attributes
+    
+    // device number; represented by a hash of the volume id
+    required fixed64 dev = 1;
+    // inode number; represented by the file ID
+    required fixed64 ino = 2;
+    // POSIX access mode
+    required fixed32 mode = 3;
+    // hardlink count
+    required fixed32 nlink = 4;
+    // owning user ID
+    required string user_id = 5;
+    // owning group ID
+    required string group_id = 6;
+    // file size
+    required fixed64 size = 7;
+    // atime (access time) in nanoseconds since 1970
+    required fixed64 atime_ns = 8;
+    // mtime (data modification time) in nanoseconds since 1970
+    required fixed64 mtime_ns = 9;
+    // ctime (inode change time) in nanoseconds since 1970
+    required fixed64 ctime_ns = 10;
+    // block size; represented by the stripe size
+    required fixed32 blksize = 11;
+
+    // XtreemFS-specific attributes
+
+    // identification tag for the stat object
+    optional fixed64 etag = 12;
+    // truncate epoch
+    required fixed32 truncate_epoch = 13;
+    // Win32-specific attributes
+    optional fixed32 attributes = 14;
+}
+
+// single directory entry; relevant for the 'readdir' call
+message DirectoryEntry {
+    // file or subdirectory name
+    required string name = 1;
+    // stat buffer containing the associated stat information
+    // Can have 0 or 1 Stats on a readdir for names only
+    optional Stat stbuf = 2;
+}
+
+// list of directory entries; relevant for the 'readdir' call
+message DirectoryEntries {
+  repeated DirectoryEntry entries = 1;
+}
+
+// extended attribute of a file or directory
+message XAttr {
+    // attribute name
+    required string name = 1;
+    // attribute value; can be empty on a 'listxattr' call for names only
+    optional string value = 2;
+}
+
+// information about a volume; relevant for the 'xtfs_mkvol' call
+message Volume {
+    // access control policy to be assigned to the volume
+    required AccessControlPolicyType access_control_policy = 1;
+    // default striping policy to be assigned to the volume
+    required StripingPolicy default_striping_policy = 2;
+    // volume ID
+    required string id = 3;
+    // initial access mode for the root directory 
+    required fixed32 mode = 4;
+    // volume name
+    required string name = 5;
+    // owning group ID of the volume (i.e. volume's root directory)
+    required string owner_group_id = 6;
+    // owning user ID of the volume (i.e. volume's root directory)
+    required string owner_user_id = 7;
+    // optional configuration attributes for the volume
+    repeated KeyValuePair attrs = 8;
+}
+
+// a list of volumes; relevant for the 'xtfs_lsvol' call
+message Volumes {
+    repeated Volume volumes = 1;
+}
+
+// information about a file system (i.e. mounted volume)
+message StatVFS {
+
+      // POSIX attributes
+      
+      // size of a block in bytes
+      required fixed32 bsize = 1; 
+      // number of free blocks in the file system       
+      required fixed64 bavail = 2;
+      // total number of blocks in file system        
+      required fixed64 blocks = 3;
+      // volume id
+      required string fsid = 4;
+      // maximum filename length
+      required fixed32 namemax = 5;
+
+      // XtreemFS-specific attributes
+      
+      // access control policy of the volume
+      required AccessControlPolicyType access_control_policy = 6;
+      // default striping policy of the volume
+      required StripingPolicy default_striping_policy = 7;
+      // identification tag for the statVFS object
+      required fixed64 etag = 8;
+      // access mode of the volume's root directory
+      required fixed32 mode = 9;
+      // volume name
+      required string name = 10;
+      // owning group ID of the volume (i.e. volume's root directory)
+      required string owner_group_id = 11;
+      // owning user ID of the volume (i.e. volume's root directory)
+      required string owner_user_id = 12;
+}
+
+// flags for setattr request
+enum Setattrs {
+      SETATTR_MODE = 1;
+      SETATTR_UID = 2;
+      SETATTR_GID = 4;
+      SETATTR_SIZE = 8;
+      SETATTR_ATIME = 16;
+      SETATTR_MTIME = 32;
+      SETATTR_CTIME = 64;
+      SETATTR_ATTRIBUTES = 128;
+}
+
+//messages for requests
+
+// sets file attriubtes of an open file
+message fsetattrRequest {
+  // a buffer containing the attributes to update
+  required Stat stbuf = 1;
+  // a bitmap of Setattrs indicating which attributes to update
+  required fixed32 to_set = 2;
+  // the capability returned by the MRC when the file was opened
+  required XCap cap = 3;
+}
+
+// requests attributes of a file or directory
+message getattrRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the file or directory, relative to the volume root
+  required string path = 2;
+  // an identification tag indicating the last known version of the attributes
+  required fixed64 known_etag = 3;
+}
+
+// returns attributes of a file or directory
+message getattrResponse {
+  optional Stat stbuf = 1;
+}
+
+
+// requests extended attributes of a file or directory
+message getxattrRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the file or directory, relative to the volume root
+  required string path = 2;
+  // the name of the attribute to retrieve
+  required string name = 3;
+}
+
+// returns an attribute value of a file or directory
+message getxattrResponse {
+  required string value = 1;
+}
+
+// creates a new hardlink to an existing file 
+message linkRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the file to which the link is supposed to be created,
+  // relative to the volume root
+  required string target_path = 2;
+  // the path to the new link, relative to the volume root
+  required string link_path = 3;
+}
+
+// requests a list of extended attributes of a file or directory
+message listxattrRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the file or directory, relative to the volume root
+  required string path = 2;
+  // a flag indicating that no attribute values are supposed to be returned
+  required bool names_only = 3;
+}
+
+// returns a list of extended attributes of a file or directory
+message listxattrResponse {
+  repeated XAttr xattrs = 1;
+}
+
+// creates a new directory
+message mkdirRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the file or directory, relative to the volume root
+  required string path = 2;
+  // the initial access mode of the newly created directory
+  required fixed32 mode = 3;
+}
+
+// opens a file and requests file credentials
+message openRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the file, relative to the volume root
+  required string path = 2;
+  // a bitmap open flags, as defined in the specification of the POSIX
+  //  'open' call, e.g. O_RDWR, O_RDONLY, O_CREAT, O_EXCL, O_TRUNC ...
+  required fixed32 flags = 3;
+  // the initial access mode for a file created w/ O_CREAT 
+  required fixed32 mode = 4;
+  // the initial set of Win32-specific attributes
+  required fixed32 attributes = 5;
+  // optional set of Vivaldi cooridnates of the client, which can be
+  // used to order the list of replicas
+  optional VivaldiCoordinates coordinates = 6;
+}
+
+// returns a set of file credentials
+message openResponse {
+  // the file credentials
+  required FileCredentials creds = 1;
+  // the server timestamp in seconds since 1970 to which the file
+  // timestamps were updated
+  required fixed32 timestamp_s = 2;
+}
+
+// requests the content of a directory
+message readdirRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the directory, relative to the volume root
+  required string path = 2;
+  // an identification tag indicating the last known version of the directory
+  // content
+  required fixed64 known_etag = 3;
+  // the maximum number of directory entries to return
+  required fixed32 limit_directory_entries_count = 4;
+  // a flag indicating that only names of nested files and directories are
+  // supposed to be returned, no attributes
+  required bool names_only = 5;
+  // the number of directory entries that have been returned already by
+  // previous calls
+  required fixed64 seen_directory_entries_count = 6;
+}
+
+// requests the target path of a symbolic link
+message readlinkRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the symbolic link, relative to the volume root
+  required string path = 2;
+}
+
+// returns the target path of a symbolic link
+message readlinkResponse {
+  repeated string link_target_path = 1;
+}
+
+// removes an extended attribute from a file or directory
+message removexattrRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the file or directory, relative to the volume root
+  required string path = 2;
+  // the name of the attribute to remove
+  required string name = 3;
+}
+
+// changes the path name of a file or directory
+message renameRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the pathname to the file or directory to change 
+  required string source_path = 2;
+  // the new path name for the file or directory
+  required string target_path = 3;
+}
+
+// returns the result of a rename operation
+message renameResponse {
+  // the server timestamp in seconds since 1970 to which the file and
+  // directory timestamps were updated
+  required fixed32 timestamp_s = 1;
+  // an optional set of file credentials that may contain a capabiltiy
+  // for the deletion of the previous file at the given target path
+  optional FileCredentials creds = 2;
+}
+
+// deletes an empty directory 
+message rmdirRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the directory to delete
+  required string path = 2;
+}
+
+// changes attributes of a file or directory
+message setattrRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the file or directory, relative to the volume root
+  required string path = 2;
+  // a buffer containing the attributes to update
+  required Stat stbuf = 3;
+  // a bitmap of Setattrs indicating which attributes to update
+  required fixed32 to_set = 4;
+}
+
+// flags for setxattr request
+enum XATTR_FLAGS {
+  XATTR_FLAGS_CREATE = 1;
+  XATTR_FLAGS_REPLACE = 2;
+}
+
+// sets an extended attribute of a file or directory
+message setxattrRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the file or directory, relative to the volume root
+  required string path = 2;
+  // the name of the extended attribute to set
+  required string name = 3;
+  // the (new) value for the extended attribute to set
+  required string value = 4;
+  // flags indicating whether the attribute is supposed to be created or
+  // replaced (see XATTR_FLAGS)
+  required fixed32 flags = 5;
+}
+
+// requests information about a mounted volume
+message statvfsRequest {
+  // the volume name
+  required string volume_name = 1;
+  // an identification tag indicating the last known version of the directory
+  // content
+  required fixed64 known_etag = 5;
+}
+
+// creates a symbolic link to a file
+message symlinkRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the file to which the link is supposed to be created,
+  // relative to the volume root
+  required string target_path = 2;
+  // the path to the new link, relative to the volume root
+  required string link_path = 3;
+}
+
+// deletes a file or directory
+message unlinkRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the file or directory, relative to the volume root
+  required string path = 2;
+}
+
+// returns the result of an unlink operation
+message unlinkResponse {
+  // the server timestamp in seconds since 1970 to which the file and
+  // directory timestamps were updated
+  required fixed32 timestamp_s = 1;
+  // an optional set of file credentials that may contain a capabiltiy
+  // for the deletion of the previous file at the given target path
+  optional FileCredentials creds = 2;
+}
+
+// flags for the 'access' call
+enum ACCESS_FLAGS {
+  ACCESS_FLAGS_F_OK = 0; // existence
+  ACCESS_FLAGS_X_OK = 1; // execute permission
+  ACCESS_FLAGS_W_OK = 2; // write permission
+  ACCESS_FLAGS_R_OK = 4; // read permission
+}
+
+// checks whether access is granted to a file or directory
+message accessRequest {
+  // the volume name
+  required string volume_name = 1;
+  // the path to the file or directory, relative to the volume root
+  required string path = 2;
+  // the flags for which the access is supposed to be checked;
+  // see ACCESS_FLAGS
+  required fixed32 flags = 3;
+}
+
+message xtreemfs_check_file_existsRequest {
+  required string volume_id = 1;
+  repeated string file_ids = 2;
+  required string osd_uuid = 3;
+}
+
+// dumps or restores the MRC database
+message xtreemfs_dump_restore_databaseRequest {
+  // the path to the dump file on the MRC host
+  required string dump_file = 1;
+}
+
+// requests the list of suitable OSDs for new replicas of a file
+message xtreemfs_get_suitable_osdsRequest {
+  // the file ID
+  optional string file_id = 1;
+  // or path and volume_name to file.
+  optional string path = 3;
+  optional string volume_name = 4;
+  // the number of OSDs for the new replicas
+  required fixed32 num_osds = 2;
+}
+
+// returns a list of suitable OSDs
+message xtreemfs_get_suitable_osdsResponse {
+  repeated string osd_uuids = 1;
+}
+
+message xtreemfs_check_file_existsResponse {
+  required string bitmap = 1;
+}
+
+message timestampResponse {
+  required fixed32 timestamp_s = 1;
+}
+
+message stringMessage {
+  required string a_string = 1;
+}
+
+message xtreemfs_listdirRequest {
+  required string path = 1;
+}
+
+message xtreemfs_listdirResponse {
+  repeated string names = 1;
+}
+
+// adds a replica to a file
+message xtreemfs_replica_addRequest {
+  // the file ID
+  optional string file_id = 1;
+  // or path and volume_name to file.
+  optional string path = 3;
+  optional string volume_name = 4;
+  // the replica to add
+  required Replica new_replica = 2;
+}
+
+// requests a list of all replicas of a file
+message xtreemfs_replica_listRequest {
+  // the file ID
+  optional string file_id = 1;
+  // or path and volume_name to file.
+  optional string path = 2;
+  optional string volume_name = 3;
+}
+
+// removes a replica from a file
+message xtreemfs_replica_removeRequest {
+  // the file ID
+  optional string file_id = 1;
+  // or path and volume_name to file.
+  optional string path = 3;
+  optional string volume_name = 4;
+  // the UUID of the head OSD of the replica to remove
+  required string osd_uuid = 2;
+}
+
+// restores a file w/ orphaned file content by creating a new metadata object
+message xtreemfs_restore_fileRequest {
+  // the path to the restored file
+  required string file_path = 1;
+  // the file ID
+  required string file_id = 2;
+  // the file size
+  required fixed64 file_size = 3;
+  // the UUID of the OSD with the orphaned file content
+  required string osd_uuid = 4;
+  // the stripe size of the file
+  required fixed32 stripe_size = 5;
+}
+
+// deletes a volume
+message xtreemfs_rmvolRequest {
+  // the name of the volume to delete
+  required string volume_name = 1;
+}
+
+// updates the size of an open file
+message xtreemfs_update_file_sizeRequest {
+  // the capability that was returned when opening the file
+  required XCap xcap = 1;
+  // the OSDWriteResponse received from an OSD that contains the new file size
+  required OSDWriteResponse osd_write_response = 2;
+  // a flag indicating that the file is supposed to be closed
+  optional bool close_file = 3;
+  // the client's Vivaldi coordinates (e.g. used for creating replicas at
+  // specific locations when the file is closed)
+  optional VivaldiCoordinates coordinates = 4;
+}
+
+// sets the replica update policy of a file by ID
+message xtreemfs_set_replica_update_policyRequest {
+  // the file ID
+  required string file_id = 1;
+  // the new replica update policy
+  required string update_policy = 2;
+}
+
+// returns the old replica update policy when setting a new one
+message xtreemfs_set_replica_update_policyResponse {
+  // the old replica update policy
+  required string old_update_policy = 1;
+}
+
+// sets the read-only flag of a file by ID
+message xtreemfs_set_read_only_xattrRequest {
+  // the file ID
+  required string file_id = 1;
+  // the read-only flag to set
+  required bool value = 2;
+}
+
+message xtreemfs_set_read_only_xattrResponse {
+  required bool was_set = 1;
+}
+
+message xtreemfs_get_file_credentialsRequest{
+  required string file_id = 1;
+}
+
+service MRCService {
+  
+  option(interface_id)=20001;
+
+  // POSIX/FUSE operations ----------------------------------------
+
+  // sets attributes of an open file
+  rpc fsetattr(fsetattrRequest) returns(emptyResponse) {
+    option(proc_id)=2;
+  };
+
+  // truncates an open file
+  rpc ftruncate(XCap) returns(XCap) {
+    option(proc_id)=3;
+  };
+
+  // returns attributes of a file or directory
+  rpc getattr(getattrRequest) returns(getattrResponse) {
+    option(proc_id)=4;
+  };
+
+  // returns an extended attribute of a file or directory
+  rpc getxattr(getxattrRequest) returns(getxattrResponse) {
+    option(proc_id)=5;
+  };
+
+  // creates a hardlink to a file
+  rpc link(linkRequest) returns(timestampResponse) {
+    option(proc_id)=6;
+  };
+
+  // returns the list of extended attributes of a file or directory 
+  rpc listxattr(listxattrRequest) returns(listxattrResponse) {
+    option(proc_id)=7;
+  };
+
+  // creates a new directory
+  rpc mkdir(mkdirRequest) returns(timestampResponse) {
+    option(proc_id)=8;
+  };
+
+  // opens an existing file to obtain file credentials
+  rpc open(openRequest) returns(openResponse) {
+    option(proc_id)=9;
+  };
+
+  // returns a list of all nested files and directories in a directory
+  rpc readdir(readdirRequest) returns(DirectoryEntries) {
+    option(proc_id)=10;
+  };
+
+  // returns the target path of a symbolic link
+  rpc readlink(readlinkRequest) returns(readlinkResponse) {
+    option(proc_id)=11;
+  };
+
+  // removes an extended attribute from a file or directory
+  rpc removexattr(removexattrRequest) returns(timestampResponse) {
+    option(proc_id)=12;
+  };
+
+  // renames a file or directory
+  rpc rename(renameRequest) returns(renameResponse) {
+    option(proc_id)=13;
+  };
+
+  // removes an empty directory
+  rpc rmdir(rmdirRequest) returns(timestampResponse) {
+    option(proc_id)=14;
+  };
+
+  // sets attributes of a file or directory
+  rpc setattr(setattrRequest) returns(timestampResponse) {
+    option(proc_id)=15;
+  };
+
+  // sets an extended attribute of a file or directory
+  rpc setxattr(setxattrRequest) returns(timestampResponse) {
+    option(proc_id)=16;
+  };
+
+  // returns information about a mounted volume
+  rpc statvfs(statvfsRequest) returns(StatVFS) {
+    option(proc_id)=17;
+  };
+
+  // creates a symbolic link to a file or directory
+  rpc symlink(symlinkRequest) returns(timestampResponse) {
+    option(proc_id)=18;
+  };
+
+  // removes a link to a file and removes the file if no more links exist
+  rpc unlink(unlinkRequest) returns(unlinkResponse) {
+    option(proc_id)=19;
+  };
+  
+  // checks access to a file or directory
+  rpc access(accessRequest) returns(emptyResponse) {
+    option(proc_id)=20;
+  };
+
+  //-- XtreemFS specific operations -------------------------------------
+  
+  // enforces a database checkpoint on the MRC
+  rpc xtreemfs_checkpoint(emptyRequest) returns(emptyResponse) {
+    option(proc_id)=30;
+  };
+
+  // checks if a certain set of files exist
+  rpc xtreemfs_check_file_exists(xtreemfs_check_file_existsRequest) returns(xtreemfs_check_file_existsResponse) {
+    option(proc_id)=31;
+  };
+
+  // dumps the MRC database to a dump file on the MRC host
+  rpc xtreemfs_dump_database(xtreemfs_dump_restore_databaseRequest) returns(emptyResponse) {
+    option(proc_id)=32;
+  };
+
+  // returns the list of suitable OSDs for replicas of a given file
+  rpc xtreemfs_get_suitable_osds(xtreemfs_get_suitable_osdsRequest) returns(xtreemfs_get_suitable_osdsResponse) {
+    option(proc_id)=33;
+  };
+
+  // call for internal debugging purposes
+  rpc xtreemfs_internal_debug(stringMessage) returns(stringMessage) {
+    option(proc_id)=34;
+  };
+
+
+  rpc xtreemfs_listdir(xtreemfs_listdirRequest) returns(xtreemfs_listdirResponse) {
+    option(proc_id)=35;
+  };
+
+  // returns a list of all volumes on the MRC
+  rpc xtreemfs_lsvol(emptyRequest) returns(Volumes) {
+    option(proc_id)=36;
+  };
+
+  // creates a new volume
+  rpc xtreemfs_mkvol(Volume) returns(emptyResponse) {
+    option(proc_id)=47;
+  };
+
+  // renews an existing capability to extend the validity period
+  rpc xtreemfs_renew_capability(XCap) returns(XCap) {
+    option(proc_id)=37;
+  };
+
+  rpc xtreemfs_replication_to_master(emptyRequest) returns(emptyResponse) {
+    option(proc_id)=38;
+  };
+ 
+  // adds a replica to a file
+  rpc xtreemfs_replica_add(xtreemfs_replica_addRequest) returns(emptyResponse) {
+    option(proc_id)=39;
+  };
+
+  // lists all replicas of a file
+  rpc xtreemfs_replica_list(xtreemfs_replica_listRequest) returns(Replicas) {
+    option(proc_id)=40;
+  };
+
+  // removes a replica from a file
+  rpc xtreemfs_replica_remove(xtreemfs_replica_removeRequest) returns(FileCredentials) {
+    option(proc_id)=41;
+  };
+
+  // restores the MRC database from a dump file on the MRC host
+  rpc xtreemfs_restore_database(xtreemfs_dump_restore_databaseRequest) returns(emptyResponse) {
+    option(proc_id)=42;
+  };
+
+  // restores a file on the MRC for which orphaned objects exist on an OSD 
+  rpc xtreemfs_restore_file(xtreemfs_restore_fileRequest) returns(emptyResponse) {
+    option(proc_id)=43;
+  };
+
+  // deletes a volume
+  rpc xtreemfs_rmvol(xtreemfs_rmvolRequest) returns(emptyResponse) {
+    option(proc_id)=44;
+  };
+
+  // terminates the MRC
+  rpc xtreemfs_shutdown(emptyRequest) returns(emptyResponse) {
+    option(proc_id)=45;
+  };
+
+  // updates the size of a file and indicates that a file was closed
+  rpc xtreemfs_update_file_size(xtreemfs_update_file_sizeRequest) returns(timestampResponse) {
+    option(proc_id)=46;
+  };
+
+  // sets the replica update policy on a file identified by a file ID (privileged users only!)
+  rpc xtreemfs_set_replica_update_policy(xtreemfs_set_replica_update_policyRequest) returns(xtreemfs_set_replica_update_policyResponse) {
+    option(proc_id)=48;
+  };
+
+  // sets the read-only attribute on a file identified by a file ID (privileged users only!)
+  rpc xtreemfs_set_read_only_xattr(xtreemfs_set_read_only_xattrRequest) returns(xtreemfs_set_read_only_xattrResponse) {
+    option(proc_id)=49;
+  };
+
+  // returns a set of file credentials (capability + XLocList) for a file identified by a file ID (privileged users only!)
+  rpc xtreemfs_get_file_credentials(xtreemfs_get_file_credentialsRequest) returns(FileCredentials) {
+    option(proc_id)=50;	  
+  }; 
+
+}

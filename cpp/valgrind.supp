@@ -1,0 +1,174 @@
+{
+   getpwuid_r
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:__nss_lookup_function
+   ...
+   fun:getpwuid_r@@GLIBC_*
+}
+{
+   getpwuid_r static mem
+   Memcheck:Leak
+   fun:malloc
+   fun:nss_parse_service_list
+   fun:__nss_database_lookup
+   ...
+   fun:getpwuid_r@@GLIBC_*
+}
+{
+   getgrgid_r
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:__nss_lookup_function
+   ...
+   fun:getgrgid_r@@GLIBC_*
+}
+{
+   getgrgid_r static mem
+   Memcheck:Leak
+   fun:malloc
+   fun:nss_parse_service_list
+   fun:__nss_database_lookup
+   ...
+   fun:getgrgid_r@@GLIBC_*
+}
+{
+   getgrnam_r
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:__nss_lookup_function
+   ...
+   fun:getgrnam_r@@GLIBC_*
+}
+{
+   getgrnam_r
+   Memcheck:Leak
+   fun:malloc
+   fun:nss_parse_service_list
+   fun:__nss_database_lookup
+   ...
+   fun:getgrnam_r@@GLIBC_*
+}
+{
+   gethostbyname2_r
+   Memcheck:Leak
+   fun:malloc
+   fun:_dl_scope_free
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:do_dlopen
+   fun:_dl_catch_error
+   fun:__libc_dlopen_mode
+   fun:__nss_lookup_function
+   fun:__nss_lookup
+   fun:gethostbyname2_r@@GLIBC_*
+}
+{
+   boost_thread_TLS?
+   Memcheck:Leak
+   fun:malloc
+   fun:_ZN5boost6detail25get_once_per_thread_epochEv
+   fun:T.1209
+   fun:_ZN5boost6detail23get_current_thread_dataEv
+   fun:_ZN5boost11this_thread6get_idEv
+}
+{
+   boost_thread_TLS?
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN5boost12_GLOBAL__N_125make_external_thread_dataEv
+   fun:_ZN5boost11this_thread6get_idEv
+}
+{
+   missing_openssl_compressionmethods_free_in_boost
+   Memcheck:Leak
+   fun:malloc
+   fun:CRYPTO_malloc
+   ...
+   fun:SSL_COMP_get_compression_methods
+   fun:SSL_library_init
+   fun:_ZN5boost4asio3ssl6detail12openssl_initILb1EE7do_initC1Ev
+   fun:_ZN5boost4asio3ssl6detail12openssl_initILb1EE7do_init8instanceEv
+   fun:_ZN5boost4asio3ssl6detail12openssl_initILb1EEC1Ev
+}
+{
+   pthread_cancel_init leak #1
+   Memcheck:Leak
+   fun:malloc
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:do_dlopen
+   fun:_dl_catch_error
+   fun:__libc_dlopen_mode
+   fun:pthread_cancel_init
+   fun:pthread_cancel
+   fun:fuse_session_loop_mt
+}
+{
+   boost::thread_specific_ptr leak
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZNSt8_Rb_treeIPKvSt4pairIKS1_N5boost6detail13tss_data_nodeEESt10_Select1stIS7_ESt4lessIS1_ESaIS7_EE10_M_insert_EPKSt18_Rb_tree_node_baseSG_RKS7_
+   fun:_ZN5boost6detail16add_new_tss_nodeEPKvNS_10shared_ptrINS0_20tss_cleanup_functionEEEPv
+   fun:_ZN5boost6detail12set_tss_dataEPKvNS_10shared_ptrINS0_20tss_cleanup_functionEEEPvb
+   fun:_ZN5boost19thread_specific_ptrIiED1Ev
+}
+{
+   boost::thread_specific_ptr leak
+   Memcheck:Leak
+   fun:malloc
+   fun:_ZN5boost6detail25get_once_per_thread_epochEv
+   fun:T.1209
+   fun:_ZN5boost6detail23get_current_thread_dataEv
+   fun:_ZN5boost6detail13find_tss_dataEPKv
+   fun:_ZN5boost6detail12get_tss_dataEPKv
+   fun:_ZNK5boost19thread_specific_ptrIiE3getEv
+   fun:_ZN5boost19thread_specific_ptrIiE5resetEPi
+}
+{
+   boost::thread_specific_ptr leak
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN5boost12_GLOBAL__N_125make_external_thread_dataEv
+   fun:_ZN5boost6detail16add_new_tss_nodeEPKvNS_10shared_ptrINS0_20tss_cleanup_functionEEEPv
+   fun:_ZN5boost6detail12set_tss_dataEPKvNS_10shared_ptrINS0_20tss_cleanup_functionEEEPvb
+   fun:_ZN5boost19thread_specific_ptrIiED1Ev
+}
+{
+   boost::thread_specific_ptr leak
+   Memcheck:Leak
+   fun:malloc
+   fun:_ZN5boost6detail25get_once_per_thread_epochEv
+   fun:T.1209
+   fun:_ZN5boost6detail23get_current_thread_dataEv
+   fun:_ZN5boost6detail20interruption_checkerC1EP14pthread_cond_t
+   fun:_ZN5boost18condition_variable4waitERNS_11unique_lockINS_5mutexEEE
+}
+{
+   boost::thread join leak
+   Memcheck:Leak
+   fun:malloc
+   fun:_ZN5boost6detail25get_once_per_thread_epochEv
+   fun:T.1209
+   fun:_ZN5boost6detail23get_current_thread_dataEv
+   fun:_ZN5boost6thread4joinEv
+}
+{
+   boost::thread exit leak
+   Memcheck:Leak
+   fun:malloc
+   fun:_ZN5boost6detail25get_once_per_thread_epochEv
+   fun:T.1209
+   fun:_ZN5boost6detail23get_current_thread_dataEv
+   fun:_ZN5boost6detail13find_tss_dataEPKv
+   fun:_ZN5boost6detail12set_tss_dataEPKvNS_10shared_ptrINS0_20tss_cleanup_functionEEEPvb
+   fun:_ZN5boost19thread_specific_ptrIiED1Ev
+   fun:exit
+}

@@ -1,0 +1,70 @@
+.TH xtfs_cleanup 1 "July 2011" "The XtreemFS Distributed File System" "XtreemFS Admin Tools"
+.SH NAME
+xtfs_cleanup \- checks for each file on the OSD, if it has an entry at the Metadata Server (MRC). 
+.SH SYNOPSIS
+\fBxtfs_cleanup [ \fIoptions\fB ] \fIuuid:<osd_uuid>
+.BR
+
+.SH DESCRIPTION
+.I xtfs_cleanup
+performs a check of each file on the given Object Storage Device (OSD) whether it is registered at a MRC or not. 
+
+.SH EXAMPLE USAGE
+.TP
+.B "xtfs_cleanup -e uuid:d1feb333-d986-4e91-b8e7-eb2a48485f8b"
+Starts the cleanup process on the OSD identified by UUID 'd1feb333-d986-4e91-b8e7-eb2a48485f8b' and deletes all orphaned files automatically.
+
+.SH OPTIONS
+.TP
+\fB-c \fI<creds_file>
+Path to a PKCS#12 credentials file (private key + certificate) to use for SSL authentication. Must be present when MRC URL starts with pbrpcs:// or pbrpcg://.
+.TP
+\fB-cpass \fI<creds_passphrase>
+An optional passphrase to access the credentials file.
+.TP
+\fB-deleteVolumes
+Deletes volumes that might be dead.
+.TP
+\fB-dir \fI<uri>
+Specifies the directory service to use (e.g. 'pbrpc://localhost:32638'). If no URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'. In case of a secured URI ('pbrpcs://...' or 'pbrpcg://...'), it is necessary to also specify SSL settings.
+.TP
+\fB-e
+Automatically deletes orphaned files.
+.TP
+\fB-h/--help
+Shows usage info.
+.TP
+\fB-i
+Enables the interactive mode. Each time an orphaned file is detected, user interaction will be required.
+.TP
+\fB-r
+Restores all orphaned files to a directory '/lost+found/' in the volume root directory.
+.TP
+\fB-stop
+Suspends the currently running cleanup process.
+.TP
+\fB-t \fI<trusted_CAs>
+Path to a PKCS#12 file containing a set of certificates from trusted certification authorities. These certificates will be used to authenticate the MRC. Must be present when MRC URL starts with pbrpcs:// or pbrpcg://.
+.TP
+\fB-tpass \fI<trusted_passphrase>
+An optional passphrase to access the truststore file.
+.TP
+.B \-v
+Run a version cleanup, which disposes of obsolete file versions. A version cleanup will only affect files with multiple versions.
+.TP
+.B \-wait
+Blocks the call until the current cleanup run has finished.
+.TP
+.B \--admin_password \fI<passphrase>
+The administrator password, if password protection is enabled.
+
+.SH "SEE ALSO"
+.BR xtfs_chstatus (1),
+.BR xtfs_mrcdbtool (1),
+.BR xtfs_remove_osd (1),
+.BR xtfs_scrub (1),
+.BR xtfs_snap (1)
+.BR
+
+.SH AVAILABILITY
+The xtfs_cleanup command is part of the XtreemFS-tools package and is available from \fIhttp://www.xtreemfs.org\fP.

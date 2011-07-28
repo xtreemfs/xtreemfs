@@ -1,0 +1,523 @@
+//
+// Copyright (c) 2009-2011, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+//
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// Redistributions of source code must retain the above copyright notice, this
+// list of conditions and the following disclaimer.
+// Redistributions in binary form must reproduce the above copyright notice,
+// this list of conditions and the following disclaimer in the documentation
+// and/or other materials provided with the distribution.
+// Neither the name of the Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+// nor the names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// AUTHORS: Bjoern Kolbeck (ZIB), Jan Stender (ZIB)
+//
+
+option java_package="org.xtreemfs.pbrpc.generatedinterfaces";
+package xtreemfs.pbrpc;
+import "include/PBRPC.proto";
+import "include/Common.proto";
+import "xtreemfs/GlobalTypes.proto";
+
+// Message sent between OSDs when the size of a striped file changes.
+// Optimization to reduce communication between servers for sparse files
+// and to handle EOF.
+message InternalGmax {
+  required fixed64 epoch = 1;
+  required fixed64 file_size = 2;
+  required fixed64 last_object_id = 3;
+}
+
+// POSIX file lock.
+message Lock {
+  // Process ID, must be unique per client,
+  // i.e. client_pid+uuid must be globally unique.
+  required fixed32 client_pid = 1;
+  // UUID for client, can be temporary.
+  required string client_uuid = 2;
+  // Length of byte range for the lock.
+  required fixed64 length = 3;
+  // Offset of the locked byte range.
+  required fixed64 offset = 4;
+  // If true, lock is exclusive.
+  required bool    exclusive = 5;
+}
+
+// Contains details on object data which is now sent in
+// the data fragment of the RPC protocol.
+message ObjectData {
+  // Data checksum (Adler32), if checksums are enabled.
+  required fixed32 checksum = 1;
+  // True, if the checksum doesn't match the data on the OSD.
+  required bool invalid_checksum_on_osd = 2;
+  // Number of zeros the client must append to data before delivering
+  // data to an application (for sparse files).
+  required fixed32 zero_padding = 3;
+}
+
+// List of objects which an OSD has stored locally.
+// Used by the read-only replication to optimize
+// fetching of missing objects.
+message ObjectList {
+  // serialized data type
+  required bytes set = 1;
+  required fixed32 stripe_width = 2;
+  required fixed32 first_ = 3;
+}
+
+// Version information for an object.
+// Used to generate a mapping from object_number
+// to object_version. Used by the read-write replication.
+message ObjectVersion {
+  required fixed64 object_number = 1;
+  required fixed64 object_version = 2;
+}
+
+// Entry for the truncate log required by the read-write
+// replication. For each truncate, a version number is
+// assigned and a record is appended to the truncate log.
+message TruncateRecord {
+  required fixed64 version = 1;
+  required fixed64 last_object_number = 2;
+}
+
+message TruncateLog {
+  repeated TruncateRecord records = 1;
+}
+
+// Full status of a replica. Used by the read-write
+// replication during Replica Reset.
+message ReplicaStatus {
+  // Current truncate epoch.
+  required fixed64 truncate_epoch = 1;
+  // Local file size.
+  required fixed64 file_size = 2;
+  // Last object version stored locally.
+  required fixed64 max_obj_version = 3;
+  // Primary epoch number (aka Master Epoch).
+  required fixed32 primary_epoch = 4;
+  // List of objects and their version.
+  repeated ObjectVersion objectVersions = 5;
+  // Truncate log.
+  required TruncateLog truncate_log = 6;
+}
+
+// Mapping from object_number/version to OSDs that have
+// a copy of this object. Used by the rw-replication.
+message ObjectVersionMapping {
+  required fixed64 object_number = 1;
+  required fixed64 object_version = 2;
+  repeated string osd_uuids = 3;
+}
+
+// Correct replica state sent by the Primary to all
+// backups. After receiving this information, backups
+// will bring themselves to the authoritative state by
+// fetching missing data and deleting outdated objects.
+message AuthoritativeReplicaState {
+  required fixed64 truncate_epoch = 1;
+  required fixed64 max_obj_version = 4;
+  repeated ObjectVersionMapping objectVersions = 2;
+  required TruncateLog truncate_log = 3;
+}
+
+// Response sent by an OSD when reading objects for
+// the ro/rw replication.
+message InternalReadLocalResponse {
+  required ObjectData data = 1;
+  // List of objects the OSD has.
+  repeated ObjectList object_set = 2;
+}
+
+message readRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  // Object number starting at 0.
+  required fixed64 object_number = 3;
+  // Version, currently ignored.
+  required fixed64 object_version = 4;
+  // Offset within the object.
+  required fixed32 offset = 5;
+  // Length of data to be read, must be <= stripe_size - offset.
+  required fixed32 length = 6;
+}
+
+message truncateRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  // New file size in bytes.
+  required fixed64 new_file_size = 3;
+}
+
+message unlink_osd_Request {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+}
+
+message writeRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  // Object number starting at 0.
+  required fixed64 object_number = 3;
+  // Version, currently ignored.
+  required fixed64 object_version = 4;
+  // Offset within the object.
+  required fixed32 offset = 5;
+  // Timeout of the client lease, if set.
+  // Reserved for client-side-caching, currently not used.
+  required fixed64 lease_timeout = 6;
+  // Only the checksum of ObjectData is used.
+  required ObjectData object_data = 7;
+}
+
+// Internal message sent between OSDs of a striped file.
+// Transmitted via UDP.
+message xtreemfs_broadcast_gmaxRequest{
+  required string file_id = 1;
+  required fixed64 truncate_epoch = 2;
+  required fixed64 last_object = 3;
+  required fixed64 file_size = 4;
+}
+
+message xtreemfs_check_objectRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  required fixed64 object_number = 3;
+  required fixed64 object_version = 4;
+}
+
+message xtreemfs_cleanup_get_resultsResponse {
+  // Human readable English status and error messages.
+  repeated string results = 1;
+}
+
+message xtreemfs_cleanup_is_runningResponse {
+  required bool is_running = 1;
+}
+
+message xtreemfs_cleanup_startRequest {
+  // If true, objects for deleted files are deleted as well.
+  required bool remove_zombies = 1;
+  // If true, files for which the MRC cannot be contacted or
+  // where no volume DIR entry exists are deleted.
+  required bool remove_unavail_volume = 2;
+  // If true, objects are not deleted but moved to lost and found.
+  required bool lost_and_found = 3;
+}
+
+message xtreemfs_cleanup_statusResponse {
+  required string status = 1;
+}
+
+message xtreemfs_rwr_fetchRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  required fixed64 object_number = 3;
+  required fixed64 object_version = 4;
+}
+
+message xtreemfs_rwr_flease_msgRequest {
+  // The actual flease message is sent in data.
+  required string sender_hostname = 1;
+  required fixed32 sender_port = 2;
+}
+
+message xtreemfs_rwr_set_primary_epochRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  required fixed32 primary_epoch = 3;
+}
+
+message xtreemfs_rwr_statusRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  // Maximum local object version stored on an OSD.
+  required fixed64 max_local_obj_version = 3;
+}
+
+message xtreemfs_rwr_truncateRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  required fixed64 new_file_size = 3;
+  required fixed64 object_version = 4;
+}
+
+message xtreemfs_rwr_updateRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  required fixed64 new_file_size = 3;
+  required fixed64 object_number = 7;
+  required fixed64 object_version = 4;
+  required fixed32 offset = 5;
+  required ObjectData obj = 6;
+}
+
+message xtreemfs_internal_get_gmaxRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+}
+
+message xtreemfs_internal_get_file_sizeRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+}
+
+message xtreemfs_internal_get_file_sizeResponse {
+  // File size in bytes (as seen by local OSD).
+  required fixed64 file_size = 1;
+}
+
+message xtreemfs_internal_read_localRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  required fixed64 object_number = 3;
+  required fixed64 object_version = 4;
+  required fixed32 offset = 5;
+  required fixed32 length = 6;
+  required bool attach_object_list = 7;
+  repeated ObjectList required_objects = 8;
+}
+
+message xtreemfs_internal_get_object_setRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+}
+
+message xtreemfs_internal_get_fileid_listResponse {
+  repeated string file_ids = 1;
+}
+message lockRequest {
+  required FileCredentials file_credentials = 1;
+  required Lock            lock_request = 2;
+}
+
+message xtreemfs_pingMesssage {
+  required VivaldiCoordinates coordinates = 1;
+  required bool request_response = 2;
+}
+
+message xtreemfs_rwr_auth_stateRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  required AuthoritativeReplicaState state = 3;
+}
+
+message xtreemfs_rwr_reset_completeRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  required fixed32 primary_epoch = 3;
+}
+
+service OSDService {
+  
+  option(interface_id)=30001;
+
+  // POSIX/FUSE operations ----------------------------------------
+  // See POSIX for details.
+
+  // Client read operation with POSIX semantics.
+  // In case of EOF, read returns less data than requested.
+  rpc read(readRequest) returns(ObjectData) {
+    option(proc_id)=10;
+    option(data_out)=true;
+  };
+
+  // Truncates a file.
+  // OSDWriteResponse may contain new file size, if it changed.
+  // The OSDWriteResponse should be sent to the MRC immediately.
+  rpc truncate(truncateRequest) returns(OSDWriteResponse) {
+    option(proc_id)=11;
+  };
+
+  // Deletes the objects of a file.
+  rpc unlink(unlink_osd_Request) returns(emptyResponse) {
+    option(proc_id)=12;
+  };
+
+  // Client write operation.
+  // If an OSDWriteResponse with a new file size is returned,
+  // it can be cached by the client and relayed to the MRC
+  // at a later point.
+  // However, the cached file size must be considered
+  // when a local process stats the file.
+  // If a fsync or close is truncated, the file size must first
+  // be written to the MRC *before* the call returns.
+  rpc write(writeRequest) returns(OSDWriteResponse) {
+    option(proc_id)=13;
+    option(data_in)=true;
+  };
+
+  // XtreemFS specific ops ----------------------------------------
+
+  // Sent only via UDP. After a write to a striped file that modifies the file size,
+  // an OSD will sent this hint to all other OSDs in the stripe.
+  // These hints are used to handle EOF and holes in sparse files correctly.
+  // However, they are not necessary for correct operations.
+  rpc xtreemfs_broadcast_gmax(xtreemfs_broadcast_gmaxRequest) returns(emptyResponse) {
+    option(proc_id)=20;
+  };
+
+  // The OSD reads the object from the local disk, and if enabled calculates and
+  // compares the checksum.
+  rpc xtreemfs_check_object(xtreemfs_check_objectRequest) returns(ObjectData) {
+    option(proc_id)=21;
+  };
+
+  // Returns the messages produces by the OSD cleanup process. Requires AUTH_PASSWORD.
+  rpc xtreemfs_cleanup_get_results(emptyRequest) returns(xtreemfs_cleanup_get_resultsResponse) {
+    option(proc_id)=30;
+  };
+
+  // Checks if the OSD cleanup process is running. Requires AUTH_PASSWORD.
+  rpc xtreemfs_cleanup_is_running(emptyRequest) returns(xtreemfs_cleanup_is_runningResponse) {
+    option(proc_id)=31;
+  };
+
+  // Starts the OSD cleanup process (removes orphaned objects). Requires AUTH_PASSWORD.
+  rpc xtreemfs_cleanup_start(xtreemfs_cleanup_startRequest) returns(emptyResponse) {
+    option(proc_id)=32;
+  };
+
+  // Returns a short status message of the cleanup process.
+  // Can be used for (G)UIs to report progress. Requires AUTH_PASSWORD.
+  rpc xtreemfs_cleanup_status(emptyRequest) returns(xtreemfs_cleanup_statusResponse) {
+    option(proc_id)=33;
+  };
+
+  // Stops the OSD cleanup process. Requires AUTH_PASSWORD.
+  rpc xtreemfs_cleanup_stop(emptyRequest) returns(emptyResponse) {
+    option(proc_id)=34;
+  };
+  
+  // Removes superflous object versions.
+  // Part of the experimental snapshots implementation.
+  rpc xtreemfs_cleanup_versions_start(emptyRequest) returns(emptyResponse) {
+    option(proc_id)=35;
+  };
+
+  // Reads a specific object version from the OSD. Used by the read-write replication.
+  rpc xtreemfs_rwr_fetch(xtreemfs_rwr_fetchRequest) returns(ObjectData) {
+    option(proc_id)=73;
+  };
+
+  // Wrapper for flease messages. Flease is used for primary election
+  // in the rw-replication.
+  rpc xtreemfs_rwr_flease_msg(xtreemfs_rwr_flease_msgRequest) returns(emptyResponse) {
+    option(proc_id)=71;
+    option(data_in)=true;
+  };
+
+  // No-op used to inform an OSD that the replica set changed.
+  rpc xtreemfs_rwr_notify(FileCredentials) returns(emptyResponse) {
+    option(proc_id)=75;
+  }
+
+  // Stores the primary epoch on the OSD.
+  rpc xtreemfs_rwr_set_primary_epoch(xtreemfs_rwr_set_primary_epochRequest) returns(ObjectData) {
+    option(proc_id)=78;
+  };
+
+  // Returns the replica status for a file on the local OSD.
+  rpc xtreemfs_rwr_status(xtreemfs_rwr_statusRequest) returns(ReplicaStatus) {
+    option(proc_id)=76;
+  };
+
+  // Executes the truncate on the backup replicas.
+  // A version number must have been assigned by the primary.
+  rpc xtreemfs_rwr_truncate(xtreemfs_rwr_truncateRequest) returns(emptyResponse) {
+    option(proc_id)=74;
+  };
+
+  // Executes the write on the backup replicas.
+  // A version number must have been assigned by the primary.
+  rpc xtreemfs_rwr_update(xtreemfs_rwr_updateRequest) returns(emptyResponse) {
+    option(proc_id)=72;
+    option(data_in)=true;
+  };
+
+  // Sets the authoritative state on a backup OSD.
+  // Only primaries can send this operation.
+  rpc xtreemfs_rwr_auth_state(xtreemfs_rwr_auth_stateRequest) returns(emptyResponse) {
+    option(proc_id)=79;
+  };
+
+  // Informs the primary that a backup has completed the RESET.
+  rpc xtreemfs_rwr_reset_complete(xtreemfs_rwr_reset_completeRequest) returns(emptyResponse) {
+    option(proc_id)=80;
+  };
+
+  // Returns the local file size information on an OSD.
+  // Used to determine the real file size of a striped file.
+  rpc xtreemfs_internal_get_gmax(xtreemfs_internal_get_gmaxRequest) returns(InternalGmax) {
+    option(proc_id)=40;
+  };
+
+  // Truncate operation sent by the head OSD to the other stripes.
+  // Only for striped files.
+  rpc xtreemfs_internal_truncate(truncateRequest) returns(OSDWriteResponse) {
+    option(proc_id)=41;
+  };
+
+  // Returns the file size.
+  rpc xtreemfs_internal_get_file_size(xtreemfs_internal_get_file_sizeRequest) returns(xtreemfs_internal_get_file_sizeResponse) {
+    option(proc_id)=42;
+  };
+
+  // Reads an object from a remote OSD, used by the ronly-replication.
+  rpc xtreemfs_internal_read_local(xtreemfs_internal_read_localRequest) returns(InternalReadLocalResponse) {
+    option(proc_id)=43;
+  };
+
+  // Returns the list of objects that an OSD has stored for a file.
+  rpc xtreemfs_internal_get_object_set(xtreemfs_internal_get_object_setRequest) returns(ObjectList) {
+    option(proc_id)=44;
+  };
+
+  // Returns a list of file ids stored on the OSD.
+  rpc xtreemfs_internal_get_fileid_list(emptyRequest) returns(xtreemfs_internal_get_fileid_listResponse) {
+    option(proc_id)=45;
+  }
+
+  // Acquires a file lock. See POSIX fcntl locks.
+  rpc xtreemfs_lock_acquire(lockRequest) returns(Lock) {
+    option(proc_id)=50;
+  };
+
+  // Checks a file lock. See POSIX fcntl locks.
+  rpc xtreemfs_lock_check(lockRequest) returns(Lock) {
+    option(proc_id)=51;
+  };
+
+  // Releases a file lock. See POSIX fcntl locks.
+  rpc xtreemfs_lock_release(lockRequest) returns(emptyResponse) {
+    option(proc_id)=52;
+  };
+
+  // Simple RPC ping.
+  rpc xtreemfs_ping(xtreemfs_pingMesssage) returns(xtreemfs_pingMesssage) {
+    option(proc_id)=60;
+  };
+
+  // Shuts the OSD down. Requires AUTH_PASSWORD.
+  rpc xtreemfs_shutdown(emptyRequest) returns(emptyResponse) {
+    option(proc_id)=70;
+  };
+
+}

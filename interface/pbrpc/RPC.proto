@@ -1,0 +1,163 @@
+//
+// Copyright (c) 2009-2011, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+//
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// Redistributions of source code must retain the above copyright notice, this
+// list of conditions and the following disclaimer.
+// Redistributions in binary form must reproduce the above copyright notice,
+// this list of conditions and the following disclaimer in the documentation
+// and/or other materials provided with the distribution.
+// Neither the name of the Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+// nor the names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// AUTHORS: Bjoern Kolbeck (ZIB)
+//
+
+// Header for RPC protocol.
+
+option java_package="org.xtreemfs.foundation.pbrpc.generatedinterfaces";
+package xtreemfs.pbrpc;
+
+// Encodes the type of the RPC message sent.
+enum MessageType {
+    // RPC request to execute method.
+    RPC_REQUEST = 0;
+    // RPC response after successful execution of method.
+    RPC_RESPONSE_SUCCESS = 1;
+    // RPC response when execution of a method failed, including POSIX errors.
+    RPC_RESPONSE_ERROR = 2;
+}
+
+// Authentication type provided for request.
+enum AuthType {
+    // No authentication.
+    AUTH_NONE = 0;
+    // Plain text admin password authentication.
+    AUTH_PASSWORD = 1;
+}
+
+// File system user credentials for executing an operation.
+// Might be ignored by some operations.
+message UserCredentials {
+    // Globally unique user ID (GUID).
+    required string username = 1;
+    // List of one or more globally unique group IDs (GGID).
+    repeated string groups = 2;
+}
+
+// Admin password if AuthType AUTH_PASSWORD.
+message AuthPassword {
+    required string password = 1;
+}
+
+// RPC Authentication information.
+message Auth {
+    // Selected authentication type.
+    required AuthType auth_type = 1;
+    // Optional data, depends on auth_type selected.
+    optional AuthPassword auth_passwd = 3;
+    optional bytes auth_data = 2;
+}
+
+// Error types.
+enum ErrorType {
+    // Requested interface_id not implemented by server.
+    INVALID_INTERFACE_ID = 1;
+    // Requested procedure_id not implemented by serevr.
+    INVALID_PROC_ID = 2;
+    // Server cannot parse the RPC request.
+    GARBAGE_ARGS = 3;
+    // Authentication failed, access denied.
+    AUTH_FAILED = 4;
+    // Unspecific internal server error that caused the RPC to fail.
+    INTERNAL_SERVER_ERROR = 5;
+    // POSIX errno error (not necessarily a failure), e.g. ENOENT.
+    // POSIXErrno contains details that can be passed to an application.
+    ERRNO = 6;
+    // Server redirects to another server implementing the same interface.
+    REDIRECT = 7;
+    // Generic IO_ERROR to be used by the RPC implementation.
+    IO_ERROR = 100;
+}
+
+// Additional error code which can be passed to applications.
+// See errno.h for details. Values are equivalent to Linux
+// values, but are different for other unix platforms such as
+// Mac OS X and Solaris!
+enum POSIXErrno {
+  POSIX_ERROR_NONE = 9999;
+  POSIX_ERROR_EPERM = 1;
+  POSIX_ERROR_ENOENT = 2;
+  POSIX_ERROR_EIO = 5;
+  POSIX_ERROR_EAGAIN = 11;
+  POSIX_ERROR_EACCES = 13;
+  POSIX_ERROR_EEXIST = 17;
+  POSIX_ERROR_EXDEV = 18;
+  POSIX_ERROR_ENODEV = 19;
+  POSIX_ERROR_ENOTDIR = 20;
+  POSIX_ERROR_EISDIR = 21;
+  POSIX_ERROR_EINVAL = 22;
+  POSIX_ERROR_ENOTEMPTY = 39;
+  POSIX_ERROR_ENODATA = 61;
+} 
+
+// RPC header message sent in the first request fragment.
+message RPCHeader {
+
+  // Header data for requests, i.e. message_type is RPC_REQUEST.
+  message RequestHeader {
+    // Interface id of the requested method.
+    required fixed32 interface_id = 1;
+    // Procedure id of the requested method.
+    required fixed32 proc_id = 2;
+    // File system user credentials for the operation.
+    required UserCredentials user_creds = 3;
+    // Authentication details.
+    required Auth auth_data = 4;
+  }
+
+  // Header data for error responses, i.e. message_type is RPC_ERROR_RESPONSE.
+  message ErrorResponse {
+    // Error type details.
+    required ErrorType error_type = 1;
+    // Optional POSIX errno.
+    optional POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];
+    // Optional human readable error message in English (not localized!).
+    optional string error_message = 3;
+    // Optional debug information that only makes sense to developers such
+    // as stack traces.
+    optional string debug_info = 4;
+    // Optional UUID of the server to use instead. Required when error_type is REDIRECT.
+    optional string redirect_to_server_uuid = 5;
+  }
+
+  // A unique id to identify the request. The response sent back by the server will have
+  // the same call_id.
+  // The call_id must be unqiue per TCP connection. In addition, clients should start
+  // with a value based e.g. on time to avoid problems after a client restart.
+  required fixed32       call_id = 1;
+  // Type of this RPC message (Request, Response).
+  required MessageType   message_type = 2;
+
+  // Optional request_header, required if message_type is RPC_REQUEST.
+  optional RequestHeader request_header = 3;
+  // Optional error_response, required if message_type is RPC_ERROR_RESPONSE.
+  optional ErrorResponse error_response = 4;
+}

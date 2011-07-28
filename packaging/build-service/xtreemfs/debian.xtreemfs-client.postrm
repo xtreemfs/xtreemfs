@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+
+#if [ "$1" = purge ]; then
+#  echo "Removing vivaldi RC-links"
+#  update-rc.d -f xtreemfs-vivaldi remove > /dev/null
+#fi
+
+exit 0

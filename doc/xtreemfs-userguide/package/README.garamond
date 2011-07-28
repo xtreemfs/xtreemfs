@@ -1,0 +1,231 @@
+============================================================
+                     URW Garamond No.8
+============================================================
+                                                  2005-07-07
+                                      w-a-schmidt(at)gmx.net
+
+
+This directory provides a set of Postscript Type-1 fonts
+which URW has made available for free under the Aladdin Free
+Public License:
+
+  font name:                  files:
+  -------------------------------------
+  GaramondNo8 Regular         ugmr8a.pfb
+                              ugmr8a.pfm
+                              ugmr8a.afm
+                                  
+  GaramondNo8 Medium          ugmm8a.pfb
+                              ugmm8a.pfm
+                              ugmm8a.afm
+                                  
+  GaramondNo8 Italic          ugmri8a.pfb
+                              ugmri8a.pfm
+                              ugmri8a.afm
+                                  
+  GaramondNo8 Medium Italic   ugmmi8a.pfb
+                              ugmmi8a.pfm
+                              ugmmi8a.afm
+
+The original distribution site of the font files is
+<http://www.artifex.com/downloads/>.
+
+The fonts are accompanied by the TeX font metrics, virtual
+fonts, font definition and font mapping files to use them
+with the LaTeX typesetting system on the PC or Un*x
+platform.  The layout of the distribution and the related
+installation instructions suit recent, TDS-compliant TeX
+systems, particularly teTeX, MikTeX and VTeX/Free.
+
+
+
+Installation paths
+------------------
+The files of your TeX system are arranged in one or more
+tree structures, the so-called "texmf trees".  The names and
+paths of the particular root directories of these trees vary
+between different TeX systems.  In the following
+instructions the install paths are indicated in a form such
+as, for instance:
+
+  <texmf>/fonts/type1/...
+ 
+<texmf> stands for the the actual name of the root directory
+of the texmf tree, where you want to install the files:  
+
+teTeX and MikTeX require additional files to be installed in
+a particular "local" tree (rather than in the one where the
+default components of the TeX system reside).  Its path must
+either be indicated in the documentation of the TeX system
+or you should have defined it yourself upon installation.
+With MikTeX 2.4+, for instance, the root directory of the
+"local" texmf tree is usually "c:\localtexmf", so you would
+in fact have to substitute
+
+  c:\localtexmf\fonts\type1\...
+ 
+for the path name in the above example.  
+
+VTeX/Free, in contrast, has only one single texmf tree,
+whose root directory is normally "/usr/local/vtex/texmf" (on
+Linux) or "c:\texmf" (on OS/2).
+
+Note that paths are indicated in "Unix notation" (i.e.,
+using slashes as directory separators), unless they are
+specific for Win or OS/2.
+
+
+
+Installing the Type1 font files in your TeX system
+--------------------------------------------------
+The Type1 font files
+
+  ugmr8a.pfb
+  ugmri8a.pfb
+  ugmb8a.pfb
+  ugmbi8a.pfb
+
+are to be copied to the directory
+
+  <texmf>/fonts/type1/urw/garamond
+  
+of your TeX system, and the related .afm files should go
+into
+
+  <texmf>/fonts/afm/urw/garamond
+
+Most likely, you will have to create these directories
+first.
+
+Feel free to use the fonts also with applications other than
+TeX!  The related PFM files are provided for this purpose;
+move them to the same directory as the PFBs.
+
+
+
+Installing the TeX support files from the archive ugm.zip
+---------------------------------------------------------
+Unpack the ZIP archive ugm.zip in the directory <texmf>,
+i.e., in root directory of the TeX file tree, where you want
+to install the present collection.  Thus, all files will end
+up in the appropriate directories.
+
+
+
+Updating the filename database
+------------------------------
+Many TeX systems require manual updating of a "filename
+database" after adding of new files.  Please, consult the
+documentation of your TeX system!
+
+
+
+Configuring your TeX system
+---------------------------
+
+The present distribution includes several font map files for
+the URW Garamond fonts.  You need to configure your
+TeX system so that an appropriate file will be used in fact.
+The required steps depend on the particular TeX system.
+Particular sets of instructions are provided below for the
+following systems:
+
+  * teTeX 2.0 and later
+  * MikTeX 2.4 and later
+  * VTeX/Free 8 and later
+
+With other TeX systems (or older versions of teTeX and
+MikTeX) consult the related documentation how to install an
+additional font map file.  The name of the map file to be
+used for Garamond is "ugm.map".  Two identical copies of
+this file reside in the directories <texmf>/dvips/config and
+<texmf>/fonts/map/dvips/ugm.
+
+
+* Configuring teTeX 2.0+
+Delete the file <texmf>/dvips/config/ugm.map, which is
+not needed with a recent teTeX.  Next, issue the following
+commands in a command shell:
+
+  texhash
+  updmap --enable Map ugm.map
+
+
+* Configuring MikTeX 2.4+
+Edit the file <texmf>\miktex\config\updmap.cfg.  (In case it
+does not yet exist, create it as a new file.)  Add the line
+
+  Map ugm.map 
+  
+and save the file; then execute the following commands 
+in a command line window ("DOS shell"):
+
+  initexmf -u 
+  updmap 
+
+
+* Configuring VTeX/Free 8+
+Make VTeX read the additional font mapping file ugm.ali.
+This is usually accomplished by putting an appropriate
+record into each of the configuration files
+
+  <texmf>/vtex/config/pdf.fm
+and
+  <texmf>/vtex/config/ps.fm
+
+Edit these files; in each file add "ugm.ali" to the TYPE1
+section:
+
+  TYPE1 {
+    ...
+    ugm.ali
+    }
+  
+
+
+
+Using the URW Garamond fonts with LaTeX
+---------------------------------------
+See the file garamond.txt, which resides in the directory
+<texmf>/doc/fonts/urw.
+
+
+
+Fontinst sources
+----------------
+The archive file ugmfnst.zip contains the Fontinst script
+and additional mtx files which were used to create the font
+metrics and virtual fonts for URW Garamond.  You need not
+install this material, if you just want to _use_ the fonts
+with TeX.
+
+
+
+License
+-------
+Distribution and modification of the the URW Garamond fonts
+are subject to the Aladdin Free Public License
+<http://www.artifex.com/downloads/doc/Public.htm>
+
+  Copyright (c) 2000 by (URW)++ Design & Development
+
+The font GaramondNo8 Italic has been modified, as compared
+with the version from the original distribution site
+<http://www.artifex.com/downloads/>; credits to Ralf Stubner
+for fixing the broken quotedblleft character.
+
+
+The TeX font metrics, virtual fonts and font definition
+files for URW Garamond, i.e., the files in the archive
+ugm.zip, may be distributed and/or modified under the
+conditions of the LaTeX Project Public License, either
+version 1.3 of this license or (at your option) any later
+version.  The latest version of this license is in
+http://www.latex-project.org/lppl.txt and version 1.3 or
+later is part of all distributions of LaTeX version
+2003/12/01 or later.
+
+  Copyright (c) 2005 Walter Schmidt
+
+
+== finis

@@ -1,0 +1,46 @@
+#!/bin/bash
+
+check_xtreemfs() {
+    if [ -z "$XTREEMFS" ]; then
+        if [ -d src -a -d share ]; then
+            #echo "Looks like you are in an XtreemFS base directory..."
+            XTREEMFS=`pwd`
+        elif [ -d ../src -a -d ../share ]; then
+            #echo "XTREEMFS base could be the parent directory..."
+            XTREEMFS=`pwd`/..
+        fi
+    fi
+    if [ ! -e "$XTREEMFS/java/servers/dist/XtreemFS.jar" -a ! -d "$XTREEMFS/java/lib" -a ! -f "/usr/share/java/XtreemFS.jar" ];
+    then
+        echo "XtreemFS jar could not be found!"
+        exit 1
+    fi
+}
+
+check_java() {
+    if [ -z "$JAVA_HOME" -a ! -f "/usr/bin/java" ]; then
+        echo "\$JAVA_HOME not set, JDK/JRE 1.6 required"
+        exit 1
+    fi
+
+    if [ -z "$JAVA_HOME" ]; then
+        JAVA_HOME=/usr
+    fi
+
+    JVERS=`$JAVA_HOME/bin/java -version 2>&1 | grep "java version" | \
+       cut -d " " -f 3`
+    perl -e " exit 1 if ($JVERS < \"1.6.0\");"
+    if [ $? -eq 1 ]; then
+       echo "Java version is $JVERS. You need JAVA 1.6!!!"
+       exit 1
+    fi
+
+    #echo "Java version $JVERS found under $JAVA_HOME"
+}
+
+
+check_xtreemfs
+check_java
+
+exec $JAVA_HOME/bin/java -ea -cp $XTREEMFS/java/servers/dist/XtreemFS.jar:$XTREEMFS/java/foundation/dist/Foundation.jar:$XTREEMFS/java/lib/*:/usr/share/java/XtreemFS.jar:/usr/share/java/protobuf-java-2.3.0.jar:/usr/share/java/Foundation.jar:. \
+    org.xtreemfs.utils.xtfs_scrub $*

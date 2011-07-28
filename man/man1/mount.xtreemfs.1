@@ -1,0 +1,158 @@
+.TH mount.xtreemfs 1 "July 2011" "The XtreemFS Distributed File System" "XtreemFS client"
+.SH NAME
+mount.xtreemfs \- mounts an XtreemFS volume
+.SH SYNOPSIS
+\fBmount.xtreemfs [\fIoptions\fB] [oncrpc[s]://]\fIdirhost\fR[:\fIport\fR]/\fIvolume mountpoint
+.br
+
+.SH DESCRIPTION
+.I mount.xtreemfs
+mounts the volume \fIvolume\fR registered at the Directory Service \fIdirhost\fR:\fIport\fR to the local directory \fImountpoint\fR. \fImount.xtreemfs\fR is implemented as a FUSE user-level file system driver. Other than in-kernel drives, it operates as a detached process per mount point. 
+
+.SH EXAMPLE USAGE
+.B "mount.xtreemfs remote.dirservice.machine/MyVolume /mnt"
+
+.SH OPTIONS
+
+.TP
+GENERAL OPTIONS:
+.TP
+\fB\-d/\-\-debug/\-\-log\-level \fIEMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG
+The log level of the XtreemFS client.
+.TP
+\fB\-h/\-\-help
+print help and exit.
+.TP
+\fB\-l/\-\-log\-file\-path \fIlog_file_path
+path to the client log file.
+
+
+.TP
+FUSE OPTIONS:
+.TP
+\fB\-\-fuse\-debug
+Enable FUSE debug output. 
+.TP
+\fB\-f/\-\-foreground
+Run the client process in the foreground (blocks the shell until the volume is un-mounted).
+.TP
+\fB\-\-enable\-fuse\-cache
+Enabling the fuse cache results in improved performance while loosing some POSIX semantics.
+.TP
+\fB\-\-disable\-fuse\-permission\-check 
+Disables fuse POSIX permission checks so all permission checks are exclusively handled by XtreemFS. This flag is required for volumes not using POSIX permission checking.  
+.TP
+\fB\-o \fIfuse_option
+Additional parameters that are passed to FUSE.
+
+
+.TP
+OPTIMIZATION / CACHING OPTIONS:
+.TP
+\fB\-\-readdir\-chunk\-size \fIsize
+Readdir calls are divides into chunks of this size. 
+.TP
+\fB\-\-file\-size\-updates\-s \fIseconds
+The time to cache update\-file\-size calls in seconds when the file is opened. All file size updates are send to the MRC when the file is closed.
+
+.TP
+\fB\-\-metadata\-cache\-size \fIsize
+The maximal size of the metadata cache for stat information and xattributes.
+.TP
+\fB\-\-metadata\-cache\-ttl\-s \fIseconds
+An entry in the metadata cache is invalidated after this time period.
+
+.TP
+\fB\-\-write\-back\-cache
+Enables write-back caching in the client for update-file-size calls.
+.TP
+\fB\-\-write\-through\-cache
+Enables write-through caching in the client for update-file-size calls.
+
+.TP
+\fB\-t/\-\-operation\-timeout\-s \fIseconds
+The request timeout in seconds.
+.TP
+\fB\-\-user\-group\-monitor\-m \fIminutes
+Changes to local users and groups are monitored this often in minutes.
+
+.TP
+\fB\-\-retry\-count \fIcount
+Number of retries in case of a failure.
+
+.TP
+\fB\-\-write\-ahead\-size \fIsize 
+The size of the parallel send writes-operations for each stripe in kB. If this is too large, the OSD might become flooded resulting in timeouts in the client.
+
+
+.TP
+SSL OPTIONS:
+.TP
+\fB\-\-pem\-certificate\-file\-path \fIcertfile
+PEM certificate file path (for SSL installations only).
+.TP
+\fB\-\-pem\-private\-key\-passphrase \fIpass
+PEM private key passphrase (for SSL installations only).
+.TP
+\fB\-\-pkcs12\-file\-path \fIfile
+PKCS#12 file path (for SSL installations only).
+.TP
+\fB\-\-pkcs12\-passphrase \fIpass
+PKCS#12 file passphrase (for SSL installations only).
+.TP
+\fB\-\-pem\-private\-key\-file\-path \fIfile
+PEM private key file path.
+
+.TP
+\fB\-\-globus\-gridmap
+Enable authorization using globus gridmap file.
+.TP
+\fB\-\-unicore\-gridmap
+Enable authorization using unicore gridmap (uudb) file.
+.TP
+\fB\-\-gridmap\-location \fIfile
+The Location of the gridmap file. unicore default: /etc/grid-security/grid-mapfile  globus default: /etc/grid-security/d-grid_uudb
+
+
+.TP
+TRACING OPTIONS:                          
+.TP
+\fB\-\-trace\-auth
+trace authentication
+.TP
+\fB\-\-trace\-file\-io
+trace file I/O
+.TP
+\fB\-\-trace\-network\-io
+trace network I/O
+.TP
+\fB\-\-trace\-network\-operations
+trace network operations
+.TP
+\fB\-\-trace\-volume\-operations
+trace volume operations
+
+
+.TP
+VIVALDI OPTIONS:
+.TP
+\fB\-\-vivaldi\-coordinates\-file\-path \fIpath
+path to Vivaldi coordinates file produced by xtfs_vivaldi
+
+
+.SH "SEE ALSO"
+.BR lsfs.xtreemfs (1),
+.BR mkfs.xtreemfs (1),
+.BR rmfs.xtreemfs (1),
+.BR umount.xtreemfs (1)
+.BR
+
+.SH "KNOWN ISSUES"
+FUSE does not support mmap in connection with direct I/O. In order to get applications running on XtreemFS that rely on mmap, volumes have to be mounted without using the FUSE option
+.B "-o direct_io"
+. However, this might lead to inconsistencies if different clients access a file concurrently, as requests might be serviced from the local page cache.
+
+When run on older Linux kernels (2.6.18 or earlier), the XtreemFS client might fail to enforce access control when changing to a directory. The problem can be solved by passing \fB"-o default_permissions"\fR to FUSE.
+
+.SH AVAILABILITY
+The mount.xtreemfs command is part of the XtreemFS-client package and is available from \fIhttp://www.xtreemfs.org\fP.

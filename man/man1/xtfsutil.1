@@ -1,0 +1,156 @@
+.TH xtfsutil 1 "July 2011" "The XtreemFS Distributed File System" "XtreemFS utility"
+.SH NAME
+xtfsutil \- shows and modifies XtreemFS specific file, directory and volume attributes
+.SH SYNOPSIS
+\fBxtfsutil [\fIpath\fR] \- shows the XtreemFS attributes such as URL, locations etc.
+.br
+\fBxtfsutil [OPTIONS] [\fIpath\fR] \- modifies XtreemFS attributes, adds/removes replicas
+.br
+
+.SH DESCRIPTION
+.I xtfsutil
+when no options are provided, xtfsutl shows information about a file or directory \fIpath\fP. 
+
+.SH EXAMPLE USAGE
+.B "xtfsutil xtfs-mount/somedir/myfile"
+.br
+.B "xtfsutil --add-replica auto xtfs-mount/somedir/myfile"
+.br
+.B "xtfsutil --set-drp --update-policy WqRq --replication-factor 3 xtfs-mount/"
+
+.SH OPTIONS
+
+.TP
+\fB\-\-errors
+Shows a list of recent error messages the client has reveived,
+e.g. more detailed XtreemFS error messages.
+
+.TP
+\fB\-\-set-acl [acl]
+Sets or updates a POSIX ACL entry for a file, directory or volume.
+The acl entry must have the following format: u|g|m|o:[<name>]:[<rwx>|<octal>]
+
+.TP
+\fB\-\-del-acl [acl]
+Removes a POSIX ACL entry for a file, directory or volume.
+The acl entry must have the following format: u|g|m|o:[<name>]
+
+.TP
+VOLUME OPTIONS:
+.TP
+\fB\-\-set-dsp
+Changes the default striping policy for a volume.
+This policy defines, how new files are striped but does not affect
+files that already exist on the volume.
+.br
+Requires the following options: \-\-striping-policy-width, \-\-striping-policy-stripe-size
+.br
+Additional options: \-\-striping-policy
+
+.TP
+\fB\-\-set-drp
+Changes the default replication policy for a volume.
+If a replication policy is defined, all new files will be replicated.
+.br
+Requires the following options: \-\-replication-policy, \-\-replication-factor
+.br
+Additional options: \-\-full
+
+.TP
+\fB\-\-replication-policy ronly|WqRq|WaRa|none
+Sets the replication policy. If ronly (readonly) is selected, files will be replicated on close.
+
+.br
+\fBronly  Read-only replication, files are immutable.
+.br
+\fBWqRq   Quorum-based replication, files are mutable and provide regular POSIX semantics. Up to n-1 replicas can fail.
+.br
+\fBWaRa   Write/read all, files are mutable and provide regular POSIX semantics. No fault tolerance.
+.br
+\fBnone   Disables replication.
+
+.TP
+\fB\-\-replication-factor num
+Sets the replication factor to num.
+
+.TP
+\fB\-\-full
+If replication policy is ronly (read-only replication), this flag will create full replicas.
+By default, read-only replicas are partial.
+
+.TP
+\fB\-\-set-osp [comma separated list of policy IDs] or \fIDEFAULT,FQDN,UUID,DCMAP,VIVALDI
+Changes the OSD selection policy for a volume. The OSD selection policy defines which OSDs are used
+for new files and replicas. In general, this command accepts a comma separated list of
+policy IDs without spaces. The command also accepts one of the following predefined policies:
+
+
+.br
+\fBDEFAULT  OSDs are selected randomly.
+.br
+\fBFQDN     OSDs are sorted by the number of characters matching the client's FQDN.
+.br
+\fBUUID     OSDs are selected based on their UUID.
+.br
+\fBDCMAP    OSDs are sorted by the distance to the client according to the datacenter map.
+.br
+\fBVIVALDI  OSDs are sorted by the distance to the client based on dynamic network coordinates (VIVALDI).
+
+.TP
+\fB\-\-set-rsp [comma separated list of policy IDs] or \fIDEFAULT,FQDN,DCMAP,VIVALDI
+Changes the Replica selection policy for a volume. The Replica selection policy defines how the list of
+replicas for a file is sorted for a client when it accesses a file. Clients iterate over the list of
+replicas from the first to the last. In general, this command accepts a comma separated list of
+policy IDs without spaces. The command also accepts one of the following predefined policies:
+
+.br
+\fBDEFAULT  The list of replicas is not modified.
+.br
+\fBFQDN     Replicas are sorted by the number of characters matching the client's FQDN.
+.br
+\fBDCMAP    Replicas are sorted by the distance to the client according to the datacenter map.
+.br
+\fBVIVALDI  Replicas are sorted by the distance to the client based on dynamic network coordinates (VIVALDI).
+
+.TP
+\fB\-\-set-pattr [value name] \-\-value [attribute value]
+Changes the value of a policy attribute for a volume. See the XtreemFS user guide for attribute names.
+
+.TP
+\fB\-\-list-pattrs
+Lists all policy attributes that are set on a volume.
+
+.TP
+FILE OPTIONS:
+.TP
+\fB\-a, \-\-add-replica [OSD UUID] or AUTO
+Adds a new replica on the specified OSD or on an automatically selected OSD (if AUTO is set).
+.br
+Additional options: \-\-full (creates a full read-only replica)
+
+.TP
+\fB\-d, \-\-delete-replica [OSD UUID]
+Removes the replica on the OSD with the specified UUID.
+
+.TP
+\fB\-l, \-\-list-osds
+Prints a list of up to ten OSDs that can be used for new replicas for the specified file.
+
+.TP
+\fB\-d, \-\-delete-replica [OSD UUID]
+Removes the replica on the OSD with the specified UUID.
+
+.TP
+\fB\-r, \-\-set-replication-policy ronly|WqRq|WaRa|none
+Sets the replication policy for a file. Mode cane only be changed when a file has no replicas. See --replication-policy for values.
+
+.SH "SEE ALSO"
+.BR lsfs.xtreemfs (1),
+.BR mkfs.xtreemfs (1),
+.BR mount.xtreemfs (1),
+.BR rmfs.xtreemfs (1),
+.BR umount.xtreemfs (1),
+.BR
+
+.SH AVAILABILITY
+The xtfsutil command is part of the XtreemFS-client package and is available from http://www.xtreemfs.org.

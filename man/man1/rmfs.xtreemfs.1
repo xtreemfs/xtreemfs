@@ -1,0 +1,91 @@
+.TH rmfs.xtreemfs 1 "July 2011" "The XtreemFS Distributed File System" "XtreemFS client"
+.SH NAME
+rmfs.xtreemfs \- delete a volume including all files on an XtreemFS MRC
+.SH SYNOPSIS
+\fBrmfs.xtreemfs [\fIoptions\fB] [oncrpc[s]://]\fImrchost\fR[:\fIport\fR]/\fIvolume
+.br
+
+.SH DESCRIPTION
+.I rmfs.xtreemfs
+deletes the volume named \fIvolume\fR from the XtreemFS MRC running at \fImrchost\fR:\fIport\fR. Be careful, this command will delete the volume and all files on it!
+
+.SH EXAMPLE USAGE
+.B "rmfs.xtreemfs remote.mrc.machine/myVolume"
+
+.SH OPTIONS
+
+.TP
+GENERAL OPTIONS:
+.TP
+\fB\-d/\-\-debug/\-\-log\-level \fIEMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG
+The log level of the XtreemFS client.
+.TP
+\fB\-h/\-\-help
+print help and exit.
+.TP
+\fB\-l/\-\-log\-file\-path \fIlog_file_path
+path to the client log file.
+
+
+.TP
+ACCESS OPTIONS:
+.TP
+\fB\-\-password \fIpassword
+MRC administrator password (if required).
+.TP
+\fB\-t/\-\-operation\-timeout\-s \fIseconds
+The request timeout in seconds.
+
+
+.TP
+SSL OPTIONS:
+.TP
+\fB\-\-pem\-certificate\-file\-path \fIcertfile
+PEM certificate file path (for SSL installations only)
+.TP
+\fB\-\-pem\-private\-key\-passphrase \fIpass
+PEM private key passphrase (for SSL installations only)
+.TP
+\fB\-\-pkcs12\-file\-path \fIfile
+PKCS#12 file path (for SSL installations only)
+.TP
+\fB\-\-pkcs12\-passphrase \fIpass
+PKCS#12 file passphrase (for SSL installations only)
+.TP
+\fB\-\-pem\-private\-key\-file\-path \fIfile
+PEM private key file path
+
+
+.TP
+\fB\-\-globus\-gridmap
+Enable authorization using globus gridmap file.
+.TP
+\fB\-\-unicore\-gridmap
+Enable authorization using unicore gridmap (uudb) file.
+.TP
+\fB\-\-gridmap\-location \fIfile
+The Location of the gridmap file. unicore default: /etc/grid-security/grid-mapfile  globus default: /etc/grid-security/d-grid_uudb
+
+
+.TP
+TRACING OPTIONS:
+.TP
+\fB\-\-trace\-auth
+trace authentication
+.TP
+\fB\-\-trace\-network\-io
+trace network I/O
+.TP
+\fB\-\-trace\-network\-operations
+trace network operations
+
+
+.SH "SEE ALSO"
+.BR lsfs.xtreemfs (1),
+.BR mkfs.xtreemfs (1),
+.BR mount.xtreemfs (1),
+.BR umount.xtreemfs (1)
+.BR
+
+.SH AVAILABILITY
+The rmfs.xtreemfs command is part of the XtreemFS-client package and is available from \fIhttp://www.xtreemfs.org\fP.
