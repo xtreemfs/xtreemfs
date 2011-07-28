@@ -110,7 +110,7 @@ public final class TruncateOperation extends OSDOperation {
 
             @Override
             public void redirect(String redirectTo) {
-                rq.getRPCRequest().sendRedirect(sharedSecret);
+                rq.getRPCRequest().sendRedirect(redirectTo);
             }
 
             @Override
