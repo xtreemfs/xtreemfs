@@ -56,7 +56,7 @@ Summary of important changes in release 1.3:
  \item \textbf{libxtreemfs}\\
  libxtreemfs is a convenient C++ library to use XtreemFS directly without a mounted client or the VFS layer. The new client is built on top of this library. A java version of libxtreemfs is planned.
  \item \textbf{File system snapshots}\\
- FIXME!!!
+ XtreemFS now supports snapshots. A snapshot reflects a momentary state of a volume or directory. It can be mounted and read-only accessed.
  \item \textbf{Full file replication}\\
  Starting with this release, XtreemFS supports full file replication. Read/write replicated files offer regular file system semantics and work with all applications.
  \item \textbf{DIR, MRC replication}\\
@@ -181,7 +181,7 @@ If you consider using XtreemFS, you may be a system administrator in search of a
 The core functionality of XtreemFS is characterized by a small set of features, which are explained in the following.
 
 \paragraph{Distribution.}
-An XtreemFS installation comprises multiple servers that may run on different nodes connected on a local cluster or via the Internet. Provided that the servers are reachable, a client module installed on any machine in the world can access the installation. A binary communication protocol based on Sun's ONC-RPC ensures an efficient communication with little overhead between clients and servers. XtreemFS ensures that the file system remains in a consistent state even if multiple clients access a common set of files and directories. Similar to NFS, it offers a close-to-open consistency model in the event of concurrent file accesses.
+An XtreemFS installation comprises multiple servers that may run on different nodes connected on a local cluster or via the Internet. Provided that the servers are reachable, a client module installed on any machine in the world can access the installation. A binary communication protocol based on Google's Protocol Buffers ensures an efficient communication with little overhead between clients and servers. XtreemFS ensures that the file system remains in a consistent state even if multiple clients access a common set of files and directories. Similar to NFS, it offers a close-to-open consistency model in the event of concurrent file accesses.
 
 \paragraph{Replication.}
 Starting with release 1.3, XtreemFS supports the replication of mutable files as well as a replicated Directory Service (DIR) and Metadata Catalog (MRC). All components in XtreemFS can be replicated for redundancy which results in a fully fault-tolerant file system. The replication in XtreemFS works with hot backups, which automatically take over if the primary replica fails.
@@ -205,7 +205,7 @@ XtreemFS uses unauthenticated and unencrypted TCP connections by default. To enc
 %When using XtreemFS as part of an \emph{XtreemOS} installation, users can benefit from a transparent integration with the XtreemOS \emph{Virtual Organization (VO)} infrastructure in the form of dynamic user mappings and automatic mounting of home volumes.
 
 \section{Architecture}
-XtreemFS implements an \emph{object-based file system architecture}\index{Object-based File System}\index{Architecture} (Fig. \ref{fig:architecture}): file content is split into a series of fixed-size \emph{objects}\index{Object} and stored across storage servers, while \emph{metadata}\index{Metadata} is stored on a separate metadata server. The metadata server organizes file system metadata as a set of \emph{volumes}\index{Volume}, each of which implements a separate file system namespace in form of a directory tree.
+XtreemFS implements an \emph{object-based file system architecture}\index{Object-based File System}\index{Architecture} (Fig. \ref{fig:architecture}): file content is split into a series of fixed-size \emph{objects}\index{Object} and stored across storage servers, while \emph{metadata}\index{Metadata} is stored on a separate metadata server. The metadata server organizes file system metadata as a set of \emph{volumes}\index{Volume}, each of which implements a separate file system namespace in the form of a directory tree.
 
 In contrast to block-based file systems, the management of available and used storage space is offloaded from the metadata server to the storage servers. Rather than inode lists with block addresses, file metadata contains lists of storage servers responsible for the objects, together with striping policies\index{Striping Policy}\index{Policy!Striping Policy} that define how to translate between byte offsets and object IDs. This implies that object sizes may vary from file to file.
 
@@ -367,7 +367,7 @@ uses X.509 certificates; user and group IDs are extracted from the distinguished
 
 In order to enable certificate-based authentication in an XtreemFS installation, services need to be equipped with X.509\index{X.509}\index{Certificate}\index{Credentials} certificates. Certificates are used to establish a mutual trust relationship among XtreemFS services and between the XtreemFS client and XtreemFS services.
 
-Note that it is not possible to mix SSL-enabled and non-SSL services in an XtreemFS installation! If you only need authentication based on certiciates without SSL, you can use the ``grid SSL'' mode. In this mode XtreemFS will only do an SSL handshake and fall back to plain TCP for communication. This mode is insecure (not encrypted and records are not signed) but just as fast as the non-SSL mode. If this mode is enabled, all client tools must be used with the \texttt{oncrpcg://} scheme prefix.
+Note that it is not possible to mix SSL-enabled and non-SSL services in an XtreemFS installation! If you only need authentication based on certificates without SSL, you can use the ``grid SSL'' mode. In this mode XtreemFS will only do an SSL handshake and fall back to plain TCP for communication. This mode is insecure (not encrypted and records are not signed) but just as fast as the non-SSL mode. If this mode is enabled, all client tools must be used with the \texttt{pbrpcg://} scheme prefix.
 
 Each XtreemFS service needs a certificate and a private key in order to be run. Once they have been created and signed, the credentials may need to be converted into the correct file format. XtreemFS services also need a \textit{trust store} that contains all trusted Certification Authority certificates.
 
@@ -505,12 +505,12 @@ $> cp \textit{service}.p12 /etc/xos/xtreemfs/truststore/certs
 	Use
 	\begin{verbatim}
 	$> mkfs.xtreemfs --pkcs12-file-path=\
-	   /etc/xos/xtreemfs/truststore/certs/client.p12 oncrpcs://localhost/test
+	   /etc/xos/xtreemfs/truststore/certs/client.p12 pbrpcs://localhost/test
 	\end{verbatim}
 	for SSL-enabled servers, or
 	\begin{verbatim}
 	$> mkfs.xtreemfs --pkcs12-file-path=\
-	   /etc/xos/xtreemfs/truststore/certs/client.p12 oncrpcg://localhost/test
+	   /etc/xos/xtreemfs/truststore/certs/client.p12 pbrpcg://localhost/test
 	\end{verbatim}
 	for Grid-SSL-enabled servers.
 
@@ -519,12 +519,12 @@ $> cp \textit{service}.p12 /etc/xos/xtreemfs/truststore/certs
 	Use
 	\begin{verbatim}
 	$> mount.xtreemfs --pkcs12-file-path=\
-	   /etc/xos/xtreemfs/truststore/certs/client.p12 oncrpcs://localhost/test /mnt
+	   /etc/xos/xtreemfs/truststore/certs/client.p12 pbrpcs://localhost/test /mnt
 	\end{verbatim}
 	for SSL-enabled servers, or
 	\begin{verbatim}
 	$> mount.xtreemfs --pkcs12-file-path=\
-	   /etc/xos/xtreemfs/truststore/certs/client.p12 oncrpcg://localhost/test /mnt
+	   /etc/xos/xtreemfs/truststore/certs/client.p12 pbrpcg://localhost/test /mnt
 	\end{verbatim}
 	for Grid-SSL-enabled servers.
 
@@ -592,7 +592,7 @@ All configuration parameters that may be used to define the behavior of the diff
  Values   & \texttt{true} or \texttt{false}\\
  Default  & DIR: \texttt{false}\\
           & MRC: \texttt{false}\\
- Description & Flag that determines whether the indices shall be compressed or not.
+ Description & Flag that determines whether database content shall be compressed or not.
 \end{tabular}
 
 \subsubsection{\texttt{babudb.debug.level} \textit{optional}}
@@ -612,14 +612,6 @@ All configuration parameters that may be used to define the behavior of the diff
  \item[6 -] info messages
  \item[7 -] debug messages
 \end{enumerate}
-\end{tabular}
-
-\subsubsection{\texttt{babudb.localTimeRenew} \textit{experimental, optional}}
-\begin{tabular}{lp{10cm}}
- Services & DIR, MRC\\
- Values   & a positive integer value\\
- Default  & \\
- Description & Intervall in milliseconds for synchronizing the ONCRPCServer and ONCRPCClient of the BabuDB replication with the local clock. 
 \end{tabular}
 
 \subsubsection{\texttt{babudb.logDir}}
@@ -649,112 +641,112 @@ All configuration parameters that may be used to define the behavior of the diff
  Description & The BabuDB disk logger can batch multiple operations into a single write+fsync to increase the throughput. This does only work if there are operations executed in parallel by the worker threads. In turn, if you work on a single database it becomes less efficient. To circumvent this problem, BabuDB offers a pseudo-sync mode which is similar to the PostgreSQL write-ahead log (WAL). If pseduoSyncWait is set to a value larger then 0, this pseudo-sync mode is enabled. In this mode, insert operations are acknowledged as soon as they have been executed on the in-memory database index. The disk logger will execute a batch write of up to 500 operations followed by a single sync (see syncMode) every pseudoSyncWait ms. This mode is considerably faster than synchronous writes but you can lose data in case of a crash. In contrast to ASYNC mode the data loss is limited to the operations executed in the last pseudoSyncWait ms.
 \end{tabular}
 
-\subsubsection{\texttt{babudb.repl.backupDir} \textit{experimental, optional}}
-\begin{tabular}{lp{10cm}}
- Services & DIR, MRC\\
- Values   & a absolute file system path\\
- Default  & \\
- Description & DB backup directory needed for the initial loading of a slave BabuDB from the master BabuDB.
-\end{tabular}
-
-\subsubsection{\texttt{babudb.repl.chunkSize} \textit{experimental, optional}}
-\begin{tabular}{lp{10cm}}
- Services & DIR, MRC\\
- Values   & a positive integer greater 0\\
- Default  & \\
- Description & At the initial load mechanism the database files will be split into chunks. The size of this chunks in bytes can be defined here.
-\end{tabular}
-
-\subsubsection{\texttt{babudb.repl.participant} \textit{experimental, optional}}
-\begin{tabular}{lp{10cm}}
- Services & DIR, MRC\\
- Values   & see description\\
- Default  & \\
- Description & The addresses of the hosts running an instance of BabuDB and participating at the replication. The local address is also required in this list. BabuDB will find out on its own, which of the given addresses is the local one.\\
-& Field babudb.repl.participant.i defines the domain name or IP address.\\
-& Field babudb.repl.participant.i.port defines the port.\\
-& \\
-& babudb.repl.participant.0 \\
-& babudb.repl.participant.0.port \\
-& babudb.repl.participant.1 \\
-& babudb.repl.participant.1.port \\
-& ... \\
-& babudb.repl.participant.n \\
-& babudb.repl.participant.n.port \\
-& for n participants. \\
-\end{tabular} 
-
-\subsubsection{\texttt{babudb.repl.sync.n} \textit{experimental, optional}}
-\begin{tabular}{lp{10cm}}
- Services & DIR, MRC\\
- Values   & a positive integer value\\
- Default  & \\
- Description & The number of slaves that at least have to be synchronous to the master BabuDB application. To use asynchronous replication, this value has to be set to 0. Otherwise it has to be less or equal to the number of participants. 
-\end{tabular}
-
-\subsubsection{\texttt{babudb.ssl.authenticationWithoutEncryption} \textit{experimental, optional}}
-\begin{tabular}{lp{10cm}}
- Services & DIR, MRC\\
- Values   & \texttt{true} or \texttt{false}\\
- Default  & \\
- Description & Flag that determines if authentication should be used without encrypting the connection. For BabuDB replication only.
-\end{tabular}
-
-\subsubsection{\texttt{babudb.ssl.enabled} \textit{experimental, optional}}
-\begin{tabular}{lp{10cm}}
- Services & DIR, MRC\\
- Values   & \texttt{true} or \texttt{false}\\
- Default  & \\
- Description & Options to use a secure connection with SSL authenticaion and optionally encryption for the BabuDB replication. 
-\end{tabular}
-
-\subsubsection{\texttt{babudb.ssl.service\_creds} \textit{experimental, optional}}
-\begin{tabular}{lp{10cm}}
- Services & MRC, OSD\\
- Values   & path to file\\
- Default  & \\
- Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file containing the service credentials (X.509 certificate and private key). PKCS\#12 and JKS format can be used, set \texttt{babudb.ssl.service\_creds.container} accordingly. This file is used during the SSL handshake to authenticate the service.
-\end{tabular}
-
-\subsubsection{\texttt{babudb.ssl.service\_creds.container } \textit{experimental, optional}}
-\begin{tabular}{lp{10cm}}
- Services & MRC, OSD\\
- Values   & \texttt{pkcs12} or \texttt{JKS}\\
- Default  & \\
- Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file format of the \texttt{babudb.ssl.service\_creds} file.
-\end{tabular}
-
-\subsubsection{\texttt{babudb.ssl.service\_creds.pw} \textit{experimental, optional}}
-\begin{tabular}{lp{10cm}}
- Services & MRC, OSD\\
- Values   & String\\
- Default  & \\
- Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the password which protects the credentials file \texttt{babudb.ssl.service\_creds}.
-\end{tabular}
-
-\subsubsection{\texttt{babudb.ssl.trusted\_certs} \textit{experimental, optional}}
-\begin{tabular}{lp{10cm}}
- Services & MRC, OSD\\
- Values   & path to file\\
- Default  & \\
- Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file containing the trusted root certificates (e.g. CA certificates) used to authenticate clients.
-\end{tabular}
-
-\subsubsection{\texttt{babudb.ssl.trusted\_certs.container} \textit{experimental, optional}}
-\begin{tabular}{lp{10cm}}
- Services & MRC, OSD\\
- Values   & \texttt{pkcs12} or \texttt{JKS}\\
- Default  & \\
- Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file format of the \texttt{babudb.ssl.trusted\_certs} file.
-\end{tabular}
-
-\subsubsection{\texttt{babudb.ssl.trusted\_certs.pw} \textit{experimental, optional}}
-\begin{tabular}{lp{10cm}}
- Services & MRC, OSD\\
- Values   & String\\
- Default  & \\
- Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the password which protects the trusted certificates file \texttt{babudb.ssl.trusted\_certs}.
-\end{tabular}
+% \subsubsection{\texttt{babudb.repl.backupDir} \textit{experimental, optional}}
+% \begin{tabular}{lp{10cm}}
+%  Services & DIR, MRC\\
+%  Values   & a absolute file system path\\
+%  Default  & \\
+%  Description & DB backup directory needed for the initial loading of a slave BabuDB from the master BabuDB.
+% \end{tabular}
+% 
+% \subsubsection{\texttt{babudb.repl.chunkSize} \textit{experimental, optional}}
+% \begin{tabular}{lp{10cm}}
+%  Services & DIR, MRC\\
+%  Values   & a positive integer greater 0\\
+%  Default  & \\
+%  Description & At the initial load mechanism the database files will be split into chunks. The size of this chunks in bytes can be defined here.
+% \end{tabular}
+% 
+% \subsubsection{\texttt{babudb.repl.participant} \textit{experimental, optional}}
+% \begin{tabular}{lp{10cm}}
+%  Services & DIR, MRC\\
+%  Values   & see description\\
+%  Default  & \\
+%  Description & The addresses of the hosts running an instance of BabuDB and participating at the replication. The local address is also required in this list. BabuDB will find out on its own, which of the given addresses is the local one.\\
+% & Field babudb.repl.participant.i defines the domain name or IP address.\\
+% & Field babudb.repl.participant.i.port defines the port.\\
+% & \\
+% & babudb.repl.participant.0 \\
+% & babudb.repl.participant.0.port \\
+% & babudb.repl.participant.1 \\
+% & babudb.repl.participant.1.port \\
+% & ... \\
+% & babudb.repl.participant.n \\
+% & babudb.repl.participant.n.port \\
+% & for n participants. \\
+% \end{tabular} 
+% 
+% \subsubsection{\texttt{babudb.repl.sync.n} \textit{experimental, optional}}
+% \begin{tabular}{lp{10cm}}
+%  Services & DIR, MRC\\
+%  Values   & a positive integer value\\
+%  Default  & \\
+%  Description & The number of slaves that at least have to be synchronous to the master BabuDB application. To use asynchronous replication, this value has to be set to 0. Otherwise it has to be less or equal to the number of participants. 
+% \end{tabular}
+% 
+% \subsubsection{\texttt{babudb.ssl.authenticationWithoutEncryption} \textit{experimental, optional}}
+% \begin{tabular}{lp{10cm}}
+%  Services & DIR, MRC\\
+%  Values   & \texttt{true} or \texttt{false}\\
+%  Default  & \\
+%  Description & Flag that determines if authentication should be used without encrypting the connection. For BabuDB replication only.
+% \end{tabular}
+% 
+% \subsubsection{\texttt{babudb.ssl.enabled} \textit{experimental, optional}}
+% \begin{tabular}{lp{10cm}}
+%  Services & DIR, MRC\\
+%  Values   & \texttt{true} or \texttt{false}\\
+%  Default  & \\
+%  Description & Options to use a secure connection with SSL authenticaion and optionally encryption for the BabuDB replication. 
+% \end{tabular}
+% 
+% \subsubsection{\texttt{babudb.ssl.service\_creds} \textit{experimental, optional}}
+% \begin{tabular}{lp{10cm}}
+%  Services & MRC, OSD\\
+%  Values   & path to file\\
+%  Default  & \\
+%  Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file containing the service credentials (X.509 certificate and private key). PKCS\#12 and JKS format can be used, set \texttt{babudb.ssl.service\_creds.container} accordingly. This file is used during the SSL handshake to authenticate the service.
+% \end{tabular}
+% 
+% \subsubsection{\texttt{babudb.ssl.service\_creds.container } \textit{experimental, optional}}
+% \begin{tabular}{lp{10cm}}
+%  Services & MRC, OSD\\
+%  Values   & \texttt{pkcs12} or \texttt{JKS}\\
+%  Default  & \\
+%  Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file format of the \texttt{babudb.ssl.service\_creds} file.
+% \end{tabular}
+% 
+% \subsubsection{\texttt{babudb.ssl.service\_creds.pw} \textit{experimental, optional}}
+% \begin{tabular}{lp{10cm}}
+%  Services & MRC, OSD\\
+%  Values   & String\\
+%  Default  & \\
+%  Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the password which protects the credentials file \texttt{babudb.ssl.service\_creds}.
+% \end{tabular}
+% 
+% \subsubsection{\texttt{babudb.ssl.trusted\_certs} \textit{experimental, optional}}
+% \begin{tabular}{lp{10cm}}
+%  Services & MRC, OSD\\
+%  Values   & path to file\\
+%  Default  & \\
+%  Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file containing the trusted root certificates (e.g. CA certificates) used to authenticate clients.
+% \end{tabular}
+% 
+% \subsubsection{\texttt{babudb.ssl.trusted\_certs.container} \textit{experimental, optional}}
+% \begin{tabular}{lp{10cm}}
+%  Services & MRC, OSD\\
+%  Values   & \texttt{pkcs12} or \texttt{JKS}\\
+%  Default  & \\
+%  Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file format of the \texttt{babudb.ssl.trusted\_certs} file.
+% \end{tabular}
+% 
+% \subsubsection{\texttt{babudb.ssl.trusted\_certs.pw} \textit{experimental, optional}}
+% \begin{tabular}{lp{10cm}}
+%  Services & MRC, OSD\\
+%  Values   & String\\
+%  Default  & \\
+%  Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the password which protects the trusted certificates file \texttt{babudb.ssl.trusted\_certs}.
+% \end{tabular}
 
 \subsubsection{\texttt{babudb.sync}}
 \begin{tabular}{lp{10cm}}
@@ -885,12 +877,20 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & If set to true the DIR will received UDP broadcasts and advertise itself in response to XtreemFS components using the DIR automatic discovery mechanism. If set to false, the DIR will ignore all UDP traffic. For details see Sec. \ref{sec:autodiscover}.
 \end{tabular}
 
+\subsubsection{\texttt{enable\_local\_FIFOs} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC\\
+ Values   & true, false \\
+ Default  & false\\
+ Description & Enables support for FIFOs (names pipes) on the local machine for compatibility reasons. If set to \texttt{false}, any attempt to open a FIFO will be rejected with EIO. Even if set to \texttt{true}, FIFOs will not work across multiple mounts.
+\end{tabular}
+
 \subsubsection{\texttt{flease.dmax\_ms} \textit{optional}}
 \begin{tabular}{lp{10cm}}
  Services & OSD\\
  Values   & millisconds \\
  Default  & 1000 \\
- Description & Maximum clock drift between any two clocks in the system.
+ Description & Maximum clock drift between any two clocks in the system. If the actual drift between two server clocks exceeds this value, read-write replication may lead to inconsistent replicas. Since servers automatically synchronize their clocks with the clock on the DIR, however, the default 1000ms should be enough in most cases.
 \end{tabular}
 
 \subsubsection{\texttt{flease.lease\_timeout\_ms} \textit{optional}}
@@ -898,7 +898,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & OSD\\
  Values   & millisconds \\
  Default  & 15000 \\
- Description & Duration of a lease in milliseconds. Should be set to a value at least three times \texttt{flease.message\_to\_ms}.
+ Description & Duration of a lease in milliseconds. For read-write-replicated files, the lease timeout specifies the validity time span of a master lease. Shorter lease timeouts guarantee a shorter failover period in the event of a server crash, which however comes at the cost of an increased rate of lease negotiations for each open file. The leaes timeout should be set to a value at least three times \texttt{flease.message\_to\_ms}.
 \end{tabular}
 
 \subsubsection{\texttt{flease.message\_to\_ms} \textit{optional}}
@@ -906,7 +906,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & OSD\\
  Values   & millisconds \\
  Default  & 500 \\
- Description & Time to wait for responses from other OSDs. This value should be larger than the maximum message round-trip time via TCP between any pair of OSDs.
+ Description & Time to wait for responses from other OSDs when negotiating leases for replicated files. This value should be larger than the maximum message round-trip time via TCP between any pair of OSDs.
 \end{tabular}
 
 \subsubsection{\texttt{flease.retries} \textit{optional}}
@@ -914,7 +914,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & OSD\\
  Values   & 1..1000 \\
  Default  & 3 \\
- Description & Number of times to retry acquiring a lease before an IO error is sent to the client.
+ Description & Number of times to retry acquiring a lease for a replicated file before an IO error is sent to the client.
 \end{tabular}
 
 \subsubsection{\texttt{geographic\_coordinates} \textit{optional}}
@@ -939,6 +939,14 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Values   & 1 .. 65535 \\
  Default  & 30636 (MRC), 30638 (DIR), 30640 (OSD)\\
  Description & Specifies the listen port for the HTTP service that returns the status page.
+\end{tabular}
+
+\subsubsection{\texttt{ignore\_capabilities} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD\\
+ Values   & true, false \\
+ Default  & false\\
+ Description & When set to \textit{true}, capability checks on the OSD are disabled. This property should only be set to \textit{true} for debugging purposes, as it effectively overrides any security mechanisms on the system.
 \end{tabular}
 
 \subsubsection{\texttt{listen.address} \textit{optional}}
@@ -967,12 +975,12 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & Reading the system clock is a slow operation on some systems (e.g. Linux) as it is a system call. To increase performance, XtreemFS services use a local variable which is only updated every \texttt{local\_clock\_renewal} milliseconds.
 \end{tabular}
 
-\subsubsection{\texttt{monitoring}}
+\subsubsection{\texttt{monitoring.enabled}}
 \begin{tabular}{lp{10cm}}
  Services & DIR\\
  Values   & true, false \\
  Default  & false\\
- Description & Enables the built-in monitoring tool in the directory service. If enabled, the DIR will send alerts via emails if services are crashed (i.e. do not send heartbeat messages). No alerts will be sent for services which signed-off at the DIR. To enable monitoring you also need to configure \texttt{email.receiver}, \texttt{email.program}. In addition, you may want to change the values for \texttt{email.sender}, \texttt{email.programm}, \texttt{service\_timeout\_s} and \texttt{max\_warnings}.
+ Description & Enables the built-in monitoring tool in the directory service. If enabled, the DIR will send alerts via emails if services are crashed (i.e. do not send heartbeat messages). No alerts will be sent for services which signed-off at the DIR. To enable monitoring you also need to configure \texttt{monitoring.email.receiver}, \texttt{monitoring.email.program}. In addition, you may want to change the values for \texttt{monitoring.email.sender}, \texttt{monitoring.max\_warnings}, \texttt{monitoring.service\_timeout\_s}.
 \end{tabular}
 
 \subsubsection{\texttt{monitoring.email.programm}}
@@ -980,7 +988,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & DIR\\
  Values   & path \\
  Default  & \texttt{/usr/sbin/sendmail} \\
- Description & Location of the \texttt{sendmail} binary to be used for sending alert mails. See \texttt{monitoring}.
+ Description & Location of the \texttt{sendmail} binary to be used for sending alert mails. See \texttt{monitoring} parameters.
 \end{tabular}
 
 \subsubsection{\texttt{monitoring.email.receiver}}
@@ -988,7 +996,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & DIR\\
  Values   & email address \\
  Default  & - \\
- Description & Email address of recipient of alert emails. See \texttt{monitoring}.
+ Description & Email address of recipient of alert emails. See \texttt{monitoring} parameters.
 \end{tabular}
 
 \subsubsection{\texttt{monitoring.email.sender}}
@@ -996,7 +1004,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & DIR\\
  Values   & email address \\
  Default  & ``XtreemFS DIR service <dir@localhost>''\\
- Description & Email address and sender name to use for sending alert mails. See \texttt{monitoring}.
+ Description & Email address and sender name to use for sending alert mails. See \texttt{monitoring} parameters.
 \end{tabular}
 
 \subsubsection{\texttt{monitoring.max\_warnings}}
@@ -1004,7 +1012,15 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & DIR\\
  Values   & 0..N \\
  Default  & 1\\
- Description & Number of alert mails to send for a single service which has crashed/disconnected. Each alert mail contains a summary of all crashed/disconnected services. See \texttt{monitoring}.
+ Description & Number of alert mails to send for a single service which has crashed/disconnected. Each alert mail contains a summary of all crashed/disconnected services. See \texttt{monitoring} parameters.
+\end{tabular}
+
+\subsubsection{\texttt{monitoring.service\_timeout\_s}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR\\
+ Values   & 0..N seconds \\
+ Default  & 300 \\
+ Description & Time to wait for a heartbeat message before sending an alert email. See \texttt{monitoring} parameters.
 \end{tabular}
 
 \subsubsection{\texttt{no\_atime}}
@@ -1031,12 +1047,28 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & The MRC regularly asks the directory service for suitable OSDs to store files on (see OSD Selection Policy, Sec. \ref{sec:osd_policies}). This parameter defines the interval between two updates of the list of suitable OSDs.
 \end{tabular}
 
+\subsubsection{\texttt{policy\_dir} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC, OSD, DIR\\
+ Values   & absolute file system path to a directory\\
+ Default  & \\
+ Description & Directory containing user-defined policies and modules. When starting a service, the policy directory will be searched for custom policies. For further details on pluggable policies, see chapter \ref{chap:policies}.
+\end{tabular}
+
 \subsubsection{\texttt{remote\_time\_sync}}
 \begin{tabular}{lp{10cm}}
  Services & MRC, OSD\\
  Values   & milliseconds \\
  Default  & 30,000\\
  Description & MRCs and OSDs all synchronize their clocks with the directory service to ensure a loose clock synchronization of all services. This is required for leases to work correctly. This parameter defines the interval in milliseconds between time updates from the directory service.
+\end{tabular}
+
+\subsubsection{\texttt{renew\_to\_caps} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC\\
+ Values   & true, false\\
+ Default  & false\\
+ Description & If set to true, the MRC allows capabilities to be renewed after they timed out. This parameter should only be used for debugging purposes, as it effectively overrides the revocation of access rights on a file.
 \end{tabular}
 
 \subsubsection{\texttt{report\_free\_space}}
@@ -1047,12 +1079,20 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & If set to true, the OSD will report its free space to the directory service. Otherwise, it will report zero, which will cause the OSD not to be used by the OSD Selection Policies (see Sec. \ref{sec:osd_policies}).
 \end{tabular}
 
-\subsubsection{\texttt{service\_timeout\_s}}
+\subsubsection{\texttt{socket.send\_buffer\_size} \textit{optional}}
 \begin{tabular}{lp{10cm}}
- Services & DIR\\
- Values   & 0..N seconds \\
- Default  & 300 \\
- Description & Time to wait for a heartbeat message before sending an alert email. See \texttt{monitoring}.
+ Services & OSD\\
+ Values   & size in bytes\\
+ Default  & -1 \\
+ Description & The send buffer size in bytes for sockets. -1 indicates that the default value (typically 128k) is used.
+\end{tabular}
+
+\subsubsection{\texttt{socket.recv\_buffer\_size} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD\\
+ Values   & size in bytes\\
+ Default  & -1 \\
+ Description & The receive buffer size in bytes for sockets. -1 indicates that the default value (typically 128k) is used.
 \end{tabular}
 
 \subsubsection{\texttt{ssl.enabled}}
@@ -1068,7 +1108,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & DIR, MRC, OSD\\
  Values   & true, false \\
  Default  & false \\
- Description & In this mode the services and client will only use SSL for mutual authentication with X.509 certificates (SSL handshake). After successful authentication the communication is via plain TCP. This means that there is no encryption and signing of records! This mode is comparable to HTTP connections with Digest authentication. It should be used when certificate based authentication is required but performance is more important than security, which is usually true in GRID installations. If this mode is enabled, all client tools must be used with the \texttt{oncrpcg://} scheme prefix.
+ Description & In this mode the services and client will only use SSL for mutual authentication with X.509 certificates (SSL handshake). After successful authentication the communication is via plain TCP. This means that there is no encryption and signing of records! This mode is comparable to HTTP connections with Digest authentication. It should be used when certificate based authentication is required but performance is more important than security, which is usually true in GRID installations. If this mode is enabled, all client tools must be used with the \texttt{pbrpcg://} scheme prefix.
 \end{tabular}
 
 \subsubsection{\texttt{ssl.service\_creds}}
@@ -1113,6 +1153,14 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & Must be specified if \texttt{ssl.enabled} is enabled. Specifies the file format of the \texttt{ssl.trusted\_certs} file.
 \end{tabular}
 
+\subsubsection{\texttt{ssl.trust\_manager} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC, OSD\\
+ Values   & Java class name\\
+ Default  & \\
+ Description & Sets a custom trust manager class for SSL connections. The trust manager is responsible for checking certificates when SSL connections are established.
+\end{tabular}
+
 \subsubsection{\texttt{ssl.trusted\_certs.pw}}
 \begin{tabular}{lp{10cm}}
  Services & DIR, MRC, OSD\\
@@ -1127,6 +1175,14 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Values   & 0..N seconds\\
  Default  & 30 \\
  Description & Time to wait for the DIR to become available during start up of the MRC and OSD. If the DIR does not respond within this time the MRC or OSD will abort startup.
+\end{tabular}
+
+\subsubsection{\texttt{storage\_layout} \textit{optional, experimental}}
+\begin{tabular}{lp{10cm}}
+ Services & OSD\\
+ Values   & HashStorageLayout\\
+ Default  & HashStorageLayout\\
+ Description & Adjusts the internally used storage layout on the OSD. The storage layout determines how an OSD stores its files and objects. Currently, only \texttt{HashStorageLayout} is supported.
 \end{tabular}
 
 \subsubsection{\texttt{uuid}}
@@ -1157,7 +1213,7 @@ or
 	\end{verbatim}
 
 
-To run init.d scripts, root permissions are required. \textbf{Note} that the Directory Service must be started first, since a running Directory Service is required when starting an MRC or OSD. Once a Directory Service as well as at least one OSD and MRC are running, XtreemFS is operational.
+To run init.d scripts, root permissions are required. Note that MRC and OSD will wait for the Directory Service to become available before they start up. Once a Directory Service as well as at least one OSD and MRC are running, XtreemFS is operational.
 
 % Alternatively, you can use the \texttt{xctl} tool to start and stop the services. Config files are read from \texttt{./etc/xos/xtreemfs} unless another path is specified with \texttt{-c <path>}.
 % 
@@ -1202,7 +1258,7 @@ The directory service has a built-in notification system that can send alert ema
 
 Various issues may occur when attempting to set up an XtreemFS server component. If a service fails to start, the log file often reveals useful information. Server log files are located in \texttt{/var/log/xtreemfs}. Note that you can restrict granularity and categories of log messages via the configuration properties \texttt{debug.level} and \texttt{debug.categories} (see Sec.\ \ref{sec:config}).
 
-If an error occurs, please check if one of the following requirements is not met:
+If an error occurs, please check if all of the following requirements are met:
 \begin{itemize}
  \item You have root permissions when starting the service. Running the \texttt{init.d} scripts requires root permissions. However, the services themselves are started on behalf of a user \textit{xtreemfs}.
  \item DIR has been started before MRC and OSD. Problems may occur if a script starts multiple services as background processes.
@@ -1217,6 +1273,7 @@ If an error occurs, please check if one of the following requirements is not met
 The XtreemFS client is needed to access an XtreemFS installation from a remote machine. This chapter describes how to use the XtreemFS client in order to work with XtreemFS like a local file system.
 
 \section{Installation}
+\label{sec:client_installation}
 
 There are two different installation sources for the XtreemFS Client: \emph{pre-packaged releases} and \emph{source tarballs}.
 
@@ -1225,8 +1282,6 @@ Note that the source tarball contains the complete distribution of XtreemFS, whi
 \subsection{Prerequisites}
 
 To install XtreemFS on Linux, please make sure that FUSE 2.6 or newer, boost 1.35 or newer, openSSL 0.9.8 or newer, libattr and a Linux 2.6 kernel are available on your system. For an optimal performance, we suggest to use FUSE 2.8 with a kernel version 2.6.26 or newer.
-
-To build the Linux XtreemFS Client from the source distribution, you also need the boost, libattr and openSSL headers (e.g.\ openssl-devel package) as well as cmake and gcc-c++ $\geq$ 4.2.
 
 \subsection{Installing from Pre-Packaged Releases}
 
@@ -1256,18 +1311,29 @@ $> make client
 
 This will build the XtreemFS client and non-Java-based tools. Note that the following third-party packages are required on Linux:
 
-\begin{verbatim}
-
-FIXME!!!
-
-
-gcc-c++ >= 4
+\begin{itemize}
+ \item RPM-based distros: \begin{verbatim}
+cmake >= 2.6
+gcc-c++ >= 4.1
 fuse >= 2.6
-fuse-devel >= 2.6 (RPM-based distros)
-libfuse-dev >= 2.6 (DEB-based distros)
-libopenssl-devel >= 0.8 (RPM-based distros)
-libssl-dev >= 0.9 (DEB-based distros)
+fuse-devel >= 2.6
+boost-devel >= 1.35
+openssl-devel >= 0.9.8
+libattr-devel >= 2
 \end{verbatim}
+
+ \item DEB-based distros: \begin{verbatim}
+cmake (>= 2.6)
+build-essential (>=11)
+libfuse-dev (>= 2.6)
+libssl-dev (>= 0.9)
+libattr-dev (>= 2)
+libboost-system1.35-dev or later
+libboost-thread1.35-dev or later
+libboost-program-options1.35-dev or later
+libboost-regex1.35-dev or later
+\end{verbatim}
+\end{itemize}
 
 When done, execute
 
@@ -1287,7 +1353,7 @@ Like many other file systems, XtreemFS supports the concept of volumes. A volume
 
 Volumes can be created with the \texttt{mkfs.xtreemfs} command line utility. Please see \texttt{man mkfs.xtreemfs} for a full list of options and usage\index{Create Volume}\index{Volume!Create}\index{xtfs\_mkvol}\index{mkfs.xtreemfs}.
 
-When creating a volume, it is recommended to specify the access control policy (see Sec. \ref{sec:access_policies}). If not specified, POSIX permissions/ACLs will be chosen by default. Unlike most other policies, access control policies cannot be changed afterwards.
+When creating a volume, it is recommended to specify the authorization policy (see Sec. \ref{sec:access_policies}). If not specified, POSIX permissions/ACLs will be chosen by default. Unlike most other policies, authorization policies cannot be changed afterwards.
 
 In addition, it is recommended to set a default striping policy (see Sec. \ref{sec:striping_policies}). If no per-file or per-directory default striping policy overrides the volume's default striping policy, the volume's policy is assigned to all newly created files. If no volume policy is explicitly defined when creating a volume, a RAID0 policy with a stripe size of 128kB and a width of 1 will be used as the default policy.
 
@@ -1299,13 +1365,13 @@ $> mkfs.xtreemfs -a POSIX -p RAID0 -s 256 -w 1 \
    my-mrc-host.com:32636/myVolume
 \end{verbatim}
 
-Creating a volume may require privileged access, which depends on whether an administrator password is required by the MRC. To pass an administrator password, add \texttt{----password <password>} to the \texttt{mkfs.xtreemfs} command.
+Creating a volume may require privileged access, which depends on whether an administrator password is required by the MRC. To pass an administrator password, add \texttt{----admin\_password <password>} to the \texttt{mkfs.xtreemfs} command.
 
 For a complete list of parameters, please refer to the \texttt{mkfs.xtreemfs} man page.
 
 \subsection{Deleting Volumes}
 
-Volumes can be deleted with the \texttt{rmfs.xtreemfs} tool. Note that deleting a volume implies that \emph{any data, i.e.\ all files and directories on the volume are deleted}! Please see \texttt{man rmfs.xtreemfs} for a full list of options and usage\index{Delete Volume}\index{Volume!Delete}\index{xtfs\_rmvol}\index{rmfs.xtreemfs}.
+Volumes can be deleted with the \texttt{rmfs.xtreemfs} tool. Deleting a volume implies that \emph{any data, i.e.\ all files and directories on the volume are irrecoverably lost}! Please see \texttt{man rmfs.xtreemfs} for a full list of options and usage\index{Delete Volume}\index{Volume!Delete}\index{xtfs\_rmvol}\index{rmfs.xtreemfs}. Please also note that \texttt{rmfs.xtreemfs} does not dispose of file contents on the OSD. To reclaim storage space occupied by the volume, it is therefore necessary to either remove all files from the volume before deleting it, or to run the cleanup tool (see Section \ref{sec:scrubber_cleanup}).
 
 The volume \texttt{myVolume} residing on the MRC \texttt{my-mrc-host.com:32636} can e.g.\ be deleted as follows:
 
@@ -1322,8 +1388,6 @@ A list of all volumes can be displayed with the \texttt{lsfs.xtreemfs} tool. All
 \begin{verbatim}
 $> lsfs.xtreemfs my-mrc-host.com:32636
 \end{verbatim}
-
-Adding the \texttt{--l} flag will result in more details being shown.
 
 
 \section{Accessing Volumes}
@@ -1361,7 +1425,7 @@ When mounting a volume, the client will immediately go into background and won't
 To check that a volume is mounted, use the \texttt{mount} command. It outputs a list of all mounts in the system. XtreemFS volumes are listed as \texttt{type fuse}:
 
 \begin{verbatim}
-xtreemfs@pbrpc://localhost:32638/xtreemfs on /xtreemfs type fuse (rw,nosuid,nodev,user=userA)
+xtreemfs@localhost:32638/xtreemfs on /xtreemfs type fuse (...)
 \end{verbatim}
 
 Volumes are unmounted with the \texttt{umount.xtreemfs} tool\index{Volume!Un-mount}\index{Unmount}\index{xtfs\_umount}\index{umount.xtreemfs}:
@@ -1392,15 +1456,6 @@ The following list contains the most common problems and their solutions.
  \textbf{Solution} & Please check your firewall settings on the server side. Are all ports accessible? The default ports are 32636 (MRC), 32638 (DIR), and 32640 (OSD).
 
  In case the XtreemFS installation has been set up behind a NAT, it is possible that services registered their NAT-internal network interfaces at the DIR. In this case, clients cannot properly resolve server addresses, even if port forwarding is enabled. Please check the \emph{Address Mappings} section on the DIR status page to ensure that externally reachable network interfaces have been registered for the your servers' UUIDs. If this is not the case, it is possible to explicitly specify the network interfaces to register via the \texttt{hostname} property (see Sec.\ \ref{sec:config}).
-\end{tabular}
-
-\begin{tabular}{lp{10cm}}
- \textbf{Problem} & \textbf{When trying to mount a volume, \texttt{ONC-RPC exception: system error} appears on the console.}\\
- \textbf{Solution} & The most common reason are incompatible protocol versions in client and server. Please make sure that client and server have the same release version numbers. They can be determined as follows:
-   \begin{itemize}
-    \item[Server:] check the status pages. Alternatively, execute \texttt{rpm -q xtreemfs-server} on RPM-based distributions, or \texttt{dpkg -l | grep xtreemfs-server} on DEB-based distributions.
-    \item[Client:] execute \texttt{rpm -q xtreemfs-client} on RPM-based distributions, or \texttt{dpkg -l | grep xtreemfs-client} on DEB-based distributions.
-   \end{itemize}
 \end{tabular}
 
 \begin{tabular}{lp{10cm}}
@@ -1435,19 +1490,19 @@ The following list contains the most common problems and their solutions.
 
 \chapter{XtreemFS Tools}
 
-To make use of most of the advanced XtreemFS features, XtreemFS offers a variety of different tools. There are tools that support administrators with the maintenance of an XtreemFS installation, as well as tools for controlling features like replication and striping. An overview of the different tools with descriptions of how to use them are provided in the following.
+To make use of most of the advanced XtreemFS features, XtreemFS offers a variety of tools. There are tools that support administrators with the maintenance of an XtreemFS installation, as well as tools for controlling features like replication and striping. An overview of the different tools with descriptions of how to use them are provided in the following.
 
 \section{Installation}
 
-User tools are packaged together with the client.
+The user tools are built, packaged and installed together with the XtreemFS client. For details on how to install the XtreemFS client, please refer to Section \ref{sec:client_installation}.
 
 To install XtreemFS admin tools, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}.
 
-Note that the source tarball contains the complete distribution of XtreemFS, which also includes client and server. Currently, binary distributions of the tools are only available for Linux.
+Note that the source tarball contains the complete distribution of XtreemFS, which also includes client and server. Currently, binary distributions of the admin tools are only available for Linux.
 
 \subsection{Prerequisites}
 
-For the pre-packaged release, you will need Sun Java JRE 1.6.0 or newer to be installed on the system.
+For the pre-packaged release, you will need Sun Java JRE 1.6.0 or newer to be installed on the system. Some tools also require the \texttt{attr}/\texttt{libattr} package to be installed.
 
 When building XtreemFS directly from the source, you need a Sun Java JDK 1.6.0 or newer, Ant 1.6.5 or newer and gmake.
 
@@ -1456,28 +1511,28 @@ When building XtreemFS directly from the source, you need a Sun Java JDK 1.6.0 o
 On RPM-based distributions (RedHat, Fedora, SuSE, Mandriva) you can install the package with
 
 \begin{verbatim}
-$> rpm -i xtreemfs-tools-1.2.x.rpm xtreemfs-backend-1.2.x.rpm
+$> rpm -i xtreemfs-tools-1.3.x.rpm xtreemfs-backend-1.3.x.rpm
 \end{verbatim}
 
 
 For Debian-based distributions, please use the \texttt{.deb} package provided and install it with
 
 \begin{verbatim}
-$> dpkg -i xtreemfs-tools-1.2.x.deb xtreemfs-backend-1.2.x.deb
+$> dpkg -i xtreemfs-tools-1.3.x.deb xtreemfs-backend-1.3.x.deb
 \end{verbatim}
 
 To install the tools, the following package is required: \texttt{jre} $\geq$ 1.6.0 for RPM-based releases, \texttt{java6-runtime} for Debian-based releases. If you already have a different distribution of \texttt{Java6} on your system, you can alternatively install the XtreemFS tools packages as follows:
 
 \begin{verbatim}
-$> rpm -i --nodeps xtreemfs-tools-1.2.x.rpm \
-   xtreemfs-backend-1.2.x.rpm
+$> rpm -i --nodeps xtreemfs-tools-1.3.x.rpm \
+   xtreemfs-backend-1.3.x.rpm
 \end{verbatim}
 
 on RPM-based distributions,
 
 \begin{verbatim}
 $> dpkg -i --ignore-depends java6-runtime \
-   xtreemfs-tools-1.2.x.deb xtreemfs-backend-1.2.x.deb
+   xtreemfs-tools-1.3.x.deb xtreemfs-backend-1.3.x.deb
 \end{verbatim}
 
 on Debian-based distributions.
@@ -1507,7 +1562,7 @@ $> sudo make install-tools
 
 to complete the installation. Note that this will also install the XtreemFS client and servers.
 
-\section{Maintenance Tools}
+\section{Admin Tools}
 
 This section describes the tools that support administrators in maintaining an XtreemFS installation.
 
@@ -1526,7 +1581,7 @@ This is done as follows:
 \texttt{xtfs\_mrcdbtool} is a tool that is capable of doing this. It can create an XML dump of an MRC database as follows:
 
 \begin{verbatim}
-$> xtfs_mrcdbtool -mrc oncrpc://my-mrc-host.com:32636 \
+$> xtfs_mrcdbtool -mrc pbrpc://my-mrc-host.com:32636 \
    dump /tmp/dump.xml
 \end{verbatim}
 
@@ -1535,22 +1590,23 @@ A file \texttt{dump.xml} containing the entire database content of the MRC runni
 A database dump can be restored from a dump file as follows:
 
 \begin{verbatim}
-$> xtfs_mrcdbtool -mrc oncrpc://my-mrc-host.com:32636 \
+$> xtfs_mrcdbtool -mrc pbrpc://my-mrc-host.com:32636 \
    restore /tmp/dump.xml
 \end{verbatim}
 
 This will restore the database stored in \texttt{/tmp/dump.xml} at \texttt{my-mrc-host.com}. Note that for safety reasons, it is only possible to restore a database from a dump if the database of the running MRC does not have any content. To restore an MRC database, it is thus necessary to delete all MRC database files before starting the MRC.
 
-Please be aware that dumping and restoring databases may both require privileged access rights if the MRC requires an administrator password. The password can be specified via \texttt{--p}; for further details, check the \texttt{xtfs\_mrcdbtool} man page.
+Please be aware that dumping and restoring databases may both require privileged access rights if the MRC requires an administrator password. The password can be specified via \texttt{----admin\_password}; for further details, check the \texttt{xtfs\_mrcdbtool} man page.
 
 \subsection{Scrubbing and Cleanup}
+\label{sec:scrubber_cleanup}
 
 In real-world environments, errors occur in the course of creating, modifying or deleting files. This can cause corruptions of file data or metadata. Such things happen e.g.\ if the client is suddenly terminated, or loses connection with a server component. There are several such scenarios: if a client writes to a file but does not report file sizes received from the OSD back to the MRC, inconsistencies between the file size stored in the MRC and the actual size of all objects in the OSD will occur. If a client deletes a file from the directory tree, but cannot reach the OSD, orphaned objects will remain on the OSD. If an OSD is terminated during an ongoing write operation, file content will become corrupted.
 
 In order to detect and, if possible, resolve such inconsistencies, tools for scrubbing and OSD cleanup exist. To check the consistency of file sizes and checksums, the following command can be executed:
 
 \begin{verbatim}
-$> xtfs_scrub -dir oncrpc://my-dir-host.com:32638 myVolume
+$> xtfs_scrub -dir pbrpc://my-dir-host.com:32638 myVolume
 \end{verbatim}
 
 This will scrub each file in the volume \texttt{myVolume}, i.e.\ check file size consistency and set the correct file size on the MRC, if necessary, and check whether an invalid checksum in the OSD indicates a corrupted file content. The \texttt{-dir} argument specifies the directory service that will be used to resolve service UUIDs. Please see \texttt{man xtfs\_scrub} for further details.
@@ -1558,7 +1614,7 @@ This will scrub each file in the volume \texttt{myVolume}, i.e.\ check file size
 A second tool scans an OSD for orphaned objects, which can be used as follows:
 
 \begin{verbatim}
-$> xtfs_cleanup -dir oncrpc://localhost:32638 \
+$> xtfs_cleanup -dir pbrpc://localhost:32638 \
    uuid:u2i3-28isu2-iwuv29-isjd83
 \end{verbatim}
 The given UUID identifies the OSD to clean and will be resolved by the
@@ -1574,30 +1630,82 @@ The service's status field is shown in the service status page as \texttt{static
 The status can be set with the \texttt{xtfs\_chstatus} tool:
 
 \begin{verbatim}
-$> xtfs_chstatus -dir oncrpc://localhost:32638 \
+$> xtfs_chstatus -dir pbrpc://localhost:32638 \
    u2i3-28isu2-iwuv29-isjd83 online
 \end{verbatim}
 
 This command sets the status of the service with the UUID \texttt{u2i3-28isu2-iwuv29-isjd83} to online.
 
-\subsection{Drain an OSD}
-To drain a running OSD from the system all object files stored on this OSD have to be moved to another one. This can be done with the \texttt{tunefs do} (\texttt{tunefs drainosd} for the long version) command. The syntax is in the following way:
+% \subsection{Drain an OSD}
+% To drain a running OSD from the system all object files stored on this OSD have to be moved to another one. This can be done with the \texttt{tunefs do} (\texttt{tunefs drainosd} for the long version) command. The syntax is in the following way:
+% 
+% \begin{verbatim}
+% $> tunefs.xtreemfs --dir pbrpc://<hostname|IP address>:<port>\
+%    do <UUID of an OSD>
+% \end{verbatim}
+% 
+% You have to consider that this command needs explicitly the address of the DIR service provided by the \texttt{---dir} option. Furthermore if you have configured an administrator password for the DIR service this has to be specified with the \texttt{---password} or \texttt{-p} option, otherwise the OSD can't be shutdown and this step has to be done manually. An example for shutting down an OSD with the UUID \linebreak \texttt{u2i3-28isu2-iwuv29-isjd83} looks like as follows:
+% 
+% \begin{verbatim}
+% $> tunefs.xtreemfs --dir pbrpc://localhost:32638  \
+%    -p mySecretPass do u2i3-28isu2-iwuv29-isjd83
+% \end{verbatim}
+% 
+% Internally the \texttt{tunefs do} command works by using the read-only replication feature. All files of which an OSD has got object files will be set to read-only. Afterwards for these files a new replica will be created and the replication triggered. When the replication is completed all the original replicas will be removed and the OSD shut down. If an error occurs while doing these steps all changes to files will be reverted.
+% 
+% Note that these steps are done mostly on client side to avoid to much load on other services. Therefore the execution time of this command can be very high, especially when dealing with a large amount of files. 
+
+\subsection{Snapshots}
+
+XtreemFS is capable of taking file system snapshots. A snapshot caputures an instantaneous image of all files and directories in a volume, which can later be accessed in a read-only manner.
+
+Snapshots can be created, listed and deleted with the \texttt{xtfs\_snap} tool. A mounted volume is necessary to run the tool; information on how to mount volumes can be found in Section \ref{sec:mount_vol}.
+
+As snapshots cause an additional storage and I/O overhead since they require copy-on-write versioning of files across the OSDs, it is first necessary to enable them on a volume. Snapshots can be enabled as follows:
 
 \begin{verbatim}
-$> tunefs.xtreemfs --dir pbrpc://<hostname|IP address>:<port>\
-   do <UUID of an OSD>
+$> xtfs_snap --enable -d /path/to/mounted/volume
 \end{verbatim}
 
-You have to consider that this command needs explicitly the address of the DIR service provided by the \texttt{---dir} option. Furthermore if you have configured an administrator password for the DIR service this has to be specified with the \texttt{---password} or \texttt{-p} option, otherwise the OSD can't be shutdown and this step has to be done manually. An example for shutting down an OSD with the UUID \linebreak \texttt{u2i3-28isu2-iwuv29-isjd83} looks like as follows:
+Once snapshots have been enabled, a snapshot named \texttt{mySnapshot} can be taken as follows:
 
 \begin{verbatim}
-$> tunefs.xtreemfs --dir pbrpc://localhost:32638  \
-   -p mySecretPass do u2i3-28isu2-iwuv29-isjd83
+$> xtfs_snap -c -r -d /path/to/mounted/volume/subdirectory \
+   mySnapshot
 \end{verbatim}
 
-Internally the \texttt{tunefs do} command works by using the read-only replication feature. All files of which an OSD has got object files will be set to read-only. Afterwards for these files a new replica will be created and the replication triggered. When the replication is completed all the original replicas will be removed and the OSD shut down. If an error occurs while doing these steps all changes to files will be reverted.
+The optional \texttt{-r} parameter enables a recursive capturing that includes all subdirectories beneath the XtreemFS directory \texttt{subdirectory}.
 
-Note that these steps are done mostly on client side to avoid to much load on other services. Therefore the execution time of this command can be very high, especially when dealing with a large amount of files. 
+A list of all snapshots that exist on the volume can be displayed as follows:
+
+\begin{verbatim}
+$> xtfs_snap -l -d /path/to/mounted/volume
+mySnapshot
+\end{verbatim}
+
+Snapshots are exposed as read-only volumes. To access a snapshot, it is necessary to mount it. The volume name is composed of the original volume name and the snapshot name, separated by an \texttt{@} character. Mounting a snapshot works as follows:
+
+\begin{verbatim}
+$> mount.xtreemfs localhost/volume@mySnapshot \
+   /path/to/mounted/volume2
+\end{verbatim}
+
+A mounted volume snapshot can be browsed normally, and all files can be read as on the original volume. However, any attempt to write data on a snapshot will result in an \texttt{EPERM} error.
+
+A snapshot \texttt{mySnapshot} that is no longer needed can be removed as follows:
+
+\begin{verbatim}
+$> xtfs_snap -x -d /path/to/mounted/volume mySnapshot
+\end{verbatim}
+
+Please be aware that removing a snapshot does not automatically reclaim storage space from all prior versions. To dispose of obsolete and redundant versions on a specific OSD, it is necessary to perform a version cleanup run with the \texttt{xtfs\_cleanup} tool:
+
+\begin{verbatim}
+$> xtfs_cleanup -dir localhost:32638 -v \
+   uuid:8bca70da-c963-43c7-b30b-d0d605d39fa7
+\end{verbatim}
+
+\textbf{Note:} A snapshot only captures a file in its current state if it is \emph{closed}. Files that are \emph{open} when taking a snapshot are captured in the last state in which they were before they were opened. Since files are implicitly closed on an OSD through a timeout rather than an explicit \texttt{close} call, it may happen that files are not included in a snapshot despite having been closed at application level before the snapshot was taken. To make sure a change to a specific file is included in a subsequent snapshot, it is necessary to wait for the close timeout on the OSD before taking the snapshot, which by default is set to 60 seconds.
 
 \section{User Tools}
 
@@ -1798,6 +1906,24 @@ A list of all policy attributes that have been set can be shown as follows:
  $> xtfsutil --list-pattrs /xtreemfs
 \end{verbatim}
 
+\subsection{Modifying Access Control Lists}
+
+In some cases, it may be necessary to enforce access control on a file or directory at a finer granularity than expressible with simple ``rwx''-like access rights. XtreemFS supports Access Control Lists (ACLs) to set individual access rights for users and groups.
+
+An ACL entry for the user \texttt{someone} with the value \texttt{rx} (``read or execute'') can be added as follows:
+
+\begin{verbatim}
+ $> xtfsutil --set-acl u:someone:rx /xtreemfs
+\end{verbatim}
+
+An existing entry can be removed as follows:
+
+\begin{verbatim}
+ $> xtfsutil --del-acl u:someone /xtreemfs
+\end{verbatim}
+
+Please be aware that when files or directories are accessed, the actual evaluation of ACL entries depends upon the effective authorization policy on the volume (see Section \ref{sec:access_policies}). With a POSIX authorization policy, ACL entries will be evaluated as described at \href{http://www.suse.de/~agruen/acl/linux-acls/online}{http://www.suse.de/\~{}agruen/acl/linux-acls/online}.
+
 \section{Vivaldi}
 \label{sec:vivaldi}
 \textbf{Attention:} Vivaldi is currently not included in Release 1.3.0 but will become available in one of the next minor releases.
@@ -1853,7 +1979,7 @@ Files that are read-only replicated can only be opened in read-only mode and can
 \section{BabuDB Database Replication (DIR/MRC)}
 FIXME!!!
 
-\chapter{Policies}
+\chapter{Policies} \label{chap:policies}
 Many facets of the behavior of XtreemFS can be configured by means of policies. A policy defines how a certain task is performed, e.g.\ how the MRC selects a set of OSDs for a new file, or how it distinguishes between an authorized and an unauthorized user when files are accessed. Policies are a means to customize an XtreemFS installation.
 
 XtreemFS supports a range of predefined policies for different tasks. Alternatively, administrators may define their own policies in order to adapt XtreemFS to customer demands. This chapter contains information about predefined policies, as well as mechanisms to implement and plug in custom policies.
@@ -2163,17 +2289,18 @@ Congratulations! You successfully finished the quick start guide of the XtreemFS
 \label{sec:cli_utils}
 
 \begin{description}
- \item[xtfs\_cleanup] Deletes orphaned objects on an OSD and restores orphaned files.
- \item[lsfs.xtreemfs (was xtfs\_lsvol)] Lists the volumes on an MRC.
- \item[mkfs.xtreemfs (was xtfs\_mkvol)] Creates a new volume on an MRC.
- \item[mount.xtreemfs (was xtfs\_mount)] The XtreemFS client which mounts an XtreemFS volume locally on a machine.
- \item[xtfs\_mrcdbtool] Dumps and restores an XML representation of the MRC database.
- \item[rmfs.xtreemfs (was xtfs\_rmvol)] Deletes a volume.
+ \item[lsfs.xtreemfs (formerly xtfs\_lsvol)] Lists the volumes on an MRC.
+ \item[mkfs.xtreemfs (formerly xtfs\_mkvol)] Creates a new volume on an MRC.
+ \item[mount.xtreemfs (formerly xtfs\_mount)] The XtreemFS client which mounts an XtreemFS volume locally on a machine.
+ \item[rmfs.xtreemfs (formerly xtfs\_rmvol)] Deletes a volume.
+ \item[umount.xtreemfs (formerly xtfs\_umount)] Un-mounts a mounted XtreemFS volume.
  \item[xstartserv] Tool for manually starting/stopping XtreemFS servers, e.g. for testing and development.
- \item[xtfs\_scrub] Examines all files in a volume for wrong file sizes and checksums and corrects wrong file sizes in the MRC.
  \item[xtestenv] Tool for automatic set-up of a test environment and for executing the autotests.
  \item[xtfsutil] XtreemFS's swiss army knife.
- \item[umount.xtreemfs (was xtfs\_umount)] Un-mounts a mounted XtreemFS volume.
+ \item[xtfs\_cleanup] Deletes orphaned objects on an OSD, restores orphaned files and removes obsolete file versions.
+ \item[xtfs\_snap] Creates, lists and deletes snapshots.
+ \item[xtfs\_mrcdbtool] Dumps and restores an XML representation of the MRC database.
+ \item[xtfs\_scrub] Examines all files in a volume for wrong file sizes and checksums and corrects wrong file sizes in the MRC.
  \item[xtfs\_vivaldi] client service to calculate vivaldi coordinates.
 \end{description}
 
