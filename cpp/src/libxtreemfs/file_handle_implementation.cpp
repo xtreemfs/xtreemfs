@@ -306,7 +306,7 @@ int FileHandleImplementation::Write(
             attempts_so_far != max_total_tries));  // Delay all but last try.
       } catch(const IOException& e) {
         Logging::log->getLog(LEVEL_ERROR)
-            << "error in read (IO error) "
+            << "error in write (IO error) "
             << file_info_->path() << " " << count << " " << offset << endl;
         if (attempts_so_far < max_total_tries || max_total_tries == 0) {
           // Use the next replica.
@@ -321,7 +321,7 @@ int FileHandleImplementation::Write(
         }
       } catch(const InternalServerErrorException& e) {
         Logging::log->getLog(LEVEL_ERROR)
-            << "error in read (internal server error) "
+            << "error in write (internal server error) "
             << file_info_->path() << " " << count << " " << offset << endl;
         if (attempts_so_far < max_total_tries || max_total_tries == 0) {
           // Use the next replica.
@@ -436,25 +436,97 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
   }
   truncate_rq.set_new_file_size(new_file_size);
 
-  string osd_address;
-  uuid_resolver_->UUIDToAddress(
-      GetOSDUUIDFromXlocSet(truncate_rq.file_credentials().xlocs(),
-                            current_replica_index,
-                            0),  // Head OSD in striping pattern.
-      &osd_address);
+  // Try all available replicas and handle redirects.
+  string osd_uuid = "";
+  string osd_address = "";
+  int max_total_tries = volume_options_.max_tries;
+  int attempts_so_far = 0;
+  const XLocSet& xlocs = truncate_rq.file_credentials().xlocs();
+  boost::scoped_ptr< SyncCallback<OSDWriteResponse> > response;
+  for (int i = 0;
+       attempts_so_far < max_total_tries || max_total_tries == 0;
+       i++) {
+    attempts_so_far++;
 
-  // TODO(mberlin): Try all available replicas.
-  boost::scoped_ptr< SyncCallback<OSDWriteResponse> > response(
-    ExecuteSyncRequest< SyncCallback<OSDWriteResponse>* >(
-        boost::bind(
-            &xtreemfs::pbrpc::OSDServiceClient::truncate_sync,
-            osd_service_client_,
-            boost::cref(osd_address),
-            boost::cref(auth_bogus_),
-            boost::cref(user_credentials),
-            &truncate_rq),
-        volume_options_.max_tries,
-        volume_options_));
+    // Pick UUID from xlocset.
+    osd_uuid = GetOSDUUIDFromXlocSet(xlocs,
+                                     current_replica_index,
+                                     0);  // Head OSD of striping pattern.
+    uuid_resolver_->UUIDToAddress(osd_uuid, &osd_address);
+
+    try {
+      response.reset(ExecuteSyncRequest< SyncCallback<OSDWriteResponse>* >(
+          boost::bind(
+              &xtreemfs::pbrpc::OSDServiceClient::truncate_sync,
+              osd_service_client_,
+              boost::cref(osd_address),
+              boost::cref(auth_bogus_),
+              boost::cref(user_credentials),
+              &truncate_rq),
+          1,  // Only one attempt, we retry on our own.
+          volume_options_,
+          attempts_so_far != max_total_tries));  // Delay all but last try.
+    } catch(const IOException& e) {
+      Logging::log->getLog(LEVEL_ERROR)
+          << "error in truncate (IO error) "
+          << file_info_->path() << " new size: " << new_file_size << endl;
+      if (attempts_so_far < max_total_tries || max_total_tries == 0) {
+        // Use the next replica.
+        current_replica_index++;
+        if (current_replica_index == xlocs.replicas_size()) {
+          current_replica_index = 0;
+        }
+        file_info_->set_current_replica_index(current_replica_index);
+        continue;  // Retry.
+      } else {
+        throw;  // Last attempt failed, rethrow exception.
+      }
+    } catch(const InternalServerErrorException& e) {
+      Logging::log->getLog(LEVEL_ERROR)
+          << "error in truncate (internal server error) "
+          << file_info_->path() << " new size: " << new_file_size << endl;
+      if (attempts_so_far < max_total_tries || max_total_tries == 0) {
+        // Use the next replica.
+        current_replica_index++;
+        if (current_replica_index == xlocs.replicas_size()) {
+          current_replica_index = 0;
+        }
+        file_info_->set_current_replica_index(current_replica_index);
+        continue;  // Retry.
+      } else {
+        throw;  // Last attempt failed, rethrow exception.
+      }
+    } catch(const ReplicationRedirectionException& e) {
+      // Find the index for the redirected UUID in the xlocset and set it as
+      // the current replica.
+      int new_replica_index = current_replica_index;
+      for (int i = 0; i < xlocs.replicas_size(); i++) {
+        if (xlocs.replicas(i).osd_uuids(0) == e.redirect_to_server_uuid_) {
+          new_replica_index = i;
+          break;
+        }
+      }
+      if (new_replica_index == current_replica_index) {
+        string error = "We were redirected by the OSD "
+            "with the UUID: " + osd_uuid + " to an OSD with the UUID: "
+            + e.redirect_to_server_uuid_ + ") which was not found in the "
+            "current XlocSet: " + xlocs.DebugString();
+        Logging::log->getLog(LEVEL_ERROR) << error << endl;
+        xtreemfs::util::ErrorLog::error_log->AppendError(error);
+      }
+      current_replica_index = new_replica_index;
+      file_info_->set_current_replica_index(current_replica_index);
+
+      // Always retry after a redirect - if needed, manipulate retry counter.
+      if (max_total_tries != 0 && attempts_so_far == max_total_tries) {
+        // This was the last retry, but we give it another chance.
+        max_total_tries++;
+      }
+      continue;
+    }
+
+    break;  // Truncate was successful.
+  }  // retry loop.
 
   assert(response->response()->has_size_in_bytes());
   // Free the rest of the msg.
