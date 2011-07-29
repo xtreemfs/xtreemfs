@@ -35,6 +35,7 @@ public class ServiceConfig extends Config {
              */
             DEBUG_LEVEL("debug.level", 6, Integer.class, false),
             DEBUG_CATEGORIES("debug.categories", debugCategoryDefault, Category[].class, false),
+            DIRECTORY_SERVICE("dir_service.host", null, InetSocketAddress.class, true),
             PORT("listen.port", null, Integer.class, true),
             HTTP_PORT("http_port", null, Integer.class, true),
             LISTEN_ADDRESS("listen.address", null, InetAddress.class, false),
@@ -52,24 +53,21 @@ public class ServiceConfig extends Config {
             USE_GRID_SSL_MODE("ssl.grid_ssl", false, Boolean.class, false),
             WAIT_FOR_DIR("startup.wait_for_dir", 30, Integer.class, false),
             POLICY_DIR("policy_dir", "/etc/xos/xtreemfs/policies/", String.class, false),
-            SOCKET_SEND_BUFFER_SIZE("socket.send_buffer_size", -1, Integer.class, false),
-            SOCKET_RECEIVE_BUFFER_SIZE("socket.recv_buffer_size", -1, Integer.class, false),
             
             /*
              * DIR specific configuration parameter
              */
             AUTODISCOVER_ENABLED("discover", true, Boolean.class, false),
-            MONITORING_ENABLED("monitor", false, Boolean.class, false ),
+            MONITORING_ENABLED("monitoring.enabled", false, Boolean.class, false ),
             ADMIN_EMAIL("monitoring.email.receiver", "", String.class, false),
             SENDER_ADDRESS("monitoring.email.sender", "XtreemFS DIR monitoring <dir@localhost>", String.class, false),
             MAX_WARNINGS("monitoring.max_warnings", 1, Integer.class, false),
-            TIMEOUT_SECONDS("service_timeout_s", 5 * 60, Integer.class, false),
             SENDMAIL_BIN("monitoring.email.programm", "/usr/sbin/sendmail", String.class, false),
+            TIMEOUT_SECONDS("monitoring.service_timeout_s", 5 * 60, Integer.class, false),
             
             /*
              * MRC specific configuration parameter
              */
-            DIRECTORY_SERVICE("dir_service.host", null, InetSocketAddress.class, true),
             UUID("uuid", null, ServiceUUID.class, true),
             LOCAL_CLOCK_RENEW("local_clock_renewal", null, Integer.class, true),
             REMOTE_TIME_SYNC("remote_time_sync", null, Integer.class, true),
@@ -79,14 +77,13 @@ public class ServiceConfig extends Config {
             CAPABILITY_SECRET("capability_secret", null, String.class, true),
             CAPABILITY_TIMEOUT("capability_timeout", 600, Integer.class, false),
             RENEW_TIMED_OUT_CAPS("renew_to_caps", false, Boolean.class, false),
-            ENABLE_LOCAL_FIFOS("enablecheckConfig_local_FIFOs", false, Boolean.class, false),
+            ENABLE_LOCAL_FIFOS("enable_local_FIFOs", false, Boolean.class, false),
+            
             /*
              * OSD specific configuration parameter
              */
             OBJECT_DIR("object_dir", null, String.class, true),
             REPORT_FREE_SPACE("report_free_space", null, Boolean.class, true),
-            MEASURE_REQUESTS("measure_requests", false, Boolean.class, false),
-            BASIC_STATISTICS("basic_statistics", false, Boolean.class, false),
             CHECKSUM_ENABLED("checksums.enabled", false, Boolean.class, false),
             CHECKSUM_PROVIDER("checksums.algorithm", null, String.class, false),
             STORAGE_LAYOUT("storage_layout", "HashStorageLayout", String.class, false),
@@ -94,7 +91,9 @@ public class ServiceConfig extends Config {
             FLEASE_DMAX_MS("flease.dmax_ms", 1000, Integer.class, false),
             FLEASE_LEASE_TIMEOUT_MS("flease.lease_timeout_ms", 15000, Integer.class, false),
             FLEASE_MESSAGE_TO_MS("flease.message_to_ms", 500, Integer.class, false),
-            FLEASE_RETRIES("flease.retries", 3, Integer.class, false);
+            FLEASE_RETRIES("flease.retries", 3, Integer.class, false),
+            SOCKET_SEND_BUFFER_SIZE("socket.send_buffer_size", -1, Integer.class, false),
+            SOCKET_RECEIVE_BUFFER_SIZE("socket.recv_buffer_size", -1, Integer.class, false);
         
         Parameter(String propString, Object defaultValue, Class propClass, Boolean req) {
             propertyString = propString;

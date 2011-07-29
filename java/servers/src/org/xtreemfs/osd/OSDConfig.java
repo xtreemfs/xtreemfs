@@ -58,8 +58,6 @@ public class OSDConfig extends ServiceConfig {
             Parameter.FLEASE_LEASE_TIMEOUT_MS,
             Parameter.FLEASE_MESSAGE_TO_MS,
             Parameter.FLEASE_RETRIES,
-            Parameter.MEASURE_REQUESTS,
-            Parameter.BASIC_STATISTICS,
             Parameter.POLICY_DIR,
             Parameter.CAPABILITY_SECRET,
             Parameter.SOCKET_SEND_BUFFER_SIZE,
@@ -147,22 +145,6 @@ public class OSDConfig extends ServiceConfig {
 
     public void setReportFreeSpace(boolean reportFreeSpace) {
         parameter.put(Parameter.REPORT_FREE_SPACE, reportFreeSpace);
-    }
-
-    public boolean isBasicStatsEnabled() {
-        return (Boolean) parameter.get(Parameter.BASIC_STATISTICS);
-    }
-
-    public void setBasicStatsEnabled(boolean basicStatsEnabled) {
-        parameter.put(Parameter.BASIC_STATISTICS, basicStatsEnabled);
-    }
-
-    public boolean isMeasureRqsEnabled() {
-        return (Boolean) parameter.get(Parameter.MEASURE_REQUESTS);
-    }
-
-    public void setMeasureRqsEnabled(boolean measureRqsEnabled) {
-        parameter.put(Parameter.MEASURE_REQUESTS, measureRqsEnabled);
     }
 
     public String getChecksumProvider() {
