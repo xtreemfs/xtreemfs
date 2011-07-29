@@ -25,7 +25,7 @@ int xtreemfs_fuse_getattr(const char *path, struct stat *statbuf) {
 int xtreemfs_fuse_readlink(const char *path, char *link, size_t size) {
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
      Logging::log->getLog(LEVEL_DEBUG)
-         << "xtreemfs_fuse_readlink on path " << path << " " << link << endl;
+         << "xtreemfs_fuse_readlink on path " << path << endl;
   }
   return fuse_adapter->readlink(path, link, size);
 }

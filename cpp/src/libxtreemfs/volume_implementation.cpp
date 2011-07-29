@@ -346,6 +346,10 @@ FileHandle* VolumeImplementation::OpenFile(
     file_handle = file_info->CreateFileHandle(open_response->creds().xcap());
   }
 
+  // Copy timestamp and free response memory.
+  boost::uint64_t timestamp_s = open_response->timestamp_s();
+  response->DeleteBuffers();
+
   // If O_CREAT is set and the file did not previously exist, upon successful
   // completion, open() shall mark for update the st_atime, st_ctime, and
   // st_mtime fields of the file and the st_ctime and st_mtime fields of
@@ -354,7 +358,7 @@ FileHandle* VolumeImplementation::OpenFile(
     const string parent_dir = ResolveParentDirectory(path);
     metadata_cache_.UpdateStatTime(
         parent_dir,
-        open_response->timestamp_s(),
+        timestamp_s,
         static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
     // TODO(mberlin): Retrieve stat as optional member of openResponse instead
     //                and update cached DirectoryEntries accordingly.
@@ -366,7 +370,7 @@ FileHandle* VolumeImplementation::OpenFile(
     // Update mtime and ctime of the file if O_TRUNC was set.
     metadata_cache_.UpdateStatTime(
         path,
-        open_response->timestamp_s(),
+        timestamp_s,
         static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
 
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -383,8 +387,6 @@ FileHandle* VolumeImplementation::OpenFile(
       throw;  // Rethrow error.
     }
   }
-
-  response->DeleteBuffers();
 
   return file_handle;
 }
