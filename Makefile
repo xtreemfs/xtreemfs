@@ -54,9 +54,7 @@ install-client:
 	@cp LICENSE $(DOC_DIR_CLIENT)
 
 	@mkdir -p $(BIN_DIR)
-	@cp   -at $(BIN_DIR) \
-	          bin/*.xtreemfs \
-	          bin/xtfsutil
+	@cp   -a  bin/*.xtreemfs bin/xtfsutil $(BIN_DIR)
 	          #bin/xtfs_vivaldi
 
 	@mkdir -p $(XTREEMFS_CONFIG_DIR)
@@ -109,8 +107,7 @@ install-tools:
 	@cp java/lib/*.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(BIN_DIR)
-	@cp   -at $(BIN_DIR) \
-	          `ls bin/xtfs_* | grep -v xtfs_.*mount`
+	@cp   -a  `ls bin/xtfs_* | grep -v xtfs_.*mount` $(BIN_DIR)
 
 	@mkdir -p $(MAN_DIR)
 	@cp -R man/man1/xtfs_* $(MAN_DIR)
@@ -162,9 +159,8 @@ check_test:
 client: check_client
 	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)	
-	@cp   -at $(XTFS_BINDIR) \
-	          $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs
-	@cp   -at $(XTFS_BINDIR) $(XTREEMFS_CLIENT_BUILD_DIR)/xtfsutil	
+	@cp   -a $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTFS_BINDIR)
+	@cp   -a $(XTREEMFS_CLIENT_BUILD_DIR)/xtfsutil $(XTFS_BINDIR)
 client_clean: check_client
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
 	@if [ -f $(shell pwd)/cpp/thirdparty/protobuf-2.3.0/Makefile ]; then $(MAKE) -C $(shell pwd)/cpp/thirdparty/protobuf-2.3.0/ clean; fi
