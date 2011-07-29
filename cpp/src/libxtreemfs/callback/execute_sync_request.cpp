@@ -6,8 +6,6 @@
  */
 
 #include "libxtreemfs/callback/execute_sync_request.h"
-#include "rpc/client_request.h"
-#include "rpc/client_request_callback_interface.h"
 
 using namespace xtreemfs::rpc;
 using namespace xtreemfs::util;

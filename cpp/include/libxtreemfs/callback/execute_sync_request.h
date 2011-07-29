@@ -86,7 +86,7 @@ template<class ReturnMessageType, class F>
         // Log only the first retry.
         if (attempt == 1 && max_tries != 1) {
           std::string retries_left = max_tries == 0 ? "infinite"
-              : boost::lexical_cast<std::string>(max_tries-attempt);
+              : boost::lexical_cast<std::string>(max_tries - attempt);
           xtreemfs::util::Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
               << "got no response from server, retrying ("
               << retries_left << " attempts left, waiting at least "
