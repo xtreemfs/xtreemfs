@@ -1256,7 +1256,8 @@ public class MRCTest extends TestCase {
         // check whether there are three replicas now, and replica 0 has the
         // correct replication flags
         assertEquals(3, xLoc.getReplicasCount());
-        assertEquals(ReplicationFlags.setReplicaIsComplete(0), xLoc.getReplicas(0).getReplicationFlags());
+        assertTrue((ReplicationFlags.setReplicaIsComplete(0)
+                    & xLoc.getReplicas(0).getReplicationFlags()) != 0);
         
         // check if the file is read-only
         try {
