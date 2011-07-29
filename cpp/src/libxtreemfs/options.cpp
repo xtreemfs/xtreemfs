@@ -74,6 +74,8 @@ Options::Options()
   grid_auth_mode_globus = false;
   grid_auth_mode_unicore = false;
   grid_gridmap_location = "";
+  grid_gridmap_location_default_globus = "/etc/grid-security/grid-mapfile";
+  grid_gridmap_location_default_unicore = "/etc/grid-security/d-grid_uudb";
   grid_gridmap_reload_interval_m = 60;  // 60 Minutes = 1 Hour.
 
   // Advanced XtreemFS options.
@@ -180,9 +182,9 @@ void Options::GenerateProgramOptionsDescriptions() {
         "authorize using unicore gridmap file.")
     ("gridmap-location",
         po::value(&grid_gridmap_location)->default_value(grid_gridmap_location),
-        "location of the gridmap file.\n"
-        "unicore default: /etc/grid-security/grid-mapfile\n"
-        "globus default: /etc/grid-security/d-grid_uudb")
+        string("location of the gridmap file.\n"
+        "unicore default: " + grid_gridmap_location_default_unicore + "\n"
+        "globus default: " + grid_gridmap_location_default_globus).c_str())
     ("gridmap-reload-interval-m",
         po::value(&grid_gridmap_reload_interval_m)
             ->default_value(grid_gridmap_reload_interval_m),
@@ -246,9 +248,15 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
   }
   if (grid_auth_mode_globus) {
     user_mapping_type = UserMapping::kGlobus;
+    if (grid_gridmap_location.empty()) {
+      grid_gridmap_location = grid_gridmap_location_default_globus;
+    }
   }
   if (grid_auth_mode_unicore) {
     user_mapping_type = UserMapping::kUnicore;
+    if (grid_gridmap_location.empty()) {
+      grid_gridmap_location = grid_gridmap_location_default_unicore;
+    }
   }
 
   // Return unparsed options.

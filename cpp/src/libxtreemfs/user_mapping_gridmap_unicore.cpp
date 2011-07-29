@@ -44,8 +44,8 @@ void UserMappingGridmapUnicore::ReadGridmapFile() {
 
   ifstream in(gridmap_file().c_str());
   if (!in.is_open()) {
-    throw XtreemFSException("gridmap: could not open gridmap-file: "
-        + gridmap_file());
+    Logging::log->getLog(LEVEL_ERROR)
+        << "gridmap: could not open gridmap-file: " << gridmap_file() << endl;
   }
 
   if (Logging::log->loggingActive(LEVEL_INFO)) {

@@ -45,15 +45,20 @@ FuseAdapter::FuseAdapter(FuseOptions* options) :
 FuseAdapter::~FuseAdapter() {}
 
 void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
-  // Setup Usermapping.
-  // TODO(mberlin): add cases for Globus and Unicore mappings.
-  user_mapping_.reset(UserMapping::CreateUserMapping(
-      options_->user_mapping_type, UserMapping::kUnix, *options_));
-  user_mapping_->Start();
-
   // Set interrupt signal to SIGINT to allow the interruption of mount.xtreemfs.
   int preserved_interrupt_signal = options_->interrupt_signal;
   options_->interrupt_signal = SIGINT;
+
+  // Start logging manually (altough it would be automatically started by
+  // ClientImplementation()) as its required by UserMapping.
+  initialize_logger(options_->log_level_string,
+                    options_->log_file_path,
+                    LEVEL_WARN);
+
+  // Setup Usermapping.
+  user_mapping_.reset(UserMapping::CreateUserMapping(
+      options_->user_mapping_type, UserMapping::kUnix, *options_));
+  user_mapping_->Start();
 
   // Create new Client.
   UserCredentials client_user_credentials;
@@ -74,7 +79,6 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   // Try to access Volume. If it fails, an error will be thrown.
   Stat stat;
   volume_->GetAttr(client_user_credentials, "/", &stat);
-
 
   // Check the attributes of the Volume.
   string mrc_uuid;
@@ -100,32 +104,33 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
       UserMapping::UserMappingType current_user_mapping_type =
           options_->user_mapping_type;
       for (int j = 0; j < volumes->volumes(i).attrs_size(); j++) {
-        // Enforce usage of globus gridmap file.
-        if (volumes->volumes(i).attrs(j).key() == "globus_gridmap") {
-          // Override previous parameters.
-          options_->grid_auth_mode_globus = true;
-          options_->grid_auth_mode_unicore = false;
-          options_->user_mapping_type = UserMapping::kGlobus;
-          if (options_->grid_gridmap_location.empty()) {
-            options_->grid_gridmap_location = "/etc/grid-security/grid-mapfile";
+        // If type of gridmap file not explicitly specified, use information
+        // from volume attributes.
+        if (!options_->grid_auth_mode_globus &&
+            !options_->grid_auth_mode_unicore) {
+          if (volumes->volumes(i).attrs(j).key() == "globus_gridmap") {
+            options_->grid_auth_mode_globus = true;
+            options_->user_mapping_type = UserMapping::kGlobus;
+            if (options_->grid_gridmap_location.empty()) {
+              options_->grid_gridmap_location =
+                  options_->grid_gridmap_location_default_globus;
+            }
+            Logging::log->getLog(LEVEL_INFO) << "Using Globus gridmap file "
+                << options_->grid_gridmap_location << endl;
+            break;
           }
-          Logging::log->getLog(LEVEL_INFO) << "Using Globus gridmap file "
-              << options_->grid_gridmap_location << endl;
-          break;
-        }
 
-        // Enforce usage of unicore gridmap file.
-        if (volumes->volumes(i).attrs(j).key() == "unicore_uudb") {
-          // Override previous parameters.
-          options_->grid_auth_mode_globus = false;
-          options_->grid_auth_mode_unicore = true;
-          options_->user_mapping_type = UserMapping::kUnicore;
-          if (options_->grid_gridmap_location.empty()) {
-            options_->grid_gridmap_location = "/etc/grid-security/d-grid_uudb";
+          if (volumes->volumes(i).attrs(j).key() == "unicore_uudb") {
+            options_->grid_auth_mode_unicore = true;
+            options_->user_mapping_type = UserMapping::kUnicore;
+            if (options_->grid_gridmap_location.empty()) {
+              options_->grid_gridmap_location =
+                  options_->grid_gridmap_location_default_unicore;
+            }
+            Logging::log->getLog(LEVEL_INFO) << "Using Unicore uudb file "
+                << options_->grid_gridmap_location << endl;
+            break;
           }
-          Logging::log->getLog(LEVEL_INFO) << "Using Unicore uudb file "
-              << options_->grid_gridmap_location << endl;
-          break;
         }
       }
       // Reset user mapping if it has to be changed.
@@ -137,6 +142,9 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
             *options_));
         user_mapping_->Start();
       }
+
+      // Skip remaining volumes.
+      break;
     }
   }
 

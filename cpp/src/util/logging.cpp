@@ -87,6 +87,11 @@ void initialize_logger(std::string stringLevel,
  * stdout is used.
  */
 void initialize_logger(LogLevel level, std::string logfilePath) {
+  // Do not initialize the logging multiple times.
+  if (Logging::log) {
+    return;
+  }
+
   if (!logfilePath.empty()) {
     std::ofstream* logfile = new std::ofstream(logfilePath.c_str());
     if (logfile != NULL && logfile->is_open()) {
@@ -106,6 +111,10 @@ void initialize_logger(LogLevel level, std::string logfilePath) {
  * Log to stdout
  */
 void initialize_logger(LogLevel level) {
+  // Do not initialize the logging multiple times.
+  if (Logging::log) {
+    return;
+  }
   Logging::log = new Logging(level);
 }
 

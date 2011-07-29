@@ -140,6 +140,10 @@ class Options {
   bool grid_auth_mode_unicore;
   /** Location of the gridmap file. */
   std::string grid_gridmap_location;
+  /** Default Location of the Globus gridmap file. */
+  std::string grid_gridmap_location_default_globus;
+  /** Default Location of the Unicore gridmap file. */
+  std::string grid_gridmap_location_default_unicore;
   /** Periodic interval after which the gridmap file will be reloaded. */
   int grid_gridmap_reload_interval_m;
 
