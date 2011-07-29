@@ -1,93 +1,55 @@
 .TH lsfs.xtreemfs 1 "July 2011" "The XtreemFS Distributed File System" "XtreemFS client"
 .SH NAME
-lsfs.xtreemfs \- list all XtreemFS volumes on an MRC
+lsfs.xtreemfs - list all XtreemFS volumes on an MRC
 .SH SYNOPSIS
-\fBlsfs.xtreemfs [\fIoptions\fB] [oncrpc[s]://]\fImrchost\fR[:\fIport\fR]
+\fBlsfs.xtreemfs [\fIoptions\fB] [pbrpc[g|s]://]\fImrc-host\fR[:\fIport\fR]
 .br
 
 .SH DESCRIPTION
 .I lsfs.xtreemfs
-lists all volumes located on the XtreemFS MRC running at \fImrchost\fR:\fIport\fR.
+lists all volumes located on the XtreemFS MRC running at \fImrc-host\fR:\fIport\fR.
 
 .SH EXAMPLE USAGE
 .B "lsfs.xtreemfs remote.mrc.machine
-.br
-.B "lsfs.xtreemfs -l oncrpc://remote.mrc.machine:11111
 
 .SH OPTIONS
 
 .TP
-GENERAL OPTIONS:
+General Options:
 .TP
-\fB\-d/\-\-debug/\-\-log\-level \fIEMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG
+.BI "-d, --log-level " EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG
 The log level of the XtreemFS client.
 .TP
-\fB\-h/\-\-help
-print help and exit.
+.B "-h, --help"
+Print help and exit.
 .TP
-\fB\-l/\-\-log\-file\-path \fIlog_file_path
-path to the client log file.
-
-
-.TP
-ACCESS OPTIONS:
-.TP
-\fB\-\-password \fIpassword
-MRC administrator password (if required).
-.TP
-\fB\-t/\-\-operation\-timeout\-s \fIseconds
-The request timeout in seconds.
-
+.BI "-l, --log-file-path " log_file_path
+Path to log file.
 
 .TP
-SSL OPTIONS:
+SSL Options:
 .TP
-\fB\-\-pem\-certificate\-file\-path \fIcertfile
-PEM certificate file path (for SSL installations only)
+.BI "--pem-certificate-file-path " certfile
+Path to PEM certificate file (for SSL installations only).
 .TP
-\fB\-\-pem\-private\-key\-passphrase \fIpass
-PEM private key passphrase (for SSL installations only)
+.BI "--pem-private-key-file-path " file
+Path to PEM private key file (for SSL installations only).
 .TP
-\fB\-\-pkcs12\-file\-path \fIfile
-PKCS#12 file path (for SSL installations only)
+.BI "--pem-private-key-passphrase " pass
+Passphrase for PEM private key file (for SSL installations only)
 .TP
-\fB\-\-pkcs12\-passphrase \fIpass
-PKCS#12 file passphrase (for SSL installations only)
+.BI "--pkcs12-file-path " file
+Path to PKCS#12 file (for SSL installations only).
 .TP
-\fB\-\-pem\-private\-key\-file\-path \fIfile
-PEM private key file path
-
-
-.TP
-\fB\-\-globus\-gridmap
-Enable authorization using globus gridmap file.
-.TP
-\fB\-\-unicore\-gridmap
-Enable authorization using unicore gridmap (uudb) file.
-.TP
-\fB\-\-gridmap\-location \fIfile
-The Location of the gridmap file. unicore default: /etc/grid-security/grid-mapfile  globus default: /etc/grid-security/d-grid_uudb
-
-
-.TP
-TRACING OPTIONS:
-.TP
-\fB\-\-trace\-auth
-trace authentication
-.TP
-\fB\-\-trace\-network\-io
-trace network I/O
-.TP
-\fB\-\-trace\-network\-operations
-trace network operations
-
-
+.BI "--pkcs12-passphrase " pass
+Passphrase for PKCS#12 file (for SSL installations only).
 
 .SH "SEE ALSO"
 .BR mkfs.xtreemfs (1),
 .BR mount.xtreemfs (1),
 .BR rmfs.xtreemfs (1),
-.BR umount.xtreemfs (1)
+.BR umount.xtreemfs (1),
+.BR xtfsutil (1)
 .BR
 
 .SH AVAILABILITY

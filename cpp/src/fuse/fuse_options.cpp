@@ -42,8 +42,9 @@ FuseOptions::FuseOptions() : Options(), fuse_descriptions_("Fuse Options") {
   po::options_description fuse_acl_information(
       "ACL and extended attributes Support:\n"
       "  -o xtreemfs_acl Enable the correct evaluation of XtreemFS ACLs.\n"
-      "                  (Note that you cannot use getfattr and setfattr; use\n"
-      "                   'xtfsutil' instead to set and retrieve ACLs.)\n"
+      "                  (Note that you cannot use the system tools getfattr\n"
+      "                   and setfattr; use 'xtfsutil' instead to set and\n"
+      "                   retrieve ACLs.)\n"
       "  -o user_xattr   Enable user defined extended attributes.");
   fuse_descriptions_.add(fuse_acl_information);
 
@@ -51,7 +52,7 @@ FuseOptions::FuseOptions() : Options(), fuse_descriptions_("Fuse Options") {
       "mount.xtreemfs: Mounts an XtreemFS Volume.\n"
       "\n"
       "Usage: \n"
-      "\tmount.xtreemfs [options] [pbrpc://]<dir host>[:port]/<volume name>"
+      "\tmount.xtreemfs [options] [pbrpc[g|s]://]<dir-host>[:port]/<volume-name>"
           " <mount point>\n"
       "\n"
       "  Example: mount.xtreemfs localhost/myVolume ~/xtreemfs\n";

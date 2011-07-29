@@ -33,7 +33,7 @@ LsfsOptions::LsfsOptions() : Options() {
       "lsfs.xtreemfs: List the volumes of a specific MRC.\n"
       "\n"
       "Usage:\n"
-      "\tlsfs.xtreemfs [options] [pbrpc://]<mrc host>[:port]\n"  // NOLINT
+      "\tlsfs.xtreemfs [options] [pbrpc[g|s]://]<mrc-host>[:port]\n"  // NOLINT
       "\n"
       "  Example: lsfs.xtreemfs localhost/myVolume\n";
 }

@@ -100,7 +100,7 @@ void Options::GenerateProgramOptionsDescriptions() {
         "EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG")
     ("log-file-path,l",
         po::value(&log_file_path)->default_value(log_file_path),
-        "Path to log-file.")
+        "Path to log file.")
     ("help,h",
         po::value(&show_help)->zero_tokens(),
         "Display this text.");
@@ -135,7 +135,7 @@ void Options::GenerateProgramOptionsDescriptions() {
         "Fuse.)")
     ("retry-delay",
         po::value(&retry_delay_s)->default_value(retry_delay_s),
-        "Wait time after a failed request until next attempt (in seconds).")
+        "Wait time after a request failed until next attempt (in seconds).")
     ("interrupt-signal",
         po::value(&interrupt_signal)->default_value(interrupt_signal),
         "Retry of a request is interrupted if this signal is sent "
@@ -173,16 +173,17 @@ void Options::GenerateProgramOptionsDescriptions() {
   grid_options_.add_options()
     ("grid-ssl",
         po::value(&grid_ssl)->zero_tokens(),
-        "connect using GRID-SSL mode.")
+        "Explicitily use the XtreemFS Grid-SSL mode. Same as specifying "
+        "pbrpcg:// in the volume URL.")
     ("globus-gridmap",
         po::value(&grid_auth_mode_globus)->zero_tokens(),
-        "authorize using globus gridmap file.")
+        "Authorize using globus gridmap file.")
     ("unicore-gridmap",
         po::value(&grid_auth_mode_unicore)->zero_tokens(),
-        "authorize using unicore gridmap file.")
+        "Authorize using unicore gridmap file.")
     ("gridmap-location",
         po::value(&grid_gridmap_location)->default_value(grid_gridmap_location),
-        string("location of the gridmap file.\n"
+        string("Location of the gridmap file.\n"
         "unicore default: " + grid_gridmap_location_default_unicore + "\n"
         "globus default: " + grid_gridmap_location_default_globus).c_str())
     ("gridmap-reload-interval-m",

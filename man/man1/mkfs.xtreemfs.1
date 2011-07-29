@@ -1,119 +1,134 @@
 .TH mkfs.xtreemfs 1 "July 2011" "The XtreemFS Distributed File System" "XtreemFS client"
 .SH NAME
-mkfs.xtreemfs \- create a new XtreemFS volume
+mkfs.xtreemfs - create a new XtreemFS volume
 .SH SYNOPSIS
-\fBmkfs.xtreemfs [\fIoptions\fB] [oncrpc[s]://]\fImrchost|dirhost\fR[:\fIport\fR]/\fIvolume
+\fBmkfs.xtreemfs [\fIoptions\fB] [pbrpc[g|s]://]\fImrc-host\fR[:\fIport\fR]/\fIvolume
 .br
 
 .SH DESCRIPTION
 .I mkfs.xtreemfs
-creates a new volume named \fIvolume\fR. Users may choose to either specify the MRC URI \fImrchost\fR:\fIport\fR at which the volume will be created, or the Directory Service URI \fIdirhost\fR:\fIport\fR at which the volume will be registered. In the latter case, the volume will be created on random MRC registered at the Directory Service.
+Creates a new volume named \fIvolume\fR at the MRC \fImrc-host\fR:\fIport\fR.
 
 .SH EXAMPLE USAGE
 .B "mkfs.xtreemfs remote.mrc.machine/myVolume"
 .br
-.B "mkfs.xtreemfs -p RAID0 -w 2 -s 256 -a POSIX oncrpc://remote.mrc.machine/myVolume"
+.B "mkfs.xtreemfs -p RAID0 -w 2 -s 256 remote.mrc.machine/myVolume"
 
 .SH OPTIONS
 
 .TP
-GENERAL OPTIONS:
+Admin Password:
 .TP
-\fB\-d/\-\-debug/\-\-log\-level \fIEMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG
+.BI "--admin_password " password
+MRC's admin_password (not required if not set at the MRC).
+
+.TP
+Volume Options:
+.TP
+.BI "-m, --mode " mode
+Mode of the volume's root directory (777 by default).
+.TP
+.BI "-u, --owner-username " username
+Owner of the new volume (by default it is the username of the effective user id).
+.TP
+.BI "-g, --owner-groupname " groupname
+Owning group of the new volume (by default its the groupname of the effective 
+group id).
+.TP
+.BI "-a, --access-control-policy " NULL|POSIX|VOLUME
+Access Control Policy of the volume. By default
+.IR POSIX .
+
+.TP
+Striping Policy Options:
+.TP
+.BI "-p, --striping-policy " RAID0
+Default striping policy for new files. Currently only the policy
+.I RAID0
+is available. Please do not get confused by the name
+.IR RAID0 .
+If the default
+.I --striping-policy-width
+of 1 is used, all objects of a file are stored on the same OSD and there is no higher failure probability compared to storing files on other file systems. 
+
+.TP
+.BI "-s, --striping-policy-stripe-size " stripe-size
+Stripe size in kB.
+.TP
+.BI "-w, --striping-policy-width " stripe-width
+Number of OSDs (stripes) per replica.
+
+.TP
+Volume Attributes:
+.TP
+.BI "--volume-attribute " name=value
+Define volume specific attributes of the form 
+.IR name=value ,
+e.g. "chown_non_root=true".
+.TP
+.B "--chown-non-root"
+Shortcut for --volume-attribute chown_non_root=true. If this attribute is not set, regular users (everybody except root) are not allowed to change the ownership of their
+.B own
+files.
+
+.TP
+General Options:
+.TP
+.BI "-d, --log-level " EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG
 The log level of the XtreemFS client.
 .TP
-\fB\-h/\-\-help
-print help and exit.
+.B "-h, --help"
+Print help and exit.
 .TP
-\fB\-l/\-\-log\-file\-path \fIlog_file_path
-path to the client log file.
-
-
-.TP 
-STRIPING OPTIONS
-.TP 
-\fB\-p/\-\-striping\-policy \fINONE|RAID0
-The default striping policy for the volume.
-.TP
-\fB\-s/\-\-striping\-policy\-stripe\-size \fIn
-The stripe size for the volume's default striping policy.
-.TP
-\fB\-w/\-\-striping\-policy\-width \fIn
-striping width (default number of OSDs) for the volume's default striping policy
-
+.BI "-l, --log-file-path " log_file_path
+Path to log file.
 
 .TP
-ACCESS OPTIONS:
+SSL Options:
 .TP
-\fB\-a/\-\-access\-control\-policy \fINULL|POSIX|VOLUME
-access control policy for the volume.
+.BI "--pem-certificate-file-path " certfile
+Path to PEM certificate file (for SSL installations only).
 .TP
-\fB\-g/\-\-owner\-group\-id \fIgroup ID
-group ID string of the volume's owning group.
+.BI "--pem-private-key-file-path " file
+Path to PEM private key file (for SSL installations only).
 .TP
-\fB\-u/\-\-owner\-user\-id \fIuser ID
-user ID string of the volume's owner.
+.BI "--pem-private-key-passphrase " pass
+Passphrase for PEM private key file (for SSL installations only)
 .TP
-\fB\-\-password \fIpassword
-MRC administrator password (if required).
+.BI "--pkcs12-file-path " file
+Path to PKCS#12 file (for SSL installations only).
 .TP
-\fB\-m/\-\-mode n
-initial POSIX access mode for the root directory
-.TP
-\fB\-t/\-\-operation\-timeout\-s \fIseconds
-The request timeout in seconds.
-
+.BI "--pkcs12-passphrase " pass
+Passphrase for PKCS#12 file (for SSL installations only).
 
 .TP
-SSL OPTIONS:
+Grid Support options:
 .TP
-\fB\-\-pem\-certificate\-file\-path \fIcertfile
-PEM certificate file path (for SSL installations only)
+.B "--grid-ssl "
+Explicitily use the XtreemFS Grid-SSL mode. Same as specifying pbrpcg:// in the volume URL.
 .TP
-\fB\-\-pem\-private\-key\-passphrase \fIpass
-PEM private key passphrase (for SSL installations only)
+.B "--globus-gridmap"
+Authorize using globus gridmap file.
 .TP
-\fB\-\-pkcs12\-file\-path \fIfile
-PKCS#12 file path (for SSL installations only)
+.B "--unicore-gridmap"
+Authorize using unicore gridmap file.
 .TP
-\fB\-\-pkcs12\-passphrase \fIpass
-PKCS#12 file passphrase (for SSL installations only)
+.BI "--gridmap-location " path
+Location of the gridmap file. If this option is not set, the default path will be used, depending on the chosen gridmap file:
+.RS
+Unicore default: /etc/grid-security/d-grid_uudb
+Globus default: /etc/grid-security/grid-mapfile
+.RE
 .TP
-\fB\-\-pem\-private\-key\-file\-path \fIfile
-PEM private key file path
-
-.TP
-\fB\-\-globus\-gridmap
-Enable authorization using globus gridmap file.
-.TP
-\fB\-\-unicore\-gridmap
-Enable authorization using unicore gridmap (uudb) file.
-.TP
-\fB\-\-gridmap\-location \fIfile
-The Location of the gridmap file. unicore default: /etc/grid-security/grid-mapfile  globus default: /etc/grid-security/d-grid_uudb
-
-.TP
-\fB\-\-no\-chown\-non\-root
-Set this flag, if a non root user is not allowed to perform chown.
-
-
-.TP
-TRACING OPTIONS:
-.TP
-\fB\-\-trace\-auth
-trace authentication
-.TP
-\fB\-\-trace\-network\-io
-trace network I/O
-.TP
-\fB\-\-trace\-network\-operations
-trace network operations
+.BI "--gridmap-reload-interval-m " interval
+Interval (in minutes) after which the gridmap file will be checked for changes and reloaded if necessary. 60 minutes by default.
 
 .SH "SEE ALSO"
 .BR lsfs.xtreemfs (1),
 .BR mount.xtreemfs (1),
 .BR rmfs.xtreemfs (1),
-.BR umount.xtreemfs (1)
+.BR umount.xtreemfs (1),
+.BR xtfsutil (1)
 .BR
 
 

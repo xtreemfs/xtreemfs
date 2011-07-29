@@ -37,7 +37,7 @@ MkfsOptions::MkfsOptions() : Options() {
       "mkfs.xtreemfs: Create an XtreemFS Volume on a specific MRC.\n"
       "\n"
       "Usage:\n"
-      "\tmkfs.xtreemfs [options] [pbrpc://]<mrc host>[:port]/<new volume name>\n"  // NOLINT
+      "\tmkfs.xtreemfs [options] [pbrpc[g|s]://]<mrc-host>[:port]/<new-volume-name>\n"  // NOLINT
       "\n"
       "  Example: mkfs.xtreemfs localhost/myVolume\n";
 
@@ -63,10 +63,10 @@ MkfsOptions::MkfsOptions() : Options() {
      "Mode of the volume's root directory.")
     ("owner-username,u",
      po::value(&owner_username), "Owner of the new volume "
-     "(by default its the username of the effective user id).")
+     "(by default it is the username of the effective user id).")
     ("owner-groupname,g",
      po::value(&owner_groupname), "Owning group of the new"
-     " volume (by default its the username of the effective user id).")
+     " volume (by default it is the groupname of the effective group id).")
     ("access-control-policy,a",
      po::value(&access_policy_type_string)
          ->default_value(access_policy_type_string),

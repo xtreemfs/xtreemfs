@@ -33,7 +33,7 @@ RmfsOptions::RmfsOptions() : Options() {
       "rmfs.xtreemfs: Delete an XtreemFS Volume on a specific MRC.\n"
       "\n"
       "Usage:\n"
-      "\trmfs.xtreemfs [options] [pbrpc://]<mrc host>[:port]/<volume name>\n"  // NOLINT
+      "\trmfs.xtreemfs [options] [pbrpc[g|s]://]<mrc-host>[:port]/<volume-name>\n"  // NOLINT
       "\n"
       "  Example: rmfs.xtreemfs localhost/myVolume\n";
 
