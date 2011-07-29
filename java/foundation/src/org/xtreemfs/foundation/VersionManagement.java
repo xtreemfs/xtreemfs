@@ -20,7 +20,7 @@ package org.xtreemfs.foundation;
  */
 public class VersionManagement {
     
-    public static final String RELEASE_VERSION   = "1.3.0 (beta1)";
+    public static final String RELEASE_VERSION   = "1.3.0 (RC1, Tasty Tartlet)";
     
     private static final long  mrcDataVersion    = 10;
     
