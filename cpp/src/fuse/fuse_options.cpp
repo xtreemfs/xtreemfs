@@ -43,7 +43,7 @@ FuseOptions::FuseOptions() : Options(), fuse_descriptions_("Fuse Options") {
       "ACL and extended attributes Support:\n"
       "  -o xtreemfs_acl Enable the correct evaluation of XtreemFS ACLs.\n"
       "                  (Note that you cannot use getfattr and setfattr; use\n"
-      "                   'xtfs_acl' instead to set and retrieve ACLs.)\n"
+      "                   'xtfsutil' instead to set and retrieve ACLs.)\n"
       "  -o user_xattr   Enable user defined extended attributes.");
   fuse_descriptions_.add(fuse_acl_information);
 

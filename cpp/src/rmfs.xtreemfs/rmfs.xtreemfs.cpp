@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
          << "\n"
          << "The disk space on the OSDs, occupied by the objects of the\n"
             "files of the deleted volume, is not freed yet.\n"
-         << "Run the tool \"xtfs_cleanup\" to free it." << endl;
+         << "Run the tool 'xtfs_cleanup' to free it." << endl;
     return 0;
   } else {
     return 1;
