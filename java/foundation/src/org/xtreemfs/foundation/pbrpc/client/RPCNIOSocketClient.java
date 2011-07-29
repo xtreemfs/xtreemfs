@@ -507,7 +507,10 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 
             RPCClientRequest rq = con.getRequest(header.getCallId());
             if (rq == null) {
-                //very bad!
+                // Might happen when a request timed out before a response was
+                // sent.
+                BufferPool.free(receiveBuffers[1]);
+                BufferPool.free(receiveBuffers[2]);
                 Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
                                     "received response for unknown request callId=%d",
                                     header.getCallId());
