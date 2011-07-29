@@ -564,18 +564,29 @@ int XtfsUtilServer::getattr(uid_t uid,
   if (!file) {
     return -1 * ENOENT;
   }
+  
+#ifdef __linux
   st_buf->st_atim.tv_sec = 0;
   st_buf->st_atim.tv_nsec = 0;
-  st_buf->st_blksize = 1024;
-  st_buf->st_blocks = 0;
   st_buf->st_ctim.tv_sec = 0;
   st_buf->st_ctim.tv_nsec = 0;
+  st_buf->st_mtim.tv_sec = 0;
+  st_buf->st_mtim.tv_nsec = 0;
+#elif __APPLE__
+  st_buf->st_atimespec.tv_sec = 0;
+  st_buf->st_atimespec.tv_nsec = 0;
+  st_buf->st_ctimespec.tv_sec = 0;
+  st_buf->st_ctimespec.tv_nsec = 0;
+  st_buf->st_mtimespec.tv_sec = 0;
+  st_buf->st_mtimespec.tv_nsec = 0;
+#endif
+
+  st_buf->st_blksize = 1024;
+  st_buf->st_blocks = 0;
   st_buf->st_dev = 0;
   st_buf->st_gid = file->get_gid();
   st_buf->st_ino = 1;
   st_buf->st_mode = S_IFREG | S_IWUSR | S_IRUSR;
-  st_buf->st_mtim.tv_sec = 0;
-  st_buf->st_mtim.tv_nsec = 0;
   st_buf->st_nlink = 1;
   st_buf->st_rdev = 0;
   st_buf->st_uid = file->get_uid();

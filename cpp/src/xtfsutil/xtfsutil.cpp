@@ -628,11 +628,20 @@ bool SetRemoveACL(const string& full_path,
   } else {
     return false;
   }
+#ifdef __linux
   int result = setxattr(full_path.c_str(),
                         "xtreemfs.acl",
                         contents.c_str(),
                         contents.size(),
                         0);
+#elif __APPLE__
+  int result = setxattr(full_path.c_str(),
+                        "xtreemfs.acl",
+                        contents.c_str(),
+                        contents.size(),
+                        0,
+                        0);
+#endif
   if (result != 0) {
     cerr << "Cannot add/modify/delete ACL entry: " << strerror(errno) << endl;
     return false;
@@ -700,7 +709,11 @@ int main(int argc, char **argv) {
   
   // get xtreemfs.url xattr.
   char xtfs_url[2048];
+#ifdef __linux
   int length = getxattr(real_path_cstr, "xtreemfs.url", xtfs_url, 2048);
+#elif __APPLE__
+  int length = getxattr(real_path_cstr, "xtreemfs.url", xtfs_url, 2048, 0, 0);
+#endif
   if (length <= 0) {
     cerr << "Path doesn't point to an entity on an XtreemFS volume!" << endl;
     cerr << "xattr xtreemfs.url is missing." << endl << endl;

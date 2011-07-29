@@ -8,7 +8,10 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_CALLBACK_EXECUTE_SYNC_REQUEST_H_
 #define CPP_INCLUDE_LIBXTREEMFS_CALLBACK_EXECUTE_SYNC_REQUEST_H_
 
+#ifdef __linux
 #include <csignal>
+#endif
+
 #include <ctime>
 
 #include <algorithm>
@@ -49,6 +52,7 @@ template<class ReturnMessageType, class F>
                                          int max_tries,
                                          const Options& options,
                                          bool delay_last_attempt) {
+#ifdef __linux
   // Ignore the signal if no previous signal was found.
   sighandler_t previous_signal_handler = SIG_IGN;
   if (options.interrupt_signal) {
@@ -58,6 +62,7 @@ template<class ReturnMessageType, class F>
     previous_signal_handler = signal(options.interrupt_signal,
                                      InterruptSyncRequest);
   }
+#endif
 
   int attempt = 0;
   bool interrupted = false;
@@ -133,10 +138,12 @@ template<class ReturnMessageType, class F>
       break;  // Do not retry if request was successful.
     }
   }
+#ifdef __linux
   // Remove signal handler.
   if (options.interrupt_signal) {
     signal(options.interrupt_signal, previous_signal_handler);
   }
+#endif
 
   // Max attempts reached or non-IO error seen. Throw an exception.
   if (response != NULL) {

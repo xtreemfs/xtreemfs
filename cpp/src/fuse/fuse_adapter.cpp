@@ -227,12 +227,21 @@ void FuseAdapter::ConvertXtreemFSStatToFuse(
   fuse_stat->st_gid = user_mapping_->GroupnameToGID(xtreemfs_stat.group_id());
 
   fuse_stat->st_size = xtreemfs_stat.size();
+#ifdef __linux
   fuse_stat->st_atim.tv_sec  = xtreemfs_stat.atime_ns() / 1000000000;
   fuse_stat->st_atim.tv_nsec = xtreemfs_stat.atime_ns() % 1000000000;
   fuse_stat->st_mtim.tv_sec  = xtreemfs_stat.mtime_ns() / 1000000000;
   fuse_stat->st_mtim.tv_nsec = xtreemfs_stat.mtime_ns() % 1000000000;
   fuse_stat->st_ctim.tv_sec  = xtreemfs_stat.ctime_ns() / 1000000000;
   fuse_stat->st_ctim.tv_nsec = xtreemfs_stat.ctime_ns() % 1000000000;
+#elif __APPLE__
+  fuse_stat->st_atimespec.tv_sec  = xtreemfs_stat.atime_ns() / 1000000000;
+  fuse_stat->st_atimespec.tv_nsec = xtreemfs_stat.atime_ns() % 1000000000;
+  fuse_stat->st_mtimespec.tv_sec  = xtreemfs_stat.mtime_ns() / 1000000000;
+  fuse_stat->st_mtimespec.tv_nsec = xtreemfs_stat.mtime_ns() % 1000000000;
+  fuse_stat->st_ctimespec.tv_sec  = xtreemfs_stat.ctime_ns() / 1000000000;
+  fuse_stat->st_ctimespec.tv_nsec = xtreemfs_stat.ctime_ns() % 1000000000;
+#endif
 
   fuse_stat->st_rdev = 0;
   fuse_stat->st_blocks = 0;
@@ -252,7 +261,9 @@ xtreemfs::pbrpc::SYSTEM_V_FCNTL FuseAdapter::ConvertFlagsUnixToXtreemFS(
   CHECK(result, flags, O_CREAT    , SYSTEM_V_FCNTL_H_O_CREAT);
   CHECK(result, flags, O_TRUNC    , SYSTEM_V_FCNTL_H_O_TRUNC);
   CHECK(result, flags, O_EXCL     , SYSTEM_V_FCNTL_H_O_EXCL);
+#ifdef __linux
   CHECK(result, flags, O_DSYNC    , SYSTEM_V_FCNTL_H_O_SYNC);
+#endif
 
   return xtreemfs::pbrpc::SYSTEM_V_FCNTL(result);
 }

@@ -25,6 +25,12 @@ IF(UNIX)
 ENDIF(UNIX)
 # TODO: add ELSEIF for WIN32/WIN64
 
+SET(LIBATTR "attr")
+IF(APPLE)
+	# No libattr on mac.
+	SET(LIABATTR "")
+ENDIF(APPLE)
+
 include_directories(${CMAKE_SOURCE_DIR}/thirdparty/protobuf-2.3.0/src)
 include_directories(${CMAKE_SOURCE_DIR}/thirdparty/protobuf-2.3.0)
 
@@ -66,7 +72,7 @@ ADD_EXECUTABLE(lsfs.xtreemfs ${SRCS_LSFS})
 TARGET_LINK_LIBRARIES(lsfs.xtreemfs xtreemfs protobuf crypto pthread ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ssl fuse)
 
 ADD_EXECUTABLE(xtfsutil src/xtfsutil/xtfsutil.cpp ${SRCS_JSONCPP})
-TARGET_LINK_LIBRARIES(xtfsutil ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_REGEX_LIBRARY} attr)
+TARGET_LINK_LIBRARIES(xtfsutil ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_REGEX_LIBRARY} ${LIABATTR})
 
 ##########################################
 
