@@ -53,14 +53,14 @@ VolumeConfigs = {
                     'stripe_width': 2,
                     'rwr_factor': 0,
                     'ronly_factor': 0,
-                    'mount_options': []
+                    'mount_options': [ '--max-read-tries=9999' ]
                 },
     'replicated' : {
                     'stripe_size': 128,
                     'stripe_width': 1,
                     'rwr_factor': 3,
                     'ronly_factor': 0,
-                    'mount_options': []
+                    'mount_options': [ '--max-read-tries=9999' ]
                 },
 }
 

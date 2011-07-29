@@ -295,3 +295,7 @@ class OSD(Server):
         self._config['checksums.enabled'] = 'false'
 
         self._config['object_dir'] = self._data_dir
+
+        # Some tests overload the test system, increase timeouts.
+        self._config['flease.lease_timeout_ms'] = 60000
+        self._config['flease.message_to_ms'] = 2000
