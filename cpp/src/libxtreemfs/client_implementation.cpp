@@ -60,6 +60,11 @@ ClientImplementation::ClientImplementation(
                     options.log_file_path,
                     LEVEL_WARN);
   initialize_error_log(20);
+
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "Created a new libxtreemfs Client "
+        "object (version " << options.version_string << ")" << endl;
+  }
 }
 
 ClientImplementation::~ClientImplementation() {

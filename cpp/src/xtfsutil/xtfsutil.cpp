@@ -24,6 +24,8 @@
 using namespace std;
 using namespace boost::program_options;
 
+std::string kVersionString = "1.3.0 (RC1, Tasty Tartlet)";
+
 // Execute an operation via xctl file.
 bool executeOperation(const string& xctl_file,
                       const Json::Value& request,
@@ -654,6 +656,7 @@ int main(int argc, char **argv) {
   options_description desc("Allowed options");
   desc.add_options()
       ("help,h", "produce help message")
+      ("version,V", "Show the version number.")
       ("path", value<string>(), "path on mounted XtreemFS volume")
       ("errors", "show client errors for a volume")
       ("set-dsp", "set (change) the default striping policy (volume)")
@@ -699,6 +702,10 @@ int main(int argc, char **argv) {
   store(command_line_parser(argc, argv).options(desc).positional(pd).run(), vm);
   notify(vm);
 
+  if (vm.count("version")) {
+    cout << "xtfsutil " << kVersionString << endl;
+    return 1;
+  }
   if (vm.count("help") || !vm.count("path")) {
     cerr << "usage: xtfsutil <path>" << endl;
     cerr << desc << endl;

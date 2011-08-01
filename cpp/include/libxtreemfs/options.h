@@ -56,6 +56,9 @@ class Options {
    *  relevant options. */
   std::string ShowCommandLineHelpVolumeDeletionAndListing();
 
+  /** Returns the version string and prepends "component". */
+  std::string ShowVersion(const std::string& component);
+
   /** Creates a new SSLOptions object based on the value of the members:
    *  - ssl_pem_path
    *  - ssl_pem_cert_path
@@ -67,6 +70,9 @@ class Options {
    * @remark Ownership is transferred to caller. May be NULL.
    */
   xtreemfs::rpc::SSLOptions* GenerateSSLOptions() const;
+
+  // Version information.
+  std::string version_string;
 
   // XtreemFS URL Options.
   /** URL to the Volume, Form: [pbrpc://]service-hostname[:port]/volume_name.  // NOLINT
@@ -94,6 +100,8 @@ class Options {
   bool show_help;
   /** True, if argc == 1 was at ParseCommandLine(). */
   bool empty_arguments_list;
+  /** True, if -V/--version was specified and the version will be shown only .*/
+  bool show_version;
 
   // Optimizations.
   /** Number of retrieved entries per readdir request. */

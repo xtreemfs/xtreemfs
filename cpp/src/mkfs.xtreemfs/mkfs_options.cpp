@@ -150,7 +150,7 @@ void MkfsOptions::ParseCommandLine(int argc, char** argv) {
   }
 
   // Do not check parameters if the help shall be shown.
-  if (show_help || empty_arguments_list) {
+  if (show_help || empty_arguments_list || show_version) {
     return;
   }
 

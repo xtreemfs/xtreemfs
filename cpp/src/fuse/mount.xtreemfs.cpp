@@ -51,6 +51,11 @@ int main(int argc, char **argv) {
     cout << options.ShowCommandLineHelp() << endl;
     return 1;
   }
+  // Show only the version.
+  if (options.show_version) {
+    cout << options.ShowVersion("mount.xtreemfs") << endl;
+    return 1;
+  }
 
   // In case of background operation: Fork before threads are created.
   int fd[2];

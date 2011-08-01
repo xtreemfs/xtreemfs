@@ -44,6 +44,11 @@ int main(int argc, char* argv[]) {
     cout << options.ShowCommandLineHelp() << endl;
     return 1;
   }
+  // Show only the version.
+  if (options.show_version) {
+    cout << options.ShowVersion("lsfs.xtreemfs") << endl;
+    return 1;
+  }
 
   // Set user_credentials.
   boost::scoped_ptr<UserMapping> user_mapping(UserMapping::CreateUserMapping(

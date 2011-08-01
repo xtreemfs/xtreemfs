@@ -34,6 +34,10 @@ Options::Options()
       ssl_options_("SSL options"),
       grid_options_("Grid Support options"),
       xtreemfs_advanced_options_("XtreemFS Advanced options") {
+  // Version information.
+  // If you change this, do not forget to change this also in xtfsutil.cpp!
+  version_string = "1.3.0 (RC1, Tasty Tartlet)";
+
   // XtreemFS URL Options.
   xtreemfs_url = "";
   service_address = "";
@@ -46,6 +50,7 @@ Options::Options()
   log_file_path = "";
   show_help = false;
   empty_arguments_list = false;
+  show_version = false;
 
   // Optimizations.
   readdir_chunk_size = 1024;
@@ -103,7 +108,10 @@ void Options::GenerateProgramOptionsDescriptions() {
         "Path to log file.")
     ("help,h",
         po::value(&show_help)->zero_tokens(),
-        "Display this text.");
+        "Display this text.")
+    ("version,V",
+        po::value(&show_version)->zero_tokens(),
+        "Shows the version number.");
 
   optimizations_.add_options()
     ("metadata-cache-size",
@@ -305,6 +313,10 @@ std::string Options::ShowCommandLineHelpVolumeDeletionAndListing() {
   stream << general_ << endl
          << ssl_options_;
   return stream.str();
+}
+
+std::string Options::ShowVersion(const std::string& component) {
+  return component + " " + version_string;
 }
 
 xtreemfs::rpc::SSLOptions* Options::GenerateSSLOptions() const {
