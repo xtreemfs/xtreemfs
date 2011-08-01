@@ -276,6 +276,43 @@ xtreemfs::pbrpc::SYSTEM_V_FCNTL FuseAdapter::ConvertFlagsUnixToXtreemFS(
   return xtreemfs::pbrpc::SYSTEM_V_FCNTL(result);
 }
 
+int FuseAdapter::ConvertXtreemFSErrnoToFuse(
+    xtreemfs::pbrpc::POSIXErrno xtreemfs_errno) {
+  switch (xtreemfs_errno) {
+    case POSIX_ERROR_EPERM:
+      return EPERM;
+    case POSIX_ERROR_ENOENT:
+      return ENOENT;
+    case POSIX_ERROR_EINTR:
+      return EINTR;
+    case POSIX_ERROR_EIO:
+      return EIO;
+    case POSIX_ERROR_EAGAIN:
+      return EAGAIN;
+    case POSIX_ERROR_EACCES:
+      return EACCES;
+    case POSIX_ERROR_EEXIST:
+      return EEXIST;
+    case POSIX_ERROR_EXDEV:
+      return EXDEV;
+    case POSIX_ERROR_ENODEV:
+      return ENODEV;
+    case POSIX_ERROR_ENOTDIR:
+      return ENOTDIR;
+    case POSIX_ERROR_EISDIR:
+      return EISDIR;
+    case POSIX_ERROR_EINVAL:
+      return EINVAL;
+    case POSIX_ERROR_ENOTEMPTY:
+      return ENOTEMPTY;
+    case POSIX_ERROR_ENODATA:
+      return ENODATA;
+
+    default:
+      return xtreemfs_errno;
+  }
+}
+
 int FuseAdapter::statfs(const char *path, struct statvfs *statv) {
   UserCredentials user_credentials;
   GenerateUserCredentials(fuse_get_context(), &user_credentials);
@@ -296,7 +333,7 @@ int FuseAdapter::statfs(const char *path, struct statvfs *statv) {
     statv->f_ffree   = 2048;  // # free inodes (we use here a bogus number)
     statv->f_namemax = stat_vfs->namemax();  // maximum filename length
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -318,7 +355,7 @@ int FuseAdapter::getattr(const char *path, struct stat *statbuf) {
     try {
       volume_->GetAttr(user_credentials, path_str, &stat);
     } catch(const PosixErrorException& e) {
-      return -1 * e.posix_errno();
+      return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
@@ -372,7 +409,7 @@ int FuseAdapter::getxattr(
       }
     }
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -400,7 +437,7 @@ int FuseAdapter::opendir(const char *path, struct fuse_file_info *fi) {
                       string(path),
                       ACCESS_FLAGS_R_OK);
     } catch(const PosixErrorException& e) {
-      return -1 * e.posix_errno();
+      return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
@@ -479,7 +516,7 @@ int FuseAdapter::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                                      false);
       dir_entries_offset = offset;
     } catch(const PosixErrorException& e) {
-      return -1 * e.posix_errno();
+      return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
@@ -578,7 +615,7 @@ int FuseAdapter::utime(const char *path, struct utimbuf *ubuf) {
     volume_->SetAttr(user_credentials, string(path), stat,
                      static_cast<Setattrs>(SETATTR_ATIME | SETATTR_MTIME));
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -611,7 +648,7 @@ int FuseAdapter::utimens(const char *path, const struct timespec tv[2]) {
     volume_->SetAttr(user_credentials, string(path), stat,
                      static_cast<Setattrs>(SETATTR_ATIME | SETATTR_MTIME));
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -633,7 +670,7 @@ int FuseAdapter::access(const char *path, int mask) {
                       string(path),
                       static_cast<ACCESS_FLAGS>(mask));
     } catch(const PosixErrorException& e) {
-      return -1 * e.posix_errno();
+      return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
@@ -675,7 +712,7 @@ int FuseAdapter::create(const char *path, mode_t mode,
       //       a void* to store a pointer.
       fi->fh = reinterpret_cast<uint64_t>(file_handle);
     } catch(const PosixErrorException& e) {
-      return -1 * e.posix_errno();
+      return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
@@ -707,7 +744,7 @@ int FuseAdapter::mknod(const char *path, mode_t mode, dev_t device) {
           mode);
       file_handle->Close();
     } catch(const PosixErrorException& e) {
-      return -1 * e.posix_errno();
+      return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
@@ -730,7 +767,7 @@ int FuseAdapter::mkdir(const char *path, mode_t mode) {
   try {
     volume_->CreateDirectory(user_credentials, string(path), mode);
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -769,7 +806,7 @@ int FuseAdapter::open(const char *path, struct fuse_file_info *fi) {
     //       a void* to store a pointer.
     fi->fh = reinterpret_cast<uint64_t>(file_handle);
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -788,7 +825,7 @@ int FuseAdapter::truncate(const char *path, off_t new_file_size) {
   try {
     volume_->Truncate(user_credentials, string(path), new_file_size);
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -812,7 +849,7 @@ int FuseAdapter::ftruncate(const char *path,
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
       file_handle->Truncate(user_credentials, new_file_size);
     } catch(const PosixErrorException& e) {
-      return -1 * e.posix_errno();
+      return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
@@ -838,7 +875,7 @@ int FuseAdapter::write(
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
       result = file_handle->Write(user_credentials, buf, size, offset);
     } catch(const PosixErrorException& e) {
-      return -1 * e.posix_errno();
+      return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
@@ -866,7 +903,7 @@ int FuseAdapter::flush(const char *path, struct fuse_file_info *fi) {
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
       file_handle->Flush();
     } catch(const PosixErrorException& e) {
-      return -1 * e.posix_errno();
+      return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
@@ -890,7 +927,7 @@ int FuseAdapter::read(const char *path, char *buf, size_t size, off_t offset,
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
       return file_handle->Read(user_credentials, buf, size, offset);
     } catch(const PosixErrorException& e) {
-      return -1 * e.posix_errno();
+      return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
@@ -915,7 +952,7 @@ int FuseAdapter::unlink(const char *path) {
     try {
       volume_->Unlink(user_credentials, path);
     } catch(const PosixErrorException& e) {
-      return -1 * e.posix_errno();
+      return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
@@ -943,7 +980,7 @@ int FuseAdapter::fgetattr(
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
       file_handle->GetAttr(user_credentials, &stat);
     } catch(const PosixErrorException& e) {
-      return -1 * e.posix_errno();
+      return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
@@ -969,7 +1006,7 @@ int FuseAdapter::release(const char *path, struct fuse_file_info *fi) {
     try {
       file_handle->Close();
     } catch(const PosixErrorException& e) {
-      return -1 * e.posix_errno();
+      return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
       return -1 * EIO;
     } catch(const exception& e) {
@@ -993,7 +1030,7 @@ int FuseAdapter::readlink(const char *path, char *buf, size_t size) {
     strncpy(buf, target_path.c_str(), max_string_length);
     buf[max_string_length] = '\0';
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -1012,7 +1049,7 @@ int FuseAdapter::rmdir(const char *path) {
   try {
     volume_->RemoveDirectory(user_credentials, string(path));
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -1031,7 +1068,7 @@ int FuseAdapter::symlink(const char *path, const char *link) {
   try {
     volume_->Symlink(user_credentials, string(path), string(link));
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -1050,7 +1087,7 @@ int FuseAdapter::rename(const char *path, const char *newpath) {
   try {
     volume_->Rename(user_credentials, string(path), string(newpath));
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -1069,7 +1106,7 @@ int FuseAdapter::link(const char *path, const char *newpath) {
   try {
     volume_->Link(user_credentials, string(path), string(newpath));
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -1093,7 +1130,7 @@ int FuseAdapter::chmod(const char *path, mode_t mode) {
     volume_->SetAttr(user_credentials, string(path), stat,
                      static_cast<Setattrs>(SETATTR_MODE));
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -1140,7 +1177,7 @@ int FuseAdapter::chown(const char *path, uid_t uid, gid_t gid) {
     volume_->SetAttr(user_credentials, string(path), stat,
                      static_cast<Setattrs>(to_set));
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -1172,7 +1209,7 @@ int FuseAdapter::setxattr(
                       string(value, size),
                       static_cast<xtreemfs::pbrpc::XATTR_FLAGS>(flags));
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -1216,7 +1253,7 @@ int FuseAdapter::listxattr(const char *path, char *list, size_t size) {
       return needed_size;
     }
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -1240,7 +1277,7 @@ int FuseAdapter::removexattr(const char *path, const char *name) {
   try {
     volume_->RemoveXAttr(user_credentials, path, string(name));
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {
@@ -1307,7 +1344,7 @@ int FuseAdapter::lock(const char* path, struct fuse_file_info *fi, int cmd,
       }
     }
   } catch(const PosixErrorException& e) {
-    return -1 * e.posix_errno();
+    return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
     return -1 * EIO;
   } catch(const exception& e) {

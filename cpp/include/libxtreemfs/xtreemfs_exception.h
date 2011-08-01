@@ -12,6 +12,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "pbrpc/RPC.pb.h"
+
 namespace xtreemfs {
 
 class XtreemFSException : public std::runtime_error {
@@ -22,12 +24,13 @@ class XtreemFSException : public std::runtime_error {
 
 class PosixErrorException : public XtreemFSException {
  public:
-  PosixErrorException(int posix_errno, const std::string& msg)
+  PosixErrorException(xtreemfs::pbrpc::POSIXErrno posix_errno,
+                      const std::string& msg)
     : XtreemFSException(msg),
-      posix_errno_(posix_errno)  {}
-  int posix_errno() const { return posix_errno_; }
+      posix_errno_(posix_errno) {}
+  xtreemfs::pbrpc::POSIXErrno posix_errno() const { return posix_errno_; }
  private:
-  int posix_errno_;
+  xtreemfs::pbrpc::POSIXErrno posix_errno_;
 };
 
 /** Will be thrown, if there was an IO_ERROR in the RPC Client on the client

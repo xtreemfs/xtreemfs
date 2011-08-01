@@ -72,6 +72,9 @@ class FuseAdapter {
   /** Converts given UNIX file handle flags into XtreemFS symbols. */
   xtreemfs::pbrpc::SYSTEM_V_FCNTL ConvertFlagsUnixToXtreemFS(int flags);
 
+  /** Converts from XtreemFS error codes to the system ones. */
+  int ConvertXtreemFSErrnoToFuse(xtreemfs::pbrpc::POSIXErrno xtreemfs_errno);
+
   // Fuse operations as called by placeholder functions in fuse_operations.h. */
   int statfs(const char *path, struct statvfs *statv);
   int getattr(const char *path, struct stat *statbuf);

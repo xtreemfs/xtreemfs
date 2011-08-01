@@ -186,7 +186,7 @@ template<class ReturnMessageType, class F>
     xtreemfs::pbrpc::RPCHeader::ErrorResponse* error_resp = response->error();
     const xtreemfs::pbrpc::ErrorType error_type = error_resp->error_type();
     const std::string error_message = error_resp->error_message();
-    const int posix_errno = error_resp->posix_errno();
+    const xtreemfs::pbrpc::POSIXErrno posix_errno = error_resp->posix_errno();
     std::string redirect_to_server_uuid = "";
     if (error_resp->has_redirect_to_server_uuid()) {
         redirect_to_server_uuid = error_resp->redirect_to_server_uuid();
@@ -278,8 +278,10 @@ template<class ReturnMessageType, class F>
     }
   } else {
     // No Response given, probably interrupted.
-    throw PosixErrorException(EINTR, "The operation was aborted by the user"
-        " at attempt: " + boost::lexical_cast<std::string>(attempt - 1) + ".");
+    throw PosixErrorException(
+        xtreemfs::pbrpc::POSIX_ERROR_EINTR,
+        "The operation was aborted by the user at attempt: "
+            + boost::lexical_cast<std::string>(attempt - 1) + ".");
   }
 }
 
@@ -416,7 +418,7 @@ template<class ReturnMessageType, class F>
     xtreemfs::pbrpc::RPCHeader::ErrorResponse* error_resp = response->error();
     const xtreemfs::pbrpc::ErrorType error_type = error_resp->error_type();
     const std::string error_message = error_resp->error_message();
-    const int posix_errno = error_resp->posix_errno();
+    const xtreemfs::pbrpc::POSIXErrno posix_errno = error_resp->posix_errno();
     std::string redirect_to_server_uuid = "";
     if (error_resp->has_redirect_to_server_uuid()) {
         redirect_to_server_uuid = error_resp->redirect_to_server_uuid();
@@ -508,8 +510,10 @@ template<class ReturnMessageType, class F>
     }
   } else {
     // No Response given, probably interrupted.
-    throw PosixErrorException(EINTR, "The operation was aborted by the user"
-        " at attempt: " + boost::lexical_cast<std::string>(attempt - 1) + ".");
+    throw PosixErrorException(
+        xtreemfs::pbrpc::POSIX_ERROR_EINTR,
+        "The operation was aborted by the user at attempt: "
+            + boost::lexical_cast<std::string>(attempt - 1) + ".");
   }
 }
 
