@@ -30,6 +30,9 @@ MAN_DIR=$(DESTDIR)/usr/share/man/man1
 DOC_DIR_SERVER=$(DESTDIR)/usr/share/doc/xtreemfs-server
 DOC_DIR_CLIENT=$(DESTDIR)/usr/share/doc/xtreemfs-client
 DOC_DIR_TOOLS=$(DESTDIR)/usr/share/doc/xtreemfs-tools
+CONTRIB_DIR=$(DESTDIR)/usr/share/xtreemfs
+PLUGIN_DIR=$(CONTRIB_DIR)/server-repl-plugin
+PLUGIN_CONFIG_DIR=$(XTREEMFS_CONFIG_DIR)/server-repl-plugin
 
 TARGETS = client server foundation
 .PHONY:	clean distclean
@@ -76,8 +79,16 @@ install-server:
 	@cp java/foundation/dist/Foundation.jar $(XTREEMFS_JAR_DIR)
 	@cp java/lib/*.jar $(XTREEMFS_JAR_DIR)
 
+	@mkdir -p $(PLUGIN_DIR)
+	@cp -r contrib/server-repl-plugin/lib $(PLUGIN_DIR)
+	@cp contrib/server-repl-plugin/replication.jar $(PLUGIN_DIR)
+
 	@mkdir -p $(XTREEMFS_CONFIG_DIR)
 #	@cp etc/xos/xtreemfs/*config.properties $(XTREEMFS_CONFIG_DIR)
+
+	@mkdir -p $(PLUGIN_CONFIG_DIR)
+	@cp contrib/server-repl-plugin/config/dir.properties $(PLUGIN_CONFIG_DIR)
+	@cp contrib/server-repl-plugin/config/mrc.properties $(PLUGIN_CONFIG_DIR)
 	
 	# delete UUID from config-files
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/dirconfig.properties > $(XTREEMFS_CONFIG_DIR)/dirconfig.properties
@@ -129,6 +140,8 @@ uninstall:
 	
 	@rm -rf $(MAN_DIR)/xtfs*
 	@rm -rf $(MAN_DIR)/*.xtreemfs*
+	
+	@rm -rf $(CONTRIB_DIR)
 
 	@echo "uninstall complete"
 	

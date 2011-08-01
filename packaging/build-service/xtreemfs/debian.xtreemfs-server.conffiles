@@ -2,3 +2,5 @@
 /etc/xos/xtreemfs/generate_uuid
 /etc/xos/xtreemfs/mrcconfig.properties
 /etc/xos/xtreemfs/osdconfig.properties
+/etc/xos/xtreemfs/server-repl-plugin/mrc.properties
+/etc/xos/xtreemfs/server-repl-plugin/dir.properties

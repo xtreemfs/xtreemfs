@@ -12,7 +12,8 @@ TMP_PATH="/tmp/fsdRLgT24fDM7YqmfFlg85gLVf6aLGA6G"
 
 # black list for files/dirs which should NEVER be copied
 SOURCE_BLACK_LIST=(
-    "contrib"
+    "contrib/console"
+    "contrib/hadoop"
 	"doc"
 	"etc/xos/xtreemfs/*test"
 	"etc/init.d/xtreemfs-vivaldi"

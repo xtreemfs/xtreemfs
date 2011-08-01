@@ -117,8 +117,6 @@ export CCFLAGS="$CCFLAGS -fPIC"
 %endif
 
 %if %{client_subpackage}
-#sed -i -e "s@.*policy_dir_paths\.push_back( \"src/policies/lib\" );.*@@g"\
-#       -e "s@/lib/xtreemfs/policies/@%{_libdir}/xtreemfs/policies/@g" src/libxtreemfs/user_database.cpp
 make %{?jobs:-j%jobs}
 %else
 make %{?jobs:-j%jobs} server
@@ -296,7 +294,14 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %attr(0750,root,root) /etc/xos/xtreemfs/*.properties
 /etc/xos/xtreemfs/generate_uuid
 /etc/xos/xtreemfs/postinstall_setup.sh
-#/usr/share/doc/xtreemfs-server/
+%dir /etc/xos/xtreemfs/server-repl-plugin/
+/etc/xos/xtreemfs/server-repl-plugin/dir.properties
+/etc/xos/xtreemfs/server-repl-plugin/mrc.properties
+%dir /usr/share/xtreemfs/
+%dir /usr/share/xtreemfs/server-repl-plugin/
+/usr/share/xtreemfs/server-repl-plugin/replication.jar
+%dir /usr/share/xtreemfs/server-repl-plugin/lib/
+/usr/share/xtreemfs/server-repl-plugin/lib/*.jar
 %doc LICENSE
 
 %files tools
