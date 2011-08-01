@@ -52,7 +52,7 @@ Summary of important changes in release 1.3:
 
 \begin{itemize}
  \item \textbf{new client}\\
- We have re-written the client from scratch. The new client supports automatic failover for replicated files and metadata caching.
+ We have re-written the client from scratch. The new client supports automatic fail-over for replicated files and metadata caching.
  \item \textbf{libxtreemfs}\\
  libxtreemfs is a convenient C++ library to use XtreemFS directly without a mounted client or the VFS layer. The new client is built on top of this library. A java version of libxtreemfs is planned.
  \item \textbf{File system snapshots}\\
@@ -73,7 +73,7 @@ Summary of important changes in release 1.2.1:
  \item \textbf{server status}\\
  Each server (especially OSDs) have a persistent status which can be online or dead/removed. This status must be changed manually and is used by the scrubber tool to identify dead OSDs which have been removed from the system.
  \item \textbf{enhanced scrubber}\\
- The scrubber is now able to remove replicas which are stored on OSDs that are marked as dead/removed. The srubber will create new replicas for that file if a complete replica still exists and a sufficient number of OSDs is available. In addition, the scrubber marks replicas as ``complete'' if they contain all objects of the original file.
+ The scrubber is now able to remove replicas which are stored on OSDs that are marked as dead/removed. The scrubber will create new replicas for that file if a complete replica still exists and a sufficient number of OSDs is available. In addition, the scrubber marks replicas as ``complete'' if they contain all objects of the original file.
 \end{itemize}
 
 
@@ -396,7 +396,7 @@ This will create three PKCS12 files (\texttt{ds.p12}, \texttt{mrc.p12} and \text
 
 \subsubsection{Importing trusted certificates from PEM into a JKS}
 
-The certificate (or multiple certificates) from your CA (or CAs) can be imported into a Java Keystore (JKS) \index{JKS}\index{Java KeyStore} using the Java keytool which comes with the Java JDK or JRE.
+The certificate (or multiple certificates) from your CA (or CAs) can be imported into a Java Keystore (JKS) \index{JKS}\index{Java Keystore} using the Java keytool which comes with the Java JDK or JRE.
 
 Execute the following steps for each CA certificate using the same keystore file.
 
@@ -629,7 +629,7 @@ All configuration parameters that may be used to define the behavior of the diff
  Values   & a positive integer value\\
  Default  & DIR: \texttt{16777216}\\
           & MRC: \texttt{16777216}\\
- Description & If automatic checkpointing is enabled, a checkpoint is created when the disk logfile exceedes maxLogfileSize bytes. The value should be reasonable large to keep the checkpointing-rate low. However, it should not be too large as a large disk log increases the recovery time after a crash.
+ Description & If automatic checkpointing is enabled, a checkpoint is created when the disk logfile exceeds maxLogfileSize bytes. The value should be reasonable large to keep the checkpointing-rate low. However, it should not be too large as a large disk log increases the recovery time after a crash.
 \end{tabular}
 
 \subsubsection{\texttt{babudb.pseudoSyncWait} \textit{optional}}
@@ -755,7 +755,7 @@ All configuration parameters that may be used to define the behavior of the diff
 	      & FDATASYNC or FSYNC\\
  Default  & DIR: \texttt{FSYNC}\\
           & MRC: \texttt{ASYNC}\\
- Description & The sync mode influences how operations are commited to the disk log before the operation is acknowledged to the caller.
+ Description & The sync mode influences how operations are committed to the disk log before the operation is acknowledged to the caller.
 \begin{itemize}
  \item[-]ASYNC mode the writes to the disk log are buffered in memory by the operating system. This is the fastest mode but will lead to data loss in case of a crash, kernel panic or power failure.
  \item[-]SYNC\_WRITE\_METADATA opens the file with O\_SYNC, the system will not buffer any writes. The operation will be acknowledged when data has been safely written to disk. This mode is slow but offers maximum data safety. However, BabuDB cannot influence the disk drive caches, this depends on the OS and hard disk model.
@@ -769,7 +769,7 @@ For best throughput use ASYNC, for maximum data safety use FSYNC.
 \subsubsection{\texttt{babudb.worker.maxQueueLength} \textit{optional}}
 \begin{tabular}{lp{10cm}}
  Services & DIR, MRC\\
- Values   & a positiv integer value\\
+ Values   & a positive integer value\\
  Default  & DIR: \texttt{250}\\
           & MRC: \texttt{250}\\
  Description & If set to a value larger than 0, this is the maximum number of requests which can be in a worker's queue. This value should be used if you have pseudo-synchronous mode enabled to ensure that your queues don't grow until you get an out of memory exception. Can be set to 0 if pseudo-sync mode is disabled. 
@@ -781,7 +781,7 @@ For best throughput use ASYNC, for maximum data safety use FSYNC.
  Values   & a positiv integer value\\
  Default  & DIR: \texttt{0}\\
           & MRC: \texttt{0}\\
- Description & The number of worker threads to be used for database operations. As BabuDB does not use locking, each database is handled by only one worker thread. If there are more databases than worker threads, the databases are distributed onto the available threads. The number of threads should be set to a value smaller than the number of available cores to reduce overhead through context switches. You can also set the number of worker threads to 0. This will considerably reduce latency, but may also decrease throughput on a multicore system with more than one database.
+ Description & The number of worker threads to be used for database operations. As BabuDB does not use locking, each database is handled by only one worker thread. If there are more databases than worker threads, the databases are distributed onto the available threads. The number of threads should be set to a value smaller than the number of available cores to reduce overhead through context switches. You can also set the number of worker threads to 0. This will considerably reduce latency, but may also decrease throughput on a multi-core system with more than one database.
 \end{tabular}
 
 \subsubsection{\texttt{capability\_secret}}
@@ -888,7 +888,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 \subsubsection{\texttt{flease.dmax\_ms} \textit{optional}}
 \begin{tabular}{lp{10cm}}
  Services & OSD\\
- Values   & millisconds \\
+ Values   & milliseconds \\
  Default  & 1000 \\
  Description & Maximum clock drift between any two clocks in the system. If the actual drift between two server clocks exceeds this value, read-write replication may lead to inconsistent replicas. Since servers automatically synchronize their clocks with the clock on the DIR, however, the default 1000ms should be enough in most cases.
 \end{tabular}
@@ -896,15 +896,15 @@ Note that it is possible to specify multiple categories by means of a comma or s
 \subsubsection{\texttt{flease.lease\_timeout\_ms} \textit{optional}}
 \begin{tabular}{lp{10cm}}
  Services & OSD\\
- Values   & millisconds \\
+ Values   & milliseconds \\
  Default  & 15000 \\
- Description & Duration of a lease in milliseconds. For read-write-replicated files, the lease timeout specifies the validity time span of a master lease. Shorter lease timeouts guarantee a shorter failover period in the event of a server crash, which however comes at the cost of an increased rate of lease negotiations for each open file. The leaes timeout should be set to a value at least three times \texttt{flease.message\_to\_ms}.
+ Description & Duration of a lease in milliseconds. For read-write-replicated files, the lease timeout specifies the validity time span of a master lease. Shorter lease timeouts guarantee a shorter fail-over period in the event of a server crash, which however comes at the cost of an increased rate of lease negotiations for each open file. The lease timeout should be set to a value at least three times \texttt{flease.message\_to\_ms}.
 \end{tabular}
 
 \subsubsection{\texttt{flease.message\_to\_ms} \textit{optional}}
 \begin{tabular}{lp{10cm}}
  Services & OSD\\
- Values   & millisconds \\
+ Values   & milliseconds \\
  Default  & 500 \\
  Description & Time to wait for responses from other OSDs when negotiating leases for replicated files. This value should be larger than the maximum message round-trip time via TCP between any pair of OSDs.
 \end{tabular}
@@ -964,7 +964,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Default  & DIR: 32638,\\
  & MRC: 32636,\\
  & OSD: 32640 \\
- Description & The port to listen on for incoming ONC-RPC connections (TCP). The OSD uses the specified port for both TCP and UDP. Please make sure to configure your firewall to allow incoming TCP traffic (plus UDP traffic, in case of an OSD) on the specified port.
+ Description & The port to listen on for incoming connections (TCP). The OSD uses the specified port for both TCP and UDP. Please make sure to configure your firewall to allow incoming TCP traffic (plus UDP traffic, in case of an OSD) on the specified port.
 \end{tabular}
 
 \subsubsection{\texttt{local\_clock\_renewal}}
@@ -1247,7 +1247,7 @@ The status page of an MRC can e.g.\ be shown by opening
 
 \texttt{http://my-mrc-host.com:30636/}
 
-with a common web browser. If you set an admin password in the service's configuration, you will be asked for authentication when accessing the status page. Use \texttt{admin} as username.
+with a common web browser. If you set an admin password in the service's configuration, you will be asked for authentication when accessing the status page. Use \texttt{admin} as user name.
 
 \subsection{DIR Service Monitoring}
 
@@ -1443,7 +1443,7 @@ By default, the local system cache on the client machine will be used to speed u
 
 \section{Troubleshooting}
 
-Different kinds of problems may occur when trying to create, mount or access files in a volume. If no log file was specified, the client will create a logfile called \texttt{mount.xtreemfs.log} in the current working direcory. This logile is only created in case of an error message. In case no useful error message is printed on the console or in the logfile, it may help to enable client-side log output. This can be done as follows:
+Different kinds of problems may occur when trying to create, mount or access files in a volume. If no log file was specified, the client will create a logfile called \texttt{mount.xtreemfs.log} in the current working directory. This logfile is only created in case of an error message. In case no useful error message is printed on the console or in the logfile, it may help to enable client-side log output. This can be done as follows:
 
 \begin{verbatim}
 $> mount.xtreemfs -f -d INFO remote.dir.machine/myVolume /xtreemfs
@@ -1657,7 +1657,7 @@ This command sets the status of the service with the UUID \texttt{u2i3-28isu2-iw
 
 \subsection{Snapshots}
 
-XtreemFS is capable of taking file system snapshots. A snapshot caputures an instantaneous image of all files and directories in a volume, which can later be accessed in a read-only manner.
+XtreemFS is capable of taking file system snapshots. A snapshot captures an instantaneous image of all files and directories in a volume, which can later be accessed in a read-only manner.
 
 Snapshots can be created, listed and deleted with the \texttt{xtfs\_snap} tool. A mounted volume is necessary to run the tool; information on how to mount volumes can be found in Section \ref{sec:mount_vol}.
 
@@ -1712,6 +1712,7 @@ $> xtfs_cleanup -dir localhost:32638 -v \
 Since release 1.3, all user tools have been replaced by the \texttt{xtfsutil} tool. \texttt{xtfsutil} displays XtreemFS specific file and directory information, manages file replicas and volume policies.
 
 \subsection{\texttt{xtfsutil} for Files}
+\label{sec:xtfsutil_files}
 
 When called without any option \texttt{xtfsutil} prints the XtreemFS specific information for a volume, directory, softlink or file.
 
@@ -1798,6 +1799,7 @@ $> xtfsutil --delete-replica test-osd1 /xtreemfs/test.txt
 \end{verbatim}
 
 \subsection{\texttt{xtfsutil} for Volumes}
+\label{sec:xtfsutil_volumes}
 
 To display the volume policies and settings, execute \texttt{xtfsutil} on the mountpoint without any options.
 
@@ -1883,9 +1885,9 @@ sets a data center map-based OSD selection policy, which is invoked each time a 
 
 \begin{description}
  \item[\texttt{default}] The default OSD selection policy selects a random subset of OSDs that are responsive and have more than 2GB of free disk space.
- \item[\texttt{fqdn}] Selects OSDs based on the size of the postfix match of the fully qualified domain names and on the free space.
+ \item[\texttt{fqdn}] Selects OSDs based on the size of the post-fix match of the fully qualified domain names and on the free space.
  \item[\texttt{dcmap}] Selects OSDs based on the distance defined in the datacenter map and on the free space.
- \item[\texttt{vivaldi}] Selects OSDs based on the distance of the vivalid coordinates between client and OSD and on the free space.
+ \item[\texttt{vivaldi}] Selects OSDs based on the distance of the Vivaldi coordinates between client and OSD and on the free space.
 \end{description}
 
 In addition, custom policies can be set by passing a list of basic policy IDs to be successively applied instead of a predefined policy name.
@@ -1951,33 +1953,99 @@ XtreemFS provides two tools to simplify testing. \texttt{xstartserv} can be used
 
 \chapter{Replication}
 
-XtreemFS offers replication of all data. On the one hand, the Directory Service (DIR) and the Metadata Catalog (MRC) are replicated via BabuDB database replication. On the other hand, files are replicated on the OSDs with read/write or with read-only replication. In this chapter, we describe how these replication mechanisms work, their requirements and potential use-cases.
+XtreemFS offers replication of all data. On the one hand, the Directory Service (DIR) and the Metadata Catalog (MRC) are replicated at database level. On the other hand, files are replicated on the OSDs with read/write or with read-only replication. In this chapter, we describe how these replication mechanisms work, their requirements and potential use-cases.
 
 \section{Read/Write File Replication}
 \label{sec:readwrite_replication}
 File that are replicated with read/write replication have the same semantics as non-replicated files. That means that all operations can be executed on those files and that data is kept consistent across replicas. Applications and users won't see a difference between read/write replicated and regular files.
 
+\subsection{Technical Details}
 Internally, the read/write replication is implemented using the primary/backup approach with leases. When a file is opened, all OSDs that have a replica ``talk'' to each other to decide which replica becomes the \textit{primary}. In XtreemFS we use leases for the primary election, this means that an OSD will become primary for some time. If it fails, the lease times out and another OSD can become primary.
 Once a replica has acquired the lease to become primary, it checks with the other replicas to ensure all replicas are in a consistent state. After this so called replica reset phase, the primary processes client operations.
 Reads can be executed locally on the primary. However, operations that modify data such as write and truncate, are executed on the primary which passes these updates on to the other replicas (backups).
 
 The replication of files adds significant communication overhead to keep replicas in sync. When a file is opened, the OSD which the client contacts requires at least three message round-trips to acquires the lease and to execute the replica reset. Once a primary was elected, read operations can be executed locally without any communication. Truncate and write require a single round-trip between the primary and the backup OSDs.
 
-Depending on the selected replication policy, the read/write replication can tolerate some replica failures. The \textbf{WqRq} policy employs majority voting and can tolerate replica failures as long as a majority of replicas is available. This is the most fault-tolerant strategy in XtreemFS. However, guarantees only that data is stored on a majority of the replicas. If you lose more replica permanently, data might be lost.
+Depending on the selected replication policy, the read/write replication can tolerate some replica failures. The \textbf{WqRq} policy employs majority voting and can tolerate replica failures as long as a majority of replicas is available. This is the most fault-tolerant strategy in XtreemFS. However, it guarantees only that data is stored on a majority of the replicas. If you lose more replicas permanently, data might be lost.
 The \textbf{WaRa} policy writes updates to all replicas which yields higher data safety. However, this policy cannot tolerate replica failures.
 
-Due to the communication overhead, the read-write replication should only be used for up to ten replicas. If you need more replicas or if you need replicas for caching, you should consider the read-only replication.
+\subsection{Limitations}
+Due to the communication overhead, the read/write replication should only be used for up to ten replicas. If you need more replicas or if you need replicas for caching, you should consider the read-only replication.
+
+\subsection{Setup}
+To enable read/write replication, it is necessary to specify a respective replication policy. Replication policies that enable read/write replication are \textbf{WqRq} and \textbf{WaRa}.
+
+A replication policy can either be specified for an existing file or as a default policy for the entire volume. In the former case, replicas need to be added manually. In the latter case, a default replication factor needs to be specified that defines the number of replicas that are initially created. Please be aware that a default replication policy only affects newly created files, i.e.\ does not automatically add replicas to existing files!
+
+For details on how to define replication policies, please refer to Section \ref{sec:xtfsutil_files} and \ref{sec:xtfsutil_volumes}.
 
 \section{Read-Only File Replication}
 \label{sec:ronly_replication}
 The read-only is designed for use-cases where you have many replicas that are not modified. Since files cannot be changed, the replicas don't need to be coordinated. Therefore, this replication mode can handle as many replicas as you like, e.g. to create copies of files close to consumers. One use-case for the read-only replication is to build a content-distribution network (CDN) like infrastructure.
 
-Read-only replicas are either \textit{full} or \textit{partial}. Full replicas immediately copy the file data from other replicas when they are created. XtreemFS uses a rares-first strategy (similar to BitTorrent) to increase the replication factor as quickly as possible. In contrast, partial replicas are initially empty and fetch the file data (objects) on demand when requested by a client. Partial replicas also pre-fetch a small number of objects to reduce latency for further client reads.
+Read-only replicas are either \textit{full} or \textit{partial}. Full replicas immediately copy the file data from other replicas when they are created. XtreemFS uses a rarest-first strategy (similar to BitTorrent) to increase the replication factor as quickly as possible. In contrast, partial replicas are initially empty and fetch the file data (objects) on demand when requested by a client. Partial replicas also pre-fetch a small number of objects to reduce latency for further client reads.
 
-Files that are read-only replicated can only be opened in read-only mode and cannot be modified. To allow existing applications to take advantage of the read-only replication without modifications, XtreemFS offers ``replicate-on-close''. When the default replication policy for a volume is set to ``ronly'', files can be opened and modified like regular files until they are closed. Once a file is closed, it is set to read-only and is replicated according to the replication factor set for the volume. This mode should, however, not be used for data safety as there are no guarantees that all replicas were created successfully when the \texttt{close()} operation returns. For data safety, please use read-write replication.
+\subsection{Limitations}
+Files that are read-only replicated can only be opened in read-only mode and cannot be modified. To allow existing applications to take advantage of the read-only replication without modifications, XtreemFS offers ``replicate-on-close''. When the default replication policy for a volume is set to ``ronly'', files can be opened and modified like regular files until they are closed. Once a file is closed, it is set to read-only and is replicated according to the replication factor set for the volume. This mode should, however, not be used for data safety as there are no guarantees that all replicas were created successfully when the \texttt{close()} operation returns. For data safety, please use read/write replication.
 
-\section{BabuDB Database Replication (DIR/MRC)}
-FIXME!!!
+\subsection{Setup}
+Similar as with read/write replication, enabling read-only replication requires a read-only replication policy to be set. The respective policy name is \textbf{ronly}. It can either be specified for an existing file or as a default policy for the entire volume. For details on how to define replication policies, please refer to Section \ref{sec:xtfsutil_files} and \ref{sec:xtfsutil_volumes}.
+
+
+\section{MRC and DIR Replication}
+Aside from file replication across OSDs, XtreemFS also supports MRC and DIR replication to increase data safety. MRC replication covers all file system metadata, whereas DIR replication covers configuration information of services as well as volumes.
+
+\subsection{Technical Details}
+DIR and MRC replication rely on the same principle as read-write replication of files. A primary replica, which is distinguished by means of a lease, accepts all updates and disseminates these to all backup replicas in the same order. When the primary fails, the lease will eventually expire and one of the former backup replicas can become primary. Unlike file replication, which may involve a different set of OSDs for each file, an MRC or DIR replicates its entire database.
+
+\subsection{Setup}
+To enable database replication across a set of DIR or MRC instances, it is necessary to enable replication and configure its parameters. This needs to be done prior to starting up the services. The basic steps are the following:
+
+\begin{itemize}
+ \item Enable the replication plug-in on all replicated MRC/DIR instances
+ \item Configure replication parameters across all instances
+ \item Start up all replicated MRC/DIR instances
+\end{itemize}
+
+\subsubsection{Enabling and Configuring MRC Replication}
+A replicated MRC consists of at least two individual server instances. Note that you will need three or more instances to be able to transparently recover from failures, as a majority of replicas always needs to be available to make progress.
+
+To configure multiple MRC instances as replicas of each other, it is necessary to enable and configure the replication plug-in across these instances. This is done by setting the property \texttt{babudb.plugin.0} in the configuration file of each MRC instance, such that it points to the plug-in's configuration file. If the \texttt{xtreemfs-server} package has been installed, a default configuration file for the replication plug-in can be found at \texttt{/etc/xos/xtreemfs/server-repl/config/mrc.properties}. In order to activate the plug-in, open \texttt{/etc/xos/xtreemfs/mrcconfig.properties} with a text editor and enter (or un-comment) the following line:
+
+\begin{verbatim}
+babudb.plugin.0 = /etc/xos/xtreemfs/server-repl/config/mrc.properties
+\end{verbatim}
+
+Now, it is necessary to configure the replication plug-in. For this purpose, open \texttt{/etc/xos/xtreemfs/server-repl/config/mrc.properties} with a text editor. The configuration file will look as follows:
+
+\begin{verbatim}
+# number of servers that at least have to be up to date
+babudb.repl.sync.n = 2
+
+...
+
+# participants of the replication including the local address
+# (may be missing, if localhost was defined explicitly)
+babudb.repl.participant.0 = localhost
+babudb.repl.participant.0.port = 35676
+babudb.repl.participant.1 = somehost
+babudb.repl.participant.1.port = 35676
+
+...
+\end{verbatim}
+
+\texttt{babudb.repl.sync.n} defines the number of servers that need to respond to an update before acknowledging the update to the client. To ensure data safety in the face of failures, it is necessary to set the property to a number that reflects at least a majority of all replicas. The list of replicas can be extended arbitrarily by adding new \texttt{babudb.repl.participant.n} as well as \texttt{babudb.repl.participant.n.port} properties, where \texttt{n} defines the replica number. Host names have to be resolvable, and hosts have to be able to reach each other on the respective ports. Please also make sure that replica lists are equivalent across all replicated MRC instances, i.e.\ each can reach all other hosts in the replica set.
+
+Note that it is necessary to explicitly enable SSL if server-to-server authentication and encryption between replicas are required, regardless of whether an SSL-based XtreemFS installation was set up. This is because BabuDB establishes its own connection to exchange data with other replicated instances.
+
+Please make sure that all replicated instances have consistent configurations before starting them up, which includes replica lists, \texttt{babudb.repl.sync.n} parameters as well as SSL settings if necessary.
+
+\subsubsection{Enabling and Configuring DIR Replication}
+DIR replication is enabled and configured in the exact same way as MRC replication. Change \texttt{/etc/xos/xtreemfs/server-repl/config/dir.properties} accordingly to configure the plug-in. In contrast to MRC replication, however, the XtreemFS client does not yet support an automatic fail-over if the DIR is not reachable.
+
+\subsubsection{Startup and Access}
+Once all service instances have been configured, they can be started up individually as described in Section \ref{sec:startstopservice}. From a user's point of view, a replicated MRC behaves exactly like a non-replicated MRC. Failures will be transparently handled by the system and hidden from users to the best possible extent. For the service to remain operable, however, at least a majority of all replicas in the list have to be reachable.
+
 
 \chapter{Policies} \label{chap:policies}
 Many facets of the behavior of XtreemFS can be configured by means of policies. A policy defines how a certain task is performed, e.g.\ how the MRC selects a set of OSDs for a new file, or how it distinguishes between an authorized and an unauthorized user when files are accessed. Policies are a means to customize an XtreemFS installation.
@@ -2040,7 +2108,7 @@ The behavior of basic policies can be further refined by means of policy attribu
 
 \subsection{Predefined Policies}
 
-Each basic policy can be assigned to one of the three different categories called \emph{filtering}, \emph{grouping} and \emph{sorting}. \emph{Filtering policies} generate a sublist from a list of OSDs. The sublist only contains those OSDs from the original list that have a certain property. \emph{Grouping policies} are used to select a subgroup from a given list of OSDs. They basically work in a similar manner as filtering policies, but unlike filtering policies, they always return a list of a fixed size. \emph{Sorting policies} generate and return a reordered list from the input OSD list, without removing any OSDs.
+Each basic policy can be assigned to one of the three different categories called \emph{filtering}, \emph{grouping} and \emph{sorting}. \emph{Filtering policies} generate a sub-list from a list of OSDs. The sub-list only contains those OSDs from the original list that have a certain property. \emph{Grouping policies} are used to select a subgroup from a given list of OSDs. They basically work in a similar manner as filtering policies, but unlike filtering policies, they always return a list of a fixed size. \emph{Sorting policies} generate and return a reordered list from the input OSD list, without removing any OSDs.
 
 The following predefined policies exist:
 
@@ -2172,9 +2240,9 @@ Please visit the \href{http://www.xtreemfs.org}{XtreemFS website at www.xtreemfs
 \section{Introduction}
 \label{sec:hadoop_integration}
 
-XtreemFS\index{Hadoop!Integration} is a distributed filesystem that can be used instead of HDFS the distributed filesystem made by the developers of Hadoop.
+XtreemFS\index{Hadoop!Integration} is a distributed file system that can be used instead of HDFS the distributed file system made by the developers of Hadoop.
 
-Therefore it replaces the NameNode and the Datanodes provided by HDFS in a common Hadoop setup. A DIR is used instead of a NameNode, because it stores the information about where the files and there metadata are located at the OSDs and the MRC, like the NameNode does for DataNodes. These DataNodes hold the files that have been stored at HDFS. On XtreemFS these files are split into metadata and raw filedata to be stored seperated at a MRC and OSDs.
+Therefore it replaces the NameNode and the DataNodes provided by HDFS in a common Hadoop setup. A DIR is used instead of a NameNode, because it stores the information about where the files and there metadata are located at the OSDs and the MRC, like the NameNode does for DataNodes. These DataNodes hold the files that have been stored at HDFS. On XtreemFS these files are split into metadata and raw file data to be stored seperated at a MRC and OSDs.
 
 \begin{figure}[h]
  \centering
