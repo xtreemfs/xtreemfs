@@ -145,10 +145,13 @@ int FileHandleImplementation::Read(
             volume_options_,
             attempts_so_far != max_total_tries));  // Delay all but last try.
       } catch(const IOException& e) {
+        bool a_left = attempts_so_far < max_total_tries || max_total_tries == 0;
         Logging::log->getLog(LEVEL_ERROR)
-            << "error in read (IO error) "
+            << (a_left ? "RETRYING" : "THROWING FAILURE")
+            << " after attempt: " << attempts_so_far
+            << " error in read (IO error) "
             << file_info_->path() << " " << count << " " << offset << endl;
-        if (attempts_so_far < max_total_tries || max_total_tries == 0) {
+        if (a_left) {
           // Use the next replica.
           current_replica_index++;
           if (current_replica_index == xlocs.replicas_size()) {
@@ -160,10 +163,13 @@ int FileHandleImplementation::Read(
           throw;  // Last attempt failed, rethrow exception.
         }
       } catch(const InternalServerErrorException& e) {
+        bool a_left = attempts_so_far < max_total_tries || max_total_tries == 0;
         Logging::log->getLog(LEVEL_ERROR)
+            << (a_left ? "RETRYING" : "THROWING FAILURE")
+            << " after attempt: " << attempts_so_far
             << "error in read (internal server error) "
             << file_info_->path() << " " << count << " " << offset << endl;
-        if (attempts_so_far < max_total_tries || max_total_tries == 0) {
+        if (a_left) {
           // Use the next replica.
           current_replica_index++;
           if (current_replica_index == xlocs.replicas_size()) {
@@ -185,10 +191,12 @@ int FileHandleImplementation::Read(
           }
         }
         if (new_replica_index == current_replica_index) {
-          string error = "We were redirected by the OSD "
-              "with the UUID: " + osd_uuid + " to an OSD with the UUID: "
-              + e.redirect_to_server_uuid_ + ") which was not found in the "
-              "current XlocSet: " + xlocs.DebugString();
+          string attempt_string = boost::lexical_cast<string>(attempts_so_far);
+          string error = "We were redirected at attempt " + attempt_string
+              + " by the OSD with the UUID: " + osd_uuid
+              + " to an OSD with the UUID: " + e.redirect_to_server_uuid_
+              + " which was not found in the current XlocSet: "
+              + xlocs.DebugString();
           Logging::log->getLog(LEVEL_ERROR) << error << endl;
           xtreemfs::util::ErrorLog::error_log->AppendError(error);
         }
@@ -305,10 +313,13 @@ int FileHandleImplementation::Write(
             volume_options_,
             attempts_so_far != max_total_tries));  // Delay all but last try.
       } catch(const IOException& e) {
+        bool a_left = attempts_so_far < max_total_tries || max_total_tries == 0;
         Logging::log->getLog(LEVEL_ERROR)
+            << (a_left ? "RETRYING" : "THROWING FAILURE")
+            << " after attempt: " << attempts_so_far
             << "error in write (IO error) "
             << file_info_->path() << " " << count << " " << offset << endl;
-        if (attempts_so_far < max_total_tries || max_total_tries == 0) {
+        if (a_left) {
           // Use the next replica.
           current_replica_index++;
           if (current_replica_index == xlocs.replicas_size()) {
@@ -320,10 +331,13 @@ int FileHandleImplementation::Write(
           throw;  // Last attempt failed, rethrow exception.
         }
       } catch(const InternalServerErrorException& e) {
+        bool a_left = attempts_so_far < max_total_tries || max_total_tries == 0;
         Logging::log->getLog(LEVEL_ERROR)
+            << (a_left ? "RETRYING" : "THROWING FAILURE")
+            << " after attempt: " << attempts_so_far
             << "error in write (internal server error) "
             << file_info_->path() << " " << count << " " << offset << endl;
-        if (attempts_so_far < max_total_tries || max_total_tries == 0) {
+        if (a_left) {
           // Use the next replica.
           current_replica_index++;
           if (current_replica_index == xlocs.replicas_size()) {
@@ -467,10 +481,13 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
           volume_options_,
           attempts_so_far != max_total_tries));  // Delay all but last try.
     } catch(const IOException& e) {
+      bool a_left = attempts_so_far < max_total_tries || max_total_tries == 0;
       Logging::log->getLog(LEVEL_ERROR)
+          << (a_left ? "RETRYING" : "THROWING FAILURE")
+          << " after attempt: " << attempts_so_far
           << "error in truncate (IO error) "
           << file_info_->path() << " new size: " << new_file_size << endl;
-      if (attempts_so_far < max_total_tries || max_total_tries == 0) {
+      if (a_left) {
         // Use the next replica.
         current_replica_index++;
         if (current_replica_index == xlocs.replicas_size()) {
@@ -482,10 +499,13 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
         throw;  // Last attempt failed, rethrow exception.
       }
     } catch(const InternalServerErrorException& e) {
+      bool a_left = attempts_so_far < max_total_tries || max_total_tries == 0;
       Logging::log->getLog(LEVEL_ERROR)
+          << (a_left ? "RETRYING" : "THROWING FAILURE")
+          << " after attempt: " << attempts_so_far
           << "error in truncate (internal server error) "
           << file_info_->path() << " new size: " << new_file_size << endl;
-      if (attempts_so_far < max_total_tries || max_total_tries == 0) {
+      if (a_left) {
         // Use the next replica.
         current_replica_index++;
         if (current_replica_index == xlocs.replicas_size()) {

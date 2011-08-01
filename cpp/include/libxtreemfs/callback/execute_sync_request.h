@@ -145,13 +145,21 @@ template<class ReturnMessageType, class F>
   }
 #endif
 
+  // Request was successful.
+  if (response && !response->HasFailed()) {
+    return response;
+  }
+
+  // Output number of retries if not failed at the first retry.
+  std::string retry_count_msg;
+  if (attempt > 2) {
+    retry_count_msg = ". Request finally failed after: "
+       + boost::lexical_cast<std::string>(attempt - 1) + " attempts.";
+  } else {
+    retry_count_msg = "";
+  }
   // Max attempts reached or non-IO error seen. Throw an exception.
   if (response != NULL) {
-    if (!response->HasFailed()) {
-      // Remove signal handler.
-      return response;
-    }
-
     // Copy error information in order to delete buffers before the throw.
     xtreemfs::pbrpc::RPCHeader::ErrorResponse* error_resp = response->error();
     const xtreemfs::pbrpc::ErrorType error_type = error_resp->error_type();
@@ -161,22 +169,24 @@ template<class ReturnMessageType, class F>
     if (error_resp->has_redirect_to_server_uuid()) {
         redirect_to_server_uuid = error_resp->redirect_to_server_uuid();
     }
-    xtreemfs::util::LogLevel level = xtreemfs::util::LEVEL_ERROR;
-    // Complete error text.
-    std::string error;
 
     // Free buffers.
     response->DeleteBuffers();
     delete response;
 
+    // By default all errors are logged as errors.
+    xtreemfs::util::LogLevel level = xtreemfs::util::LEVEL_ERROR;
+    // String for complete error text which will be logged.
+    std::string error;
+
     // Throw an exception.
     switch (error_type) {
       case xtreemfs::pbrpc::ERRNO:  {
+        // Posix errors are usually not logged as errors.
         level = xtreemfs::util::LEVEL_INFO;
         if (posix_errno == xtreemfs::pbrpc::POSIX_ERROR_ENOENT) {
           level = xtreemfs::util::LEVEL_DEBUG;
         }
-
         std::string posix_errono_string
             = boost::lexical_cast<std::string>(posix_errno);
         const ::google::protobuf::EnumValueDescriptor* enum_desc =
@@ -185,10 +195,10 @@ template<class ReturnMessageType, class F>
         if (enum_desc) {
             posix_errono_string = enum_desc->name();
         }
-        error = "The server denied the requested operation. Error "
-            "Value: " + posix_errono_string + " Error message: " +
-            error_message;
-
+        error = "The server denied the requested operation."
+              " Error Value: " + posix_errono_string
+            + " Error message: " + error_message
+            + retry_count_msg;
         if (xtreemfs::util::Logging::log->loggingActive(level)) {
           xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
         }
@@ -196,8 +206,8 @@ template<class ReturnMessageType, class F>
         throw PosixErrorException(posix_errno, error);
       }
       case xtreemfs::pbrpc::IO_ERROR:  {
-        error = "The client encountered a communication error: "
-            + error_message;
+        error = "The client encountered a communication error: " + error_message
+            + retry_count_msg;
         if (xtreemfs::util::Logging::log->loggingActive(level)) {
           xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
         }
@@ -205,8 +215,8 @@ template<class ReturnMessageType, class F>
         throw IOException(error_message);
       }
       case xtreemfs::pbrpc::INTERNAL_SERVER_ERROR:  {
-        error = "The server returned an internal server error: "
-            + error_message;
+        error = "The server returned an internal server error: " + error_message
+            + retry_count_msg;
         if (xtreemfs::util::Logging::log->loggingActive(level)) {
           xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
         }
@@ -215,8 +225,10 @@ template<class ReturnMessageType, class F>
       }
       case xtreemfs::pbrpc::REDIRECT:  {
         level = xtreemfs::util::LEVEL_INFO;
-        error = "The server redirected to the current master with "
-            "UUID: " + redirect_to_server_uuid;
+        error = "The server redirected to the current master with"
+              " UUID: " + redirect_to_server_uuid
+            + " after: " + boost::lexical_cast<std::string>(attempt - 1)
+            + " attempts.";
         if (xtreemfs::util::Logging::log->loggingActive(level)) {
           xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
         }
@@ -233,7 +245,8 @@ template<class ReturnMessageType, class F>
           error_type_name = enum_desc->name();
         }
         error = "The server returned an error: " + error_type_name
-            + " Error Message: " + error_message;
+            + " Error Message: " + error_message
+            + retry_count_msg;
         if (xtreemfs::util::Logging::log->loggingActive(level)) {
           xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
         }
@@ -243,7 +256,8 @@ template<class ReturnMessageType, class F>
     }
   } else {
     // No Response given, probably interrupted.
-    throw PosixErrorException(EINTR, "The operation was aborted by the user.");
+    throw PosixErrorException(EINTR, "The operation was aborted by the user"
+        " at attempt: " + boost::lexical_cast<std::string>(attempt - 1) + ".");
   }
 }
 
