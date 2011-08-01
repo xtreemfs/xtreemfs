@@ -2010,13 +2010,13 @@ To enable database replication across a set of DIR or MRC instances, it is neces
 \subsubsection{Enabling and Configuring MRC Replication}
 A replicated MRC consists of at least two individual server instances. Note that you will need three or more instances to be able to transparently recover from failures, as a majority of replicas always needs to be available to make progress.
 
-To configure multiple MRC instances as replicas of each other, it is necessary to enable and configure the replication plug-in across these instances. This is done by setting the property \texttt{babudb.plugin.0} in the configuration file of each MRC instance, such that it points to the plug-in's configuration file. If the \texttt{xtreemfs-server} package has been installed, a default configuration file for the replication plug-in can be found at \texttt{/etc/xos/xtreemfs/server-repl/config/mrc.properties}. In order to activate the plug-in, open \texttt{/etc/xos/xtreemfs/mrcconfig.properties} with a text editor and enter (or un-comment) the following line:
+To configure multiple MRC instances as replicas of each other, it is necessary to enable and configure the replication plug-in across these instances. This is done by setting the property \texttt{babudb.plugin.0} in the configuration file of each MRC instance, such that it points to the plug-in's configuration file. If the \texttt{xtreemfs-server} package has been installed, a default configuration file for the replication plug-in can be found at \texttt{/etc/xos/xtreemfs/server-repl-plugin/mrc.properties}. In order to activate the plug-in, open \texttt{/etc/xos/xtreemfs/mrcconfig.properties} with a text editor and enter (or un-comment) the following line:
 
 \begin{verbatim}
-babudb.plugin.0 = /etc/xos/xtreemfs/server-repl/config/mrc.properties
+babudb.plugin.0 = /etc/xos/xtreemfs/server-repl-plugin/mrc.properties
 \end{verbatim}
 
-Now, it is necessary to configure the replication plug-in. For this purpose, open \texttt{/etc/xos/xtreemfs/server-repl/config/mrc.properties} with a text editor. The configuration file will look as follows:
+Now, it is necessary to configure the replication plug-in. For this purpose, open \texttt{/etc/xos/xtreemfs/server-repl-plugin/mrc.properties} with a text editor. The configuration file will look as follows:
 
 \begin{verbatim}
 # number of servers that at least have to be up to date
@@ -2041,7 +2041,7 @@ Note that it is necessary to explicitly enable SSL if server-to-server authentic
 Please make sure that all replicated instances have consistent configurations before starting them up, which includes replica lists, \texttt{babudb.repl.sync.n} parameters as well as SSL settings if necessary.
 
 \subsubsection{Enabling and Configuring DIR Replication}
-DIR replication is enabled and configured in the exact same way as MRC replication. Change \texttt{/etc/xos/xtreemfs/server-repl/config/dir.properties} accordingly to configure the plug-in. In contrast to MRC replication, however, the XtreemFS client does not yet support an automatic fail-over if the DIR is not reachable.
+DIR replication is enabled and configured in the exact same way as MRC replication. Change \texttt{/etc/xos/xtreemfs/server-repl-plugin/dir.properties} accordingly to configure the plug-in. In contrast to MRC replication, however, the XtreemFS client does not yet support an automatic fail-over if the DIR is not reachable.
 
 \subsubsection{Startup and Access}
 Once all service instances have been configured, they can be started up individually as described in Section \ref{sec:startstopservice}. From a user's point of view, a replicated MRC behaves exactly like a non-replicated MRC. Failures will be transparently handled by the system and hidden from users to the best possible extent. For the service to remain operable, however, at least a majority of all replicas in the list have to be reachable.
