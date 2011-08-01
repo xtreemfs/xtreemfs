@@ -42,6 +42,7 @@ class FileHandleImplementation;
 class FileInfo;
 class Options;
 class StripeTranslator;
+class UUIDIterator;
 class UUIDResolver;
 
 /**
@@ -53,6 +54,17 @@ class VolumeImplementation : public Volume {
       ClientImplementation* client,
       const std::string& client_uuid,
       const std::string& mrc_uuid,
+      const std::string& volume_name,
+      const xtreemfs::rpc::SSLOptions* ssl_options,
+      const Options& options);
+  /**
+   * @remark Ownership of mrc_uuid_iterator is transferred to this object.
+   */
+  VolumeImplementation(
+      ClientImplementation* client,
+      const std::string& client_uuid,
+      const std::string& mrc_uuid,
+      UUIDIterator* mrc_uuid_iterator,
       const std::string& volume_name,
       const xtreemfs::rpc::SSLOptions* ssl_options,
       const Options& options);
@@ -302,6 +314,10 @@ class VolumeImplementation : public Volume {
 
   /** UUID of MRC which owns this volume. */
   const std::string mrc_uuid_;
+
+  /** UUID Iterator which contains the UUIDs of all MRC replicas of this
+   *  volume. */
+  boost::scoped_ptr<UUIDIterator> mrc_uuid_iterator_;
 
   /** Name of the corresponding Volume. */
   const std::string volume_name_;

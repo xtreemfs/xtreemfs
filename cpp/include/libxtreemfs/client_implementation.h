@@ -85,6 +85,8 @@ class ClientImplementation : public Client, public UUIDResolver {
   virtual void UUIDToAddress(const std::string& uuid, std::string* address);
   virtual void VolumeNameToMRCUUID(const std::string& volume_name,
                                    std::string* uuid);
+  virtual void VolumeNameToMRCUUID(const std::string& volume_name,
+                                   UUIDIterator* uuid_iterator);
 
  private:
   /** Auth of type AUTH_NONE which is required for most operations which do not

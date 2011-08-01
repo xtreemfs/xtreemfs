@@ -20,6 +20,7 @@
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/pbrpc_url.h"
+#include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/volume_implementation.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "util/error_log.h"
@@ -106,15 +107,17 @@ Volume* ClientImplementation::OpenVolume(
     const std::string& volume_name,
     const xtreemfs::rpc::SSLOptions* ssl_options,
     const Options& options) {
+  UUIDIterator* uuid_iterator = new UUIDIterator;
+  VolumeNameToMRCUUID(volume_name, uuid_iterator);
+
   string mrc_uuid;
-  VolumeNameToMRCUUID(volume_name, &mrc_uuid);
-  string mrc_address;
-  UUIDToAddress(mrc_uuid, &mrc_address);
+  uuid_iterator->GetUUID(&mrc_uuid);
 
   VolumeImplementation* volume = new VolumeImplementation(
       this,
       client_uuid_,
       mrc_uuid,
+      uuid_iterator,
       volume_name,
       ssl_options,
       options);
@@ -356,6 +359,69 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
 
   response->DeleteBuffers();
   if (mrc_uuid->empty()) {
+    Logging::log->getLog(LEVEL_ERROR) << "No MRC found for volume: "
+        << volume_name << std::endl;
+    throw VolumeNotFoundException(volume_name);
+  }
+}
+
+void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
+                                               UUIDIterator* uuid_iterator) {
+  assert(uuid_iterator);
+
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+     Logging::log->getLog(LEVEL_DEBUG)
+         << "MRC: searching volume on MRC: " << volume_name << endl;
+  }
+
+  // Check if there is a @ in the volume_name.
+  // Everything behind the @ has to be removed as it identifies the snapshot.
+  string parsed_volume_name = volume_name;
+  size_t at_pos = volume_name.find("@");
+  if (at_pos != string::npos) {
+    parsed_volume_name = volume_name.substr(0, at_pos);
+  }
+
+  serviceGetByNameRequest rq = serviceGetByNameRequest();
+  rq.set_name(parsed_volume_name);
+
+  boost::scoped_ptr< SyncCallback<ServiceSet> > response(
+      ExecuteSyncRequest< SyncCallback<ServiceSet>* >(
+          boost::bind(
+              &xtreemfs::pbrpc::DIRServiceClient::
+                  xtreemfs_service_get_by_name_sync,
+              dir_service_client_.get(),
+              boost::cref(dir_service_address_),
+              boost::cref(dir_service_auth_),
+              boost::cref(dir_service_user_credentials_),
+              &rq),
+          options_.max_tries,
+          options_,
+          false));
+
+  bool mrc_found = false;
+  ServiceSet *service_set = response->response();
+  for (int i = 0; i < service_set->services_size(); i++) {
+    Service service = service_set->services(i);
+    if ((service.type() == SERVICE_TYPE_VOLUME)
+          && (service.name() == parsed_volume_name)) {
+      const ServiceDataMap& data = service.data();
+      for (int j = 0; j < data.data_size(); j++) {
+        if (data.data(j).key().substr(0, 3) == "mrc") {
+          if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+            Logging::log->getLog(LEVEL_DEBUG)
+                << "MRC with UUID: " << data.data(j).value()
+                << " added (key: " << data.data(j).key() << "." << std::endl;
+          }
+          uuid_iterator->AddUUID(data.data(j).value());
+          mrc_found = true;
+        }
+      }
+    }
+  }
+
+  response->DeleteBuffers();
+  if (!mrc_found) {
     Logging::log->getLog(LEVEL_ERROR) << "No MRC found for volume: "
         << volume_name << std::endl;
     throw VolumeNotFoundException(volume_name);

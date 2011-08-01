@@ -20,6 +20,7 @@
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/stripe_translator.h"
+#include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "rpc/client.h"
 #include "util/logging.h"
@@ -53,6 +54,31 @@ VolumeImplementation::VolumeImplementation(
   auth_bogus_.set_auth_type(AUTH_NONE);
   // Set username "xtreemfs" as it does not get checked at server side.
   user_credentials_bogus_.set_username("xtreemfs");
+}
+
+VolumeImplementation::VolumeImplementation(
+    ClientImplementation* client,
+    const std::string& client_uuid,
+    const std::string& mrc_uuid,
+    UUIDIterator* mrc_uuid_iterator,
+    const std::string& volume_name,
+    const xtreemfs::rpc::SSLOptions* ssl_options,
+    const Options& options)
+    : client_(client),
+      uuid_resolver_(client),
+      client_uuid_(client_uuid),
+      mrc_uuid_(mrc_uuid),
+      volume_name_(volume_name),
+      volume_ssl_options_(ssl_options),
+      volume_options_(options),
+      metadata_cache_(options.metadata_cache_size,
+                      options.metadata_cache_ttl_s) {
+  // Set AuthType to AUTH_NONE as it's currently not used.
+  auth_bogus_.set_auth_type(AUTH_NONE);
+  // Set username "xtreemfs" as it does not get checked at server side.
+  user_credentials_bogus_.set_username("xtreemfs");
+
+  mrc_uuid_iterator_.reset(mrc_uuid_iterator);
 }
 
 VolumeImplementation::~VolumeImplementation() {
@@ -453,9 +479,6 @@ void VolumeImplementation::GetAttr(
     }
   } else {
     // Not found in StatCache, retrieve from MRC.
-    string mrc_address;
-    uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
     getattrRequest rq;
     rq.set_volume_name(volume_name_);
     rq.set_path(path);
@@ -466,12 +489,15 @@ void VolumeImplementation::GetAttr(
             boost::bind(
                 &xtreemfs::pbrpc::MRCServiceClient::getattr_sync,
                 mrc_service_client_.get(),
-                boost::cref(mrc_address),
+                _1,
                 boost::cref(auth_bogus_),
                 boost::cref(user_credentials),
                 &rq),
+            mrc_uuid_iterator_.get(),
+            uuid_resolver_,
             volume_options_.max_tries,
-            volume_options_));
+            volume_options_,
+            false));
 
     stat_buffer->CopyFrom(response->response()->stbuf());
     if (stat_buffer->nlink() > 1) {  // Do not cache hard links.

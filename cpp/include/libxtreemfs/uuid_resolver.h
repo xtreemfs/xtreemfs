@@ -12,6 +12,8 @@
 
 namespace xtreemfs {
 
+class UUIDIterator;
+
 /** Abstract base class which defines the interface to resolve UUIDs from the
  *  DIR service. */
 class UUIDResolver {
@@ -31,6 +33,14 @@ class UUIDResolver {
    */
   virtual void VolumeNameToMRCUUID(const std::string& volume_name,
                                    std::string* mrc_uuid) = 0;
+
+  /** Resolves the list of UUIDs of the MRC replicas and adds them to the
+   *  uuid_iterator object.
+   *
+   *  @throws VolumeNotFoundException
+   */
+  virtual void VolumeNameToMRCUUID(const std::string& volume_name,
+                                   UUIDIterator* uuid_iterator) = 0;
 };
 
 }  // namespace xtreemfs

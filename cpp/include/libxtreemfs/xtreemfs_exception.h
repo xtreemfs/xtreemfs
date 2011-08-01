@@ -101,6 +101,15 @@ class UUIDNotInXlocSetException : public XtreemFSException {
     : XtreemFSException(msg) {}
 };
 
+/** Thrown if there was an operation on an UUIDIterator requested which could
+ *  not be fulfilled, e.g. retrieve a UUID, because the list of UUIDs of the
+ *  UUIDIterator was empty. */
+class UUIDIteratorListIsEmpyException : public XtreemFSException {
+ public:
+  explicit UUIDIteratorListIsEmpyException(const std::string& msg)
+    : XtreemFSException(msg) {}
+};
+
 /** Thrown in case the OSD did reply with a redirect error, internal use only.*/
 class ReplicationRedirectionException : public XtreemFSException {
  public:
