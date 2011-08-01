@@ -174,7 +174,9 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   if (options_->use_fuse_permission_checks) {
     required_fuse_options->push_back(strdup("-odefault_permissions"));
   }
+#ifdef __linux
   required_fuse_options->push_back(strdup("-obig_writes"));
+#endif
   // Unfortunately Fuse does also cache the stat entries of hard links and
   // therefore returns incorrect results if hard links are "chained".
   // In consequence, we have to disable the Fuse stat cache at all.
