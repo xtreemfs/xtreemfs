@@ -49,15 +49,15 @@ public final class PBRPC {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\013PBRPC.proto\022\022org.xtreemfs.pbrpc\032 googl" +
-      "e/protobuf/descriptor.proto:1\n\007proc_id\022\036" +
-      ".google.protobuf.MethodOptions\030\321\206\003 \001(\007:1" +
-      "\n\007data_in\022\036.google.protobuf.MethodOption" +
-      "s\030\324\206\003 \001(\010:2\n\010data_out\022\036.google.protobuf." +
-      "MethodOptions\030\323\206\003 \001(\010:7\n\014interface_id\022\037." +
-      "google.protobuf.ServiceOptions\030\322\206\003 \001(\007B3" +
-      "\n1org.xtreemfs.foundation.pbrpc.generate" +
-      "dinterfaces"
+      "\n\013PBRPC.proto\022\016xtreemfs.pbrpc\032 google/pr" +
+      "otobuf/descriptor.proto:1\n\007proc_id\022\036.goo" +
+      "gle.protobuf.MethodOptions\030\321\206\003 \001(\007:1\n\007da" +
+      "ta_in\022\036.google.protobuf.MethodOptions\030\324\206" +
+      "\003 \001(\010:2\n\010data_out\022\036.google.protobuf.Meth" +
+      "odOptions\030\323\206\003 \001(\010:7\n\014interface_id\022\037.goog" +
+      "le.protobuf.ServiceOptions\030\322\206\003 \001(\007B3\n1or" +
+      "g.xtreemfs.foundation.pbrpc.generatedint" +
+      "erfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

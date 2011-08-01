@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Fri Jul 22 16:47:10 CEST 2011
+//automatically generated from OSD.proto at Mon Aug 01 16:12:49 CEST 2011
 //(c) 2011. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
