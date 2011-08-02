@@ -457,5 +457,6 @@ if __name__ == "__main__":
 
         if failed:
             print 'FAILED!'
+            sys.exit(1)
         else:
             print 'SUCCESS.'
