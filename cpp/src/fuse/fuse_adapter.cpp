@@ -394,20 +394,30 @@ int FuseAdapter::getxattr(
           string(name), &result)) {
         return result;
       } else {
-        return -1 * ENODATA;  // Actually, it would be ENOATTR.
+#ifdef __linux
+        return -1 * ENODATA;  // Linux has no ENOATTR.
+#else
+        return -1 * ENOATTR;
+#endif
       }
     } else {
       string value_string;
       if (volume_->GetXAttr(user_credentials, string(path),
                             string(name), &value_string)) {
-        if (value_string.size() < size) {
-          memcpy(value, value_string.c_str(), value_string.size() + 1);
+        if (value_string.size() <= size) {
+          // XAttrs are actually binary data and do not require a
+          // null-terminating character.
+          memcpy(value, value_string.c_str(), value_string.size());
           return value_string.size();
         } else {
           return -1 * ERANGE;
         }
       } else {
-        return -1 * ENODATA;  // Actually, it would be ENOATTR.
+#ifdef __linux
+        return -1 * ENODATA;  // Linux has no ENOATTR.
+#else
+        return -1 * ENOATTR;
+#endif
       }
     }
   } catch(const PosixErrorException& e) {
