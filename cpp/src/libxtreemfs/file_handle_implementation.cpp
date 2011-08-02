@@ -39,9 +39,9 @@ namespace xtreemfs {
  */
 FileHandleImplementation::FileHandleImplementation(
     const std::string& client_uuid,
-    const std::string& mrc_uuid,
     FileInfo* file_info,
     const xtreemfs::pbrpc::XCap& xcap,
+    UUIDIterator* mrc_uuid_iterator,
     UUIDResolver* uuid_resolver,
     xtreemfs::pbrpc::MRCServiceClient* mrc_service_client,
     xtreemfs::pbrpc::OSDServiceClient* osd_service_client,
@@ -51,7 +51,7 @@ FileHandleImplementation::FileHandleImplementation(
     const xtreemfs::pbrpc::Auth& auth_bogus,
     const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus)
     : client_uuid_(client_uuid),
-      mrc_uuid_(mrc_uuid),
+      mrc_uuid_iterator_(mrc_uuid_iterator),
       file_info_(file_info),
       xcap_(xcap),
       xcap_renewal_pending_(false),
@@ -410,19 +410,18 @@ void FileHandleImplementation::Truncate(
     xcap_copy.CopyFrom(xcap_);
   }
 
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   // 1. Call truncate at the MRC (in order to increase the trunc epoch).
   boost::scoped_ptr< SyncCallback<XCap> > response(
     ExecuteSyncRequest< SyncCallback<XCap>* >(
         boost::bind(
             &xtreemfs::pbrpc::MRCServiceClient::ftruncate_sync,
             mrc_service_client_,
-            boost::cref(mrc_address),
+            _1,
             boost::cref(auth_bogus_),
             boost::cref(user_credentials),
             &xcap_copy),
+        mrc_uuid_iterator_,
+        uuid_resolver_,
         volume_options_.max_tries,
         volume_options_));
   {
@@ -910,18 +909,18 @@ void FileHandleImplementation::WriteBackFileSize(
   rq.mutable_osd_write_response()->CopyFrom(owr);
   rq.set_close_file(close_file);
 
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
   boost::scoped_ptr< SyncCallback<timestampResponse> > response(
       ExecuteSyncRequest< SyncCallback<timestampResponse>* >(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::
                   xtreemfs_update_file_size_sync,
               mrc_service_client_,
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials_bogus_),
               &rq),
+          mrc_uuid_iterator_,
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
   response->DeleteBuffers();
@@ -951,8 +950,10 @@ void FileHandleImplementation::WriteBackFileSizeAsync() {
   // Set to false because a close would use a sync writeback.
   rq.set_close_file(false);
 
+  string mrc_uuid;
   string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
+  mrc_uuid_iterator_->GetUUID(&mrc_uuid);
+  uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address);
   mrc_service_client_->xtreemfs_update_file_size(mrc_address,
                                                  auth_bogus_,
                                                  user_credentials_bogus_,
@@ -980,8 +981,10 @@ void FileHandleImplementation::RenewXCapAsync() {
     xcap_renewal_pending_ = true;
   }
 
+  string mrc_uuid;
   string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
+  mrc_uuid_iterator_->GetUUID(&mrc_uuid);
+  uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address);
   mrc_service_client_->xtreemfs_renew_capability(
       mrc_address,
       auth_bogus_,

@@ -55,8 +55,7 @@ template<class ReturnMessageType, class F>
                                          UUIDIterator* uuid_iterator,
                                          UUIDResolver* uuid_resolver,
                                          int max_tries,
-                                         const Options& options,
-                                         bool delay_last_attempt) {
+                                         const Options& options) {
 #ifdef __linux
   // Ignore the signal if no previous signal was found.
   sighandler_t previous_signal_handler = SIG_IGN;
@@ -98,9 +97,7 @@ template<class ReturnMessageType, class F>
       // Retry only in case of certain errors.
       if (response->error()->error_type() == xtreemfs::pbrpc::IO_ERROR
           // At least one retry left.
-          && (attempt < max_tries || max_tries == 0
-              // or this last attempt should get intentionally delayed.
-              || (attempt == max_tries && delay_last_attempt))) {
+          && (attempt < max_tries || max_tries == 0)) {
         // Mark the current UUID as failed and get the next one.
         uuid_iterator->MarkUUIDAsFailed(service_uuid);
         uuid_iterator->GetUUID(&service_uuid);
@@ -174,9 +171,9 @@ template<class ReturnMessageType, class F>
 
   // Output number of retries if not failed at the first retry.
   std::string retry_count_msg;
-  if (attempt > 2) {
+  if (attempt > 1) {
     retry_count_msg = ". Request finally failed after: "
-       + boost::lexical_cast<std::string>(attempt - 1) + " attempts.";
+       + boost::lexical_cast<std::string>(attempt) + " attempts.";
   } else {
     retry_count_msg = "";
   }
@@ -249,7 +246,7 @@ template<class ReturnMessageType, class F>
         level = xtreemfs::util::LEVEL_INFO;
         error = "The server redirected to the current master with"
               " UUID: " + redirect_to_server_uuid
-            + " after: " + boost::lexical_cast<std::string>(attempt - 1)
+            + " after: " + boost::lexical_cast<std::string>(attempt)
             + " attempts.";
         if (xtreemfs::util::Logging::log->loggingActive(level)) {
           xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
@@ -281,7 +278,7 @@ template<class ReturnMessageType, class F>
     throw PosixErrorException(
         xtreemfs::pbrpc::POSIX_ERROR_EINTR,
         "The operation was aborted by the user at attempt: "
-            + boost::lexical_cast<std::string>(attempt - 1) + ".");
+            + boost::lexical_cast<std::string>(attempt) + ".");
   }
 }
 

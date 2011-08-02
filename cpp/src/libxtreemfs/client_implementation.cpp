@@ -112,17 +112,13 @@ Volume* ClientImplementation::OpenVolume(
     const std::string& volume_name,
     const xtreemfs::rpc::SSLOptions* ssl_options,
     const Options& options) {
-  UUIDIterator* uuid_iterator = new UUIDIterator;
-  VolumeNameToMRCUUID(volume_name, uuid_iterator);
-
-  string mrc_uuid;
-  uuid_iterator->GetUUID(&mrc_uuid);
+  UUIDIterator* mrc_uuid_iterator = new UUIDIterator;
+  VolumeNameToMRCUUID(volume_name, mrc_uuid_iterator);
 
   VolumeImplementation* volume = new VolumeImplementation(
       this,
       client_uuid_,
-      mrc_uuid,
-      uuid_iterator,
+      mrc_uuid_iterator,
       volume_name,
       ssl_options,
       options);

@@ -50,20 +50,12 @@ class UUIDResolver;
  */
 class VolumeImplementation : public Volume {
  public:
-  VolumeImplementation(
-      ClientImplementation* client,
-      const std::string& client_uuid,
-      const std::string& mrc_uuid,
-      const std::string& volume_name,
-      const xtreemfs::rpc::SSLOptions* ssl_options,
-      const Options& options);
   /**
    * @remark Ownership of mrc_uuid_iterator is transferred to this object.
    */
   VolumeImplementation(
       ClientImplementation* client,
       const std::string& client_uuid,
-      const std::string& mrc_uuid,
       UUIDIterator* mrc_uuid_iterator,
       const std::string& volume_name,
       const xtreemfs::rpc::SSLOptions* ssl_options,
@@ -234,8 +226,11 @@ class VolumeImplementation : public Volume {
     return client_uuid_;
   }
 
-  const std::string& mrc_uuid() {
-    return mrc_uuid_;
+  /**
+   * @remark    Ownership is NOT transferred to the caller.
+   */
+  UUIDIterator* mrc_uuid_iterator() {
+    return mrc_uuid_iterator_.get();
   }
 
   /**
@@ -311,9 +306,6 @@ class VolumeImplementation : public Volume {
 
   /** UUID of the Client (needed to distinguish Locks of different clients). */
   const std::string& client_uuid_;
-
-  /** UUID of MRC which owns this volume. */
-  const std::string mrc_uuid_;
 
   /** UUID Iterator which contains the UUIDs of all MRC replicas of this
    *  volume. */

@@ -34,6 +34,7 @@ class OSDServiceClient;
 class FileInfo;
 class Options;
 class StripeTranslator;
+class UUIDIterator;
 class UUIDResolver;
 class Volume;
 
@@ -45,9 +46,9 @@ class FileHandleImplementation
  public:
   FileHandleImplementation(
       const std::string& client_uuid,
-      const std::string& mrc_uuid,
       FileInfo* file_info,
       const xtreemfs::pbrpc::XCap& xcap,
+      UUIDIterator* mrc_uuid_iterator,
       UUIDResolver* uuid_resolver,
       xtreemfs::pbrpc::MRCServiceClient* mrc_service_client,
       xtreemfs::pbrpc::OSDServiceClient* osd_service_client,
@@ -190,8 +191,8 @@ class FileHandleImplementation
   /** UUID of the Client (needed to distinguish Locks of different clients). */
   const std::string& client_uuid_;
 
-  /** UUID of the MRC. */
-  std::string mrc_uuid_;
+  /** UUIDIterator of the MRC. */
+  UUIDIterator* mrc_uuid_iterator_;
 
   /** Multiple FileHandle may refer to the same File and therefore unique file
    * properties (e.g. Path, FileId, XlocSet) are stored in a FileInfo object. */

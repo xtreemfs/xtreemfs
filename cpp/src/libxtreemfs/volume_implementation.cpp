@@ -37,29 +37,6 @@ namespace xtreemfs {
 VolumeImplementation::VolumeImplementation(
     ClientImplementation* client,
     const std::string& client_uuid,
-    const std::string& mrc_uuid,
-    const std::string& volume_name,
-    const xtreemfs::rpc::SSLOptions* ssl_options,
-    const Options& options)
-    : client_(client),
-      uuid_resolver_(client),
-      client_uuid_(client_uuid),
-      mrc_uuid_(mrc_uuid),
-      volume_name_(volume_name),
-      volume_ssl_options_(ssl_options),
-      volume_options_(options),
-      metadata_cache_(options.metadata_cache_size,
-                      options.metadata_cache_ttl_s) {
-  // Set AuthType to AUTH_NONE as it's currently not used.
-  auth_bogus_.set_auth_type(AUTH_NONE);
-  // Set username "xtreemfs" as it does not get checked at server side.
-  user_credentials_bogus_.set_username("xtreemfs");
-}
-
-VolumeImplementation::VolumeImplementation(
-    ClientImplementation* client,
-    const std::string& client_uuid,
-    const std::string& mrc_uuid,
     UUIDIterator* mrc_uuid_iterator,
     const std::string& volume_name,
     const xtreemfs::rpc::SSLOptions* ssl_options,
@@ -67,7 +44,6 @@ VolumeImplementation::VolumeImplementation(
     : client_(client),
       uuid_resolver_(client),
       client_uuid_(client_uuid),
-      mrc_uuid_(mrc_uuid),
       volume_name_(volume_name),
       volume_ssl_options_(ssl_options),
       volume_options_(options),
@@ -147,9 +123,6 @@ void VolumeImplementation::Close() {
 
 StatVFS* VolumeImplementation::StatFS(
     const xtreemfs::pbrpc::UserCredentials& user_credentials) {
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   statvfsRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_known_etag(0);
@@ -158,10 +131,12 @@ StatVFS* VolumeImplementation::StatFS(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::statvfs_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -175,9 +150,6 @@ void VolumeImplementation::ReadLink(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path,
       std::string* link_target_path) {
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   readlinkRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
@@ -186,10 +158,12 @@ void VolumeImplementation::ReadLink(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::readlink_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -203,9 +177,6 @@ void VolumeImplementation::Symlink(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& target_path,
     const std::string& link_path) {
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   symlinkRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_target_path(target_path);
@@ -215,10 +186,12 @@ void VolumeImplementation::Symlink(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::symlink_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -238,9 +211,6 @@ void VolumeImplementation::Link(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& target_path,
     const std::string& link_path) {
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   linkRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_target_path(target_path);
@@ -250,10 +220,12 @@ void VolumeImplementation::Link(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::link_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -277,9 +249,6 @@ void VolumeImplementation::Access(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
     const xtreemfs::pbrpc::ACCESS_FLAGS flags) {
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   accessRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
@@ -290,10 +259,12 @@ void VolumeImplementation::Access(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::access_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -324,10 +295,6 @@ FileHandle* VolumeImplementation::OpenFile(
     const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
     boost::uint32_t mode,
     int truncate_new_file_size) {
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
-
   // Handle o_sync.
   // TODO(mberlin): Currently no special handling needed?
   if (flags & SYSTEM_V_FCNTL_H_O_SYNC) {
@@ -348,10 +315,12 @@ FileHandle* VolumeImplementation::OpenFile(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::open_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -496,8 +465,7 @@ void VolumeImplementation::GetAttr(
             mrc_uuid_iterator_.get(),
             uuid_resolver_,
             volume_options_.max_tries,
-            volume_options_,
-            false));
+            volume_options_));
 
     stat_buffer->CopyFrom(response->response()->stbuf());
     if (stat_buffer->nlink() > 1) {  // Do not cache hard links.
@@ -522,9 +490,6 @@ void VolumeImplementation::SetAttr(
     const std::string& path,
     const xtreemfs::pbrpc::Stat& stat,
     xtreemfs::pbrpc::Setattrs to_set) {
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   setattrRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
@@ -536,10 +501,12 @@ void VolumeImplementation::SetAttr(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::setattr_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -565,9 +532,6 @@ void VolumeImplementation::SetAttr(
 void VolumeImplementation::Unlink(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path) {
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   // 1. Delete file at MRC.
   unlinkRequest rq;
   rq.set_volume_name(volume_name_);
@@ -578,10 +542,12 @@ void VolumeImplementation::Unlink(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::unlink_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -661,9 +627,6 @@ void VolumeImplementation::Rename(
     return;  // Do nothing.
   }
   // 1. Issue rename at MRC.
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   renameRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_source_path(path);
@@ -674,10 +637,12 @@ void VolumeImplementation::Rename(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::rename_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -735,9 +700,6 @@ void VolumeImplementation::CreateDirectory(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
     mode_t mode) {
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   mkdirRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
@@ -748,10 +710,12 @@ void VolumeImplementation::CreateDirectory(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::mkdir_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -770,9 +734,6 @@ void VolumeImplementation::CreateDirectory(
 void VolumeImplementation::RemoveDirectory(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path) {
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   rmdirRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
@@ -782,10 +743,12 @@ void VolumeImplementation::RemoveDirectory(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::rmdir_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -837,9 +800,6 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
     return result;
   }
 
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   // Process large requests in multiples of readdir_chunk_size.
   readdirRequest rq;
   rq.set_volume_name(volume_name_);
@@ -859,10 +819,12 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
             boost::bind(
                 &xtreemfs::pbrpc::MRCServiceClient::readdir_sync,
                 mrc_service_client_.get(),
-                boost::cref(mrc_address),
+                _1,
                 boost::cref(auth_bogus_),
                 boost::cref(user_credentials),
                 &rq),
+            mrc_uuid_iterator_.get(),
+            uuid_resolver_,
             volume_options_.max_tries,
             volume_options_));
     DirectoryEntries* dentries = response->response();
@@ -945,9 +907,6 @@ xtreemfs::pbrpc::listxattrResponse* VolumeImplementation::ListXAttrs(
     }
   }
 
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   listxattrRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
@@ -958,10 +917,12 @@ xtreemfs::pbrpc::listxattrResponse* VolumeImplementation::ListXAttrs(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::listxattr_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -991,18 +952,17 @@ void VolumeImplementation::SetXAttr(
   rq.set_value(value.c_str());
   rq.set_flags(flags);
 
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   boost::scoped_ptr< SyncCallback<timestampResponse> > response(
       ExecuteSyncRequest< SyncCallback<timestampResponse>* >(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::setxattr_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
   response->DeleteBuffers();
@@ -1021,9 +981,6 @@ bool VolumeImplementation::GetXAttr(
 
   if (xtreemfs_attribute_requested) {
     // Retrieve only the value of the requested attribute, not the whole list.
-    string mrc_address;
-    uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
     getxattrRequest rq;
     rq.set_volume_name(volume_name_);
     rq.set_path(path);
@@ -1034,10 +991,12 @@ bool VolumeImplementation::GetXAttr(
             boost::bind(
                 &xtreemfs::pbrpc::MRCServiceClient::getxattr_sync,
                 mrc_service_client_.get(),
-                boost::cref(mrc_address),
+                _1,
                 boost::cref(auth_bogus_),
                 boost::cref(user_credentials),
                 &rq),
+            mrc_uuid_iterator_.get(),
+            uuid_resolver_,
             volume_options_.max_tries,
             volume_options_));
     if (response->response()->has_value()) {
@@ -1133,18 +1092,17 @@ void VolumeImplementation::RemoveXAttr(
   rq.set_path(path);
   rq.set_name(name);
 
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   boost::scoped_ptr< SyncCallback<timestampResponse> > response(
       ExecuteSyncRequest< SyncCallback<timestampResponse>* >(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::removexattr_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
   response->DeleteBuffers();
@@ -1156,9 +1114,6 @@ void VolumeImplementation::AddReplica(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
     const xtreemfs::pbrpc::Replica& new_replica) {
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   xtreemfs_replica_addRequest replica_addRequest;
   replica_addRequest.set_volume_name(volume_name_);
   replica_addRequest.set_path(path);
@@ -1170,10 +1125,12 @@ void VolumeImplementation::AddReplica(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_replica_add_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &replica_addRequest),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -1190,9 +1147,6 @@ void VolumeImplementation::AddReplica(
 xtreemfs::pbrpc::Replicas* VolumeImplementation::ListReplicas(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path) {
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   xtreemfs_replica_listRequest replica_listRequest;
   replica_listRequest.set_volume_name(volume_name_);
   replica_listRequest.set_path(path);
@@ -1203,10 +1157,12 @@ xtreemfs::pbrpc::Replicas* VolumeImplementation::ListReplicas(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_replica_list_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &replica_listRequest),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -1222,9 +1178,6 @@ void VolumeImplementation::RemoveReplica(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
     const std::string& osd_uuid) {
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   xtreemfs_replica_removeRequest replica_removeRequest;
   replica_removeRequest.set_volume_name(volume_name_);
   replica_removeRequest.set_path(path);
@@ -1236,18 +1189,19 @@ void VolumeImplementation::RemoveReplica(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_replica_remove_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &replica_removeRequest),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
-  // Resolve OSD UUID.
-  string osd_address;
-  uuid_resolver_->UUIDToAddress(osd_uuid, &osd_address);
-
   // Now unlink the replica at the OSD.
+  UUIDIterator osd_uuid_iterator;
+  osd_uuid_iterator.AddUUID(osd_uuid);
+
   unlink_osd_Request unlink_osd_Request;
   unlink_osd_Request.set_file_id(response_mrc->response()->xcap().file_id());
   unlink_osd_Request.mutable_file_credentials()->CopyFrom(
@@ -1259,10 +1213,12 @@ void VolumeImplementation::RemoveReplica(
           boost::bind(
               &xtreemfs::pbrpc::OSDServiceClient::unlink_sync,
               &osd_service_client,
-              boost::cref(osd_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &unlink_osd_Request),
+          &osd_uuid_iterator,
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 
@@ -1278,9 +1234,6 @@ void VolumeImplementation::GetSuitableOSDs(
     std::list<std::string>* list_of_osd_uuids) {
   assert(list_of_osd_uuids);
 
-  string mrc_address;
-  uuid_resolver_->UUIDToAddress(mrc_uuid_, &mrc_address);
-
   xtreemfs_get_suitable_osdsRequest get_suitable_osdsRequest;
   get_suitable_osdsRequest.set_volume_name(volume_name_);
   get_suitable_osdsRequest.set_path(path);
@@ -1295,10 +1248,12 @@ void VolumeImplementation::GetSuitableOSDs(
               &xtreemfs::pbrpc::MRCServiceClient::
                   xtreemfs_get_suitable_osds_sync,
               mrc_service_client_.get(),
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials),
               &get_suitable_osdsRequest),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
           volume_options_.max_tries,
           volume_options_));
 

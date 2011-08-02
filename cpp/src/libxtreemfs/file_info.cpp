@@ -53,9 +53,9 @@ FileHandleImplementation* FileInfo::CreateFileHandle(
     const xtreemfs::pbrpc::XCap& xcap, bool used_for_pending_filesize_update) {
   FileHandleImplementation* file_handle = new FileHandleImplementation(
       volume_->client_uuid(),
-      volume_->mrc_uuid(),
       this,
       xcap,
+      volume_->mrc_uuid_iterator(),
       volume_->uuid_resolver(),
       volume_->mrc_service_client(),
       volume_->osd_service_client(),
