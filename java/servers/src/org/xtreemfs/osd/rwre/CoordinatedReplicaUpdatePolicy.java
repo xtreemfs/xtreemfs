@@ -150,6 +150,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                         // ignore.
                     }
                     r.freeBuffers();
+                    return;
                 }
 
                 if (numResponses == numAcksRequired) {
