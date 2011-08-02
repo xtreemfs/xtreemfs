@@ -285,17 +285,6 @@ template<class ReturnMessageType, class F>
   }
 }
 
-/** Executes the request without delaying the last try. */
-template<class ReturnMessageType, class F>
-    ReturnMessageType ExecuteSyncRequest(F sync_function,
-                                         int max_tries,
-                                         const Options& options) {
-  return ExecuteSyncRequest<ReturnMessageType>(sync_function,
-                                               max_tries,
-                                               options,
-                                               false);
-}
-
 /** Retries to execute the synchronous request "sync_function" up to "options.
  *  max_tries" times and may get interrupted (NON-UUIDIterator aware version).
  *
@@ -515,6 +504,17 @@ template<class ReturnMessageType, class F>
         "The operation was aborted by the user at attempt: "
             + boost::lexical_cast<std::string>(attempt - 1) + ".");
   }
+}
+
+/** Executes the request without delaying the last try. */
+template<class ReturnMessageType, class F>
+    ReturnMessageType ExecuteSyncRequest(F sync_function,
+                                         int max_tries,
+                                         const Options& options) {
+  return ExecuteSyncRequest<ReturnMessageType>(sync_function,
+                                               max_tries,
+                                               options,
+                                               false);
 }
 
 }  // namespace xtreemfs
