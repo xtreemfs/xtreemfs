@@ -227,15 +227,16 @@ int xtreemfs_fuse_getxattr(
     const char *path, const char *name, char *value, size_t size) {
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG)
-        << "xtreemfs_fuse_getxattr " << " " << path << " " << name << endl;
+        << "xtreemfs_fuse_getxattr " << " " << path << " " << name << " "
+        << size << endl;
   }
   return fuse_adapter->getxattr(path, name, value, size);
 }
 
 int xtreemfs_fuse_listxattr(const char *path, char *list, size_t size) {
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-     Logging::log->getLog(LEVEL_DEBUG)  << "xtreemfs_fuse_listxattr " << path
-         << endl;
+     Logging::log->getLog(LEVEL_DEBUG)
+         << "xtreemfs_fuse_listxattr " << path << " " << size << endl;
   }
   return fuse_adapter->listxattr(path, list, size);
 }
