@@ -311,7 +311,7 @@ public class MRCHelper {
         try {
             key = SysAttrs.valueOf(keyString);
         } catch (IllegalArgumentException exc) {
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "unknown system attribute '" + key + "'");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "unknown system attribute '" + keyString + "'");
         }
         
         if (key != null) {
@@ -486,7 +486,7 @@ public class MRCHelper {
         try {
             key = SysAttrs.valueOf(keyString);
         } catch (IllegalArgumentException exc) {
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "unknown system attribute '" + key + "'");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "unknown system attribute '" + keyString + "'");
         }
         
         switch (key) {
@@ -771,7 +771,7 @@ public class MRCHelper {
             break;
         
         default:
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "system attribute '" + key
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "system attribute '" + keyString
                 + "' is immutable");
         }
     }
