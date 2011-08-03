@@ -43,11 +43,11 @@ int main(int argc, char **argv) {
     invalid_commandline_parameters = true;
   }
   // Display help if needed.
-  if (options.empty_arguments_list) {
+  if (options.empty_arguments_list || invalid_commandline_parameters) {
     cout << options.ShowCommandLineUsage() << endl;
     return 1;
   }
-  if (options.show_help || invalid_commandline_parameters) {
+  if (options.show_help) {
     cout << options.ShowCommandLineHelp() << endl;
     return 1;
   }
