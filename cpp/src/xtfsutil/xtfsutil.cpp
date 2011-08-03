@@ -124,8 +124,11 @@ bool getattr(const string& xctl_file,
         cout << "file" << endl;
 
         bool is_replicated = false;
+        bool is_ronly =
+            (stat["locations"]["update-policy"].asString() == "ronly");
         cout << "Replication policy   ";
         if (!stat["locations"]["update-policy"].asString().empty()) {
+          ;
           is_replicated = true;
           cout << stat["locations"]["update-policy"].asString() << endl;
         } else {
@@ -142,7 +145,7 @@ bool getattr(const string& xctl_file,
               << " / " << replica["striping-policy"]["width"].asInt()
               << " / " <<replica["striping-policy"]["size"].asInt()
               << "kB" << endl;
-          if (is_replicated) {
+          if (is_ronly) {
             cout << "     Replication Flags   ";
             int repl_flags = replica["replication-flags"].asInt();
             if (repl_flags & xtreemfs::pbrpc::REPL_FLAG_FULL_REPLICA) {
