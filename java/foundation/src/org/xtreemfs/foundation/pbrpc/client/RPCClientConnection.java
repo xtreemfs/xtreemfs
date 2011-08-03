@@ -34,7 +34,7 @@ public class RPCClientConnection {
 
     /** max wait is one hour
      */
-    public static final int MAX_RETRY_WAIT = 1000*60*60;
+    public static final int MAX_RETRY_WAIT = 1000*60;
 
     private ChannelIO  channel;
 
