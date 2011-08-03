@@ -43,14 +43,15 @@ class Server:
 
             print "xtestenv: checking if server is running with pid", pid
 
+            # Use 'waitpid' to touch any zombies and ensure that these are
+            # cleaned up first.
             try:
-                pid, exitvalue = os.waitpid(int(pid), os.WNOHANG)
-                if pid != 0 and exitvalue != 0:
-                    return False
-                else:
-                    return True
+                # We dont care about the actual result of waitpid.
+                os.waitpid(int(pid), os.WNOHANG)
             except OSError:
-                return False
+                pass
+
+            return os.path.exists("/proc/" + str(pid))
         else:
             return False
 
@@ -102,14 +103,14 @@ class Server:
             pidfile.write(str(p.pid))
             pidfile.close()
 
-            print "xtestenv: started server on with pid", p.pid
+            print "xtestenv: started", self._service_name, "server with pid", p.pid
 
             sleep(2.0)
 
             if not self.is_running():
                 raise RuntimeError, "server failed to start"
         else:
-            print "xtestenv: server with is already running"
+            print "xtestenv:", self._service_name, "server is already running"
 
     def stop(self):
         pid_file_path = self._get_pid_file_path()
@@ -123,32 +124,35 @@ class Server:
                 killed = False
                 for signo in (signal.SIGTERM, signal.SIGKILL):
                     for try_i in xrange(self._start_stop_retries):
-                        print "xtestenv: stopping server with pid", pid, "with signal", str(signo) + ", try", try_i
+                        print "xtestenv: stopping", self._service_name, "server with pid", pid, "with signal", str(signo) + ", try", try_i
 
                         try: os.kill(pid, signo)
                         except: pass
 
                         sleep(1)
 
+                        # Use 'waitpid' to touch any zombies and ensure that these are
+                        # cleaned up first.
                         try:
-                            if os.waitpid(pid, os.WNOHANG)[0] != 0:
-                                killed = True
-                                break
+                            # We dont care about the actual result of waitpid.
+                            os.waitpid(int(pid), os.WNOHANG)
                         except OSError:
-                            killed = True
+                            pass
+
+                        killed = not os.path.exists("/proc/" + str(pid))
+                        if killed:
                             break
-                        except:
-                            if DEBUG_ME:
-                                traceback.print_exc()
 
                     if killed:
                         break
 
             if killed:
                 os.unlink(pid_file_path)
+            else:
+                print "FAILED to stop", self._service_name, "server with pid", pid
 
         else:
-            print "xtestenv: no pid file for", self.__class__.__name__, "server"
+            print "xtestenv: no pid file for", self._service_name, "server found"
 
 
 START_STOP_SERVICE_RETRIES = 3
