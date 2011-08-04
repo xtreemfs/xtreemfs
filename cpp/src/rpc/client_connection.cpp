@@ -285,6 +285,9 @@ void ClientConnection::Reset() {
   next_reconnect_at_ = posix_time::second_clock::local_time()
       + posix_time::seconds(reconnect_interval_s_);
   reconnect_interval_s_ = reconnect_interval_s_ * 2;
+  if (reconnect_interval_s_ > max_reconnect_interval_s_) {
+    reconnect_interval_s_ = max_reconnect_interval_s_;
+  }
 }
 
 void ClientConnection::Close() {

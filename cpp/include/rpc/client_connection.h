@@ -92,8 +92,8 @@ class ClientConnection {
   boost::asio::ip::tcp::endpoint *endpoint_;
   request_map *request_table_;
   boost::asio::deadline_timer timer_;
-  int32_t connect_timeout_s_;
-  int32_t max_reconnect_interval_s_;
+  const int32_t connect_timeout_s_;
+  const int32_t max_reconnect_interval_s_;
   boost::posix_time::ptime next_reconnect_at_;
   int32_t reconnect_interval_s_;
   boost::posix_time::ptime last_used_;
