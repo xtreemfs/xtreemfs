@@ -169,8 +169,26 @@ if __name__ == "__main__":
     option_parser.add_option(  "--stop-mrc", action="store_true", dest="mrc_stop")
     option_parser.add_option(  "--start-osd", action="store_true", dest="osd_start")
     option_parser.add_option(  "--stop-osd", action="store_true", dest="osd_stop")
+    option_parser.add_option(  "--dir-suffix", action="store", dest="dir_suffix")
+    option_parser.add_option(  "--mrc-suffix", action="store", dest="mrc_suffix")
+    option_parser.add_option(  "--osd-suffix", action="store", dest="osd_suffix")
 
     options, positional_args = option_parser.parse_args()
+    
+    if options.dir_suffix:
+        dir_string = "dir" + options.dir_suffix
+    else:
+        dir_string = "dir"
+
+    if options.mrc_suffix:
+        mrc_string = "mrc" + options.mrc_suffix
+    else:
+        mrc_string = "mrc"
+
+    if options.osd_suffix:
+        osd_string = "osd" + options.osd_suffix
+    else:
+        osd_string = "osd"
 
     if options.dir_start or options.mrc_start or options.osd_start:
         try:
@@ -190,22 +208,22 @@ if __name__ == "__main__":
     if options.dir_start:
         if not options.config_file_path:
             config_file = os.path.join(xtreemfs_dir,
-                                       "etc/xos/xtreemfs/dirconfig.properties")
+                                       "etc/xos/xtreemfs/" + dir_string + "config.properties")
         else:
             config_file = options.config_file_path
         print "Starting DIR with config:", config_file
         dir = Server(1,
                      config_file,
-                     os.path.join(options.base_dir, "run", "xtreemfs_dir.pid"),
+                     os.path.join(options.base_dir, "run", "xtreemfs_" + dir_string + ".pid"),
                      xtreemfs_dir,
                      'DIR')
-        dir.start(os.path.join(options.base_dir, "log", "dir.log"))
+        dir.start(os.path.join(options.base_dir, "log", dir_string + ".log"))
 
     elif options.dir_stop:
         print "Stopping DIR..."
         dir = Server(1,
                      '',
-                     os.path.join(options.base_dir, "run", "xtreemfs_dir.pid"),
+                     os.path.join(options.base_dir, "run", "xtreemfs_" + dir_string + ".pid"),
                      xtreemfs_dir,
                      'DIR')
         dir.stop()
@@ -213,22 +231,22 @@ if __name__ == "__main__":
     if options.mrc_start:
         if not options.config_file_path:
             config_file = os.path.join(xtreemfs_dir,
-                                       "etc/xos/xtreemfs/mrcconfig.properties")
+                                       "etc/xos/xtreemfs/" + dir_string + "config.properties")
         else:
             config_file = options.config_file_path
         print "Starting MRC with config:", config_file
         mrc = Server(1,
                      config_file,
-                     os.path.join(options.base_dir, "run", "xtreemfs_mrc.pid"),
+                     os.path.join(options.base_dir, "run", "xtreemfs_" + mrc_string + ".pid"),
                      xtreemfs_dir,
                      'MRC')
-        mrc.start(os.path.join(options.base_dir, "log", "mrc.log"))
+        mrc.start(os.path.join(options.base_dir, "log", mrc_string + ".log"))
 
     elif options.mrc_stop:
         print "Stopping MRC..."
         mrc = Server(1,
                      '',
-                     os.path.join(options.base_dir, "run", "xtreemfs_mrc.pid"),
+                     os.path.join(options.base_dir, "run", "xtreemfs_" + mrc_string + ".pid"),
                      xtreemfs_dir,
                      'MRC')
         mrc.stop()
@@ -236,22 +254,22 @@ if __name__ == "__main__":
     if options.osd_start:
         if not options.config_file_path:
             config_file = os.path.join(xtreemfs_dir,
-                                       "etc/xos/xtreemfs/osdconfig.properties")
+                                       "etc/xos/xtreemfs/" + osd_string + "config.properties")
         else:
             config_file = options.config_file_path
         print "Starting OSD with config:", config_file
         osd = Server(1,
                      config_file,
-                     os.path.join(options.base_dir, "run", "xtreemfs_osd.pid"),
+                     os.path.join(options.base_dir, "run", "xtreemfs_" + osd_string + ".pid"),
                      xtreemfs_dir,
                      'OSD')
-        osd.start(os.path.join(options.base_dir, "log", "osd.log"))
+        osd.start(os.path.join(options.base_dir, "log", osd_string + ".log"))
 
     elif options.osd_stop:
         print "Stopping OSD..."
         osd = Server(1,
                      '',
-                     os.path.join(options.base_dir, "run", "xtreemfs_mrc.pid"),
+                     os.path.join(options.base_dir, "run", "xtreemfs_" + osd_string + ".pid"),
                      xtreemfs_dir,
                      'OSD')
         osd.stop()
