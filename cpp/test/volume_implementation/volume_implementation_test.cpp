@@ -607,8 +607,87 @@ TEST_F(VolumeImplementationTest, FilesLocking) {
   });
 }
 
-/** If a file is closed, it's locks should be automatically released. */
-TEST_F(VolumeImplementationTest, FilesLockingImplicitReleaseAfterClose) {
+/** Releasing a lock which does not exist does not throw. */
+TEST_F(VolumeImplementationTest, FilesLockingReleaseNonExistantLock) {
+  string path = "/test";
+
+  FileHandle* file_handle;
+  Lock lock;
+
+  ASSERT_NO_THROW({
+    // Open file.
+    file_handle = volume_->OpenFile(user_credentials_,
+                                    path,
+                                    SYSTEM_V_FCNTL_H_O_CREAT,
+                                    448);  // octal 700.
+    EXPECT_EQ(0, dynamic_cast<FileHandleImplementation*>(file_handle)
+        ->file_info_->active_locks_.size());
+    file_handle->ReleaseLock(user_credentials_,
+                             23,
+                             0,
+                             0,
+                             true);
+    EXPECT_EQ(0, dynamic_cast<FileHandleImplementation*>(file_handle)
+            ->file_info_->active_locks_.size());
+    file_handle->Close();
+    volume_->Unlink(user_credentials_, path);
+  });
+}
+
+/** Releasing a lock which does exist does not throw. */
+TEST_F(VolumeImplementationTest, FilesLockingReleaseExistantLock) {
+  string path = "/test";
+
+  FileHandle* file_handle;
+  boost::scoped_ptr<Lock> lock;
+
+  ASSERT_NO_THROW({
+    // Open file.
+    file_handle = volume_->OpenFile(user_credentials_,
+                                    path,
+                                    SYSTEM_V_FCNTL_H_O_CREAT,
+                                    448);  // octal 700.
+    EXPECT_EQ(0, dynamic_cast<FileHandleImplementation*>(file_handle)
+        ->file_info_->active_locks_.size());
+
+    lock.reset(file_handle->AcquireLock(user_credentials_,
+                                         1,  // PID.
+                                         0,
+                                         1,  // Range in bytes: [0, 1]
+                                         true,
+                                         false));
+    EXPECT_EQ(1, dynamic_cast<FileHandleImplementation*>(file_handle)
+        ->file_info_->active_locks_.size());
+
+    file_handle->ReleaseLock(user_credentials_,
+                             1,
+                             0,
+                             0,
+                             true);
+    EXPECT_EQ(0, dynamic_cast<FileHandleImplementation*>(file_handle)
+            ->file_info_->active_locks_.size());
+    file_handle->Close();
+
+    // Open file again.
+    file_handle = volume_->OpenFile(user_credentials_,
+                                    path,
+                                    SYSTEM_V_FCNTL_H_O_CREAT);
+    // Make sure there are no locks for the file at the OSD.
+    lock.reset(file_handle->CheckLock(user_credentials_,
+                                      3,  // PID.
+                                      0,
+                                      0,  // Range in bytes: [0, EOF]
+                                      true));
+    EXPECT_EQ(3, lock->client_pid());
+    file_handle->Close();
+
+    volume_->Unlink(user_credentials_, path);
+  });
+}
+
+/** Obtain locks on a file and close the file handles. Reopen the file and
+ *  check if the OSD still has any locks for it. */
+TEST_F(VolumeImplementationTest, FilesLockingLastCloseReleasesAllLocks) {
   string path = "/test";
 
   FileHandle* file_handle;
@@ -622,56 +701,131 @@ TEST_F(VolumeImplementationTest, FilesLockingImplicitReleaseAfterClose) {
                                     path,
                                     SYSTEM_V_FCNTL_H_O_CREAT,
                                     448);  // octal 700.
-    // Lock file for writing.
+
+    // No locks yet.
+    EXPECT_EQ(0, dynamic_cast<FileHandleImplementation*>(file_handle)
+        ->file_info_->active_locks_.size());
+
+    // Lock first file for writing.
     lock1.reset(file_handle->AcquireLock(user_credentials_,
                                          1,  // PID.
                                          0,
-                                         1,  // Range in bytes: [0, 0]
+                                         1,  // Range in bytes: [0, 1]
                                          true,
                                          false));
+    EXPECT_EQ(1, dynamic_cast<FileHandleImplementation*>(file_handle)
+          ->file_info_->active_locks_.size());
+
     // Open second file.
     file_handle2 = volume_->OpenFile(user_credentials_,
                                      path,
                                      SYSTEM_V_FCNTL_H_O_RDWR);
     // Obtain a second lock.
     lock2.reset(file_handle2->AcquireLock(user_credentials_,
-                                          1,  // PID.
-                                          1,
-                                          1,  // Range in bytes: [1, 1]
+                                          2,  // PID.
+                                          2,
+                                          1,  // Range in bytes: [2, 3]
                                           true,
                                           false));
-  });
+    EXPECT_EQ(2, dynamic_cast<FileHandleImplementation*>(file_handle)
+          ->file_info_->active_locks_.size());
 
-  // After a close of the first file, all locks should be gone.
-  ASSERT_NO_THROW({
-    file_handle->Close();
-    lock2.reset(file_handle2->CheckLock(user_credentials_,
-                                        2,  // PID.
-                                        0,
-                                        1,  // Range in bytes: [0, 0]
-                                        false));
-    // Should fail if the previous lock is still present at the OSD or cache.
-    EXPECT_EQ(2, lock2->client_pid());
-    EXPECT_EQ(0, lock2->offset());
-    EXPECT_EQ(1, lock2->length());
-    EXPECT_FALSE(lock2->exclusive());
-  });
-  ASSERT_NO_THROW({
-    lock1.reset(file_handle2->CheckLock(user_credentials_,
-                                        1,  // PID.
-                                        1,
-                                        1,  // Range in bytes: [1, 1]
-                                        false));
-    // Should fail if the previous lock is still present at the OSD or cache.
-    EXPECT_EQ(1, lock1->client_pid());
-    EXPECT_EQ(1, lock1->offset());
-    EXPECT_EQ(1, lock1->length());
-    EXPECT_FALSE(lock1->exclusive());
-  });
-
-  // Cleanup.
-  ASSERT_NO_THROW({
     file_handle2->Close();
+    // Still two locks reaming as we did not explicitly call
+    // file_handle->ReleaseLockOfProcess().
+    EXPECT_EQ(2, dynamic_cast<FileHandleImplementation*>(file_handle)
+            ->file_info_->active_locks_.size());
+    file_handle->Close();
+
+    // Open file again.
+    file_handle = volume_->OpenFile(user_credentials_,
+                                    path,
+                                    SYSTEM_V_FCNTL_H_O_CREAT);
+    // Make sure there are no locks for the file at the OSD.
+    lock1.reset(file_handle->CheckLock(user_credentials_,
+                                       3,  // PID.
+                                       0,
+                                       0,  // Range in bytes: [0, EOF]
+                                       true));
+    EXPECT_EQ(3, lock1->client_pid());
+    file_handle->Close();
+
+    // Cleanup.
+    volume_->Unlink(user_credentials_, path);
+  });
+}
+
+/** ReleaseLockOfProcess releases only the locks of the specified process id. */
+TEST_F(VolumeImplementationTest, FilesLockingReleaseLockOfProcess) {
+  string path = "/test";
+
+  FileHandle* file_handle;
+  FileHandle* file_handle2;
+  boost::scoped_ptr<Lock> lock1;
+  boost::scoped_ptr<Lock> lock2;
+
+  ASSERT_NO_THROW({
+    // Open first file.
+    file_handle = volume_->OpenFile(user_credentials_,
+                                    path,
+                                    SYSTEM_V_FCNTL_H_O_CREAT,
+                                    448);  // octal 700.
+
+    // No locks yet.
+    EXPECT_EQ(0, dynamic_cast<FileHandleImplementation*>(file_handle)
+        ->file_info_->active_locks_.size());
+
+    // Lock first file for writing.
+    lock1.reset(file_handle->AcquireLock(user_credentials_,
+                                         1,  // PID.
+                                         0,
+                                         1,  // Range in bytes: [0, 1]
+                                         true,
+                                         false));
+    EXPECT_EQ(1, dynamic_cast<FileHandleImplementation*>(file_handle)
+          ->file_info_->active_locks_.size());
+
+    // Open second file.
+    file_handle2 = volume_->OpenFile(user_credentials_,
+                                     path,
+                                     SYSTEM_V_FCNTL_H_O_RDWR);
+    // Obtain a second lock.
+    lock2.reset(file_handle2->AcquireLock(user_credentials_,
+                                          2,  // PID.
+                                          2,
+                                          1,  // Range in bytes: [2, 3]
+                                          true,
+                                          false));
+    EXPECT_EQ(2, dynamic_cast<FileHandleImplementation*>(file_handle)
+          ->file_info_->active_locks_.size());
+
+    // Explicitly call file_handle->ReleaseLockOfProcess().
+    file_handle2->ReleaseLockOfProcess(2);
+    EXPECT_EQ(1, dynamic_cast<FileHandleImplementation*>(file_handle)
+            ->file_info_->active_locks_.size());
+    file_handle2->Close();
+    EXPECT_EQ(1, dynamic_cast<FileHandleImplementation*>(file_handle)
+                ->file_info_->active_locks_.size());
+
+    file_handle->ReleaseLockOfProcess(1);
+    EXPECT_EQ(0, dynamic_cast<FileHandleImplementation*>(file_handle)
+                ->file_info_->active_locks_.size());
+    file_handle->Close();
+
+    // Open file again.
+    file_handle = volume_->OpenFile(user_credentials_,
+                                    path,
+                                    SYSTEM_V_FCNTL_H_O_CREAT);
+    // Make sure there are no locks for the file at the OSD.
+    lock1.reset(file_handle->CheckLock(user_credentials_,
+                                       3,  // PID.
+                                       0,
+                                       0,  // Range in bytes: [0, EOF]
+                                       true));
+    EXPECT_EQ(3, lock1->client_pid());
+    file_handle->Close();
+
+    // Cleanup.
     volume_->Unlink(user_credentials_, path);
   });
 }
@@ -710,21 +864,22 @@ TEST_F(VolumeImplementationTest, ExplicitCloseSent) {
     string old_repl_factor;
     volume_->GetXAttr(user_credentials_,
                       "/",
-                      "xtreemfs.repl_factor",
+                      "xtreemfs.default_rp",
                       &old_repl_factor);
-    EXPECT_EQ("1", old_repl_factor);
+    // No default replication policy by default.
+    EXPECT_EQ("", old_repl_factor);
     volume_->SetXAttr(user_credentials_,
                       "/",
-                      "xtreemfs.repl_factor",
-                      "2",
+                      "xtreemfs.default_rp",
+                      "{\"replication-factor\":2,\"replication-flags\":32,\"update-policy\":\"ronly\"}",  // NOLINT
                       XATTR_FLAGS_REPLACE);
     // Test if the increase was successful.
-    string new_repl_factor;
+    string new_default_rp_policy;
     volume_->GetXAttr(user_credentials_,
                       "/",
-                      "xtreemfs.repl_factor",
-                      &new_repl_factor);
-    EXPECT_EQ("2", new_repl_factor);
+                      "xtreemfs.default_rp",
+                      &new_default_rp_policy);
+    EXPECT_EQ("{\"replication-factor\":2,\"replication-flags\":32,\"update-policy\":\"ronly\"}", new_default_rp_policy);  // NOLINT
 
     // Open and close a file.
     FileHandle* file_handle = volume_->OpenFile(user_credentials_,

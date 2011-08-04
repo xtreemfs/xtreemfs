@@ -49,6 +49,7 @@ class FileHandleImplementation
       FileInfo* file_info,
       const xtreemfs::pbrpc::XCap& xcap,
       UUIDIterator* mrc_uuid_iterator,
+      UUIDIterator* osd_uuid_iterator,
       UUIDResolver* uuid_resolver,
       xtreemfs::pbrpc::MRCServiceClient* mrc_service_client,
       xtreemfs::pbrpc::OSDServiceClient* osd_service_client,
@@ -120,6 +121,11 @@ class FileHandleImplementation
       boost::uint64_t length,
       bool exclusive);
 
+  /** Used by FileInfo object to free active locks. */
+  void ReleaseLock(const xtreemfs::pbrpc::Lock& lock);
+
+  virtual void ReleaseLockOfProcess(int process_id);
+
   virtual void PingReplica(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& osd_uuid);
@@ -138,9 +144,6 @@ class FileHandleImplementation
    */
   const StripeTranslator* GetStripeTranslator(
       xtreemfs::pbrpc::StripingPolicyType type);
-
-  /** Used by FileInfo->CloseFileHandle() to free active locks. */
-  void ReleaseLock(const xtreemfs::pbrpc::Lock& lock, bool update_cache);
 
   /** Sends pending file size updates synchronous (needed for flush/close).
    *
@@ -183,7 +186,7 @@ class FileHandleImplementation
   void ReleaseLock(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const xtreemfs::pbrpc::Lock& lock,
-      bool update_cache);
+      boost::mutex::scoped_lock* active_locks_mutex_lock);
 
   /** Any modification to the object must obtain a lock first. */
   boost::mutex mutex_;
@@ -193,6 +196,12 @@ class FileHandleImplementation
 
   /** UUIDIterator of the MRC. */
   UUIDIterator* mrc_uuid_iterator_;
+
+  /** UUIDIterator which contains the UUIDs of all replicas. */
+  UUIDIterator* osd_uuid_iterator_;
+
+  /** Needed to resolve UUIDs. */
+  UUIDResolver* uuid_resolver_;
 
   /** Multiple FileHandle may refer to the same File and therefore unique file
    * properties (e.g. Path, FileId, XlocSet) are stored in a FileInfo object. */
@@ -212,9 +221,6 @@ class FileHandleImplementation
   /** Contains a file size update which has to be written back (or NULL). */
   boost::scoped_ptr<xtreemfs::pbrpc::OSDWriteResponse>
       osd_write_response_for_async_write_back_;
-
-  /** Used to resolve UUIDs. */
-  UUIDResolver* uuid_resolver_;
 
   /** Pointer to object owned by VolumeImplemention */
   xtreemfs::pbrpc::MRCServiceClient* mrc_service_client_;
@@ -240,6 +246,10 @@ class FileHandleImplementation
               FileSizeUpdateAfterFlushWaitsForPendingUpdates);
   FRIEND_TEST(VolumeImplementationTestFastPeriodicXCapRenewal,
               WorkingXCapRenewal);
+  FRIEND_TEST(VolumeImplementationTest, FilesLockingReleaseNonExistantLock);
+  FRIEND_TEST(VolumeImplementationTest, FilesLockingReleaseExistantLock);
+  FRIEND_TEST(VolumeImplementationTest, FilesLockingLastCloseReleasesAllLocks);
+  FRIEND_TEST(VolumeImplementationTest, FilesLockingReleaseLockOfProcess);
 };
 
 }  // namespace xtreemfs

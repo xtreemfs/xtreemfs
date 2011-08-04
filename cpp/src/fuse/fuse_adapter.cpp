@@ -1018,6 +1018,13 @@ int FuseAdapter::release(const char *path, struct fuse_file_info *fi) {
     FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
     assert(file_handle != NULL);
 
+    // Ensure POSIX semantics and release all locks of the filehandle's process.
+    try {
+      file_handle->ReleaseLockOfProcess(fuse_get_context()->pid);
+    } catch(const XtreemFSException& e) {
+      // We dont care if errors occured.
+    }
+
     try {
       file_handle->Close();
     } catch(const PosixErrorException& e) {

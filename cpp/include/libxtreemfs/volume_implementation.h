@@ -220,7 +220,8 @@ class VolumeImplementation : public Volume {
 
   /** Called by FileHandle.Close() to remove file_handle from the list. */
   void CloseFile(boost::uint64_t file_id,
-                 FileInfo* file_info);
+                 FileInfo* file_info,
+                 FileHandleImplementation* file_handle);
 
   const std::string& client_uuid() {
     return client_uuid_;

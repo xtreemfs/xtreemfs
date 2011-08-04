@@ -18,6 +18,7 @@
 #include <map>
 #include <string>
 
+#include "libxtreemfs/uuid_iterator.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 
 namespace xtreemfs {
@@ -62,22 +63,6 @@ class FileInfo {
     assert(new_xlocset);
     boost::mutex::scoped_lock lock(xlocset_mutex_);
     new_xlocset->CopyFrom(xlocset_);
-  }
-
-  /** Copies the XlocSet into new_xlocset and the index of the current replica
-   *  to "current_replica_index". */
-  inline void GetXLocSet(xtreemfs::pbrpc::XLocSet* new_xlocset,
-                         int* current_replica_index) {
-    assert(new_xlocset);
-    boost::mutex::scoped_lock lock(xlocset_mutex_);
-    new_xlocset->CopyFrom(xlocset_);
-    *current_replica_index = current_replica_index_;
-  }
-
-  /** Change the index of the current replica. */
-  inline void set_current_replica_index(int new_index) {
-    boost::mutex::scoped_lock lock(xlocset_mutex_);
-    current_replica_index_ = new_index;
   }
 
   /** Returns a new FileHandle object to which xcap belongs.
@@ -134,7 +119,12 @@ class FileInfo {
   /** Renews xcap of all file handles of this file asynchronously. */
   void RenewXCapsAsync();
 
-  /** Releases all locks using file_handle to issue ReleaseLock(). */
+  /** Releases all locks of process_id using file_handle to issue
+   *  ReleaseLock(). */
+  void ReleaseLockOfProcess(FileHandleImplementation* file_handle,
+                            int process_id);
+
+  /** Uses file_handle to release all known local locks. */
   void ReleaseAllLocks(FileHandleImplementation* file_handle);
 
   /** Blocks until all asynchronous file size updates are completed. */
@@ -164,6 +154,9 @@ class FileInfo {
                  bool* lock_for_pid_cached,
                  bool* cached_lock_for_pid_equal,
                  bool* conflict_found);
+
+  /** Returns true if a lock for "process_id" is known. */
+  bool CheckIfProcessHasLocks(int process_id);
 
   /** Add a copy of "lock" to list of active locks. */
   void PutLock(const xtreemfs::pbrpc::Lock& lock);
@@ -204,14 +197,17 @@ class FileInfo {
   /** List of corresponding OSDs. */
   xtreemfs::pbrpc::XLocSet xlocset_;
 
-  /** Index of the current replica in the XlocSet. Defaults to 0 and may change
-   *  due to failed reads or writes. */
-  int current_replica_index_;
+  /** UUIDIterator which contains the UUIDs of all replicas.
+   *
+   * If striping is used, replication is not possible. Therefore, for striped
+   * files the UUID Iterator will contain only the head OSD. */
+  UUIDIterator osd_uuid_iterator_;
 
-  /** Use this to protect xlocset_ and current_replica_index_. */
+  /** Use this to protect xlocset_. */
   boost::mutex xlocset_mutex_;
 
-  /** List of active locks (acts as a cache). */
+  /** List of active locks (acts as a cache). The OSD allows only one lock per
+   *  (client UUID, PID) tuple. */
   std::map<unsigned int, xtreemfs::pbrpc::Lock*> active_locks_;
 
   /** Use this to protect active_locks_. */
@@ -264,6 +260,10 @@ class FileInfo {
   FRIEND_TEST(VolumeImplementationTest, FileSizeUpdateAfterFlush);
   FRIEND_TEST(VolumeImplementationTestFastPeriodicFileSizeUpdate,
               FileSizeUpdateAfterFlushWaitsForPendingUpdates);
+  FRIEND_TEST(VolumeImplementationTest, FilesLockingReleaseNonExistantLock);
+  FRIEND_TEST(VolumeImplementationTest, FilesLockingReleaseExistantLock);
+  FRIEND_TEST(VolumeImplementationTest, FilesLockingLastCloseReleasesAllLocks);
+  FRIEND_TEST(VolumeImplementationTest, FilesLockingReleaseLockOfProcess);
 };
 
 }  // namespace xtreemfs

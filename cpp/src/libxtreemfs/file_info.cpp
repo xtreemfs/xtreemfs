@@ -7,6 +7,8 @@
 
 #include "libxtreemfs/file_info.h"
 
+#include <unistd.h>
+
 #include "libxtreemfs/file_handle_implementation.h"
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/volume_implementation.h"
@@ -34,10 +36,13 @@ FileInfo::FileInfo(
       replicate_on_close_(replicate_on_close),
       reference_count_(0),
       xlocset_(xlocset),
-      current_replica_index_(0),
       client_uuid_(client_uuid),
       osd_write_response_(NULL),
       osd_write_response_status_(kClean) {
+  // Add the UUIDs of all replicas to the UUID Iterator.
+  for (int i = 0; i < xlocset_.replicas_size(); i++) {
+    osd_uuid_iterator_.AddUUID(xlocset_.replicas(i).osd_uuids(0));
+  }
 }
 
 FileInfo::~FileInfo() {
@@ -56,6 +61,7 @@ FileHandleImplementation* FileInfo::CreateFileHandle(
       this,
       xcap,
       volume_->mrc_uuid_iterator(),
+      &osd_uuid_iterator_,
       volume_->uuid_resolver(),
       volume_->mrc_service_client(),
       volume_->osd_service_client(),
@@ -85,13 +91,6 @@ void FileInfo::CloseFileHandle(FileHandleImplementation* file_handle) {
     // Ignore errors.
   }
 
-  // Locks are released if any filehandle of the file is closed.
-  try {
-    ReleaseAllLocks(file_handle);
-  } catch(const XtreemFSException& e) {
-    // Ignore errors.
-  }
-
   // Remove file handle.
   {
     boost::mutex::scoped_lock lock_fhlist(open_file_handles_mutex_);
@@ -100,12 +99,13 @@ void FileInfo::CloseFileHandle(FileHandleImplementation* file_handle) {
   }
   // Waiting does not require a lock on the open_file_handles_.
   file_handle->WaitForPendingXCapRenewal();
-  delete file_handle;
+  // Defer the deletion of file_handle as it might be needed by
+  // VolumeImplementation::CloseFile() to release all locks.
 
   // At this point the file_handle is already removed from the list of open file
   // handles, but the reference_count is not decreased yet. This has to happen
   // after locking the open_file_table_ in Volume.
-  volume_->CloseFile(file_id_, this);
+  volume_->CloseFile(file_id_, this, file_handle);
 }
 
 int FileInfo::DecreaseReferenceCount() {
@@ -299,6 +299,9 @@ void FileInfo::CheckLock(const xtreemfs::pbrpc::Lock& lock,
                          bool* lock_for_pid_cached,
                          bool* cached_lock_for_pid_equal,
                          bool* conflict_found) {
+  assert(conflicting_lock);
+  assert(lock_for_pid_cached);
+  assert(cached_lock_for_pid_equal);
   assert(lock.client_uuid() == client_uuid_);
 
   boost::mutex::scoped_lock mutex_lock(active_locks_mutex_);
@@ -328,13 +331,20 @@ void FileInfo::CheckLock(const xtreemfs::pbrpc::Lock& lock,
   }
 }
 
+bool FileInfo::CheckIfProcessHasLocks(int process_id) {
+  boost::mutex::scoped_lock mutex_lock(active_locks_mutex_);
+
+  // There may be only up to one lock per process_id. No loop required.
+  map<unsigned int, Lock*>::const_iterator it = active_locks_.find(process_id);
+  return it != active_locks_.end();
+}
+
 void FileInfo::PutLock(const xtreemfs::pbrpc::Lock& lock) {
   assert(lock.client_uuid() == client_uuid_);
 
   boost::mutex::scoped_lock mutex_lock(active_locks_mutex_);
 
-  map<unsigned int, Lock*>::iterator  it
-      = active_locks_.find(lock.client_pid());
+  map<unsigned int, Lock*>::iterator it = active_locks_.find(lock.client_pid());
   if (it != active_locks_.end()) {
     delete it->second;
     active_locks_.erase(it);
@@ -345,28 +355,52 @@ void FileInfo::PutLock(const xtreemfs::pbrpc::Lock& lock) {
 
 void FileInfo::DelLock(const xtreemfs::pbrpc::Lock& lock) {
   assert(lock.client_uuid() == client_uuid_);
-
   boost::mutex::scoped_lock mutex_lock(active_locks_mutex_);
 
-  map<unsigned int, Lock*>::iterator  it
-      = active_locks_.find(lock.client_pid());
+  map<unsigned int, Lock*>::iterator it = active_locks_.find(lock.client_pid());
   if (it != active_locks_.end()) {
-    if (CheckIfLocksAreEqual(lock, *(it->second))) {
-      delete it->second;
-      active_locks_.erase(it);
-    }
+    // Only up to one lock per PID. If its unlocked, just delete it.
+    delete it->second;
+    active_locks_.erase(it);
+  }
+}
+
+void FileInfo::ReleaseLockOfProcess(FileHandleImplementation* file_handle,
+                                    int process_id) {
+  boost::mutex::scoped_lock mutex_lock(active_locks_mutex_);
+
+  // There may be only up to one lock per process_id. No loop required.
+  map<unsigned int, Lock*>::iterator it = active_locks_.find(process_id);
+  if (it != active_locks_.end()) {
+    Lock lock(*(it->second));
+    // Leave critical section.
+    mutex_lock.unlock();
+
+    file_handle->ReleaseLock(lock);
   }
 }
 
 void FileInfo::ReleaseAllLocks(FileHandleImplementation* file_handle) {
-  boost::mutex::scoped_lock mutex_lock(active_locks_mutex_);
+  // Do not use pointers here to ensure the deletion of this list - otherwise
+  // a ReleaseLock() may fail and the memory wont be freed.
+  list<Lock> active_locks_copy;
+  {
+    // Create a copy to avoid longer locking periods and ensure that ReleaseLock
+    // can delete the lock from active_locks_ without invalidating the iterator.
+    boost::mutex::scoped_lock mutex_lock(active_locks_mutex_);
 
-  for (map<unsigned int, Lock*>::iterator it = active_locks_.begin();
-       it != active_locks_.end();
-       ) {
-    file_handle->ReleaseLock(*(it->second), false);
-    delete it->second;
-    active_locks_.erase(it++);
+    for (map<unsigned int, Lock*>::iterator it = active_locks_.begin();
+         it != active_locks_.end();
+         ++it) {
+      active_locks_copy.push_back((*(it->second)));
+    }
+  }
+
+  for (list<Lock>::const_iterator it = active_locks_copy.begin();
+       it != active_locks_copy.end();
+       ++it) {
+    // The lock itself will be deleted by ReleaseLock.
+    file_handle->ReleaseLock(*it);
   }
 }
 

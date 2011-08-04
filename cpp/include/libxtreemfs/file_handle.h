@@ -184,6 +184,23 @@ class FileHandle {
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const xtreemfs::pbrpc::Lock& lock) = 0;
 
+  /** Releases the lock possibly hold by "process_id". Use this before closing
+   *  a file to ensure POSIX semantics:
+   *
+   * "All locks associated with a file for a given process shall be removed
+   *  when a file descriptor for that file is closed by that process or the
+   *  process holding that file descriptor terminates."
+   *  (http://pubs.opengroup.org/onlinepubs/009695399/functions/fcntl.html)
+   *
+   * @param process_id  ID of the process whose lock shall be released.
+   *
+   * @throws AddressToUUIDNotFoundException
+   * @throws IOException
+   * @throws PosixErrorException
+   * @throws UnknownAddressSchemeException
+   */
+  virtual void ReleaseLockOfProcess(int process_id) = 0;
+
   /** Triggers the replication of the replica on the OSD with the UUID
    *  "osd_uuid" if the replica is a full replica (and not a partial one).
    *
@@ -204,6 +221,15 @@ class FileHandle {
       const std::string& osd_uuid) = 0;
 
   /** Closes the open file handle (flushing any pending data).
+   *
+   * @attention Please execute ReleaseLockOfProcess() first if there're multiple
+   *            open file handles for the same file and you want to ensure the
+   *            POSIX semantics that with the close of a file handle the lock
+   *            (XtreemFS allows only one per tuple (client UUID, Process ID))
+   *            of the process will be closed.
+   *            If you do not care about this, you don't have to release any
+   *            locks on your own as all locks will be automatically released if
+   *            the last open file handle of a file will be closed.
    *
    * @throws AddressToUUIDNotFoundException
    * @throws FileInfoNotFoundException

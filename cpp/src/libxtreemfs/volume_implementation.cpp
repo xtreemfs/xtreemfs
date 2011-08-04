@@ -406,10 +406,22 @@ void VolumeImplementation::Truncate(
  */
 void VolumeImplementation::CloseFile(
     boost::uint64_t file_id,
-    FileInfo* file_info) {
+    FileInfo* file_info,
+    FileHandleImplementation* file_handle) {
+  // Put file_handle into a scoped_ptr as it definitely has to be deleted.
+  boost::scoped_ptr<FileHandleImplementation> file_handle_ptr(file_handle);
+
   // Remove file_info if it has no more open file handles.
   boost::mutex::scoped_lock lock(open_file_table_mutex_);
   if (file_info->DecreaseReferenceCount() == 0) {
+    // The last file handle of this file was closed: Release all locks.
+    // All locks for the process of this file handle have to be released.
+    try {
+      file_info->ReleaseAllLocks(file_handle_ptr.get());
+    } catch(const XtreemFSException& e) {
+      // Ignore errors.
+    }
+
     file_info->WaitForPendingFileSizeUpdates();
     RemoveFileInfoUnmutexed(file_id, file_info);
     // file_info is no longer visible: it's safe to unlock the open_file_table_.
@@ -568,55 +580,36 @@ void VolumeImplementation::Unlink(
   response->DeleteBuffers();
 }
 
-void VolumeImplementation::UnlinkAtOSD(
-    const FileCredentials& fc, const std::string& path) {
+void VolumeImplementation::UnlinkAtOSD(const FileCredentials& fc,
+                                       const std::string& path) {
   const XLocSet& xlocs = fc.xlocs();
-  string osd_address;
-  int max_total_tries = volume_options_.max_tries;
-  int attempts_so_far = 0;
-  // Retry unlink object if failed.
+
   unlink_osd_Request rq_osd;
   rq_osd.mutable_file_credentials()->CopyFrom(fc);
   rq_osd.set_file_id(fc.xcap().file_id());
+
+  UUIDIterator osd_uuid_iterator;
+
   // Remove _all_ replicas.
   for (int k = 0; k < xlocs.replicas_size(); k++) {
-    for (int i = 0;
-         attempts_so_far < max_total_tries || max_total_tries == 0;
-         i++) {
-      attempts_so_far++;
+    osd_uuid_iterator.ClearAndAddUUID(GetOSDUUIDFromXlocSet(xlocs,
+                                                            k,
+                                                            0));
 
-      uuid_resolver_->UUIDToAddress(GetOSDUUIDFromXlocSet(
-                                        xlocs,
-                                        k,
-                                        0),
-                                    &osd_address);
-
-      boost::scoped_ptr< SyncCallback<emptyResponse> > response_osd;
-      try {
-        response_osd.reset(ExecuteSyncRequest< SyncCallback<emptyResponse>* >(
+    boost::scoped_ptr< SyncCallback<emptyResponse> > response_osd(
+        ExecuteSyncRequest< SyncCallback<emptyResponse>* >(
             boost::bind(&xtreemfs::pbrpc::OSDServiceClient::unlink_sync,
-                        osd_service_client_.get(),
-                        boost::cref(osd_address),
-                        boost::cref(auth_bogus_),
-                        boost::cref(user_credentials_bogus_),
-                        &rq_osd),
-            1,  // Only one attempt, we retry on our own.
-            volume_options_,
-            attempts_so_far != max_total_tries));  // Delay all but last try.
-        response_osd->DeleteBuffers();
-      } catch(const IOException& e) {
-        Logging::log->getLog(LEVEL_ERROR)
-            << "error in unlink "<< path << endl;
-        if (attempts_so_far < max_total_tries || max_total_tries == 0) {
-          continue;  // Retry to delete the objects on this replica.
-        } else {
-          throw;  // Last attempt failed, rethrow exception.
-        }
-      }
-
-      break;  // Unlink on this replica successful, do not retry again.
-    }  // End of retry loop.
-  }  // End of loop over all replicas..
+                osd_service_client_.get(),
+                _1,
+                boost::cref(auth_bogus_),
+                boost::cref(user_credentials_bogus_),
+                &rq_osd),
+            &osd_uuid_iterator,
+            uuid_resolver_,
+            volume_options_.max_tries,
+            volume_options_));
+    response_osd->DeleteBuffers();
+  }
 }
 
 void VolumeImplementation::Rename(
