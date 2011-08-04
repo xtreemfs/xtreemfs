@@ -170,4 +170,45 @@ TEST_F(UUIDIteratorTest, SetCurrentUUID) {
   EXPECT_EQ(uuid1, current_uuid);
 }
 
+TEST_F(UUIDIteratorTest, DebugString) {
+  string uuid1 = "uuid1";
+  string uuid2 = "uuid2";
+  string uuid3 = "uuid3";
+
+  EXPECT_EQ("[  ]", uuid_iterator_->DebugString());
+
+  uuid_iterator_->AddUUID(uuid1);
+  EXPECT_EQ("[ [ uuid1, 0] ]", uuid_iterator_->DebugString());
+
+  uuid_iterator_->AddUUID(uuid2);
+  EXPECT_EQ("[ [ uuid1, 0], [ uuid2, 0] ]", uuid_iterator_->DebugString());
+
+  uuid_iterator_->AddUUID(uuid3);
+  EXPECT_EQ("[ [ uuid1, 0], [ uuid2, 0], [ uuid3, 0] ]", uuid_iterator_->DebugString());
+}
+
+TEST_F(UUIDIteratorTest, ClearAndAddUUID) {
+  string uuid1 = "uuid1";
+  string uuid2 = "uuid2";
+  string uuid3 = "uuid3";
+  string current_uuid;
+
+  EXPECT_EQ(0, uuid_iterator_->uuids_.size());
+
+  uuid_iterator_->ClearAndAddUUID(uuid1);
+  uuid_iterator_->GetUUID(&current_uuid);
+  EXPECT_EQ(uuid1, current_uuid);
+  EXPECT_EQ(1, uuid_iterator_->uuids_.size());
+
+  uuid_iterator_->ClearAndAddUUID(uuid2);
+  uuid_iterator_->GetUUID(&current_uuid);
+  EXPECT_EQ(uuid2, current_uuid);
+  EXPECT_EQ(1, uuid_iterator_->uuids_.size());
+
+  uuid_iterator_->ClearAndAddUUID(uuid3);
+  uuid_iterator_->GetUUID(&current_uuid);
+  EXPECT_EQ(uuid3, current_uuid);
+  EXPECT_EQ(1, uuid_iterator_->uuids_.size());
+}
+
 }  // namespace xtreemfs

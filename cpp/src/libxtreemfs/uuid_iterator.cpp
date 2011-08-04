@@ -7,6 +7,8 @@
 
 #include "libxtreemfs/uuid_iterator.h"
 
+#include <sstream>
+
 #include "libxtreemfs/xtreemfs_exception.h"
 
 using namespace std;
@@ -20,7 +22,7 @@ UUIDIterator::UUIDIterator() {
 
 UUIDIterator::~UUIDIterator() {
   for (list<UUIDItem*>::iterator it = uuids_.begin();
-       it != uuids_.end();
+        it != uuids_.end();
        ++it) {
     delete (*it);
   }
@@ -51,10 +53,47 @@ void UUIDIterator::Clear() {
   current_uuid_ = uuids_.end();
 }
 
+void UUIDIterator::ClearAndAddUUID(const std::string& uuid) {
+  boost::mutex::scoped_lock lock(mutex_);
+
+  for (list<UUIDItem*>::iterator it = uuids_.begin();
+       it != uuids_.end();
+       ++it) {
+    delete (*it);
+  }
+  uuids_.clear();
+
+  UUIDItem* entry = new UUIDItem(uuid);
+  uuids_.push_back(entry);
+
+  // Set the current UUID to the first element.
+  current_uuid_ = uuids_.begin();
+}
+
+std::string UUIDIterator::DebugString() {
+  ostringstream stream;
+
+  stream << "[ ";
+
+  boost::mutex::scoped_lock lock(mutex_);
+  for (list<UUIDItem*>::iterator it = uuids_.begin();
+       it != uuids_.end();
+       ++it) {
+    if (it != uuids_.begin()) {
+      stream << ", ";
+    }
+    stream << "[ " << (*it)->uuid << ", " << (*it)->marked_as_failed << "]";
+  }
+
+  stream << " ]";
+
+  return stream.str();
+}
+
 void UUIDIterator::GetUUID(std::string* result) {
   assert(result);
   boost::mutex::scoped_lock lock(mutex_);
-  
+
   if (current_uuid_ == uuids_.end()) {
     throw UUIDIteratorListIsEmpyException("GetUUID() failed as no current "
         " UUID is set. Size of list of UUIDs: " + uuids_.size());
@@ -86,7 +125,7 @@ void UUIDIterator::MarkUUIDAsFailed(const std::string& uuid) {
 
 bool UUIDIterator::SetCurrentUUID(const std::string& uuid) {
   boost::mutex::scoped_lock lock(mutex_);
-  
+
   // Search "uuid" in "uuids_" and set it to the current UUID.
   for (list<UUIDItem*>::iterator it = uuids_.begin();
        it != uuids_.end();

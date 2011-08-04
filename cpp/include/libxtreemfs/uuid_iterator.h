@@ -52,6 +52,12 @@ class UUIDIterator {
   /** Clears the list of UUIDs. */
   void Clear();
 
+  /** Atomically clears the list and adds "uuid" to avoid an empty list. */
+  void ClearAndAddUUID(const std::string& uuid);
+
+  /** Returns the list of UUIDs and their status. */
+  std::string DebugString();
+
   /** Get the current UUID (by default the first in the list) .*/
   void GetUUID(std::string* result);
 
@@ -78,6 +84,7 @@ class UUIDIterator {
   /** List of UUIDs. */
   std::list<UUIDItem*> uuids_;
 
+  FRIEND_TEST(UUIDIteratorTest, ClearAndAddUUID);
   FRIEND_TEST(UUIDIteratorTest, ResetAfterEndOfList);
   FRIEND_TEST(UUIDIteratorTest, SetCurrentUUID);
 };
