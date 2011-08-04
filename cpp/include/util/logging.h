@@ -30,7 +30,7 @@ class Logging {
   static Logging* log;
 
   explicit Logging(LogLevel level = LEVEL_ERROR);
-  Logging(LogLevel level, std::ostream& stream);  // NOLINT
+  Logging(LogLevel level, std::ostream* stream);
   virtual ~Logging();
 
   std::ostream& getLog(LogLevel level) {
@@ -42,7 +42,13 @@ class Logging {
   bool loggingActive(LogLevel level);
 
  private:
+  /** Log stream. */
   std::ostream& log_stream_;
+
+  /** Contains the pointer to the stream which has to be freed by the shutdown
+   *  method. */
+  std::ostream* log_file_stream_;
+
   LogLevel level_;
 
   char levelToChar(LogLevel level);

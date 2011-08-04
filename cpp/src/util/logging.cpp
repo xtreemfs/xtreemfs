@@ -6,31 +6,51 @@
  */
 #include "util/logging.h"
 
-#include <ostream>
+#include <ctime>
 
 #include <boost/thread.hpp>
-#include <iostream>
 #include <fstream>
 #include <iostream>
+#include <ostream>
 #include <string>
+
+using namespace std;
 
 namespace xtreemfs {
 namespace util {
 
-Logging::Logging(LogLevel level, std::ostream& stream)  // NOLINT
-    : log_stream_(stream), level_(level) {
+Logging::Logging(LogLevel level, std::ostream* stream)
+    : log_stream_(*stream), log_file_stream_(stream), level_(level) {
 }
 
-Logging::Logging(LogLevel level) : log_stream_(std::cout), level_(level) {
+Logging::Logging(LogLevel level)
+    : log_stream_(std::cout), log_file_stream_(NULL), level_(level) {
 }
 
 Logging::~Logging() {
+  if (log_file_stream_) {
+    delete log_file_stream_;
+  }
 }
 
 std::ostream& Logging::getLog(LogLevel level, const char* file, int line) {
-  log_stream_ << "[ " << levelToChar(level) << " | " << file << ":"
-      << line << " | "
-      << boost::this_thread::get_id() << " ] ";
+  timeval current_time;
+  gettimeofday(&current_time, 0);
+  struct tm* tm = localtime(&current_time.tv_sec);
+
+  log_stream_
+      << "[ " << levelToChar(level)
+      << " | " << file << ":" << line << " | "
+
+      << setw(2) << (tm->tm_mon + 1) << "/" << setw(2) << tm->tm_mday << " "
+      << setfill('0') << setw(2) << tm->tm_hour << ":"
+      << setfill('0') << setw(2) << tm->tm_min << ":"
+      << setfill('0') << setw(2) << tm->tm_sec << "."
+      << setfill('0') << setw(3) << (current_time.tv_usec / 1000) << " | "
+
+      << boost::this_thread::get_id() << " ] "
+      // Reset modifiers.
+      << setfill(' ');
   return log_stream_;
 }
 
@@ -93,15 +113,14 @@ void initialize_logger(LogLevel level, std::string logfilePath) {
   }
 
   if (!logfilePath.empty()) {
-    std::ofstream* logfile = new std::ofstream(logfilePath.c_str());
+    ofstream* logfile = new std::ofstream(logfilePath.c_str());
     if (logfile != NULL && logfile->is_open()) {
-      std::cerr << "Logging to file " << logfilePath.c_str()
-          << "." << std::endl;
-      Logging::log = new Logging(level, *logfile);
+      cerr << "Logging to file " << logfilePath.c_str() << "." << endl;
+      Logging::log = new Logging(level, logfile);
       return;
     }
-    std::cerr << "Could not log to file " << logfilePath.c_str()
-        << ". Fallback to stdout." << std::endl;
+    cerr << "Could not log to file " << logfilePath.c_str()
+        << ". Fallback to stdout." << endl;
   }
   // in case of an error, log to stdout
   Logging::log = new Logging(level);
