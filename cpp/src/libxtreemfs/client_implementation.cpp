@@ -39,8 +39,7 @@ ClientImplementation::ClientImplementation(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const xtreemfs::rpc::SSLOptions* ssl_options,
     const Options& options)
-  : dir_service_address_(dir_service_address),
-    dir_service_auth_(),
+  : dir_service_auth_(),
     dir_service_user_credentials_(user_credentials),
     dir_service_ssl_options_(ssl_options),
     options_(options),
@@ -50,6 +49,8 @@ ClientImplementation::ClientImplementation(
     network_client_thread_(NULL),
     dir_service_client_(NULL),
     client_uuid_("") {
+  dir_service_addresses.AddUUID(dir_service_address);
+
   // Set bogus auth object.
   auth_bogus_.set_auth_type(AUTH_NONE);
 
@@ -182,17 +183,24 @@ void ClientImplementation::CreateVolume(
         ->set_value((*it)->value());
   }
 
+  UUIDIterator temp_uuid_iterator_with_addresses;
+  temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
+
   boost::scoped_ptr< SyncCallback<emptyResponse> > response(
       ExecuteSyncRequest< SyncCallback<emptyResponse>* >(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_mkvol_sync,
               &mrc_service_client,
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth),
               boost::cref(user_credentials),
               &new_volume),
+          &temp_uuid_iterator_with_addresses,
+          NULL,
           options_.max_tries,
-          options_));
+          options_,
+          true,
+          false));
   response->DeleteBuffers();
 }
 
@@ -206,17 +214,24 @@ void ClientImplementation::DeleteVolume(
   xtreemfs_rmvolRequest rmvol_request;
   rmvol_request.set_volume_name(volume_name);
 
+  UUIDIterator temp_uuid_iterator_with_addresses;
+  temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
+
   boost::scoped_ptr< SyncCallback<emptyResponse> > response(
       ExecuteSyncRequest< SyncCallback<emptyResponse>* >(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_rmvol_sync,
               &mrc_service_client,
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth),
               boost::cref(user_credentials),
               &rmvol_request),
+          &temp_uuid_iterator_with_addresses,
+          NULL,
           options_.max_tries,
-          options_));
+          options_,
+          true,
+          false));
   response->DeleteBuffers();
 }
 
@@ -229,17 +244,24 @@ xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
   UserCredentials user_credentials;
   user_credentials.set_username("xtreemfs");
 
+  UUIDIterator temp_uuid_iterator_with_addresses;
+  temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
+
   // Retrieve the list of volumes from the MRC.
   boost::scoped_ptr< SyncCallback<xtreemfs::pbrpc::Volumes> > response(
       ExecuteSyncRequest< SyncCallback<xtreemfs::pbrpc::Volumes>* >(
           boost::bind(
               &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_lsvol_sync,
               &mrc_service_client,
-              boost::cref(mrc_address),
+              _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials)),
+          &temp_uuid_iterator_with_addresses,
+          NULL,
           options_.max_tries,
-          options_));
+          options_,
+          true,
+          false));
 
   // Delete everything except the response.
   delete[] response->data();
@@ -269,12 +291,16 @@ void ClientImplementation::UUIDToAddress(const std::string& uuid,
               &xtreemfs::pbrpc::DIRServiceClient::
                   xtreemfs_address_mappings_get_sync,
               dir_service_client_.get(),
-              boost::cref(dir_service_address_),
+              _1,
               boost::cref(dir_service_auth_),
               boost::cref(dir_service_user_credentials_),
               &rq),
+          &dir_service_addresses,
+          NULL,
           options_.max_tries,
-          options_));
+          options_,
+          true,
+          false));
 
   AddressMappingSet* set = response->response();
   for (int i = 0; i < set->mappings_size(); i++) {
@@ -334,12 +360,15 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
               &xtreemfs::pbrpc::DIRServiceClient::
                   xtreemfs_service_get_by_name_sync,
               dir_service_client_.get(),
-              boost::cref(dir_service_address_),
+              _1,
               boost::cref(dir_service_auth_),
               boost::cref(dir_service_user_credentials_),
               &rq),
+          &dir_service_addresses,
+          NULL,
           options_.max_tries,
           options_,
+          true,
           false));
 
   ServiceSet *service_set = response->response();
@@ -392,12 +421,15 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
               &xtreemfs::pbrpc::DIRServiceClient::
                   xtreemfs_service_get_by_name_sync,
               dir_service_client_.get(),
-              boost::cref(dir_service_address_),
+              _1,
               boost::cref(dir_service_auth_),
               boost::cref(dir_service_user_credentials_),
               &rq),
+          &dir_service_addresses,
+          NULL,
           options_.max_tries,
           options_,
+          true,
           false));
 
   bool mrc_found = false;

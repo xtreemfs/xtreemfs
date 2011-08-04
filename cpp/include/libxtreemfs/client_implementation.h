@@ -15,6 +15,7 @@
 
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/uuid_cache.h"
+#include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/uuid_resolver.h"
 
 namespace boost {
@@ -93,7 +94,7 @@ class ClientImplementation : public Client, public UUIDResolver {
    *  check the authentication data (except Create, Delete, ListVolume(s)). */
   xtreemfs::pbrpc::Auth auth_bogus_;
 
-  const std::string dir_service_address_;
+  UUIDIterator dir_service_addresses;
 
   /** The auth_type of this object will always be set to AUTH_NONE. */
   // TODO(mberlin): change this when the DIR service supports real auth.

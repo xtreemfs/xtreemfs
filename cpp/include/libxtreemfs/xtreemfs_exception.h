@@ -113,21 +113,6 @@ class UUIDIteratorListIsEmpyException : public XtreemFSException {
     : XtreemFSException(msg) {}
 };
 
-/** Thrown in case the OSD did reply with a redirect error, internal use only.*/
-class ReplicationRedirectionException : public XtreemFSException {
- public:
-  /** UUID of the actual master we were redirected to. */
-  std::string redirect_to_server_uuid_;
-
-  explicit ReplicationRedirectionException(const std::string& redirect_uuid)
-    : XtreemFSException("ReplicationRedirectionException thrown (libxtreemfs "
-              "internal use only - should not have shown up"),
-      redirect_to_server_uuid_(redirect_uuid) {}
-  /** Define a destructor with "throw()" to avoid the error message
-   *  "Looser throw specifier" */
-  virtual ~ReplicationRedirectionException() throw() {};
-};
-
 /** Thrown if the given URL was not parsed correctly. */
 class InvalidURLException : public XtreemFSException {
  public:

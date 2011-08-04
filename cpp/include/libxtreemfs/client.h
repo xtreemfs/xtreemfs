@@ -80,6 +80,8 @@ class Client {
       const xtreemfs::rpc::SSLOptions* ssl_options,
       const Options& options) = 0;
 
+  // TODO(mberlin): Also provide a method which accepts a list of MRC addresses
+  //                or an UUID Iterator object which contains all addresses.
   /** Creates a volume on the MRC at mrc_address using certain default values (
    *  POSIX access policy type, striping size = 128k and width = 1 (i.e. no
    *  striping), mode = 777 and owner username and groupname retrieved from the
@@ -100,6 +102,8 @@ class Client {
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& volume_name);
 
+  // TODO(mberlin): Also provide a method which accepts a list of MRC addresses
+  //                or an UUID Iterator object which contains all addresses.
   /** Creates a volume on the MRC at mrc_address.
    *
    * @param mrc_address     String of the form "hostname:port".
@@ -137,6 +141,8 @@ class Client {
       int default_stripe_width,
       const std::list<xtreemfs::pbrpc::KeyValuePair*>& volume_attributes) = 0;
 
+  // TODO(mberlin): Also provide a method which accepts a list of MRC addresses
+  //                or an UUID Iterator object which contains all addresses.
   /** Deletes the volume "volume_name" at the MRC "mrc_address".
    *
    * @param mrc_address     String of the form "hostname:port".
@@ -154,6 +160,8 @@ class Client {
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& volume_name) = 0;
 
+  // TODO(mberlin): Also provide a method which accepts a list of MRC addresses
+  //                or an UUID Iterator object which contains all addresses.
   /** Returns the available volumes on a MRC.
    *
    * @param mrc_address     String of the form "hostname:port".
