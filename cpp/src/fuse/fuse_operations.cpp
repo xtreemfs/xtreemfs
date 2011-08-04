@@ -95,12 +95,45 @@ int xtreemfs_fuse_chmod(const char *path, mode_t mode) {
   return fuse_adapter->chmod(path, mode);
 }
 
-int xtreemfs_fuse_lock(
-    const char* path, struct fuse_file_info *fi,
-    int cmd, struct flock* flock_) {
+int xtreemfs_fuse_lock(const char* path,
+                       struct fuse_file_info *fi,
+                       int cmd,
+                       struct flock* flock_) {
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    string log_command;
+    switch(cmd) {
+      case F_GETLK:
+        log_command = "check lock";
+        break;
+      case F_SETLK:
+        log_command = "set lock";
+        break;
+      case F_SETLKW:
+        log_command = "set lock and wait";
+        break;
+      default:
+        log_command = "unknown lock command";
+        break;
+    }
+    string log_type;
+    switch(flock_->l_type) {
+      case F_UNLCK:
+        log_type = "unlock";
+        break;
+      case F_RDLCK:
+        log_type = "read lock";
+        break;
+      case F_WRLCK:
+        log_type = "write lock";
+        break;
+      default:
+        log_type = "unknown lock type";
+        break;
+    }
     Logging::log->getLog(LEVEL_DEBUG)  << "xtreemfs_fuse_lock on path " << path
-        << endl;
+        << " command: " << log_command << " type: " << log_type << " start: "
+        << flock_->l_start << " length: "<< flock_->l_len << " pid: "
+        << flock_->l_pid << endl;
   }
   return fuse_adapter->lock(path, fi, cmd, flock_);
 }
@@ -171,7 +204,7 @@ int xtreemfs_fuse_write(const char *path, const char *buf, size_t size,
     off_t offset, struct fuse_file_info *fi) {
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG)  << "xtreemfs_fuse_write " << path
-        << endl;
+        << " size: " << size << endl;
   }
   return fuse_adapter->write(path, buf, size, offset, fi);
 }
