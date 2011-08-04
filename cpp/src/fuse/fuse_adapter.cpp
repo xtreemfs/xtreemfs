@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <boost/cstdint.hpp>
 #include <boost/lexical_cast.hpp>
 #include <list>
 #include <string>
@@ -613,12 +614,12 @@ int FuseAdapter::utime(const char *path, struct utimbuf *ubuf) {
 
   // Convert seconds to nanoseconds.
   if (ubuf != NULL) {
-    stat.set_atime_ns(ubuf->actime * 1000000000);
-    stat.set_mtime_ns(ubuf->modtime * 1000000000);
+    stat.set_atime_ns(static_cast<boost::uint64_t>(ubuf->actime) * 1000000000);
+    stat.set_mtime_ns(static_cast<boost::uint64_t>(ubuf->modtime) * 1000000000);
   } else {
     // POSIX: If times is a null pointer, the access and modification
     //        times of the file shall be set to the current time.
-    time_t current_time = time(NULL);
+    boost::uint64_t current_time = time(NULL);
     stat.set_atime_ns(current_time * 1000000000);
     stat.set_mtime_ns(current_time * 1000000000);
   }
@@ -646,12 +647,14 @@ int FuseAdapter::utimens(const char *path, const struct timespec tv[2]) {
 
   // Convert seconds to nanoseconds.
   if (tv != NULL) {
-    stat.set_atime_ns(tv[0].tv_sec * 1000000000 + tv[0].tv_nsec);
-    stat.set_mtime_ns(tv[1].tv_sec * 1000000000 + tv[1].tv_nsec);
+    stat.set_atime_ns(static_cast<boost::uint64_t>(tv[0].tv_sec)
+                      * 1000000000 + tv[0].tv_nsec);
+    stat.set_mtime_ns(static_cast<boost::uint64_t>(tv[1].tv_sec)
+                      * 1000000000 + tv[1].tv_nsec);
   } else {
     // POSIX: If times is a null pointer, the access and modification
     //        times of the file shall be set to the current time.
-    time_t current_time = time(NULL);
+    boost::uint64_t current_time = time(NULL);
     stat.set_atime_ns(current_time * 1000000000);
     stat.set_mtime_ns(current_time * 1000000000);
   }

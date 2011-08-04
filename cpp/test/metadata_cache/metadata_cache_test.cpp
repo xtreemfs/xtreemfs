@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 
+#include <boost/cstdint.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <string>
@@ -240,6 +241,37 @@ TEST_F(MetadataCacheTestSize1024, RenamePrefix) {
   EXPECT_EQ(2, c.ino());
   EXPECT_TRUE(metadata_cache_->GetStat("/dirZfile1", &d));
   EXPECT_EQ(3, d.ino());
+}
+
+/** Are large nanoseconds values correctly updated by
+ *  UpdateStatAttributes? */
+TEST_F(MetadataCacheTestSize1024, UpdateStatAttributes) {
+  string path = "/file";
+  Stat stat, update_stat;
+  InitializeStat(&stat);
+  InitializeStat(&update_stat);
+  stat.set_ino(0);
+  update_stat.set_ino(1);
+
+  metadata_cache_->UpdateStat(path, stat);
+  EXPECT_EQ(1, metadata_cache_->Size());
+  EXPECT_TRUE(metadata_cache_->GetStat(path, &stat));
+  EXPECT_EQ(0, stat.ino());
+  EXPECT_EQ(0, stat.mtime_ns());
+
+  boost::uint64_t time = 1234567890;
+  time *= 1000000000;
+  update_stat.set_atime_ns(time);
+  update_stat.set_mtime_ns(time);
+  metadata_cache_->UpdateStatAttributes(
+      path,
+      update_stat,
+      static_cast<Setattrs>(SETATTR_ATIME | SETATTR_MTIME));
+  EXPECT_EQ(1, metadata_cache_->Size());
+  EXPECT_TRUE(metadata_cache_->GetStat(path, &stat));
+  EXPECT_EQ(0, stat.ino());
+  EXPECT_EQ(time, stat.atime_ns());
+  EXPECT_EQ(time, stat.mtime_ns());
 }
 
 /** Ideas:
