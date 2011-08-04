@@ -48,6 +48,15 @@ bool executeOperation(const string& xctl_file,
     return false;
   }
 
+  // Close and re-open file to avoid cache problems on APPLE.
+  close(fd);
+  fd = open(xctl_file.c_str(), O_RDWR);
+  if (fd == -1) {
+    cerr << "Cannot open xctl file: " << strerror(errno) << endl;
+    unlink(xctl_file.c_str());
+    return false;
+  }
+
   char result[1 << 20];
   int bytes_read = pread(fd, result, (1 << 20) - 1, 0);
   if (bytes_read <= 0) {

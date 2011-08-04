@@ -42,7 +42,10 @@ class XCtlFile {
   }
 
   bool is_owner(uid_t uid, gid_t gid) {
-    return uid == uid_ && gid == gid_;
+    // Always allow root to read all files.
+    // Required for APPLE.
+    return (uid == 0 && gid == 0)
+           || (uid == uid_ && gid == gid_);
   }
 
   uid_t get_uid() const {
