@@ -304,7 +304,10 @@ void MetadataCache::UpdateStatAttributes(const std::string& path,
       cached_stat->set_attributes(stat.attributes());
     }
     if ((to_set &  SETATTR_MODE)) {
-      cached_stat->set_mode(stat.mode());
+      // Modify only the last 12 Bits (3 bits for sticky bit, set GID and
+      // set UID and 3 * 3 bits for the file access mode).
+      cached_stat->set_mode((cached_stat->mode() & 0xFFFFF000) |
+          (stat.mode() & 0x00000FFF));
     }
     if ((to_set &  SETATTR_UID)) {
       cached_stat->set_user_id(stat.user_id());

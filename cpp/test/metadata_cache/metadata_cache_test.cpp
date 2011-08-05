@@ -274,6 +274,44 @@ TEST_F(MetadataCacheTestSize1024, UpdateStatAttributes) {
   EXPECT_EQ(time, stat.mtime_ns());
 }
 
+/** Changing the file access mode may only modify the last 12 bits (3 bits for
+ *  sticky bit, set GID and set UID and 3 * 3 bits for the file access mode). */
+TEST_F(MetadataCacheTestSize1024, UpdateStatAttributesPreservesModeBits) {
+  string path = "/file";
+  Stat stat, cached_stat;
+  InitializeStat(&stat);
+  stat.set_ino(0);
+  stat.set_mode(33188);  // Octal: 100644 (regular file + 644).
+
+  metadata_cache_->UpdateStat(path, stat);
+  EXPECT_EQ(1, metadata_cache_->Size());
+  EXPECT_TRUE(metadata_cache_->GetStat(path, &cached_stat));
+  EXPECT_EQ(0, cached_stat.ino());
+  EXPECT_EQ(33188, cached_stat.mode());
+
+  stat.set_mode(420);  // Octal: 644.
+  metadata_cache_->UpdateStatAttributes(path, stat, SETATTR_MODE);
+  EXPECT_EQ(1, metadata_cache_->Size());
+  EXPECT_TRUE(metadata_cache_->GetStat(path, &cached_stat));
+  EXPECT_EQ(0, cached_stat.ino());
+  EXPECT_EQ(33188, cached_stat.mode());
+
+  stat.set_mode(263076);  // Octal: 1001644 (regular file + sticky bit + 644).
+
+  metadata_cache_->UpdateStat(path, stat);
+  EXPECT_EQ(1, metadata_cache_->Size());
+  EXPECT_TRUE(metadata_cache_->GetStat(path, &cached_stat));
+  EXPECT_EQ(0, cached_stat.ino());
+  EXPECT_EQ(263076, cached_stat.mode());
+
+  stat.set_mode(511);  // Octal: 0777 (no sticky bit + 777).
+  metadata_cache_->UpdateStatAttributes(path, stat, SETATTR_MODE);
+  EXPECT_EQ(1, metadata_cache_->Size());
+  EXPECT_TRUE(metadata_cache_->GetStat(path, &cached_stat));
+  EXPECT_EQ(0, cached_stat.ino());
+  EXPECT_EQ(262655, cached_stat.mode());  // Octal: 1000777.
+}
+
 /** Ideas:
  *
  * test TTL expiration.
