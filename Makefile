@@ -24,7 +24,7 @@ XTREEMFS_JAR_DIR=$(DESTDIR)/usr/share/java
 XTREEMFS_CONFIG_PARENT_DIR=$(DESTDIR)/etc/xos
 XTREEMFS_CONFIG_DIR=$(XTREEMFS_CONFIG_PARENT_DIR)/xtreemfs
 XTREEMFS_INIT_DIR=$(DESTDIR)/etc/init.d
-XTREEMFS_CLIENT_BUILD_DIR=$(shell pwd)/cppbin_build
+XTREEMFS_CLIENT_BUILD_DIR=$(shell pwd)/cpp/build
 BIN_DIR=$(DESTDIR)/usr/bin
 MAN_DIR=$(DESTDIR)/usr/share/man/man1
 DOC_DIR_SERVER=$(DESTDIR)/usr/share/doc/xtreemfs-server
@@ -33,6 +33,19 @@ DOC_DIR_TOOLS=$(DESTDIR)/usr/share/doc/xtreemfs-tools
 CONTRIB_DIR=$(DESTDIR)/usr/share/xtreemfs
 PLUGIN_DIR=$(CONTRIB_DIR)/server-repl-plugin
 PLUGIN_CONFIG_DIR=$(XTREEMFS_CONFIG_DIR)/server-repl-plugin
+
+#Configuration of cpp code thirdparty dependencies.
+# If you edit the next five variables, make sure you also change them in cpp/CMakeLists.txt.
+CLIENT_GOOGLE_PROTOBUF_CPP = cpp/thirdparty/protobuf-2.3.0
+CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY = $(CLIENT_GOOGLE_PROTOBUF_CPP)/src/.libs/libprotobuf.a
+CLIENT_GOOGLE_TEST_CPP = cpp/thirdparty/gtest-1.5.0
+CLIENT_GOOGLE_TEST_CPP_LIBRARY = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest.a
+CLIENT_GOOGLE_TEST_CPP_MAIN = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest_main.a
+# The two required objects libgtest.a and libgtest_main.a both depend
+# on the same target building the Google googletest library.
+# Therefore, this target is guarded by a checkfile which will be touched once it was executed.
+# This prevents the target from getting executed again as long as the checkfile does not change.
+CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
 
 TARGETS = client server foundation
 .PHONY:	clean distclean
@@ -168,18 +181,56 @@ check_test:
 	@if [[ $(shell python -V 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f2) -lt 3 && $(shell python -V 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f1) -lt 3 ]]; then echo "python >= 2.4 required!"; exit 1; fi;
 	@echo "python ok"
 
-.PHONY:	client client_clean client_distclean
-client: check_client
+.PHONY:	client client_clean client_distclean client_thirdparty_clean
+
+client_thirdparty: $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY) $(CLIENT_GOOGLE_TEST_CPP_LIBRARY) $(CLIENT_GOOGLE_TEST_CPP_MAIN)
+
+$(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY): $(CLIENT_GOOGLE_PROTOBUF_CPP)/src/**
+	@echo "client_thirdparty: Configuring and building required Google protobuf library..."
+	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && ./configure >/dev/null
+	@$(MAKE) -C $(CLIENT_GOOGLE_PROTOBUF_CPP) >/dev/null
+	@echo "client_thirdparty: ...completed building required Google protobuf library."
+	@touch $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
+
+$(CLIENT_GOOGLE_TEST_CPP_LIBRARY): $(CLIENT_GOOGLE_TEST_CHECKFILE)
+	@touch $(CLIENT_GOOGLE_TEST_CPP_LIBRARY)
+
+$(CLIENT_GOOGLE_TEST_CPP_MAIN): $(CLIENT_GOOGLE_TEST_CHECKFILE)
+	@touch $(CLIENT_GOOGLE_TEST_CPP_MAIN)
+
+$(CLIENT_GOOGLE_TEST_CHECKFILE): $(CLIENT_GOOGLE_TEST_CPP)/include/** $(CLIENT_GOOGLE_TEST_CPP)/src/**
+	@echo "client_thirdparty: Configuring and building required Google googletest library..."
+	@cd $(CLIENT_GOOGLE_TEST_CPP) && ./configure >/dev/null
+	@$(MAKE) -C $(CLIENT_GOOGLE_TEST_CPP) >/dev/null
+	@touch $(CLIENT_GOOGLE_TEST_CPP_LIBRARY)
+	@echo "client_thirdparty: ...completed building required Google googletest library."
+	@touch $(CLIENT_GOOGLE_TEST_CHECKFILE)
+
+client_thirdparty_clean:
+	@echo "Cleaning required Google protobuf library sources..."
+	@if [ -f $(CLIENT_GOOGLE_PROTOBUF_CPP)/Makefile ]; then $(MAKE) -C $(CLIENT_GOOGLE_PROTOBUF_CPP) clean >/dev/null; fi
+	@echo "Cleaning required Google googletest library sources..."
+	@if [ -f $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP)/Makefile ]; then $(MAKE) -C $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP) clean >/dev/null; fi
+	@if [ -f $(CLIENT_GOOGLE_TEST_CHECKFILE) ]; then rm $(CLIENT_GOOGLE_TEST_CHECKFILE); fi
+	@echo "...finished cleaning thirdparty sources."
+
+client_thirdparty_distclean:
+	@echo "client_thirdparty: Dist-Cleaning required Google protobuf library sources..."
+	@if [ -f $(shell pwd)/$(CLIENT_GOOGLE_PROTOBUF_CPP)/Makefile ]; then $(MAKE) -C $(shell pwd)/$(CLIENT_GOOGLE_PROTOBUF_CPP) distclean >/dev/null; fi
+	@echo "client_thirdparty: Dist-Cleaning required Google googletest library sources..."
+	@if [ -f $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP)/Makefile ]; then $(MAKE) -C $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP) distclean >/dev/null; fi
+	@if [ -f $(CLIENT_GOOGLE_TEST_CHECKFILE) ]; then rm $(CLIENT_GOOGLE_TEST_CHECKFILE); fi
+	@echo "client_thirdparty: ...finished distcleaning thirdparty sources."
+
+client: check_client client_thirdparty
 	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)	
 	@cp   -a $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTFS_BINDIR)
 	@cp   -a $(XTREEMFS_CLIENT_BUILD_DIR)/xtfsutil $(XTFS_BINDIR)
-client_clean: check_client
+client_clean: check_client client_thirdparty_clean
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
-	@if [ -f $(shell pwd)/cpp/thirdparty/protobuf-2.3.0/Makefile ]; then $(MAKE) -C $(shell pwd)/cpp/thirdparty/protobuf-2.3.0/ clean; fi
-client_distclean: check_client
+client_distclean: check_client client_thirdparty_distclean
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
-	@if [ -f $(shell pwd)/cpp/thirdparty/protobuf-2.3.0/Makefile ]; then $(MAKE) -C $(shell pwd)/cpp/thirdparty/protobuf-2.3.0/ distclean; fi
 
 .PHONY: foundation foundation_clean
 foundation:
