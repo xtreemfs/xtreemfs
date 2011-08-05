@@ -20,6 +20,10 @@ set(CLIENT_GOOGLE_TEST_CPP_MAIN "${CLIENT_GOOGLE_TEST_CPP}/lib/.libs/libgtest_ma
 
 # Set required thirdparty libraries.
 SET(Boost_USE_STATIC_LIBS true)
+# Finding the boost libraries may fail. If existing, we point FIND_PACKAGE to /usr/lib64.
+if(EXISTS "/usr/lib64/libboost_system.a")
+  set(BOOST_LIBRARYDIR "/usr/lib64")
+endif(EXISTS "/usr/lib64/libboost_system.a")
 FIND_PACKAGE(Boost COMPONENTS system thread program_options regex REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
