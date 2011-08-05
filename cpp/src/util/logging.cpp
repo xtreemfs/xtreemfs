@@ -10,6 +10,7 @@
 
 #include <boost/thread.hpp>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <ostream>
 #include <string>
