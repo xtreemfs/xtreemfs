@@ -6,7 +6,18 @@ option(build_thirdparty "Executes ./configure and make commands on required thir
 
 #SET (CMAKE_VERBOSE_MAKEFILE true)
 
-ADD_DEFINITIONS(-D_FILE_OFFSET_BITS=64)
+add_definitions(-D_FILE_OFFSET_BITS=64)
+
+set(LIBFUSE "fuse")
+
+# Check if this is a 64 Bit system
+if(UNIX AND NOT WIN32)
+  if(CMAKE_SIZEOF_VOID_P MATCHES "8")
+    if(APPLE)
+      set(LIBFUSE "fuse_ino64")
+    endif(APPLE)
+  endif(CMAKE_SIZEOF_VOID_P MATCHES "8")
+endif(UNIX AND NOT WIN32)
 
 ##########################################
 
@@ -28,7 +39,7 @@ ENDIF(UNIX)
 SET(LIBATTR "attr")
 IF(APPLE)
 	# No libattr on mac.
-	SET(LIABATTR "")
+	SET(LIBATTR "")
 ENDIF(APPLE)
 
 include_directories(${CMAKE_SOURCE_DIR}/thirdparty/protobuf-2.3.0/src)
@@ -37,8 +48,9 @@ include_directories(${CMAKE_SOURCE_DIR}/thirdparty/protobuf-2.3.0)
 ##########################################
 MESSAGE(STATUS "Configuring XtreemFS client (libxtreemfs, FuseAdapter(mount.xtreemfs) and Volume Tools ({mkfs,rmfs,lsfs}.xtreemfs).")
 
-SET(BOOST_LIBRARYDIR "/usr/lib64")
+SET(Boost_USE_STATIC_LIBS true)
 FIND_PACKAGE(Boost COMPONENTS system thread program_options regex REQUIRED)
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 
 INCLUDE_DIRECTORIES(include generated)
 
@@ -57,22 +69,22 @@ file(GLOB_RECURSE SRCS_FUSE_ADAPTER src/fuse/*.cpp)
 file(GLOB_RECURSE SRCS_XTFS_UTIL src/xtfsutil/xtfsutil_server.cpp)
 file(GLOB_RECURSE SRCS_JSONCPP src/json/*.cpp)
 ADD_EXECUTABLE(mount.xtreemfs ${SRCS_FUSE_ADAPTER} ${SRCS_XTFS_UTIL} ${SRCS_JSONCPP})
-TARGET_LINK_LIBRARIES(mount.xtreemfs xtreemfs protobuf crypto pthread ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ssl fuse)
+TARGET_LINK_LIBRARIES(mount.xtreemfs xtreemfs protobuf crypto pthread ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ssl ${LIBFUSE})
 
 file(GLOB_RECURSE SRCS_MKFS src/mkfs.xtreemfs/*.cpp)
 ADD_EXECUTABLE(mkfs.xtreemfs ${SRCS_MKFS})
-TARGET_LINK_LIBRARIES(mkfs.xtreemfs xtreemfs protobuf crypto pthread ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ssl fuse)
+TARGET_LINK_LIBRARIES(mkfs.xtreemfs xtreemfs protobuf crypto pthread ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ssl)
 
 file(GLOB_RECURSE SRCS_RMFS src/rmfs.xtreemfs/*.cpp)
 ADD_EXECUTABLE(rmfs.xtreemfs ${SRCS_RMFS})
-TARGET_LINK_LIBRARIES(rmfs.xtreemfs xtreemfs protobuf crypto pthread ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ssl fuse)
+TARGET_LINK_LIBRARIES(rmfs.xtreemfs xtreemfs protobuf crypto pthread ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ssl)
 
 file(GLOB_RECURSE SRCS_LSFS src/lsfs.xtreemfs/*.cpp)
 ADD_EXECUTABLE(lsfs.xtreemfs ${SRCS_LSFS})
-TARGET_LINK_LIBRARIES(lsfs.xtreemfs xtreemfs protobuf crypto pthread ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ssl fuse)
+TARGET_LINK_LIBRARIES(lsfs.xtreemfs xtreemfs protobuf crypto pthread ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ssl)
 
 ADD_EXECUTABLE(xtfsutil src/xtfsutil/xtfsutil.cpp ${SRCS_JSONCPP})
-TARGET_LINK_LIBRARIES(xtfsutil ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_REGEX_LIBRARY} ${LIABATTR})
+TARGET_LINK_LIBRARIES(xtfsutil ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_REGEX_LIBRARY} ${LIBATTR})
 
 ##########################################
 
@@ -97,11 +109,6 @@ include_directories(${CMAKE_SOURCE_DIR}/thirdparty/gtest-1.5.0/include)
 
 ##########################################
 MESSAGE(STATUS "Configuring libxtreemfs unittests.")
-
-SET(BOOST_LIBRARYDIR "/usr/lib64")
-FIND_PACKAGE(Boost COMPONENTS system thread program_options REQUIRED)
-
-INCLUDE_DIRECTORIES(include generated)
 
 set(CMAKE_CXX_FLAGS "-Wall -Wno-unused-function -Wno-sign-compare")
 
