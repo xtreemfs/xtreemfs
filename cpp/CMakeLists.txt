@@ -18,14 +18,27 @@ set(CLIENT_GOOGLE_TEST_CPP "${CMAKE_SOURCE_DIR}/thirdparty/gtest-1.5.0")
 set(CLIENT_GOOGLE_TEST_CPP_LIBRARY "${CLIENT_GOOGLE_TEST_CPP}/lib/.libs/libgtest.a")
 set(CLIENT_GOOGLE_TEST_CPP_MAIN "${CLIENT_GOOGLE_TEST_CPP}/lib/.libs/libgtest_main.a")
 
+# Set required libraries.
+set(LIBFUSE "fuse")
+SET(LIBATTR "attr")
+IF(APPLE)
+  # No libattr on mac.
+  SET(LIBATTR "")
+  # On Apple we use the environment variable BOOST_ROOT to point to a local boost installation and we link the built boost libraries statically.
+  SET(Boost_USE_STATIC_LIBS true)
+ENDIF(APPLE)
+
 # Set required thirdparty libraries.
-SET(Boost_USE_STATIC_LIBS true)
 # Finding the boost libraries may fail. If existing, we point FIND_PACKAGE to /usr/lib64.
-if(EXISTS "/usr/lib64/libboost_system.a")
+if(EXISTS "/usr/lib64/libboost_system.so")
   set(BOOST_LIBRARYDIR "/usr/lib64")
-endif(EXISTS "/usr/lib64/libboost_system.a")
+endif(EXISTS "/usr/lib64/libboost_system.so")
 FIND_PACKAGE(Boost COMPONENTS system thread program_options regex REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
+if (NOT Boost_FOUND)
+  message(FATAL_ERROR "The boost library was not found on your system. If needed, you can also download and compile it on your own. After compiling boost locally, set the the environment variable BOOST_ROOT to the boost base directory, e.g. export BOOST_ROOT=/Users/xyz/boost_1_47_0.")
+endif(NOT Boost_FOUND)
+
 
 SET(REQUIRED_STATIC_LIBRARIES ${CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY} ${CLIENT_GOOGLE_TEST_CPP_LIBRARY} ${CLIENT_GOOGLE_TEST_CPP_MAIN})
 foreach (STATIC_LIB_FULL_PATH ${REQUIRED_STATIC_LIB_FULL_PATHRARIES})
@@ -45,14 +58,6 @@ SET_PROPERTY(TARGET gtest PROPERTY IMPORTED_LOCATION ${CLIENT_GOOGLE_TEST_CPP_LI
 SET_PROPERTY(TARGET gtest_main PROPERTY IMPORTED_LOCATION ${CLIENT_GOOGLE_TEST_CPP_MAIN})
 include_directories(${CLIENT_GOOGLE_TEST_CPP}/include)
 
-# Set required libraries.
-set(LIBFUSE "fuse")
-SET(LIBATTR "attr")
-IF(APPLE)
-  # No libattr on mac.
-  SET(LIBATTR "")
-ENDIF(APPLE)
-
 # Check if this is a 64 Bit system
 if(UNIX AND NOT WIN32)
   if(CMAKE_SIZEOF_VOID_P MATCHES "8")
@@ -65,7 +70,9 @@ endif(UNIX AND NOT WIN32)
 SET(REQUIRED_LIBRARIES ${LIBFUSE} ${LIBATTR} "crypto" "ssl" "pthread")
 foreach(LIB ${REQUIRED_LIBRARIES})
   #message(STATUS "checking for library: ${LIB}")
-  find_library(FOUND${LIB} ${LIB})
+  # For unknown reasons, setting "FIND_LIBRARY_USE_LIB64_PATHS" does not fix the issue that libraries in /usr/lib64/ are not found under openSuse.
+  # Therefore we just specify a list of possible library directories.
+  find_library(FOUND${LIB} ${LIB} PATHS "/lib64" "/usr/lib64")
   if (NOT FOUND${LIB})
     message(FATAL_ERROR "The required library '${LIB}' was not found. Please install it on your system first.")
   #else()
