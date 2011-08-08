@@ -256,6 +256,12 @@ public class MoveOperation extends MRCOperation {
             case file: // target is a file
             {
                 
+                // check whether the target file may be overwritten
+                // important w/ POSIX access control if the sticky bit is set)
+                faMan.checkPermission(FileAccessManager.NON_POSIX_RM_MV_IN_DIR, sMan, tRes.getFile(), tRes
+                        .getParentDirId(), rq.getDetails().userId, rq.getDetails().superUser,
+                    rq.getDetails().groupIds);
+                
                 // if the file is not a symbolic link, and unless there is still
                 // another link to the target file, i.e. the target file must
                 // not be deleted yet, create a 'delete' capability and include
