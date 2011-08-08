@@ -43,6 +43,7 @@ std::ostream& Logging::getLog(LogLevel level, const char* file, int line) {
       << "[ " << levelToChar(level)
       << " | " << file << ":" << line << " | "
 
+      << setiosflags(ios::dec)
       << setw(2) << (tm->tm_mon + 1) << "/" << setw(2) << tm->tm_mday << " "
       << setfill('0') << setw(2) << tm->tm_hour << ":"
       << setfill('0') << setw(2) << tm->tm_min << ":"
@@ -51,7 +52,7 @@ std::ostream& Logging::getLog(LogLevel level, const char* file, int line) {
 
       << boost::this_thread::get_id() << " ] "
       // Reset modifiers.
-      << setfill(' ');
+      << setfill(' ') << setiosflags(ios::dec);
   return log_stream_;
 }
 
