@@ -23,16 +23,16 @@ class makextreemfsTest(unittest.TestCase):
         if self.direct_io:
             print >>self.stdout, self.__class__.__name__ + ": skipping nondirect volume", os.getcwd()
         else:
-            retcode = subprocess.call( "svn co http://xtreemfs.googlecode.com/svn/branches/pb_experimental/bin", shell=True )
+            retcode = subprocess.call( "svn co http://xtreemfs.googlecode.com/svn/trunk/bin", shell=True )
             self.assertEqual( retcode, 0 )
 
-            retcode = subprocess.call( "svn co http://xtreemfs.googlecode.com/svn/branches/pb_experimental/cpp", shell=True )
+            retcode = subprocess.call( "svn co http://xtreemfs.googlecode.com/svn/trunk/cpp", shell=True )
             self.assertEqual( retcode, 0 )
 
-            retcode = subprocess.call( "svn co http://xtreemfs.googlecode.com/svn/branches/pb_experimental/java", shell=True )
+            retcode = subprocess.call( "svn co http://xtreemfs.googlecode.com/svn/trunk/java", shell=True )
             self.assertEqual( retcode, 0 )
 
-            retcode = subprocess.call( "svn export http://xtreemfs.googlecode.com/svn/branches/pb_experimental/Makefile", shell=True )
+            retcode = subprocess.call( "svn export http://xtreemfs.googlecode.com/svn/trunk/Makefile", shell=True )
             self.assertEqual( retcode, 0 )
             
             retcode = subprocess.call( "make", shell=True )    
