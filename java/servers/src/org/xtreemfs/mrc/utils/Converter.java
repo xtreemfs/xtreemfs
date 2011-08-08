@@ -425,7 +425,7 @@ public class Converter {
         
         StringTokenizer st = new StringTokenizer(rpString, " ,\t");
         
-        final String policy = st.nextToken();
+        final String policy = rpString.startsWith(",")? "": st.nextToken();
         final int numRepls = Integer.parseInt(st.nextToken());
         final int flags = Integer.parseInt(st.nextToken());
         
