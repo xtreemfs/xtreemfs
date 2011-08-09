@@ -729,6 +729,7 @@ public class MRCHelper {
             }
             
             if (!ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA.equals(value)
+                && !ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(value)
                 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE.equals(value)
                 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(value)
                 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(value))
