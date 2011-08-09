@@ -7,6 +7,8 @@
 
 #include "fuse/fuse_options.h"
 
+#include <csignal>
+
 #include <boost/program_options/cmdline.hpp>
 #include <iostream>
 #include <sstream>
@@ -22,14 +24,31 @@ namespace xtreemfs {
 
 FuseOptions::FuseOptions() : Options(), fuse_descriptions_("Fuse Options") {
   // Overwrite certain members of Options().
+
+  // MacFuse is not able to send signals to our fuse implementation. However,
+  // it allows interruption of system calls and therefore we leave the tries
+  // values to infinite.
+#ifndef __APPLE__
   // Fuse's default interrupt signal is SIGUSR1 = 10.
-  interrupt_signal = 10;
-  // Never give up to execute a request.
+  interrupt_signal = SIGUSR1;
+#endif // __APPLE__
+
+#ifndef __linux
+  // Interrupting read calls does not work with Linux Fuse.
+  max_read_tries = 0;
+#endif
+
+  // Never give up to execute a request as we enabled interruption.
   max_tries = 0;
   max_write_tries = 0;
 
   // Default Fuse options.
+#ifdef __APPLE__
+  // Always enable xattrs for Mac.
+  enable_xattrs = true;
+#else
   enable_xattrs = false;
+#endif  // __APPLE__
   foreground = false;
   use_fuse_permission_checks = true;
 
@@ -44,8 +63,12 @@ FuseOptions::FuseOptions() : Options(), fuse_descriptions_("Fuse Options") {
       "  -o xtreemfs_acl Enable the correct evaluation of XtreemFS ACLs.\n"
       "                  (Note that you cannot use the system tools getfattr\n"
       "                   and setfattr; use 'xtfsutil' instead to set and\n"
-      "                   retrieve ACLs.)\n"
-      "  -o user_xattr   Enable user defined extended attributes.");
+      "                   retrieve ACLs.)"
+#ifndef __APPLE__
+      "\n  -o user_xattr   Enable user defined extended attributes.");
+#else
+      );
+#endif  // __APPLE__
   fuse_descriptions_.add(fuse_acl_information);
 
   helptext_usage_ =
