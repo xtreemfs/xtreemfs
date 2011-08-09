@@ -62,6 +62,7 @@ Client::Client(int32_t connect_timeout_s,
     ssl_context_ =
         new boost::asio::ssl::context(service_,
                                       boost::asio::ssl::context::sslv23);
+    ssl_context_->set_options(boost::asio::ssl::context::no_tlsv1);
     ssl_context_->set_verify_mode(boost::asio::ssl::context::verify_none);
 
     OpenSSL_add_all_algorithms();
