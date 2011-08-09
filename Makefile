@@ -187,7 +187,7 @@ client_thirdparty: $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY) $(CLIENT_GOOGLE_TEST_CP
 
 $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY): $(CLIENT_GOOGLE_PROTOBUF_CPP)/src/**
 	@echo "client_thirdparty: Configuring and building required Google protobuf library..."
-	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && ./configure >/dev/null
+	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && make clean >/dev/null && ./configure >/dev/null
 	@$(MAKE) -C $(CLIENT_GOOGLE_PROTOBUF_CPP) >/dev/null
 	@echo "client_thirdparty: ...completed building required Google protobuf library."
 	@touch $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
