@@ -181,7 +181,7 @@ check_test:
 	@if [[ $(shell python -V 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f2) -lt 3 && $(shell python -V 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f1) -lt 3 ]]; then echo "python >= 2.4 required!"; exit 1; fi;
 	@echo "python ok"
 
-.PHONY:	client client_clean client_distclean client_thirdparty_clean
+.PHONY:	client client_clean client_distclean client_thirdparty_clean client_package_macosx
 
 CLIENT_THIRDPARTY_REQUIREMENTS = $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
 ifdef BUILD_CLIENT_TESTS
@@ -234,6 +234,21 @@ client_clean: check_client client_thirdparty_clean
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
 client_distclean: check_client client_thirdparty_distclean
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
+
+CLIENT_PACKAGE_MACOSX_OUTPUT_DIR = XtreemFS_Client_MacOSX.mpkg
+CLIENT_PACKAGE_MACOSX_OUTPUT_FILE = XtreemFS_installer.dmg
+client_package_macosx:
+# Clean everything first to ensure we package a clean client.
+#	@$(MAKE) client_distclean
+# We call $(MAKE) instead of specifying the targets as requirements as its not possible to define dependencies between these two and this breaks in case of parallel builds.
+	@$(MAKE) client
+	@echo "Running the Apple Packagemaker..."
+	@/Developer/usr/bin/packagemaker -d packaging/macosx/XtreemFS_MacOSX_Package.pmdoc/ -o $(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)
+	@echo "Creating a DMG file..."
+	@if [ -f "$(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)" ]; then echo "Removing previous file $(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)."; rm "$(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)"; fi
+	@hdiutil create -fs HFS+ -srcfolder "$(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)" -volname "XtreemFS Client for MacOSX" "$(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)"
+	@if [ -d "$(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)" ]; then echo "Cleaning up temporary files..."; rm -r "$(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)"; fi
+	@echo "Package file created: $(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)"
 
 .PHONY: foundation foundation_clean
 foundation:
