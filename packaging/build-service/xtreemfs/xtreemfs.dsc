@@ -9,7 +9,7 @@ Build-Depends:
   build-essential (>=11),
   libssl-dev (>= 0.9),
   libfuse-dev (>= 2.6),
-  libattr-dev (>= 2),
+  libattr1-dev (>= 2),
   ant (>= 1.6.5), ant-optional (>= 1.6.5),
   cmake (>= 2.6),
   libboost-system1.35-dev | libboost-system1.36-dev | libboost-system1.37-dev | libboost-system1.38-dev | libboost-system1.39-dev | libboost-system1.40-dev | libboost-system1.41-dev | libboost-system1.42-dev | libboost-system1.42-dev | libboost-system1.43-dev | libboost-system1.44-dev | libboost-system1.45-dev | libboost-system1.46-dev ,

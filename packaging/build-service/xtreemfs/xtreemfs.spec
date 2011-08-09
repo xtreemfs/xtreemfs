@@ -208,7 +208,7 @@ fi
 %post client
 #XTREEMFS_CONFIG_DIR=/etc/xos/xtreemfs/
 #$XTREEMFS_CONFIG_DIR/postinstall_setup.sh
-_POSTINSTALL_
+#_POSTINSTALL_
 
 #%%if 0%{?suse_version}
 #%%fillup_and_insserv -f xtreemfs-vivaldi

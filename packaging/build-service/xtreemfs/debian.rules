@@ -62,7 +62,7 @@ install: build
 	rmdir $(BUILD_DIR)/usr/share/doc/xtreemfs-tools
 	
 	# remove test program
-	rm -f $(BUILD_DIR)/usr/bin/xtfs_test
+	#rm -f $(BUILD_DIR)/usr/bin/xtfs_test
 	
 	# --- end custom part for installing
 	
@@ -110,8 +110,9 @@ install: build
 	mkdir -p $(BUILD_DIR)-server/etc/xos/xtreemfs/server-repl-plugin
 	mv    -t $(BUILD_DIR)-server/etc/xos/xtreemfs/server-repl-plugin \
 	         $(BUILD_DIR)/etc/xos/xtreemfs/server-repl-plugin/*.properties
-	mv    -t $(BUILD_DIR)-server/usr/share/xtreemfs/server-repl-plugin \
-	         $(BUILD_DIR)/usr/share/xtreemfs/server-repl-plugin/*
+	mkdir -p $(BUILD_DIR)-server/usr/share/xtreemfs
+	mv    -t $(BUILD_DIR)-server/usr/share/xtreemfs \
+	         $(BUILD_DIR)/usr/share/xtreemfs/server-repl-plugin
 	mkdir -p $(BUILD_DIR)-server/usr/share/doc/xtreemfs-server
 	cp    -t $(BUILD_DIR)-server/usr/share/doc/xtreemfs-server \
 	         $(CURDIR)/LICENSE
