@@ -210,44 +210,44 @@ fi
 #$XTREEMFS_CONFIG_DIR/postinstall_setup.sh
 _POSTINSTALL_
 
-#%if 0%{?suse_version}
-#%fillup_and_insserv -f xtreemfs-vivaldi
-#%restart_on_update xtreemfs-vivaldi
-#%endif
-#%if 0%{?fedora_version}
+#%%if 0%{?suse_version}
+#%%fillup_and_insserv -f xtreemfs-vivaldi
+#%%restart_on_update xtreemfs-vivaldi
+#%%endif
+#%%if 0%{?fedora_version}
 #/sbin/chkconfig --add xtreemfs-vivaldi
-#%endif
-#%if 0%{?mandriva_version}
-#%_post_service xtreemfs-vivaldi
-#%endif
+#%%endif
+#%%if 0%{?mandriva_version}
+#%%_post_service xtreemfs-vivaldi
+#%%endif
 
 %preun client
-#%if 0%{?suse_version}
-#%stop_on_removal xtreemfs-vivaldi
-#%endif
-#%if 0%{?fedora_version}
+#%%if 0%{?suse_version}
+#%%stop_on_removal xtreemfs-vivaldi
+#%%endif
+#%%if 0%{?fedora_version}
 ## 0 packages after uninstall -> pkg is about to be removed
 #  if [ "$1" = "0" ] ; then
 #    /sbin/service xtreemfs-vivaldi stop >/dev/null 2>&1
 #    /sbin/chkconfig --del xtreemfs-vivaldi
 #  fi
-#%endif
-#%if 0%{?mandriva_version}
-#%_preun_service xtreemfs-vivaldi
-#%endif
+#%%endif
+#%%if 0%{?mandriva_version}
+#%%_preun_service xtreemfs-vivaldi
+#%%endif
 
 %postun client
-#%if 0%{?suse_version}
-#%insserv_cleanup
-#%endif
-#%if 0%{?fedora_version}
+#%%if 0%{?suse_version}
+#%%insserv_cleanup
+#%%endif
+#%%if 0%{?fedora_version}
 ## >=1 packages after uninstall -> pkg was updated -> restart
 #if [ "$1" -ge "1" ] ; then
 #  /sbin/service xtreemfs-vivaldi condrestart >/dev/null 2>&1 || :
 #fi
-#%endif
-#%if 0%{?mandriva_version}
-#%endif
+#%%endif
+#%%if 0%{?mandriva_version}
+#%%endif
 %endif
 
 %clean
@@ -286,7 +286,7 @@ rm -rf $RPM_BUILD_ROOT
 %files server
 %defattr(-,root,root)
 /etc/init.d/xtreemfs-*
-#%exclude /etc/init.d/xtreemfs-vivaldi
+#%%exclude /etc/init.d/xtreemfs-vivaldi
 %dir /etc/xos/
 %dir /etc/xos/xtreemfs/
 %dir %attr(0750,root,root) /etc/xos/xtreemfs/truststore/
@@ -308,7 +308,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %if %{client_subpackage}
 # these files only appear if the client package is built
-#%exclude /usr/bin/xtfs_vivaldi
+#%%exclude /usr/bin/xtfs_vivaldi
 %endif
 /usr/bin/xtfs_*
 /usr/share/man/man1/xtfs_*
