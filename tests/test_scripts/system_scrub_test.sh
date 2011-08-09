@@ -23,18 +23,19 @@ RESULT=$?
 if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
 
 #
-# create file, delete objects and scrub
+# delete objects and scrub again
 #
 
 # parse the volume ID
-#FILE_ID=`getfattr --only-values -n xtreemfs.file_id ..`
+FILE_ID=`getfattr --only-values -n xtreemfs.file_id file.txt`
+echo "file ID of 'file.txt': $FILE_ID"
 #COLON_INDEX=`awk -v a="$FILE_ID" -v b=":" 'BEGIN{print index(a,b)}'`
 #VOL_ID=${FILE_ID:0:$COLON_INDEX-1}
 
-# delete file data
-VOLUME_DIR=$TEST_DIR/data/osd0/`find . |grep 00000`
-echo "Deleting data at $VOLUME_DIR..."
-rm -rf $VOLUME_DIR/*
+# retrieve directory w/ file data and delete it
+for i in `ls $TEST_DIR/data | grep osd`; do FILE_DIR=`find $TEST_DIR/data/$i -type d |grep $FILE_ID`; if [ "$FILE_DIR" != "" ]; then break; fi; done
+if [ "$FILE_DIR" == "" ]; then echo "could not find file directory on any OSD"; exit 1
+else echo "Deleting data at $FILE_DIR..."; rm -rf $FILE_DIR/*; fi
 
 # execute scrub command
 COMMAND="$1/bin/xtfs_scrub -dir $2 $CREDS -repair nomdcache"
