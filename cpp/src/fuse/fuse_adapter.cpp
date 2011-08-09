@@ -7,6 +7,7 @@
 
 #include "fuse/fuse_adapter.h"
 
+#include <sys/errno.h>
 #include <sys/types.h>
 #include <csignal>
 #include <cstring>
@@ -15,6 +16,7 @@
 #include <algorithm>
 #include <boost/cstdint.hpp>
 #include <boost/lexical_cast.hpp>
+#include <fstream>
 #include <list>
 #include <string>
 
@@ -175,9 +177,25 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   if (options_->use_fuse_permission_checks) {
     required_fuse_options->push_back(strdup("-odefault_permissions"));
   }
+#ifdef __APPLE__
+  // Add fancy icon and set volume name
+  required_fuse_options->push_back(strdup(
+      (string("-ovolname=\"XtreemFS (") + options_->xtreemfs_url
+       + string(")\"")).c_str()));
+  // Check if icon file exists.
+  {
+    string default_xtreemfs_icon_path
+        = "/usr/local/share/xtreemfs/xtreemfs_logo_transparent.icns";
+    ifstream icon_file(default_xtreemfs_icon_path.c_str());
+    if (icon_file.good()) {
+      required_fuse_options->push_back(strdup(
+          (string("-ovolicon=") + default_xtreemfs_icon_path).c_str()));
+    }
+  }
+#endif  // __APPLE__
 #ifdef __linux
   required_fuse_options->push_back(strdup("-obig_writes"));
-#endif
+#endif  // __linux
   // Unfortunately Fuse does also cache the stat entries of hard links and
   // therefore returns incorrect results if hard links are "chained".
   // In consequence, we have to disable the Fuse stat cache at all.
