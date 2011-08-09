@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 PROJECT(cpp CXX)
-# enable_testing() will provide a target "test".
-enable_testing()
+set(BUILD_CLIENT_TESTS $ENV{BUILD_CLIENT_TESTS})
 
 #SET (CMAKE_VERBOSE_MAKEFILE true)
 
@@ -40,8 +39,12 @@ if (NOT Boost_FOUND)
 endif(NOT Boost_FOUND)
 
 
-SET(REQUIRED_STATIC_LIBRARIES ${CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY} ${CLIENT_GOOGLE_TEST_CPP_LIBRARY} ${CLIENT_GOOGLE_TEST_CPP_MAIN})
-foreach (STATIC_LIB_FULL_PATH ${REQUIRED_STATIC_LIB_FULL_PATHRARIES})
+SET(REQUIRED_STATIC_LIBRARIES ${CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY})
+if(BUILD_CLIENT_TESTS)
+  SET(REQUIRED_STATIC_LIBRARIES ${REQUIRED_STATIC_LIBRARIES} ${CLIENT_GOOGLE_TEST_CPP_LIBRARY} ${CLIENT_GOOGLE_TEST_CPP_MAIN})
+endif(BUILD_CLIENT_TESTS)
+
+foreach (STATIC_LIB_FULL_PATH ${REQUIRED_STATIC_LIBRARIES})
   if(NOT EXISTS ${STATIC_LIB_FULL_PATH})
     message(FATAL_ERROR "The file ${STATIC_LIB_FULL_PATH} was not found. Please run 'make client' or 'make' from the base directory in order to build the required static libraries.")
   endif()
@@ -117,19 +120,24 @@ TARGET_LINK_LIBRARIES(xtfsutil ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} $
 
 # Define building of unittests.
 ##########################################
-MESSAGE(STATUS "Configuring libxtreemfs unittests.")
+if(BUILD_CLIENT_TESTS)
+  # enable_testing() will provide a target "test".
+  enable_testing()
 
-file(GLOB TESTS test/*)
-foreach (testdir ${TESTS})
-  if(IS_DIRECTORY ${testdir})
-    get_filename_component(testname ${testdir} NAME)
-    set(testname "test_${testname}")
-    file(GLOB_RECURSE SRCS_TESTS ${testdir}/*.cpp)
-    if (SRCS_TESTS)
-      MESSAGE(STATUS "\tConfiguring test: ${testname}.")
-      add_executable(${testname} ${SRCS_TESTS})
-      TARGET_LINK_LIBRARIES(${testname} gtest_main gtest xtreemfs protobuf crypto pthread ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ssl)
-      ADD_TEST(${testname} ${testname})
-    endif()
-  endif(IS_DIRECTORY ${testdir})
-endforeach(testdir)
+  MESSAGE(STATUS "Configuring libxtreemfs unittests.")
+
+  file(GLOB TESTS test/*)
+  foreach (testdir ${TESTS})
+    if(IS_DIRECTORY ${testdir})
+      get_filename_component(testname ${testdir} NAME)
+      set(testname "test_${testname}")
+      file(GLOB_RECURSE SRCS_TESTS ${testdir}/*.cpp)
+      if (SRCS_TESTS)
+        MESSAGE(STATUS "\tConfiguring test: ${testname}.")
+        add_executable(${testname} ${SRCS_TESTS})
+        TARGET_LINK_LIBRARIES(${testname} gtest_main gtest xtreemfs protobuf crypto pthread ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ssl)
+        ADD_TEST(${testname} ${testname})
+      endif()
+    endif(IS_DIRECTORY ${testdir})
+  endforeach(testdir)
+endif(BUILD_CLIENT_TESTS)

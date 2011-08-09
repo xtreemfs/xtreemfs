@@ -183,7 +183,12 @@ check_test:
 
 .PHONY:	client client_clean client_distclean client_thirdparty_clean
 
-client_thirdparty: $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY) $(CLIENT_GOOGLE_TEST_CPP_LIBRARY) $(CLIENT_GOOGLE_TEST_CPP_MAIN)
+CLIENT_THIRDPARTY_REQUIREMENTS = $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
+ifdef BUILD_CLIENT_TESTS
+	CLIENT_THIRDPARTY_REQUIREMENTS += $(CLIENT_GOOGLE_TEST_CPP_LIBRARY) $(CLIENT_GOOGLE_TEST_CPP_MAIN)
+endif
+
+client_thirdparty: $(CLIENT_THIRDPARTY_REQUIREMENTS)
 
 $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY): $(CLIENT_GOOGLE_PROTOBUF_CPP)/src/**
 	@echo "client_thirdparty: Configuring and building required Google protobuf library..."
@@ -207,10 +212,8 @@ $(CLIENT_GOOGLE_TEST_CHECKFILE): $(CLIENT_GOOGLE_TEST_CPP)/include/** $(CLIENT_G
 	@touch $(CLIENT_GOOGLE_TEST_CHECKFILE)
 
 client_thirdparty_clean:
-	@echo "Cleaning required Google protobuf library sources..."
-	@if [ -f $(CLIENT_GOOGLE_PROTOBUF_CPP)/Makefile ]; then $(MAKE) -C $(CLIENT_GOOGLE_PROTOBUF_CPP) clean >/dev/null; fi
-	@echo "Cleaning required Google googletest library sources..."
-	@if [ -f $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP)/Makefile ]; then $(MAKE) -C $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP) clean >/dev/null; fi
+	@if [ -f $(CLIENT_GOOGLE_PROTOBUF_CPP)/Makefile ]; then echo "Cleaning required Google protobuf library sources..."; $(MAKE) -C $(CLIENT_GOOGLE_PROTOBUF_CPP) clean >/dev/null; fi
+	@if [ -f $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP)/Makefile ]; then echo "Cleaning required Google googletest library sources..."; $(MAKE) -C $(shell pwd)/$(CLIENT_GOOGLE_TEST_CPP) clean >/dev/null; fi
 	@if [ -f $(CLIENT_GOOGLE_TEST_CHECKFILE) ]; then rm $(CLIENT_GOOGLE_TEST_CHECKFILE); fi
 	@echo "...finished cleaning thirdparty sources."
 
