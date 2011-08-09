@@ -58,6 +58,13 @@ class FileInfo {
     return path_;
   }
 
+  inline void UpdateXLocSetAndRest(const xtreemfs::pbrpc::XLocSet& new_xlocset,
+                                   bool replicate_on_close) {
+    boost::mutex::scoped_lock lock(xlocset_mutex_);
+    xlocset_.CopyFrom(new_xlocset);
+    replicate_on_close_ = replicate_on_close;
+  }
+
   /** Copies the XlocSet into new_xlocset. */
   inline void GetXLocSet(xtreemfs::pbrpc::XLocSet* new_xlocset) {
     assert(new_xlocset);
@@ -203,7 +210,7 @@ class FileInfo {
    * files the UUID Iterator will contain only the head OSD. */
   UUIDIterator osd_uuid_iterator_;
 
-  /** Use this to protect xlocset_. */
+  /** Use this to protect xlocset_ and replicate_on_close_. */
   boost::mutex xlocset_mutex_;
 
   /** List of active locks (acts as a cache). The OSD allows only one lock per

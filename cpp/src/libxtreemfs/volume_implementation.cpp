@@ -1274,8 +1274,12 @@ FileInfo* VolumeImplementation::GetFileInfoOrCreateUnmutexed(
   map< boost::uint64_t, FileInfo* >::const_iterator it
     = open_file_table_.find(file_id);
   if (it != open_file_table_.end()) {
-    // TODO(mberlin): Update xlocset and replicate_on_close information?!
     // File has already been opened.
+    it->second->UpdateXLocSetAndRest(xlocset, replicate_on_close);
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG) << "GetFileInfoOrCreateUnmutexed: "
+          << "Updated the FileInfo object with the file_id: " << file_id;
+    }
     return it->second;
   } else {
     // File has not been opened yet, add it.
@@ -1286,6 +1290,10 @@ FileInfo* VolumeImplementation::GetFileInfoOrCreateUnmutexed(
                                      xlocset,
                                      client_uuid_));
     open_file_table_[file_id] = file_info;
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG) << "GetFileInfoOrCreateUnmutexed: "
+          << "Created a new FileInfo object for the file_id: " << file_id;
+    }
     return file_info;
   }
 }
