@@ -2,10 +2,10 @@
 
 check_xtreemfs() {
     if [ -z "$XTREEMFS" ]; then
-        if [ -d src -a -d share ]; then
+        if [ -d src -a -d cpp -a -d etc ]; then
             #echo "Looks like you are in an XtreemFS base directory..."
             XTREEMFS=`pwd`
-        elif [ -d ../src -a -d ../share ]; then
+        elif [ -d ../src -a -d ../cpp -a -d ../etc ]; then
             #echo "XTREEMFS base could be the parent directory..."
             XTREEMFS=`pwd`/..
         fi
