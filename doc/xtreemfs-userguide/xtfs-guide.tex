@@ -42,7 +42,7 @@ Version 1.3
 XtreemFS is available from the \href{http://www.XtreemFS.org}{XtreemFS website (www.XtreemFS.org)}.
 
 
-This document is \copyright{} 2009-2011 by Bj\"orn Kolbeck, Jan Stender, NEC HPC Europe, Felix Hupfeld, Juan Gonzales. All rights reserved.
+This document is \copyright{} 2009-2011 by Bj\"orn Kolbeck, Jan Stender, Michael Berlin, Paul Seiferth, Felix Langner, NEC HPC Europe, Felix Hupfeld, Juan Gonzales. All rights reserved.
 
 \setcounter{tocdepth}{10}
 \tableofcontents
@@ -1270,7 +1270,7 @@ If an error occurs, please check if all of the following requirements are met:
 
 \chapter{XtreemFS Client}
 
-The XtreemFS client is needed to access an XtreemFS installation from a remote machine. This chapter describes how to use the XtreemFS client in order to work with XtreemFS like a local file system.
+The XtreemFS client is needed to access an XtreemFS installation from a local or remote machine. This chapter describes how to use the XtreemFS client in order to work with XtreemFS like a local file system.
 
 \section{Installation}
 \label{sec:client_installation}
@@ -1300,6 +1300,7 @@ $> dpkg -i xtreemfs-client-1.3.x.deb
 
 
 For Windows, please use the \emph{.msi} installer that will guide you through the installation process.
+For Mac OS X, we provide packaged client with installer.
 
 \subsection{Installing from Sources}
 
@@ -1379,7 +1380,7 @@ The volume \texttt{myVolume} residing on the MRC \texttt{my-mrc-host.com:32636} 
 $> rmfs.xtreemfs my-mrc-host.com:32636/myVolume
 \end{verbatim}
 
-Volume deletion is restricted to volume owners and privileged users. Similar to \texttt{xtfs\_mkvol}, an administrator password can be specified if required.
+Volume deletion is restricted to volume owners and privileged users. Similar to \texttt{mkfs.xtreemfs}, an administrator password can be specified if required.
 
 \subsection{Listing all Volumes}
 
@@ -1420,7 +1421,7 @@ $> mount.xtreemfs remote.dir.machine/myVolume /xtreemfs
 
 Please be aware that the Directory Service URL needs to be provided when mounting a volume, while MRC URLs are used to create volumes.
 
-When mounting a volume, the client will immediately go into background and won't display any error messages. Use the \texttt{-f} option to prevent the mount process from going into background and get all error messages printed to the console.
+When mounting a volume, the client will immediately go into background and won't display any error messages. Use the \texttt{-f} option to prevent the mount process from going into background and get all error messages printed to the console. Alternatively, you can use the \texttt{xtfsutil} to print the last 20 errors for a mounted volume.
 
 To check that a volume is mounted, use the \texttt{mount} command. It outputs a list of all mounts in the system. XtreemFS volumes are listed as \texttt{type fuse}:
 
@@ -1432,6 +1433,11 @@ Volumes are unmounted with the \texttt{umount.xtreemfs} tool\index{Volume!Un-mou
 
 \begin{verbatim}
 $> umount.xtreemfs /xtreemfs
+\end{verbatim}
+
+On Mac OS X, volumes are unmounted with the regular \texttt{umount} command:
+\begin{verbatim}
+$> umount /xtreemfs
 \end{verbatim}
 
 \subsection{Mount Options}
@@ -1446,7 +1452,7 @@ By default, the local system cache on the client machine will be used to speed u
 Different kinds of problems may occur when trying to create, mount or access files in a volume. If no log file was specified, the client will create a logfile called \texttt{mount.xtreemfs.log} in the current working directory. This logfile is only created in case of an error message. In case no useful error message is printed on the console or in the logfile, it may help to enable client-side log output. This can be done as follows:
 
 \begin{verbatim}
-$> mount.xtreemfs -f -d INFO remote.dir.machine/myVolume /xtreemfs
+$> mount.xtreemfs -f -d DEBUG remote.dir.machine/myVolume /xtreemfs
 \end{verbatim}
 
 The following list contains the most common problems and their solutions.
@@ -1729,7 +1735,7 @@ will produce output similar to the following:
 Path (on volume)     /test.txt
 XtreemFS file Id     1089e4fb-9eb9-46ea-8acf-91d10c2170e3:2
 XtreemFS URL         pbrpc://localhost:32638/xtreemfs/test.txt
-Owner                bjko
+Owner                user
 Group                users
 Type                 file
 Replication policy   WqRq
@@ -1738,15 +1744,15 @@ Replicas:
   Replica 1
      Striping policy     STRIPING_POLICY_RAID0 / 1 / 128kB
      Replication Flags   partial
-     OSD 1               test-osd1/130.73.78.138:32641
+     OSD 1               test-osd1/127.0.0.1:32641
   Replica 2
      Striping policy     STRIPING_POLICY_RAID0 / 1 / 128kB
      Replication Flags   partial
-     OSD 1               test-osd0/130.73.78.138:32640
+     OSD 1               test-osd0/127.0.0.1:32640
   Replica 3
      Striping policy     STRIPING_POLICY_RAID0 / 1 / 128kB
      Replication Flags   partial
-     OSD 1               test-osd2/130.73.78.138:32642
+     OSD 1               test-osd2/127.0.0.1:32642
 \end{verbatim}
 
 
@@ -1812,8 +1818,8 @@ will produce output similar to the following:
 \begin{verbatim}
 Path (on volume)     /
 XtreemFS file Id     1089e4fb-9eb9-46ea-8acf-91d10c2170e3:1
-XtreemFS URL         pbrpc://localhost.localdomain:32638/replicated
-Owner                bjko
+XtreemFS URL         pbrpc://localhost:32638/replicated
+Owner                user
 Group                users
 Type                 volume
 Free/Used Space      24 GB / 6 bytes
