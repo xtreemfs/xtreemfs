@@ -231,7 +231,7 @@ if __name__ == "__main__":
     if options.mrc_start:
         if not options.config_file_path:
             config_file = os.path.join(xtreemfs_dir,
-                                       "etc/xos/xtreemfs/" + dir_string + "config.properties")
+                                       "etc/xos/xtreemfs/" + mrc_string + "config.properties")
         else:
             config_file = options.config_file_path
         print "Starting MRC with config:", config_file
