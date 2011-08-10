@@ -10,6 +10,9 @@
 
 #include <cstdio>
 #include <cstdlib>
+#ifdef __APPLE__
+#include <sys/utsname.h>
+#endif  // __APPLE__
 
 #include <boost/lexical_cast.hpp>
 #include <string>
@@ -256,5 +259,27 @@ bool CheckIfUnsignedInteger(const std::string& string) {
 
   return true;  // It actually was an unsigned integer.
 }
+
+#ifdef __APPLE__
+int GetMacOSXKernelVersion() {
+  int darwin_kernel_version = -1;
+
+  struct utsname uname_result;
+  uname(&uname_result);
+  string darwin_release(uname_result.release);
+  size_t first_dot = darwin_release.find_first_of(".");
+  try {
+    darwin_kernel_version = boost::lexical_cast<int>(
+        darwin_release.substr(0, first_dot));
+  } catch(const boost::bad_lexical_cast& e) {
+    if (Logging::log->loggingActive(LEVEL_WARN)) {
+      Logging::log->getLog(LEVEL_WARN) << "Failed to retrieve the kernel "
+          "version, got: " << darwin_kernel_version << endl;
+    }
+  }
+
+  return darwin_kernel_version;
+}
+#endif  // __APPLE__
 
 }  // namespace xtreemfs

@@ -9,10 +9,12 @@
 
 #include <csignal>
 
+#include <boost/lexical_cast.hpp>
 #include <boost/program_options/cmdline.hpp>
 #include <iostream>
 #include <sstream>
 
+#include "libxtreemfs/helper.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 
 using namespace std;
@@ -44,8 +46,24 @@ FuseOptions::FuseOptions() : Options(), fuse_descriptions_("Fuse Options") {
 
   // Default Fuse options.
 #ifdef __APPLE__
+  // We assume that the MacFuse default timeout is 60 seconds on Leopard.
+  daemon_timeout = 60;
+
   // Always enable xattrs for Mac.
   enable_xattrs = true;
+
+  // If we are under Leopard or newer, reduce the timeout values.
+  if (GetMacOSXKernelVersion() >= 9) {
+    max_tries = 3;
+    max_read_tries = 3;
+    max_write_tries = 3;
+
+    retry_delay_s = 15;
+    connect_timeout_s = 15;
+    // The detection of a timeout may take twice the time, i.e. up to 18 seconds
+    // resulting in a total time of 3 * 18 (< 60 seconds daemon_timeout default).
+    request_timeout_s = 9;
+  }
 #else
   enable_xattrs = false;
 #endif  // __APPLE__
@@ -158,6 +176,17 @@ void FuseOptions::ParseCommandLine(int argc, char** argv) {
           "parameter and not passed through to Fuse. Use --interrupt-signal"
           "instead.");
     }
+#ifdef __APPLE__
+    if (fuse_options[i].substr(0, 15) == "daemon_timeout=") {
+      try {
+        daemon_timeout = boost::lexical_cast<int>(fuse_options[i].substr(15));
+      } catch(const boost::bad_lexical_cast& e) {
+        throw InvalidCommandLineParametersException(
+            "The integer value after daemon_timeout could not be parsed: "
+            + fuse_options[i].substr(15));
+      }
+    }
+#endif
   }
 
   // Extract information from command line.

@@ -79,6 +79,11 @@ bool CheckIfLocksDoConflict(const xtreemfs::pbrpc::Lock& lock1,
 /** Tests if string is a numeric (positive) value. */
 bool CheckIfUnsignedInteger(const std::string& string);
 
+#ifdef __APPLE__
+/** Returns the MacOSX Kernel Version (8 = Tiger, 9 = Leopard, 10 = Snow Leopard). */
+int GetMacOSXKernelVersion();
+#endif  // __APPLE__
+
 }  // namespace xtreemfs
 
 #endif  // CPP_INCLUDE_LIBXTREEMFS_HELPER_H_

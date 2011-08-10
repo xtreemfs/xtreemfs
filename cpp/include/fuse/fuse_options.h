@@ -46,6 +46,14 @@ class FuseOptions : public Options {
   bool foreground;
   /** Fuse options specified by -o. */
   std::vector<std::string> fuse_options;
+#ifdef __APPLE__
+  /** Assumed (or if specified the set) timeout of a blocked operation after
+   *  which MacFuse will on a) Tiger show a dialog if the user will still wait
+   *  for the operation or b) >=Leopard just kill our Fuse implementation and
+   *  call fuse_destroy.
+   */
+  int daemon_timeout;
+#endif  // __APPLE__
 
  private:
   /** Contains all available Fuse options and its descriptions. */

@@ -60,6 +60,84 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
                     options_->log_file_path,
                     LEVEL_WARN);
 
+#ifdef __APPLE__
+  // If the system is newer than Tiger, reduce the number of retries and warn
+  // the user about it.
+  if (GetMacOSXKernelVersion() >= 9) {
+    // At least 3 attempts should be possible. Reduce the timeout if necessary.
+    int min_tries = 3;
+    int max_tries = max(max(options_->max_tries, options_->max_read_tries),
+                        options_->max_write_tries);
+    if (options_->max_tries == 0 || options_->max_read_tries == 0 ||
+        options_->max_write_tries == 0) {
+      max_tries = 0;
+    }
+    int max_delay = max(max(options_->connect_timeout_s,
+                            options_->request_timeout_s),
+                        options_->retry_delay_s);
+    // -1 seconds required because Fuse gets killed at daemon_timeout sharp.
+    int allowed_max_timeout = (options_->daemon_timeout - 1);
+    bool timeouts_reduced = false;
+
+    if (max_tries == 0 || ((max_delay * max_tries) > allowed_max_timeout)) {
+      // Reduce the number of tries.
+      timeouts_reduced = true;
+      max_tries = max(min_tries, allowed_max_timeout / max_delay);
+
+      // If it did not work, also reduce the timeouts.
+      if ((options_->retry_delay_s * max_tries) > allowed_max_timeout) {
+        options_->retry_delay_s = max(1, allowed_max_timeout / max_tries);
+      }
+      if ((options_->connect_timeout_s * max_tries) > allowed_max_timeout) {
+        options_->connect_timeout_s = max(1, allowed_max_timeout / max_tries);
+      }
+
+      // Overwrite read and write tries values by max_tries.
+      options_->max_tries = max_tries;
+      options_->max_read_tries = max_tries;
+      options_->max_write_tries = max_tries;
+    }
+
+    // TODO(mberlin): Special handling of the request timeout required.
+    //                Due to a limitation in the RPC client, the actual
+    //                request timeout may be twice the time.
+    string info_request_timeout_bug = "";
+    if ((2 * options_->request_timeout_s * max_tries) > allowed_max_timeout) {
+      options_->request_timeout_s = max(1, allowed_max_timeout / max_tries / 2);
+      timeouts_reduced = true;
+      info_request_timeout_bug = " (the actual value had to be halved due to a"
+          " limitation in the current code)";
+    }
+
+    if (timeouts_reduced) {
+      if (Logging::log->loggingActive(LEVEL_WARN)) {
+        Logging::log->getLog(LEVEL_WARN)
+            << "You are running MacOSX Leopard or newer. The timeout values"
+               " and/or maximum number of attempts had to be reduced as follows"
+               " to avoid unwanted terminations of mount.xtreemfs."
+               "\n\n"
+               "As the Finder blocks in case of stall operations (which may"
+               " happen, for instance if a file replica went offline and the"
+               " client has to retry the next one), MacFuse does terminate the"
+               " blocking file system after the period specified by -o"
+               " daemon_timeout=XX where XX defaults to 60 seconds for MacOSX"
+               " versions newer than Tiger. You can increase this value by"
+               " passing -o daemon_timeout=XX to mount.xtreemfs."
+               "\n\n"
+            << "Based on a daemon_timeout value of " << options_->daemon_timeout
+            << ", the options were adjusted as follows:"
+            << "\nmax-tries: " << options_->max_tries
+            << "\nmax-read-tries: " << options_->max_read_tries
+            << "\nmax-write-tries: " << options_->max_write_tries
+            << "\nretry_delay: " << options_->retry_delay_s
+            << "\nconnect-timeout: " << options_->connect_timeout_s
+            << "\nrequest-timeout: " << options_->request_timeout_s
+            << info_request_timeout_bug << endl;
+      }
+    }
+  }
+#endif  // __APPLE__
+
   // Setup Usermapping.
   user_mapping_.reset(UserMapping::CreateUserMapping(
       options_->user_mapping_type, UserMapping::kUnix, *options_));

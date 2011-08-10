@@ -157,14 +157,20 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&max_read_tries)->default_value(max_read_tries),
         "Maximum number of attempts to execute a read command (0 means infinite"
         ")."
+#ifdef __linux
         "\n(If you use Fuse it's not possible to interrupt a read request, i.e."
-        " do not set this value too high or to infinite.)")
+        " do not set this value too high or to infinite.)"
+#endif  // __linux
+        )
     ("max-write-tries",
         po::value(&max_write_tries)->default_value(max_write_tries),
         "Maximum number of attempts to execute a write command (0 means "
         "infinite)."
+#ifdef __linux
         "\n(Unlike read requests, write requests can get interrupted in "
-        "Fuse.)")
+        "Fuse.)"
+#endif  // __linux
+        )
     ("retry-delay",
         po::value(&retry_delay_s)->default_value(retry_delay_s),
         "Wait time after a request failed until next attempt (in seconds).")
@@ -172,8 +178,15 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&interrupt_signal)->default_value(interrupt_signal),
         "Retry of a request is interrupted if this signal is sent "
         "(set to 0 to disable it)."
+#ifdef __APPLE__
+        " (This option has no effect with MacFuse as it supports to interrupt"
+        " all requests by default.)"
+#endif  // __APPLE__
+#ifdef __linux
         "\n(If not disabled and Fuse is used, -o intr and -o intr_signal=10 "
-        "(=SIGUSR1) will be passed to Fuse by default.)")
+        "(=SIGUSR1) will be passed to Fuse by default.)"
+#endif  // __linux
+        )
     ("connect-timeout",
         po::value(&connect_timeout_s)->default_value(connect_timeout_s),
         "Timeout after which a connection attempt will be retried "
