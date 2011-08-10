@@ -4,7 +4,6 @@ set -e
 
 #XTREEMFS_CONFIG_DIR=/etc/xos/xtreemfs/
 #$XTREEMFS_CONFIG_DIR/postinstall_setup.sh
-#_POSTINSTALL_
 
 #echo "Installing vivaldi RC-links..."
 #update-rc.d xtreemfs-vivaldi defaults > /dev/null
