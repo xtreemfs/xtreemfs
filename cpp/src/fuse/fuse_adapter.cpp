@@ -7,10 +7,12 @@
 
 #include "fuse/fuse_adapter.h"
 
-#include <sys/errno.h>
-#include <sys/types.h>
 #include <csignal>
 #include <cstring>
+#define FUSE_USE_VERSION 26
+#include <fuse.h>
+#include <sys/errno.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -194,7 +196,10 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   }
 #endif  // __APPLE__
 #ifdef __linux
+  #if FUSE_MAJOR_VERSION > 2 || \
+      ( FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 8 )
   required_fuse_options->push_back(strdup("-obig_writes"));
+  #endif  // Fuse >= 2.8
 #endif  // __linux
   // Unfortunately Fuse does also cache the stat entries of hard links and
   // therefore returns incorrect results if hard links are "chained".
