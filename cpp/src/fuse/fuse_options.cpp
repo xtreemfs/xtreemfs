@@ -173,7 +173,7 @@ void FuseOptions::ParseCommandLine(int argc, char** argv) {
       i--;
       throw InvalidCommandLineParametersException(
           "The option -o intr_signal will be ignored as command line "
-          "parameter and not passed through to Fuse. Use --interrupt-signal"
+          "parameter and not passed through to Fuse. Use --interrupt-signal "
           "instead.");
     }
 #ifdef __APPLE__

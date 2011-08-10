@@ -61,7 +61,7 @@ Options::Options()
   // Depending on the values max{_read|_write}_tries and and (retry_delay_s or
   // (connect_|request_)timeout_s), the _maximum_ time an operation does block
   // is in the range:
-  // [(max_tries-1) * retry_delay_s, (max_tries-1) * connect_timeout_s]
+  // [(max_tries-1) * retry_delay_s, max_tries * connect_timeout_s]
   // (assuming retry_delay_s <= connect_timeout_s).
   //
   // Example: If there is only one replica available and the connect
@@ -74,14 +74,15 @@ Options::Options()
   //          However, if the attempt does not fail immediately (for instance
   //          the host is not up and we have to wait for the timeout for the
   //          request), the client will wait at least connect_timeout_s or
-  //          request_timeout_s seconds for the completion of the request.
+  //          request_timeout_s seconds for the completion of every request.
   //          The timeout values and retry_delay_s do not add up, i.e. the
   //          client will only wait for the maximum of both.
-  //          In total, the maximum time will not exceed (max_tries-1) *
+  //          In total, the maximum time will not exceed max_tries *
   //          (connect_|request_)timeout_s).
   //
   //          With the default values, an unsuccessful operation may block
-  //          between 10 and 40 minutes [15 seconds * 40 tries, 60 secs * 40].
+  //          between ~10 and 40 minutes: [(15-1) seconds * 40 tries,
+  //                                       60 secs * 40].
   max_tries = 40;
   max_read_tries = 40;
   max_write_tries = 40;

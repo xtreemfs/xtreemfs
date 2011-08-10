@@ -1278,7 +1278,8 @@ FileInfo* VolumeImplementation::GetFileInfoOrCreateUnmutexed(
     it->second->UpdateXLocSetAndRest(xlocset, replicate_on_close);
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
       Logging::log->getLog(LEVEL_DEBUG) << "GetFileInfoOrCreateUnmutexed: "
-          << "Updated the FileInfo object with the file_id: " << file_id;
+          << "Updated the FileInfo object with the file_id: "
+          << file_id << endl;
     }
     return it->second;
   } else {
@@ -1292,7 +1293,8 @@ FileInfo* VolumeImplementation::GetFileInfoOrCreateUnmutexed(
     open_file_table_[file_id] = file_info;
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
       Logging::log->getLog(LEVEL_DEBUG) << "GetFileInfoOrCreateUnmutexed: "
-          << "Created a new FileInfo object for the file_id: " << file_id;
+          << "Created a new FileInfo object for the file_id: "
+          << file_id << endl;
     }
     return file_info;
   }

@@ -379,7 +379,7 @@ void Client::run() {
             << endl;
       }
     } else {
-      Logging::log->getLog(LEVEL_INFO) << "running in plain TPC mode"
+      Logging::log->getLog(LEVEL_INFO) << "running in plain TCP mode"
           << endl;
     }
   }

@@ -191,11 +191,14 @@ int xtreemfs_fuse_release(const char *path, struct fuse_file_info *fi) {
 int xtreemfs_fuse_read(
     const char *path, char *buf,
     size_t size, off_t offset, struct fuse_file_info *fi) {
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "xtreemfs_fuse_read " << path
+        << " s:" << size <<  " o:" << offset << endl;
+  }
   int count = fuse_adapter->read(path, buf, size, offset, fi);
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-    Logging::log->getLog(LEVEL_DEBUG)
-        << "xtreemfs_fuse_read " << path << " s:" << size <<  " o:"
-        << offset << " r:" << count << endl;
+    Logging::log->getLog(LEVEL_DEBUG) << "xtreemfs_fuse_read finished " << path
+        << " s:" << size <<  " o:" << offset << " r:" << count << endl;
   }
   return count;
 }
