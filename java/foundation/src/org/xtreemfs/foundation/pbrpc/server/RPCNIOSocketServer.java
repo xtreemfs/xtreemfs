@@ -11,6 +11,7 @@ package org.xtreemfs.foundation.pbrpc.server;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedByInterruptException;
@@ -125,10 +126,15 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
         
         if (receiveBufferSize != -1) {
             socket.socket().setReceiveBufferSize(receiveBufferSize);
-            if (socket.socket().getReceiveBufferSize() != receiveBufferSize) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
-                    "could not set socket receive buffer size to " + receiveBufferSize
-                        + ", using default size of " + socket.socket().getReceiveBufferSize());
+            try {
+                if (socket.socket().getReceiveBufferSize() != receiveBufferSize) {
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
+                            "could not set socket receive buffer size to " + receiveBufferSize
+                                    + ", using default size of " + socket.socket().getReceiveBufferSize());
+                }
+            } catch (SocketException exc) {
+                Logging.logMessage(Logging.LEVEL_WARN, this,
+                        "could not check whether receive buffer size was successfully set to %d bytes", receiveBufferSize);
             }
         } else {
             socket.socket().setReceiveBufferSize(256 * 1024);
