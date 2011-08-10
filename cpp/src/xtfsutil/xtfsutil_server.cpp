@@ -12,6 +12,7 @@
 #include <cassert>
 #include <errno.h>
 #include <list>
+#include <sys/fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -477,7 +478,12 @@ void XtfsUtilServer::OpGetSuitableOSDs(
 }
 
 bool XtfsUtilServer::checkXctlFile(const std::string& path) {
+#ifdef __APPLE__
+  return boost::starts_with(path, "/._" + prefix_.substr(1)) ||
+         boost::starts_with(path, prefix_);
+#else
   return boost::starts_with(path, prefix_);
+#endif
 }
 
 XCtlFile* XtfsUtilServer::FindFile(uid_t uid,
