@@ -106,6 +106,8 @@ public class MRC {
         
         Logging.start(config.getDebugLevel(), config.getDebugCategories());
         
+        TimeSync.initializeLocal(60000, 50).waitForStartup();
+        
         if (config.isInitializable()) {
             try {
                 MRCConfig remoteConfig = getConfigurationFromDIR(config);
@@ -148,9 +150,7 @@ public class MRC {
         
         clientStage.start();
         clientStage.waitForStartup();
-        
-        TimeSync.initializeLocal(60000, 50);
-        
+                
         Auth authNone = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
         UserCredentials uc = UserCredentials.newBuilder().setUsername("main-method").addGroups(
             "xtreemfs-services").build();
@@ -174,9 +174,7 @@ public class MRC {
         for (KeyValuePair kvp : conf.getParameterList()) {
             returnMap.put(kvp.getKey(), kvp.getValue());
         }
-        
-        TimeSync.close();
-        
+                
         return new MRCConfig(returnMap);
     };
     

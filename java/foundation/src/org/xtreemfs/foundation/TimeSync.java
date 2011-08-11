@@ -33,60 +33,58 @@ import org.xtreemfs.foundation.logging.Logging.Category;
  */
 public final class TimeSync extends LifeCycleThread {
 
-    private enum extSyncSource {
-        XTREEMFS_DIR,
-        GPSD,
-        LOCAL_CLOCK
+    public enum ExtSyncSource {
+        XTREEMFS_DIR, GPSD, LOCAL_CLOCK
     };
-    
+
     /**
      * A client used to synchronize clocks
      */
-    private TimeServerClient timeServerClient;
-    
+    private TimeServerClient       timeServerClient;
+
     /**
      * interval in ms to wait between to synchronizations.
      */
-    private final int        timeSyncInterval;
-    
+    private volatile int           timeSyncInterval;
+
     /**
      * interval between updates of the local system clock.
      */
-    private final int        localTimeRenew;
+    private volatile int           localTimeRenew;
 
-    private final extSyncSource     syncSource;
+    private volatile ExtSyncSource syncSource;
 
-    private final InetSocketAddress gpsdAddr;
-    
+    private InetSocketAddress      gpsdAddr;
+
     /**
      * local sys time as of last update
      */
-    private volatile long    localSysTime;
-    
+    private volatile long          localSysTime;
+
     /**
      * drift between local clock and global time as of last resync() operation.
      */
-    private volatile long    currentDrift;
-    
+    private volatile long          currentDrift;
+
     /**
      * set to true to stop thread
      */
-    private volatile boolean quit;
-    
+    private volatile boolean       quit;
+
     /**
      * timestamp of last resync operation
      */
-    private volatile long    lastSync;
+    private volatile long          lastSync;
 
-    private volatile int     syncRTT;
+    private volatile int           syncRTT;
 
-    private volatile boolean syncSuccess;
-    
-    private static TimeSync  theInstance;
+    private volatile boolean       syncSuccess;
 
-    private final Pattern    gpsdDatePattern;
+    private static TimeSync        theInstance;
 
-    private Socket            gpsdSocket;
+    private final Pattern          gpsdDatePattern;
+
+    private Socket                 gpsdSocket;
     
     /**
      * Creates a new instance of TimeSync
@@ -94,20 +92,37 @@ public final class TimeSync extends LifeCycleThread {
      * @dir a directory server to use for synchronizing clocks, can be null for
      *      test setups only
      */
-    private TimeSync(extSyncSource source, TimeServerClient dir, InetSocketAddress gpsd, int timeSyncInterval, int localTimeRenew) {
+    private TimeSync(ExtSyncSource source, TimeServerClient dir, InetSocketAddress gpsd, int timeSyncInterval, int localTimeRenew) {
         super("TSync Thr");
         setDaemon(true);
+        this.syncSuccess = false;
+        this.gpsdDatePattern = Pattern.compile("GPSD,D=(....)-(..)-(..)T(..):(..):(..)\\.(.+)Z");
+        
+        init(source, dir, gpsd, timeSyncInterval, localTimeRenew);
+    }
+
+    /**
+     * Initializes the TimeSync with new parameters.
+     * 
+     * @param source
+     * @param dir
+     * @param gpsd
+     * @param timeSyncInterval
+     * @param localTimeRenew
+     */
+    public synchronized void init(ExtSyncSource source, TimeServerClient dir, InetSocketAddress gpsd, int timeSyncInterval, int localTimeRenew) {
+        
         this.localTimeRenew = localTimeRenew;
         this.timeSyncInterval = timeSyncInterval;
         this.timeServerClient = dir;
-        this.syncSuccess = false;
         this.syncSource = source;
         this.gpsdAddr = gpsd;
 
-        gpsdDatePattern = Pattern.compile("GPSD,D=(....)-(..)-(..)T(..):(..):(..)\\.(.+)Z");
-
-        if (source == extSyncSource.GPSD) {
+        if (source == ExtSyncSource.GPSD) {
             try {
+                if (gpsdSocket != null)
+                    gpsdSocket.close();
+                
                 gpsdSocket = new Socket();
                 gpsdSocket.setSoTimeout(2000);
                 gpsdSocket.setTcpNoDelay(true);
@@ -118,8 +133,6 @@ public final class TimeSync extends LifeCycleThread {
             }
         }
     }
-
-
     
     /**
      * main loop
@@ -171,7 +184,7 @@ public final class TimeSync extends LifeCycleThread {
             return theInstance;
         }
         
-        TimeSync s = new TimeSync(extSyncSource.XTREEMFS_DIR, dir, null, timeSyncInterval, localTimeRenew);
+        TimeSync s = new TimeSync(ExtSyncSource.XTREEMFS_DIR, dir, null, timeSyncInterval, localTimeRenew);
         s.start();
         s.waitForStartup();
         return s;
@@ -184,7 +197,7 @@ public final class TimeSync extends LifeCycleThread {
             return theInstance;
         }
         
-        TimeSync s = new TimeSync(extSyncSource.LOCAL_CLOCK, null, null, timeSyncInterval, localTimeRenew);
+        TimeSync s = new TimeSync(ExtSyncSource.LOCAL_CLOCK, null, null, timeSyncInterval, localTimeRenew);
         s.start();
         return s;
     }
@@ -196,7 +209,7 @@ public final class TimeSync extends LifeCycleThread {
             return theInstance;
         }
 
-        TimeSync s = new TimeSync(extSyncSource.GPSD, null, gpsd, timeSyncInterval, localTimeRenew);
+        TimeSync s = new TimeSync(ExtSyncSource.GPSD, null, gpsd, timeSyncInterval, localTimeRenew);
         s.start();
         return s;
     }
@@ -406,7 +419,7 @@ public final class TimeSync extends LifeCycleThread {
             c.start();
             c.waitForStartup();
             DIRClient dir = new DIRClient(c, new InetSocketAddress("xtreem.zib.de", 32638));*/
-            TimeSync ts = new TimeSync(extSyncSource.GPSD,null, new InetSocketAddress("localhost", 2947), 10000, 50);
+            TimeSync ts = new TimeSync(ExtSyncSource.GPSD,null, new InetSocketAddress("localhost", 2947), 10000, 50);
             ts.start();
             ts.waitForStartup();
             

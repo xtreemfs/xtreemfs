@@ -39,6 +39,7 @@ import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.TimeServerClient;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.VersionManagement;
+import org.xtreemfs.foundation.TimeSync.ExtSyncSource;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -317,7 +318,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         try {
             
-            TimeSync.initialize(new TimeServerClient() {
+            TimeSync.getInstance().init(ExtSyncSource.XTREEMFS_DIR, new TimeServerClient() {
                 
                 @Override
                 public long xtreemfs_global_time_get(InetSocketAddress server) {
@@ -335,7 +336,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                             resp.freeBuffers();
                     }
                 }
-            }, config.getRemoteTimeSync(), config.getLocalClockRenew());
+            }, null, config.getRemoteTimeSync(), config.getLocalClockRenew());
             
             clientStage.start();
             clientStage.waitForStartup();
