@@ -1,0 +1,57 @@
+modules {
+  module {
+    name = "xtfs-mrc-plugin"
+    language = "python"
+    # The following params are examples only
+    #  They are not actually used by the temp module
+    param Host {
+      value = localhost
+    }
+    param Port {
+      value = 9002
+    }
+    param CommunityString {
+      value = public
+    }
+  }
+}
+
+collection_group {
+  collect_every = 60
+  time_threshold = 10
+  metric {
+    name = "mrc_jvm_used_mem"
+    title = "used memory of the jvm"
+    value_threshold = 1
+  } 
+  metric {
+    name = "mrc_jvm_free_mem"
+    title = "free memory of the jvm"
+    value_threshold = 1
+  }
+  metric {
+    name = "mrc_client_connections"
+    title = "number of Clients"
+    value_threshold = 1
+  }
+  metric {
+    name = "mrc_pending_requests"
+    title = "number of pending requests"
+    value_threshold = 1
+  }
+  metric {
+    name = "volumes_count"
+    title = "number of volumes"
+    value_threshold = 1
+  } 
+  metric {
+    name = "mrc_status"
+    title = "Status MRC"
+  }
+  metric { 
+    name = "mrc_uuid"
+    title = "MRC UUID"
+  } 
+}
+
+ 

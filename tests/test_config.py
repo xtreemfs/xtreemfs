@@ -6,16 +6,19 @@ TestSets = {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
+		'snmp': False,
               },
     'full' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
+		'snmp': False,
               },
     'short-ssl' : {
                 'ssl': True,
                 'mrc_repl': False,
                 'dir_repl': False,
+		'snmp': False,
               },
     # This configuration is used for manual test environment
     # set-ups.
@@ -23,6 +26,7 @@ TestSets = {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
+		'snmp': True,
     }
 }
 

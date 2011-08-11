@@ -11,6 +11,7 @@ package org.xtreemfs.dir.operations;
 import java.util.ConcurrentModificationException;
 
 import org.xtreemfs.babudb.api.database.Database;
+import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
@@ -56,6 +57,52 @@ public class RegisterServiceOperation extends DIROperation {
                             ReusableBuffer buf = ReusableBuffer.wrap(result);
                             ServiceRecord dbData = new ServiceRecord(buf);
                             currentVersion = dbData.getVersion();
+                        } else {
+                            // The registered service wasn't registered before. 
+                            // Collect data from the request and inform all listeners about this registration
+                            String uuid, name, type, pageUrl, geoCoordinates;
+                            long totalRam, usedRam, lastUpdated;
+                            int status, load, protoVersion;
+                            
+                            ServiceRecord sRec = new ServiceRecord(request.getService().toBuilder().build());
+                            
+                            uuid = sRec.getUuid();
+                            name = sRec.getName();
+                            type = sRec.getType().toString();
+                            
+                            
+                            pageUrl = sRec.getData().get("status_page_url") == null ? "": sRec.getData().get("status_page_url");
+                            geoCoordinates = sRec.getData().get("vivaldi_coordinates") == null ? "" :
+                                sRec.getData().get("vivaldi_coordinates");
+                            try {
+                                totalRam = Long.parseLong(sRec.getData().get("totalRAM"));
+                            } catch (NumberFormatException nfe) {
+                                totalRam = -1;
+                            }
+                            try {
+                                usedRam = Long.parseLong(sRec.getData().get("usedRAM"));
+                            } catch (NumberFormatException nfe) {
+                                usedRam = -1;
+                            }
+                            lastUpdated = System.currentTimeMillis() / 1000l;
+                            try {
+                                status = Integer.parseInt(sRec.getData().get(HeartbeatThread.STATUS_ATTR));
+                            } catch (NumberFormatException nfe) {
+                                status = -1;
+                            }
+                            try {
+                                load = Integer.parseInt(sRec.getData().get("load"));
+                            } catch (NumberFormatException nfe) {
+                                load = -1;
+                            }
+                            try {
+                                protoVersion = Integer.parseInt(sRec.getData().get("proto_version"));
+                            } catch (NumberFormatException nfe) {
+                                protoVersion = -1;
+                            }
+                            
+                            master.notifyServiceRegistred(uuid, name, type, pageUrl, geoCoordinates, totalRam, usedRam, 
+                                    lastUpdated, status, load, protoVersion);
                         }
                         
                         if (reg.getVersion() != currentVersion) {

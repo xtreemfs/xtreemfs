@@ -1,0 +1,62 @@
+modules {
+  module {
+    name = "xtfs-dir-plugin"
+    language = "python"
+    # The following params are examples only
+    #  They are not actually used by the temp module
+    param Host {
+      value = localhost
+    }
+    param Port {
+      value = 9001
+    }
+    param CommunityString {
+      value = public
+    }
+  }
+}
+
+collection_group {
+  collect_every = 60
+  time_threshold = 10
+  metric {
+    name = "dir_jvm_used_mem"
+    title = "used memory of the jvm"
+    value_threshold = 1
+  }
+  metric {
+    name = "dir_jvm_free_mem"
+    title = "free memory of the jvm"
+    value_threshold = 1
+  } 
+  metric {
+    name = "dir_client_connections"
+    title = "number of Clients"
+    value_threshold = 1
+  }
+  metric {
+    name = "dir_pending_requests"
+    title = "number of pending requests"
+    value_threshold = 1
+  }
+  metric {
+    name = "addr_mapping_count"
+    title = "number of address mappings"
+    value_threshold = 1
+  }
+  metric {
+    name = "service_count"
+    title = "number of services"
+    value_threshold = 1
+  }
+  metric {
+    name = "dir_status"
+    title = "Status DIR"
+  }
+  metric {
+    name = "dir_uuid"
+    title = "DIR UUID"
+  }
+}
+
+ 

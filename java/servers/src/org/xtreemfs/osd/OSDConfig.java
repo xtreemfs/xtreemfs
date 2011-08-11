@@ -17,7 +17,6 @@ import java.util.Properties;
 
 import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.config.ServiceConfig.Parameter;
-import org.xtreemfs.common.uuids.ServiceUUID;
 
 /**
  * 
@@ -61,7 +60,11 @@ public class OSDConfig extends ServiceConfig {
             Parameter.POLICY_DIR,
             Parameter.CAPABILITY_SECRET,
             Parameter.SOCKET_SEND_BUFFER_SIZE,
-            Parameter.SOCKET_RECEIVE_BUFFER_SIZE
+            Parameter.SOCKET_RECEIVE_BUFFER_SIZE,
+            Parameter.USE_SNMP,
+            Parameter.SNMP_ADDRESS,
+            Parameter.SNMP_PORT,
+            Parameter.SNMP_ACL,
     };
     
     /**
@@ -133,10 +136,6 @@ public class OSDConfig extends ServiceConfig {
 
     public int getRemoteTimeSync() {
         return (Integer) parameter.get(Parameter.REMOTE_TIME_SYNC);
-    }
-
-    public ServiceUUID getUUID() {
-        return (ServiceUUID) parameter.get(Parameter.UUID);
     }
 
     public boolean isReportFreeSpace() {

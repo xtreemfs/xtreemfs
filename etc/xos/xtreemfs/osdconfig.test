@@ -85,3 +85,13 @@ capability_secret = Yagga
 # deployed either as .java, .class or .jar files. While Java and Class files
 # may be located in subdirectories, JAR files mustn't.
 policy_dir = /etc/xos/xtreemfs/policies
+
+# If you want to monitor your XtreemFS installation through SNMP 
+# uncomment the following lines. You have to set snmp.enabled = true
+# and provide a listen port and optional a address. Also optional 
+# is a path to an aclfile which controls which hosts can access the
+# monitoring information via SNMP.
+# snmp.enabled = true
+# snmp.address = localhost
+# snmp.port = 34638
+# snmp.aclfile =  /etc/xtreemfs/snmp.acl

@@ -51,6 +51,8 @@ public class DeregisterServiceOperation extends DIROperation {
                 return result;
             }
         });
+        
+        master.notifyServiceDeregistred(request.getUuid());
     }
     
     @Override

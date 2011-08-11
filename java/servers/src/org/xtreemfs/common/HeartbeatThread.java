@@ -69,7 +69,7 @@ public class HeartbeatThread extends LifeCycleThread {
         public DIR.ServiceSet getServiceData();
     }
 
-    private static final long UPDATE_INTERVAL = 60 * 1000; // 60s
+    public static final long UPDATE_INTERVAL = 60 * 1000; // 60s
 
     private ServiceUUID uuid;
 
@@ -92,6 +92,11 @@ public class HeartbeatThread extends LifeCycleThread {
     public static final String STATIC_ATTR_PREFIX = "static.";
 
     public static final String STATUS_ATTR = STATIC_ATTR_PREFIX+"status";
+    
+    /**
+     * Timestamp when the last heartbeat was send. 
+     */
+    private long lastHeartbeat;
 
 
     private static Auth     authNone;
@@ -122,6 +127,8 @@ public class HeartbeatThread extends LifeCycleThread {
                 proto = Schemes.SCHEME_PBRPCS;
             }
         }
+        
+        this.lastHeartbeat = System.currentTimeMillis();
     }
 
     public synchronized void shutdown() {
@@ -427,6 +434,9 @@ public class HeartbeatThread extends LifeCycleThread {
                     r2.freeBuffers();
                 }
             }
+            
+            //update lastHeartbeat value
+            this.lastHeartbeat = System.currentTimeMillis();
         }
     }
 
@@ -477,6 +487,14 @@ public class HeartbeatThread extends LifeCycleThread {
         }
       }
 
+    
+    /**
+     * Getter for the timestamp when the last heartbeat was sent. 
+     * @return  long - timestamp like System.currentTimeMillis() returns it. 
+     */
+    public long getLastHeartbeat() {
+        return this.lastHeartbeat;
+    }
     
     public static void waitForDIR(InetSocketAddress dirAddress, int maxWait_s) throws IOException {
         //check if we can connect to DIR and wait if necessary

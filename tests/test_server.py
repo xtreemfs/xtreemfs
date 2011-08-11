@@ -53,6 +53,17 @@ class Server:
         self._config['ssl.trusted_certs.pw'] = trusted_certs_jks_passphrase
         self._config['ssl.trusted_certs.container'] = 'JKS'
 
+    # set configuration parameters required for SNMP support
+    def enable_snmp(self,
+                    snmp_port,
+                    snmp_address,
+                    snmp_aclfile):
+        self._config['snmp.enabled'] = 'true'
+        self._config['snmp.port'] = snmp_port
+        self._config['snmp.address'] = snmp_address
+        self._config['snmp.aclfile'] = snmp_aclfile
+        
+         
     # Imports the configuration from the config file.
     def read_config_file(self):
         self._config = dict()
@@ -145,6 +156,8 @@ class Server:
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "protobuf-java-2.3.0.jar")),
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "Flease.jar")),
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "foundation", "dist", "Foundation.jar")),
+                             os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "OpenDMK-src" ,"dist", "lib", 
+                                                          "jdmkrt.jar")),
                              )
                 if sys.platform.startswith("win"):
                     classpath = ";".join(classpath)

@@ -14,7 +14,9 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,6 +26,7 @@ import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.config.PolicyContainer;
+import org.xtreemfs.common.monitoring.StatusMonitor;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -176,6 +179,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final CleanupVersionsThread               cvThread;
     
     protected final RWReplicationStage                  rwrStage;
+    
+    private List<OSDStatusListener>                     statusListener;
     
     /**
      * reachability of services
@@ -510,6 +515,16 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         cvThread = new CleanupVersionsThread(this, storageLayout);
         cvThread.setLifeCycleListener(this);
         
+        statusListener = new ArrayList<OSDStatusListener>();
+        if (config.isUsingSnmp()) {
+            statusListener.add(new StatusMonitor(
+                    this, config.getSnmpAddress(), config.getSnmpPort(), config.getSnmpACLFile()));
+            
+            notifyConfigurationChange();
+        }
+        
+        
+        
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.lifecycle, this, "OSD at %s ready", this
                     .getConfig().getUUID().toString());
@@ -765,11 +780,11 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         }
     }
     
-    int getNumClientConnections() {
+    public int getNumClientConnections() {
         return rpcServer.getNumConnections();
     }
     
-    long getPendingRequests() {
+    public long getPendingRequests() {
         return rpcServer.getPendingRequests();
     }
     
@@ -952,27 +967,45 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     }
     
     public void objectReceived() {
-        numObjsRX.incrementAndGet();
+        long num = numObjsRX.incrementAndGet();
+        for (OSDStatusListener listener : statusListener) {
+            listener.numObjsRXChanged(num);
+        }
     }
     
     public void objectReplicated() {
-        numReplObjsRX.incrementAndGet();
+        long num = numReplObjsRX.incrementAndGet();
+        for (OSDStatusListener listener : statusListener) {
+            listener.numReplObjsRX(num);
+        }
     }
     
     public void objectSent() {
-        numObjsTX.incrementAndGet();
+        long num = numObjsTX.incrementAndGet();
+        for (OSDStatusListener listener : statusListener) {
+            listener.numObjsTXChanged(num);
+        }
     }
     
     public void replicatedDataReceived(int numBytes) {
-        numReplBytesRX.addAndGet(numBytes);
+        long num = numReplBytesRX.addAndGet(numBytes);
+        for (OSDStatusListener listener : statusListener) {
+            listener.numReplBytesRXChanged(num);
+        }
     }
     
     public void dataReceived(int numBytes) {
-        numBytesRX.addAndGet(numBytes);
+        long num = numBytesRX.addAndGet(numBytes);
+        for (OSDStatusListener listener : statusListener) {
+            listener.numBytesRXChanged(num);
+        }
     }
     
     public void dataSent(int numBytes) {
-        numBytesTX.addAndGet(numBytes);
+        long num = numBytesTX.addAndGet(numBytes);
+        for (OSDStatusListener listener : statusListener) {
+            listener.numBytesTXChanged(num);
+        }
     }
     
     public long getObjectsReceived() {
@@ -1005,6 +1038,32 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public String getHostName() {
         return heartbeatThread.getAdvertisedHostName();
+    }
+    
+    public void addStatusListener(OSDStatusListener listener) {
+        this.statusListener.add(listener);
+    }
+
+    public void removeStatusListener(OSDStatusListener listener) {
+        this.statusListener.remove(listener);
+    }
+    
+    /**
+     * Tells all listeners when the configuration has changed.
+     */
+    public void notifyConfigurationChange() {
+        for (OSDStatusListener listener : statusListener) {
+            listener.OSDConfigChanged(this.config);
+        }
+    }
+    
+    
+    /**
+     * Getter for a timestamp when the heartbeatthread sent his last heartbeat
+     * @return long - timestamp as returned by System.currentTimeMillis()
+     */
+    public long getLastHeartbeat() {
+        return heartbeatThread.getLastHeartbeat();
     }
     
 }

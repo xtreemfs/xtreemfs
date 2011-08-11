@@ -12,8 +12,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
@@ -28,6 +30,7 @@ import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.config.PolicyContainer;
+import org.xtreemfs.common.monitoring.StatusMonitor;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.dir.data.ServiceRecords;
 import org.xtreemfs.dir.discovery.DiscoveryMsgThread;
@@ -116,7 +119,9 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     private final DIRConfig                       config;
     
     public static final String                    DB_NAME                 = "dirdb";
-    
+
+    private List<DIRStatusListener>               statusListener;
+
     public DIRRequestDispatcher(final DIRConfig config, final BabuDBConfig dbsConfig) throws IOException,
         BabuDBException {
         super("DIR RqDisp");
@@ -219,6 +224,29 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         } else {
             monThr = null;
         }
+
+        statusListener = new ArrayList<DIRStatusListener>();
+        if (config.isUsingSnmp()) {
+            statusListener.add(new StatusMonitor(
+                    this, config.getSnmpAddress(), config.getSnmpPort(), config.getSnmpACLFile()));
+
+            // tell the StatusMonitor about the new (initial) configuration
+            notifyConfigurationChange();
+        }
+        
+        
+        //notify listener about further ServiceRecords which are already in the database on initialization
+        try {
+            for (ServiceRecord sRec : this.getServices().getList()) {
+                this.notifyServiceRegistred(sRec.getUuid(),sRec.getName() ,sRec.getType().toString(), "", "", 0, 0,
+                        sRec.getLast_updated_s(), 0, 0, 0);
+            }
+        } catch (Exception ex) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, ": %s",
+            ex.getMessage());
+        }
+        
+        
     }
     
     @Override
@@ -496,6 +524,63 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             dbMan.createDatabase("dirdb", 3);
         } catch (BabuDBException ex) {
             // database already created
+        }
+    }
+
+    public void addStatusListener(DIRStatusListener listener) {
+        this.statusListener.add(listener);
+    }
+
+    public void removeStatusListener(DIRStatusListener listener) {
+        this.statusListener.remove(listener);
+    }
+
+    /**
+     * Tells all listeners when an AddressMapping was added.
+     */
+    public void notifyAddressMappingAdded(String uuid, String uri) {
+        for (DIRStatusListener listener : statusListener) {
+            listener.addressMappingAdded();
+        }
+    }
+
+    /**
+     * Tells all listeners when an AddressMapping was deleted.
+     */
+    public void notifyAddressMappingDeleted(String uuid, String uri) {
+        for (DIRStatusListener listener : statusListener) {
+            listener.addressMappingDeleted();
+        }
+    }
+
+    /**
+     * Tells all listeners when the configuration has changed.
+     */
+    public void notifyConfigurationChange() {
+        for (DIRStatusListener listener : statusListener) {
+            listener.DIRConfigChanged(this.config);
+        }
+    }
+
+    /**
+     * Tells all listeners when an ServiceRegistred or Updated its registration at the DIR.
+     * 
+     */
+    public void notifyServiceRegistred(String uuid, String name, String type, String pageUrl,
+            String geoCoordinates, long totalRam, long usedRam, long lastUpdated, int status, int load,
+            int protoVersion) {
+        for (DIRStatusListener listener : statusListener) {
+            listener.serviceRegistered();
+        }
+    }
+
+    /**
+     * Tells all listeners that a service was deregistred.
+     * 
+     */
+    public void notifyServiceDeregistred(String uuid) {
+        for (DIRStatusListener listener : statusListener) {
+            listener.serviceDeregistered();
         }
     }
 }

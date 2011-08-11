@@ -47,13 +47,17 @@ public class DIRConfig extends ServiceConfig {
             Parameter.MAX_WARNINGS,
             Parameter.TIMEOUT_SECONDS,
             Parameter.SENDMAIL_BIN,
-            Parameter.POLICY_DIR
+            Parameter.POLICY_DIR,
+            Parameter.USE_SNMP,
+            Parameter.SNMP_ADDRESS,
+            Parameter.SNMP_PORT,
+            Parameter.SNMP_ACL,
     };
     
     private Map<String, Integer> mirrors;
     
     
-    /** Creates a new instance of OSDConfig */
+    /** Creates a new instance of DIRConfig */
     public DIRConfig(String filename) throws IOException {
         super(filename);
         read();

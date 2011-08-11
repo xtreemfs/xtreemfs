@@ -10,6 +10,7 @@
 \usepackage{garamond}
 \usepackage{lmodern}
 \usepackage[T1]{fontenc}
+\usepackage{enumerate}
 
 \title{XtreemFS Installation and User Guide}
 
@@ -1087,12 +1088,36 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & The send buffer size in bytes for sockets. -1 indicates that the default value (typically 128k) is used.
 \end{tabular}
 
-\subsubsection{\texttt{socket.recv\_buffer\_size} \textit{optional}}
+\subsubsection{\texttt{snmp.enabled} \textit{optional}}
 \begin{tabular}{lp{10cm}}
- Services & OSD\\
- Values   & size in bytes\\
- Default  & -1 \\
- Description & The receive buffer size in bytes for sockets. -1 indicates that the default value (typically 128k) is used.
+ Services & DIR, MRC, OSD\\
+ Values   & String, either true or false \\
+ Default  & false\\
+ Description & Must be set if the SNMP agent of XtreemFS should be used for monitoring. See section \ref{sec:snmpmonitoring}.
+\end{tabular}
+
+\subsubsection{\texttt{snmp.address} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC, OSD\\
+ Values   & IP address or hostname \\
+ Default  & localhost \\
+ Description & If specified, it defines the interface for the SNMP agent to listen on. If not specified, the SNMP agent will listen on all interfaces (any). See section \ref{sec:snmpmonitoring}.
+\end{tabular}
+
+\subsubsection{\texttt{snmp.port} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC, OSD\\
+ Values   & 1 .. 65535\\
+ Default  & 34636 (MRC), 34638 (DIR), 34640 (OSD)\\
+ Description & Specifies the listen port for the SNMP agent. See section \ref{sec:snmpmonitoring}.
+\end{tabular}
+
+\subsubsection{\texttt{snmp.aclfile} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC, OSD\\
+ Values   & path to file\\
+ Default  & /etc/xtreemfs/snmp.acl\\
+ Description & Specifies the path to the ACL file for SNMP access. See section \ref{sec:snmpmonitoring}.
 \end{tabular}
 
 \subsubsection{\texttt{ssl.enabled}}
@@ -1253,6 +1278,198 @@ with a common web browser. If you set an admin password in the service's configu
 
 The directory service has a built-in notification system that can send alert emails if a service fails to send heartbeat messages for some time. The monitoring can be enabled in the DIR configuration by setting \texttt{monitoring = true}.
 
+\subsection{Monitoring Services with SNMP}
+\label{sec:snmpmonitoring}
+All XtreemFS services can act as SNMP agent which gives the possibility to monitor status information through the SNMP protocol. To enable SNMP support for a specific service you have to set the following parameter in its configuration file: 
+
+\begin{verbatim}
+snmp.enabled = true
+snmp.address = localhost
+snmp.port = 34638
+snmp.aclfile =  /etc/xos/xtreemfs/snmp.acl
+\end{verbatim}
+
+If \texttt{snmp.enabled} is not set to true the service will not start a SNMP agent and all other SNMP related configuration parameter will be ignored.  \texttt{snmp.port} defines the port on which the SNMP agent will listen and \texttt{snmp.address} the interface it is bound to. Since XtreemFS uses SNMPv2 which is known to be not secure it is recommended to use a dedicated monitoring network and a dedicated interface. The optional \texttt{snmp.aclfile} paramater is a path to JDMK\footnote{see \url{http://opendmk.java.net/} and \url{http://java.sun.com/products/jdmk/}} (Java Dynamic Management Kit -- the library used for providing SNMP functionality in XtreemFS) ACL file. In this file you can define who (which hosts) can use what kind of SNMP feature. Because the XtreemFS SNMP agent only provides the functionality to read values per SNMP the following example acl file is sufficient:
+\begin{verbatim}
+acl = {
+ {
+ communities = public
+ access = read-only
+ managers = localhost
+ }
+}
+\end{verbatim}
+\texttt{communites} is the SNMP community string your managers have to use and \texttt{managers} is a list of hostname, ip address or subnets in prefix notation (i.e. "xtreemfs-host", "192.168.0.54" or "192.168.0.3/24").
+
+Note: If you comment out the \texttt{snmp.aclfile} line every host on your network can access all information through the SNMP agent.
+
+If you have configured SNMP correctly an easy way to check if the SNMP agent is running is by using the \texttt{snmpget} commandline tool as follows
+\begin{verbatim}
+ $> snmpget -v2c -cpublic localhost:34638 1.3.6.1.4.1.38350.1.1.0 
+\end{verbatim}
+where "public" is the community string and the SNMP agent listens at port 9001 on localhost. "1.3.6.1.4.1.38350.1.1.0" is the OID (object identifier) which is associated with the amount of memory the JVM of this service is currently using. A list of all queryable OIDs and which information the represent can be found in the following tables.
+
+
+\begin{tabular}{|l|l|l|p{5cm}|}
+\hline
+\multicolumn{4}{|c|}{General: These information belong to all services} \\
+\hline
+OID & Textual representation & Datatype & Description \\
+\hline
+1.3.6.1.4.1.38350.1.1.0 & jvmUsedMemory & Long &  The amount of memory that is used by the JVM this service is running into. \\
+\hline
+1.3.6.1.4.1.38350.1.2.0 & jvmMaxMemory & Long &  The maximum amount of memory the JVM can use. \\
+\hline
+1.3.6.1.4.1.38350.1.3.0 & jvmFreeMemory & Long &  The amount of free memory the JVM can still use. \\
+\hline
+1.3.6.1.4.1.38350.1.4.0 & rpcInterface & Integer32 &  The interface number associated with Google Protocolbuffers RPC infrastructure. \\
+\hline
+1.3.6.1.4.1.38350.1.5.0 & databaseVersion & String & The version of the BabuDB Database which the service is using.   \\
+\hline
+1.3.6.1.4.1.38350.1.6.0 & tcpPort & Integer32 &  The TCP port on which the service is listening for incomming client connections.  \\
+\hline
+1.3.6.1.4.1.38350.1.7.0 & debugLevel & Integer &  The current Debug Level the service has.  \\
+\hline
+1.3.6.1.4.1.38350.1.8.0 & numClientConnections & Integer32 & Number of active client connections. \\
+\hline
+1.3.6.1.4.1.38350.1.9.0 & numPendingRequests  & Long &  The number of currently pending requests. \\
+\hline
+1.3.6.1.4.1.38350.1.10.0 & currentTime & Long & The global time in this XtreemFS installation.  \\
+\hline
+1.3.6.1.4.1.38350.1.11.0 & isRunning & String & Returns whether or not the service is running. (ONLINE, OFFLINE)   \\
+\hline
+1.3.6.1.4.1.38350.1.12.0 & serviceType & String & Returns which kind of service this is (DIR, MRC, OSD).  \\
+\hline
+1.3.6.1.4.1.38350.1.13.0 & serviceUUID & String & Returns the UUID of the service. \\
+\hline 
+\end{tabular}
+
+\begin{tabular}{|l|l|l|p{5cm}|}
+\hline
+\multicolumn{4}{|c|}{Dir: These information belong to the DIR service} \\
+\hline
+OID & Textual representation & Datatype & Description \\
+\hline
+1.3.6.1.4.1.38350.2.1.0 & addressMappingCount & Integer & The  number of address mappings currently registered at the DIR. \\
+\hline
+1.3.6.1.4.1.38350.2.2.0 & serviceCount & Integer & The number of services currently registered at the DIR. \\
+\hline 
+\end{tabular}
+
+
+\begin{tabular}{|l|l|l|p{5cm}|}
+\hline
+\multicolumn{4}{|c|}{Mrc: These information belong to the MRC service} \\
+\hline
+OID & Textual representation & Datatype & Description \\
+\hline
+1.3.6.1.4.1.38350.3.1.0 & volumeCount & Integer &  The number of volumes currently registered at this MRC.\\
+\hline
+\end{tabular}
+
+\begin{tabular}{|l|l|l|p{5cm}|}
+\hline
+\multicolumn{4}{|c|}{Osd: These information belong to the OSD service} \\
+\hline
+OID & Textual representation & Datatype & Description \\
+\hline
+1.3.6.1.4.1.38350.4.1.0 & numObjsRX & Long &  The number of objects this OSD has received.\\
+\hline
+1.3.6.1.4.1.38350.4.2.0 & numReplObjsRX & Long & The number of replicated objects this OSD has received. \\
+\hline
+1.3.6.1.4.1.38350.4.3.0 & numObjsTX & Long & The number of objects this OSD has transmitted. \\
+\hline
+1.3.6.1.4.1.38350.4.4.0 & numReplBytesRX & Long &  The number of bytes belonging to file replication this OSD has received.\\
+\hline
+1.3.6.1.4.1.38350.4.5.0 & numBytesRX & Long & The number of bytes this OSD has received. \\
+\hline
+1.3.6.1.4.1.38350.4.6.0 & numBytesTX & Long &  The number of bytes this OSD has transmitted.\\
+\hline
+1.3.6.1.4.1.38350.4.7.0 & preprocStageQueueLength & Integer & The current length of the preprocessing stage of this OSD. \\
+\hline
+1.3.6.1.4.1.38350.4.8.0 & storageStageQueueLength & Integer &  The current length of the storage stage of this OSD.\\
+\hline
+1.3.6.1.4.1.38350.4.9.0 & deletionStageQueueLength & Integer & The current length of the deletion stage of this OSD. \\
+\hline
+1.3.6.1.4.1.38350.4.10.0 & numOpenFiles & Long & The number of files this OSD has currently opened.\\
+\hline
+1.3.6.1.4.1.38350.4.11.0 & numDeletedFiles & Integer & The number of deleted files on this OSD. \\
+\hline
+1.3.6.1.4.1.38350.4.12.0 & freeSpace & Long & The free disc space on the partition this OSD stores the object files.\\
+\hline
+\end{tabular}
+
+\subsection{Monitoring with Ganglia}
+Ganglia\footnote{\url{http://ganglia.sourceforge.net/}} is a monitoring system specialized for environments like clusters and grids. XtreemFS provides three python based plugins for the ganglia monitoring daemon which act as SNMP manager and gather information through a local SNMP agent. 
+
+To use these plugins you have to copy them to the \texttt{/usr/lib/ganglia/python\_modules/} directory on the host running your XtreemFS service and a ganglia monitoring daemon. You have to ensure that
+\begin{enumerate}[(i)]
+  \item your ganglia installation supports python modules
+  \item you installed python and the pysnmp\footnote{\url{http://pysnmp.sourceforge.net/}} library which is used by the plugins
+\end{enumerate}
+ Also you have to configure the modules with \texttt{*.pyconf} files in the \texttt{/etc/ganglia/conf.d/} directory. I.e. to monitor a running DIR instance the following example file can be used
+\newpage
+\begin{verbatim}
+modules {
+  module {
+    name = "xtfs-dir-plugin"
+    language = "python"
+    param Host {
+      value = localhost
+    }
+    param Port {
+      value = 34638
+    }
+    param CommunityString {
+      value = public
+    }
+  }
+}
+
+collection_group {
+  collect_every = 300
+  time_threshold = 100
+  metric {
+    name = "dir_jvm_used_mem"
+    title = "used memory of the jvm"
+    value_threshold = 1
+  }
+  metric {
+    name = "dir_jvm_free_mem"
+    title = "free memory of the jvm"
+    value_threshold = 1
+  } 
+  metric {
+    name = "dir_client_connections"
+    title = "number of Clients"
+    value_threshold = 1
+  }
+  metric {
+    name = "dir_pending_requests"
+    title = "number of pending requests"
+    value_threshold = 1
+  }
+  metric {
+    name = "addr_mapping_count"
+    title = "number of address mappings"
+    value_threshold = 1
+  }
+  metric {
+    name = "service_count"
+    title = "number of services"
+    value_threshold = 1
+  }
+  metric {
+    name = "dir_status"
+    title = "Status DIR"
+  }
+  metric {
+    name = "dir_uuid"
+    title = "DIR UUID"
+  }
+}
+\end{verbatim}
+Every XtreemFS plugin has to get 3 parameters: Host, Port, CommunityString where Host is the hostname of the SNMP agent, Port the port of the agent and CommunityString the community string as it is configured in the \texttt{snmp.acl} file. These parameters are configured in the \texttt{modules} directive. The \texttt{collection\_group} directive describes which metrics should be gathered. An overview of all possible metrics shows the \texttt{gmond -m} command. For most people the default configurations that came with your XtreemFS distribution should be sufficient. More information about ganglia, the ganglia monitoring daemon plugin system and how to configure plugins can be found at \url{http://sourceforge.net/apps/trac/ganglia}.
 
 \section{Troubleshooting}
 

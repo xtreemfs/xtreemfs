@@ -82,6 +82,7 @@ public class DeleteVolumeOperation extends MRCOperation {
             
             // delete the volume from the local database
             master.getVolumeManager().deleteVolume(volumeId, master, rq);
+            master.notifyVolumeDeleted();
             
             // set the response
             rq.setResponse(emptyResponse.getDefaultInstance());

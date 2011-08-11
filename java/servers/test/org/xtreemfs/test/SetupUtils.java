@@ -76,6 +76,9 @@ public class SetupUtils {
         props.setProperty("checksums.algorithm", "Adler32");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getUUID("localhost", port).toString());
+        props.setProperty("snmp.enabled", "true");
+        props.setProperty("snmp.port", "" + (port+1000));
+        props.setProperty("snmp.address", "localhost");
         return props;
     }
     
@@ -127,6 +130,7 @@ public class SetupUtils {
             + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("listen.port", "33638");
         props.setProperty("http_port", "30638");
+        props.setProperty("uuid", "UUID:localhost:33638");
         props.setProperty("ssl.enabled", "" + SSL_ON);
         props.setProperty("ssl.service_creds", CERT_DIR + "DIR.p12");
         props.setProperty("ssl.service_creds.pw", "passphrase");
@@ -135,6 +139,9 @@ public class SetupUtils {
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
         props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
+        props.setProperty("snmp.enabled", "true");
+        props.setProperty("snmp.port", "34638");
+        props.setProperty("snmp.address", "localhost");
         
         DIRConfig config = new DIRConfig(props);
         config.setDefaults();
@@ -184,6 +191,9 @@ public class SetupUtils {
         props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getMRC1UUID().toString());
+        props.setProperty("snmp.enabled", "true");
+        props.setProperty("snmp.port", "34636");
+        props.setProperty("snmp.address", "localhost");
         
         MRCConfig config = new MRCConfig(props);
         config.setDefaults();
@@ -232,6 +242,9 @@ public class SetupUtils {
         props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getMRC2UUID().toString());
+        props.setProperty("snmp.enabled", "true");
+        props.setProperty("snmp.port", "34639");
+        props.setProperty("snmp.address", "localhost");
         
         MRCConfig config = new MRCConfig(props);
         config.setDefaults();

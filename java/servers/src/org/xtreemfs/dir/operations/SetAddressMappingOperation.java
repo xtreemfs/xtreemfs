@@ -13,6 +13,7 @@ import java.util.ConcurrentModificationException;
 import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.dir.data.AddressMappingRecord;
 import org.xtreemfs.dir.data.AddressMappingRecords;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
@@ -104,6 +105,12 @@ public class SetAddressMappingOperation extends DIROperation {
                                         return version;
                                     }
                                 });
+                        
+                        // notify all listeners about the insert
+                        for (AddressMappingRecord amr : newData.getRecords()) {
+                            master.notifyAddressMappingAdded(amr.getUuid(), amr.getUri());
+                        }
+                        
                         return null;
                     }
                 });

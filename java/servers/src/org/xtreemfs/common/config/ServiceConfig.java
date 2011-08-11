@@ -53,6 +53,10 @@ public class ServiceConfig extends Config {
             USE_GRID_SSL_MODE("ssl.grid_ssl", false, Boolean.class, false),
             WAIT_FOR_DIR("startup.wait_for_dir", 30, Integer.class, false),
             POLICY_DIR("policy_dir", "/etc/xos/xtreemfs/policies/", String.class, false),
+            USE_SNMP("snmp.enabled", false, Boolean.class, false),
+            SNMP_ADDRESS("snmp.address", null, InetAddress.class, false),
+            SNMP_PORT("snmp.port", null, Integer.class, false),
+            SNMP_ACL("snmp.aclfile", null, String.class, false),
             
             /*
              * DIR specific configuration parameter
@@ -520,6 +524,11 @@ public class ServiceConfig extends Config {
         return (String) parameter.get(Parameter.HOSTNAME);
     }
     
+    public ServiceUUID getUUID() {
+        return (ServiceUUID) parameter.get(Parameter.UUID);
+    }
+    
+    
     /**
      * @return the useFakeSSLmodeport
      */
@@ -544,6 +553,22 @@ public class ServiceConfig extends Config {
     
     public String getPolicyDir() {
         return (String) parameter.get(Parameter.POLICY_DIR);
+    }
+    
+    public Boolean isUsingSnmp() {
+        return (Boolean) parameter.get(Parameter.USE_SNMP);
+    }
+    
+    public InetAddress getSnmpAddress() {
+        return (InetAddress) parameter.get(Parameter.SNMP_ADDRESS);
+    }
+    
+    public Integer getSnmpPort() {
+        return (Integer) parameter.get(Parameter.SNMP_PORT);
+    }
+    
+    public String getSnmpACLFile() {
+        return (String) parameter.get(Parameter.SNMP_ACL);
     }
     
     /**

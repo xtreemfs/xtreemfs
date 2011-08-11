@@ -54,6 +54,11 @@ class TestEnvironment:
             if self.__config.getTestSetConfig()['dir_repl']:
                 print 'xtestenv: Replicated DIR not yet supported'
 
+            snmp_enabled = False
+            if self.__config.getTestSetConfig()['snmp']:
+                print 'xtestenv: SNMP enabled'
+                snmp_enabled = True
+
             print 'xtestenv: Creating directories...'
             try: os.mkdir(self.__test_dir)
             except: pass
@@ -111,6 +116,11 @@ class TestEnvironment:
                                       'passphrase',
                                       os.path.join(self.__xtreemfs_dir, "tests", "certs", "trusted.jks"),
                                       'passphrase')
+            
+            if snmp_enabled:
+            	self.__dir.enable_snmp(dir_port+2000,'localhost', 
+                                       os.path.join(self.__xtreemfs_dir,"config","snmp.acl"))	 
+            
             self.__dir.write_config_file()
 
             self.__mrc = test_server.MRC(START_STOP_SERVICE_RETRIES,
@@ -128,6 +138,10 @@ class TestEnvironment:
                                       'passphrase',
                                       os.path.join(self.__xtreemfs_dir, "tests", "certs", "trusted.jks"),
                                       'passphrase')
+            if snmp_enabled:
+                self.__mrc.enable_snmp(dir_port -2 +2000,'localhost', 
+                                       os.path.join(self.__xtreemfs_dir,"config","snmp.acl"))
+            
             self.__mrc.write_config_file()
 
             for osdNum in range(maxOsds):
@@ -146,6 +160,10 @@ class TestEnvironment:
                                    'passphrase',
                                    os.path.join(self.__xtreemfs_dir, "tests", "certs", "trusted.jks"),
                                    'passphrase')
+                    
+                if snmp_enabled:
+                    osd.enable_snmp(dir_port+2000+2+osdNum,'localhost', 
+                                       os.path.join(self.__xtreemfs_dir,"config","snmp.acl"))
                 osd.write_config_file()
                 self.__osds.append(osd)
 

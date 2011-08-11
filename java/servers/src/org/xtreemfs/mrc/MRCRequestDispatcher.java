@@ -28,6 +28,7 @@ import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.auth.AuthenticationProvider;
+import org.xtreemfs.common.monitoring.StatusMonitor;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -124,7 +125,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     private final HttpServer               httpServ;
     
     private final OSDServiceClient         osdClient;
-    
+
+    private List<MRCStatusListener>        statusListener;
+
     public MRCRequestDispatcher(final MRCConfig config, BabuDBConfig dbConfig) throws IOException,
         ClassNotFoundException, IllegalAccessException, InstantiationException, DatabaseException {
         
@@ -184,6 +187,14 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         volumeManager = new BabuDBVolumeManager(this, dbConfig);
         fileAccessManager = new FileAccessManager(volumeManager, policyContainer);
+        
+        statusListener = new ArrayList<MRCStatusListener>();
+        if (config.isUsingSnmp()) {
+            statusListener.add(new StatusMonitor(
+                    this, config.getSnmpAddress(), config.getSnmpPort(), config.getSnmpACLFile()));
+            notifyConfigurationChange();
+        }
+        
         
         ServiceDataGenerator gen = new ServiceDataGenerator() {
             public ServiceSet getServiceData() {
@@ -496,8 +507,17 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 Logging.logError(Logging.LEVEL_ERROR, this, e);
             }
         }
-        
+
     }
+
+    public int getNumConnections() {
+        return this.serverStage.getNumConnections();
+    }
+    
+    public long getNumRequests() {
+        return this.serverStage.getPendingRequests();
+    }
+    
     
     public Map<StatusPageOperation.Vars, String> getStatusInformation() {
         HashMap<StatusPageOperation.Vars, String> data = new HashMap<StatusPageOperation.Vars, String>();
@@ -739,4 +759,46 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public void finished(Object result, Object context) {
         requestFinished((MRCRequest) context);
     }
+    
+    public void addStatusListener(MRCStatusListener listener) {
+        this.statusListener.add(listener);
+    }
+
+    public void removeStatusListener(MRCStatusListener listener) {
+        this.statusListener.remove(listener);
+    }
+        
+    /**
+     * Tells all listeners when the configuration has changed.
+     */
+    public void notifyConfigurationChange() {
+        for (MRCStatusListener listener : statusListener ) {
+            listener.MRCConfigChanged(this.config);
+        } 
+    }
+    
+    /**
+     * Tells all listeners when a Volume was created.
+     */
+    public void notifyVolumeCreated() {
+        for (MRCStatusListener listener : statusListener) {
+            listener.volumeCreated();
+        }
+    }
+    
+    public void notifyVolumeDeleted() {
+        for (MRCStatusListener listener : statusListener) {
+            listener.volumeDeleted();
+        }
+    }
+    
+    
+    /**
+     * Getter for a timestamp when the heartbeatthread sent his last heartbeat
+     * @return long - timestamp as returned by System.currentTimeMillis()
+     */
+    public long getLastHeartbeat() {
+        return heartbeatThread.getLastHeartbeat();
+    }
+    
 }
