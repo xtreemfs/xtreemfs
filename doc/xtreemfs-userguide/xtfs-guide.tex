@@ -1659,7 +1659,7 @@ $> umount /xtreemfs
 
 \subsection{Mount Options}
 
-Access to a FUSE mount is usually restricted to the user who mounted the volume. To allow the root user or any other user on the system to access the mounted volume, the FUSE options \texttt{-o allow\_root} and \texttt{-o allow\_other} can be used with \texttt{xtfs\_mount}. They are, however, mutually exclusive. In order to use these options, the system administrator must create a FUSE configuration file \texttt{/etc/fuse.conf} and add a line\index{allow\_others option}\index{allow\_root option}\index{user\_allow\_other option} \texttt{user\_allow\_other}.
+Access to a FUSE mount is usually restricted to the user who mounted the volume. To allow the root user or any other user on the system to access the mounted volume, the FUSE options \texttt{-o allow\_root} and \texttt{-o allow\_other} can be used with \texttt{mount.xtreemfs}. They are, however, mutually exclusive. In order to use these options, the system administrator must create a FUSE configuration file \texttt{/etc/fuse.conf} and add a line\index{allow\_others option}\index{allow\_root option}\index{user\_allow\_other option} \texttt{user\_allow\_other}.
 
 By default, the local system cache on the client machine will be used to speed up read access to XtreemFS. In particular, using the cache as a local buffer is necessary to support the \texttt{mmap} system call, which - amongst others - is required to execute applications on Linux. On the other hand, using buffered I/O may adversely affect throughput when writing large files, as FUSE $\leq$ 2.7 splits up large writes into multiple individual 4k (page size) writes. In addition, it limits the consistency model of client caches to ``close-to-open'', which is similar to the model provided by NFS. Buffered I/O can be switched off by adding the \texttt{-o direct\_io} parameter. The parameter effects that all read and write operations are directed to their OSDs instead of being served from local caches.
 
@@ -1683,7 +1683,7 @@ The following list contains the most common problems and their solutions.
 
 \begin{tabular}{lp{10cm}}
  \textbf{Problem}  & \textbf{An error occurs when trying to access a mounted volume.} \\
- \textbf{Solution} & Please make sure that you have sufficient access rights to the volume root. Superusers and volume owners can change these rights via \texttt{chmod <mode> <mountpoint>}. If you try to access a mount point to which XtreemFS was mounted by a different user, please make sure that the volume is mounted with \texttt{xtfs\_mount -o allow\_other \dots}.
+ \textbf{Solution} & Please make sure that you have sufficient access rights to the volume root. Superusers and volume owners can change these rights via \texttt{chmod <mode> <mountpoint>}. If you try to access a mount point to which XtreemFS was mounted by a different user, please make sure that the volume is mounted with \texttt{mount.xtreemfs -o allow\_other \dots}.
 \end{tabular}
 
 \begin{tabular}{lp{10cm}}
@@ -2302,7 +2302,7 @@ Superusers must have \texttt{xtreemfs-admin} as part of their Organizational Uni
 
 
 \section{Authorization Policies} \label{sec:access_policies}
-Before executing an operation, a file system needs to check whether the user bound to the operation is sufficiently authorized, i.e.\ is allowed to execute the operation. User authorization is managed by means of \emph{access policies}, which reside on the MRC. Unlike authentication policies which are bound to an MRC, access policies can be defined for each volume. This has to be done when the volume is created (see \texttt{man xtfs\_mkvol}). Various access policies can be used: \index{Access Policy}\index{Policy!Access Policy}
+Before executing an operation, a file system needs to check whether the user bound to the operation is sufficiently authorized, i.e.\ is allowed to execute the operation. User authorization is managed by means of \emph{access policies}, which reside on the MRC. Unlike authentication policies which are bound to an MRC, access policies can be defined for each volume. This has to be done when the volume is created (see \texttt{man mkfs.xtreemfs}). Various access policies can be used: \index{Access Policy}\index{Policy!Access Policy}
 
 \begin{itemize}
  \item Authorize All Policy (policy Id 1)\index{Access Policy!Authorize All}\index{Authorize All Access Policy}\\
