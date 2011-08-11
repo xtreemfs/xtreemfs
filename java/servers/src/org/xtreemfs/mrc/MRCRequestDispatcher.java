@@ -240,9 +240,16 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 ServiceSet.Builder sregs = ServiceSet.newBuilder().addServices(mrcReg);
                 
                 for (StorageManager sMan : volumeManager.getStorageManagers()) {
+                    
                     VolumeInfo vol = sMan.getVolumeInfo();
-                    Service dsVolumeInfo = MRCHelper.createDSVolumeInfo(vol, osdMonitor, sMan, uuid);
-                    sregs.addServices(dsVolumeInfo);
+                    
+                    try {
+                        Service dsVolumeInfo = MRCHelper.createDSVolumeInfo(vol, osdMonitor, sMan, uuid);
+                        sregs.addServices(dsVolumeInfo);
+                    } catch (Exception exc) {
+                        Logging.logError(Logging.LEVEL_WARN,
+                                "could not send heartbeat signal for volume " + vol.getName(), exc);
+                    }
                 }
                 
                 return sregs.build();
@@ -424,7 +431,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             case INTERNAL_SERVER_ERROR: {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, "%s / request: %s", errorMessage, request
                         .toString());
-                Logging.logError(Logging.LEVEL_ERROR, this, error.getThrowable());
+                if (error.getThrowable() != null)
+                    Logging.logError(Logging.LEVEL_ERROR, this, error.getThrowable());
                 rpcRequest.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
                     errorMessage, error.getStackTrace());
                 break;
