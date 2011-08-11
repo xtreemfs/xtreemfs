@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2008-2011 by Paul Seiferth,
+ *               Zuse Institute Berlin
+ *
+ * Licensed under the BSD License, see LICENSE file for details.
+ *
+ */
+
 package org.xtreemfs.dir;
 
 

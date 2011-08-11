@@ -24,6 +24,7 @@ import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.util.NetUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.LifeCycleThread;
+import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.Schemes;
@@ -128,7 +129,7 @@ public class HeartbeatThread extends LifeCycleThread {
             }
         }
         
-        this.lastHeartbeat = System.currentTimeMillis();
+        this.lastHeartbeat = TimeSync.getGlobalTime();
     }
 
     public synchronized void shutdown() {
@@ -436,7 +437,7 @@ public class HeartbeatThread extends LifeCycleThread {
             }
             
             //update lastHeartbeat value
-            this.lastHeartbeat = System.currentTimeMillis();
+            this.lastHeartbeat = TimeSync.getGlobalTime();
         }
     }
 
