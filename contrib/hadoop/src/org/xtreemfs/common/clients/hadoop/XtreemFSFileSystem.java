@@ -44,11 +44,10 @@ import org.xtreemfs.common.clients.RandomAccessFile;
 import org.xtreemfs.common.clients.Volume;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.DirectoryEntry;
-import org.xtreemfs.interfaces.Stat;
-import org.xtreemfs.interfaces.StringSet;
-import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntry;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 
 /**
  * A XtreemFS driver for hadoop
@@ -90,7 +89,7 @@ public class XtreemFSFileSystem extends FileSystem {
         
         String volumeName = conf.get("xtreemfs.volumeName");
         if (volumeName == null)
-            throw new IOException("You have to specify a volume name at the" +
+            throw new IOException("You have to specify a volume name in" +
             " core-site.xml! (xtreemfs.volumeName)");
             
         Logging.start(logLevel, Category.all);
@@ -103,19 +102,20 @@ public class XtreemFSFileSystem extends FileSystem {
             throw new IOException("cannot start XtreemFS client", ex);
         }
 
+        UserCredentials.Builder ucBuilder = UserCredentials.newBuilder();
         UserCredentials uc = null;
         if ( (conf.get("xtreemfs.client.userid") != null)
             && (conf.get("xtreemfs.client.groupid") != null) ){
-            StringSet grps = new StringSet();
-            grps.add(conf.get("xtreemfs.client.groupid"));
-            uc = new UserCredentials(conf.get("xtreemfs.client.userid"), grps, "");
+            uc = UserCredentials.newBuilder().
+                    setUsername(conf.get("xtreemfs.client.userid")).
+                    addGroups(conf.get("xtreemfs.client.groupid")).build();
         }
         if (uc == null) {
             //try to guess from env
             if (System.getenv("USER") != null) {
-                StringSet grps = new StringSet();
-                grps.add("users");
-                uc = new UserCredentials(System.getProperty("user.name"), grps, "");
+                uc = UserCredentials.newBuilder().
+                    setUsername(System.getProperty("user.name")).
+                    addGroups("users").build();
             }
         }
 
@@ -281,11 +281,11 @@ public class XtreemFSFileSystem extends FileSystem {
         FileStatus[] fslist = new FileStatus[list.length];
         for (int i = 0; i < list.length; i++) {
             final DirectoryEntry e = list[i];
-            final Stat s = e.getStbuf().get(0);
-            final boolean isDir = (s.getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFDIR) > 0;
-            fslist[i] = new FileStatus(s.getSize(), isDir , 1, 1,(long) (s.getMtime_ns() / 1e6),
-                    (long) (s.getAtime_ns() / 1e6), new FsPermission((short)s.getMode()),
-                    s.getUser_id(), s.getGroup_id(), new Path(hdPath,e.getName()));
+            final Stat s = e.getStbuf();
+            final boolean isDir = (s.getMode() & GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_S_IFDIR.getNumber()) > 0;
+            fslist[i] = new FileStatus(s.getSize(), isDir , 1, 1,(long) (s.getMtimeNs() / 1e6),
+                    (long) (s.getAtimeNs() / 1e6), new FsPermission((short)s.getMode()),
+                    s.getUserId(), s.getGroupId(), new Path(hdPath,e.getName()));
         }
         return fslist;
     }
@@ -324,10 +324,10 @@ public class XtreemFSFileSystem extends FileSystem {
         Logging.logMessage(Logging.LEVEL_DEBUG, this,"getattr: "+path);
         File f = volume.getFile(path);
         Stat s = f.stat();
-        final boolean isDir = (s.getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFDIR) > 0;
-        return new FileStatus(s.getSize(), isDir , 1, 1,(long) (s.getMtime_ns() / 1e6),
-                    (long) (s.getAtime_ns() / 1e6), new FsPermission((short)s.getMode()),
-                    s.getUser_id(), s.getGroup_id(), file);
+        final boolean isDir = (s.getMode() & GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_S_IFDIR.getNumber()) > 0;
+        return new FileStatus(s.getSize(), isDir , 1, 1,(long) (s.getMtimeNs() / 1e6),
+                    (long) (s.getAtimeNs() / 1e6), new FsPermission((short)s.getMode()),
+                    s.getUserId(), s.getGroupId(), file);
     }
 
     public void close() {
