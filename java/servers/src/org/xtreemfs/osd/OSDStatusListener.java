@@ -24,4 +24,9 @@ public interface OSDStatusListener {
     public void numObjsRXChanged(long numObjsRX);
     
     public void numReplObjsRX(long numReplObjsRX);
+
+    /**
+     * Called when OSD is shutting down.
+     */
+	public void shuttingDown();
 }

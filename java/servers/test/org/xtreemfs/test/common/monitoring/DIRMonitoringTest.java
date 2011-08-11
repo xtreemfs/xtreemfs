@@ -8,17 +8,22 @@
 package org.xtreemfs.test.common.monitoring;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 import org.junit.After;
 import org.junit.Before;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.monitoring.generatedcode.XTREEMFS_MIBOidTable;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -37,153 +42,203 @@ import junit.framework.TestCase;
 
 public class DIRMonitoringTest extends TestCase {
 
-    DIRRequestDispatcher dir;
+	DIRRequestDispatcher dir;
 
-    TestEnvironment      testEnv;
+	TestEnvironment testEnv;
 
-    DIRConfig            dirConfig;
+	DIRConfig dirConfig;
 
-    SnmpPeer             dirAgent, mrcAgent, osdAgent;
+	SnmpPeer dirAgent, mrcAgent, osdAgent;
 
-    SnmpSession          session;
+	SnmpSession session;
 
-    public DIRMonitoringTest() throws IOException {
+	public DIRMonitoringTest() throws IOException {
 
-        dirConfig = SetupUtils.createDIRConfig();
-        Logging.start(Logging.LEVEL_DEBUG);
-       
+		dirConfig = SetupUtils.createDIRConfig();
+		Logging.start(Logging.LEVEL_DEBUG);
 
-    }
+	}
 
-    @Before
-    public void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 
-        System.out.println("TEST: " + getClass().getSimpleName());
+		System.out.println("TEST: " + getClass().getSimpleName());
 
-        FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
-        
-        dir = new DIRRequestDispatcher(dirConfig, SetupUtils.createDIRdbsConfig());
-        dir.startup();
-        dir.waitForStartup();
+		FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
 
-        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
-                TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
-                TestEnvironment.Services.MRC, TestEnvironment.Services.OSD });
-        testEnv.start();
+		dir = new DIRRequestDispatcher(dirConfig,
+				SetupUtils.createDIRdbsConfig());
+		dir.startup();
+		dir.waitForStartup();
 
-        final SnmpOidTableSupport oidTable = new XTREEMFS_MIBOidTable();
-        SnmpOid.setSnmpOidTable(oidTable);
+		testEnv = new TestEnvironment(new TestEnvironment.Services[] {
+				TestEnvironment.Services.DIR_CLIENT,
+				TestEnvironment.Services.TIME_SYNC,
+				TestEnvironment.Services.RPC_CLIENT,
+				TestEnvironment.Services.MRC, TestEnvironment.Services.OSD });
+		testEnv.start();
 
-        MRCConfig mrcConfig = SetupUtils.createMRC1Config();
-        OSDConfig osdConfig = SetupUtils.createMultipleOSDConfigs(1)[0];
+		final SnmpOidTableSupport oidTable = new XTREEMFS_MIBOidTable();
+		SnmpOid.setSnmpOidTable(oidTable);
 
-        dirAgent = new SnmpPeer(dirConfig.getSnmpAddress().getHostName(), dirConfig.getSnmpPort());
-        mrcAgent = new SnmpPeer(mrcConfig.getSnmpAddress().getHostName(), mrcConfig.getSnmpPort());
-        osdAgent = new SnmpPeer(osdConfig.getSnmpAddress().getHostName(), osdConfig.getSnmpPort());
+		MRCConfig mrcConfig = SetupUtils.createMRC1Config();
+		OSDConfig osdConfig = SetupUtils.createMultipleOSDConfigs(1)[0];
 
-        // Create and set Parameters, i.e. the community strings for read-only and read-write.
-        // Since the config don't provide an ACL file it doens't matter what community strings are
-        // used here
-        final SnmpParameters params = new SnmpParameters("public", "private");
+		dirAgent = new SnmpPeer(dirConfig.getSnmpAddress().getHostName(),
+				dirConfig.getSnmpPort());
+		mrcAgent = new SnmpPeer(mrcConfig.getSnmpAddress().getHostName(),
+				mrcConfig.getSnmpPort());
+		osdAgent = new SnmpPeer(osdConfig.getSnmpAddress().getHostName(),
+				osdConfig.getSnmpPort());
 
-        dirAgent.setParams(params);
-        mrcAgent.setParams(params);
-        osdAgent.setParams(params);
+		// Create and set Parameters, i.e. the community strings for read-only
+		// and read-write.
+		// Since the config don't provide an ACL file it doens't matter what
+		// community strings are
+		// used here
+		final SnmpParameters params = new SnmpParameters("public", "private");
 
-        session = new SnmpSession("UnitTest Session");
+		dirAgent.setParams(params);
+		mrcAgent.setParams(params);
+		osdAgent.setParams(params);
 
-    }
+		session = new SnmpSession("UnitTest Session");
 
-    @After
-    public void tearDown() throws Exception {
+	}
 
-        session.destroySession();
+	@After
+	public void tearDown() throws Exception {
 
-        testEnv.shutdown();
+		session.destroySession();
 
-        dir.shutdown();
+		testEnv.shutdown();
 
-        dir.waitForShutdown();
+		dir.shutdown();
 
-    }
+		dir.waitForShutdown();
 
-    /**
-     * Make an SNMP get
-     * 
-     * @param agent
-     *            The {@link SnmpPeer} from which the OID should be read.
-     * @param varDesc
-     *            The textual representation of the OID.
-     * 
-     * @return
-     */
-    private SnmpVarBindList makeSnmpGet(SnmpPeer agent, String varDesc) throws Exception {
-        final SnmpVarBindList list = new SnmpVarBindList("UnitTest varbind list");
+	}
 
-        // We want to read the "sysDescr" variable.
-        list.addVarBind(varDesc);
+	/**
+	 * Make an SNMP get
+	 * 
+	 * @param agent
+	 *            The {@link SnmpPeer} from which the OID should be read.
+	 * @param varDesc
+	 *            The textual representation of the OID.
+	 * 
+	 * @return
+	 */
+	private SnmpVarBindList makeSnmpGet(SnmpPeer agent, String varDesc)
+			throws Exception {
+		final SnmpVarBindList list = new SnmpVarBindList(
+				"UnitTest varbind list");
 
-        // Make the SNMP get request and wait for the result.
-        SnmpRequest request = session.snmpGetRequest(agent, null, list);
-        final boolean completed = request.waitForCompletion(10000);
+		// We want to read the "sysDescr" variable.
+		list.addVarBind(varDesc);
 
-        // Check for a timeout of the request.
-        assertTrue(completed);
+		// Make the SNMP get request and wait for the result.
+		SnmpRequest request = session.snmpGetRequest(agent, null, list);
+		final boolean completed = request.waitForCompletion(10000);
 
-        // Check if the response contains an error.
-        int errorStatus = request.getErrorStatus();
-        assertEquals(SnmpDefinitions.snmpRspNoError, errorStatus);
+		// Check for a timeout of the request.
+		assertTrue(completed);
 
-        // Now we can extract the content of the result.
-        return request.getResponseVarBindList();
+		// Check if the response contains an error.
+		int errorStatus = request.getErrorStatus();
+		assertEquals(SnmpDefinitions.snmpRspNoError, errorStatus);
 
-    }
+		// Now we can extract the content of the result.
+		return request.getResponseVarBindList();
 
-    public void testAddressMappingCount() throws Exception {
+	}
 
-        SnmpVarBindList result = makeSnmpGet(dirAgent, "addressMappingCount.0");
+	public void testAddressMappingCount() throws Exception {
 
-        SnmpVarBind varBind = result.getVarBindAt(0);
-        SnmpInt snmpInt = varBind.getSnmpIntValue();
+		SnmpVarBindList result = makeSnmpGet(dirAgent, "addressMappingCount.0");
 
-        // After initialization there should be 3 address mappings registered at the DIR.
-        assertEquals(3, snmpInt.intValue());
+		SnmpVarBind varBind = result.getVarBindAt(0);
+		SnmpInt snmpInt = varBind.getSnmpIntValue();
 
-        // start another MRC to increase number of address mappings
-        MRCConfig mrcConfig2 = SetupUtils.createMRC2Config();
-        MRCRequestDispatcher secondMrc = new MRCRequestDispatcher(mrcConfig2,
-                SetupUtils.createMRC2dbsConfig());
+		// After initialization there should be 3 address mappings registered at
+		// the DIR.
+		assertEquals(3, snmpInt.intValue());
 
-        secondMrc.startup();
+		// start another MRC to increase number of address mappings
+		MRCConfig mrcConfig2 = SetupUtils.createMRC2Config();
+		MRCRequestDispatcher secondMrc = new MRCRequestDispatcher(mrcConfig2,
+				SetupUtils.createMRC2dbsConfig());
 
-        result = makeSnmpGet(dirAgent, "addressMappingCount.0");
+		secondMrc.startup();
 
-        varBind = result.getVarBindAt(0);
-        snmpInt = varBind.getSnmpIntValue();
+		result = makeSnmpGet(dirAgent, "addressMappingCount.0");
 
-        assertEquals(4, snmpInt.intValue());
+		varBind = result.getVarBindAt(0);
+		snmpInt = varBind.getSnmpIntValue();
 
-        secondMrc.shutdown();
+		assertEquals(4, snmpInt.intValue());
 
-    }
+		secondMrc.shutdown();
 
-    //FIXME: This test fails. The GET request for serviceCount.0 OID returns the ServiceCount variable
-    // from common.monitoring.Dir Class. This is variable correctly set and has the right value just
-    // before and after the snmpGet Request is sent. Nevertheless the result of the GET request is
-    // the value which was used to initialize this variable. However, outside the test environment 
-    // everything works fine.
-    
-    // public void testServiceCount() throws Exception {
-    //
-    // SnmpVarBindList result = makeSnmpGet(dirAgent, "serviceCount.0");
-    //
-    // System.out.println(result);
-    //
-    // SnmpVarBind varBind = result.getVarBindAt(0);
-    // SnmpInt snmpInt = varBind.getSnmpIntValue();
-    //
-    // // After initialization there should be 2 services registered at the DIR.
-    // assertEquals(2, snmpInt.intValue());
-    // }
+	}
+
+	public void testServiceCount() throws Exception {
+
+		SnmpVarBindList result = makeSnmpGet(dirAgent, "serviceCount.0");
+
+		SnmpVarBind varBind = result.getVarBindAt(0);
+		SnmpInt snmpInt = varBind.getSnmpIntValue();
+
+		// After initialization there should be 2 services registered at the
+		// DIR.
+		assertEquals(2, snmpInt.intValue());
+		
+        Client c = new Client(new InetSocketAddress[] { testEnv.getDIRAddress() }, 10000, 60000, null);
+        c.start();
+        UserCredentials uc =  UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
+
+        c.createVolume("foobar", RPCAuthentication.authNone, uc, SetupUtils.getStripingPolicy(64, 1),
+                AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, 0777);
+		result = makeSnmpGet(dirAgent, "serviceCount.0");
+		varBind = result.getVarBindAt(0);
+		snmpInt = varBind.getSnmpIntValue();
+		
+		// Now there should be 3 services. 
+		assertEquals(3, snmpInt.intValue());
+		
+		
+		
+		c.deleteVolume("foobar", RPCAuthentication.authNone, uc);
+		result = makeSnmpGet(dirAgent, "serviceCount.0");
+		varBind = result.getVarBindAt(0);
+		snmpInt = varBind.getSnmpIntValue();
+		
+		// Now there should be 2 services again. 
+		assertEquals(2, snmpInt.intValue());
+
+		c.stop();
+		
+		// start another MRC to increase number of registred services
+		MRCConfig mrcConfig2 = SetupUtils.createMRC2Config();
+		MRCRequestDispatcher secondMrc = new MRCRequestDispatcher(mrcConfig2,
+				SetupUtils.createMRC2dbsConfig());
+
+		secondMrc.startup();
+		
+		result = makeSnmpGet(dirAgent, "serviceCount.0");
+		varBind = result.getVarBindAt(0);
+		snmpInt = varBind.getSnmpIntValue();
+		// Now there should be 3 services. 
+		assertEquals(3, snmpInt.intValue());
+
+		secondMrc.shutdown();
+		
+		result = makeSnmpGet(dirAgent, "serviceCount.0");
+		varBind = result.getVarBindAt(0);
+		snmpInt = varBind.getSnmpIntValue();
+		// Now there should be 2 services again. 
+		assertEquals(2, snmpInt.intValue());
+		
+	}
 
 }

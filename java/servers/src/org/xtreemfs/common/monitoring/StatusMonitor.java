@@ -423,4 +423,9 @@ public class StatusMonitor implements DIRStatusListener, MRCStatusListener, OSDS
     public void numReplObjsRX(long numReplObjsRX) {
         osdGroup.setNumReplObjsRX(numReplObjsRX);
     }
+
+	@Override
+	public void shuttingDown() {
+		snmpAdaptor.stop();
+	}
 }

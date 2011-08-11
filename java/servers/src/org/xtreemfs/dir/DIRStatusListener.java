@@ -20,4 +20,9 @@ public interface DIRStatusListener {
     public void serviceRegistered();
     
     public void serviceDeregistered();
+
+    /**
+     * Called when DIR is shutting down.
+     */
+	public void shuttingDown();
 }

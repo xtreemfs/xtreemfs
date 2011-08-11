@@ -16,4 +16,9 @@ public interface MRCStatusListener {
     
     public void volumeDeleted();
     
+    /**
+     * Called when DIR is shutting down.
+     */
+	public void shuttingDown();
+    
 }

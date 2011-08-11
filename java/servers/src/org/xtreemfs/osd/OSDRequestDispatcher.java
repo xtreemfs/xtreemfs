@@ -588,6 +588,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         try {
             
+        	for (OSDStatusListener listener : statusListener) {
+				listener.shuttingDown();
+			}
+        	
             heartbeatThread.shutdown();
             heartbeatThread.waitForShutdown();
             
@@ -638,6 +642,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public void asyncShutdown() {
         try {
             
+        	for (OSDStatusListener listener : statusListener ) {
+        		listener.shuttingDown();
+			}
+        	
             heartbeatThread.shutdown();
             
             UUIDResolver.shutdown();

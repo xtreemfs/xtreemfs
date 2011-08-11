@@ -309,6 +309,11 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     }
     
     public void shutdown() throws Exception {
+    	
+    	for (DIRStatusListener listener : statusListener) {
+			listener.shuttingDown();
+		}
+    	
         httpServ.stop(0);
         server.shutdown();
         server.waitForShutdown();

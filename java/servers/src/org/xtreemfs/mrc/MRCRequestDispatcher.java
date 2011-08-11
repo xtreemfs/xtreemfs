@@ -386,6 +386,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public void shutdown() throws Exception {
         
+    	for (MRCStatusListener listener : statusListener) {
+			listener.shuttingDown();
+		}
+    	
         onCloseReplicationThread.shutdown();
         onCloseReplicationThread.waitForShutdown();
         
