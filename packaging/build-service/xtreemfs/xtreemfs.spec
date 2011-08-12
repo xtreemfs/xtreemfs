@@ -145,6 +145,12 @@ rm $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-server/LICENSE
 rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-server
 rm $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-tools/LICENSE
 rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-tools
+rm $RPM_BUILD_ROOT/etc/xos/xtreemfs/default_dir # disable for Vivaldi
+
+%pre server
+/usr/sbin/groupadd xtreemfs 2>/dev/null || :
+/usr/sbin/useradd -r --home /var/lib/xtreemfs -g xtreemfs xtreemfs 2>/dev/null || :
+/usr/sbin/usermod -g xtreemfs xtreemfs 2>/dev/null || :
 
 %post server
 XTREEMFS_CONFIG_DIR=/etc/xos/xtreemfs/
@@ -263,13 +269,11 @@ rm -rf $RPM_BUILD_ROOT
 #/etc/init.d/xtreemfs-vivaldi
 /usr/share/man/man1/*.xtreemfs*
 /usr/share/man/man1/xtfsutil*
-%dir /etc/xos/
-%dir /etc/xos/xtreemfs/
-%config(noreplace) /etc/xos/xtreemfs/default_dir
+#%%dir /etc/xos/
+#%%dir /etc/xos/xtreemfs/
+#%%config(noreplace) /etc/xos/xtreemfs/default_dir
 #/usr/share/doc/xtreemfs-client/
 %doc LICENSE
-
-%defattr(-,root,root)
 %endif
 
 %files backend
@@ -283,19 +287,19 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE
 
 %files server
-%defattr(-,root,root)
+%defattr(-,root,xtreemfs)
 /etc/init.d/xtreemfs-*
 #%%exclude /etc/init.d/xtreemfs-vivaldi
 %dir /etc/xos/
-%dir /etc/xos/xtreemfs/
-%dir %attr(0750,root,root) /etc/xos/xtreemfs/truststore/
-%dir %attr(0750,root,root) /etc/xos/xtreemfs/truststore/certs/
-%config(noreplace) %attr(0750,root,root) /etc/xos/xtreemfs/*.properties
+%dir %attr(0750,root,xtreemfs) /etc/xos/xtreemfs/
+%dir %attr(0750,root,xtreemfs) /etc/xos/xtreemfs/truststore/
+%dir %attr(0750,root,xtreemfs) /etc/xos/xtreemfs/truststore/certs/
+%config(noreplace) %attr(0640,root,xtreemfs) /etc/xos/xtreemfs/*.properties
 /etc/xos/xtreemfs/generate_uuid
 /etc/xos/xtreemfs/postinstall_setup.sh
 %dir /etc/xos/xtreemfs/server-repl-plugin/
-/etc/xos/xtreemfs/server-repl-plugin/dir.properties
-/etc/xos/xtreemfs/server-repl-plugin/mrc.properties
+%config(noreplace) /etc/xos/xtreemfs/server-repl-plugin/dir.properties
+%config(noreplace) /etc/xos/xtreemfs/server-repl-plugin/mrc.properties
 %dir /usr/share/xtreemfs/
 %dir /usr/share/xtreemfs/server-repl-plugin/
 /usr/share/xtreemfs/server-repl-plugin/replication.jar

@@ -38,7 +38,7 @@ fi
 if [ -e $XTREEMFS_ETC ]; then
     group=`stat -c %G $XTREEMFS_ETC`
     if [ $group != $XTREEMFS_GROUP ]; then
-        echo "directory $XTREEMFS_ETC is not owned by $XTREEMFS_GROUP, executing chgrp (may take some time)"
+        echo "directory $XTREEMFS_ETC is owned by $group, should be owned by $XTREEMFS_GROUP, executing chgrp (may take some time)"
         chgrp -R $XTREEMFS_GROUP $XTREEMFS_ETC
     fi
     for file in `ls $XTREEMFS_ETC/*.properties 2>/dev/null`; do
