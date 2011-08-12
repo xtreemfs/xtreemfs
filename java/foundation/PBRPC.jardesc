@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<jardesc>
+    <jar path="xtreemfs/java/foundation/dist/PBRPC.jar"/>
+    <options buildIfNeeded="true" compress="false" descriptionLocation="/xtreemfs/java/foundation/PBRPC.jardesc" exportErrors="false" exportWarnings="true" includeDirectoryEntries="true" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <selectedProjects/>
+    <manifest generateManifest="true" manifestLocation="" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
+        <sealing sealJar="false">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
+        <file path="/xtreemfs/LICENSE"/>
+        <javaElement handleIdentifier="=xtreemfs/java\/foundation\/src&lt;org.xtreemfs.foundation.pbrpc"/>
+        <javaElement handleIdentifier="=xtreemfs/java\/foundation\/src&lt;org.xtreemfs.foundation.pbrpc.server"/>
+        <javaElement handleIdentifier="=xtreemfs/java\/foundation\/src&lt;org.xtreemfs.foundation.pbrpc.client"/>
+        <javaElement handleIdentifier="=xtreemfs/java\/foundation\/src&lt;org.xtreemfs.foundation.pbrpc.utils"/>
+        <javaElement handleIdentifier="=xtreemfs/java\/foundation\/src&lt;org.xtreemfs.foundation.pbrpc.generatedinterfaces"/>
+        <javaElement handleIdentifier="=xtreemfs/java\/foundation\/src&lt;org.xtreemfs.foundation.pbrpc.channels"/>
+    </selectedElements>
+</jardesc>
