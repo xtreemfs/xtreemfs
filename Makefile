@@ -239,7 +239,7 @@ CLIENT_PACKAGE_MACOSX_OUTPUT_DIR = XtreemFS_Client_MacOSX.mpkg
 CLIENT_PACKAGE_MACOSX_OUTPUT_FILE = XtreemFS_installer.dmg
 client_package_macosx:
 # Clean everything first to ensure we package a clean client.
-#	@$(MAKE) client_distclean
+	@$(MAKE) client_distclean
 # We call $(MAKE) instead of specifying the targets as requirements as its not possible to define dependencies between these two and this breaks in case of parallel builds.
 	@$(MAKE) client
 	@echo "Running the Apple Packagemaker..."
