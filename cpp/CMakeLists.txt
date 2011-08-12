@@ -25,8 +25,9 @@ IF(APPLE)
   SET(LIBATTR "")
   # On Apple we use the environment variable BOOST_ROOT to point to a local boost installation and we link the built boost libraries statically.
   SET(Boost_USE_STATIC_LIBS true)
+  # Update 8/12/2011: Setting macosx-version-min does break mount.xtreemfs for unknown reasons - so disabled for now.
   # Tell gcc to compile 10.4 compatible files (does not work otherwise on older Macs).
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.4")
+  #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.4")
 ENDIF(APPLE)
 
 # Set required thirdparty libraries.
