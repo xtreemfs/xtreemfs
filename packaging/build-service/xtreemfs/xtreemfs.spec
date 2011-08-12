@@ -146,6 +146,11 @@ rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-server
 rm $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-tools/LICENSE
 rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-tools
 
+%pre server
+/usr/sbin/groupadd $XTREEMFS_GROUP 2>/dev/null || :
+/usr/sbin/useradd -r --home $XTREEMFS_HOME -g $XTREEMFS_GROUP $XTREEMFS_USER 2>/dev/null || :
+/usr/sbin/usermod -g $XTREEMFS_GROUP $XTREEMFS_USER || :
+
 %post server
 XTREEMFS_CONFIG_DIR=/etc/xos/xtreemfs/
 
@@ -287,7 +292,7 @@ rm -rf $RPM_BUILD_ROOT
 /etc/init.d/xtreemfs-*
 #%%exclude /etc/init.d/xtreemfs-vivaldi
 %dir /etc/xos/
-%dir /etc/xos/xtreemfs/
+%dir %attr(0640, root, $XTREEMFS_GROUP) /etc/xos/xtreemfs/
 %dir %attr(0750,root,root) /etc/xos/xtreemfs/truststore/
 %dir %attr(0750,root,root) /etc/xos/xtreemfs/truststore/certs/
 %config(noreplace) %attr(0750,root,root) /etc/xos/xtreemfs/*.properties
