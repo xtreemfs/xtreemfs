@@ -2348,12 +2348,20 @@ The following predefined policies exist:
  \end{itemize}
 
  \item \textbf{FQDN-based filter (policy ID 1001)}\\
- Removes OSDs from the list that do not match any of the domains in a given set. By default, the set of domains contains '*', which indicates that no domains are removed.\\
+ Removes OSDs from the list that do not match any of the domains in a given set. By default, the set of domains contains `*', which indicates that no domains are removed.\\
 
  Attributes:
  \begin{itemize}
- \item \emph{domains}: a comma or space-separated list of domain names. The list may include leading and trailing '*'s, which will be regarded as wildcard characters.
-\end{itemize}
+ \item \emph{domains}: a comma or space-separated list of domain names. The list may include leading and trailing `*'s, which will be regarded as wildcard characters.
+ \end{itemize}
+
+ \item \textbf{UUID-based filte (policy ID 1002)}\\
+ Removes OSDs from the list that do not match any of the UUIDs in a given set. By default, the set of UUIDs contains `*', which indicates that no domains are removed.\\
+
+ Attributes:
+ \begin{itemize}
+ \item \emph{uuids}: a comma or space-separated list of OSD UUIDs. The list may include leading and trailing `*'s, which will be regarded as wildcard characters.
+ \end{itemize}
 
 \end{itemize}
 
@@ -2406,17 +2414,17 @@ This policy uses domain names of clients and OSDs to determine the distance betw
 
 \begin{itemize}
 
- \item \textbf{Shuffling (policy ID 3000)}\\
- Shuffles the given list of OSDs.
+ \item \textbf{DNS based OSD Selection (policy ID 3000)}\\
+ The FQDN of the client and all OSDs is compared and the maximum match (from the end of the FQDN) is used to sort the OSDs. The policy sorts the list of OSDs in descending order by the number of characters that match. This policy can be used to automatically select OSDs which are close to the client, if the length of the match between two DNS entries also indicate a low latency between two machines.
 
  \item \textbf{Data center map-based sorting (policy ID 3001)}\\
  Sorts the list of OSDs in ascending order of their distance to the client, according to the data center map.
 
+ \item \textbf{Shuffling (policy ID 3002)}\\
+ Shuffles the given list of OSDs.
+
  \item \textbf{Vivaldi network coordinates based sorting (policy ID 3003)}\\
  Sorts the list of OSDs in ascending order of their distance to the client, according to the vivaldi coordinates of the client and OSDs. This policy requires the clients to run the \texttt{xtfs\_vivaldi} service.
-
- \item \textbf{DNS based OSD Selection (policy ID 3002)}\\
- The FQDN of the client and all OSDs is compared and the maximum match (from the end of the FQDN) is used to sort the OSDs. The policy sorts the list of OSDs in descending order by the number of characters that match. This policy can be used to automatically select OSDs which are close to the client, if the length of the match between two DNS entries also indicate a low latency between two machines.
 
 \end{itemize}
 
