@@ -137,7 +137,6 @@ bool getattr(const string& xctl_file,
             (stat["locations"]["update-policy"].asString() == "ronly");
         cout << "Replication policy   ";
         if (!stat["locations"]["update-policy"].asString().empty()) {
-          ;
           is_replicated = true;
           cout << stat["locations"]["update-policy"].asString() << endl;
         } else {
@@ -223,7 +222,8 @@ bool getattr(const string& xctl_file,
         }
 
         cout << "Default Repl. p.     ";
-        if (stat.isMember("default_rp")) {
+        if (stat.isMember("default_rp")
+            && !stat["default_rp"]["update-policy"].asString().empty()) {
           cout << stat["default_rp"]["update-policy"].asString()
               << " with " << stat["default_rp"]["replication-factor"].asInt()
               << " replicas";
@@ -523,20 +523,35 @@ bool SetOSP(const string& xctl_file,
   request["operation"] = "setOSP";
   request["path"] = path;
   if (policy_uc == "DEFAULT") {
-    request["policy"] = xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_DEFAULT
-        | xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_RANDOM;
+    request["policy"] = boost::lexical_cast<string>(
+        xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_DEFAULT)
+        + ","
+        + boost::lexical_cast<string>(
+            xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_RANDOM);
   } else if (policy_uc == "FQDN") {
-    request["policy"] = xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_DEFAULT
-        | xtreemfs::pbrpc::OSD_SELECTION_POLICY_GROUP_FQDN;
+    request["policy"] = boost::lexical_cast<string>(
+        xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_DEFAULT)
+        + ","
+        + boost::lexical_cast<string>(
+            xtreemfs::pbrpc::OSD_SELECTION_POLICY_GROUP_FQDN);
   } else if (policy_uc == "UUID") {
-    request["policy"] = xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_DEFAULT
-        | xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_UUID;
+    request["policy"] = boost::lexical_cast<string>(
+        xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_DEFAULT)
+        + ","
+        + boost::lexical_cast<string>(
+            xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_UUID);
   } else if (policy_uc == "DCMAP") {
-    request["policy"] = xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_DEFAULT
-        | xtreemfs::pbrpc::OSD_SELECTION_POLICY_GROUP_DCMAP;
+    request["policy"] = boost::lexical_cast<string>(
+        xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_DEFAULT)
+        + ","
+        + boost::lexical_cast<string>(
+            xtreemfs::pbrpc::OSD_SELECTION_POLICY_GROUP_DCMAP);
   } else if (policy_uc == "VIVALDI") {
-    request["policy"] = xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_DEFAULT
-        | xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_VIVALDI;
+    request["policy"] = boost::lexical_cast<string>(
+        xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_DEFAULT)
+        + ","
+        + boost::lexical_cast<string>(
+            xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_VIVALDI);
   } else {
     request["policy"] = policy;
   }
@@ -562,13 +577,17 @@ bool SetRSP(const string& xctl_file,
   request["operation"] = "setRSP";
   request["path"] = path;
   if (policy_uc == "DEFAULT") {
-    request["policy"] = xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_RANDOM;
+    request["policy"] = boost::lexical_cast<string>(
+        xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_RANDOM);
   } else if (policy_uc == "FQDN") {
-    request["policy"] = xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_FQDN;
+    request["policy"] = boost::lexical_cast<string>(
+        xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_FQDN);
   } else if (policy_uc == "DCMAP") {
-    request["policy"] = xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_DCMAP;
+    request["policy"] = boost::lexical_cast<string>(
+        xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_DCMAP);
   } else if (policy_uc == "VIVALDI") {
-    request["policy"] = xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_VIVALDI;
+    request["policy"] = boost::lexical_cast<string>(
+        xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_VIVALDI);
   } else {
     request["policy"] = policy;
   }
