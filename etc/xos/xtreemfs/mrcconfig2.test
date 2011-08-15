@@ -123,7 +123,6 @@ babudb.debug.level = 4
 
 # base directory to store database index snapshots in
 babudb.baseDir = /tmp/xtreemfs-test/mrc2/database
-#babudb.baseDir = /home/stender/tmp/mrc2
 
 # directory in which the database logs are stored
 babudb.logDir = /tmp/xtreemfs-test/mrc2/db-log
