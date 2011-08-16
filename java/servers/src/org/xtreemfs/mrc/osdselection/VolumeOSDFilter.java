@@ -153,7 +153,12 @@ public class VolumeOSDFilter {
                         "could not find OSD selection policy with ID=%d", id);
                 return result;
             }
-            result = policy.getOSDs(result, clientIP, clientCoords, currentXLoc, numOSDs);
+            try {
+                result = policy.getOSDs(result, clientIP, clientCoords, currentXLoc, numOSDs);
+            } catch (Exception exc) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.misc, "an error occurred while executing policy %d", id);
+                Logging.logError(Logging.LEVEL_WARN, this, exc);
+            }
         }
 
         return result;
