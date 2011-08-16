@@ -13,6 +13,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
+import java.util.List;
 
 import org.junit.After;
 import org.junit.Before;
@@ -24,20 +25,21 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class ClientTest {
 
-    private TestEnvironment       testEnv;
+    private TestEnvironment     testEnv;
 
-    private static final String  VOLUME_NAME = "testvol";
+    private static final String VOLUME_NAME = "testvol";
 
-    private UserCredentials uc;
+    private UserCredentials     uc;
 
     public ClientTest() {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
@@ -48,17 +50,18 @@ public class ClientTest {
         System.out.println("TEST: " + getClass().getSimpleName());
 
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
-        
+
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
-            TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.TIME_SYNC,
-            TestEnvironment.Services.UUID_RESOLVER, TestEnvironment.Services.DIR_SERVICE,
-            TestEnvironment.Services.MRC, TestEnvironment.Services.OSD});
+                TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.TIME_SYNC,
+                TestEnvironment.Services.UUID_RESOLVER, TestEnvironment.Services.DIR_SERVICE,
+                TestEnvironment.Services.MRC, TestEnvironment.Services.OSD });
         testEnv.start();
 
         uc = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
 
         RPCResponse r = testEnv.getMrcClient().xtreemfs_mkvol(testEnv.getMRCAddress(), RPCAuthentication.authNone, uc,
-            AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, SetupUtils.getStripingPolicy(64, 1), "", 0777, VOLUME_NAME, "test", "test", new LinkedList<KeyValuePair>());
+                AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, SetupUtils.getStripingPolicy(64, 1), "", 0777,
+                VOLUME_NAME, "test", "test", new LinkedList<KeyValuePair>());
         r.get();
         r.freeBuffers();
     }
@@ -71,24 +74,24 @@ public class ClientTest {
     @Test
     public void testMDOps() throws Exception {
 
-        final Client c = new Client(new InetSocketAddress[]{testEnv.getDIRAddress()}, 15000, 300000, null);
+        final Client c = new Client(new InetSocketAddress[] { testEnv.getDIRAddress() }, 15000, 300000, null);
         c.start();
 
-        Volume v = c.getVolume(VOLUME_NAME,uc);
+        Volume v = c.getVolume(VOLUME_NAME, uc);
 
         long fspace = v.getFreeSpace();
         long uspace = v.getUsedSpace();
-        System.out.println("free/used: "+fspace+"/"+uspace);
+        System.out.println("free/used: " + fspace + "/" + uspace);
 
         File dir = v.getFile("dir");
         dir.mkdir(0777);
 
         String[] entries = v.list("/");
-        assertEquals(3,entries.length);
-        assertEquals("dir",entries[2]);
+        assertEquals(3, entries.length);
+        assertEquals("dir", entries[2]);
 
         entries = v.list("/dir/");
-        assertEquals(2,entries.length);
+        assertEquals(2, entries.length);
 
         assertTrue(dir.isDirectory());
         assertFalse(dir.isFile());
@@ -105,28 +108,75 @@ public class ClientTest {
 
         assertFalse(file.exists());
         assertTrue(file2.exists());
-        
+
         entries = v.list("/");
-        assertEquals(4,entries.length);
+        assertEquals(4, entries.length);
 
         file2.delete();
-        
 
         c.stop();
 
+    }
+    
+    @Test
+    public void testMDOps2() throws Exception {
+
+        final Client c = new Client(new InetSocketAddress[] { testEnv.getDIRAddress() }, 15000, 300000, null);
+        c.start();
+
+        UserCredentials rootCreds = UserCredentials.newBuilder().setUsername("root").addGroups("root").build();
+        Volume v = c.getVolume(VOLUME_NAME, rootCreds);
+
+        File f = v.getFile("/test");
+        f.createFile();
+        f.chown("someone");
+        f.chgrp("somegroup");
+        f.chmod(0777);
+
+        Stat stat = f.stat();
+        assertEquals("someone", stat.getUserId());
+        assertEquals("somegroup", stat.getGroupId());
+        assertEquals(0777, stat.getMode() & 0777);
+
+        List<String> acl = f.getACL();
+        assertEquals(0, acl.size());
+
+        acl.add("u::rwx");
+        acl.add("g::rwx");
+        f.setACL(acl);
+        
+        acl = f.getACL();
+        assertTrue(acl.contains("u::7"));
+        assertTrue(acl.contains("g::7"));
+                
+        acl.clear();
+        acl.add("u:test:r");
+        acl.add("g:test:r");
+        f.setACL(acl);
+        
+        acl = f.getACL();
+        assertTrue(acl.contains("u:test:1"));
+        assertTrue(acl.contains("u:test:1"));
+        
+        acl.clear();
+        f.setACL(acl);
+        
+        acl = f.getACL();
+        assertFalse(acl.contains("u:test:1"));
+        assertFalse(acl.contains("u:test:1"));
     }
 
     @Test
     public void testData() throws Exception {
 
-        final Client c = new Client(new InetSocketAddress[]{testEnv.getDIRAddress()}, 15000, 300000, null);
+        final Client c = new Client(new InetSocketAddress[] { testEnv.getDIRAddress() }, 15000, 300000, null);
         c.start();
 
-        Volume v = c.getVolume(VOLUME_NAME,uc);
+        Volume v = c.getVolume(VOLUME_NAME, uc);
 
         File f = v.getFile("/test");
 
-        RandomAccessFile ra = f.open("rw",0555);
+        RandomAccessFile ra = f.open("rw", 0555);
         ra.seek(2);
 
         byte[] data = new byte[2048];
@@ -135,22 +185,20 @@ public class ClientTest {
 
         ra.seek(0);
         int rbytes = ra.read(data, 0, data.length);
-        assertEquals(2048,rbytes);
+        assertEquals(2048, rbytes);
 
         ra.seek(2);
         rbytes = ra.read(data, 0, data.length);
-        assertEquals(2048,rbytes);
+        assertEquals(2048, rbytes);
 
         ra.seek(4);
         rbytes = ra.read(data, 0, data.length);
-        assertEquals(2048-2,rbytes);
+        assertEquals(2048 - 2, rbytes);
 
         ra.close();
-
 
         c.stop();
 
     }
-    
 
 }

@@ -267,6 +267,46 @@ public class File {
         setxattr(name, value, userCreds);
     }
     
+    public void chmod(int mode, UserCredentials userCreds) throws IOException {
+        volume.chmod(path, mode, userCreds);
+    }
+    
+    public void chmod(int mode) throws IOException {
+        chmod(mode, userCreds);
+    }
+    
+    public void chown(String user, UserCredentials userCreds) throws IOException {
+        volume.chown(path, user, userCreds);
+    }
+    
+    public void chown(String user) throws IOException {
+        chown(user, userCreds);
+    }
+    
+    public void chgrp(String group, UserCredentials userCreds) throws IOException {
+        volume.chgrp(path, group, userCreds);
+    }
+    
+    public void chgrp(String group) throws IOException {
+        chgrp(group, userCreds);
+    }
+    
+    public void setACL(List<String> aclEntries, UserCredentials userCreds) throws IOException {
+        volume.setACL(path, aclEntries, userCreds);
+    }
+    
+    public void setACL(List<String> aclEntries) throws IOException {
+        setACL(aclEntries, userCreds);
+    }
+    
+    public List<String> getACL(UserCredentials userCreds) throws IOException {
+        return volume.getACL(path, userCreds);
+    }
+    
+    public List<String> getACL() throws IOException {
+        return getACL(userCreds);
+    }
+    
     public RandomAccessFile open(String openMode, int permissions, UserCredentials userCreds) throws IOException {
         int flags = 0;
         if (openMode.contains("rw")) {
