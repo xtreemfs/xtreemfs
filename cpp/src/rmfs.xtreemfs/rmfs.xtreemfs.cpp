@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
     auth.set_auth_type(AUTH_NONE);
   } else {
     auth.set_auth_type(AUTH_PASSWORD);
-    auth.set_auth_data(options.admin_password);
+    auth.mutable_auth_passwd()->set_password(options.admin_password);
   }
   cout << "Trying to delete the volume: " << options.xtreemfs_url << endl;
 
