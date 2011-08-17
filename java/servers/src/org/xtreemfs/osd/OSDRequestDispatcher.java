@@ -123,6 +123,7 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.osd.operations.EventRWRStatus;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener {
@@ -135,7 +136,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     protected final OSDConfig                           config;
     
-    protected final DIRServiceClient                    dirClient;
+    protected final DIRClient                           dirClient;
     
     protected final MRCServiceClient                    mrcClient;
     
@@ -324,30 +325,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         // initialize TimeSync and Heartbeat thread
         // ----------------------------------------
         
-        dirClient = new DIRServiceClient(rpcClient, config.getDirectoryService());
+        DIRServiceClient dirRpcClient = new DIRServiceClient(rpcClient, config.getDirectoryService());
+        dirClient = new DIRClient(dirRpcClient, config.getDirectoryServices(), config.getFailoverMaxRetries(), config.getFailoverWait());
         mrcClient = new MRCServiceClient(rpcClient, null);
         osdClient = new OSDServiceClient(rpcClient, null);
         osdClientForReplication = new OSDServiceClient(rpcClientForReplication, null);
-        
-        TimeSync.initialize(new TimeServerClient() {
-            
-            @Override
-            public long xtreemfs_global_time_get(InetSocketAddress server) {
-                
-                RPCResponse<globalTimeSGetResponse> resp = null;
-                try {
-                    resp = dirClient.xtreemfs_global_time_s_get(server, RPCAuthentication.authNone,
-                        RPCAuthentication.userService);
-                    return resp.get().getTimeInSeconds();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    return -1;
-                } finally {
-                    if (resp != null)
-                        resp.freeBuffers();
-                }
-            }
-        }, config.getRemoteTimeSync(), config.getLocalClockRenew());
+
+        TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew());
         UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
         UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), Schemes.getScheme(config
                 .isUsingSSL(), config.isGRIDSSLmode()));
@@ -686,7 +670,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         return config;
     }
     
-    public DIRServiceClient getDIRClient() {
+    public DIRClient getDIRClient() {
         return dirClient;
     }
     

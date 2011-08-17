@@ -19,6 +19,7 @@ import org.xtreemfs.common.KeyValuePairs;
 
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
+import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
@@ -138,114 +139,118 @@ public class TestEnvironment {
     }
     
     public void start() throws Exception {
-        
-        // ensure that TEST_DIR is empty
-        File testDir = new File(SetupUtils.TEST_DIR);
-        FSUtils.delTree(testDir);
-        testDir.mkdirs();
-        
-        rpcClient = SetupUtils.createRPCClient(10000);
-        getRpcClient().start();
-        getRpcClient().waitForStartup();
-        
-        dirClient = SetupUtils.createDIRClient(getRpcClient());
-        
-        if (enabledServs.contains(Services.DIR_SERVICE)) {
-            dirService = new DIRRequestDispatcher(SetupUtils.createDIRConfig(), 
-                    SetupUtils.createDIRdbsConfig());
-            dirService.startup();
-            dirService.waitForStartup();
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "DIR running");
-        }
-        
-        if (enabledServs.contains(Services.TIME_SYNC) || enabledServs.contains(Services.MOCKUP_OSD)) {
-            tsInstance = TimeSync.initializeLocal(60 * 1000, 50);
-            tsInstance.waitForStartup();
-        }
-        
-        if (enabledServs.contains(Services.UUID_RESOLVER)) {
-            UUIDResolver.start(getDirClient(), 1000, 10 * 10 * 1000);
-            SetupUtils.localResolver();
-        }
-        
-        if (enabledServs.contains(Services.MOCKUP_OSD)) {
-            Map<String,String> dmap = new HashMap();
-            dmap.put("free", "1000000000");
-            dmap.put("total", "1000000000");
-            dmap.put("load", "0");
-            dmap.put("totalRAM", "1000000000");
-            dmap.put("usedRAM", "0");
-            dmap.put("proto_version", "" + OSDServiceConstants.INTERFACE_ID);
-            Service reg = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD).setName("mockUpOSD").setUuid("mockUpOSD").
-                    setVersion(0).setLastUpdatedS(0).setData(ServiceDataMap.newBuilder().addAllData(KeyValuePairs.fromMap(dmap))).build();
-            RPCResponse<serviceRegisterResponse> response = dirClient.xtreemfs_service_register(null, RPCAuthentication.authNone, RPCAuthentication.userService, reg);
-            response.get();
-            response.freeBuffers();
-            
-            UUIDResolver.addLocalMapping("mockUpOSD", 11111, Schemes.SCHEME_PBRPC);
-        }
-        
-        if (enabledServs.contains(Services.MOCKUP_OSD2)) {
-            Map<String,String> dmap = new HashMap();
-            dmap.put("free", "1000000000");
-            dmap.put("total", "1000000000");
-            dmap.put("load", "0");
-            dmap.put("totalRAM", "1000000000");
-            dmap.put("usedRAM", "0");
-            dmap.put("proto_version", "" + OSDServiceConstants.INTERFACE_ID);
-            Service reg = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD).setName("mockUpOSD2").setUuid("mockUpOSD2").
-                    setVersion(0).setLastUpdatedS(0).setData(ServiceDataMap.newBuilder().addAllData(KeyValuePairs.fromMap(dmap))).build();
-            RPCResponse<serviceRegisterResponse> response = dirClient.xtreemfs_service_register(null, RPCAuthentication.authNone, RPCAuthentication.userService, reg);
-            response.get();
-            response.freeBuffers();
-            
-            UUIDResolver.addLocalMapping("mockUpOSD2", 11111, Schemes.SCHEME_PBRPC);
-        }
-        
-        if (enabledServs.contains(Services.MOCKUP_OSD3)) {
-            Map<String,String> dmap = new HashMap();
-            dmap.put("free", "1000000000");
-            dmap.put("total", "1000000000");
-            dmap.put("load", "0");
-            dmap.put("totalRAM", "1000000000");
-            dmap.put("usedRAM", "0");
-            dmap.put("proto_version", "" + OSDServiceConstants.INTERFACE_ID);
-            Service reg = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD).setName("mockUpOSD3").setUuid("mockUpOSD3").
-                    setVersion(0).setLastUpdatedS(0).setData(ServiceDataMap.newBuilder().addAllData(KeyValuePairs.fromMap(dmap))).build();
-            RPCResponse<serviceRegisterResponse> response = dirClient.xtreemfs_service_register(null, RPCAuthentication.authNone, RPCAuthentication.userService, reg);
-            response.get();
-            response.freeBuffers();
+        try {
+            // ensure that TEST_DIR is empty
+            File testDir = new File(SetupUtils.TEST_DIR);
+            FSUtils.delTree(testDir);
+            testDir.mkdirs();
 
-            UUIDResolver.addLocalMapping("mockUpOSD3", 11111, Schemes.SCHEME_PBRPC);
-        }
-        
-        if (enabledServs.contains(Services.OSD)) {
-            int osdCount = Collections.frequency(enabledServs, Services.OSD);
-            osds = new OSDRequestDispatcher[osdCount];
-            OSDConfig[] configs = SetupUtils.createMultipleOSDConfigs(osdCount);
-            for (int i = 0; i < configs.length; i++) {
-                osds[i] = new OSDRequestDispatcher(configs[i]);
+            rpcClient = SetupUtils.createRPCClient(10000);
+            getRpcClient().start();
+            getRpcClient().waitForStartup();
+
+            dirClient = SetupUtils.createDIRClient(getRpcClient());
+
+            if (enabledServs.contains(Services.DIR_SERVICE)) {
+                dirService = new DIRRequestDispatcher(SetupUtils.createDIRConfig(),
+                        SetupUtils.createDIRdbsConfig());
+                dirService.startup();
+                dirService.waitForStartup();
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "DIR running");
             }
-            for (int i = 0; i < configs.length; i++) {
-                osds[i].start();
+
+            if (enabledServs.contains(Services.TIME_SYNC) || enabledServs.contains(Services.MOCKUP_OSD)) {
+                tsInstance = TimeSync.initializeLocal(60 * 1000, 50);
+                tsInstance.waitForStartup();
             }
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSDs 1-" + osdCount + " running");
+
+            if (enabledServs.contains(Services.UUID_RESOLVER)) {
+                DIRClient dc = new DIRClient(dirClient, new InetSocketAddress[]{getDIRAddress()}, 10, 1000 * 5);
+                UUIDResolver.start(dc, 1000, 10 * 10 * 1000);
+                SetupUtils.localResolver();
+            }
+
+            if (enabledServs.contains(Services.MOCKUP_OSD)) {
+                Map<String,String> dmap = new HashMap();
+                dmap.put("free", "1000000000");
+                dmap.put("total", "1000000000");
+                dmap.put("load", "0");
+                dmap.put("totalRAM", "1000000000");
+                dmap.put("usedRAM", "0");
+                dmap.put("proto_version", "" + OSDServiceConstants.INTERFACE_ID);
+                Service reg = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD).setName("mockUpOSD").setUuid("mockUpOSD").
+                        setVersion(0).setLastUpdatedS(0).setData(ServiceDataMap.newBuilder().addAllData(KeyValuePairs.fromMap(dmap))).build();
+                RPCResponse<serviceRegisterResponse> response = dirClient.xtreemfs_service_register(null, RPCAuthentication.authNone, RPCAuthentication.userService, reg);
+                response.get();
+                response.freeBuffers();
+
+                UUIDResolver.addLocalMapping("mockUpOSD", 11111, Schemes.SCHEME_PBRPC);
+            }
+
+            if (enabledServs.contains(Services.MOCKUP_OSD2)) {
+                Map<String,String> dmap = new HashMap();
+                dmap.put("free", "1000000000");
+                dmap.put("total", "1000000000");
+                dmap.put("load", "0");
+                dmap.put("totalRAM", "1000000000");
+                dmap.put("usedRAM", "0");
+                dmap.put("proto_version", "" + OSDServiceConstants.INTERFACE_ID);
+                Service reg = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD).setName("mockUpOSD2").setUuid("mockUpOSD2").
+                        setVersion(0).setLastUpdatedS(0).setData(ServiceDataMap.newBuilder().addAllData(KeyValuePairs.fromMap(dmap))).build();
+                RPCResponse<serviceRegisterResponse> response = dirClient.xtreemfs_service_register(null, RPCAuthentication.authNone, RPCAuthentication.userService, reg);
+                response.get();
+                response.freeBuffers();
+
+                UUIDResolver.addLocalMapping("mockUpOSD2", 11111, Schemes.SCHEME_PBRPC);
+            }
+
+            if (enabledServs.contains(Services.MOCKUP_OSD3)) {
+                Map<String,String> dmap = new HashMap();
+                dmap.put("free", "1000000000");
+                dmap.put("total", "1000000000");
+                dmap.put("load", "0");
+                dmap.put("totalRAM", "1000000000");
+                dmap.put("usedRAM", "0");
+                dmap.put("proto_version", "" + OSDServiceConstants.INTERFACE_ID);
+                Service reg = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD).setName("mockUpOSD3").setUuid("mockUpOSD3").
+                        setVersion(0).setLastUpdatedS(0).setData(ServiceDataMap.newBuilder().addAllData(KeyValuePairs.fromMap(dmap))).build();
+                RPCResponse<serviceRegisterResponse> response = dirClient.xtreemfs_service_register(null, RPCAuthentication.authNone, RPCAuthentication.userService, reg);
+                response.get();
+                response.freeBuffers();
+
+                UUIDResolver.addLocalMapping("mockUpOSD3", 11111, Schemes.SCHEME_PBRPC);
+            }
+
+            if (enabledServs.contains(Services.OSD)) {
+                int osdCount = Collections.frequency(enabledServs, Services.OSD);
+                osds = new OSDRequestDispatcher[osdCount];
+                OSDConfig[] configs = SetupUtils.createMultipleOSDConfigs(osdCount);
+                for (int i = 0; i < configs.length; i++) {
+                    osds[i] = new OSDRequestDispatcher(configs[i]);
+                }
+                for (int i = 0; i < configs.length; i++) {
+                    osds[i].start();
+                }
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSDs 1-" + osdCount + " running");
+            }
+
+            if (enabledServs.contains(Services.MRC)) {
+                mrc = new MRCRequestDispatcher(SetupUtils.createMRC1Config(), SetupUtils.createMRC1dbsConfig());
+                mrc.startup();
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "MRC running");
+            }
+
+            if (enabledServs.contains(Services.MRC_CLIENT)) {
+                mrcClient = new MRCServiceClient(rpcClient, null);
+            }
+
+            if (enabledServs.contains(Services.OSD_CLIENT)) {
+                osdClient = new OSDServiceClient(rpcClient, null);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw ex;
         }
-        
-        if (enabledServs.contains(Services.MRC)) {
-            mrc = new MRCRequestDispatcher(SetupUtils.createMRC1Config(), SetupUtils.createMRC1dbsConfig());
-            mrc.startup();
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "MRC running");
-        }
-        
-        if (enabledServs.contains(Services.MRC_CLIENT)) {
-            mrcClient = new MRCServiceClient(rpcClient, null);
-        }
-        
-        if (enabledServs.contains(Services.OSD_CLIENT)) {
-            osdClient = new OSDServiceClient(rpcClient, null);
-        }
-        
     }
     
     public void shutdown() {

@@ -10,7 +10,9 @@ package org.xtreemfs.mrc;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Properties;
 
 
@@ -60,6 +62,8 @@ public class MRCConfig extends ServiceConfig {
             Parameter.SNMP_ADDRESS,
             Parameter.SNMP_PORT,
             Parameter.SNMP_ACL,
+            Parameter.FAILOVER_MAX_RETRIES,
+            Parameter.FAILOVER_WAIT,
             };
     
     /**
@@ -162,6 +166,28 @@ public class MRCConfig extends ServiceConfig {
     	return (Boolean)parameter.get(Parameter.RENEW_TIMED_OUT_CAPS);
 
     }
+
+    public InetSocketAddress[] getDirectoryServices() {
+        List<InetSocketAddress> addresses = new ArrayList();
+        addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE));
+        if (parameter.get(Parameter.DIRECTORY_SERVICE0) != null) {
+            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE0));
+        }
+        if (parameter.get(Parameter.DIRECTORY_SERVICE1) != null) {
+            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE1));
+        }
+        if (parameter.get(Parameter.DIRECTORY_SERVICE2) != null) {
+            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE2));
+        }
+        if (parameter.get(Parameter.DIRECTORY_SERVICE3) != null) {
+            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE3));
+        }
+        if (parameter.get(Parameter.DIRECTORY_SERVICE4) != null) {
+            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE4));
+        }
+        return addresses.toArray(new InetSocketAddress[0]);
+    }
+
     
     /**
      * Set default values according to the value in {@link Parameter} for all configuration 

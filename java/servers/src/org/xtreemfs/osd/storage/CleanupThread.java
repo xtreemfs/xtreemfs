@@ -202,8 +202,7 @@ public class CleanupThread extends LifeCycleThread {
                     for (Volume volume : perVolume.keySet()) {
                         final Map<String,FileData> zombieFiles = new Hashtable<String,FileData>();
                         try {
-                             RPCResponse<ServiceSet> vol = master.getDIRClient().xtreemfs_service_get_by_uuid(null, RPCAuthentication.authNone,RPCAuthentication.userService, volume.id);
-                             ServiceSet s = vol.get();
+                             ServiceSet s = master.getDIRClient().xtreemfs_service_get_by_uuid(null, RPCAuthentication.authNone,RPCAuthentication.userService, volume.id);
                              
                              if (s.getServicesCount() == 0) {
                                  //volume does not exist

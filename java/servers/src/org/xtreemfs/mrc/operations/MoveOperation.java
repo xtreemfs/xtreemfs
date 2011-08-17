@@ -255,7 +255,7 @@ public class MoveOperation extends MRCOperation {
                 
             case file: // target is a file
             {
-                
+
                 // check whether the target file may be overwritten
                 // important w/ POSIX access control if the sticky bit is set)
                 faMan.checkPermission(FileAccessManager.NON_POSIX_RM_MV_IN_DIR, sMan, tRes.getFile(), tRes

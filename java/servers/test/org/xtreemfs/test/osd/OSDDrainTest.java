@@ -24,6 +24,7 @@ import org.xtreemfs.common.clients.Volume;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
@@ -109,9 +110,11 @@ public class OSDDrainTest extends TestCase {
 
         mrcClient = testEnv.getMrcClient();
 
-        resolver = UUIDResolver.startNonSingelton(testEnv.getDirClient(), 1000, 10 * 10 * 1000);
 
-        osdDrain = new OSDDrain(testEnv.getDirClient(), testEnv.getOSDClient(), testEnv.getMrcClient(),
+        DIRClient dir = new DIRClient(testEnv.getDirClient(), new InetSocketAddress[]{testEnv.getDIRAddress()}, 10, 1000 * 5);
+        resolver = UUIDResolver.startNonSingelton(dir, 1000, 10 * 10 * 1000);
+
+        osdDrain = new OSDDrain(dir, testEnv.getOSDClient(), testEnv.getMrcClient(),
                 osdConfig1.getUUID(), authHeader, uc, resolver);
 
     }

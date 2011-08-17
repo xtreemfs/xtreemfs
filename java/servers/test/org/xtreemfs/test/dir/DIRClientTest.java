@@ -120,10 +120,18 @@ public class DIRClientTest extends TestCase {
 
     @After
     public void tearDown() throws Exception {
-        dummy1.shutdown();
-        dummy2.shutdown();
-        dummy1.waitForShutdown();
-        dummy2.waitForShutdown();
+        try {
+            dummy1.shutdown();
+            dummy1.waitForShutdown();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        try {
+            dummy2.shutdown();
+            dummy2.waitForShutdown();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
         testEnv.shutdown();
 
     }

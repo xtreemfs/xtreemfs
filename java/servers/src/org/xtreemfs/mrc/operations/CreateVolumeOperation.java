@@ -78,28 +78,27 @@ public class CreateVolumeOperation extends MRCOperation {
         queryMap.put("name", volData.getName());
         List<String> attrs = new LinkedList<String>();
         attrs.add("version");
-        
-        RPCResponse<ServiceSet> response = master.getDirClient().xtreemfs_service_get_by_type(null,
-            rq.getDetails().auth, RPCAuthentication.userService, ServiceType.SERVICE_TYPE_VOLUME);
-        response.registerListener(new RPCResponseAvailableListener<ServiceSet>() {
-            
+
+        // Ugly workaround for async call.
+        Runnable rqThr = new Runnable() {
             @Override
-            public void responseAvailable(RPCResponse<ServiceSet> r) {
-                processStep2(volData, volumeId, rq, r);
+            public void run() {
+                try {
+                    ServiceSet sset = master.getDirClient().xtreemfs_service_get_by_type(null, rq.getDetails().auth, RPCAuthentication.userService, ServiceType.SERVICE_TYPE_VOLUME);
+                    processStep2(volData, volumeId, rq, sset);
+                } catch (Exception ex) {
+                    finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
+                                  "an error has occurred", ex));
+                }
             }
-        });
+        };
+        Thread thr = new Thread(rqThr);
+        thr.start();
     }
     
     private void processStep2(final Volume volData, final String volumeId, final MRCRequest rq,
-        RPCResponse<ServiceSet> rpcResponse) {
-        
+        ServiceSet response) {
         try {
-            
-            // check the response; if a volume with the same name has already
-            // been registered, return an error
-            
-            ServiceSet response = rpcResponse.get();
-            
             // check if the volume already exists; if so, return an error
             for (Service reg : response.getServicesList())
                 if (volData.getName().equals(reg.getName())) {
@@ -136,19 +135,24 @@ public class CreateVolumeOperation extends MRCOperation {
             for (KeyValuePair kv : volData.getAttrsList())
                 dmap.addData(KeyValuePair.newBuilder().setKey("attr." + kv.getKey()).setValue(kv.getValue()));
             
-            Service vol = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_VOLUME).setUuid(volumeId)
+            final Service vol = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_VOLUME).setUuid(volumeId)
                     .setVersion(0).setName(volData.getName()).setLastUpdatedS(0).setData(dmap).build();
-            
-            RPCResponse<serviceRegisterResponse> rpcResponse2 = master
-                    .getDirClient()
-                    .xtreemfs_service_register(null, rq.getDetails().auth, RPCAuthentication.userService, vol);
-            rpcResponse2.registerListener(new RPCResponseAvailableListener<serviceRegisterResponse>() {
-                
+
+            // Ugly workaround for async call.
+            Runnable rqThr = new Runnable() {
                 @Override
-                public void responseAvailable(RPCResponse<serviceRegisterResponse> r) {
-                    processStep3(volData, volumeId, rq, r);
+                public void run() {
+                    try {
+                        master.getDirClient().xtreemfs_service_register(null, rq.getDetails().auth, RPCAuthentication.userService, vol);
+                        processStep3(volData, volumeId, rq);
+                    } catch (Exception ex) {
+                        finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
+                                      "an error has occurred", ex));
+                    }
                 }
-            });
+            };
+            Thread thr = new Thread(rqThr);
+            thr.start();
             
         } catch (UserException exc) {
             if (Logging.isDebug())
@@ -157,31 +161,18 @@ public class CreateVolumeOperation extends MRCOperation {
         } catch (Throwable exc) {
             finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
                 "an error has occurred", exc));
-        } finally {
-            rpcResponse.freeBuffers();
         }
     }
     
-    public void processStep3(final Volume rqArgs, final String volumeId, final MRCRequest rq,
-        RPCResponse<serviceRegisterResponse> rpcResponse) {
-        
+    public void processStep3(final Volume rqArgs, final String volumeId, final MRCRequest rq) {
         try {
-            
-            // check whether an exception has occured; if so, an exception is
-            // thrown when trying to parse the response
-            
-            rpcResponse.get();
-            
             // set the response
             rq.setResponse(emptyResponse.getDefaultInstance());
             finishRequest(rq);
-            
         } catch (Throwable exc) {
             finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
                 "an error has occurred", exc));
-        } finally {
-            rpcResponse.freeBuffers();
-        }
+        } 
     }
     
 }

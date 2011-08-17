@@ -36,6 +36,11 @@ public class ServiceConfig extends Config {
             DEBUG_LEVEL("debug.level", 6, Integer.class, false),
             DEBUG_CATEGORIES("debug.categories", debugCategoryDefault, Category[].class, false),
             DIRECTORY_SERVICE("dir_service.host", null, InetSocketAddress.class, true),
+            DIRECTORY_SERVICE0("dir_service.0.host", null, InetSocketAddress.class, false),
+            DIRECTORY_SERVICE1("dir_service.1.host", null, InetSocketAddress.class, false),
+            DIRECTORY_SERVICE2("dir_service.2.host", null, InetSocketAddress.class, false),
+            DIRECTORY_SERVICE3("dir_service.3.host", null, InetSocketAddress.class, false),
+            DIRECTORY_SERVICE4("dir_service.4.host", null, InetSocketAddress.class, false),
             PORT("listen.port", null, Integer.class, true),
             HTTP_PORT("http_port", null, Integer.class, true),
             LISTEN_ADDRESS("listen.address", null, InetAddress.class, false),
@@ -57,6 +62,8 @@ public class ServiceConfig extends Config {
             SNMP_ADDRESS("snmp.address", null, InetAddress.class, false),
             SNMP_PORT("snmp.port", null, Integer.class, false),
             SNMP_ACL("snmp.aclfile", null, String.class, false),
+            FAILOVER_MAX_RETRIES("failover.retries", 15, Integer.class, false),
+            FAILOVER_WAIT("failover.wait_ms", 15 * 1000, Integer.class, false),
             
             /*
              * DIR specific configuration parameter
@@ -569,6 +576,14 @@ public class ServiceConfig extends Config {
     
     public String getSnmpACLFile() {
         return (String) parameter.get(Parameter.SNMP_ACL);
+    }
+
+    public Integer getFailoverMaxRetries() {
+        return (Integer) parameter.get(Parameter.FAILOVER_MAX_RETRIES);
+    }
+
+    public Integer getFailoverWait() {
+        return (Integer) parameter.get(Parameter.FAILOVER_WAIT);
     }
     
     /**

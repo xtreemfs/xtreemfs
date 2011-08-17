@@ -36,7 +36,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 /**
  * DIR Client with automatic fail-over and redirect support.
  * All operations are synchronous.
- * Implementation is not thread-safe!
  * @author bjko
  */
 public class DIRClient implements TimeServerClient {
@@ -128,6 +127,16 @@ public class DIRClient implements TimeServerClient {
             @Override
             public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_address_mappings_set(server, authHeader, userCreds, mappings);
+            }
+        });
+        return response;
+    }
+
+    public addressMappingSetResponse xtreemfs_address_mappings_set(InetSocketAddress server, final Auth authHeader, final UserCredentials userCreds, final AddressMappingSet input) throws IOException, InterruptedException {
+        addressMappingSetResponse response = (addressMappingSetResponse) syncCall(new CallGenerator() {
+            @Override
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
+                return client.xtreemfs_address_mappings_set(server, authHeader, userCreds, input);
             }
         });
         return response;
@@ -231,7 +240,9 @@ public class DIRClient implements TimeServerClient {
         return response.getTimeInSeconds();
     }
 
-
+    public boolean clientIsAlive() {
+        return rpcClient.clientIsAlive();
+    }
 
     /**
      * Interface for syncCall which generates the calls. Will be called for each retry.
@@ -241,13 +252,17 @@ public class DIRClient implements TimeServerClient {
     }
     
     protected Object syncCall(CallGenerator call) throws InterruptedException, PBRPCException, IOException {
+        InetSocketAddress server = null;
         isRedirect = false;
         int numTries = 0;
         Exception lastException = null;
         do {
+            synchronized (this) {
+                server = servers[currentServer];
+            }
             RPCResponse response = null;
             try {
-                response = call.executeCall(rpcClient, servers[currentServer]);
+                response = call.executeCall(rpcClient, server);
                 Object result = response.get();
                 return result;
             } catch (PBRPCException ex) {
@@ -301,7 +316,9 @@ public class DIRClient implements TimeServerClient {
                 final InetSocketAddress server = servers[i];
                 if (server.equals(redirectTo)) {
                     Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.net, this, "redirected to DIR: %s", server);
-                    currentServer = i;
+                    synchronized (this) {
+                        currentServer = i;
+                    }
                     if (isRedirect) {
                         // Wait between redirects, but not for the first redirect.
                         Thread.sleep(retryWaitMs);
@@ -322,9 +339,11 @@ public class DIRClient implements TimeServerClient {
     protected void failover(IOException exception) throws InterruptedException {
         Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "Request to server %s failed due to exception: %s", servers[currentServer], exception);
         Thread.sleep(retryWaitMs);
-        currentServer++;
-        if (currentServer >= servers.length) {
-            currentServer = 0;
+        synchronized (this) {
+            currentServer++;
+            if (currentServer >= servers.length) {
+                currentServer = 0;
+            }
         }
         Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "Switching to server %s", servers[currentServer]);
     }

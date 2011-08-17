@@ -36,7 +36,6 @@ import org.xtreemfs.dir.discovery.DiscoveryUtils;
 import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.SSLOptions;
-import org.xtreemfs.foundation.TimeServerClient;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.TimeSync.ExtSyncSource;
@@ -44,9 +43,7 @@ import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.Schemes;
-import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
@@ -78,7 +75,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR.globalTimeSGetResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 
@@ -87,6 +83,7 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.dir.DIRClient;
 
 /**
  * 
@@ -103,7 +100,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     private final RPCNIOSocketClient       clientStage;
     
-    private final DIRServiceClient         dirClient;
+    private final DIRClient                dirClient;
     
     private final ProcessingStage          procStage;
     
@@ -172,7 +169,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         serverStage = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
         serverStage.setLifeCycleListener(this);
         
-        dirClient = new DIRServiceClient(clientStage, config.getDirectoryService());
+        DIRServiceClient dirRpcClient = new DIRServiceClient(clientStage, config.getDirectoryService());
+        dirClient = new DIRClient(dirRpcClient, config.getDirectoryServices(), config.getFailoverMaxRetries(), config.getFailoverWait());
         osdClient = new OSDServiceClient(clientStage, null);
         
         authProvider = policyContainer.getAuthenticationProvider();
@@ -325,25 +323,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         try {
             
-            TimeSync.getInstance().init(ExtSyncSource.XTREEMFS_DIR, new TimeServerClient() {
-                
-                @Override
-                public long xtreemfs_global_time_get(InetSocketAddress server) {
-                    
-                    RPCResponse<globalTimeSGetResponse> resp = null;
-                    try {
-                        resp = dirClient.xtreemfs_global_time_s_get(server, RPCAuthentication.authNone,
-                            RPCAuthentication.userService);
-                        return resp.get().getTimeInSeconds();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                        return -1;
-                    } finally {
-                        if (resp != null)
-                            resp.freeBuffers();
-                    }
-                }
-            }, null, config.getRemoteTimeSync(), config.getLocalClockRenew());
+            TimeSync.getInstance().init(ExtSyncSource.XTREEMFS_DIR, dirClient, null, config.getRemoteTimeSync(), config.getLocalClockRenew());
             
             clientStage.start();
             clientStage.waitForStartup();
@@ -696,7 +676,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         return policyContainer;
     }
     
-    public DIRServiceClient getDirClient() {
+    public DIRClient getDirClient() {
         return dirClient;
     }
     

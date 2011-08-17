@@ -16,6 +16,7 @@ import java.util.Map;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.TimeServerClient;
 import org.xtreemfs.foundation.TimeSync;
@@ -51,7 +52,7 @@ public class xtfs_cleanup_osd {
     
     private static OSDServiceClient   osd;
     
-    private static DIRServiceClient   dir;
+    private static DIRClient          dir;
     
     private static RPCNIOSocketClient dirClient;
     
@@ -194,24 +195,13 @@ public class xtfs_cleanup_osd {
             dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
             dirClient.start();
             dirClient.waitForStartup();
-            dir = new DIRServiceClient(dirClient, dirAddr);
+            DIRServiceClient dirRpcClient = new DIRServiceClient(dirClient, dirAddr);
+            dir = new DIRClient(dirRpcClient, new InetSocketAddress[]{dirAddr}, 100, 15*1000);
             
             try {
                 TimeSync.getInstance();
             } catch (RuntimeException re) {
-                TimeSync.initialize(new TimeServerClient() {
-                    
-                    @Override
-                    public long xtreemfs_global_time_get(InetSocketAddress server) {
-                        try {
-                            RPCResponse<globalTimeSGetResponse> resp = dir.xtreemfs_global_time_s_get(server,
-                                RPCAuthentication.authNone, RPCAuthentication.userService);
-                            return resp.get().getTimeInSeconds();
-                        } catch (Exception ex) {
-                            return -1;
-                        }
-                    }
-                }, 60 * 1000, 30 * 1000);
+                TimeSync.initialize(dir, 60 * 1000, 30 * 1000);
             }
             
             if (!UUIDResolver.isRunning()) {

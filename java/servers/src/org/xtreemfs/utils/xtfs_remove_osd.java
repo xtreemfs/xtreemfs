@@ -12,6 +12,7 @@ import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
@@ -38,7 +39,7 @@ public class xtfs_remove_osd {
 
     private OSDServiceClient    osd;
 
-    private DIRServiceClient    dir;
+    private DIRClient           dir;
 
     private MRCServiceClient    mrc;
 
@@ -90,7 +91,7 @@ public class xtfs_remove_osd {
             resolverClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
             resolverClient.start();
             resolverClient.waitForStartup();
-            this.resolver = UUIDResolver.startNonSingelton(new DIRServiceClient(resolverClient, dirAddress),
+            this.resolver = UUIDResolver.startNonSingelton(dir,
                     1000, 10 * 10 * 1000);
 
         } catch (Exception e) {
@@ -107,7 +108,8 @@ public class xtfs_remove_osd {
         dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
         dirClient.start();
         dirClient.waitForStartup();
-        dir = new DIRServiceClient(dirClient, dirAddress);
+        DIRServiceClient tmp = new DIRServiceClient(dirClient, dirAddress);
+        dir = new DIRClient(tmp, new InetSocketAddress[]{dirAddress}, 100, 15*1000);
 
         // create OSD client
         osdUUID = new ServiceUUID(osdUUIDString, resolver);
@@ -120,21 +122,14 @@ public class xtfs_remove_osd {
         osd = new OSDServiceClient(osdClient, osdAddr);
 
         // create MRC client
-        serviceGetByTypeRequest getByTypeRequest = serviceGetByTypeRequest.newBuilder()
-                .setType(ServiceType.SERVICE_TYPE_MRC).build();
-        RPCResponse<ServiceSet> r = null;
         ServiceSet sSet = null;
         try {
-            r = dir.xtreemfs_service_get_by_type(null, authHeader, credentials, getByTypeRequest);
-            sSet = r.get();
+            sSet = dir.xtreemfs_service_get_by_type(null, authHeader, credentials, ServiceType.SERVICE_TYPE_MRC);
         } catch (IOException ioe) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.proc, new Object(),
                     OutputUtils.stackTraceToString(ioe));
             throw ioe;
-        } finally {
-            if (r != null)
-                r.freeBuffers();
-        }
+        } 
 
         mrcClient = new RPCNIOSocketClient(sslOptions, 100000, 5 * 60 * 10000);
         mrcClient.start();

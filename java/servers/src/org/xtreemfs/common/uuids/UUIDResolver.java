@@ -19,15 +19,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.xtreemfs.common.GlobalConstants;
 
 import org.xtreemfs.common.util.NetUtils;
+import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.Schemes;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 
 /**
  * Resolves UUID to InetSocketAddress+Protocol mappings.
@@ -40,7 +39,7 @@ public final class UUIDResolver extends Thread {
     
     protected transient boolean   quit;
     
-    protected final DIRServiceClient     dir;
+    protected final DIRClient     dir;
     
     protected final List<String>  myNetworks;
     
@@ -55,7 +54,7 @@ public final class UUIDResolver extends Thread {
 
     protected final UserCredentials uc;
     
-    protected UUIDResolver(DIRServiceClient client, int cacheCleanInterval, int maxUnusedEntry, boolean singleton)
+    protected UUIDResolver(DIRClient client, int cacheCleanInterval, int maxUnusedEntry, boolean singleton)
         throws IOException {
         
         super("UUID Resolver");
@@ -94,7 +93,7 @@ public final class UUIDResolver extends Thread {
      * @throws org.xtreemfs.foundation.json.JSONException
      * @throws java.io.IOException
      */
-    public static synchronized void start(DIRServiceClient client, int cacheCleanInterval, int maxUnusedEntry)
+    public static synchronized void start(DIRClient client, int cacheCleanInterval, int maxUnusedEntry)
         throws IOException {
         if (theInstance == null) {
             new UUIDResolver(client, cacheCleanInterval, maxUnusedEntry, true);
@@ -109,7 +108,7 @@ public final class UUIDResolver extends Thread {
         }
     }
     
-    public static synchronized UUIDResolver startNonSingelton(DIRServiceClient client, int cacheCleanInterval,
+    public static synchronized UUIDResolver startNonSingelton(DIRClient client, int cacheCleanInterval,
         int maxUnusedEntry) throws IOException {
         UUIDResolver tmp = new UUIDResolver(client, cacheCleanInterval, maxUnusedEntry, false);
         tmp.start();
@@ -147,14 +146,12 @@ public final class UUIDResolver extends Thread {
         if (dir == null)
             throw new UnknownUUIDException("there is no mapping for " + uuid
                 + ". Attention: local mode enabled, no remote lookup possible.");
-        RPCResponse<AddressMappingSet> r = null;
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "loading uuid mapping for %s", uuid);
         try {
-            r = dir.xtreemfs_address_mappings_get(null, GlobalConstants.AUTH_NONE, uc, uuid);
+            AddressMappingSet ams = dir.xtreemfs_address_mappings_get(null, GlobalConstants.AUTH_NONE, uc, uuid);
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "sent request to DIR");
-            AddressMappingSet ams = r.get();
             if (Logging.isDebug())
                 Logging
                         .logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "received response for %s",
@@ -195,9 +192,6 @@ public final class UUIDResolver extends Thread {
             ex.printStackTrace();
             throw new UnknownUUIDException(
                 "cannot retrieve mapping from server due to invalid data sent by the server: " + ex);
-        } finally {
-            if (r != null)
-                r.freeBuffers();
         }
     }
     

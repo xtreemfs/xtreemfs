@@ -173,9 +173,8 @@ public class CleanupVersionsThread extends LifeCycleThread {
                             // volume
                             
                             // first, determine the volume name
-                            RPCResponse<ServiceSet> v = master.getDIRClient().xtreemfs_service_get_by_uuid(
+                            ServiceSet s = master.getDIRClient().xtreemfs_service_get_by_uuid(
                                 null, RPCAuthentication.authNone, RPCAuthentication.userService, vol.id);
-                            ServiceSet s = v.get();
                             if (s.getServicesCount() == 0) {
                                 Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
                                     "could not retrieve volume information for '%s' from DIR", vol.id);

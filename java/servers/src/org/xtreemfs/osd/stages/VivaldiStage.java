@@ -5,7 +5,6 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-
 package org.xtreemfs.osd.stages;
 
 import java.io.IOException;
@@ -19,6 +18,7 @@ import org.xtreemfs.common.KeyValuePairs;
 import org.xtreemfs.common.uuids.Mapping;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
+import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.Schemes;
@@ -32,7 +32,6 @@ import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.osd.vivaldi.ZipfGenerator;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
@@ -60,7 +59,7 @@ public class VivaldiStage extends Stage {
     /**
      * Client used to communicate with the Directory Service.
      */
-    private final DIRServiceClient dirClient;
+    private final DIRClient dirClient;
     /**
      * List of already sent Vivaldi requests.
      */
@@ -571,15 +570,8 @@ public class VivaldiStage extends Stage {
      * function is responsible of keeping a list of OSDs used by the algorithm.
      */
     private void updateKnownOSDs() {
-
-        RPCResponse<ServiceSet> r = null;
-
-
-
         try {
-
-            r = dirClient.xtreemfs_service_get_by_type(null, RPCAuthentication.authNone, RPCAuthentication.userService, ServiceType.SERVICE_TYPE_OSD);
-            ServiceSet receivedOSDs = r.get();
+            ServiceSet receivedOSDs = dirClient.xtreemfs_service_get_by_type(null, RPCAuthentication.authNone, RPCAuthentication.userService, ServiceType.SERVICE_TYPE_OSD);
 
             //We need our own UUID, to discard its corresponding entry
             String ownUUID = master.getConfig().getUUID().toString();
@@ -651,37 +643,20 @@ public class VivaldiStage extends Stage {
             }
 
         } catch (Exception exc) {
-
             Logging.logMessage(Logging.LEVEL_ERROR, this, "Error while updating known OSDs:" + exc);
-
             //Create an empty OSDs set
             knownOSDs = new LinkedList<KnownOSD>();
-
-
-
         } finally {
-
-            if (r != null) {
-                r.freeBuffers();
-
-
-            } //Adapt the Zipf generator to the new sample
+            //Adapt the Zipf generator to the new sample
             if (rankGenerator == null) {
                 rankGenerator = new ZipfGenerator(knownOSDs.size(), ZIPF_GENERATOR_SKEW);
-
-
             } else {
                 rankGenerator.setSize(knownOSDs.size());
-
-
             }
 
             //Previous requests are discarded
             sentRequests.clear();
             toBeRetried.clear();
-
-
-
         }
     }
 

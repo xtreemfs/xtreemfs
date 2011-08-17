@@ -14,6 +14,7 @@ import java.util.HashMap;
 
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.HeartbeatThread;
+import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
@@ -136,8 +137,12 @@ public class MRC {
     }
     
     private static MRCConfig getConfigurationFromDIR(MRCConfig config) throws Exception {
-        
-        HeartbeatThread.waitForDIR(config.getDirectoryService(), config.getWaitForDIR());
+        final int WAIT_BETWEEN_RETRIES = 1000;
+        int retries = config.getWaitForDIR() * 1000 / WAIT_BETWEEN_RETRIES;
+        if (retries <= 0) {
+            retries = 1;
+        }
+        Logging.logMessage(Logging.LEVEL_INFO, null, "Loading configuration from DIR, %d retries", retries);
         
         SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
@@ -146,7 +151,9 @@ public class MRC {
                 .isGRIDSSLmode(), new MRCPolicyContainer(config).getTrustManager()) : null;
         
         RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, 1000, 60 * 1000);
-        DIRServiceClient dirClient = new DIRServiceClient(clientStage, config.getDirectoryService());
+        DIRServiceClient dirRPCClient = new DIRServiceClient(clientStage, config.getDirectoryService());
+        DIRClient dirClient = new DIRClient(dirRPCClient, config.getDirectoryServices(),
+                retries, WAIT_BETWEEN_RETRIES);
         
         clientStage.start();
         clientStage.waitForStartup();
@@ -155,16 +162,8 @@ public class MRC {
         UserCredentials uc = UserCredentials.newBuilder().setUsername("main-method").addGroups(
             "xtreemfs-services").build();
         
-        RPCResponse<Configuration> responseGet = null;
-        Configuration conf = null;
-        try {
-            responseGet = dirClient.xtreemfs_configuration_get(null, authNone, uc, config.getUUID()
+        Configuration conf = dirClient.xtreemfs_configuration_get(null, authNone, uc, config.getUUID()
                     .toString());
-            conf = responseGet.get();
-        } finally {
-            if (responseGet != null)
-                responseGet.freeBuffers();
-        }
         
         clientStage.shutdown();
         clientStage.waitForShutdown();

@@ -24,6 +24,7 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
@@ -94,7 +95,7 @@ public class OSDDrain {
         public String            oldReplicationPolicy;
     }
     
-    private DIRServiceClient      dirClient;
+    private DIRClient      dirClient;
     
     private OSDServiceClient      osdClient;
     
@@ -112,7 +113,7 @@ public class OSDDrain {
     
     private UUIDResolver          resolver;
     
-    public OSDDrain(DIRServiceClient dirClient, OSDServiceClient osdClient, MRCServiceClient mrcClient,
+    public OSDDrain(DIRClient dirClient, OSDServiceClient osdClient, MRCServiceClient mrcClient,
         ServiceUUID osdUUID, Auth password, UserCredentials usercreds, UUIDResolver resolver)
         throws Exception {
         
@@ -198,18 +199,13 @@ public class OSDDrain {
      * @throws Exception
      */
     public void setServiceStatus(DIR.ServiceStatus status) throws OSDDrainException {
-        RPCResponse<ServiceSet> resp = null;
         ServiceSet sSet = null;
         try {
-            resp = dirClient.xtreemfs_service_get_by_uuid(null, RPCAuthentication.authNone,
+            sSet = dirClient.xtreemfs_service_get_by_uuid(null, RPCAuthentication.authNone,
                 RPCAuthentication.userService, osdUUID.toString());
-            sSet = resp.get();
         } catch (Exception e) {
             Logging.logError(Logging.LEVEL_WARN, this, e);
             throw new OSDDrainException(e.getMessage(), ErrorState.SET_SERVICE_STATUS);
-        } finally {
-            if (resp != null)
-                resp.freeBuffers();
         }
         
         if (sSet.getServicesCount() == 0) {
@@ -248,19 +244,14 @@ public class OSDDrain {
         
         serv = serv.toBuilder().setData(dataMap).build();
         
-        RPCResponse<serviceRegisterResponse> resp2 = null;
         try {
-            resp2 = dirClient.xtreemfs_service_register(null, RPCAuthentication.authNone,
+            dirClient.xtreemfs_service_register(null, RPCAuthentication.authNone,
                 RPCAuthentication.userService, serv);
-            resp2.get();
         } catch (Exception e) {
             if (Logging.isDebug()) {
                 Logging.logError(Logging.LEVEL_WARN, this, e);
             }
             throw new OSDDrainException(e.getMessage(), ErrorState.SET_SERVICE_STATUS);
-        } finally {
-            if (resp2 != null)
-                resp2.freeBuffers();
         }
     }
     
@@ -311,12 +302,10 @@ public class OSDDrain {
             
             String volumeUUID = fileInfo.fileID.substring(0, fileInfo.fileID.indexOf(':'));
             
-            RPCResponse<ServiceSet> r1 = null;
             ServiceSet sSet = null;
             String mrcUUIDString = null;
             try {
-                r1 = dirClient.xtreemfs_service_get_by_uuid(null, password, userCreds, volumeUUID);
-                sSet = r1.get();
+                sSet = dirClient.xtreemfs_service_get_by_uuid(null, password, userCreds, volumeUUID);
                 for (KeyValuePair kvp : sSet.getServices(0).getData().getDataList()) {
                     if (kvp.getKey().equals("mrc"))
                         mrcUUIDString = kvp.getValue();
@@ -327,17 +316,10 @@ public class OSDDrain {
                     Logging.logError(Logging.LEVEL_WARN, this, e);
                 }
                 throw new OSDDrainException(e.getMessage(), ErrorState.UPDATE_MRC_ADDRESSES);
-            } finally {
-                if (r1 != null) {
-                    r1.freeBuffers();
-                }
-            }
+            } 
             
-            RPCResponse<AddressMappingSet> r2 = null;
-            AddressMappingSet ams = null;
             try {
-                r2 = dirClient.xtreemfs_address_mappings_get(null, password, userCreds, mrcUUIDString);
-                ams = r2.get();
+                AddressMappingSet ams = dirClient.xtreemfs_address_mappings_get(null, password, userCreds, mrcUUIDString);
                 
                 assert (ams != null);
                 assert (ams.getMappings(0).getUuid().equalsIgnoreCase(mrcUUIDString));
@@ -348,10 +330,6 @@ public class OSDDrain {
                     Logging.logError(Logging.LEVEL_WARN, this, e);
                 }
                 throw new OSDDrainException(e.getMessage(), ErrorState.UPDATE_MRC_ADDRESSES);
-            } finally {
-                if (r2 != null) {
-                    r2.freeBuffers();
-                }
             }
             
         }

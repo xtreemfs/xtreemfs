@@ -136,17 +136,11 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
     public void run() {
         
         // initially fetch the list of OSDs from the Directory Service
-        RPCResponse<ServiceSet> r = null;
         try {
-            r = master.getDirClient().xtreemfs_service_get_by_type(null, RPCAuthentication.authNone,
-                RPCAuthentication.userService, ServiceType.SERVICE_TYPE_OSD);
-            knownOSDs = r.get().toBuilder();
-            
+            knownOSDs = master.getDirClient().xtreemfs_service_get_by_type(null, RPCAuthentication.authNone,
+                RPCAuthentication.userService, ServiceType.SERVICE_TYPE_OSD).toBuilder();
         } catch (Exception exc) {
             this.notifyCrashed(exc);
-        } finally {
-            if (r != null)
-                r.freeBuffers();
         }
         
         notifyStarted();
@@ -169,14 +163,12 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
             
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                 "sending request for OSD list to DIR...");
-            r = null;
             
             try {
                 // request list of registered OSDs from Directory
                 // Service
-                r = master.getDirClient().xtreemfs_service_get_by_type(null, RPCAuthentication.authNone,
-                    RPCAuthentication.userService, ServiceType.SERVICE_TYPE_OSD);
-                knownOSDs = r.get().toBuilder();
+                knownOSDs = master.getDirClient().xtreemfs_service_get_by_type(null, RPCAuthentication.authNone,
+                            RPCAuthentication.userService, ServiceType.SERVICE_TYPE_OSD).toBuilder();
                 
                 Logging
                         .logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
@@ -190,9 +182,6 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
                 if (!quit)
                     Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, OutputUtils
                             .stackTraceToString(exc));
-            } finally {
-                if (r != null)
-                    r.freeBuffers();
             }
             
         }

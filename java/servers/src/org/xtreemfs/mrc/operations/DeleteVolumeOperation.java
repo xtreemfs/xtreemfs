@@ -60,26 +60,25 @@ public class DeleteVolumeOperation extends MRCOperation {
                 rq.getDetails().superUser, rq.getDetails().groupIds);
         
         // deregister the volume from the Directory Service
-        RPCResponse<Message> response = master.getDirClient().xtreemfs_service_deregister(null,
-            rq.getDetails().auth, RPCAuthentication.userService, volume.getId());
-        response.registerListener(new RPCResponseAvailableListener<Message>() {
-            
+        // Ugly workaround for async call.
+        Runnable rqThr = new Runnable() {
             @Override
-            public void responseAvailable(RPCResponse<Message> r) {
-                processStep2(rqArgs, volume.getId(), rq, r);
+            public void run() {
+                try {
+                    master.getDirClient().xtreemfs_service_deregister(null, rq.getDetails().auth, RPCAuthentication.userService, volume.getId());
+                    processStep2(rqArgs, volume.getId(), rq);
+                } catch (Exception ex) {
+                    finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
+                                  "an error has occurred", ex));
+                }
             }
-        });
+        };
+        Thread thr = new Thread(rqThr);
+        thr.start();
     }
     
-    private void processStep2(xtreemfs_rmvolRequest rqArgs, final String volumeId, final MRCRequest rq,
-        final RPCResponse<Message> rpcResponse) {
-        
+    private void processStep2(xtreemfs_rmvolRequest rqArgs, final String volumeId, final MRCRequest rq) {
         try {
-            
-            // check whether an exception has occured; if so, an exception is
-            // thrown when trying to parse the response
-            rpcResponse.get();
-            
             // delete the volume from the local database
             master.getVolumeManager().deleteVolume(volumeId, master, rq);
             master.notifyVolumeDeleted();
@@ -95,8 +94,6 @@ public class DeleteVolumeOperation extends MRCOperation {
         } catch (Throwable exc) {
             finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
                 "an error has occurred", exc));
-        } finally {
-            rpcResponse.freeBuffers();
         }
     }
     

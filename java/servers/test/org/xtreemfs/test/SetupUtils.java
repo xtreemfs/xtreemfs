@@ -79,6 +79,7 @@ public class SetupUtils {
         props.setProperty("snmp.enabled", "true");
         props.setProperty("snmp.port", "" + (port+1000));
         props.setProperty("snmp.address", "localhost");
+        props.setProperty("measure_requests", "false");
         return props;
     }
     
@@ -142,6 +143,7 @@ public class SetupUtils {
         props.setProperty("snmp.enabled", "true");
         props.setProperty("snmp.port", "34638");
         props.setProperty("snmp.address", "localhost");
+        props.setProperty("measure_requests", "false");
         
         DIRConfig config = new DIRConfig(props);
         config.setDefaults();
@@ -194,6 +196,7 @@ public class SetupUtils {
         props.setProperty("snmp.enabled", "true");
         props.setProperty("snmp.port", "34636");
         props.setProperty("snmp.address", "localhost");
+        props.setProperty("measure_requests", "false");
         
         MRCConfig config = new MRCConfig(props);
         config.setDefaults();

@@ -11,11 +11,8 @@ package org.xtreemfs.common;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -23,12 +20,14 @@ import java.util.Map.Entry;
 import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.util.NetUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
+import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
@@ -43,8 +42,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationSetResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 
 /**
@@ -52,13 +49,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
  * the Directory Service.
  */
 public class HeartbeatThread extends LifeCycleThread {
-
-    /**
-     * @return the advertisedHostName
-     */
-    public String getAdvertisedHostName() {
-        return advertisedHostName;
-    }
 
     /**
      * An interface that generates service data to be sent to the Directory
@@ -76,7 +66,7 @@ public class HeartbeatThread extends LifeCycleThread {
 
     private ServiceDataGenerator serviceDataGen;
 
-    private DIRServiceClient client;
+    private DIRClient client;
 
     private volatile boolean quit;
 
@@ -106,7 +96,7 @@ public class HeartbeatThread extends LifeCycleThread {
         authNone = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
     }
 
-    public HeartbeatThread(String name, DIRServiceClient client, ServiceUUID uuid,
+    public HeartbeatThread(String name, DIRClient client, ServiceUUID uuid,
             ServiceDataGenerator serviceDataGen, ServiceConfig config, boolean advertiseUDPEndpoints) {
 
         super(name);
@@ -136,22 +126,11 @@ public class HeartbeatThread extends LifeCycleThread {
         RPCResponse<emptyResponse> r = null;
         try {
             if (client.clientIsAlive()) {
-
-                RPCResponse r1 = client.xtreemfs_service_deregister(null, authNone,uc,uuid.toString());
-                r1.get();
-                r1.freeBuffers();
-
+                client.xtreemfs_service_deregister(null, authNone,uc,uuid.toString());
             }
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_WARN, this, "could not deregister service at DIR");
             Logging.logError(Logging.LEVEL_WARN, this, ex);
-        } finally {
-            try {
-                if (r != null) {
-                    r.freeBuffers();
-                }
-            } catch (Throwable thr) {
-            }
         }
 
         this.quit = true;
@@ -159,9 +138,6 @@ public class HeartbeatThread extends LifeCycleThread {
     }
 
     public void initialize() throws IOException {
-
-        List<RPCResponse> responses = new LinkedList<RPCResponse>();
-
         // initially, ...
         try {
 
@@ -242,49 +218,36 @@ public class HeartbeatThread extends LifeCycleThread {
             // fetch the latest address mapping version from the Directory
             // Serivce
             long version = 0;
-            RPCResponse<AddressMappingSet> r2 = client.xtreemfs_address_mappings_get(null, authNone, uc, uuid.toString());
-            try {
-                AddressMappingSet ams = r2.get();
+            AddressMappingSet ams = client.xtreemfs_address_mappings_get(null, authNone, uc, uuid.toString());
 
-                // retrieve the version number from the address mapping
-                if (ams.getMappingsCount() > 0) {
-                    version = ams.getMappings(0).getVersion();
-                }
-            } finally {
-                responses.add(r2);
+            // retrieve the version number from the address mapping
+            if (ams.getMappingsCount() > 0) {
+                version = ams.getMappings(0).getVersion();
             }
+
 
             if (endpoints.size() > 0) {
                 endpoints.get(0).setVersion(version);
             }
 
-            AddressMappingSet.Builder ams = AddressMappingSet.newBuilder();
+            AddressMappingSet.Builder amsb = AddressMappingSet.newBuilder();
             for (AddressMapping.Builder mapping : endpoints) {
-                ams.addMappings(mapping);
+                amsb.addMappings(mapping);
             }
             // register/update the current address mapping
-            RPCResponse r3 = client.xtreemfs_address_mappings_set(null, authNone, uc, ams.build());
-            try {
-                r3.get();
-            } finally {
-                responses.add(r3);
-            }
+            client.xtreemfs_address_mappings_set(null, authNone, uc, amsb.build());
+            
         } catch (InterruptedException ex) {
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,
                     "an error occurred while initially contacting the Directory Service: " + ex);
             throw new IOException("cannot initialize service at XtreemFS DIR: " + ex, ex);
-        } finally {
-            for (RPCResponse resp : responses) {
-                resp.freeBuffers();
-            }
         }
-        
         try {
-			this.setServiceConfiguration();
-		} catch (Exception e) {
-			// TODO: handle exception
-		}
+            this.setServiceConfiguration();
+        } catch (Exception e) {
+                // TODO: handle exception
+        }
     }
 
     public void run() {
@@ -296,14 +259,9 @@ public class HeartbeatThread extends LifeCycleThread {
 
             // periodically, ...
             while (!quit) {
-
                 synchronized (this) {
-
-
                     try {
-
                         registerServices();
-
                     } catch (IOException ex) {
                         Logging.logError(Logging.LEVEL_ERROR, this, ex);
                     } catch (InterruptedException ex) {
@@ -331,109 +289,93 @@ public class HeartbeatThread extends LifeCycleThread {
     }
 
     private void registerServices() throws IOException, PBRPCException, InterruptedException {
-        
         for (Service reg : serviceDataGen.getServiceData().getServicesList()) {
+            // retrieve old DIR entry
+            ServiceSet oldSet = client.xtreemfs_service_get_by_uuid(null, authNone, uc, reg.getUuid());
+            long currentVersion = 0;
+            Service oldService = oldSet.getServicesCount() == 0? null: oldSet.getServices(0);
 
-            RPCResponse<ServiceSet> r1 = null;
-            RPCResponse<serviceRegisterResponse> r2 = null;
-            try {
+            Map<String,String> staticAttrs = new HashMap();
+            if (oldService != null) {
+                currentVersion = oldService.getVersion();
+                final ServiceDataMap data = oldService.getData();
+                for (KeyValuePair pair : data.getDataList()) {
+                    if (pair.getKey().startsWith(STATIC_ATTR_PREFIX))
+                        staticAttrs.put(pair.getKey(),pair.getValue());
+                }
+            }
 
-                // retrieve old DIR entry
-                r1 = client.xtreemfs_service_get_by_uuid(null, authNone, uc, reg.getUuid());
-                long currentVersion = 0;
-                ServiceSet oldSet = r1.get();
-                Service oldService = oldSet.getServicesCount() == 0? null: oldSet.getServices(0);
-                
-                Map<String,String> staticAttrs = new HashMap();
-                if (oldService != null) {
-                    currentVersion = oldService.getVersion();
-                    final ServiceDataMap data = oldService.getData();
-                    for (KeyValuePair pair : data.getDataList()) {
-                        if (pair.getKey().startsWith(STATIC_ATTR_PREFIX))
-                            staticAttrs.put(pair.getKey(),pair.getValue());
+            if (!staticAttrs.containsKey(STATUS_ATTR))
+                staticAttrs.put(STATUS_ATTR, Integer.toString(DIR.ServiceStatus.SERVICE_STATUS_AVAIL.getNumber()));
+
+            Service.Builder builder = reg.toBuilder();
+            builder.setVersion(currentVersion);
+            final ServiceDataMap.Builder data = ServiceDataMap.newBuilder();
+            for (Entry<String,String> sAttr : staticAttrs.entrySet()) {
+                data.addData(KeyValuePair.newBuilder().setKey(sAttr.getKey()).setValue(sAttr.getValue()).build());
+            }
+
+            // If the service to register is a volume, and a volume with the
+            // same ID but a different MRC has been registered already, it
+            // may be necessary to register the volume's MRC as a replica.
+            // In this case, all keys starting with 'mrc' have to be treated
+            // separately.
+            if (reg.getType() == ServiceType.SERVICE_TYPE_VOLUME && oldService != null
+                && oldService.getUuid().equals(reg.getUuid())) {
+
+                // retrieve the MRC UUID attached to the volume to be
+                // registered
+                String mrcUUID = null;
+                for (KeyValuePair kv : reg.getData().getDataList())
+                    if (kv.getKey().equals("mrc")) {
+                        mrcUUID = kv.getValue();
+                        break;
                     }
-                }
+                assert (mrcUUID != null);
 
-                if (!staticAttrs.containsKey(STATUS_ATTR))
-                    staticAttrs.put(STATUS_ATTR, Integer.toString(DIR.ServiceStatus.SERVICE_STATUS_AVAIL.getNumber()));
+                // check if the UUID is already contained in the volume's
+                // list of MRCs and determine the next vacant key
+                int maxMRCNo = 1;
+                boolean contained = false;
+                for (KeyValuePair kv : oldService.getData().getDataList()) {
 
-                Service.Builder builder = reg.toBuilder();
-                builder.setVersion(currentVersion);
-                final ServiceDataMap.Builder data = ServiceDataMap.newBuilder();
-                for (Entry<String,String> sAttr : staticAttrs.entrySet()) {
-                    data.addData(KeyValuePair.newBuilder().setKey(sAttr.getKey()).setValue(sAttr.getValue()).build());
-                }
-                
-                // If the service to register is a volume, and a volume with the
-                // same ID but a different MRC has been registered already, it
-                // may be necessary to register the volume's MRC as a replica.
-                // In this case, all keys starting with 'mrc' have to be treated
-                // separately.
-                if (reg.getType() == ServiceType.SERVICE_TYPE_VOLUME && oldService != null
-                    && oldService.getUuid().equals(reg.getUuid())) {
-                    
-                    // retrieve the MRC UUID attached to the volume to be
-                    // registered
-                    String mrcUUID = null;
-                    for (KeyValuePair kv : reg.getData().getDataList())
-                        if (kv.getKey().equals("mrc")) {
-                            mrcUUID = kv.getValue();
-                            break;
-                        }
-                    assert (mrcUUID != null);
-                    
-                    // check if the UUID is already contained in the volume's
-                    // list of MRCs and determine the next vacant key
-                    int maxMRCNo = 1;
-                    boolean contained = false;
-                    for (KeyValuePair kv : oldService.getData().getDataList()) {
-                        
-                        if (kv.getKey().startsWith("mrc")) {
-                            
-                            data.addData(kv);
-                            
-                            if (kv.getValue().equals(mrcUUID))
-                                contained = true;
-                            
-                            if (!kv.getKey().equals("mrc")) {
-                                int no = Integer.parseInt(kv.getKey().substring(3));
-                                if (no > maxMRCNo)
-                                    maxMRCNo = no;
-                            }
+                    if (kv.getKey().startsWith("mrc")) {
+
+                        data.addData(kv);
+
+                        if (kv.getValue().equals(mrcUUID))
+                            contained = true;
+
+                        if (!kv.getKey().equals("mrc")) {
+                            int no = Integer.parseInt(kv.getKey().substring(3));
+                            if (no > maxMRCNo)
+                                maxMRCNo = no;
                         }
                     }
-                    
-                    // if the UUID is not contained, add it
-                    if (!contained)
-                        data.addData(KeyValuePair.newBuilder().setKey("mrc" + (maxMRCNo + 1)).setValue(
-                            mrcUUID));
-                    
-                    // add all other key-value pairs
-                    for(KeyValuePair kv: reg.getData().getDataList())
-                        if(!kv.getKey().startsWith("mrc"))
-                            data.addData(kv);
-                    
                 }
 
-                // in any other case, all data can be updated
-                else
-                    data.addAllData(reg.getData().getDataList());
-                
-                builder.setData(data);
-                r2 = client.xtreemfs_service_register(null, authNone, uc, builder.build());
-                r2.get();
+                // if the UUID is not contained, add it
+                if (!contained)
+                    data.addData(KeyValuePair.newBuilder().setKey("mrc" + (maxMRCNo + 1)).setValue(
+                        mrcUUID));
 
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
-                            "%s successfully updated at Directory Service", uuid);
-                }
-            } finally {
-                if (r1 != null) {
-                    r1.freeBuffers();
-                }
-                if (r2 != null) {
-                    r2.freeBuffers();
-                }
+                // add all other key-value pairs
+                for(KeyValuePair kv: reg.getData().getDataList())
+                    if(!kv.getKey().startsWith("mrc"))
+                        data.addData(kv);
+
+            }
+
+            // in any other case, all data can be updated
+            else
+                data.addAllData(reg.getData().getDataList());
+
+            builder.setData(data);
+            client.xtreemfs_service_register(null, authNone, uc, builder.build());
+
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                        "%s successfully updated at Directory Service", uuid);
             }
             
             //update lastHeartbeat value
@@ -443,17 +385,10 @@ public class HeartbeatThread extends LifeCycleThread {
 
    
     private void setServiceConfiguration() throws IOException, PBRPCException, InterruptedException {
-        
-        RPCResponse<Configuration> responseGet = null;
-        RPCResponse<configurationSetResponse> responseSet = null;
-             
-        
         try {
-            
-            responseGet = client.xtreemfs_configuration_get(null, authNone, uc, uuid.toString());
+            Configuration conf = client.xtreemfs_configuration_get(null, authNone, uc, uuid.toString());
             long currentVersion = 0;
             
-            Configuration conf = responseGet.get();
             currentVersion = conf.getVersion();
             
             Configuration.Builder confBuilder = Configuration.newBuilder();
@@ -465,26 +400,15 @@ public class HeartbeatThread extends LifeCycleThread {
                         );
             }
                               
-            responseSet = client.xtreemfs_configuration_set(null, authNone, uc, confBuilder.build());
-            responseSet.get();
-            
+            client.xtreemfs_configuration_set(null, authNone, uc, confBuilder.build());
             
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                         "%s successfully send configuration to Directory Service", uuid);
             }
-            
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } finally {
-            if (responseGet != null) {
-                responseGet.freeBuffers();
-            }
-            if (responseSet != null) {
-                responseSet.freeBuffers();
-            }
-
         }
       }
 
@@ -496,40 +420,12 @@ public class HeartbeatThread extends LifeCycleThread {
     public long getLastHeartbeat() {
         return this.lastHeartbeat;
     }
-    
-    public static void waitForDIR(InetSocketAddress dirAddress, int maxWait_s) throws IOException {
-        //check if we can connect to DIR and wait if necessary
-        final long tStart = System.currentTimeMillis();
-        final long maxWait = maxWait_s * 1000;
-        int wait = 1;
 
-        do {
-
-            try {
-                Socket s = new Socket();
-                s.connect(dirAddress, 2000);
-                s.close();
-                break;
-            } catch (UnknownHostException ex) {
-                throw new IOException("Initialization failed: " + ex);
-            } catch (IOException ex) {
-                //wait for next try
-                Logging.logMessage(Logging.LEVEL_WARN, null, "cannot connect to DIR (" + ex + "), waiting " + wait + "s");
-            } catch (Exception ex) {
-                //abort
-                throw new IOException("Initialization failed: " + ex);
-            }
-            long now = System.currentTimeMillis();
-            if (now >= tStart + maxWait) {
-                throw new IOException("Initialization failed: XtreemFS DIR @ " + dirAddress + " does not respond.");
-            }
-            try {
-                Thread.sleep(wait * 1000);
-            } catch (InterruptedException ex) {
-                throw new IOException("Initialization failed: " + ex);
-            }
-            wait += 1;
-        } while (true);
-        Logging.logMessage(Logging.LEVEL_INFO, null, "XtreemFS DIR @ " + dirAddress + " ok");
+    /**
+     * @return the advertisedHostName
+     */
+    public String getAdvertisedHostName() {
+        return advertisedHostName;
     }
+    
 }
