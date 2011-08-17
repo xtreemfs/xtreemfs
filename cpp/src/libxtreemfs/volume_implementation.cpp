@@ -445,11 +445,10 @@ void VolumeImplementation::GetAttr(
   GetAttr(user_credentials, path, stat_buffer, NULL);
 }
 
-void VolumeImplementation::GetAttr(
+void VolumeImplementation::GetAttrHelper(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
-    xtreemfs::pbrpc::Stat* stat_buffer,
-    FileInfo* file_info) {
+    xtreemfs::pbrpc::Stat* stat_buffer) {
   // Check if the information was cached.
   if (metadata_cache_.GetStat(path, stat_buffer)) {
     // Found in StatCache.
@@ -488,11 +487,72 @@ void VolumeImplementation::GetAttr(
 
     response->DeleteBuffers();
   }
+}
 
-  // Merge StatCache object with possibly newer information from FileInfo.
+void VolumeImplementation::GetAttr(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::string& path,
+    xtreemfs::pbrpc::Stat* stat_buffer,
+    FileInfo* file_info) {
+  // Retrieve stat object from cache or MRC.
+  GetAttrHelper(user_credentials, path, stat_buffer);
+
+  // Wait until async writes have finished and merge StatCache object with
+  // possibly newer information from FileInfo.
   if (file_info == NULL) {
-    MergeStatAndOSDWriteResponseFromFileInfo(stat_buffer->ino(), stat_buffer);
+    // Unknown if this file at "path" is open - look it up by its file_id.
+    boost::mutex::scoped_lock oft_lock(open_file_table_mutex_);
+
+    map< boost::uint64_t, FileInfo* >::const_iterator it
+        = open_file_table_.find(stat_buffer->ino());  // ino = file_id.
+    if (it != open_file_table_.end()) {
+      // File at "path" is opened.
+
+      // Wait for pending asynchronous writes which haven't finished yet and
+      // whose new file size is not considered yet by the stat object.
+
+      // To avoid longer locking periods of the open file table, we will
+      // register an observer at the file and get notified later.
+      bool wait_completed = false;
+      boost::mutex wait_completed_mutex;
+      boost::mutex::scoped_lock wait_completed_lock(wait_completed_mutex);
+      boost::condition wait_completed_condition;
+      if (it->second->WaitForPendingAsyncWritesNonBlocking(
+              &wait_completed_condition,
+              &wait_completed,
+              &wait_completed_mutex)) {
+        // Wait would have blocked and did register our observer.
+
+        oft_lock.unlock();
+
+        while (!wait_completed) {
+          wait_completed_condition.wait(wait_completed_lock);
+        }
+
+        oft_lock.lock();
+
+        // As wait did unlock the open file table, the previously
+        // found FileInfo object may be removed and deleted meanwhile, i.e.
+        // search again for it.
+        map< boost::uint64_t, FileInfo* >::const_iterator it2
+            = open_file_table_.find(stat_buffer->ino());  // ino = file_id.
+        if (it2 != open_file_table_.end()) {
+          it2->second->MergeStatAndOSDWriteResponse(stat_buffer);
+        } else {
+          // We dont find the previous FileInfo object anymore. This means we
+          // have to retrieve the file size once again from the MRC or stat cache.
+          // Return lock on open_file_table_.
+          oft_lock.unlock();
+          GetAttrHelper(user_credentials, path, stat_buffer);
+        }
+      } else {
+        // Open file table was never unlocked and it's still safe to access the
+        // file info object.
+        it->second->MergeStatAndOSDWriteResponse(stat_buffer);
+      }
+    }
   } else {
+    file_info->WaitForPendingAsyncWrites();
     file_info->MergeStatAndOSDWriteResponse(stat_buffer);
   }
 }
@@ -1297,25 +1357,6 @@ FileInfo* VolumeImplementation::GetFileInfoOrCreateUnmutexed(
           << file_id << endl;
     }
     return file_info;
-  }
-}
-
-/**
- * Needed to merge the getattr result with the OSDWriteResponse if file is open.
- *
- * @remark Ownership is NOT transferred to the caller.
- */
-void VolumeImplementation::MergeStatAndOSDWriteResponseFromFileInfo(
-    boost::uint64_t file_id,
-    xtreemfs::pbrpc::Stat* stat_buffer) {
-  boost::mutex::scoped_lock lock(open_file_table_mutex_);
-
-  // Check if the file with file_id is already opened.
-  map< boost::uint64_t, FileInfo* >::const_iterator it
-    = open_file_table_.find(file_id);
-  if (it != open_file_table_.end()) {
-    // FileInfo for "file_id" found.
-    it->second->MergeStatAndOSDWriteResponse(stat_buffer);
   }
 }
 

@@ -40,9 +40,10 @@ class Volume;
 
 /** Default implementation of the FileHandle Interface. */
 class FileHandleImplementation
-  : public FileHandle,
-    public xtreemfs::rpc::CallbackInterface<xtreemfs::pbrpc::timestampResponse>,
-    public xtreemfs::rpc::CallbackInterface<xtreemfs::pbrpc::XCap> {
+    : public FileHandle,
+      public xtreemfs::rpc::CallbackInterface<
+          xtreemfs::pbrpc::timestampResponse>,
+      public xtreemfs::rpc::CallbackInterface<xtreemfs::pbrpc::XCap> {
  public:
   FileHandleImplementation(
       const std::string& client_uuid,
@@ -68,6 +69,12 @@ class FileHandleImplementation
       off_t offset);
 
   virtual int Write(
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const char *buf,
+      size_t count,
+      off_t offset);
+
+  virtual void WriteAsync(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const char *buf,
       size_t count,
@@ -132,18 +139,18 @@ class FileHandleImplementation
 
   virtual void Close();
 
-  /** Extracts the file_id from the stored xcap_. */
-  boost::uint64_t GetFileId();
-
-  /** Writes the path, which is stored in file_info_, into result. */
-  void GetPath(std::string* result);
-
   /** Returns the StripingPolicy object for a given type (e.g. Raid0).
    *
    *  @remark Ownership is NOT transferred to the caller.
    */
   const StripeTranslator* GetStripeTranslator(
       xtreemfs::pbrpc::StripingPolicyType type);
+
+  /** Copies xcap_ to xcap. */
+  void GetXCap(xtreemfs::pbrpc::XCap* xcap);
+
+  /** Sets async_writes_failed_ to true. */
+  void MarkAsyncWritesAsFailed();
 
   /** Sends pending file size updates synchronous (needed for flush/close).
    *
@@ -170,17 +177,30 @@ class FileHandleImplementation
 
  private:
   /** Implements callback for an async xtreemfs_update_file_size request. */
-  void CallFinished(xtreemfs::pbrpc::timestampResponse* response_message,
-                    char* data, boost::uint32_t data_length,
-                    xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
-                    void* context);
+  virtual void CallFinished(
+      xtreemfs::pbrpc::timestampResponse* response_message,
+      char* data, boost::uint32_t data_length,
+      xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
+      void* context);
 
   /** Implements callback for an async xtreemfs_renew_capability request. */
-  void CallFinished(xtreemfs::pbrpc::XCap* new_xcap,
-                    char* data,
-                    boost::uint32_t data_length,
-                    xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
-                    void* context);
+  virtual void CallFinished(xtreemfs::pbrpc::XCap* new_xcap,
+                            char* data,
+                            boost::uint32_t data_length,
+                            xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
+                            void* context);
+
+  /** Same as Flush(), takes special actions if called by Close(). */
+  void Flush(bool close_file);
+
+  /** Extracts the file_id from the stored xcap_. */
+  boost::uint64_t GetFileId();
+
+  /** Extracts the file_id from the stored xcap_.
+   *
+   * @remark Requires a lock on mutex_.
+   */
+  boost::uint64_t GetFileIdHelper(boost::mutex::scoped_lock* lock);
 
   /** Actual implementation of ReleaseLock(). */
   void ReleaseLock(
@@ -230,6 +250,11 @@ class FileHandleImplementation
 
   const std::map<xtreemfs::pbrpc::StripingPolicyType,
            StripeTranslator*>& stripe_translators_;
+
+  /** Set to true if an async write of this file_handle failed. If true, this
+   *  file_handle is broken and no further writes/reads/truncates are possible.
+   */
+  bool async_writes_failed_;
 
   const Options& volume_options_;
 

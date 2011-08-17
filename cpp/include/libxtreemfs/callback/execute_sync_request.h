@@ -106,6 +106,8 @@ template<class ReturnMessageType, class F>
     // Execute request.
     timeval request_sent, current_time;
     gettimeofday(&request_sent, 0);
+    // TODO(mberlin): Check if it is necessary to copy the latest XCap from
+    //                a known file before executing the request.
     response = sync_function(service_address);
 
     // Check response.

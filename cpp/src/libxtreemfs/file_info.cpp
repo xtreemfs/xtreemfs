@@ -11,6 +11,7 @@
 
 #include "libxtreemfs/file_handle_implementation.h"
 #include "libxtreemfs/helper.h"
+#include "libxtreemfs/options.h"
 #include "libxtreemfs/volume_implementation.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "util/logging.h"
@@ -38,7 +39,15 @@ FileInfo::FileInfo(
       xlocset_(xlocset),
       client_uuid_(client_uuid),
       osd_write_response_(NULL),
-      osd_write_response_status_(kClean) {
+      osd_write_response_status_(kClean),
+      async_write_handler_(this,
+                           &osd_uuid_iterator_,
+                           volume->uuid_resolver(),
+                           volume->osd_service_client(),
+                           volume->auth_bogus(),
+                           volume->user_credentials_bogus(),
+                           volume->volume_options().max_writeahead,
+                           volume->volume_options().max_write_tries) {
   // Add the UUIDs of all replicas to the UUID Iterator.
   for (int i = 0; i < xlocset_.replicas_size(); i++) {
     osd_uuid_iterator_.AddUUID(xlocset_.replicas(i).osd_uuids(0));
@@ -82,14 +91,9 @@ FileHandleImplementation* FileInfo::CreateFileHandle(
   return file_handle;
 }
 
-/** Unregisters a closed FileHandle. Called by FileHandle::Close(). */
 void FileInfo::CloseFileHandle(FileHandleImplementation* file_handle) {
-  // Flush pending file size updates.
-  try {
-    Flush(file_handle, true);
-  } catch(const XtreemFSException& e) {
-    // Ignore errors.
-  }
+  // Pending async writes and file size updates have already been flushed
+  // by file_handle.
 
   // Remove file handle.
   {
@@ -140,6 +144,7 @@ void FileInfo::MergeStatAndOSDWriteResponse(xtreemfs::pbrpc::Stat* stat) {
 bool FileInfo::TryToUpdateOSDWriteResponse(
     xtreemfs::pbrpc::OSDWriteResponse* response,
     const xtreemfs::pbrpc::XCap& xcap) {
+  assert(response);
   boost::mutex::scoped_lock lock(osd_write_response_mutex_);
 
   // Determine the new maximum of osd_write_response_.
@@ -256,6 +261,21 @@ void FileInfo::Flush(FileHandleImplementation* file_handle) {
 }
 
 void FileInfo::Flush(FileHandleImplementation* file_handle, bool close_file) {
+  // We don't wait only for file_handle's pending writes but for all writes of
+  // this file.
+  WaitForPendingAsyncWrites();
+
+  FlushPendingFileSizeUpdate(file_handle, close_file);
+}
+
+void FileInfo::FlushPendingFileSizeUpdate(
+    FileHandleImplementation* file_handle) {
+  FlushPendingFileSizeUpdate(file_handle, false);
+}
+
+void FileInfo::FlushPendingFileSizeUpdate(FileHandleImplementation* file_handle,
+                                          bool close_file) {
+  // File size write back.
   boost::mutex::scoped_lock lock(osd_write_response_mutex_);
 
   bool no_response_sent = true;
@@ -403,5 +423,24 @@ void FileInfo::ReleaseAllLocks(FileHandleImplementation* file_handle) {
     file_handle->ReleaseLock(*it);
   }
 }
+
+void FileInfo::AsyncWrite(AsyncWriteBuffer* write_buffer) {
+  async_write_handler_.Write(write_buffer);
+}
+
+void FileInfo::WaitForPendingAsyncWrites() {
+  async_write_handler_.WaitForPendingWrites();
+}
+
+bool FileInfo::WaitForPendingAsyncWritesNonBlocking(
+    boost::condition* condition_variable,
+    bool* wait_completed,
+    boost::mutex* wait_completed_mutex) {
+  return async_write_handler_.
+      WaitForPendingWritesNonBlocking(condition_variable,
+                                      wait_completed,
+                                      wait_completed_mutex);
+}
+
 
 }  // namespace xtreemfs

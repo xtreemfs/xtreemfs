@@ -18,6 +18,7 @@
 #include <map>
 #include <string>
 
+#include "libxtreemfs/async_write_handler.h"
 #include "libxtreemfs/uuid_iterator.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 
@@ -171,12 +172,39 @@ class FileInfo {
   /** Remove locks equal to "lock" from list of active locks. */
   void DelLock(const xtreemfs::pbrpc::Lock& lock);
 
-  /** Flushes pending file size updates and written data. */
+  /** Flushes pending async writes and file size updates. */
   void Flush(FileHandleImplementation* file_handle);
 
- private:
-  /** Same as Flush(), takes special actions if called by Close(). */
+  /** Same as Flush(), takes special actions if called by FileHandle::Close().*/
   void Flush(FileHandleImplementation* file_handle, bool close_file);
+
+  /** Flushes a pending file size update. */
+  void FlushPendingFileSizeUpdate(FileHandleImplementation* file_handle);
+
+  /** Calls async_write_handler_.Write().
+   *
+   * @remark Ownership of write_buffer is transferred to caller.
+   */
+  void AsyncWrite(AsyncWriteBuffer* write_buffer);
+
+  /** Calls async_write_handler_.WaitForPendingWrites() (resulting in blocking
+   *  until all pending async writes are finished).
+   */
+  void WaitForPendingAsyncWrites();
+
+  /** Returns result of async_write_handler_.WaitForPendingWritesNonBlocking().
+   *
+   * @remark  Ownership is not transferred to the caller.
+   */
+  bool WaitForPendingAsyncWritesNonBlocking(
+      boost::condition* condition_variable,
+      bool* wait_completed,
+      boost::mutex* wait_completed_mutex);
+
+ private:
+  /** Same as FlushPendingFileSizeUpdate(), takes special actions if called by Close(). */
+  void FlushPendingFileSizeUpdate(FileHandleImplementation* file_handle,
+                                  bool close_file);
 
   /** See WaitForPendingFileSizeUpdates(). */
   void WaitForPendingFileSizeUpdatesHelper(boost::mutex::scoped_lock* lock);
@@ -261,6 +289,10 @@ class FileInfo {
 
   /** Used by NotifyFileSizeUpdateCompletition() to notify waiting threads. */
   boost::condition osd_write_response_cond_;
+
+  /** Proceeds async writes, handles the callbacks and provides a
+   *  WaitForPendingWrites() method for barrier operations like read. */
+  AsyncWriteHandler async_write_handler_;
 
   FRIEND_TEST(VolumeImplementationTestFastPeriodicFileSizeUpdate,
               WorkingPendingFileSizeUpdates);

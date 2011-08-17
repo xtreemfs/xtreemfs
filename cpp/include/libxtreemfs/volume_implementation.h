@@ -273,6 +273,16 @@ class VolumeImplementation : public Volume {
   }
 
  private:
+  /** Retrieves the stat object for file at "path" from MRC or cache.
+   *  Does not query any open file for pending file size updates nor lock the
+   *  open_file_table_.
+   *
+   *  @remark   Ownership of stat_buffer is not transferred to the caller.
+   */
+  void GetAttrHelper(const xtreemfs::pbrpc::UserCredentials& user_credentials,
+                     const std::string& path,
+                     xtreemfs::pbrpc::Stat* stat_buffer);
+
   /** Obtain or create a new FileInfo object in the open_file_table_
    *
    * @remark Ownership is NOT transferred to the caller. The object will be
@@ -284,13 +294,7 @@ class VolumeImplementation : public Volume {
       bool replicate_on_close,
       const xtreemfs::pbrpc::XLocSet& xlocset);
 
-  /** Looks up FileInfo for "file_id" in open_file_table_ and, if an FileInfo
-   *  was found, does merge an OSDWriteResponse into stat_buffer. */
-  void MergeStatAndOSDWriteResponseFromFileInfo(
-      boost::uint64_t file_id,
-      xtreemfs::pbrpc::Stat* stat_buffer);
-
-  /** Unregisters file_id from open_file_table_. */
+  /** Deregisters file_id from open_file_table_. */
   void RemoveFileInfoUnmutexed(boost::uint64_t file_id, FileInfo* file_info);
 
   /** Renew the XCap of every FileHandle before it does expire. */

@@ -60,6 +60,28 @@ class FileHandle {
       size_t count,
       off_t offset) = 0;
 
+  /** Write to a file 'count' bytes at file offset 'offset' from 'buf' and
+   *  returns immediately unless the write ahead buffer is full.
+   *
+   * @attention     Only after calling Flush() or Close() occured write errors
+   *                are returned.
+   *
+   * @param user_credentials    Name and Groups of the user.
+   * @param buf[in]             Buffer which contains data to be written.
+   * @param count               Number of bytes to be written from buf.
+   * @param offset              Offset in bytes.
+   *
+   * @throws AddressToUUIDNotFoundException
+   * @throws IOException
+   * @throws PosixErrorException
+   * @throws UnknownAddressSchemeException
+   */
+  virtual void WriteAsync(
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const char *buf,
+      size_t count,
+      off_t offset) = 0;
+
   /** Flushes pending writes and file size updates (corresponds to a fsync()
    *  system call).
    *

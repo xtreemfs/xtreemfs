@@ -53,9 +53,10 @@ Options::Options()
   show_version = false;
 
   // Optimizations.
-  readdir_chunk_size = 1024;
   metadata_cache_size = 100000;
   metadata_cache_ttl_s = 120;
+  max_writeahead = 8 * 128 * 1024;  // 8 default objects = 1 MB.
+  readdir_chunk_size = 1024;
 
   // Error Handling options.
   // Depending on the values max{_read|_write}_tries and and (retry_delay_s or
@@ -146,6 +147,9 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("metadata-cache-ttl-s",
         po::value(&metadata_cache_ttl_s)->default_value(metadata_cache_ttl_s),
         "Time to live after which cached entries will expire.")
+    ("max-writeahead",
+        po::value(&max_writeahead)->default_value(max_writeahead),
+        "Maximum number of pending written bytes per file.")
     ("readdir-chunk-size",
         po::value(&readdir_chunk_size)->default_value(readdir_chunk_size),
         "Number of entries requested per readdir.");
@@ -287,6 +291,12 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
   // Show help if no arguments given.
   if (argc == 1) {
     empty_arguments_list = true;
+  }
+
+  if (max_writeahead < 128 * 1024) {
+    throw InvalidCommandLineParametersException("Please specify a writeahead"
+        " size which is at least as high as the default object size of"
+        " 131072 byes (128 kB).");
   }
 
   if (grid_auth_mode_globus && grid_auth_mode_unicore) {

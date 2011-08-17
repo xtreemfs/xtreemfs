@@ -104,12 +104,14 @@ class Options {
   bool show_version;
 
   // Optimizations.
-  /** Number of retrieved entries per readdir request. */
-  int readdir_chunk_size;
   /** Maximum number of entries of the StatCache */
   boost::uint64_t metadata_cache_size;
   /** Time to live for MetadataCache entries. */
   boost::uint64_t metadata_cache_ttl_s;
+  /** Maximum number of pending bytes (of async writes) per file. */
+  int max_writeahead;
+  /** Number of retrieved entries per readdir request. */
+  int readdir_chunk_size;
 
   // Error Handling options.
   /** How often shall a failed operation get retried? */

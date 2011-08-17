@@ -15,6 +15,7 @@
 
 #include "util/logging.h"
 
+#include "libxtreemfs/async_write_buffer.h"
 #include "libxtreemfs/callback/execute_sync_request.h"
 #include "libxtreemfs/file_info.h"
 #include "libxtreemfs/helper.h"
@@ -62,6 +63,7 @@ FileHandleImplementation::FileHandleImplementation(
       mrc_service_client_(mrc_service_client),
       osd_service_client_(osd_service_client),
       stripe_translators_(stripe_translators),
+      async_writes_failed_(false),
       volume_options_(options),
       auth_bogus_(auth_bogus),
       user_credentials_bogus_(user_credentials_bogus) {
@@ -74,10 +76,19 @@ int FileHandleImplementation::Read(
     char *buf,
     size_t count,
     off_t offset) {
+  file_info_->WaitForPendingAsyncWrites();
+
   // Prepare request object.
   readRequest rq;
   {
     boost::mutex::scoped_lock lock(mutex_);
+
+    if (async_writes_failed_) {
+      throw PosixErrorException(POSIX_ERROR_EIO, "A previous asynchronous write"
+          " did fail. No more actions on this file handle are allowed.");
+    }
+    // TODO(mberlin): XCap might expire while retrying a request. Provide a
+    //                mechanism to renew the xcap in the request.
     rq.mutable_file_credentials()->mutable_xcap()->CopyFrom(xcap_);
     rq.set_file_id(xcap_.file_id());
   }
@@ -168,8 +179,8 @@ int FileHandleImplementation::Write(
   {
     boost::mutex::scoped_lock lock(mutex_);
     rq.mutable_file_credentials()->mutable_xcap()->CopyFrom(xcap_);
-    rq.set_file_id(xcap_.file_id());
   }
+  rq.set_file_id(rq.file_credentials().xcap().file_id());
   file_info_->GetXLocSet(rq.mutable_file_credentials()->mutable_xlocs());
   // Use a reference for shorter code.
   const XLocSet& xlocs = rq.file_credentials().xlocs();
@@ -254,16 +265,127 @@ int FileHandleImplementation::Write(
   return count;
 }
 
+void FileHandleImplementation::WriteAsync(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const char *buf,
+    size_t count,
+    off_t offset) {
+  // Create copies of required data.
+  FileCredentials file_credentials;
+  {
+    boost::mutex::scoped_lock lock(mutex_);
+
+    if (async_writes_failed_) {
+      throw PosixErrorException(POSIX_ERROR_EIO, "A previous asynchronous write"
+          " did fail. No further writes on this file handle are allowed.");
+    }
+
+    file_credentials.mutable_xcap()->CopyFrom(xcap_);
+  }
+  file_info_->GetXLocSet(file_credentials.mutable_xlocs());
+  string global_file_id = file_credentials.xcap().file_id();
+  // Use a reference for shorter code.
+  const XLocSet& xlocs = file_credentials.xlocs();
+
+  if (xlocs.replicas_size() == 0) {
+    Logging::log->getLog(LEVEL_ERROR)
+        << "no replica found for file:" << file_info_->path() << endl;
+    throw PosixErrorException(
+        POSIX_ERROR_EIO,
+        "no replica found for file:" + file_info_->path());
+  }
+
+  // Map operation to stripes.
+  vector<WriteOperation> operations;
+  const StripingPolicy& striping_policy = xlocs.replicas(0).striping_policy();
+  const StripeTranslator* translator =
+      GetStripeTranslator(striping_policy.type());
+  translator->TranslateWriteRequest(buf,
+                                    count,
+                                    offset,
+                                    striping_policy,
+                                    &operations);
+
+  string osd_uuid = "";
+  writeRequest* write_request = NULL;
+  // Write all objects.
+  for (size_t j = 0; j < operations.size(); j++) {
+    write_request = new writeRequest();
+    write_request->mutable_file_credentials()->CopyFrom(file_credentials);
+    write_request->set_file_id(global_file_id);
+
+    write_request->set_object_number(operations[j].obj_number);
+    write_request->set_object_version(0);
+    write_request->set_offset(operations[j].req_offset);
+    write_request->set_lease_timeout(0);
+
+    ObjectData* data = write_request->mutable_object_data();
+    data->set_checksum(0);
+    data->set_invalid_checksum_on_osd(false);
+    data->set_zero_padding(0);
+
+    // Create new WriteBuffer and differ between striping and the rest (
+    // (replication = use UUIDIterator, no replication = set specific OSD UUID).
+    AsyncWriteBuffer* write_buffer;
+    if (xlocs.replicas(0).osd_uuids_size() > 1) {
+      // Replica is striped. Pick UUID from xlocset.
+      write_buffer = new AsyncWriteBuffer(
+          write_request,
+          operations[j].data,
+          operations[j].req_size,
+          this,
+          GetOSDUUIDFromXlocSet(xlocs,
+                                0,  // Use first and only replica.
+                                operations[j].osd_offset));
+    } else {
+      write_buffer = new AsyncWriteBuffer(write_request,
+                                          operations[j].data,
+                                          operations[j].req_size,
+                                          this);
+    }
+
+    // TODO(mberlin): Currently the UserCredentials are ignored by the OSD and
+    //                therefore we avoid copying them into write_buffer.
+    file_info_->AsyncWrite(write_buffer);
+
+    // Processing of file size updates is handled by the FileInfo's
+    // AsyncWriteHandler.
+  }
+}
+
 void FileHandleImplementation::Flush() {
-  file_info_->Flush(this);
+  Flush(false);
+}
+
+void FileHandleImplementation::Flush(bool close_file) {
+  file_info_->Flush(this, close_file);
+
+  boost::mutex::scoped_lock lock(mutex_);
+  if (async_writes_failed_) {
+    string path;
+    file_info_->GetPath(&path);
+    string error = "Flush for file: " + path + " did not succeed flushing"
+        " all pending writes as at least one asynchronous write did fail.";
+
+    Logging::log->getLog(LEVEL_ERROR) << error << endl;
+    ErrorLog::error_log->AppendError(error);
+    throw PosixErrorException(POSIX_ERROR_EIO, error);
+  }
 }
 
 void FileHandleImplementation::Truncate(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     off_t new_file_size) {
+  file_info_->WaitForPendingAsyncWrites();
+
   XCap xcap_copy;
   {
     boost::mutex::scoped_lock lock(mutex_);
+
+    if (async_writes_failed_) {
+      throw PosixErrorException(POSIX_ERROR_EIO, "A previous asynchronous write"
+          " did fail. No further actions on this file handle are allowed.");
+    }
     xcap_copy.CopyFrom(xcap_);
   }
 
@@ -327,7 +449,7 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
   file_info_->TryToUpdateOSDWriteResponse(response->response(), xcap_);
 
   // 3. Update the file size at the MRC.
-  file_info_->Flush(this);
+  file_info_->FlushPendingFileSizeUpdate(this);
 }
 
 void FileHandleImplementation::GetAttr(
@@ -629,10 +751,32 @@ void FileHandleImplementation::WaitForPendingXCapRenewal() {
 }
 
 void FileHandleImplementation::Close() {
+  try {
+    Flush(true);  // true = Tell Flush() the file will be closed.
+  } catch(const XtreemFSException& e) {
+    // Current C++ does not allow to store the exception and rethrow it outside
+    // the catch block. We also don't want to use an extra meta object with a
+    // destructor that could execute the cleanup code.
+    // Therefore, CloseFileHandle() has to be called here and after the try/
+    // catch block.
+    file_info_->CloseFileHandle(this);
+
+    // Rethrow exception.
+    throw;
+  }
   file_info_->CloseFileHandle(this);
 }
 
 boost::uint64_t FileHandleImplementation::GetFileId() {
+  boost::mutex::scoped_lock lock(mutex_);
+
+  return GetFileIdHelper(&lock);
+}
+
+boost::uint64_t FileHandleImplementation::GetFileIdHelper(
+    boost::mutex::scoped_lock* lock) {
+  assert(lock && lock->owns_lock());
+
   return ExtractFileIdFromXCap(xcap_);
 }
 
@@ -649,6 +793,18 @@ const StripeTranslator* FileHandleImplementation::GetStripeTranslator(
     // Type found.
     return it->second;
   }
+}
+
+void FileHandleImplementation::GetXCap(xtreemfs::pbrpc::XCap* xcap) {
+  assert(xcap);
+
+  boost::mutex::scoped_lock lock(mutex_);
+  xcap->CopyFrom(xcap_);
+}
+
+void FileHandleImplementation::MarkAsyncWritesAsFailed() {
+  boost::mutex::scoped_lock lock(mutex_);
+  async_writes_failed_ = true;
 }
 
 void FileHandleImplementation::WriteBackFileSize(
@@ -732,7 +888,7 @@ void FileHandleImplementation::RenewXCapAsync() {
     // TODO(mberlin): Cope with local clocks which have a high clock skew.
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG)
-            << "Renew XCap for file_id: " <<  GetFileId()
+            << "Renew XCap for file_id: " <<  GetFileIdHelper(&lock)
             << "Expiration in: " << (xcap_.expire_time_s() - time(NULL))
             << endl;
     }
@@ -797,7 +953,7 @@ void FileHandleImplementation::CallFinished(
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG)
-           << "XCap renewed for file_id: " << GetFileId() << endl;
+           << "XCap renewed for file_id: " << GetFileIdHelper(&lock) << endl;
       }
     }
   }

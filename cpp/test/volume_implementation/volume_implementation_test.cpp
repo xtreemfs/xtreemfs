@@ -53,6 +53,13 @@ std::string RandomVolumeName(const int length) {
 }
 
 class VolumeImplementationTest : public ::testing::Test {
+ public:
+  void CheckFileSize(const std::string& path, size_t size) {
+    Stat stat;
+    volume_->GetAttr(user_credentials_, path, &stat);
+    EXPECT_EQ(size, stat.size());
+  }
+
  protected:
   virtual void SetUp() {
     auth_.set_auth_type(AUTH_NONE);
@@ -901,6 +908,91 @@ TEST_F(VolumeImplementationTest, ExplicitCloseSent) {
                       &read_only_status_after_explicit_close);
     EXPECT_EQ("true", read_only_status_after_explicit_close);
   });
+}
+
+/** GetAttr() does block until all pending async writes were completed, thus
+ *  always considering the file size _after_ all previous (possibly still)
+ *  pending async writes. */
+TEST_F(VolumeImplementationTest, GetAttrAfterWriteAsync) {
+  string path_to_file = "test";
+
+  ASSERT_NO_THROW({
+    FileHandle* file_handle = volume_->OpenFile(user_credentials_,
+                                                path_to_file,
+                                                SYSTEM_V_FCNTL_H_O_CREAT);
+    Stat stat;
+
+    // File has a size of 0 bytes.
+    volume_->GetAttr(user_credentials_, path_to_file, &stat);
+    EXPECT_EQ(0, stat.size());
+
+    const char* buf = "a";
+    file_handle->WriteAsync(user_credentials_,
+                            buf,
+                            strlen(buf),
+                            0);
+
+    // File has a size of 1 bytes.
+    volume_->GetAttr(user_credentials_, path_to_file, &stat);
+    EXPECT_EQ(strlen(buf), stat.size());
+
+    file_handle->Close();
+
+    volume_->Unlink(user_credentials_, path_to_file);
+  });
+}
+
+/** Parallel to a write + close sequence, a second thread should always
+ *  see the correct file size after a getattr.
+ *
+ *  The difficulty here is that a pending file size is only known locally
+ *  as long as the file is open. If the subsequent close is faster than
+ *  the concurrent getattr (after it finished waiting for the write
+ *  completion), the pending file size will be no longer available as the
+ *  FileInfo object was already removed from the open_file_table of the
+ *  volume.
+ *  In this case, GetAttr() has to read the current file size one more time
+ *  from the MRC or stat cache.
+ */
+TEST_F(VolumeImplementationTest, ConcurrentGetAttrAndWriteAsyncPlusClose) {
+  string path_to_file = "test";
+  FileHandle* file_handle;
+  Stat stat;
+  // Try to write 100 times and run a concurrent getattr.
+  int iterations = 100;
+  char* buf = new char[iterations + 1];
+  buf[0] = '\0';
+
+  ASSERT_NO_THROW({
+    for (int i = 0; i < iterations; i++) {
+      strncat(buf + i, "a", 1);
+      ASSERT_EQ(strlen(buf), i + 1);
+
+      file_handle = volume_->OpenFile(user_credentials_,
+                                      path_to_file,
+                                      SYSTEM_V_FCNTL_H_O_CREAT,
+                                      448);  // Octal 700.
+      // File has a size of strlen(buf) - 1 bytes.
+      volume_->GetAttr(user_credentials_, path_to_file, &stat);
+      EXPECT_EQ(strlen(buf) - 1, stat.size());
+
+      file_handle->WriteAsync(user_credentials_,
+                              buf,
+                              strlen(buf),
+                              0);
+      boost::thread concurrent_getattr(boost::bind(
+          &xtreemfs::VolumeImplementationTest::CheckFileSize,
+          this,
+          boost::cref(path_to_file),
+          strlen(buf)));
+      file_handle->Close();
+      concurrent_getattr.join();
+    }
+
+    volume_->Unlink(user_credentials_, path_to_file);
+  });
+  delete[] buf;
+  buf = NULL;
 }
 
 }  // namespace xtreemfs
