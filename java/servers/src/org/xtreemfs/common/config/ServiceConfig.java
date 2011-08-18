@@ -64,6 +64,7 @@ public class ServiceConfig extends Config {
             SNMP_ACL("snmp.aclfile", null, String.class, false),
             FAILOVER_MAX_RETRIES("failover.retries", 15, Integer.class, false),
             FAILOVER_WAIT("failover.wait_ms", 15 * 1000, Integer.class, false),
+            MAX_CLIENT_Q("max_client_queue", 100, Integer.class, false),
             
             /*
              * DIR specific configuration parameter

@@ -69,6 +69,7 @@ public class OSDConfig extends ServiceConfig {
             Parameter.SNMP_ACL,
             Parameter.FAILOVER_MAX_RETRIES,
             Parameter.FAILOVER_WAIT,
+            Parameter.MAX_CLIENT_Q
     };
     
     /**
@@ -284,6 +285,10 @@ public class OSDConfig extends ServiceConfig {
      */
     public void checkConfig() {
         super.checkConfig(osdParameter);
+    }
+
+    public int getMaxClientQ() {
+        return (Integer) parameter.get(Parameter.MAX_CLIENT_Q);
     }
 }
     

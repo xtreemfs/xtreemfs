@@ -264,8 +264,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
                 .isGRIDSSLmode(), tm1) : null;
         
-        rpcServer = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, serverSSLopts, config
-                .getSocketReceiveBufferSize());
+        rpcServer = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, serverSSLopts,
+                config.getSocketReceiveBufferSize(), config.getMaxClientQ());
         rpcServer.setLifeCycleListener(this);
         
         final SSLOptions clientSSLopts = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config

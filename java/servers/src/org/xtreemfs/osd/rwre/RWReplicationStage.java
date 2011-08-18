@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import org.xtreemfs.common.clients.Client;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -113,9 +113,13 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     private static final int MAX_PENDING_PER_FILE = 10;
 
+    private static final int MAX_EXTERNAL_REQUESTS_IN_Q = 500;
+
     private final Queue<ReplicatedFileState> filesInReset;
 
     private final FleaseMasterEpochThread masterEpochThread;
+
+    private final AtomicInteger externalRequestsInQueue;
 
 
 
@@ -128,6 +132,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         cellToFileId = new HashMap<ASCIIString,String>();
         numObjsInFlight = 0;
         filesInReset = new LinkedList();
+        externalRequestsInQueue = new AtomicInteger(0);
 
         localID = new ASCIIString(master.getConfig().getUUID().toString());
 
@@ -610,8 +615,10 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 }
                 file.setPrimaryReset(false);
                 file.setState(ReplicaState.PRIMARY);
-                this.q.addAll(file.getPendingRequests());
-                file.getPendingRequests().clear();
+                while (!file.getPendingRequests().isEmpty()) {
+                    StageRequest m = file.getPendingRequests().remove(0);
+                    enqueuePrioritized(m);
+                }
             }
         } catch (IOException ex) {
             failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
@@ -627,8 +634,10 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
         file.setPrimaryReset(false);
         file.setState(ReplicaState.BACKUP);
-        this.q.addAll(file.getPendingRequests());
-        file.getPendingRequests().clear();
+        while (!file.getPendingRequests().isEmpty()) {
+            StageRequest m = file.getPendingRequests().remove(0);
+            enqueuePrioritized(m);
+        }
         /*} catch (IOException ex) {
             failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
         }*/
@@ -647,6 +656,14 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         file.getPendingRequests().clear();
     }
 
+    private void enqueuePrioritized(StageRequest rq) {
+        while (!q.offer(rq)) {
+            StageRequest otherRq = q.poll();
+            otherRq.sendInternalServerError(new IllegalStateException("internal queue overflow, cannot enqueue operation for processing."));
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Dropping request from rwre queue due to overload");
+        }
+    }
+
 
     public static interface RWReplicationCallback {
         public void success(long newObjectVersion);
@@ -659,19 +676,29 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         this.enqueueOperation(STAGEOP_OPEN, new Object[]{credentials,locations,forceReset}, request, callback);
     }*/
 
+    protected void enqueueExternalOperation(int stageOp, Object[] arguments, OSDRequest request, Object callback) {
+        if (externalRequestsInQueue.get() >= MAX_EXTERNAL_REQUESTS_IN_Q) {
+            Logging.logMessage(Logging.LEVEL_WARN, this, "RW replication stage is overloaded, request %d for %s dropped", request.getRequestId(), request.getFileId());
+            request.sendInternalServerError(new IllegalStateException("RW replication stage is overloaded, request dropped"));
+        } else {
+            externalRequestsInQueue.incrementAndGet();
+            this.enqueueOperation(stageOp, arguments, request, callback);
+        }
+    }
+
     public void prepareOperation(FileCredentials credentials, XLocations xloc, long objNo, long objVersion, Operation op, RWReplicationCallback callback,
             OSDRequest request) {
-        this.enqueueOperation(STAGEOP_PREPAREOP, new Object[]{credentials,xloc,objNo,objVersion,op}, request, callback);
+        this.enqueueExternalOperation(STAGEOP_PREPAREOP, new Object[]{credentials,xloc,objNo,objVersion,op}, request, callback);
     }
     
     public void replicatedWrite(FileCredentials credentials, XLocations xloc, long objNo, long objVersion, InternalObjectData data,
             RWReplicationCallback callback, OSDRequest request) {
-        this.enqueueOperation(STAGEOP_REPLICATED_WRITE, new Object[]{credentials,xloc,objNo,objVersion,data}, request, callback);
+        this.enqueueExternalOperation(STAGEOP_REPLICATED_WRITE, new Object[]{credentials,xloc,objNo,objVersion,data}, request, callback);
     }
 
     public void replicateTruncate(FileCredentials credentials, XLocations xloc, long newFileSize, long newObjectVersion,
             RWReplicationCallback callback, OSDRequest request) {
-        this.enqueueOperation(STAGEOP_TRUNCATE, new Object[]{credentials,xloc,newFileSize,newObjectVersion}, request, callback);
+        this.enqueueExternalOperation(STAGEOP_TRUNCATE, new Object[]{credentials,xloc,newFileSize,newObjectVersion}, request, callback);
     }
 
     public void fileClosed(String fileId) {
@@ -713,11 +740,23 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     @Override
     protected void processMethod(StageRequest method) {
         switch (method.getStageMethod()) {
-            case STAGEOP_REPLICATED_WRITE : processReplicatedWrite(method); break;
-            case STAGEOP_TRUNCATE : processReplicatedTruncate(method); break;
+            case STAGEOP_REPLICATED_WRITE : {
+                externalRequestsInQueue.decrementAndGet();
+                processReplicatedWrite(method);
+                break;
+            }
+            case STAGEOP_TRUNCATE : {
+                externalRequestsInQueue.decrementAndGet();
+                processReplicatedTruncate(method);
+                break;
+            }
             case STAGEOP_CLOSE : processFileClosed(method); break;
             case STAGEOP_PROCESS_FLEASE_MSG : processFleaseMessage(method); break;
-            case STAGEOP_PREPAREOP : processPrepareOp(method); break;
+            case STAGEOP_PREPAREOP : {
+                externalRequestsInQueue.decrementAndGet();
+                processPrepareOp(method);
+                break;
+            }
             case STAGEOP_INTERNAL_AUTHSTATE : processSetAuthoritativeState(method); break;
             case STAGEOP_LEASE_STATE_CHANGED : processLeaseStateChanged(method); break;
             case STAGEOP_INTERNAL_OBJFETCHED : processObjectFetched(method); break;
@@ -910,7 +949,12 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                             Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"enqeue update for %s (state is %s)",fileId,state.getState());
                         }
                         if (state.getPendingRequests().size() > MAX_PENDING_PER_FILE) {
-                            callback.failed(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, "too many requests in queue for file"));
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                                        "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
+                                        state.getPendingRequests().size(), MAX_PENDING_PER_FILE, fileId);
+                            }
+                            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
                         } else {
                             state.getPendingRequests().add(method);
                         }
@@ -938,11 +982,29 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     case WAITING_FOR_LEASE:
                     case INITIALIZING:
                     case RESET : {
-                        state.getPendingRequests().add(method);
+                        if (state.getPendingRequests().size() > MAX_PENDING_PER_FILE) {
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                                        "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
+                                        state.getPendingRequests().size(), MAX_PENDING_PER_FILE, fileId);
+                            }
+                            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                        } else {
+                            state.getPendingRequests().add(method);
+                        }
                         return;
                     }
                     case OPEN : {
-                        state.getPendingRequests().add(method);
+                        if (state.getPendingRequests().size() > MAX_PENDING_PER_FILE) {
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                                        "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
+                                        state.getPendingRequests().size(), MAX_PENDING_PER_FILE, fileId);
+                            }
+                            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                        } else {
+                            state.getPendingRequests().add(method);
+                        }
                         doWaitingForLease(state);
                         return;
                     }
