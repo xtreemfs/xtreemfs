@@ -122,30 +122,40 @@ class AsyncWriteHandler
   /** State of this object. */
   State state_;
 
-  /** Set by WaitForPendingWrites{NonBlocking}() to true if there are
-   *  temporarily no new async writes allowed and will be set to false again
-   *  once the state IDLE is reached. */
-  bool writing_paused;
-
-  /** List of observers (specified by their boost::condition variable and their
-   *  bool value which will be set to true if the state changed back to IDLE).
-   */
-  std::list<WaitForCompletionObserver*> waiting_observers_;
-
   /** List of pending writes. */
   // TODO(mberlin): Limit the size of writes in flight to avoid flooding.
   std::list<AsyncWriteBuffer*> writes_in_flight_;
 
+  /** Number of pending bytes. */
+  int pending_bytes_;
+
+  /** Set by WaitForPendingWrites{NonBlocking}() to true if there are
+   *  temporarily no new async writes allowed and will be set to false again
+   *  once the state IDLE is reached. */
+  bool writing_paused_;
+  
   /** Used to notify blocked WaitForPendingWrites() callers for the state change
    *  back to IDLE. */
   boost::condition all_pending_writes_did_complete_;
+
+  /** Number of threads blocked by WaitForPendingWrites() waiting on
+   *  all_pending_writes_did_complete_ for a state change back to IDLE.
+   *
+   *  This does not include the number of waiting threads which did call
+   *  WaitForPendingWritesNonBlocking(). Therefore, see "waiting_observers_".
+   *  The total number of all waiting threads is:
+   *    waiting_blocking_threads_count_ + waiting_observers_.size()
+   */
+  int waiting_blocking_threads_count_;
 
   /** Used to notify blocked Write() callers that the number of pending bytes
    *  has decreased. */
   boost::condition pending_bytes_were_decreased_;
 
-  /** Number of pending bytes. */
-  int pending_bytes_;
+  /** List of WaitForPendingWritesNonBlocking() observers (specified by their
+   *  boost::condition variable and their bool value which will be set to true
+   *  if the state changed back to IDLE). */
+  std::list<WaitForCompletionObserver*> waiting_observers_;
 
   /** FileInfo object to which this AsyncWriteHandler does belong. Accessed for
    *  file size updates. */

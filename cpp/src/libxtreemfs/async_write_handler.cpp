@@ -40,8 +40,9 @@ AsyncWriteHandler::AsyncWriteHandler(
     int max_writeahead,
     int max_write_tries)
     : state_(IDLE),
-      writing_paused(false),
       pending_bytes_(0),
+      writing_paused_(false),
+      waiting_blocking_threads_count_(0),
       file_info_(file_info),
       uuid_iterator_(uuid_iterator),
       uuid_resolver_(uuid_resolver),
@@ -59,6 +60,15 @@ AsyncWriteHandler::~AsyncWriteHandler() {
     file_info_->GetPath(&path);
     string error = "The AsyncWriteHandler for the file with the path: " + path
         + " has pending writes left. This should NOT happen.";
+    Logging::log->getLog(LEVEL_ERROR) << error << endl;
+    xtreemfs::util::ErrorLog::error_log->AppendError(error);
+  }
+  if (waiting_blocking_threads_count_ > 0) {
+    string path;
+    file_info_->GetPath(&path);
+    string error = "The AsyncWriteHandler for the file"
+        " with the path: " + path + " has remaining blocked threads waiting"
+        " for the completion of pending writes left. This should NOT happen.";
     Logging::log->getLog(LEVEL_ERROR) << error << endl;
     xtreemfs::util::ErrorLog::error_log->AppendError(error);
   }
@@ -94,8 +104,8 @@ void AsyncWriteHandler::Write(AsyncWriteBuffer* write_buffer) {
     boost::mutex::scoped_lock lock(mutex_);
     // Block if there are currently no writes allowed OR the writeahead is
     // exceeded.
-    while (writing_paused || (pending_bytes_ + write_buffer->data_length) >
-                             max_writeahead_) {
+    while (writing_paused_ || (pending_bytes_ + write_buffer->data_length) >
+                              max_writeahead_) {
       // TODO(mberlin): Allow interruption and set the write status of the
       //                FileHandle of the interrupted write to an error state.
       pending_bytes_were_decreased_.wait(lock);
@@ -139,12 +149,12 @@ void AsyncWriteHandler::Write(AsyncWriteBuffer* write_buffer) {
 void AsyncWriteHandler::WaitForPendingWrites() {
   boost::mutex::scoped_lock lock(mutex_);
   if (state_ != IDLE) {
-    writing_paused = true;
+    writing_paused_ = true;
+    waiting_blocking_threads_count_++;
     while (state_ != IDLE) {
-      // TODO(mberlin): Saw a Read() hanging here infinitely when running
-      //                dbench (in the cleanup phase?). Find cause and fix it.
       all_pending_writes_did_complete_.wait(lock);
     }
+    waiting_blocking_threads_count_--;
   }
 }
 
@@ -169,7 +179,7 @@ bool AsyncWriteHandler::WaitForPendingWritesNonBlocking(
   boost::mutex::scoped_lock lock(mutex_);
   
   if (state_ != IDLE) {
-    writing_paused = true;
+    writing_paused_ = true;
     waiting_observers_.push_back(new WaitForCompletionObserver(
         condition_variable,
         wait_completed,
@@ -265,9 +275,30 @@ void AsyncWriteHandler::DecreasePendingBytesHelper(
 
   if (pending_bytes_ == 0) {
     state_ = IDLE;
-    if (writing_paused) {
-      writing_paused = false;
+    if (writing_paused_) {
+      writing_paused_ = false;
       NotifyWaitingObserversAndClearAll(lock);
+    }
+    // Issue notify_all as long as there are remaining blocked threads.
+    //
+    // Please note the following here: After the two notify_all()s on the
+    // condition variables all_pending_writes_did_complete_ and
+    // pending_bytes_were_decreased_, two different thread types
+    // (waiting blocked ones AND further waiting writes) do race for
+    // re-acquiring the lock on mutex_.
+    // Example:
+    // T1: write1           state_ = PENDING
+    // T2: getattr          writing_paused_ = true => blocked as state_ != IDLE
+    // T1: write2   =>  blocked as writing_paused_ = true
+    // Tx: write1 callback: state = IDLE, writing_paused_ = false
+    // T1: write2 succeeds to obtain lock on mutex_ *before* getattr
+    //              => state = IDLE (writing_paused_ remains false)
+    // Tx: write2 callback: state = IDLE, writing paused remains false
+    //     - however its necessary to notify the blocked getattr.
+    // As you can see the order of concurrent writes and reads/getattrs
+    // is undefined and we don't enforce any order as it's up to the user to
+    // synchronize his threads himself when working on the same file.
+    if (waiting_blocking_threads_count_ > 0) {
       all_pending_writes_did_complete_.notify_all();
     }
   }
