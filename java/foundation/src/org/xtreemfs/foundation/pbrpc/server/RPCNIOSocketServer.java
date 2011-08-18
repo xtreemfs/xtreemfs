@@ -100,13 +100,15 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
     /**
      * maximum number of pending client requests to allow
      */
-    public static int                      MAX_CLIENT_QUEUE  = 20000;
+    private final int                      maxClientQLength;
     
     /**
      * if the Q was full we need at least CLIENT_Q_THR spaces before we start
      * reading from the client again. This is to prevent it from oscillating
      */
-    public static int                      CLIENT_Q_THR      = 5000;
+    private final int                      clientQThreshold;
+
+    public static final int         DEFAULT_MAX_CLIENT_Q_LENGTH = 100;
 
     // Connections with pending writes.
     private final ConcurrentLinkedQueue<RPCNIOSocketServerConnection>  writeableConnections;
@@ -115,9 +117,15 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
         SSLOptions sslOptions) throws IOException {
         this(bindPort, bindAddr, rl, sslOptions, 256 * 1024);
     }
-    
+
     public RPCNIOSocketServer(int bindPort, InetAddress bindAddr, RPCServerRequestListener rl,
         SSLOptions sslOptions, int receiveBufferSize) throws IOException {
+        this(bindPort, bindAddr, rl, sslOptions, receiveBufferSize, DEFAULT_MAX_CLIENT_Q_LENGTH);
+    }
+    
+    public RPCNIOSocketServer(int bindPort, InetAddress bindAddr, RPCServerRequestListener rl,
+        SSLOptions sslOptions, int receiveBufferSize,
+        int maxClientQLength) throws IOException {
         super("PBRPCSrv@" + bindPort);
         
         // open server socket
@@ -160,6 +168,12 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
         this.connections = new LinkedList<RPCNIOSocketServerConnection>();
 
         this.writeableConnections = new ConcurrentLinkedQueue<RPCNIOSocketServerConnection>();
+
+        this.maxClientQLength = maxClientQLength;
+        this.clientQThreshold = (maxClientQLength/2 >= 0) ? maxClientQLength/2 : 0;
+        if (maxClientQLength <= 1) {
+            Logging.logMessage(Logging.LEVEL_WARN, this, "max client queue length is 1, pipelining is disabled.");
+        }
     }
     
     /**
@@ -315,15 +329,15 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
             
             if (!channel.isShutdownInProgress()) {
                 if (channel.doHandshake(key)) {
-                    
-                    if (con.getOpenRequests().get() > MAX_CLIENT_QUEUE) {
-                        key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
-                        Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
-                            "client sent too many requests... not accepting new requests: %s", con
-                                    .getChannel().socket().getRemoteSocketAddress().toString());
-                        return;
-                    }
                     while (true) {
+                        if (con.getOpenRequests().get() > maxClientQLength) {
+                            key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
+                            Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
+                                "client sent too many requests... not accepting new requests from %s, q=%d", con
+                                        .getChannel().socket().getRemoteSocketAddress().toString(), con.getOpenRequests().get());
+                            return;
+                        }
+
                         ByteBuffer buf = null;
                         switch (con.getReceiveState()) {
                             case RECORD_MARKER: {
@@ -548,12 +562,12 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                         int numRq = con.getOpenRequests().decrementAndGet();
 
                         if ((key.interestOps() & SelectionKey.OP_READ) == 0) {
-                            if (numRq < (MAX_CLIENT_QUEUE - CLIENT_Q_THR)) {
+                            if (numRq < clientQThreshold) {
                                 // read from client again
                                 key.interestOps(key.interestOps() | SelectionKey.OP_READ);
                                 Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
-                                    "client allowed to send data again: %s", con.getChannel().socket()
-                                            .getRemoteSocketAddress().toString());
+                                    "client allowed to send data again: %s, q=%d", con.getChannel().socket()
+                                            .getRemoteSocketAddress().toString(), numRq);
                             }
                         }
 
