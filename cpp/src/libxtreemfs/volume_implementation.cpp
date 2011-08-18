@@ -295,12 +295,14 @@ FileHandle* VolumeImplementation::OpenFile(
     const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
     boost::uint32_t mode,
     int truncate_new_file_size) {
-  // Handle o_sync.
-  // TODO(mberlin): Currently no special handling needed?
+  bool async_writes_enabled = (volume_options_.max_writeahead_requests > 0);
+
   if (flags & SYSTEM_V_FCNTL_H_O_SYNC) {
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-      Logging::log->getLog(LEVEL_DEBUG) << "open called with O_SYNC." << endl;
+      Logging::log->getLog(LEVEL_DEBUG)
+          << "open called with O_SYNC, async writes were disabled." << endl;
     }
+    async_writes_enabled = false;
   }
 
   openRequest rq;
@@ -338,7 +340,8 @@ FileHandle* VolumeImplementation::OpenFile(
         path,
         open_response->creds().xcap().replicate_on_close(),
         open_response->creds().xlocs());
-    file_handle = file_info->CreateFileHandle(open_response->creds().xcap());
+    file_handle = file_info->CreateFileHandle(open_response->creds().xcap(),
+                                              async_writes_enabled);
   }
 
   // Copy timestamp and free response memory.

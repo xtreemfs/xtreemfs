@@ -42,6 +42,15 @@ class FileHandle {
 
   /** Write to a file 'count' bytes at file offset 'offset' from 'buf'.
    *
+   * @attention     If asynchronous writes are enabled (which is the default
+   *                unless the file was opened with O_SYNC or async writes
+   *                were disabled globally), no possible write errors can be
+   *                returned as Write() does return immediately after putting
+   *                the write request into the send queue instead of waiting
+   *                until the result was received.
+   *                In this case, only after calling Flush() or Close() occurred
+   *                write errors are returned to the user.
+   *
    * @param user_credentials    Name and Groups of the user.
    * @param buf[in]             Buffer which contains data to be written.
    * @param count               Number of bytes to be written from buf.
@@ -52,31 +61,9 @@ class FileHandle {
    * @throws PosixErrorException
    * @throws UnknownAddressSchemeException
    *
-   * @return    Number of bytes written.
+   * @return    Number of bytes written (see @attention above).
    */
   virtual int Write(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const char *buf,
-      size_t count,
-      off_t offset) = 0;
-
-  /** Write to a file 'count' bytes at file offset 'offset' from 'buf' and
-   *  returns immediately unless the write ahead buffer is full.
-   *
-   * @attention     Only after calling Flush() or Close() occured write errors
-   *                are returned.
-   *
-   * @param user_credentials    Name and Groups of the user.
-   * @param buf[in]             Buffer which contains data to be written.
-   * @param count               Number of bytes to be written from buf.
-   * @param offset              Offset in bytes.
-   *
-   * @throws AddressToUUIDNotFoundException
-   * @throws IOException
-   * @throws PosixErrorException
-   * @throws UnknownAddressSchemeException
-   */
-  virtual void WriteAsync(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const char *buf,
       size_t count,

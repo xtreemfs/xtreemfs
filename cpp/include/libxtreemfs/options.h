@@ -110,6 +110,8 @@ class Options {
   boost::uint64_t metadata_cache_ttl_s;
   /** Maximum number of pending bytes (of async writes) per file. */
   int max_writeahead;
+  /** Maximum number of pending async write requests per file. */
+  int max_writeahead_requests;
   /** Number of retrieved entries per readdir request. */
   int readdir_chunk_size;
 

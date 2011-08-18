@@ -989,7 +989,7 @@ int FuseAdapter::write(
     int result;
     try {
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
-      file_handle->WriteAsync(user_credentials, buf, size, offset);
+      result = file_handle->Write(user_credentials, buf, size, offset);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
@@ -1000,7 +1000,7 @@ int FuseAdapter::write(
       return -1 * EIO;
     }
 
-    return size;
+    return result;
   } else {
     fuse_context* ctx = fuse_get_context();
     return xctl_.write(ctx->uid,

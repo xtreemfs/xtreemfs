@@ -38,6 +38,7 @@ AsyncWriteHandler::AsyncWriteHandler(
     const xtreemfs::pbrpc::Auth& auth_bogus,
     const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus,
     int max_writeahead,
+    int max_writeahead_requests,
     int max_write_tries)
     : state_(IDLE),
       pending_bytes_(0),
@@ -50,6 +51,7 @@ AsyncWriteHandler::AsyncWriteHandler(
       auth_bogus_(auth_bogus),
       user_credentials_bogus_(user_credentials_bogus),
       max_writeahead_(max_writeahead),
+      max_writeahead_requests_(max_writeahead_requests),
       max_write_tries_(max_write_tries) {
   assert(file_info && uuid_iterator && uuid_resolver && osd_service_client);
 }
@@ -102,10 +104,9 @@ void AsyncWriteHandler::Write(AsyncWriteBuffer* write_buffer) {
   // Append to list of writes in flight.
   {
     boost::mutex::scoped_lock lock(mutex_);
-    // Block if there are currently no writes allowed OR the writeahead is
-    // exceeded.
-    while (writing_paused_ || (pending_bytes_ + write_buffer->data_length) >
-                              max_writeahead_) {
+    while (writing_paused_ ||
+           (pending_bytes_ + write_buffer->data_length) > max_writeahead_ ||
+           writes_in_flight_.size() == max_writeahead_requests_) {
       // TODO(mberlin): Allow interruption and set the write status of the
       //                FileHandle of the interrupted write to an error state.
       pending_bytes_were_decreased_.wait(lock);
@@ -260,6 +261,7 @@ void AsyncWriteHandler::IncreasePendingBytesHelper(
 
   pending_bytes_ += write_buffer->data_length;
   writes_in_flight_.push_back(write_buffer);
+  assert(writes_in_flight_.size() <= max_writeahead_requests_);
 
   state_ = WRITES_PENDING;
 }

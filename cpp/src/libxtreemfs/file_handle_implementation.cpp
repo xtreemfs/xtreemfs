@@ -49,6 +49,7 @@ FileHandleImplementation::FileHandleImplementation(
     xtreemfs::pbrpc::OSDServiceClient* osd_service_client,
     const std::map<xtreemfs::pbrpc::StripingPolicyType,
                    StripeTranslator*>& stripe_translators,
+    bool async_writes_enabled,
     const Options& options,
     const xtreemfs::pbrpc::Auth& auth_bogus,
     const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus)
@@ -63,6 +64,7 @@ FileHandleImplementation::FileHandleImplementation(
       mrc_service_client_(mrc_service_client),
       osd_service_client_(osd_service_client),
       stripe_translators_(stripe_translators),
+      async_writes_enabled_(async_writes_enabled),
       async_writes_failed_(false),
       volume_options_(options),
       auth_bogus_(auth_bogus),
@@ -174,108 +176,13 @@ int FileHandleImplementation::Write(
     const char *buf,
     size_t count,
     off_t offset) {
-  // Prepare request object.
-  writeRequest rq;
-  {
-    boost::mutex::scoped_lock lock(mutex_);
-    rq.mutable_file_credentials()->mutable_xcap()->CopyFrom(xcap_);
-  }
-  rq.set_file_id(rq.file_credentials().xcap().file_id());
-  file_info_->GetXLocSet(rq.mutable_file_credentials()->mutable_xlocs());
-  // Use a reference for shorter code.
-  const XLocSet& xlocs = rq.file_credentials().xlocs();
-
-  if (xlocs.replicas_size() == 0) {
-    Logging::log->getLog(LEVEL_ERROR)
-        << "no replica found for file:" << file_info_->path() << endl;
-    throw PosixErrorException(
-        POSIX_ERROR_EIO,
-        "no replica found for file:" + file_info_->path());
-  }
-
-  // Map operation to stripes.
-  vector<WriteOperation> operations;
-  const StripingPolicy& striping_policy = xlocs.replicas(0).striping_policy();
-  const StripeTranslator* translator =
-      GetStripeTranslator(striping_policy.type());
-  translator->TranslateWriteRequest(buf,
-                                    count,
-                                    offset,
-                                    striping_policy,
-                                    &operations);
-
-  UUIDIterator temp_uuid_iterator_for_striping;
-  string osd_uuid = "";
-  // Write all objects.
-  for (size_t j = 0; j < operations.size(); j++) {
-    rq.set_object_number(operations[j].obj_number);
-    rq.set_object_version(0);
-    rq.set_offset(operations[j].req_offset);
-    rq.set_lease_timeout(0);
-
-    ObjectData *data = rq.mutable_object_data();
-    data->set_checksum(0);
-    data->set_invalid_checksum_on_osd(false);
-    data->set_zero_padding(0);
-
-    // Differ between striping and the rest (replication, no replication).
-    UUIDIterator* uuid_iterator;
-    if (xlocs.replicas(0).osd_uuids_size() > 1) {
-      // Replica is striped. Pick UUID from xlocset.
-      osd_uuid = GetOSDUUIDFromXlocSet(xlocs,
-                                       0,  // Use first and only replica.
-                                       operations[j].osd_offset);
-      temp_uuid_iterator_for_striping.ClearAndAddUUID(osd_uuid);
-      uuid_iterator = &temp_uuid_iterator_for_striping;
-    } else {
-      // TODO(mberlin): Enhance UUIDIterator to read from different replicas.
-      uuid_iterator = osd_uuid_iterator_;
-    }
-
-    boost::scoped_ptr< SyncCallback<OSDWriteResponse> > response(
-        ExecuteSyncRequest< SyncCallback<OSDWriteResponse>* >(
-            boost::bind(
-                &xtreemfs::pbrpc::OSDServiceClient::write_sync,
-                osd_service_client_,
-                _1,
-                boost::cref(auth_bogus_),
-                boost::cref(user_credentials),
-                &rq,
-                operations[j].data,
-                operations[j].req_size),
-            uuid_iterator,
-            uuid_resolver_,
-            volume_options_.max_write_tries,
-            volume_options_));
-
-    // If the filesize has changed, remember OSDWriteResponse for later file
-    // size update towards the MRC (executed by filesize_writeback_thread_).
-    if (response->response()->has_size_in_bytes()) {
-      if (file_info_->TryToUpdateOSDWriteResponse(response->response(),
-                                                  xcap_)) {
-        // Free everything except the response.
-        delete response->data();
-        delete response->error();
-      } else {
-        response->DeleteBuffers();
-      }
-    }
-  }  // objects loop.
-
-  return count;
-}
-
-void FileHandleImplementation::WriteAsync(
-    const xtreemfs::pbrpc::UserCredentials& user_credentials,
-    const char *buf,
-    size_t count,
-    off_t offset) {
   // Create copies of required data.
   FileCredentials file_credentials;
   {
     boost::mutex::scoped_lock lock(mutex_);
 
     if (async_writes_failed_) {
+      assert(async_writes_enabled_);
       throw PosixErrorException(POSIX_ERROR_EIO, "A previous asynchronous write"
           " did fail. No further writes on this file handle are allowed.");
     }
@@ -283,16 +190,14 @@ void FileHandleImplementation::WriteAsync(
     file_credentials.mutable_xcap()->CopyFrom(xcap_);
   }
   file_info_->GetXLocSet(file_credentials.mutable_xlocs());
-  string global_file_id = file_credentials.xcap().file_id();
-  // Use a reference for shorter code.
+  // Use references for shorter code.
+  const string& global_file_id = file_credentials.xcap().file_id();
   const XLocSet& xlocs = file_credentials.xlocs();
 
   if (xlocs.replicas_size() == 0) {
-    Logging::log->getLog(LEVEL_ERROR)
-        << "no replica found for file:" << file_info_->path() << endl;
-    throw PosixErrorException(
-        POSIX_ERROR_EIO,
-        "no replica found for file:" + file_info_->path());
+    string error = "No replica found for file: " + file_info_->path();
+    Logging::log->getLog(LEVEL_ERROR) << error << endl;
+    throw PosixErrorException(POSIX_ERROR_EIO, error);
   }
 
   // Map operation to stripes.
@@ -306,51 +211,118 @@ void FileHandleImplementation::WriteAsync(
                                     striping_policy,
                                     &operations);
 
-  string osd_uuid = "";
-  writeRequest* write_request = NULL;
-  // Write all objects.
-  for (size_t j = 0; j < operations.size(); j++) {
-    write_request = new writeRequest();
-    write_request->mutable_file_credentials()->CopyFrom(file_credentials);
-    write_request->set_file_id(global_file_id);
+  if (async_writes_enabled_) {
+    string osd_uuid = "";
+    writeRequest* write_request = NULL;
+    // Write all objects.
+    for (size_t j = 0; j < operations.size(); j++) {
+      write_request = new writeRequest();
+      write_request->mutable_file_credentials()->CopyFrom(file_credentials);
+      write_request->set_file_id(global_file_id);
 
-    write_request->set_object_number(operations[j].obj_number);
-    write_request->set_object_version(0);
-    write_request->set_offset(operations[j].req_offset);
-    write_request->set_lease_timeout(0);
+      write_request->set_object_number(operations[j].obj_number);
+      write_request->set_object_version(0);
+      write_request->set_offset(operations[j].req_offset);
+      write_request->set_lease_timeout(0);
 
-    ObjectData* data = write_request->mutable_object_data();
-    data->set_checksum(0);
-    data->set_invalid_checksum_on_osd(false);
-    data->set_zero_padding(0);
+      ObjectData* data = write_request->mutable_object_data();
+      data->set_checksum(0);
+      data->set_invalid_checksum_on_osd(false);
+      data->set_zero_padding(0);
 
-    // Create new WriteBuffer and differ between striping and the rest (
-    // (replication = use UUIDIterator, no replication = set specific OSD UUID).
-    AsyncWriteBuffer* write_buffer;
-    if (xlocs.replicas(0).osd_uuids_size() > 1) {
-      // Replica is striped. Pick UUID from xlocset.
-      write_buffer = new AsyncWriteBuffer(
-          write_request,
-          operations[j].data,
-          operations[j].req_size,
-          this,
-          GetOSDUUIDFromXlocSet(xlocs,
-                                0,  // Use first and only replica.
-                                operations[j].osd_offset));
-    } else {
-      write_buffer = new AsyncWriteBuffer(write_request,
-                                          operations[j].data,
-                                          operations[j].req_size,
-                                          this);
+      // Create new WriteBuffer and differ between striping and the rest (
+      // (replication = use UUIDIterator, no replication = set specific UUID).
+      AsyncWriteBuffer* write_buffer;
+      if (xlocs.replicas(0).osd_uuids_size() > 1) {
+        // Replica is striped. Pick UUID from xlocset.
+        write_buffer = new AsyncWriteBuffer(
+            write_request,
+            operations[j].data,
+            operations[j].req_size,
+            this,
+            GetOSDUUIDFromXlocSet(xlocs,
+                                  0,  // Use first and only replica.
+                                  operations[j].osd_offset));
+      } else {
+        write_buffer = new AsyncWriteBuffer(write_request,
+                                            operations[j].data,
+                                            operations[j].req_size,
+                                            this);
+      }
+
+      // TODO(mberlin): Currently the UserCredentials are ignored by the OSD and
+      //                therefore we avoid copying them into write_buffer.
+      file_info_->AsyncWrite(write_buffer);
+
+      // Processing of file size updates is handled by the FileInfo's
+      // AsyncWriteHandler.
     }
+  } else {
+    // Synchronous writes.
+    UUIDIterator temp_uuid_iterator_for_striping;
+    string osd_uuid = "";
+    writeRequest write_request;
+    write_request.mutable_file_credentials()->CopyFrom(file_credentials);
+    write_request.set_file_id(global_file_id);
+    // Write all objects.
+    for (size_t j = 0; j < operations.size(); j++) {
+      write_request.set_object_number(operations[j].obj_number);
+      write_request.set_object_version(0);
+      write_request.set_offset(operations[j].req_offset);
+      write_request.set_lease_timeout(0);
 
-    // TODO(mberlin): Currently the UserCredentials are ignored by the OSD and
-    //                therefore we avoid copying them into write_buffer.
-    file_info_->AsyncWrite(write_buffer);
+      ObjectData *data = write_request.mutable_object_data();
+      data->set_checksum(0);
+      data->set_invalid_checksum_on_osd(false);
+      data->set_zero_padding(0);
 
-    // Processing of file size updates is handled by the FileInfo's
-    // AsyncWriteHandler.
+      // Differ between striping and the rest (replication, no replication).
+      UUIDIterator* uuid_iterator;
+      if (xlocs.replicas(0).osd_uuids_size() > 1) {
+        // Replica is striped. Pick UUID from xlocset.
+        osd_uuid = GetOSDUUIDFromXlocSet(xlocs,
+                                         0,  // Use first and only replica.
+                                         operations[j].osd_offset);
+        temp_uuid_iterator_for_striping.ClearAndAddUUID(osd_uuid);
+        uuid_iterator = &temp_uuid_iterator_for_striping;
+      } else {
+        // TODO(mberlin): Enhance UUIDIterator to read from different replicas.
+        uuid_iterator = osd_uuid_iterator_;
+      }
+
+      boost::scoped_ptr< SyncCallback<OSDWriteResponse> > response(
+          ExecuteSyncRequest< SyncCallback<OSDWriteResponse>* >(
+              boost::bind(
+                  &xtreemfs::pbrpc::OSDServiceClient::write_sync,
+                  osd_service_client_,
+                  _1,
+                  boost::cref(auth_bogus_),
+                  boost::cref(user_credentials),
+                  &write_request,
+                  operations[j].data,
+                  operations[j].req_size),
+              uuid_iterator,
+              uuid_resolver_,
+              volume_options_.max_write_tries,
+              volume_options_));
+
+      // If the filesize has changed, remember OSDWriteResponse for later file
+      // size update towards the MRC (executed by
+      // VolumeImplementation::PeriodicFileSizeUpdate).
+      if (response->response()->has_size_in_bytes()) {
+        if (file_info_->TryToUpdateOSDWriteResponse(response->response(),
+                                                    xcap_)) {
+          // Free everything except the response.
+          delete response->data();
+          delete response->error();
+        } else {
+          response->DeleteBuffers();
+        }
+      }
+    }  // objects loop.
   }
+
+  return count;
 }
 
 void FileHandleImplementation::Flush() {

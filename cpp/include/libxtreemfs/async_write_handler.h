@@ -38,6 +38,7 @@ class AsyncWriteHandler
       const xtreemfs::pbrpc::Auth& auth_bogus,
       const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus,
       int max_writeahead,
+      int max_writeahead_requests,
       int max_write_tries);
 
   ~AsyncWriteHandler();
@@ -178,6 +179,9 @@ class AsyncWriteHandler
 
   /** Maximum number in bytes which may be pending. */
   const int max_writeahead_;
+
+  /** Maximum number of pending write requests. */
+  const int max_writeahead_requests_;
 
   /** Maximum number of attempts a write will be tried. */
   const int max_write_tries_;

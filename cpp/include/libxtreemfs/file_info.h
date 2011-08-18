@@ -77,7 +77,8 @@ class FileInfo {
    *
    * @remark Ownership is transferred to the caller.
    */
-  FileHandleImplementation* CreateFileHandle(const xtreemfs::pbrpc::XCap& xcap);
+  FileHandleImplementation* CreateFileHandle(const xtreemfs::pbrpc::XCap& xcap,
+                                             bool async_writes_enabled);
 
   /** See CreateFileHandle(xcap). Does not add file_handle to list of open
    *  file handles if used_for_pending_filesize_update=true.
@@ -89,6 +90,7 @@ class FileInfo {
    */
   FileHandleImplementation* CreateFileHandle(
       const xtreemfs::pbrpc::XCap& xcap,
+      bool async_writes_enabled,
       bool used_for_pending_filesize_update);
 
   /** Deregisters a closed FileHandle. Called by FileHandle::Close(). */

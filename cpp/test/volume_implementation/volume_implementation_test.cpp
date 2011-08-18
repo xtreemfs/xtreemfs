@@ -257,9 +257,11 @@ TEST_F(VolumeImplementationTestFastPeriodicFileSizeUpdate,
   string path_to_file = "test";
 
   ASSERT_NO_THROW({
-    FileHandle* file_handle = volume_->OpenFile(user_credentials_,
-                                                path_to_file,
-                                                SYSTEM_V_FCNTL_H_O_CREAT);
+    FileHandle* file_handle = volume_->OpenFile(
+        user_credentials_,
+        path_to_file,
+        static_cast<SYSTEM_V_FCNTL>(
+            SYSTEM_V_FCNTL_H_O_CREAT | SYSTEM_V_FCNTL_H_O_SYNC));
     Stat stat;
 
     // File has a size of 0 bytes.
@@ -319,9 +321,11 @@ TEST_F(VolumeImplementationTest, FileSizeUpdateAfterFlush) {
   string path_to_file = "test";
 
   ASSERT_NO_THROW({
-    FileHandle* file_handle = volume_->OpenFile(user_credentials_,
-                                                path_to_file,
-                                                SYSTEM_V_FCNTL_H_O_CREAT);
+    FileHandle* file_handle = volume_->OpenFile(
+        user_credentials_,
+        path_to_file,
+        static_cast<SYSTEM_V_FCNTL>(
+            SYSTEM_V_FCNTL_H_O_CREAT | SYSTEM_V_FCNTL_H_O_SYNC));
     Stat stat;
 
     // File has a size of 0 bytes.
@@ -359,9 +363,11 @@ TEST_F(VolumeImplementationTestFastPeriodicFileSizeUpdate,
   string path_to_file = "test";
 
   ASSERT_NO_THROW({
-    FileHandle* file_handle = volume_->OpenFile(user_credentials_,
-                                                path_to_file,
-                                                SYSTEM_V_FCNTL_H_O_CREAT);
+    FileHandle* file_handle = volume_->OpenFile(
+        user_credentials_,
+        path_to_file,
+        static_cast<SYSTEM_V_FCNTL>(
+            SYSTEM_V_FCNTL_H_O_CREAT | SYSTEM_V_FCNTL_H_O_SYNC));
     Stat stat;
 
     // File has a size of 0 bytes.
@@ -917,9 +923,10 @@ TEST_F(VolumeImplementationTest, GetAttrAfterWriteAsync) {
   string path_to_file = "test";
 
   ASSERT_NO_THROW({
-    FileHandle* file_handle = volume_->OpenFile(user_credentials_,
-                                                path_to_file,
-                                                SYSTEM_V_FCNTL_H_O_CREAT);
+    FileHandle* file_handle = volume_->OpenFile(
+        user_credentials_,
+        path_to_file,
+        SYSTEM_V_FCNTL_H_O_CREAT);
     Stat stat;
 
     // File has a size of 0 bytes.
@@ -927,10 +934,10 @@ TEST_F(VolumeImplementationTest, GetAttrAfterWriteAsync) {
     EXPECT_EQ(0, stat.size());
 
     const char* buf = "a";
-    file_handle->WriteAsync(user_credentials_,
-                            buf,
-                            strlen(buf),
-                            0);
+    file_handle->Write(user_credentials_,
+                       buf,
+                       strlen(buf),
+                       0);
 
     // File has a size of 1 bytes.
     volume_->GetAttr(user_credentials_, path_to_file, &stat);
@@ -976,10 +983,11 @@ TEST_F(VolumeImplementationTest, ConcurrentGetAttrAndWriteAsyncPlusClose) {
       volume_->GetAttr(user_credentials_, path_to_file, &stat);
       EXPECT_EQ(strlen(buf) - 1, stat.size());
 
-      file_handle->WriteAsync(user_credentials_,
-                              buf,
-                              strlen(buf),
-                              0);
+      // File was not opend with O_SYNC, so async writes *should* be used.
+      file_handle->Write(user_credentials_,
+                         buf,
+                         strlen(buf),
+                         0);
       boost::thread concurrent_getattr(boost::bind(
           &xtreemfs::VolumeImplementationTest::CheckFileSize,
           this,

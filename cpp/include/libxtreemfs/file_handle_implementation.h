@@ -56,6 +56,7 @@ class FileHandleImplementation
       xtreemfs::pbrpc::OSDServiceClient* osd_service_client,
       const std::map<xtreemfs::pbrpc::StripingPolicyType,
                      StripeTranslator*>& stripe_translators,
+      bool async_writes_enabled,
       const Options& options,
       const xtreemfs::pbrpc::Auth& auth_bogus,
       const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus);
@@ -69,12 +70,6 @@ class FileHandleImplementation
       off_t offset);
 
   virtual int Write(
-      const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      const char *buf,
-      size_t count,
-      off_t offset);
-
-  virtual void WriteAsync(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const char *buf,
       size_t count,
@@ -250,6 +245,9 @@ class FileHandleImplementation
 
   const std::map<xtreemfs::pbrpc::StripingPolicyType,
            StripeTranslator*>& stripe_translators_;
+
+  /** Set to true if async writes (max requests > 0, no O_SYNC) are enabled. */
+  const bool async_writes_enabled_;
 
   /** Set to true if an async write of this file_handle failed. If true, this
    *  file_handle is broken and no further writes/reads/truncates are possible.

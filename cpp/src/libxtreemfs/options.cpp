@@ -55,7 +55,8 @@ Options::Options()
   // Optimizations.
   metadata_cache_size = 100000;
   metadata_cache_ttl_s = 120;
-  max_writeahead = 8 * 128 * 1024;  // 8 default objects = 1 MB.
+  max_writeahead = 10 * 128 * 1024;  // 10 default objects = 1280kB = 1.25MB.
+  max_writeahead_requests = 10;  // Only 10 pending requests allowed by default.
   readdir_chunk_size = 1024;
 
   // Error Handling options.
@@ -150,6 +151,15 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("max-writeahead",
         po::value(&max_writeahead)->default_value(max_writeahead),
         "Maximum number of pending written bytes per file.")
+    ("max-writeahead-requests",
+        po::value(&max_writeahead_requests)
+            ->default_value(max_writeahead_requests),
+        "Maximum number of pending write requests per file (Asynchronous writes"
+        " will block if this or max-writeahead is reached first. Set this to 0"
+        " to completely disable asynchronous writes).")
+        //TODO(bjko): Insert new OSD parameter.
+//        "\nIf you increase this value, please take care of the value "
+//        " in the OSD config and do not set it to high to avoid flooding.")
     ("readdir-chunk-size",
         po::value(&readdir_chunk_size)->default_value(readdir_chunk_size),
         "Number of entries requested per readdir.");
@@ -284,8 +294,34 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
 
   if (metadata_cache_size < readdir_chunk_size && metadata_cache_size != 0) {
     cerr << "Warning: Please set the metadata cache size at least as high as "
-        "the readdir chunk size. (Currently: " << metadata_cache_size << " < "
-        << readdir_chunk_size << ")" << endl << endl;
+            "the readdir chunk size. (Currently: " << metadata_cache_size <<
+            " < " << readdir_chunk_size << "). Otherwise you might experience"
+            " a degraded performance."
+         << endl << endl;
+  }
+
+  if (max_writeahead_requests != 0 &&
+      (max_writeahead_requests * 128 * 1024 > max_writeahead)) {
+    cerr << "Information: The value max-writeahead-requests may be ineffective"
+            " if you are writing buffers of a multiple of the object size"
+            " (default 128kB), as it does currently limit the number of"
+            " requests to:\n\t"
+         << max_writeahead << " / " << " 128kB default object size = "
+         << (max_writeahead / 128 / 1024) << "\n\t(which is lower than the set"
+            " maximum number of requests: " << max_writeahead_requests << ")."
+         << endl << endl;
+  }
+  if (max_writeahead_requests != 0 &&
+      (max_writeahead > max_writeahead_requests * 128 * 1024)) {
+    cerr << "Information: The value max-writeahead may be ineffective as the"
+            " allowed maximum number of pending writes (max-writeahead-requests"
+            " = " << max_writeahead_requests << ") does limit the maximum"
+            " writeahead considering the default object size 128kB:\n\t"
+         << "max write ahead of " << max_writeahead << " > " << "128kB default"
+            " object size * " << max_writeahead_requests << " max write"
+            " requests (= " << (128 * 1024 * max_writeahead_requests) <<
+            " effective writeahead)."
+         << endl << endl;
   }
 
   // Show help if no arguments given.
