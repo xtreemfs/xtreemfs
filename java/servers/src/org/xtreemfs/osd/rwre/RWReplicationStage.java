@@ -113,7 +113,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     private static final int MAX_PENDING_PER_FILE = 10;
 
-    private static final int MAX_EXTERNAL_REQUESTS_IN_Q = 500;
+    private static final int MAX_EXTERNAL_REQUESTS_IN_Q = 250;
 
     private final Queue<ReplicatedFileState> filesInReset;
 

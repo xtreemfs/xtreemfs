@@ -65,8 +65,10 @@ public abstract class Stage extends LifeCycleThread {
     protected void enqueueOperation(int stageOp, Object[] args, OSDRequest request, Object callback) {
         // rq.setEnqueueNanos(System.nanoTime());
         if (!q.offer(new StageRequest(stageOp, args, request, callback))) {
-            Logging.logMessage(Logging.LEVEL_WARN, this, "stage is overloaded, request %d for %s dropped", request.getRequestId(), request.getFileId());
-            request.sendInternalServerError(new IllegalStateException("server overloaded, request dropped"));
+            if (request != null) {
+                Logging.logMessage(Logging.LEVEL_WARN, this, "stage is overloaded, request %d for %s dropped", request.getRequestId(), request.getFileId());
+                request.sendInternalServerError(new IllegalStateException("server overloaded, request dropped"));
+            }
         }
     }
     
