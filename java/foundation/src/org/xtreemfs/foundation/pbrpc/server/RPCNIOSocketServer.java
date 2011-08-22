@@ -575,6 +575,13 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                     }
                 }
             }
+        } catch (CancelledKeyException ex) {
+            if (Logging.isInfo()) {
+                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                    "client closed connection (CancelledKeyException): %s", channel.socket().getRemoteSocketAddress()
+                            .toString());
+            }
+            closeConnection(key);
         } catch (ClosedByInterruptException ex) {
             if (Logging.isInfo()) {
                 Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,

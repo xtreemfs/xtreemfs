@@ -511,6 +511,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 // sent.
                 BufferPool.free(receiveBuffers[1]);
                 BufferPool.free(receiveBuffers[2]);
+                rq.freeBuffers();
                 Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
                                     "received response for unknown request callId=%d",
                                     header.getCallId());
@@ -519,7 +520,6 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             RPCResponse response = rq.getResponse();
             rq.setResponseHeader(header);
             con.setResponseBuffers(null);
-
 
             response.responseAvailable(rq, receiveBuffers[1], receiveBuffers[2]);
         } catch (IOException ex) {
@@ -548,7 +548,6 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                                     break;
                                 }
                                 send = con.getSendQueue().get(0);
-                                con.addRequest(send.getRequestHeader().getCallId(), send);
                             }
                             assert(send != null);
                             con.getRequestRecordMarker().clear();
@@ -577,6 +576,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                         //remove from queue
                         synchronized (con) {
                             RPCClientRequest send = con.getSendQueue().remove(0);
+                            con.addRequest(send.getRequestHeader().getCallId(), send);
                             if (Logging.isDebug()) {
                                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
                                     "sent request %d to %s", send.getRequestHeader().getCallId(), con.getEndpoint()
