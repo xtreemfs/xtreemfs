@@ -64,7 +64,7 @@ VolumeConfigs = {
                     'stripe_width': 1,
                     'rwr_factor': 3,
                     'ronly_factor': 0,
-                    'mount_options': [ '--max-read-tries=9999' ]
+                    'mount_options': [ '--max-read-tries=50', '--max-write-tries=50', '--max-tries=50' ]
                 },
 }
 
