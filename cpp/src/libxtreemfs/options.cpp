@@ -55,7 +55,8 @@ Options::Options()
   // Optimizations.
   metadata_cache_size = 100000;
   metadata_cache_ttl_s = 120;
-  max_writeahead = 10 * 128 * 1024;  // 10 default objects = 1280kB = 1.25MB.
+  //TODO(mberlin): Reenable async writes when retry support is completed.
+  max_writeahead = 0; // 10 * 128 * 1024;  // 10 default objects = 1280kB = 1.25MB.
   max_writeahead_requests = 10;  // Only 10 pending requests allowed by default.
   readdir_chunk_size = 1024;
 
@@ -150,13 +151,13 @@ void Options::GenerateProgramOptionsDescriptions() {
         "Time to live after which cached entries will expire.")
     ("max-writeahead",
         po::value(&max_writeahead)->default_value(max_writeahead),
-        "Maximum number of pending written bytes per file.")
+        "Maximum number of pending written bytes per file. Set this to 0"
+        " to completely disable asynchronous writes)")
     ("max-writeahead-requests",
         po::value(&max_writeahead_requests)
             ->default_value(max_writeahead_requests),
         "Maximum number of pending write requests per file (Asynchronous writes"
-        " will block if this or max-writeahead is reached first. Set this to 0"
-        " to completely disable asynchronous writes).")
+        " will block if this or max-writeahead is reached first).")
         //TODO(bjko): Insert new OSD parameter.
 //        "\nIf you increase this value, please take care of the value "
 //        " in the OSD config and do not set it to high to avoid flooding.")
@@ -300,7 +301,21 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
          << endl << endl;
   }
 
-  if (max_writeahead_requests != 0 &&
+  if (max_writeahead_requests < 1) {
+    throw InvalidCommandLineParametersException("The maximum number of pending"
+        " asynchronous writes (max-writeahead-requests) must be greater or"
+        " equal 1. If you want to completely disable asynchronous writes,"
+        " please set max-writeahead to 0. The value of max-writeahead-requests"
+        " will be ignored then.");
+  }
+
+  if (max_writeahead != 0 && max_writeahead < 128 * 1024) {
+    throw InvalidCommandLineParametersException("Please specify a writeahead"
+        " size which is at least as high as the default object size of"
+        " 131072 byes (128 kB).");
+  }
+
+  if (max_writeahead != 0 &&
       (max_writeahead_requests * 128 * 1024 > max_writeahead)) {
     cerr << "Information: The value max-writeahead-requests may be ineffective"
             " if you are writing buffers of a multiple of the object size"
@@ -308,10 +323,12 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
             " requests to:\n\t"
          << max_writeahead << " / " << " 128kB default object size = "
          << (max_writeahead / 128 / 1024) << "\n\t(which is lower than the set"
-            " maximum number of requests: " << max_writeahead_requests << ")."
+            " maximum number of requests: " << max_writeahead_requests << ").\n"
+         << "The recommended max-writeahead for the current maximum number of"
+            " pending writes is: " << (max_writeahead_requests * 128 * 1024)
          << endl << endl;
   }
-  if (max_writeahead_requests != 0 &&
+  if (max_writeahead != 0 &&
       (max_writeahead > max_writeahead_requests * 128 * 1024)) {
     cerr << "Information: The value max-writeahead may be ineffective as the"
             " allowed maximum number of pending writes (max-writeahead-requests"
@@ -327,12 +344,6 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
   // Show help if no arguments given.
   if (argc == 1) {
     empty_arguments_list = true;
-  }
-
-  if (max_writeahead < 128 * 1024) {
-    throw InvalidCommandLineParametersException("Please specify a writeahead"
-        " size which is at least as high as the default object size of"
-        " 131072 byes (128 kB).");
   }
 
   if (grid_auth_mode_globus && grid_auth_mode_unicore) {

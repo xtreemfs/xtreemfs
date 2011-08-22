@@ -295,7 +295,7 @@ FileHandle* VolumeImplementation::OpenFile(
     const xtreemfs::pbrpc::SYSTEM_V_FCNTL flags,
     boost::uint32_t mode,
     int truncate_new_file_size) {
-  bool async_writes_enabled = (volume_options_.max_writeahead_requests > 0);
+  bool async_writes_enabled = (volume_options_.max_writeahead > 0);
 
   if (flags & SYSTEM_V_FCNTL_H_O_SYNC) {
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
