@@ -511,7 +511,6 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 // sent.
                 BufferPool.free(receiveBuffers[1]);
                 BufferPool.free(receiveBuffers[2]);
-                rq.freeBuffers();
                 Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
                                     "received response for unknown request callId=%d",
                                     header.getCallId());
