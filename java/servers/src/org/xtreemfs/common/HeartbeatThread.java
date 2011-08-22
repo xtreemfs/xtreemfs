@@ -31,6 +31,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
@@ -261,7 +262,18 @@ public class HeartbeatThread extends LifeCycleThread {
             while (!quit) {
                 synchronized (this) {
                     try {
-                        registerServices();
+                        while (true) {
+                            try {
+                                registerServices();
+                                break;
+                            } catch (PBRPCException ex) {
+                                if (ex.getPOSIXErrno() != POSIXErrno.POSIX_ERROR_EAGAIN) {
+                                    throw ex;
+                                } else {
+                                    Logging.logMessage(Logging.LEVEL_INFO, this, "Concurrent modification exception: %s", ex.toString());
+                                }
+                            }
+                        }
                     } catch (IOException ex) {
                         Logging.logError(Logging.LEVEL_ERROR, this, ex);
                     } catch (InterruptedException ex) {

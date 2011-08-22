@@ -338,7 +338,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
         RPCResponseAvailableListener listener = new RPCResponseAvailableListener() {
             int numAcks = 0;
             int numErrors = 0;
-            boolean exceptionSent = false;
+            boolean responseSent = false;
 
             @Override
             public void responseAvailable(RPCResponse r) {
@@ -350,8 +350,8 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"exception for %s/%s (acks: %d, errs: %d, maxErrs: %d)",
                                            operation, fileId, numAcks, numErrors, maxErrors);
                     if (numErrors > maxErrors) {
-                        if (!exceptionSent) {
-                            exceptionSent = true;
+                        if (!responseSent) {
+                            responseSent = true;
                             Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this,"replicated %s FAILED for %s (acks: %d, errs: %d, maxErrs: %d)",
                                                operation, fileId, numAcks, numErrors, maxErrors);
                             callback.failed(ErrorUtils.getInternalServerError(ex));
@@ -362,6 +362,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                     r.freeBuffers();
                 }
                 if (numAcks == numAcksRequired) {
+                    responseSent = true;
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"replicated %s successfull for %s",operation,fileId);
                     }

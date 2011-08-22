@@ -105,6 +105,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     private final FleaseStage          fstage;
 
+    private final RPCNIOSocketClient   fleaseClient;
+
+    private final OSDServiceClient     fleaseOsdClient;
+
+
     private final ASCIIString          localID;
 
     private int                        numObjsInFlight;
@@ -127,7 +132,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         super("RWReplSt");
         this.master = master;
         client = new RPCNIOSocketClient(sslOpts, 15000, 60000*5);
+        fleaseClient = new RPCNIOSocketClient(sslOpts, 15000, 60000*5);
         osdClient = new OSDServiceClient(client,null);
+        fleaseOsdClient = new OSDServiceClient(fleaseClient,null);
         files = new HashMap<String, ReplicatedFileState>();
         cellToFileId = new HashMap<ASCIIString,String>();
         numObjsInFlight = 0;
@@ -170,6 +177,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     public void start() {
         masterEpochThread.start();
         client.start();
+        fleaseClient.start();
         fstage.start();
         super.start();
     }
@@ -177,6 +185,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     @Override
     public void shutdown() {
         client.shutdown();
+        fleaseClient.shutdown();
         fstage.shutdown();
         masterEpochThread.shutdown();
         super.shutdown();
@@ -186,12 +195,14 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     public void waitForStartup() throws Exception {
         masterEpochThread.waitForStartup();
         client.waitForStartup();
+        fleaseClient.waitForStartup();
         fstage.waitForStartup();
         super.waitForStartup();
     }
 
     public void waitForShutdown() throws Exception {
         client.waitForShutdown();
+        fleaseClient.waitForShutdown();
         fstage.waitForShutdown();
         masterEpochThread.waitForShutdown();
         super.waitForShutdown();
@@ -723,7 +734,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         message.serialize(data);
         data.flip();
         try {
-            RPCResponse r = osdClient.xtreemfs_rwr_flease_msg(recipient, RPCAuthentication.authNone, RPCAuthentication.userService, master.getHostName(),master.getConfig().getPort(),data);
+            RPCResponse r = fleaseOsdClient.xtreemfs_rwr_flease_msg(recipient, RPCAuthentication.authNone, RPCAuthentication.userService, master.getHostName(),master.getConfig().getPort(),data);
             r.registerListener(new RPCResponseAvailableListener() {
 
                 @Override
