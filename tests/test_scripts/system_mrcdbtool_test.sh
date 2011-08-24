@@ -15,6 +15,9 @@ $COMMAND
 RESULT=$?
 if [ "$RESULT" -ne "0" ]; then echo "$COMMAND failed"; exit $RESULT; fi
 
+# wait for the dump to be created (asynchronously)
+sleep 5
+
 # check the dump
 cat $TEST_DIR/dump.xml |grep "<filesystem "
 
