@@ -330,6 +330,14 @@ FileHandle* VolumeImplementation::OpenFile(
   // We must have obtained file credentials.
   assert(open_response->has_creds());
 
+  if (open_response->creds().xlocs().replicas_size() == 0) {
+    string error = "MRC assigned no OSDs to file on open: " + path +
+        ", xloc: " + open_response->creds().xlocs().DebugString();
+    Logging::log->getLog(LEVEL_ERROR) << error << endl;
+    xtreemfs::util::ErrorLog::error_log->AppendError(error);
+    throw PosixErrorException(POSIX_ERROR_EIO, error);
+  }
+
   FileHandleImplementation* file_handle = NULL;
   // Create a FileInfo object if it does not exist yet.
   {
