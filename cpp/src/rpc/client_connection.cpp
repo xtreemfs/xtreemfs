@@ -110,7 +110,8 @@ void ClientConnection::DoProcess() {
       Connect();
     } else {
       SendError(POSIX_ERROR_EIO,
-                string("cannot connect to server, reconnect blocked"));
+                "cannot connect to server '" + server_name_ + ":" + server_port_
+                    + "', reconnect blocked");
     }
   }
 }
@@ -145,8 +146,9 @@ void ClientConnection::Connect() {
 void ClientConnection::OnConnectTimeout(const boost::system::error_code& err) {
   if (err != asio::error::operation_aborted) {
     Reset();
-    SendError(POSIX_ERROR_EIO, string("connection to '")
-        + server_name_ + ":" + server_port_ + "' timed out");
+    SendError(POSIX_ERROR_EIO,
+              "connection to '" + server_name_ + ":" + server_port_
+                  + "' timed out");
   }
 }
 
@@ -156,9 +158,8 @@ void ClientConnection::PostResolve(
   if (err) {
     Reset();
     SendError(POSIX_ERROR_EIO,
-        std::string("could not connect to '")
-        + server_name_ + ":" + server_port_
-        + "': " + err.message());
+              "could not connect to '" + server_name_ + ":" + server_port_
+                  + "': " + err.message());
   }
   if (endpoint_iterator != tcp::resolver::iterator()) {
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -206,8 +207,9 @@ void ClientConnection::PostConnect(
       PostResolve(err, endpoint_iterator);
     } else {
       Reset();
-      SendError(POSIX_ERROR_EIO, string("could not connect to host name '")
-          + server_name_ + "': " + err.message());
+      SendError(POSIX_ERROR_EIO,
+                "could not connect to host '" + server_name_ + ":"
+                    + server_port_ + "': " + err.message());
     }
   } else {
     // Do something useful.
@@ -295,16 +297,18 @@ void ClientConnection::Close() {
   delete socket_;
   socket_ = NULL;
   connection_state_ = CLOSED;
-  SendError(POSIX_ERROR_EIO, "connection to '" + server_name_
-      + "' closed locally");
+  SendError(POSIX_ERROR_EIO,
+            "connection to '" + server_name_ + ":" + server_port_ + "' closed"
+                " locally");
 }
 
 void ClientConnection::PostWrite(const boost::system::error_code& err,
                                  size_t bytes_written) {
   if (err) {
     Reset();
-    SendError(POSIX_ERROR_EIO, "could not send request to '"
-        + server_name_+":"+server_port_ + "': " + err.message());
+    SendError(POSIX_ERROR_EIO,
+              "could not send request to '" + server_name_ + ":" +server_port_
+                  + "': " + err.message());
   } else {
     // Send next?
     requests_.pop();
@@ -317,9 +321,9 @@ void ClientConnection::PostReadRecordMarker(
     const boost::system::error_code& err) {
   if (err) {
     Reset();
-    string msg = "could not read record marker in response from '"
-        + server_name_ + ":" + server_port_ + "': " + err.message();
-    SendError(POSIX_ERROR_EIO, msg);
+    SendError(POSIX_ERROR_EIO,
+              "could not read record marker in response from '" + server_name_
+                  + ":" + server_port_ + "': " + err.message());
   } else {
     // Do read.
     receive_marker_ = new RecordMarker(receive_marker_buffer_);
@@ -352,8 +356,9 @@ void ClientConnection::PostReadRecordMarker(
 void ClientConnection::PostReadMessage(const boost::system::error_code& err) {
   if (err) {
     Reset();
-    SendError(POSIX_ERROR_EIO, "could not read response from '" +
-        server_name_ + "': " + err.message());
+    SendError(POSIX_ERROR_EIO,
+              "could not read response from '" + server_name_ + ":"
+                  + server_port_ + "': " + err.message());
   } else {
     // Parse header.
     RPCHeader *respHdr = new RPCHeader();
@@ -365,8 +370,9 @@ void ClientConnection::PostReadMessage(const boost::system::error_code& err) {
       DeleteInternalBuffers();
       delete respHdr;
       Reset();
-      SendError(POSIX_ERROR_EINVAL, "received garbage header from '" +
-          server_name_ + ", closing connection");
+      SendError(POSIX_ERROR_EINVAL,
+                "received garbage header from '" + server_name_ + ":"
+                    + server_port_ + "', closing connection");
       return;
     }
 
