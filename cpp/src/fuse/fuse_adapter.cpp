@@ -28,6 +28,7 @@
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/user_mapping.h"
+#include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/uuid_resolver.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
@@ -164,12 +165,29 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   volume_->GetAttr(client_user_credentials, "/", &stat);
 
   // Check the attributes of the Volume.
-  string mrc_uuid;
+  // Ugly trick to get the addresses of all MRC UUIDs and pass them to
+  // ListVolumes().
+  UUIDIterator mrc_uuids;
+  UUIDIterator mrc_addresses;
   client_->GetUUIDResolver()->VolumeNameToMRCUUID(options_->volume_name,
-                                                  &mrc_uuid);
-  string mrc_address;
-  client_->GetUUIDResolver()->UUIDToAddress(mrc_uuid, &mrc_address);
-  boost::scoped_ptr<Volumes> volumes(client_->ListVolumes(mrc_address));
+                                                  &mrc_uuids);
+  string first_mrc_uuid = "";
+  string current_mrc_uuid;
+  string current_mrc_address;
+  while (true) {
+    mrc_uuids.GetUUID(&current_mrc_uuid);
+    if (first_mrc_uuid == "") {
+      first_mrc_uuid = current_mrc_uuid;
+    } else if (first_mrc_uuid == current_mrc_uuid) {
+      break;
+    }
+    client_->GetUUIDResolver()->UUIDToAddress(current_mrc_uuid,
+                                              &current_mrc_address);
+    mrc_uuids.MarkUUIDAsFailed(current_mrc_uuid);
+    mrc_addresses.AddUUID(current_mrc_address);
+  }
+
+  boost::scoped_ptr<Volumes> volumes(client_->ListVolumes(&mrc_addresses));
   for (int i = 0; i < volumes->volumes_size(); i++) {
     // Found volume?
     if (volumes->volumes(i).name() == options_->volume_name) {
