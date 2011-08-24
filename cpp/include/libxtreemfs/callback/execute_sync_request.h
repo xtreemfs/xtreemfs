@@ -116,39 +116,28 @@ template<class ReturnMessageType, class F>
       // allowed) and application errors (need to pass to the caller).
 
       // Special handling of an UUID redirection.
-      if (response->error()->error_type() == xtreemfs::pbrpc::REDIRECT
-          && !uuid_iterator_has_addresses) {
+      if (response->error()->error_type() == xtreemfs::pbrpc::REDIRECT) {
         assert(response->error()->has_redirect_to_server_uuid());
-        if (uuid_iterator->SetCurrentUUID(
-            response->error()->redirect_to_server_uuid())) {
-          // Log the redirect.
-          xtreemfs::util::LogLevel level = xtreemfs::util::LEVEL_INFO;
-          std::string error
-              = "The server with the UUID: " + service_uuid
-              + " redirected to the current master with the UUID: "
-              + response->error()->redirect_to_server_uuid()
-              + " at attempt: " + boost::lexical_cast<std::string>(attempt);
-          if (xtreemfs::util::Logging::log->loggingActive(level)) {
-            xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
-          }
-          xtreemfs::util::ErrorLog::error_log->AppendError(error);
+        uuid_iterator->SetCurrentUUID(
+            response->error()->redirect_to_server_uuid());
+        // Log the redirect.
+        xtreemfs::util::LogLevel level = xtreemfs::util::LEVEL_INFO;
+        std::string error;
+        if (uuid_iterator_has_addresses) {
+          error = "The server: " + service_address
+                + " redirected to the current master: "
+                + response->error()->redirect_to_server_uuid()
+                + " at attempt: " + boost::lexical_cast<std::string>(attempt);
         } else {
-          // The new UUID was not found in the iterator.
-          std::string attempt_string
-              = boost::lexical_cast<std::string>(attempt);
-          std::string error = "We were redirected at attempt " + attempt_string
-                            + " by the OSD with the UUID: " + service_uuid
-                            + " to an OSD with the UUID: "
-                            + response->error()->redirect_to_server_uuid()
-                            + " which was not found in the UUID Iterator: "
-                            + uuid_iterator->DebugString();
-          xtreemfs::util::Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
-              << error << std::endl;
-          xtreemfs::util::ErrorLog::error_log->AppendError(error);
-          // TODO(mberlin): This should never happen. But when it does, this may
-          //                result in an infinite loop. Therefore, do define an
-          //                error handling here.
+          error = "The server with the UUID: " + service_uuid
+                + " redirected to the current master with the UUID: "
+                + response->error()->redirect_to_server_uuid()
+                + " at attempt: " + boost::lexical_cast<std::string>(attempt);
         }
+        if (xtreemfs::util::Logging::log->loggingActive(level)) {
+          xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
+        }
+        xtreemfs::util::ErrorLog::error_log->AppendError(error);
 
         if (max_tries != 0 && attempt == max_tries) {
           // This was the last retry, but we give it another chance.

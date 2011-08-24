@@ -154,7 +154,7 @@ TEST_F(UUIDIteratorTest, SetCurrentUUID) {
   EXPECT_EQ(uuid1, current_uuid);
 
   // Set third as current one.
-  EXPECT_TRUE(uuid_iterator_->SetCurrentUUID(uuid3));
+  uuid_iterator_->SetCurrentUUID(uuid3);
   uuid_iterator_->GetUUID(&current_uuid);
   EXPECT_EQ(uuid3, current_uuid);
 
@@ -167,6 +167,16 @@ TEST_F(UUIDIteratorTest, SetCurrentUUID) {
        ++it) {
     EXPECT_FALSE((*it)->marked_as_failed);
   }
+  EXPECT_EQ(uuid1, current_uuid);
+}
+
+TEST_F(UUIDIteratorTest, SetCurrentUUIDAddsUnknownUUID) {
+  string uuid1 = "uuid1";
+  string current_uuid;
+
+  // UUID1 not added so far. Setting it will automatically add it.
+  uuid_iterator_->SetCurrentUUID(uuid1);
+  uuid_iterator_->GetUUID(&current_uuid);
   EXPECT_EQ(uuid1, current_uuid);
 }
 

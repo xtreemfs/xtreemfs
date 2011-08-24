@@ -123,7 +123,7 @@ void UUIDIterator::MarkUUIDAsFailed(const std::string& uuid) {
   }
 }
 
-bool UUIDIterator::SetCurrentUUID(const std::string& uuid) {
+void UUIDIterator::SetCurrentUUID(const std::string& uuid) {
   boost::mutex::scoped_lock lock(mutex_);
 
   // Search "uuid" in "uuids_" and set it to the current UUID.
@@ -134,11 +134,16 @@ bool UUIDIterator::SetCurrentUUID(const std::string& uuid) {
       current_uuid_ = it;
       // Reset its current state.
       (*current_uuid_)->marked_as_failed = false;
-      return true;
+      return;
     }
   }
 
-  return false;
+  // UUID was not found, add it.
+  UUIDItem* entry = new UUIDItem(uuid);
+  uuids_.push_back(entry);
+  // Add current UUID to the added, last UUID.
+  list<UUIDItem*>::iterator it = uuids_.end();
+  current_uuid_ = --it;
 }
 
 }  // namespace xtreemfs
