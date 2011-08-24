@@ -238,14 +238,19 @@ void ClientImplementation::DeleteVolume(
 
 xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
     const std::string& mrc_address) {
+  UUIDIterator temp_uuid_iterator_with_addresses;
+  temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
+
+  return ListVolumes(&temp_uuid_iterator_with_addresses);
+}
+
+xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
+    UUIDIterator* uuid_iterator_with_mrc_addresses) {
   // Create a MRCServiceClient
   MRCServiceClient mrc_service_client(network_client_.get());
   // Use bogus user_credentials;
   UserCredentials user_credentials;
   user_credentials.set_username("xtreemfs");
-
-  UUIDIterator temp_uuid_iterator_with_addresses;
-  temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
 
   // Retrieve the list of volumes from the MRC.
   boost::scoped_ptr< SyncCallback<xtreemfs::pbrpc::Volumes> > response(
@@ -256,7 +261,7 @@ xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
               _1,
               boost::cref(auth_bogus_),
               boost::cref(user_credentials)),
-          &temp_uuid_iterator_with_addresses,
+          uuid_iterator_with_mrc_addresses,
           NULL,
           options_.max_tries,
           options_,
@@ -444,7 +449,7 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
           if (Logging::log->loggingActive(LEVEL_DEBUG)) {
             Logging::log->getLog(LEVEL_DEBUG)
                 << "MRC with UUID: " << data.data(j).value()
-                << " added (key: " << data.data(j).key() << "." << std::endl;
+                << " added (key: " << data.data(j).key() << ")." << std::endl;
           }
           uuid_iterator->AddUUID(data.data(j).value());
           mrc_found = true;

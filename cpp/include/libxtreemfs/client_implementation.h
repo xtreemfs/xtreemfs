@@ -25,6 +25,7 @@ class thread;
 namespace xtreemfs {
 
 class Options;
+class UUIDIterator;
 class Volume;
 class VolumeImplementation;
 
@@ -80,6 +81,9 @@ class ClientImplementation : public Client, public UUIDResolver {
 
   virtual xtreemfs::pbrpc::Volumes* ListVolumes(
       const std::string& mrc_address);
+
+  virtual xtreemfs::pbrpc::Volumes* ListVolumes(
+      UUIDIterator* uuid_iterator_with_mrc_addresses);
 
   virtual UUIDResolver* GetUUIDResolver();
 

@@ -18,6 +18,7 @@
 namespace xtreemfs {
 
 class Options;
+class UUIDIterator;
 class UUIDResolver;
 class Volume;
 
@@ -160,8 +161,6 @@ class Client {
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& volume_name) = 0;
 
-  // TODO(mberlin): Also provide a method which accepts a list of MRC addresses
-  //                or an UUID Iterator object which contains all addresses.
   /** Returns the available volumes on a MRC.
    *
    * @param mrc_address     String of the form "hostname:port".
@@ -173,6 +172,20 @@ class Client {
    * @remark Ownership is transferred to the caller. */
   virtual xtreemfs::pbrpc::Volumes* ListVolumes(
       const std::string& mrc_address) = 0;
+
+  /** Returns the available volumes on a MRC.
+   *
+   * @param uuid_iterator_with_mrc_addresses    UUIDIterator object which
+   *                                            contains MRC addresses of the
+   *                                            form "hostname:port".
+   *
+   * @throws AddressToUUIDNotFoundException
+   * @throws IOException
+   * @throws PosixErrorException
+   *
+   * @remark Ownership of the return value is transferred to the caller. */
+  virtual xtreemfs::pbrpc::Volumes* ListVolumes(
+      UUIDIterator* uuid_iterator_with_mrc_addresses) = 0;
 
   /** Returns a pointer to a UUIDResolver object, which provides functions to
    *  resolve UUIDs to IP-Addresses and Ports.
