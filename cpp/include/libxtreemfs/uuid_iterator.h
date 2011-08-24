@@ -65,9 +65,9 @@ class UUIDIterator {
    *  list. */
   void MarkUUIDAsFailed(const std::string& uuid);
 
-  /** Sets "uuid" as current UUID. Returns false, if uuid was not found in the
-      list of UUIDs, true otherwise. */
-  bool SetCurrentUUID(const std::string& uuid);
+  /** Sets "uuid" as current UUID. If uuid was not found in the list of UUIDs,
+   *  it will be added to the UUIDIterator. */
+  void SetCurrentUUID(const std::string& uuid);
 
  private:
   /** Obtain a lock on this when accessing uuids_ or current_uuid_. */
