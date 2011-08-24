@@ -318,6 +318,8 @@ int FileHandleImplementation::Write(
         } else {
           response->DeleteBuffers();
         }
+      } else {
+        response->DeleteBuffers();
       }
     }  // objects loop.
   }
