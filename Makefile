@@ -225,8 +225,11 @@ client_thirdparty_distclean:
 	@if [ -f $(CLIENT_GOOGLE_TEST_CHECKFILE) ]; then rm $(CLIENT_GOOGLE_TEST_CHECKFILE); fi
 	@echo "client_thirdparty: ...finished distcleaning thirdparty sources."
 
+client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
+client_debug: client
+
 client: check_client client_thirdparty
-	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG)
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)	
 	@cp   -a $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTFS_BINDIR)
 	@cp   -a $(XTREEMFS_CLIENT_BUILD_DIR)/xtfsutil $(XTFS_BINDIR)
