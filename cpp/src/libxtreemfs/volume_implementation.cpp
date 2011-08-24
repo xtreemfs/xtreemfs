@@ -916,6 +916,9 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
     }
   }
 
+  // TODO(mberlin): Merge possible pending file size updates of files into
+  //                the stat entries of listed files.
+
   // Cache the first stat buffers that fit into the cache.
   for (int i = 0;
        i < min(volume_options_.metadata_cache_size,
