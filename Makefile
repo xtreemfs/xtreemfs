@@ -26,6 +26,7 @@ XTREEMFS_CONFIG_DIR=$(XTREEMFS_CONFIG_PARENT_DIR)/xtreemfs
 XTREEMFS_INIT_DIR=$(DESTDIR)/etc/init.d
 XTREEMFS_CLIENT_BUILD_DIR=$(shell pwd)/cpp/build
 BIN_DIR=$(DESTDIR)/usr/bin
+SBIN_DIR=$(DESTDIR)/sbin
 MAN_DIR=$(DESTDIR)/usr/share/man/man1
 DOC_DIR_SERVER=$(DESTDIR)/usr/share/doc/xtreemfs-server
 DOC_DIR_CLIENT=$(DESTDIR)/usr/share/doc/xtreemfs-client
@@ -72,6 +73,9 @@ install-client:
 	@mkdir -p $(BIN_DIR)
 	@cp   -a  bin/*.xtreemfs bin/xtfsutil $(BIN_DIR)
 	          #bin/xtfs_vivaldi
+	          
+	@ln -s $(BIN_DIR)/mount.xtreemfs $(SBIN_DIR)/mount.xtreemfs
+	@ln -s $(BIN_DIR)/umount.xtreemfs $(SBIN_DIR)/umount.xtreemfs
 
 	@mkdir -p $(XTREEMFS_CONFIG_DIR)
 	@cp etc/xos/xtreemfs/default_dir $(XTREEMFS_CONFIG_DIR)
@@ -144,6 +148,9 @@ uninstall:
 	
 	@rm -rf $(BIN_DIR)/xtfs*
 	@rm -rf $(BIN_DIR)/*.xtreemfs
+	
+	@rm -f $(SBIN_DIR)/mount.xtreemfs
+	@rm -f $(SBIN_DIR)/umount.xtreemfs
 
 	@rm -f $(XTREEMFS_JAR_DIR)/XtreemFS.jar
 	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB*.jar
