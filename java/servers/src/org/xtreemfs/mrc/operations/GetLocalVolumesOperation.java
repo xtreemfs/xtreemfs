@@ -11,8 +11,10 @@ package org.xtreemfs.mrc.operations;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.DatabaseResultSet;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.XAttr;
@@ -36,6 +38,9 @@ public class GetLocalVolumesOperation extends MRCOperation {
     public void startRequest(MRCRequest rq) throws Throwable {
         
         Collection<StorageManager> sMans = master.getVolumeManager().getStorageManagers();
+        if (sMans == null)
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                    "cannot retrieve volume list because volume manager has not yet been initialized");
         
         Volumes.Builder vSet = Volumes.newBuilder();
         for (StorageManager sMan : sMans) {

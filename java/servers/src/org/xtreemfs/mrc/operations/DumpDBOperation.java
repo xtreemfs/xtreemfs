@@ -11,6 +11,7 @@ package org.xtreemfs.mrc.operations;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -99,7 +100,13 @@ public class DumpDBOperation extends MRCOperation {
             // create snapshots of all volumes
             List<StorageManager> storageManagers = new LinkedList<StorageManager>();
             final VolumeManager vMan = master.getVolumeManager();
-            for (StorageManager sMan : vMan.getStorageManagers()) {
+            
+            Collection<StorageManager> sManColl = vMan.getStorageManagers();
+            if (sManColl == null)
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                        "cannot dump volumes because volume manager has not yet been initialized");
+
+            for (StorageManager sMan : sManColl) {
                 
                 FileMetadata rootDir = sMan.getMetadata(1);
                 try {

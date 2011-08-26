@@ -13,23 +13,23 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
+import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume;
 
@@ -46,21 +46,28 @@ public class CreateVolumeOperation extends MRCOperation {
     @Override
     public void startRequest(final MRCRequest rq) throws Throwable {
         
+        // perform master redirect if replicated and required
+        String replMasterUUID = master.getReplMasterUUID();
+        if (replMasterUUID != null && !replMasterUUID.equals(master.getConfig().getUUID().toString())) {
+            ServiceUUID uuid = new ServiceUUID(replMasterUUID);
+            throw new DatabaseException(ExceptionType.REDIRECT, uuid.getAddress().getHostName() + ":"
+                    + uuid.getAddress().getPort());
+        }
+        
         final Volume volData = (Volume) rq.getRequestArgs();
         
         // check password to ensure that user is authorized
         if (master.getConfig().getAdminPassword().length() > 0
-            && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
+                && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
             throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "invalid password");
         
         validateContext(rq);
         
         try {
-            master.getFileAccessManager().getFileAccessPolicy(
-                (short) volData.getAccessControlPolicy().getNumber());
+            master.getFileAccessManager().getFileAccessPolicy((short) volData.getAccessControlPolicy().getNumber());
         } catch (Exception exc) {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "invalid file access policy ID: "
-                + volData.getAccessControlPolicy());
+                    + volData.getAccessControlPolicy());
         }
         
         // in order to allow volume creation in a single-threaded
@@ -78,17 +85,18 @@ public class CreateVolumeOperation extends MRCOperation {
         queryMap.put("name", volData.getName());
         List<String> attrs = new LinkedList<String>();
         attrs.add("version");
-
+        
         // Ugly workaround for async call.
         Runnable rqThr = new Runnable() {
             @Override
             public void run() {
                 try {
-                    ServiceSet sset = master.getDirClient().xtreemfs_service_get_by_type(null, rq.getDetails().auth, RPCAuthentication.userService, ServiceType.SERVICE_TYPE_VOLUME);
+                    ServiceSet sset = master.getDirClient().xtreemfs_service_get_by_type(null, rq.getDetails().auth,
+                            RPCAuthentication.userService, ServiceType.SERVICE_TYPE_VOLUME);
                     processStep2(volData, volumeId, rq, sset);
                 } catch (Exception ex) {
                     finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-                                  "an error has occurred", ex));
+                            "an error has occurred", ex));
                 }
             }
         };
@@ -96,15 +104,14 @@ public class CreateVolumeOperation extends MRCOperation {
         thr.start();
     }
     
-    private void processStep2(final Volume volData, final String volumeId, final MRCRequest rq,
-        ServiceSet response) {
+    private void processStep2(final Volume volData, final String volumeId, final MRCRequest rq, ServiceSet response) {
         try {
             // check if the volume already exists; if so, return an error
             for (Service reg : response.getServicesList())
                 if (volData.getName().equals(reg.getName())) {
                     String uuid = reg.getUuid();
                     throw new UserException(POSIXErrno.POSIX_ERROR_EEXIST, "volume '" + volData.getName()
-                        + "' already exists in Directory Service, id='" + uuid + "'");
+                            + "' already exists in Directory Service, id='" + uuid + "'");
                 }
             
             // determine owner and owning group for the new volume
@@ -117,18 +124,16 @@ public class CreateVolumeOperation extends MRCOperation {
                 gid = rq.getDetails().groupIds.get(0);
             
             // create the volume locally
-            master.getVolumeManager().createVolume(master.getFileAccessManager(), volumeId,
-                volData.getName(), (short) volData.getAccessControlPolicy().getNumber(), uid, gid,
-                volData.getDefaultStripingPolicy(), volData.getMode(), volData.getAttrsList());
-            
+            master.getVolumeManager().createVolume(master.getFileAccessManager(), volumeId, volData.getName(),
+                    (short) volData.getAccessControlPolicy().getNumber(), uid, gid, volData.getDefaultStripingPolicy(),
+                    volData.getMode(), volData.getAttrsList());
             
             master.notifyVolumeCreated();
             
             // register the volume at the Directory Service
             
             ServiceDataMap.Builder dmap = ServiceDataMap.newBuilder();
-            dmap.addData(KeyValuePair.newBuilder().setKey("mrc").setValue(
-                master.getConfig().getUUID().toString()));
+            dmap.addData(KeyValuePair.newBuilder().setKey("mrc").setValue(master.getConfig().getUUID().toString()));
             dmap.addData(KeyValuePair.newBuilder().setKey("free").setValue("0"));
             
             // add all user-defined volume attributes
@@ -137,17 +142,18 @@ public class CreateVolumeOperation extends MRCOperation {
             
             final Service vol = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_VOLUME).setUuid(volumeId)
                     .setVersion(0).setName(volData.getName()).setLastUpdatedS(0).setData(dmap).build();
-
+            
             // Ugly workaround for async call.
             Runnable rqThr = new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        master.getDirClient().xtreemfs_service_register(null, rq.getDetails().auth, RPCAuthentication.userService, vol);
+                        master.getDirClient().xtreemfs_service_register(null, rq.getDetails().auth,
+                                RPCAuthentication.userService, vol);
                         processStep3(volData, volumeId, rq);
                     } catch (Exception ex) {
                         finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-                                      "an error has occurred", ex));
+                                "an error has occurred", ex));
                     }
                 }
             };
@@ -158,9 +164,12 @@ public class CreateVolumeOperation extends MRCOperation {
             if (Logging.isDebug())
                 Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
             finishRequest(rq, new ErrorRecord(ErrorType.ERRNO, exc.getErrno(), exc.getMessage(), exc));
+        } catch (DatabaseException exc) {
+            finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
+                    "an error has occurred", exc));
         } catch (Throwable exc) {
             finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-                "an error has occurred", exc));
+                    "an error has occurred", exc));
         }
     }
     
@@ -171,8 +180,8 @@ public class CreateVolumeOperation extends MRCOperation {
             finishRequest(rq);
         } catch (Throwable exc) {
             finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-                "an error has occurred", exc));
-        } 
+                    "an error has occurred", exc));
+        }
     }
     
 }

@@ -285,7 +285,11 @@ public class ProcessingStage extends MRCStage {
             if (exc.getType() == ExceptionType.NOT_ALLOWED) {
                 reportUserError(op, rq, exc, POSIXErrno.POSIX_ERROR_EPERM);
             } else if (exc.getType() == ExceptionType.REDIRECT) {
-                redirect(rq, (InetSocketAddress) exc.getAttachment());
+                try {
+                    redirect(rq, exc.getAttachment() != null? (String) exc.getAttachment(): master.getReplMasterUUID());
+                } catch (MRCException e) {
+                    reportServerError(op, rq, e);
+                }
             } else
                 reportServerError(op, rq, exc);
             
@@ -307,8 +311,8 @@ public class ProcessingStage extends MRCStage {
             "an error has occurred", exc));
     }
     
-    private void redirect(MRCRequest rq, InetSocketAddress to) {
-        rq.getRPCRequest().sendRedirect(to.getHostName() + ":" + to.getPort());
+    private void redirect(MRCRequest rq, String uuid) {
+        rq.getRPCRequest().sendRedirect(uuid);
     }
     
 }

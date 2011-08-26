@@ -8,24 +8,23 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
+import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_rmvolRequest;
-
-import com.google.protobuf.Message;
 
 /**
  * 
@@ -40,12 +39,20 @@ public class DeleteVolumeOperation extends MRCOperation {
     @Override
     public void startRequest(final MRCRequest rq) throws Throwable {
         
+        // perform master redirect if replicated and required
+        String replMasterUUID = master.getReplMasterUUID();
+        if (replMasterUUID != null && !replMasterUUID.equals(master.getConfig().getUUID().toString())) {
+            ServiceUUID uuid = new ServiceUUID(replMasterUUID);
+            throw new DatabaseException(ExceptionType.REDIRECT, uuid.getAddress().getHostName() + ":"
+                    + uuid.getAddress().getPort());
+        }
+        
         final xtreemfs_rmvolRequest rqArgs = (xtreemfs_rmvolRequest) rq.getRequestArgs();
         
         // check password to ensure that user is authorized
         if (master.getConfig().getAdminPassword().length() > 0
                 && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
-                throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "invalid password");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "invalid password");
         
         final StorageManager sMan = master.getVolumeManager().getStorageManagerByName(rqArgs.getVolumeName());
         final VolumeInfo volume = sMan.getVolumeInfo();
@@ -57,7 +64,7 @@ public class DeleteVolumeOperation extends MRCOperation {
         // permissions are granted for deleting the volume
         if (master.getConfig().getAdminPassword() == null)
             master.getFileAccessManager().checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
-                rq.getDetails().superUser, rq.getDetails().groupIds);
+                    rq.getDetails().superUser, rq.getDetails().groupIds);
         
         // deregister the volume from the Directory Service
         // Ugly workaround for async call.
@@ -65,11 +72,12 @@ public class DeleteVolumeOperation extends MRCOperation {
             @Override
             public void run() {
                 try {
-                    master.getDirClient().xtreemfs_service_deregister(null, rq.getDetails().auth, RPCAuthentication.userService, volume.getId());
+                    master.getDirClient().xtreemfs_service_deregister(null, rq.getDetails().auth,
+                            RPCAuthentication.userService, volume.getId());
                     processStep2(rqArgs, volume.getId(), rq);
                 } catch (Exception ex) {
                     finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-                                  "an error has occurred", ex));
+                            "an error has occurred", ex));
                 }
             }
         };
@@ -93,7 +101,7 @@ public class DeleteVolumeOperation extends MRCOperation {
             finishRequest(rq, new ErrorRecord(ErrorType.ERRNO, exc.getErrno(), exc.getMessage(), exc));
         } catch (Throwable exc) {
             finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-                "an error has occurred", exc));
+                    "an error has occurred", exc));
         }
     }
     

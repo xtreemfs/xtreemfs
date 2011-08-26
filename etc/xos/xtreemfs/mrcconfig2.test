@@ -163,4 +163,4 @@ babudb.pseudoSyncWait = 0
 #CHECK THE REFERENCE FOR FURTHER INFORMATIONS
 
 # replication configuration
-babudb.plugin.0 = contrib/server-repl-plugin/config/mrc2.properties
+#babudb.plugin.0 = contrib/server-repl-plugin/config/mrc-test2.properties

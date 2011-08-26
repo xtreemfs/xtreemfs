@@ -33,8 +33,6 @@ import org.xtreemfs.mrc.utils.DBAdminHelper.DBRestoreState;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_dump_restore_databaseRequest;
 
-import com.google.protobuf.Message;
-
 /**
  * 
  * @author stender
@@ -59,6 +57,10 @@ public class RestoreDBOperation extends MRCOperation {
                 throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "invalid password");
             
             final VolumeManager vMan = master.getVolumeManager();
+            
+            if (vMan.getStorageManagers() == null)
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                        "cannot restore database because volume manager has not yet been initialized");
             
             // First, check if any volume exists already. If so, deny the
             // operation for security reasons.

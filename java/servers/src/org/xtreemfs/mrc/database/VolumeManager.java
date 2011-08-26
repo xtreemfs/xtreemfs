@@ -10,6 +10,7 @@ package org.xtreemfs.mrc.database;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
@@ -211,5 +212,12 @@ public interface VolumeManager {
      * @return the database version of the backend
      */
     public String getDBVersion();
+    
+    /**
+     * Returns the runtime status of the internal database as a collection of key-value pairs.
+     * 
+     * @return the database status
+     */
+    public Map<String, Object> getDBStatus();
     
 }

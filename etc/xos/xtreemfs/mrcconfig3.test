@@ -23,9 +23,9 @@
 #debug.categories = all
 
 # port for the service to listen on
-listen.port = 32636
+listen.port = 32634
 
-http_port = 30636
+http_port = 30634
 
 # optional address for network device, "any" if not specified
 # listen.address = 127.0.0.1
@@ -65,7 +65,7 @@ database.checkpoint.logfile_size = 16384
 # UUID for the OSD
 # IMPORTANT: replace 'localhost' with a reachable host name/IP address
 #uuid = http://farnsworth.zib.de:32636
-uuid = test-localhost-MRC
+uuid = test-localhost-MRC3
 
 # Authentication providers are used to retrieve the user identities
 # from the client or from certificate.
@@ -100,17 +100,6 @@ capability_secret = Yagga
 # administrator password for privileged operations
 #admin_password = blub
 
-# If you want to monitor your XtreemFS installation through SNMP 
-# uncomment the following lines. You have to set snmp.enabled = true
-# and provide a listen port and optional a address. Also optional 
-# is a path to an aclfile which controls which hosts can access the
-# monitoring information via SNMP.
-#snmp.enabled = true
-#snmp.address = localhost
-#snmp.port = 34636
-#snmp.aclfile = etc/xos/xtreemfs/snmp.acl
-
-
 #####################################################################
 # BabuDB configuration                                              #
 #####################################################################
@@ -124,7 +113,7 @@ capability_secret = Yagga
 # 5 = notice, 
 # 6 = info, 
 # 7 = debug)
-babudb.debug.level = 7
+babudb.debug.level = 4
 
 # optional debug category
 #babudb.debug.category = all
@@ -133,11 +122,11 @@ babudb.debug.level = 7
 #babudb.cfgFile = config.db
 
 # base directory to store database index snapshots in
-babudb.baseDir = /tmp/xtreemfs-test/mrc/database
-#babudb.baseDir = /home/stender/tmp/mrc
+babudb.baseDir = /tmp/xtreemfs-test/mrc3/database
+#babudb.baseDir = /home/stender/tmp/mrc3
 
 # directory in which the database logs are stored
-babudb.logDir = /tmp/xtreemfs-test/mrc/db-log
+babudb.logDir = /tmp/xtreemfs-test/mrc3/db-log
 
 # SyncMode the synchronization mode to use for the logFile
 # ASYNC - asynchronously write log entries (data is lost when system crashes).
@@ -175,4 +164,4 @@ babudb.pseudoSyncWait = 0
 #CHECK THE REFERENCE FOR FURTHER INFORMATIONS
 
 # replication configuration
-#babudb.plugin.0 = contrib/server-repl-plugin/config/mrc-test1.properties
+babudb.plugin.0 = contrib/server-repl-plugin/config/mrc-test3.properties

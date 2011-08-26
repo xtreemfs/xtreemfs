@@ -23,6 +23,7 @@ import org.xtreemfs.mrc.database.DatabaseResultSet;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
@@ -46,6 +47,10 @@ public class MoveOperation extends MRCOperation {
     
     @Override
     public void startRequest(MRCRequest rq) throws Throwable {
+        
+        // perform master redirect if necessary
+        if (master.getReplMasterUUID() != null && !master.getReplMasterUUID().equals(master.getConfig().getUUID().toString()))
+            throw new DatabaseException(ExceptionType.REDIRECT);
         
         final renameRequest rqArgs = (renameRequest) rq.getRequestArgs();
         

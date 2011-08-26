@@ -10,7 +10,6 @@ package org.xtreemfs.common;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,15 +26,13 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
-import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration;
@@ -62,6 +59,8 @@ public class HeartbeatThread extends LifeCycleThread {
     }
 
     public static final long UPDATE_INTERVAL = 60 * 1000; // 60s
+    
+    public static final long CONCURRENT_RETRY_INTERVALL = 5 * 1000; // 5s
 
     private ServiceUUID uuid;
 
@@ -143,8 +142,22 @@ public class HeartbeatThread extends LifeCycleThread {
         try {
 
             // ... for each UUID, ...
-            registerServices();
-
+            for (;;) {
+                // catch any ConcurrentModificationException and retry
+                try {
+                    registerServices();
+                    break;
+                } catch (PBRPCException ex) {
+                    if (ex.getPOSIXErrno() == POSIXErrno.POSIX_ERROR_EAGAIN) {
+                        if (Logging.isInfo())
+                            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this,
+                                    "concurrent service registration; will try again after %d milliseconds",
+                                    CONCURRENT_RETRY_INTERVALL);
+                    } else
+                        throw ex;
+                }
+            }
+            
             // ... register the address mapping for the service
 
             //AddressMappingSet endpoints = null;
@@ -274,6 +287,14 @@ public class HeartbeatThread extends LifeCycleThread {
                                 }
                             }
                         }
+                    } catch (PBRPCException ex) {
+                        if (ex.getPOSIXErrno() == POSIXErrno.POSIX_ERROR_EAGAIN) {
+                            if (Logging.isInfo())
+                                Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this,
+                                        "concurrent service registration; will try again after %d milliseconds",
+                                        UPDATE_INTERVAL);
+                        } else
+                            Logging.logError(Logging.LEVEL_ERROR, this, ex);
                     } catch (IOException ex) {
                         Logging.logError(Logging.LEVEL_ERROR, this, ex);
                     } catch (InterruptedException ex) {

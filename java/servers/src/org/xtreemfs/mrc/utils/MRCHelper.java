@@ -126,8 +126,9 @@ public class MRCHelper {
         try {
             volSize = String.valueOf(sMan.getVolumeInfo().getVolumeSize());
         } catch (DatabaseException e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, null,
-                OutputUtils.stackTraceToString(e), new Object[0]);
+            Logging.logMessage(Logging.LEVEL_WARN, Category.storage, null,
+                    "could not retrieve volume size from database for volume '%s': %s",
+                    new Object[] { vol.getName(), e.toString() });
         }
         
         ServiceDataMap.Builder dmap = buildServiceDataMap("mrc", mrcUUID, "free", free, "used", volSize);

@@ -32,13 +32,14 @@ import org.xtreemfs.common.monitoring.StatusMonitor;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
+import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.dir.discovery.DiscoveryUtils;
 import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.TimeSync;
-import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.TimeSync.ExtSyncSource;
+import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -67,30 +68,29 @@ import org.xtreemfs.mrc.stages.OnCloseReplicationThread;
 import org.xtreemfs.mrc.stages.ProcessingStage;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceConstants;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.DirService;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 import com.sun.net.httpserver.BasicAuthenticator;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.xtreemfs.dir.DIRClient;
 
 /**
  * 
  * @author bjko
  */
 public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
-    DBAccessResultListener<Object> {
+        DBAccessResultListener<Object> {
     
     private static final int               RPC_TIMEOUT        = 10000;
     
@@ -103,6 +103,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     private final DIRClient                dirClient;
     
     private final ProcessingStage          procStage;
+    
+    private final MRCStatusManager         mrcMonitor;
     
     private final OSDStatusManager         osdMonitor;
     
@@ -123,28 +125,30 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     private final HttpServer               httpServ;
     
     private final OSDServiceClient         osdClient;
-
+    
+    private final boolean                  replicated;
+    
     private List<MRCStatusListener>        statusListener;
-
-    public MRCRequestDispatcher(final MRCConfig config, BabuDBConfig dbConfig) throws IOException,
-        ClassNotFoundException, IllegalAccessException, InstantiationException, DatabaseException {
+    
+    public MRCRequestDispatcher(final MRCConfig config, final BabuDBConfig dbConfig) throws IOException,
+            ClassNotFoundException, IllegalAccessException, InstantiationException, DatabaseException {
         
         Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS Metadata Service version "
-            + VersionManagement.RELEASE_VERSION);
+                + VersionManagement.RELEASE_VERSION);
         
         this.config = config;
         
         if (this.config.getDirectoryService().getHostName().equals(DiscoveryUtils.AUTODISCOVER_HOSTNAME)) {
             Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
-                "trying to discover local XtreemFS DIR service...");
+                    "trying to discover local XtreemFS DIR service...");
             DirService dir = DiscoveryUtils.discoverDir(10);
             if (dir == null) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this,
-                    "CANNOT FIND XtreemFS DIR service via discovery broadcasts... no response");
+                        "CANNOT FIND XtreemFS DIR service via discovery broadcasts... no response");
                 throw new IOException("no DIR service found via discovery broadcast");
             }
-            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "found XtreemFS DIR service at "
-                + dir.getAddress() + ":" + dir.getPort());
+            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                    "found XtreemFS DIR service at " + dir.getAddress() + ":" + dir.getPort());
             config.setDirectoryService(new InetSocketAddress(dir.getAddress(), dir.getPort()));
         }
         
@@ -155,13 +159,13 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         if (Logging.isInfo() && config.isUsingSSL() && policyContainer.getTrustManager() != null)
             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this, "using custom trust manager '%s'",
-                policyContainer.getTrustManager().getClass().getName());
+                    policyContainer.getTrustManager().getClass().getName());
         
-        SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
-                .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
-                .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
-                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
-                .isGRIDSSLmode(), policyContainer.getTrustManager()) : null;
+        SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config.getServiceCredsFile()),
+                config.getServiceCredsPassphrase(), config.getServiceCredsContainer(), new FileInputStream(
+                        config.getTrustedCertsFile()), config.getTrustedCertsPassphrase(),
+                config.getTrustedCertsContainer(), false, config.isGRIDSSLmode(), policyContainer.getTrustManager())
+                : null;
         
         clientStage = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT);
         clientStage.setLifeCycleListener(this);
@@ -170,14 +174,15 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         serverStage.setLifeCycleListener(this);
         
         DIRServiceClient dirRpcClient = new DIRServiceClient(clientStage, config.getDirectoryService());
-        dirClient = new DIRClient(dirRpcClient, config.getDirectoryServices(), config.getFailoverMaxRetries(), config.getFailoverWait());
+        dirClient = new DIRClient(dirRpcClient, config.getDirectoryServices(), config.getFailoverMaxRetries(),
+                config.getFailoverWait());
         osdClient = new OSDServiceClient(clientStage, null);
         
         authProvider = policyContainer.getAuthenticationProvider();
         authProvider.initialize(config.isUsingSSL());
         if (Logging.isInfo())
             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this, "using authentication provider '%s'",
-                authProvider.getClass().getName());
+                    authProvider.getClass().getName());
         
         osdMonitor = new OSDStatusManager(this);
         osdMonitor.setLifeCycleListener(this);
@@ -189,11 +194,13 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         statusListener = new ArrayList<MRCStatusListener>();
         if (config.isUsingSnmp()) {
-            statusListener.add(new StatusMonitor(
-                    this, config.getSnmpAddress(), config.getSnmpPort(), config.getSnmpACLFile()));
+            statusListener.add(new StatusMonitor(this, config.getSnmpAddress(), config.getSnmpPort(), config
+                    .getSnmpACLFile()));
             notifyConfigurationChange();
         }
         
+        // initialize flag that indicates whether the service is replicated
+        replicated = dbConfig.getPlugins().size() > 0;
         
         ServiceDataGenerator gen = new ServiceDataGenerator() {
             public ServiceSet getServiceData() {
@@ -201,8 +208,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 String uuid = config.getUUID().toString();
                 
                 OperatingSystemMXBean osb = ManagementFactory.getOperatingSystemMXBean();
-                String load = String.valueOf((int) (osb.getSystemLoadAverage() * 100 / osb
-                        .getAvailableProcessors()));
+                String load = String.valueOf((int) (osb.getSystemLoadAverage() * 100 / osb.getAvailableProcessors()));
                 
                 long totalRAM = Runtime.getRuntime().maxMemory();
                 long usedRAM = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
@@ -210,43 +216,61 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 // get service data
                 ServiceDataMap.Builder dmap = ServiceDataMap.newBuilder();
                 dmap.addData(KeyValuePair.newBuilder().setKey("load").setValue(load).build());
-                dmap.addData(KeyValuePair.newBuilder().setKey("proto_version").setValue(
-                    Integer.toString(MRCServiceConstants.INTERFACE_ID)).build());
-                dmap.addData(KeyValuePair.newBuilder().setKey("totalRAM").setValue(Long.toString(totalRAM))
+                dmap.addData(KeyValuePair.newBuilder().setKey("proto_version")
+                        .setValue(Integer.toString(MRCServiceConstants.INTERFACE_ID)).build());
+                dmap.addData(KeyValuePair.newBuilder().setKey("totalRAM").setValue(Long.toString(totalRAM)).build());
+                dmap.addData(KeyValuePair.newBuilder().setKey("usedRAM").setValue(Long.toString(usedRAM)).build());
+                dmap.addData(KeyValuePair.newBuilder().setKey("geoCoordinates").setValue(config.getGeoCoordinates())
                         .build());
-                dmap.addData(KeyValuePair.newBuilder().setKey("usedRAM").setValue(Long.toString(usedRAM))
-                        .build());
-                dmap.addData(KeyValuePair.newBuilder().setKey("geoCoordinates").setValue(
-                    config.getGeoCoordinates()).build());
+                
+                // If BabuDB replication is enabled, determine and register the
+                // local communication endpoint for the BabuDB replication.
+                // Registering this information at the DIR is necessary to
+                // enable MRCs to send REDIRECTs to the client with the MRC
+                // address rather than the BabuDB address of the correct master.
+                if (replicated) {
+                    InetSocketAddress localReplAddr = (InetSocketAddress) volumeManager.getDBStatus().get(
+                            "replication.control.address");
+                    assert (localReplAddr != null);
+                    dmap.addData(KeyValuePair.newBuilder().setKey("babudbReplAddr")
+                            .setValue(localReplAddr.getAddress().getHostAddress() + ":" + localReplAddr.getPort())
+                            .build());
+                }
                 
                 try {
                     final String address = "".equals(config.getHostName()) ? config.getAddress() == null ? config
-                            .getUUID().getMappings()[0].resolvedAddr.getAddress().getHostAddress()
-                        : config.getAddress().getHostAddress()
-                        : config.getHostName();
-                    dmap.addData(KeyValuePair.newBuilder().setKey("status_page_url").setValue(
-                        "http://" + address + ":" + config.getHttpPort()));
+                            .getUUID().getMappings()[0].resolvedAddr.getAddress().getHostAddress() : config
+                            .getAddress().getHostAddress() : config.getHostName();
+                    dmap.addData(KeyValuePair.newBuilder().setKey("status_page_url")
+                            .setValue("http://" + address + ":" + config.getHttpPort()));
                 } catch (UnknownUUIDException ex) {
                     // should never happen
                     Logging.logError(Logging.LEVEL_ERROR, this, ex);
                 }
                 
-                Service mrcReg = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_MRC).setUuid(uuid)
-                        .setData(dmap).setVersion(0).setLastUpdatedS(0).setName("MRC @ " + uuid).build();
+                Service mrcReg = Service.newBuilder().setType(ServiceType.SERVICE_TYPE_MRC).setUuid(uuid).setData(dmap)
+                        .setVersion(0).setLastUpdatedS(0).setName("MRC @ " + uuid).build();
                 // (ServiceType.SERVICE_TYPE_MRC, uuid, 0, "MRC @ " + uuid, 0,
                 // dmap);
                 ServiceSet.Builder sregs = ServiceSet.newBuilder().addServices(mrcReg);
                 
-                for (StorageManager sMan : volumeManager.getStorageManagers()) {
-                    
-                    VolumeInfo vol = sMan.getVolumeInfo();
-                    
-                    try {
-                        Service dsVolumeInfo = MRCHelper.createDSVolumeInfo(vol, osdMonitor, sMan, uuid);
-                        sregs.addServices(dsVolumeInfo);
-                    } catch (Exception exc) {
-                        Logging.logError(Logging.LEVEL_WARN,
-                                "could not send heartbeat signal for volume " + vol.getName(), exc);
+                Collection<StorageManager> storageManagers = volumeManager.getStorageManagers();
+                if (storageManagers == null) {
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.misc,
+                            "cannot register volumes because volume manager not initialized yet");
+                } else {
+                    for (StorageManager sMan : storageManagers) {
+                        
+                        VolumeInfo vol = sMan.getVolumeInfo();
+                        
+                        try {
+                            Service dsVolumeInfo = MRCHelper.createDSVolumeInfo(vol, osdMonitor, sMan, uuid);
+                            sregs.addServices(dsVolumeInfo);
+                        } catch (Exception exc) {
+                            Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                                    "could not send heartbeat signal for volume '%s': %s", vol.getName(),
+                                    exc.toString());
+                        }
                     }
                 }
                 
@@ -264,6 +288,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 try {
                     if (httpExchange.getRequestURI().getPath().contains("strace")) {
                         content = OutputUtils.getThreadDump().getBytes("ascii");
+                    } else if (httpExchange.getRequestURI().getPath().contains("babudb")) {
+                        content = status.getDBInfo().getBytes("ascii");
                     } else {
                         content = status.getStatusPage().getBytes("ascii");
                     }
@@ -290,10 +316,15 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         httpServ.start();
         
-        heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen,
-            config, false);
+        heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen, config, false);
         
         onCloseReplicationThread = new OnCloseReplicationThread(this);
+        
+        if (replicated) {
+            mrcMonitor = new MRCStatusManager(this);
+            mrcMonitor.setLifeCycleListener(this);
+        } else
+            mrcMonitor = null;
     }
     
     public void asyncShutdown() {
@@ -316,6 +347,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         httpServ.stop(0);
         
+        if (replicated)
+            mrcMonitor.shutdown();
+        
         // TimeSync.getInstance().shutdown();
     }
     
@@ -323,15 +357,19 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         try {
             
-            TimeSync.getInstance().init(ExtSyncSource.XTREEMFS_DIR, dirClient, null, config.getRemoteTimeSync(), config.getLocalClockRenew());
+            TimeSync.getInstance().init(ExtSyncSource.XTREEMFS_DIR, dirClient, null, config.getRemoteTimeSync(),
+                    config.getLocalClockRenew());
             
             clientStage.start();
             clientStage.waitForStartup();
             
             UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
-            UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), Schemes.getScheme(config
-                    .isUsingSSL(), config.isGRIDSSLmode()));
+            UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(),
+                    Schemes.getScheme(config.isUsingSSL(), config.isGRIDSSLmode()));
             UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(), Schemes.SCHEME_PBRPCU);
+            
+            volumeManager.init();
+            volumeManager.addVolumeChangeListener(osdMonitor);
             
             heartbeatThread.initialize();
             heartbeatThread.start();
@@ -341,11 +379,13 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             osdMonitor.start();
             osdMonitor.waitForStartup();
             
+            if (replicated) {
+                mrcMonitor.start();
+                mrcMonitor.waitForStartup();
+            }
+            
             procStage.start();
             procStage.waitForStartup();
-            
-            volumeManager.init();
-            volumeManager.addVolumeChangeListener(osdMonitor);
             
             onCloseReplicationThread.start();
             onCloseReplicationThread.waitForStartup();
@@ -355,7 +395,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             
             if (Logging.isInfo())
                 Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
-                    "MRC operational, listening on port %d", config.getPort());
+                        "MRC operational, listening on port %d", config.getPort());
             
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "STARTUP FAILED!");
@@ -366,10 +406,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public void shutdown() throws Exception {
         
-    	for (MRCStatusListener listener : statusListener) {
-			listener.shuttingDown();
-		}
-    	
+        for (MRCStatusListener listener : statusListener) {
+            listener.shuttingDown();
+        }
+        
         onCloseReplicationThread.shutdown();
         onCloseReplicationThread.waitForShutdown();
         
@@ -384,6 +424,11 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         osdMonitor.shutdown();
         osdMonitor.waitForShutdown();
+        
+        if (replicated) {
+            mrcMonitor.shutdown();
+            mrcMonitor.waitForShutdown();
+        }
         
         procStage.shutdown();
         procStage.waitForShutdown();
@@ -413,12 +458,11 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             switch (error.getErrorType()) {
             
             case INTERNAL_SERVER_ERROR: {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, "%s / request: %s", errorMessage, request
-                        .toString());
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "%s / request: %s", errorMessage, request.toString());
                 if (error.getThrowable() != null)
                     Logging.logError(Logging.LEVEL_ERROR, this, error.getThrowable());
-                rpcRequest.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
-                    errorMessage, error.getStackTrace());
+                rpcRequest.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO, errorMessage,
+                        error.getStackTrace());
                 break;
             }
             case ERRNO: {
@@ -441,57 +485,54 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, errorMessage);
                 }
                 rpcRequest.sendError(ErrorType.GARBAGE_ARGS, POSIXErrno.POSIX_ERROR_EINVAL, errorMessage,
-                    error.getStackTrace());
+                        error.getStackTrace());
                 break;
             }
             case INVALID_INTERFACE_ID: {
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "invalid interface: %d",
-                        request.getRPCRequest().getHeader().getRequestHeader().getInterfaceId());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "invalid interface: %d", request
+                            .getRPCRequest().getHeader().getRequestHeader().getInterfaceId());
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, errorMessage);
                 }
-                rpcRequest.sendError(ErrorType.INVALID_INTERFACE_ID, POSIXErrno.POSIX_ERROR_EINVAL,
-                    errorMessage, error.getStackTrace());
+                rpcRequest.sendError(ErrorType.INVALID_INTERFACE_ID, POSIXErrno.POSIX_ERROR_EINVAL, errorMessage,
+                        error.getStackTrace());
                 break;
             }
-                
+            
             case INVALID_PROC_ID: {
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "unknown operation: %d",
-                        request.getRPCRequest().getHeader().getRequestHeader().getProcId());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "unknown operation: %d", request
+                            .getRPCRequest().getHeader().getRequestHeader().getProcId());
                 }
                 rpcRequest.sendError(ErrorType.INVALID_PROC_ID, POSIXErrno.POSIX_ERROR_EINVAL, errorMessage,
-                    error.getStackTrace());
+                        error.getStackTrace());
                 break;
             }
-                
+            
             case REDIRECT: {
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "redirect to: %s",
-                        errorMessage);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "redirect to: %s", errorMessage);
                 }
                 rpcRequest.sendRedirect(errorMessage);
                 break;
             }
-                
+            
             default: {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, "some unexpected exception occurred");
                 Logging.logError(Logging.LEVEL_ERROR, this, error.getThrowable());
-                rpcRequest.sendError(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EIO, errorMessage, error
-                        .getStackTrace());
+                rpcRequest.sendError(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EIO, errorMessage,
+                        error.getStackTrace());
                 break;
             }
             }
         }
-
+        
         else {
             assert (request.getResponse() != null);
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                    "sending response for request %d", request.getRPCRequest().getHeader().getCallId());
-                Logging
-                        .logMessage(Logging.LEVEL_DEBUG, Category.proc, this, request.getResponse()
-                                .toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "sending response for request %d", request
+                        .getRPCRequest().getHeader().getCallId());
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, request.getResponse().toString());
             }
             
             try {
@@ -500,9 +541,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 Logging.logError(Logging.LEVEL_ERROR, this, e);
             }
         }
-
+        
     }
-
+    
     public int getNumConnections() {
         return this.serverStage.getNumConnections();
     }
@@ -511,7 +552,6 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         return this.serverStage.getPendingRequests();
     }
     
-    
     public Map<StatusPageOperation.Vars, String> getStatusInformation() {
         HashMap<StatusPageOperation.Vars, String> data = new HashMap<StatusPageOperation.Vars, String>();
         
@@ -519,11 +559,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         data.put(Vars.BPSTATS, BufferPool.getStatus());
         data.put(Vars.DEBUG, Integer.toString(config.getDebugLevel()));
         data.put(Vars.DIRURL, (config.isUsingSSL() ? (config.isGRIDSSLmode() ? Schemes.SCHEME_PBRPCG
-            : Schemes.SCHEME_PBRPCS) : Schemes.SCHEME_PBRPC)
-            + "://"
-            + config.getDirectoryService().getHostName()
-            + ":"
-            + config.getDirectoryService().getPort());
+                : Schemes.SCHEME_PBRPCS) : Schemes.SCHEME_PBRPC)
+                + "://"
+                + config.getDirectoryService().getHostName()
+                + ":" + config.getDirectoryService().getPort());
         data.put(Vars.GLOBALRESYNC, Long.toString(TimeSync.getTimeSyncInterval()));
         
         final long globalTime = TimeSync.getGlobalTime();
@@ -550,9 +589,11 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         } else if (freeMem < 1024 * 1024 * 2) {
             span = "<span class=\"levelERROR\">";
         }
-        data.put(Vars.MEMSTAT, span + OutputUtils.formatBytes(freeMem) + " / "
-            + OutputUtils.formatBytes(Runtime.getRuntime().maxMemory()) + " / "
-            + OutputUtils.formatBytes(Runtime.getRuntime().totalMemory()) + "</span>");
+        data.put(
+                Vars.MEMSTAT,
+                span + OutputUtils.formatBytes(freeMem) + " / "
+                        + OutputUtils.formatBytes(Runtime.getRuntime().maxMemory()) + " / "
+                        + OutputUtils.formatBytes(Runtime.getRuntime().totalMemory()) + "</span>");
         
         StringBuffer rqTableBuf = new StringBuffer();
         long totalRequests = 0;
@@ -582,71 +623,79 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         // add volume statistics
         try {
-            StringBuffer volTableBuf = new StringBuffer();
             Collection<StorageManager> sMans = volumeManager.getStorageManagers();
             
-            List<VolumeInfo> volumes = new ArrayList<VolumeInfo>(sMans.size());
-            for (StorageManager sMan : sMans)
-                volumes.add(sMan.getVolumeInfo());
-            
-            Collections.sort(volumes, new Comparator<VolumeInfo>() {
-                public int compare(VolumeInfo o1, VolumeInfo o2) {
-                    return o1.getName().compareTo(o2.getName());
+            if (sMans != null) {
+                
+                StringBuffer volTableBuf = new StringBuffer();
+                
+                List<VolumeInfo> volumes = new ArrayList<VolumeInfo>(sMans.size());
+                for (StorageManager sMan : sMans)
+                    volumes.add(sMan.getVolumeInfo());
+                
+                Collections.sort(volumes, new Comparator<VolumeInfo>() {
+                    public int compare(VolumeInfo o1, VolumeInfo o2) {
+                        return o1.getName().compareTo(o2.getName());
+                    }
+                });
+                
+                boolean first = true;
+                for (VolumeInfo v : volumes) {
+                    
+                    ServiceSet osdList = osdMonitor.getUsableOSDs(v.getId()).build();
+                    
+                    if (!first)
+                        volTableBuf.append("<tr><td colspan=\"2\"><hr style=\"height:1px\"/></td></tr>");
+                    
+                    volTableBuf.append("<tr><td align=\"left\">");
+                    volTableBuf.append(v.getName());
+                    volTableBuf
+                            .append("</td><td><table border=\"0\" cellpadding=\"0\"><tr><td class=\"subtitle\">selectable OSDs</td><td align=\"right\">");
+                    Iterator<Service> it = osdList.getServicesList().iterator();
+                    while (it.hasNext()) {
+                        Service osd = it.next();
+                        final ServiceUUID osdUUID = new ServiceUUID(osd.getUuid());
+                        volTableBuf.append(osdUUID);
+                        if (it.hasNext())
+                            volTableBuf.append(", ");
+                    }
+                    
+                    StripingPolicy defaultSP = volumeManager.getStorageManager(v.getId()).getDefaultStripingPolicy(1);
+                    
+                    AccessControlPolicyType policy = AccessControlPolicyType.valueOf(v.getAcPolicyId());
+                    
+                    volTableBuf.append("</td></tr><tr><td class=\"subtitle\">striping policy</td><td>");
+                    volTableBuf.append(Converter.stripingPolicyToString(defaultSP));
+                    volTableBuf.append("</td></tr><tr><td class=\"subtitle\">access policy</td><td>");
+                    volTableBuf.append(policy != null ? policy.name() : v.getAcPolicyId());
+                    volTableBuf.append("</td></tr><tr><td class=\"subtitle\">osd policy</td><td>");
+                    volTableBuf.append(Converter.shortArrayToString(v.getOsdPolicy()));
+                    volTableBuf.append("</td></tr><tr><td class=\"subtitle\">replica policy</td><td>");
+                    volTableBuf.append(Converter.shortArrayToString(v.getReplicaPolicy()));
+                    volTableBuf.append("</td></tr><tr><td class=\"subtitle\">#files</td><td>");
+                    volTableBuf.append(v.getNumFiles());
+                    volTableBuf.append("</td></tr><tr></tr><tr><td class=\"subtitle\">#directories</td><td>");
+                    volTableBuf.append(v.getNumDirs());
+                    volTableBuf.append("</td></tr><tr><td class=\"subtitle\">free disk space:</td><td>");
+                    volTableBuf.append(OutputUtils.formatBytes(osdMonitor.getFreeSpace(v.getId())));
+                    volTableBuf.append("</td></tr><tr><td class=\"subtitle\">occupied disk space:</td><td>");
+                    volTableBuf.append(OutputUtils.formatBytes(v.getVolumeSize()));
+                    volTableBuf.append("</td></tr></table></td></tr>");
+                    
+                    first = false;
                 }
-            });
-            
-            boolean first = true;
-            for (VolumeInfo v : volumes) {
                 
-                ServiceSet osdList = osdMonitor.getUsableOSDs(v.getId()).build();
-                
-                if (!first)
-                    volTableBuf.append("<tr><td colspan=\"2\"><hr style=\"height:1px\"/></td></tr>");
-                
-                volTableBuf.append("<tr><td align=\"left\">");
-                volTableBuf.append(v.getName());
-                volTableBuf
-                        .append("</td><td><table border=\"0\" cellpadding=\"0\"><tr><td class=\"subtitle\">selectable OSDs</td><td align=\"right\">");
-                Iterator<Service> it = osdList.getServicesList().iterator();
-                while (it.hasNext()) {
-                    Service osd = it.next();
-                    final ServiceUUID osdUUID = new ServiceUUID(osd.getUuid());
-                    volTableBuf.append(osdUUID);
-                    if (it.hasNext())
-                        volTableBuf.append(", ");
-                }
-                
-                StripingPolicy defaultSP = volumeManager.getStorageManager(v.getId())
-                        .getDefaultStripingPolicy(1);
-                
-                AccessControlPolicyType policy = AccessControlPolicyType.valueOf(v.getAcPolicyId());
-                
-                volTableBuf.append("</td></tr><tr><td class=\"subtitle\">striping policy</td><td>");
-                volTableBuf.append(Converter.stripingPolicyToString(defaultSP));
-                volTableBuf.append("</td></tr><tr><td class=\"subtitle\">access policy</td><td>");
-                volTableBuf.append(policy != null ? policy.name() : v.getAcPolicyId());
-                volTableBuf.append("</td></tr><tr><td class=\"subtitle\">osd policy</td><td>");
-                volTableBuf.append(Converter.shortArrayToString(v.getOsdPolicy()));
-                volTableBuf.append("</td></tr><tr><td class=\"subtitle\">replica policy</td><td>");
-                volTableBuf.append(Converter.shortArrayToString(v.getReplicaPolicy()));
-                volTableBuf.append("</td></tr><tr><td class=\"subtitle\">#files</td><td>");
-                volTableBuf.append(v.getNumFiles());
-                volTableBuf.append("</td></tr><tr></tr><tr><td class=\"subtitle\">#directories</td><td>");
-                volTableBuf.append(v.getNumDirs());
-                volTableBuf.append("</td></tr><tr><td class=\"subtitle\">free disk space:</td><td>");
-                volTableBuf.append(OutputUtils.formatBytes(osdMonitor.getFreeSpace(v.getId())));
-                volTableBuf.append("</td></tr><tr><td class=\"subtitle\">occupied disk space:</td><td>");
-                volTableBuf.append(OutputUtils.formatBytes(v.getVolumeSize()));
-                volTableBuf.append("</td></tr></table></td></tr>");
-                
-                first = false;
+                data.put(Vars.VOLUMES, volTableBuf.toString());
             }
             
-            data.put(Vars.VOLUMES, volTableBuf.toString());
+            else {
+                data.put(Vars.VOLUMES, "<tr><td align=\"left\">Volumes not yet initialized!</td></tr>");
+            }
+            
         } catch (Exception exc) {
             data.put(Vars.VOLUMES,
-                "<tr><td align=\"left\">could not retrieve volume info due to an server internal error: "
-                    + exc + "</td></tr>");
+                    "<tr><td align=\"left\">could not retrieve volume info due to an server internal error: " + exc
+                            + "</td></tr>");
         }
         
         return data;
@@ -695,8 +744,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     }
     
     public void crashPerformed(Throwable cause) {
-        final String report = CrashReporter
-                .createCrashReport("MRC", VersionManagement.RELEASE_VERSION, cause);
+        final String report = CrashReporter.createCrashReport("MRC", VersionManagement.RELEASE_VERSION, cause);
         System.out.println(report);
         CrashReporter.reportXtreemFSCrash(report);
         try {
@@ -715,7 +763,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         if (hdr.getMessageType() != MessageType.RPC_REQUEST) {
             rq.sendError(ErrorType.GARBAGE_ARGS, POSIXErrno.POSIX_ERROR_EIO,
-                "expected RPC request message type but got " + hdr.getMessageType());
+                    "expected RPC request message type but got " + hdr.getMessageType());
             return;
         }
         
@@ -723,13 +771,12 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         if (rqHdr.getInterfaceId() != MRCServiceConstants.INTERFACE_ID) {
             rq.sendError(ErrorType.INVALID_INTERFACE_ID, POSIXErrno.POSIX_ERROR_EIO,
-                "invalid interface id. Maybe wrong service address/port configured?");
+                    "invalid interface id. Maybe wrong service address/port configured?");
             return;
         }
         
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "enqueueing request: %s", rq
-                    .toString());
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "enqueueing request: %s", rq.toString());
         
         // no callback, special stage which executes the operatios
         procStage.enqueueOperation(new MRCRequest(rq), ProcessingStage.STAGEOP_PARSE_AND_EXECUTE, null);
@@ -756,18 +803,18 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public void addStatusListener(MRCStatusListener listener) {
         this.statusListener.add(listener);
     }
-
+    
     public void removeStatusListener(MRCStatusListener listener) {
         this.statusListener.remove(listener);
     }
-        
+    
     /**
      * Tells all listeners when the configuration has changed.
      */
     public void notifyConfigurationChange() {
-        for (MRCStatusListener listener : statusListener ) {
+        for (MRCStatusListener listener : statusListener) {
             listener.MRCConfigChanged(this.config);
-        } 
+        }
     }
     
     /**
@@ -785,13 +832,48 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         }
     }
     
-    
     /**
      * Getter for a timestamp when the heartbeatthread sent his last heartbeat
+     * 
      * @return long - timestamp as returned by System.currentTimeMillis()
      */
     public long getLastHeartbeat() {
         return heartbeatThread.getLastHeartbeat();
     }
     
+    public Map<String, Object> getDBStatus() {
+        return volumeManager == null ? null : volumeManager.getDBStatus();
+    }
+    
+    public String getReplMasterUUID() throws MRCException {
+        
+        if (replicated) {
+            InetSocketAddress addr = (InetSocketAddress) volumeManager.getDBStatus().get("replication.control.master");
+            
+            String uuid = addr == null ? null : mrcMonitor.getUUIDForReplHost(addr);
+            
+            // if the UUID could not be resolved immediately, fetch MRC status
+            // and try again
+            if (uuid == null) {
+                try {
+                    mrcMonitor.waitForNextSync(true);
+                    
+                    addr = (InetSocketAddress) volumeManager.getDBStatus().get("replication.control.master");
+                    uuid = addr == null ? null : mrcMonitor.getUUIDForReplHost(addr);
+                    
+                } catch (InterruptedException e) {
+                }
+                
+                if (uuid == null) {
+                    Logging.logMessage(Logging.LEVEL_INFO, this,
+                            "unable to detect replication master; BabuDB addr=%s, UUID=%s", addr.toString(), uuid);
+                    throw new MRCException("could not detect replication master");
+                }
+            }
+            
+            return uuid;
+            
+        } else
+            return null;
+    }
 }

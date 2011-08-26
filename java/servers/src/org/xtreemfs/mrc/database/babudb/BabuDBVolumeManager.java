@@ -18,8 +18,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Map.Entry;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.api.BabuDB;
@@ -43,11 +44,11 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeChangeListener;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
-import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
@@ -68,6 +69,8 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     private Database                               snapVersionDB;
     
+    private AtomicBoolean                          initialized;
+    
     /** maps the IDs of all locally known volumes to their managers */
     private final Map<String, StorageManager>      volsById;
     
@@ -78,11 +81,15 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     private final BabuDBConfig                     config;
     
+    private final AtomicBoolean                    waitLock;
+    
     public BabuDBVolumeManager(MRCRequestDispatcher master, BabuDBConfig dbconfig) {
+        initialized = new AtomicBoolean(false);
         volsById = Collections.synchronizedMap(new HashMap<String, StorageManager>());
         volsByName = Collections.synchronizedMap(new HashMap<String, StorageManager>());
         listeners = new LinkedList<VolumeChangeListener>();
         config = dbconfig;
+        waitLock = new AtomicBoolean(false);
     }
     
     /*
@@ -102,16 +109,22 @@ public class BabuDBVolumeManager implements VolumeManager {
                     
                     Operation op = txn.getOperations().get(0);
                     
-                    // TODO: use constants
                     if ((op.getType() == Operation.TYPE_CREATE_DB || op.getType() == Operation.TYPE_DELETE_DB)
-                        && !VERSION_DB_NAME.equals(op.getDatabaseName())
-                        && !SNAP_VERSIONS_DB_NAME.equals(op.getDatabaseName())) {
+                            && !VERSION_DB_NAME.equals(op.getDatabaseName())
+                            && !SNAP_VERSIONS_DB_NAME.equals(op.getDatabaseName())) {
                         
-                        // re-initialize the list of volumes
+                        // register/deregister the volume
                         try {
-                            if (op.getType() == Operation.TYPE_CREATE_DB)
+                            if (op.getType() == Operation.TYPE_CREATE_DB) {
+                                
                                 registerVolume(op.getDatabaseName());
-                            else
+                                
+                                synchronized (waitLock) {
+                                    waitLock.set(true);
+                                    waitLock.notify();
+                                }
+                                
+                            } else
                                 deregisterVolume(op.getDatabaseName());
                         } catch (Exception exc) {
                             Logging.logError(Logging.LEVEL_ERROR, this, exc);
@@ -133,33 +146,48 @@ public class BabuDBVolumeManager implements VolumeManager {
         try {
             database.shutdown();
         } catch (BabuDBException exc) {
-            Logging.logMessage(Logging.LEVEL_WARN, Category.lifecycle, this,
-                "could not shut down volume manager");
+            Logging.logMessage(Logging.LEVEL_WARN, Category.lifecycle, this, "could not shut down volume manager");
             Logging.logError(Logging.LEVEL_WARN, this, exc);
         }
     }
     
     @Override
-    public void createVolume(FileAccessManager faMan, String volumeId, String volumeName,
-        short fileAccessPolicyId, String ownerId, String owningGroupId, StripingPolicy defaultStripingPolicy,
-        int initialAccessMode, List<KeyValuePair> attrs) throws UserException, DatabaseException {
+    public void createVolume(FileAccessManager faMan, String volumeId, String volumeName, short fileAccessPolicyId,
+            String ownerId, String owningGroupId, StripingPolicy defaultStripingPolicy, int initialAccessMode,
+            List<KeyValuePair> attrs) throws UserException, DatabaseException {
+        
+        waitLock.set(false);
         
         if (volumeName.indexOf(SNAPSHOT_SEPARATOR) != -1 || volumeName.indexOf('/') != -1
-            || volumeName.indexOf('\\') != -1)
+                || volumeName.indexOf('\\') != -1)
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "volume name must not contain '"
-                + SNAPSHOT_SEPARATOR + "', '/' or '\\'");
+                    + SNAPSHOT_SEPARATOR + "', '/' or '\\'");
         
         if (hasVolume(volumeName))
             throw new UserException(POSIXErrno.POSIX_ERROR_EEXIST, "volume ' " + volumeName
-                + "' already exists locally");
+                    + "' already exists locally");
         
         // get the default permissions and ACL for the new volume
         ACLEntry[] acl = faMan.getFileAccessPolicy(fileAccessPolicyId).getDefaultRootACL();
         
-        // create the new volume
+        // create the new volume (local registration will be initiated through
+        // the transaction listener)
         new BabuDBStorageManager(database, volumeId, volumeName, fileAccessPolicyId, DEFAULT_OSD_POLICY,
-            DEFAULT_REPL_POLICY, ownerId, owningGroupId, initialAccessMode, acl, defaultStripingPolicy,
-            DEFAULT_ALLOW_SNAPS, KeyValuePairs.toMap(attrs));
+                DEFAULT_REPL_POLICY, ownerId, owningGroupId, initialAccessMode, acl, defaultStripingPolicy,
+                DEFAULT_ALLOW_SNAPS, KeyValuePairs.toMap(attrs));
+        
+        // wait for the notification from the transaction listener before
+        // continuing
+        synchronized (waitLock) {
+            while (!waitLock.get())
+                try {
+                    waitLock.wait();
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+        }
+        
+        System.out.println("done");
         
     }
     
@@ -175,7 +203,7 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     @Override
     public void deleteVolume(String volumeId, DBAccessResultListener<Object> listener, Object context)
-        throws DatabaseException, UserException {
+            throws DatabaseException, UserException {
         
         // check if the volume exists
         StorageManager sMan = getStorageManager(volumeId);
@@ -193,8 +221,7 @@ public class BabuDBVolumeManager implements VolumeManager {
         
         StorageManager sMan = volsById.get(volumeId);
         if (sMan == null)
-            throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "volume '" + volumeId
-                + "' not found on this MRC");
+            throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "volume '" + volumeId + "' not found on this MRC");
         
         return sMan;
     }
@@ -204,8 +231,7 @@ public class BabuDBVolumeManager implements VolumeManager {
         
         StorageManager sMan = volsByName.get(volumeName);
         if (sMan == null)
-            throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "volume '" + volumeName
-                + "' not found on this MRC");
+            throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "volume '" + volumeName + "' not found on this MRC");
         
         return sMan;
     }
@@ -226,6 +252,8 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     @Override
     public Collection<StorageManager> getStorageManagers() {
+        if (!initialized.get())
+            return null;
         return volsById.values();
     }
     
@@ -237,8 +265,8 @@ public class BabuDBVolumeManager implements VolumeManager {
     }
     
     @Override
-    public void createSnapshot(String volumeId, String snapName, long parentId, FileMetadata dir,
-        boolean recursive) throws UserException, DatabaseException {
+    public void createSnapshot(String volumeId, String snapName, long parentId, FileMetadata dir, boolean recursive)
+            throws UserException, DatabaseException {
         
         try {
             // check if the volume exists
@@ -246,13 +274,13 @@ public class BabuDBVolumeManager implements VolumeManager {
             
             if (!snapName.equals(".dump") && !sMan.getVolumeInfo().isSnapshotsEnabled())
                 throw new UserException(POSIXErrno.POSIX_ERROR_EPERM,
-                    "snapshot operations are not allowed on this volume");
+                        "snapshot operations are not allowed on this volume");
             
             // get the time for the snapshot; this will be needed to attach the
             // snapshot to file content snapshots
             long currentTime = TimeSync.getGlobalTime();
-            byte[] currentTimeAndParentAsBytes = ByteBuffer.wrap(new byte[2 * Long.SIZE / 8]).putLong(
-                currentTime).putLong(parentId).array();
+            byte[] currentTimeAndParentAsBytes = ByteBuffer.wrap(new byte[2 * Long.SIZE / 8]).putLong(currentTime)
+                    .putLong(parentId).array();
             
             // if no snapshot name was passed, use the current time as the name
             if ("".equals(snapName))
@@ -264,8 +292,7 @@ public class BabuDBVolumeManager implements VolumeManager {
             // update the snapshot version table in order to persistently store
             // the snapshot time stamp
             try {
-                snapVersionDB.singleInsert(0, snapVolName.getBytes(), currentTimeAndParentAsBytes, null)
-                        .get();
+                snapVersionDB.singleInsert(0, snapVolName.getBytes(), currentTimeAndParentAsBytes, null).get();
             } catch (BabuDBException exc2) {
                 throw new DatabaseException(exc2);
             }
@@ -286,7 +313,7 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     @Override
     public void deleteSnapshot(String volumeId, FileMetadata dir, String snapName) throws UserException,
-        DatabaseException {
+            DatabaseException {
         
         try {
             
@@ -295,7 +322,7 @@ public class BabuDBVolumeManager implements VolumeManager {
             
             if (!snapName.equals(".dump") && !sMan.getVolumeInfo().isSnapshotsEnabled())
                 throw new UserException(POSIXErrno.POSIX_ERROR_EPERM,
-                    "snapshot operations are not allowed on this volume");
+                        "snapshot operations are not allowed on this volume");
             
             // determine the unique identifier for the snapshot
             String snapVolName = sMan.getVolumeInfo().getName() + SNAPSHOT_SEPARATOR + snapName;
@@ -358,6 +385,11 @@ public class BabuDBVolumeManager implements VolumeManager {
         return BabuDBFactory.BABUDB_VERSION;
     }
     
+    @Override
+    public Map<String, Object> getDBStatus() {
+        return database == null ? null : database.getRuntimeState();
+    }
+    
     private void initDB(DatabaseManager dbMan, SnapshotManager snapMan) throws DatabaseException {
         
         // check if the snapshot version DB exists; if not, make sure that it is
@@ -366,12 +398,33 @@ public class BabuDBVolumeManager implements VolumeManager {
             try {
                 snapVersionDB = dbMan.createDatabase(SNAP_VERSIONS_DB_NAME, 1);
             } catch (BabuDBException exc) {
+                
                 if (exc.getErrorCode() == ErrorCode.DB_EXISTS)
                     try {
                         snapVersionDB = dbMan.getDatabase(SNAP_VERSIONS_DB_NAME);
                     } catch (BabuDBException exc2) {
                         throw new DatabaseException(exc2);
                     }
+                
+                // if a replication failure occurred, wait and retry
+                // else if (exc.getErrorCode() == ErrorCode.REPLICATION_FAILURE)
+                // {
+                //
+                // Logging.logMessage(
+                // Logging.LEVEL_INFO,
+                // Category.storage,
+                // this,
+                // "could not initialize database because of a replication failure: %s, will retry after %d ms",
+                // exc.toString(), RETRY_PERIOD);
+                //
+                // try {
+                // Thread.sleep(RETRY_PERIOD);
+                // initDB(dbMan, snapMan);
+                // } catch (InterruptedException e1) {
+                // }
+                //
+                // }
+                
                 else
                     throw new DatabaseException(exc);
             }
@@ -385,8 +438,7 @@ public class BabuDBVolumeManager implements VolumeManager {
             
             // if the creation succeeds, set the version number to the current
             // MRC DB version
-            byte[] verBytes = ByteBuffer.wrap(new byte[4])
-                    .putInt((int) VersionManagement.getMrcDataVersion()).array();
+            byte[] verBytes = ByteBuffer.wrap(new byte[4]).putInt((int) VersionManagement.getMrcDataVersion()).array();
             txn.insertRecord(VERSION_DB_NAME, VERSION_INDEX, VERSION_KEY.getBytes(), verBytes);
             dbMan.executeTransaction(txn);
             
@@ -403,8 +455,8 @@ public class BabuDBVolumeManager implements VolumeManager {
                 
                 // database already exists
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
-                        "database loaded from '%s'", config.getBaseDir());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "database loaded from '%s'",
+                            config.getBaseDir());
                 
                 try {
                     
@@ -416,85 +468,86 @@ public class BabuDBVolumeManager implements VolumeManager {
                     if (ver != VersionManagement.getMrcDataVersion()) {
                         
                         String errMsg = "Wrong database version. Expected version = "
-                            + VersionManagement.getMrcDataVersion() + ", version on disk = " + ver;
+                                + VersionManagement.getMrcDataVersion() + ", version on disk = " + ver;
                         
                         Logging.logMessage(Logging.LEVEL_CRIT, this, errMsg);
                         if (VersionManagement.getMrcDataVersion() > ver)
-                            Logging
-                                    .logMessage(
-                                        Logging.LEVEL_CRIT,
-                                        this,
-                                        "Please create an XML dump with the old MRC version and restore the dump with this MRC, or delete the database if the file system is no longer needed.");
+                            Logging.logMessage(
+                                    Logging.LEVEL_CRIT,
+                                    this,
+                                    "Please create an XML dump with the old MRC version and restore the dump with this MRC, or delete the database if the file system is no longer needed.");
                         
                         throw new DatabaseException(errMsg, ExceptionType.WRONG_DB_VERSION);
                     }
                     
                 } catch (Exception exc) {
                     Logging.logMessage(Logging.LEVEL_CRIT, this,
-                        "The MRC database is either corrupted or outdated. The expected database version for this server is "
-                            + VersionManagement.getMrcDataVersion());
+                            "The MRC database is either corrupted or outdated. The expected database version for this server is "
+                                    + VersionManagement.getMrcDataVersion());
                     throw new DatabaseException(exc);
                 }
                 
                 // initialize all volumes
+                initVolumes(dbMan, snapMan);
                 
-                // iterate over the list of databases in the storage manager
-                for (Entry<String, Database> dbEntry : dbMan.getDatabases().entrySet()) {
-                    
-                    // ignore the volume database
-                    if (dbEntry.getKey().equals(VERSION_DB_NAME)
-                        || dbEntry.getKey().equals(SNAP_VERSIONS_DB_NAME))
-                        continue;
-                    
-                    BabuDBStorageManager sMan = new BabuDBStorageManager(dbMan, snapMan, dbEntry.getValue());
-                    VolumeInfo vol = sMan.getVolumeInfo();
-                    
-                    volsById.put(vol.getId(), sMan);
-                    volsByName.put(vol.getName(), sMan);
-                    
-                    // initialize all snapshots
-                    for (String snapName : sMan.getAllSnapshots()) {
-                        
-                        // ignore snapshots that have been created for MRC
-                        // dumps
-                        if (snapName.equals(".dump"))
-                            continue;
-                        
-                        String snapVolName = vol.getName() + SNAPSHOT_SEPARATOR + snapName;
-                        
-                        // retrieve the version time stamp from the snap
-                        // version database
-                        try {
-                            byte[] timeStampAndParentBytes = snapVersionDB.lookup(0, snapVolName.getBytes(),
-                                null).get();
-                            if (timeStampAndParentBytes == null)
-                                Logging
-                                        .logMessage(
-                                            Logging.LEVEL_WARN,
-                                            Category.storage,
-                                            this,
-                                            "no version mapping exists for snapshot %s; file contents may be corrupted",
-                                            snapVolName);
-                            long snapTime = timeStampAndParentBytes == null ? 0 : ByteBuffer.wrap(
-                                timeStampAndParentBytes).getLong();
-                            long parentId = timeStampAndParentBytes == null ? 0 : ByteBuffer.wrap(
-                                timeStampAndParentBytes).getLong(8);
-                            
-                            volsByName.put(snapVolName, new BabuDBSnapshotStorageManager(snapMan, vol
-                                    .getName(), vol.getId(), snapName, snapTime, parentId));
-                            
-                        } catch (BabuDBException exc) {
-                            throw new DatabaseException(exc);
-                        }
-                    }
-                    
-                    for (VolumeChangeListener l : listeners)
-                        sMan.addVolumeChangeListener(l);
-                    
-                }
-                
-            } else
+            }
+            
+            else
                 throw new DatabaseException(e);
+            
+        } finally {
+            initialized.set(true);
+        }
+    }
+    
+    private void initVolumes(DatabaseManager dbMan, SnapshotManager snapMan) throws DatabaseException {
+        
+        // iterate over the list of databases in the storage manager
+        for (Entry<String, Database> dbEntry : dbMan.getDatabases().entrySet()) {
+            
+            // ignore the volume database
+            if (dbEntry.getKey().equals(VERSION_DB_NAME) || dbEntry.getKey().equals(SNAP_VERSIONS_DB_NAME))
+                continue;
+            
+            BabuDBStorageManager sMan = new BabuDBStorageManager(dbMan, snapMan, dbEntry.getValue());
+            VolumeInfo vol = sMan.getVolumeInfo();
+            
+            volsById.put(vol.getId(), sMan);
+            volsByName.put(vol.getName(), sMan);
+            
+            // initialize all snapshots
+            for (String snapName : sMan.getAllSnapshots()) {
+                
+                // ignore snapshots that have been created for MRC
+                // dumps
+                if (snapName.equals(".dump"))
+                    continue;
+                
+                String snapVolName = vol.getName() + SNAPSHOT_SEPARATOR + snapName;
+                
+                // retrieve the version time stamp from the snap
+                // version database
+                try {
+                    byte[] timeStampAndParentBytes = snapVersionDB.lookup(0, snapVolName.getBytes(), null).get();
+                    if (timeStampAndParentBytes == null)
+                        Logging.logMessage(Logging.LEVEL_WARN, Category.storage, this,
+                                "no version mapping exists for snapshot %s; file contents may be corrupted",
+                                snapVolName);
+                    long snapTime = timeStampAndParentBytes == null ? 0 : ByteBuffer.wrap(timeStampAndParentBytes)
+                            .getLong();
+                    long parentId = timeStampAndParentBytes == null ? 0 : ByteBuffer.wrap(timeStampAndParentBytes)
+                            .getLong(8);
+                    
+                    volsByName.put(snapVolName, new BabuDBSnapshotStorageManager(snapMan, vol.getName(), vol.getId(),
+                            snapName, snapTime, parentId));
+                    
+                } catch (BabuDBException exc) {
+                    throw new DatabaseException(exc);
+                }
+            }
+            
+            for (VolumeChangeListener l : listeners)
+                sMan.addVolumeChangeListener(l);
             
         }
     }
@@ -505,8 +558,8 @@ public class BabuDBVolumeManager implements VolumeManager {
         
         try {
             
-            BabuDBStorageManager sMan = new BabuDBStorageManager(dbMan, database.getSnapshotManager(), dbMan
-                    .getDatabase(volumeId));
+            BabuDBStorageManager sMan = new BabuDBStorageManager(dbMan, database.getSnapshotManager(),
+                    dbMan.getDatabase(volumeId));
             
             VolumeInfo vol = sMan.getVolumeInfo();
             
