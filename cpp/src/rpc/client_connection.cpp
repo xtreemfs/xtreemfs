@@ -192,12 +192,12 @@ void ClientConnection::PostConnect(
     if (err == asio::error::operation_aborted) {
       return;
     }
+    delete endpoint_;
+    endpoint_ = NULL;
 
     if (++endpoint_iterator != tcp::resolver::iterator()) {
       // Try next endpoint.
       CreateChannel();
-      delete endpoint_;
-      endpoint_ = NULL;
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG) << "failed: next endpoint"
@@ -207,9 +207,13 @@ void ClientConnection::PostConnect(
       PostResolve(err, endpoint_iterator);
     } else {
       Reset();
+      string ssl_error_info;
+      if (err.category() == asio::error::ssl_category) {
+        ssl_error_info = ERR_error_string(ERR_get_error(), NULL);
+      }
       SendError(POSIX_ERROR_EIO,
                 "could not connect to host '" + server_name_ + ":"
-                    + server_port_ + "': " + err.message());
+                    + server_port_ + "': " + err.message()+" "+ssl_error_info);
     }
   } else {
     // Do something useful.
@@ -217,8 +221,9 @@ void ClientConnection::PostConnect(
     next_reconnect_at_ = posix_time::not_a_date_time;
 
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-      Logging::log->getLog(LEVEL_DEBUG) << "connected: "
-          << (*endpoint_iterator).host_name() << endl;
+      Logging::log->getLog(LEVEL_DEBUG) << "connected to "
+          << (*endpoint_iterator).host_name() << ":"
+          << (*endpoint_iterator).service_name() << endl;
     }
 
     connection_state_ = IDLE;
@@ -355,6 +360,7 @@ void ClientConnection::PostReadRecordMarker(
 
 void ClientConnection::PostReadMessage(const boost::system::error_code& err) {
   if (err) {
+    DeleteInternalBuffers();
     Reset();
     SendError(POSIX_ERROR_EIO,
               "could not read response from '" + server_name_ + ":"
