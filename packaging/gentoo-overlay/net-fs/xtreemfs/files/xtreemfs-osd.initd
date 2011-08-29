@@ -1,0 +1,29 @@
+#!/sbin/runscript
+# Copyright 1999-2009 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+# $Header: $
+
+depend() {
+	use logger dns
+	need net
+}
+
+start() {
+	ebegin "Starting XtreemFS Object Storage Device (OSD)"
+	start-stop-daemon --start \
+		--user xtreemfs \
+		--background \
+		--make-pidfile \
+		--pidfile ${XTREEMFS_OSD_PIDFILE} \
+		--stdout ${XTREEMFS_OSD_LOGFILE} \
+		--stderr ${XTREEMFS_OSD_ERRFILE} \
+		--exec $(java-config -J) -- \
+		${XTREEMFS_OSD_ARGS} ${XTREEMFS_OSD_CONFIG}
+	eend $?
+}
+
+stop() {
+	ebegin "Stopping XtreemFS Object Storage Device (OSD)"
+	start-stop-daemon --pidfile ${XTREEMFS_OSD_PIDFILE} --stop
+	eend $?
+}

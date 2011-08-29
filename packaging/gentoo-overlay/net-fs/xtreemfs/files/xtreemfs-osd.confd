@@ -1,0 +1,7 @@
+XTREEMFS_OSD_LIB="/usr/share/xtreemfs/lib"
+XTREEMFS_OSD_CLASS="-classpath ${XTREEMFS_OSD_LIB}/XtreemFS.jar:${XTREEMFS_OSD_LIB}/BabuDB.jar:${XTREEMFS_OSD_LIB}/Flease.jar:${XTREEMFS_OSD_LIB}/protobuf-java-2.3.0.jar:${XTREEMFS_OSD_LIB}/Foundation.jar"
+XTREEMFS_OSD_ARGS="${XTREEMFS_OSD_CLASS} org.xtreemfs.osd.OSD"
+XTREEMFS_OSD_CONFIG="/etc/xtreemfs/osd.properties"
+XTREEMFS_OSD_PIDFILE="/var/run/xtreemfs/osd.pid"
+XTREEMFS_OSD_LOGFILE="/var/log/xtreemfs/osd.log"
+XTREEMFS_OSD_ERRFILE="/var/log/xtreemfs/osd.err"
