@@ -273,7 +273,8 @@ public class xtfs_cleanup_osd {
         try {
             return r.get().getIsRunning();
         } catch (Exception e) {
-            throw new Exception("Status-request for cleanup on the given OSD failed.");
+            Logging.logError(Logging.LEVEL_WARN, null, e);
+            throw new Exception("Status-request for cleanup on the given OSD failed, because: " + e.getMessage());
         } finally {
             r.freeBuffers();
         }
