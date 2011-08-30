@@ -1,0 +1,52 @@
+.TH xtfs_remove_osd 1 "July 2011" "The XtreemFS Distributed File System" "XtreemFS Admin Tools"
+.SH NAME
+xtfs_remove_osd \- removes an OSD by copying all objects on this OSD to other OSDs
+.SH SYNOPSIS
+\fBxtfs_remove_osd [ \fIoptions\fB ] \fIuuid:<osd_uuid>
+.BR
+
+.SH DESCRIPTION
+.I xtfs_remove_osd
+removes an OSD which is currently used. It copies all objectes on the OSD with the UUID 
+.I <osd_uuid>
+to other OSDs and then shut down the OSD. 
+
+.SH EXAMPLE USAGE
+.TP
+.B "xtfs_remove_osd -dir localhost:32638 uuid:d1feb333-d986-4e91-b8e7-eb2a48485f8b"
+Starts the removing process on the OSD identified by UUID 'd1feb333-d986-4e91-b8e7-eb2a48485f8b' and copies all files automatically to other OSDs (determinded by the OSD Selection Policy).
+
+.SH OPTIONS
+.TP
+\fB-c \fI<creds_file>
+Path to a PKCS#12 credentials file (private key + certificate) to use for SSL authentication. Must be present when MRC URL starts with pbrpcs:// or pbrpcg://.
+.TP
+\fB-cpass \fI<creds_passphrase>
+An optional passphrase to access the credentials file.
+.TP
+\fB-dir \fI<uri>
+Specifies the directory service to use (e.g. 'pbrpc://localhost:32638'). If no URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'. In case of a secured URI ('pbrpcs://...' or 'pbrpcg://...'), it is necessary to also specify SSL settings.
+.TP
+\fB-h/--help
+Shows usage info.
+.TP
+\fB-t \fI<trusted_CAs>
+Path to a PKCS#12 file containing a set of certificates from trusted certification authorities. These certificates will be used to authenticate the MRC. Must be present when MRC URL starts with pbrpcs:// or pbrpcg://.
+.TP
+\fB-tpass \fI<trusted_passphrase>
+An optional passphrase to access the truststore file.
+.TP
+.B \--admin_password \fI<passphrase>
+The administrator password, if password protection is enabled.
+
+.SH "SEE ALSO"
+.BR xtfs_chstatus (1),
+.BR xtfs_mrcdbtool (1),
+.BR xtfs_remove_osd (1),
+.BR xtfs_scrub (1),
+.BR xtfs_snap (1),
+.BR xtfs_cleanup (1)
+.BR
+
+.SH AVAILABILITY
+The xtfs_remove_osd command is part of the XtreemFS-tools package and is available at \fIhttp://www.xtreemfs.org\fP.
