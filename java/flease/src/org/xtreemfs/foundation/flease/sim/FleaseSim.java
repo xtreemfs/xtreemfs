@@ -54,7 +54,7 @@ public class FleaseSim {
             Logging.start(Logging.LEVEL_DEBUG, Category.all);
             TimeSync.initializeLocal(10000, 50);
 
-            final Communicator com = new Communicator(10, 10, 2000, 5, true, 0.05, 0.05, DEBUG_COMM_MSGS);
+            final Communicator com = new Communicator(10, 100, 30000, 5, true, 0.2, 0.05, DEBUG_COMM_MSGS);
             com.start();
 
             List<InetSocketAddress> allPorts = new ArrayList(numHosts);
@@ -65,7 +65,7 @@ public class FleaseSim {
             for (int i = 0; i < numHosts; i++) {
                 final int portNo = 1024+i;
                 final int myI = i;
-                FleaseConfig cfg = new FleaseConfig(leaseTimeout, dmax, 500, new InetSocketAddress(portNo), "localhost:"+(1024+i),5);
+                FleaseConfig cfg = new FleaseConfig(leaseTimeout, dmax, 500, new InetSocketAddress(portNo), "localhost:"+(1024+i),5, true, 0, true);
                 leaseStates[i] = new AtomicReference<Flease>(Flease.EMPTY_LEASE);
 
                 if (useME) {

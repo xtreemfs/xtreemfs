@@ -7,6 +7,7 @@
 
 package org.xtreemfs.foundation.flease;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Map;
@@ -19,6 +20,7 @@ import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.flease.proposer.FleaseException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.util.FSUtils;
 
 /**
  *
@@ -27,6 +29,7 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 public class MasterEpochTest extends TestCase {
 
     private final FleaseConfig cfg;
+    private final File testDir;
     
     public MasterEpochTest(String testName) {
         super(testName);
@@ -34,12 +37,15 @@ public class MasterEpochTest extends TestCase {
         Logging.start(Logging.LEVEL_DEBUG, Category.all);
         TimeSync.initializeLocal(10000, 50);
 
-        cfg = new FleaseConfig(10000, 500, 500, new InetSocketAddress(12345), "localhost:12345",5);
+        cfg = new FleaseConfig(10000, 500, 500, new InetSocketAddress(12345), "localhost:12345",5, true, 0, true);
+        testDir = new File("/tmp/xtreemfs-test/");
     }
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+        FSUtils.delTree(testDir);
+        testDir.mkdirs();
     }
 
     @Override
@@ -191,7 +197,7 @@ public class MasterEpochTest extends TestCase {
         }
 
         assertEquals(result.get().getLeaseHolder(),cfg.getIdentity());
-        assertEquals(result.get().getMasterEpochNumber(),1);
+        assertEquals(1, result.get().getMasterEpochNumber());
 
         FleaseFuture f = fs.closeCell(CELL_ID, false);
         f.get();

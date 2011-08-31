@@ -46,6 +46,7 @@ public class FleaseAcceptorCell implements Serializable {
     }
 
     public void setLatestLearn(FleaseMessage msg) {
+        assert(msg.getMsgType() == FleaseMessage.MsgType.MSG_LEARN);
         latestLearn.set(msg);
     }
 
@@ -84,10 +85,7 @@ public class FleaseAcceptorCell implements Serializable {
     }
 
     public boolean isLearned() {
-        if (accepted == null)
-            return false;
-
-        return (accepted.getMsgType() == FleaseMessage.MsgType.MSG_LEARN);
+        return latestLearn.get() != null;
     }
 
     public void touch() {

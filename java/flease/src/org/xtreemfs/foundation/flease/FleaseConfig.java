@@ -53,6 +53,8 @@ public class FleaseConfig {
 
     private final int toNotification_ms;
 
+    private final boolean debugPrintMessages;
+
     public FleaseConfig(int leaseTimeout_ms, int dmax_ms,
                     int messageTimeout_ms, InetSocketAddress endpoint,
                     String identity, int maxRetries) {
@@ -63,6 +65,13 @@ public class FleaseConfig {
                     int messageTimeout_ms, InetSocketAddress endpoint,
                     String identity, int maxRetries, boolean sendLearnMessages,
                     int toNotification_ms) {
+        this(leaseTimeout_ms, dmax_ms, messageTimeout_ms, endpoint, identity, maxRetries, sendLearnMessages, toNotification_ms, false);
+    }
+
+    public FleaseConfig(int leaseTimeout_ms, int dmax_ms,
+                    int messageTimeout_ms, InetSocketAddress endpoint,
+                    String identity, int maxRetries, boolean sendLearnMessages,
+                    int toNotification_ms, boolean debugPrintMessages) {
 
         this.maxLeaseTimeout_ms = leaseTimeout_ms;
         this.dmax_ms = dmax_ms;
@@ -81,6 +90,7 @@ public class FleaseConfig {
 
         this.sendLearnMessages = sendLearnMessages;
         this.toNotification_ms = toNotification_ms;
+        this.debugPrintMessages = debugPrintMessages;
 
     }
 
@@ -168,6 +178,13 @@ public class FleaseConfig {
      */
     public int getToNotification_ms() {
         return toNotification_ms;
+    }
+
+    /**
+     * @return the debugPrintMessages
+     */
+    public boolean isDebugPrintMessages() {
+        return debugPrintMessages;
     }
 
 

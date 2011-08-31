@@ -142,7 +142,7 @@ public class FleaseAcceptor {
         cc.touch();
 
         if ((cc.getPrepared() != null) && (cc.getPrepared().after(msg))) {
-            if (Logging.isDebug()) {
+            if (Logging.isDebug() && config.isDebugPrintMessages()) {
                 final String preped = (cc.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getPrepared().getProposalNo().toString();
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication,this,"A prepare NACK p:"+preped+" is after "+msg.getProposalNo()+"");
             }
@@ -154,7 +154,7 @@ public class FleaseAcceptor {
             reject.setSendTimestamp(TimeSync.getGlobalTime());
             return reject;
         } else {
-            if (Logging.isDebug()) {
+            if (Logging.isDebug() && config.isDebugPrintMessages()) {
                 final String preped = (cc.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getPrepared().getProposalNo().toString();
                 final String acced = (cc.getAccepted() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getAccepted().getProposalNo()+"="+cc.getAccepted().getLeaseHolder()+"/"+cc.getAccepted().getLeaseTimeout();
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication,this,"A prepare ACK  p:"+preped+" -> "+msg.getProposalNo()+" a:"+acced);
@@ -194,7 +194,7 @@ public class FleaseAcceptor {
         cc.touch();
         if ((cc.getPrepared() != null) && (cc.getPrepared().after(msg))) {
             // reject the request
-           if (Logging.isDebug()) {
+           if (Logging.isDebug() && config.isDebugPrintMessages()) {
                 final String preped = (cc.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getPrepared().getProposalNo().toString();
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication,this,"A accept  NACK p:"+preped+" is after "+msg.getProposalNo()+"");
             }
@@ -207,7 +207,7 @@ public class FleaseAcceptor {
             return tmp;
         } else {
             // okay accept it
-            if (Logging.isDebug()) {
+            if (Logging.isDebug() && config.isDebugPrintMessages()) {
                 final String preped = (cc.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getPrepared().getProposalNo().toString();
                 final String acced = (cc.getAccepted() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getAccepted().getProposalNo()+"="+cc.getAccepted().getLeaseHolder()+"/"+cc.getAccepted().getLeaseTimeout();
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication,this,"A accept  ACK  p:"+preped+" a: "+acced+" -> "+msg.getProposalNo()+"="+msg.getLeaseHolder()+"/"+msg.getLeaseTimeout());
@@ -236,11 +236,12 @@ public class FleaseAcceptor {
         final FleaseAcceptorCell cc = getCell(msg);
 
         cc.touch();
-        if ((cc.getPrepared() != null) && (cc.getPrepared().after(msg))) {
-            if (Logging.isDebug())
+        if ((cc.getPrepared() != null) && (cc.getPrepared().after(msg))
+            || (cc.getAccepted() != null) && (cc.getAccepted().after(msg))) {
+            if (Logging.isDebug() && config.isDebugPrintMessages())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication,this,"A ignore outdated LEARN message "+msg.getProposalNo());
         } else {
-            if (Logging.isDebug()) {
+            if (Logging.isDebug() && config.isDebugPrintMessages()) {
                 final String preped = (cc.getPrepared() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getPrepared().getProposalNo().toString();
                 final String acced = (cc.getAccepted() == null) ? ProposalNumber.EMPTY_PROPOSAL_NUMBER.toString() : cc.getAccepted().getProposalNo()+"="+cc.getAccepted().getLeaseHolder()+"/"+cc.getAccepted().getLeaseTimeout();
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication,this,"A learn        p:"+preped+" a: "+acced+" -> "+msg.getProposalNo()+"="+msg.getLeaseHolder()+"/"+msg.getLeaseTimeout());
@@ -263,14 +264,8 @@ public class FleaseAcceptor {
      * @return a response message
      */
     public FleaseMessage getLocalLeaseInformation(ASCIIString cellId) {
-
         FleaseAcceptorCell cc = getCell(cellId);
-
-        if (cc.isLearned())
-            return new FleaseMessage(cc.getAccepted());
-        else
-            return null;
-        
+        return cc.getLatestLearn();
     }
 
     public Map<ASCIIString,FleaseMessage> localState() {
@@ -301,12 +296,12 @@ public class FleaseAcceptor {
         final long now = TimeSync.getLocalSystemTime();
         if (msg.getSendTimestamp()+config.getMessageTimeout() < TimeSync.getGlobalTime()) {
             //old message, ignore
-            if (Logging.isDebug())
+            if (Logging.isDebug() && config.isDebugPrintMessages())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"A outdated message discarded: %s",msg.toString());
             return null;
         }
         if (this.waitUntilTimestamp_ms >= now) {
-            if (Logging.isDebug())
+            if (Logging.isDebug() && config.isDebugPrintMessages())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"A message discarded, acceptor is still in recovery period");
             return null;
         }

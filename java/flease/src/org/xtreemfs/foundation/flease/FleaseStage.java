@@ -36,7 +36,7 @@ import org.xtreemfs.foundation.logging.Logging.Category;
  */
 public class FleaseStage extends LifeCycleThread implements LearnEventListener, FleaseLocalQueueInterface {
 
-    public static final String FLEASE_VERSION = "0.2.2 (trunk)";
+    public static final String FLEASE_VERSION = "0.2.4 (trunk)";
 
     public static final int TIMER_INTERVAL_IN_MS = 50;
 
@@ -498,6 +498,9 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
                 if (COLLECT_STATISTICS) {
                     rqStart = System.nanoTime();
                     inTimers.incrementAndGet();
+                }
+                if (e.getScheduledTime() < now) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "event sent after deadline: %s", e.message);
                 }
                 e.getMessage().setSendTimestamp(TimeSync.getGlobalTime());
                 proposer.processMessage(e.getMessage());
