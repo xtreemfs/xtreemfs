@@ -140,6 +140,7 @@ public abstract class DCMapPolicyBase implements OSDSelectionPolicy {
                 }
                 
             } else {
+                matchers[i] = new Inet4AddressMatcher[0];
                 // allow empty datacenters
                 Logging.logMessage(Logging.LEVEL_WARN, this, "datacenter '" + dcs[i] + "' has no entries!");
             }
