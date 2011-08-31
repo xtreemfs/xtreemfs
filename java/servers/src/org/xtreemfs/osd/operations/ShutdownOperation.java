@@ -35,10 +35,10 @@ public class ShutdownOperation extends OSDOperation {
     @Override
     public void startRequest(OSDRequest rq) {
 
-        //check password
-
+        // check password to ensure that user is authorized
         Auth authData = rq.getRPCRequest().getHeader().getRequestHeader().getAuthData();
-        if (!authData.hasAuthPasswd() || authData.getAuthPasswd().equals(master.getConfig().getAdminPassword())) {
+        if (master.getConfig().getAdminPassword().length() > 0
+                && !master.getConfig().getAdminPassword().equals(authData.getAuthPasswd())) {
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, "this operation requires an admin password");
             return;
         }

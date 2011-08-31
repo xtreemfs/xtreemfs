@@ -598,8 +598,11 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             replStage.shutdown();
             rwrStage.shutdown();
             vStage.shutdown();
+            cThread.cleanupStop();
             cThread.shutdown();
+            cvThread.cleanupStop();
             cvThread.shutdown();
+            serviceAvailability.shutdown();
             
             udpCom.waitForShutdown();
             preprocStage.waitForShutdown();
@@ -626,10 +629,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public void asyncShutdown() {
         try {
             
-        	for (OSDStatusListener listener : statusListener ) {
-        		listener.shuttingDown();
-			}
-        	
+            for (OSDStatusListener listener : statusListener) {
+                listener.shuttingDown();
+            }
+            
             heartbeatThread.shutdown();
             
             UUIDResolver.shutdown();
@@ -642,15 +645,19 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             preprocStage.shutdown();
             delStage.shutdown();
             stStage.shutdown();
+            replStage.shutdown();
+            rwrStage.shutdown();
             vStage.shutdown();
             cThread.cleanupStop();
+            cThread.shutdown();
             cvThread.cleanupStop();
+            cvThread.shutdown();
+            serviceAvailability.shutdown();
             
             httpServ.stop(0);
             
             if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
-                    "OSD and all stages terminated");
+                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "OSD and all stages terminated");
             
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "shutdown failed");
