@@ -156,8 +156,7 @@ class Server:
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "protobuf-java-2.3.0.jar")),
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "Flease.jar")),
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "foundation", "dist", "Foundation.jar")),
-                             os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "OpenDMK-src" ,"dist", "lib", 
-                                                          "jdmkrt.jar")),
+                             os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "jdmkrt.jar")),
                              )
                 if sys.platform.startswith("win"):
                     classpath = ";".join(classpath)

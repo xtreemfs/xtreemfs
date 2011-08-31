@@ -162,6 +162,7 @@ public class xtfs_remove_osd {
             removeOsd.drainOSD();
             removeOsd.shutdown();
 
+            System.exit(0);
 
         } catch (Exception e) {
 
