@@ -243,7 +243,13 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             final Flease lease = (Flease) method.getArgs()[1];
             final FleaseException error = (FleaseException) method.getArgs()[2];
 
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) lease change event: %s, %s, %s",localID, cellId,lease,error);
+            if (error == null) {
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) lease change event: %s, %s",localID, cellId, lease);
+                }
+            } else {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) lease error in cell %s: %s",localID, cellId, error);
+            }
 
             final String fileId = cellToFileId.get(cellId);
             if (fileId != null) {
@@ -261,7 +267,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     if (oldState == ReplicaState.PRIMARY
                         &&lease.getLeaseHolder() == null
                         && lease.getLeaseTimeout_ms() == 0) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,"(R:%s) was primarym, lease error in cell %s, restarting replication: %s",localID, cellId,lease,error);
+                        Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,"(R:%s) was primary, lease error in cell %s, restarting replication: %s",localID, cellId,lease,error);
                         failed(state, ErrorUtils.getInternalServerError(new IOException(fileId +": lease timed out, renew failed")));
                     } else {
                         if ( (state.getState() == ReplicaState.BACKUP)
@@ -717,7 +723,15 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     public void receiveFleaseMessage(ReusableBuffer message, InetSocketAddress sender) {
-        this.enqueueOperation(STAGEOP_PROCESS_FLEASE_MSG, new Object[]{message,sender}, null, null);
+        //this.enqueueOperation(STAGEOP_PROCESS_FLEASE_MSG, new Object[]{message,sender}, null, null);
+        try {
+            FleaseMessage msg = new FleaseMessage(message);
+            BufferPool.free(message);
+            msg.setSender(sender);
+            fstage.receiveMessage(msg);
+        } catch (Exception ex) {
+            Logging.logError(Logging.LEVEL_ERROR, this,ex);
+        }
     }
 
     public void getStatus(StatusCallback callback) {
