@@ -36,8 +36,15 @@ Path to a PKCS#12 file containing a set of certificates from trusted certificati
 \fB-tpass \fI<trusted_passphrase>
 An optional passphrase to access the truststore file.
 .TP
+\fB-d 
+Enables debugging output. 
+.TP
+\fB-s
+Shuts down the OSD per remote call after all object files are moved to other OSDs. Note that the shutdown process will be performed independently from your init system which can lead to errors if you try to start this OSD again with your init scripts. Therefore the default is not to shutdown the OSD. This step should be performed manually. 
+.TP
 .B \--admin_password \fI<passphrase>
-The administrator password, if password protection is enabled.
+The administrator password, if password protection is enabled. Used only if you want to shutdown the OSD automatically per remote call.
+
 
 .SH "SEE ALSO"
 .BR xtfs_chstatus (1),

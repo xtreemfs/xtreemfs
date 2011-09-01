@@ -31,23 +31,14 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.drain.OSDDrainException.ErrorState;
 import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_listRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
@@ -55,12 +46,18 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_listRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_read_only_xattrResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
  * Class that provides function to remove a OSD by moving all his files to other OSDs.
@@ -131,8 +128,12 @@ public class OSDDrain {
 
     /**
      * Try to remove the OSD.
+     * 
+     * @param shutdown
+     *            If true the OSD will be shut down. Otherwise it will be locked for assigning of new files
+     *            but is still running.
      */
-    public void drain() {
+    public void drain(boolean shutdown) {
 
         try {
             // set OSDServiceStatus to prevent further writing on this OSD
@@ -183,10 +184,23 @@ public class OSDDrain {
             // TODO: delete all files on osd
 
             // shutdown osd
-            this.shutdownOsd();
+            if (shutdown) {
+                this.shutdownOsd();
+            } else {
+                System.out.println("The OSD is now locked and objects stored on it copied to other OSDs."
+                        + " It is save to shutdown this OSD now!");
+            }
 
         } catch (OSDDrainException e) {
             this.handleException(e, true);
+            // set Service Status back to availalbe when an error occurs.
+            try {
+                this.setServiceStatus(ServiceStatus.SERVICE_STATUS_AVAIL);
+            } catch (OSDDrainException e1) {
+                this.handleException(e1, true);
+                System.out.println("Service Status couldn't set back to AVAILABLE. You have to do"
+                        + " this yourself.");
+            }
         }
 
     }
@@ -443,9 +457,9 @@ public class OSDDrain {
             xtreemfs_get_suitable_osdsResponse suitOSDResp = null;
             try {
                 xtreemfs_get_suitable_osdsRequest sosdsReq = xtreemfs_get_suitable_osdsRequest.newBuilder()
-                    .setFileId(fileInfo.fileID).setNumOsds(1).build();
+                        .setFileId(fileInfo.fileID).setNumOsds(1).build();
                 sor = mrcClient
-                    .xtreemfs_get_suitable_osds(fileInfo.mrcAddress, password, userCreds, sosdsReq);
+                        .xtreemfs_get_suitable_osds(fileInfo.mrcAddress, password, userCreds, sosdsReq);
                 suitOSDResp = sor.get();
             } catch (Exception e) {
                 if (Logging.isDebug()) {
@@ -481,7 +495,7 @@ public class OSDDrain {
             RPCResponse<?> repAddResp = null;
             try {
                 xtreemfs_replica_addRequest repAddReq = xtreemfs_replica_addRequest.newBuilder()
-                    .setFileId(fileInfo.fileID).setNewReplica(replica).build();
+                        .setFileId(fileInfo.fileID).setNewReplica(replica).build();
                 repAddResp = mrcClient.xtreemfs_replica_add(fileInfo.mrcAddress, password, userCreds,
                         repAddReq);
                 repAddResp.get();
@@ -787,9 +801,9 @@ public class OSDDrain {
             RPCResponse<FileCredentials> resp = null;
             try {
                 xtreemfs_replica_removeRequest replRemReq = xtreemfs_replica_removeRequest.newBuilder()
-                    .setFileId(fileInfo.fileID).setOsdUuid(osdUUID.toString()).build();
-                resp = mrcClient.xtreemfs_replica_remove(fileInfo.mrcAddress, password, userCreds,
-                        replRemReq);
+                        .setFileId(fileInfo.fileID).setOsdUuid(osdUUID.toString()).build();
+                resp = mrcClient
+                        .xtreemfs_replica_remove(fileInfo.mrcAddress, password, userCreds, replRemReq);
                 resp.get();
                 finishedFileInfos.add(fileInfo);
             } catch (Exception e) {
@@ -889,52 +903,64 @@ public class OSDDrain {
     public void handleException(OSDDrainException ex, boolean printError) {
         switch (ex.getErrorState()) {
         case INITIALIZATION:
-            if (printError)
+            if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
                         "Failed to initialize connection");
+                printError();
+            }
             if (Logging.isDebug()) {
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
             }
             break;
 
         case GET_FILE_LIST:
-            if (printError)
+            if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
                         "Failed to get filelist from OSD");
+                printError();
+            }
             if (Logging.isDebug()) {
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
             }
             break;
 
         case UPDATE_MRC_ADDRESSES:
-            if (printError)
+            if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
                         "Failed to get all MRC Addresses from DIR");
+                printError();
+            }
             if (Logging.isDebug()) {
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
             }
             break;
 
         case REMOVE_NON_EXISTING_IDS:
-            if (printError)
+            if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
                         "Failed to check if files exist on MRC");
+                printError();
+            }
             if (Logging.isDebug())
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
             break;
 
         case SET_SERVICE_STATUS:
-            if (printError)
+            if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
                         "ERROR: failed to set ServiceStatus for OSD");
+                printError();
+            }
             if (Logging.isDebug())
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
             break;
 
         case SET_UPDATE_POLICY:
-            if (printError)
+            if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
                         "Failed to set ReplicationUpdatePolicies");
+                printError();
+            }
             if (Logging.isDebug())
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
 
@@ -957,8 +983,10 @@ public class OSDDrain {
             break;
 
         case SET_RONLY:
-            if (printError)
+            if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, "Failed to set files read-only");
+                printError();
+            }
             if (Logging.isDebug())
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
 
@@ -984,8 +1012,10 @@ public class OSDDrain {
             break;
 
         case CREATE_REPLICAS:
-            if (printError)
+            if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, "Failed to create new replicas");
+                printError();
+            }
             if (Logging.isDebug())
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
 
@@ -1009,8 +1039,11 @@ public class OSDDrain {
             break;
 
         case WAIT_FOR_REPLICATION:
-            if (printError)
+            if (printError) {
+
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, "Failed to replicate files");
+                printError();
+            }
             if (Logging.isDebug())
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
 
@@ -1032,12 +1065,15 @@ public class OSDDrain {
             this.handleException(
                     new OSDDrainException(ex.getMessage(), ErrorState.SET_RONLY, ex.getFileInfosAll(), ex
                             .getFileInfosAll()), false);
+
             break;
 
         case REMOVE_REPLICAS:
-            if (printError)
+            if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
                         "Failed to remove original replicas");
+                printError();
+            }
             if (Logging.isDebug())
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
 
@@ -1063,9 +1099,11 @@ public class OSDDrain {
             break;
 
         case UNSET_RONLY:
-            if (printError)
+            if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
                         "Failed to set files back from read-only mode");
+                printError();
+            }
             if (Logging.isDebug())
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
 
@@ -1090,9 +1128,12 @@ public class OSDDrain {
             break;
 
         case UNSET_UPDATE_POLICY:
-            if (printError)
+            if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
                         "Failed to set ReplicationUpdatePolicy back to the original ones");
+                printError();
+            }
+
             if (Logging.isDebug()) {
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
             }
@@ -1119,10 +1160,13 @@ public class OSDDrain {
             break;
 
         case SHUTDOWN_OSD:
-            if (printError)
+            if (printError) {
                 Logging.logMessage(Logging.LEVEL_WARN, Category.tool, this,
                         "Couldn't shut down OSD with UUID=" + this.osdUUID.toString()
-                                + "  but all files are removed this OSD. It's safe to shutdown the OSD now.");
+                                + "  but all object files are moved to other OSDs. It's safe to shutdown this OSD now.");
+                System.out.println("WARNING: Couldn't shut down OSD with UUID=" + this.osdUUID.toString()
+                        + "  but all object files are moved to other OSDs. It's safe to shutdown this OSD now.");
+            }
             if (Logging.isDebug()) {
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
             }
@@ -1131,5 +1175,10 @@ public class OSDDrain {
         default:
             break;
         }
+    }
+
+    private void printError() {
+        System.err.println("ERROR: An error accured during the OSD drain process. See logging output"
+                + "for details. It is NOT save to shutdown the OSD.");
     }
 }

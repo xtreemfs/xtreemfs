@@ -14,6 +14,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.DIRClient;
@@ -63,8 +64,6 @@ public class xtfs_remove_osd {
 
         Map<String, CliOption> options = null;
         try {
-            Logging.start(Logging.LEVEL_DEBUG);
-
             // parse the call arguments
             options = utils.getDefaultAdminToolOptions(true);
             List<String> arguments = new ArrayList<String>(1);
@@ -76,8 +75,16 @@ public class xtfs_remove_osd {
             oDir.urlDefaultPort = PORTS.DIR_PBRPC_PORT_DEFAULT.getNumber();
             oDir.urlDefaultProtocol = Schemes.SCHEME_PBRPC;
             options.put("dir", oDir);
-
+            options.put("s", new CliOption(CliOption.OPTIONTYPE.SWITCH, "shutdown OSD", ""));
+            options.put("d", new CliOption(CliOption.OPTIONTYPE.SWITCH, "enbable debug output", ""));
             CLIParser.parseCLI(args, options, arguments);
+            
+            //start logging
+            if (options.get("d").switchValue) {
+                Logging.start(Logging.LEVEL_DEBUG);
+            } else {
+                Logging.start(Logging.LEVEL_ERROR);
+            }
 
             if (options.get(utils.OPTION_HELP).switchValue || options.get(utils.OPTION_HELP_LONG).switchValue) {
                 usage(options);
@@ -90,6 +97,7 @@ public class xtfs_remove_osd {
 
 
             ONCRPCServiceURL dirURL = options.get("dir").urlValue;
+            boolean shutdown = options.get("s").switchValue;
             String password = (options.get(utils.OPTION_ADMIN_PASS).stringValue != null) ? options.get(utils.OPTION_ADMIN_PASS).stringValue : "";
             boolean useSSL = false;
             boolean gridSSL = false;
@@ -159,7 +167,7 @@ public class xtfs_remove_osd {
 
             xtfs_remove_osd removeOsd = new xtfs_remove_osd(dirAddr, osdUUID, sslOptions, password);
             removeOsd.initialize();
-            removeOsd.drainOSD();
+            removeOsd.drainOSD(shutdown);
             removeOsd.shutdown();
 
             System.exit(0);
@@ -263,9 +271,9 @@ public class xtfs_remove_osd {
      * 
      * @throws Exception
      */
-    public void drainOSD() throws Exception {
+    public void drainOSD(boolean shutdown) throws Exception {
         OSDDrain osdDrain = new OSDDrain(dir, osd, mrc, osdUUID, authHeader, credentials, resolver);
-        osdDrain.drain();
+        osdDrain.drain(shutdown);
     }
 
     /**
