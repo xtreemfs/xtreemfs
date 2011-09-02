@@ -123,6 +123,11 @@ public class RemoveReplicaOperation extends MRCOperation {
                 break;
         }
         
+        // if the OSD could not be found, throw a corresponding user exception
+        if (i == oldXLocList.getReplicaCount())
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                    "OSD '" + rqArgs.getOsdUuid() + "' is not head OSD of any replica");
+        
         // create and assign a new X-Locations list that excludes the
         // replica to remove
         XLoc[] newReplList = new XLoc[oldXLocList.getReplicaCount() - 1];

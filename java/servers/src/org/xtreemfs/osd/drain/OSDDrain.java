@@ -44,6 +44,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsRequest;
@@ -483,6 +484,9 @@ public class OSDDrain {
             // stripe-width is greater than 1 all OSDs used in one of the other
             // replicas couldn't
             // be used again)
+            // current solution is to use '1' for the striping width
+            sp = StripingPolicy.newBuilder().setType(sp.getType()).setStripeSize(sp.getStripeSize()).setWidth(1)
+                    .build();
             Replica replica = Replica
                     .newBuilder()
                     .addOsdUuids(suitOSDResp.getOsdUuids(0))
@@ -748,7 +752,7 @@ public class OSDDrain {
                     "waiting 10secs for replication to be finished");
             try {
                 // wait 10sec until next poll
-                Thread.sleep(10000);
+                Thread.sleep(5000);
             } catch (Exception e) {
                 // ignore
             }
@@ -800,8 +804,18 @@ public class OSDDrain {
         for (FileInformation fileInfo : fileInfos) {
             RPCResponse<FileCredentials> resp = null;
             try {
+                
+                // find the head OSD for the given UUID
+                String headOSD = null;
+                XLocSet xlocs = fileInfo.fileCredentials.getXlocs();
+                for (Replica xloc : xlocs.getReplicasList()) {
+                    if (xloc.getOsdUuidsList().contains(osdUUID.toString()))
+                        headOSD = xloc.getOsdUuidsList().get(0);
+                }
+                assert (headOSD != null);
+                                
                 xtreemfs_replica_removeRequest replRemReq = xtreemfs_replica_removeRequest.newBuilder()
-                        .setFileId(fileInfo.fileID).setOsdUuid(osdUUID.toString()).build();
+                        .setFileId(fileInfo.fileID).setOsdUuid(headOSD).build();
                 resp = mrcClient
                         .xtreemfs_replica_remove(fileInfo.mrcAddress, password, userCreds, replRemReq);
                 resp.get();
