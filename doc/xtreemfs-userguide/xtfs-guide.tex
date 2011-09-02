@@ -1930,6 +1930,33 @@ $> xtfs_cleanup -dir localhost:32638 -v \
 
 \textbf{Note:} A snapshot only captures a file in its current state if it is \emph{closed}. Files that are \emph{open} when taking a snapshot are captured in the last state in which they were before they were opened. Since files are implicitly closed on an OSD through a timeout rather than an explicit \texttt{close} call, it may happen that files are not included in a snapshot despite having been closed at application level before the snapshot was taken. To make sure a change to a specific file is included in a subsequent snapshot, it is necessary to wait for the close timeout on the OSD before taking the snapshot, which by default is set to 60 seconds.
 
+\subsection{Draining OSDs}
+
+In some cases, it may be necessary to remove an OSD from an XtreemFS installation. The OSD drain tool removes an OSD without losing the files stored on it. This is done by distributing the files across the remaining OSDs before performing the removal. The tool can be used as follows:
+
+\begin{verbatim}
+$> xtfs_remove_osd -dir localhost:32638 \
+   uuid:8bca70da-c963-43c7-b30b-d0d605d39fa7
+\end{verbatim}
+
+Executing the command will drain the OSD with the given UUID that was registered at the given DIR. A drained OSD will not be assigned to new files. By default, it will remain in the system until it is manually shut down by the administrator. To perform an automatic shutdown, use the \texttt{-s} switch. Please refer to the man page for further details.
+
+\subsubsection{How it Works}
+
+Draining an OSD works as follows:
+\begin{enumerate}
+ \item The OSD is marked as ``locked''. This restrains it from being assigned to newly created files.
+ \item A new replica is added to each file stored on the OSD. The OSD used for this replica is selected according to the volume's OSD selection policy (see Section \ref{sec:osd_policies}).
+ \item Once the new replica has become consistent, i.e. all content has been copied from the original replica, the original replica (which is stored on the OSD that is supposed to be drained) is removed.
+ \item As soon as all replicas have been removed, the draining procedure has finished. 
+\end{enumerate}
+
+\subsubsection{Limitations}
+
+Draining an OSD that holds striped and replicated files involves certain limitations. A striped file is currently moved to a new OSD in its entirety rather than partially. Regardless of the original number of OSDs it was striped across, it is relocated to a single target OSD, which implies that the target file is not striped anymore. As a consequence, data may be moved from OSDs that are not directly affected by the draining process.
+
+Furthermore, at least one OSD has to exist for each file that does not hold any data of the file, i.e.\ is not included in any stripe or replica. If all OSDs that are eligible according to the OSD selection policy have already been assigned to a file, draining any of these OSDs will fail, as no additional replicas can be created.
+
 \section{User Tools}
 
 Since release 1.3, all user tools have been replaced by the \texttt{xtfsutil} tool. \texttt{xtfsutil} displays XtreemFS specific file and directory information, manages file replicas and volume policies.
@@ -2597,8 +2624,10 @@ Congratulations! You successfully finished the quick start guide of the XtreemFS
  \item[xtestenv] Tool for automatic set-up of a test environment and for executing the autotests.
  \item[xtfsutil] XtreemFS's swiss army knife.
  \item[xtfs\_cleanup] Deletes orphaned objects on an OSD, restores orphaned files and removes obsolete file versions.
+ \item[xtfs\_chstatus] Changes the status of an service.
  \item[xtfs\_snap] Creates, lists and deletes snapshots.
  \item[xtfs\_mrcdbtool] Dumps and restores an XML representation of the MRC database.
+ \item[xtfs\_remove\_osd] Relocates all files stored on an OSD in order to remove the OSD from the system.
  \item[xtfs\_scrub] Examines all files in a volume for wrong file sizes and checksums and corrects wrong file sizes in the MRC.
  \item[xtfs\_vivaldi] client service to calculate vivaldi coordinates.
 \end{description}
