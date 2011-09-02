@@ -23,6 +23,9 @@ class Controller implements PerformanceMeasurementListener {
     
     private final int[]                           queueComposition;
     private final long[]                          queueBandwidthComposition;
+
+    private final int[]                           priorityQueueComposition;
+    private final long[]                          priorityQueueBandwidthComposition;
     
     private final AtomicLongArray                 fixedProcessingTimeAverages;
     private final AtomicLongArray                 variableProcessingTimeAverages;
@@ -38,6 +41,8 @@ class Controller implements PerformanceMeasurementListener {
         
         queueComposition = new int[numTypes];
         queueBandwidthComposition = new long[numTypes];
+        priorityQueueComposition = new int[numTypes];
+        priorityQueueBandwidthComposition = new long[numTypes];
         
         fixedProcessingTimeAverages = new AtomicLongArray(numTypes);
         variableProcessingTimeAverages = new AtomicLongArray(numTypes);
@@ -51,7 +56,11 @@ class Controller implements PerformanceMeasurementListener {
         if (size > 0L) {
             result += Double.longBitsToDouble(variableProcessingTimeAverages.get(type)) * size;
         }
-        result += estimateIdleTime();
+        if (hasPriority) {
+            result += estimatePriorityWaitingTime();
+        } else {
+            result += estimateWaitingTime();
+        }
         return result;
     }
     
@@ -59,12 +68,22 @@ class Controller implements PerformanceMeasurementListener {
         
         queueComposition[type]++;
         queueBandwidthComposition[type] += size;
+        
+        if (hasPriority) {
+            priorityQueueComposition[type]++;
+            priorityQueueBandwidthComposition[type] += size;
+        }
     }
     
     void quitRequest(int type, long size, boolean hasPriority) {
         
         queueComposition[type]--;
         queueBandwidthComposition[type] -= size;
+        
+        if (hasPriority) {
+            priorityQueueComposition[type]--;
+            priorityQueueBandwidthComposition[type] -= size;
+        }
     }
     
     void updateSuccessorInformation(PerformanceInformation performanceInformation) {
@@ -86,7 +105,8 @@ class Controller implements PerformanceMeasurementListener {
         return new PerformanceInformation(id, 
                                           fixedProcessingTime, 
                                           variableProcessingTime, 
-                                          estimateIdleTime(fixedProcessingTime, variableProcessingTime));
+                                          estimateWaitingTime(fixedProcessingTime, variableProcessingTime),
+                                          estimatePriorityWaitingTime(fixedProcessingTime, variableProcessingTime));
     }
 
 /*
@@ -122,8 +142,8 @@ class Controller implements PerformanceMeasurementListener {
      * 
      * @return
      */
-    private double estimateIdleTime() {
-        double result = successorPerformanceInformation.getIdleTime();
+    private double estimateWaitingTime() {
+        double result = successorPerformanceInformation.getWaitingTime();
         
         int numTypes = fixedProcessingTimeAverages.length();
         for (int i = 0; i < numTypes; i++) {
@@ -137,17 +157,53 @@ class Controller implements PerformanceMeasurementListener {
     
     /**
      * 
+     * @return
+     */
+    private double estimatePriorityWaitingTime() {
+        double result = successorPerformanceInformation.getPriorityWaitingTime();
+        
+        int numTypes = fixedProcessingTimeAverages.length();
+        for (int i = 0; i < numTypes; i++) {
+            result += Double.longBitsToDouble(
+                    fixedProcessingTimeAverages.get(numTypes)) * priorityQueueComposition[numTypes];
+            result += Double.longBitsToDouble(
+                    variableProcessingTimeAverages.get(numTypes)) * priorityQueueBandwidthComposition[numTypes];
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 
      * @param fixedProcessingTime
      * @param variableProcessingTime
      * @return
      */
-    private double estimateIdleTime(double[] fixedProcessingTime, double[] variableProcessingTime) {
-        double result = successorPerformanceInformation.getIdleTime();
+    private double estimateWaitingTime(double[] fixedProcessingTime, double[] variableProcessingTime) {
+        double result = successorPerformanceInformation.getWaitingTime();
         
         int numTypes = fixedProcessingTime.length;
         for (int i = 0; i < numTypes; i++) {
             result += fixedProcessingTime[numTypes] * queueComposition[numTypes];
             result += variableProcessingTime[numTypes] * queueBandwidthComposition[numTypes];
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 
+     * @param fixedProcessingTime
+     * @param variableProcessingTime
+     * @return
+     */
+    private double estimatePriorityWaitingTime(double[] fixedProcessingTime, double[] variableProcessingTime) {
+        double result = successorPerformanceInformation.getPriorityWaitingTime();
+        
+        int numTypes = fixedProcessingTime.length;
+        for (int i = 0; i < numTypes; i++) {
+            result += fixedProcessingTime[numTypes] * priorityQueueComposition[numTypes];
+            result += variableProcessingTime[numTypes] * priorityQueueBandwidthComposition[numTypes];
         }
         
         return result;

@@ -14,8 +14,6 @@ import org.xtreemfs.foundation.buffer.ReusableBuffer;
  * <p>Instances of this class encapsulate performance measurements that are exchanged between different stages. It also
  * provides methods to serialize and dezerialize these informations to be able to share them via RPCs.</p>
  * 
- * TODO priorities
- * 
  * @author flangner
  * @version 1.00, 09/01/11
  */
@@ -37,10 +35,16 @@ public class PerformanceInformation {
     double[]    variableProcessingTimeAverages;
     
     /**
-     * <p>The idle time in ms retrieved from size and composition of this and subsequent queues for the remaining 
+     * <p>Waiting time in ms retrieved from size and composition of this and subsequent queues for the remaining 
      * queuing network.</p>
      */
-    double      idleTime;
+    double      waitingTime;
+    
+    /**
+     * <p>Waiting time for high priority requests in ms retrieved from size and composition of this and subsequent 
+     * queues for the remaining queuing network.</p>
+     */
+    double      priorityWaitingTime;
 
     /**
      * <p>Constructor to bundle important performance information to be ready for forwarding to the preceding stage.</p>
@@ -48,18 +52,21 @@ public class PerformanceInformation {
      * @param id - unique identifier for this stage.
      * @param fixedProcessingTimeAverages - the fixed processing time averages at this stage in ms.
      * @param variableProcessingTimeAverages - the variable processing time averages at this stage in ms/byte.
-     * @param idleTime - the idle time retrieved from size and composition of this and subsequent queues for the 
-     *                   remaining queuing network.
+     * @param waitingTime - the estimated waiting time in ms retrieved from size and composition of this and subsequent 
+     *                      queues for the remaining queuing network.
+     * @param waitingTime - the estimated waiting time for high priority requests in ms retrieved from size and 
+     *                      composition of this and subsequent queues for the remaining queuing network.
      */
     PerformanceInformation(int id, double[] fixedProcessingTimeAverages, double[] variableProcessingTimeAverages, 
-            double idleTime) {
+            double waitingTime, double priorityWaitingTime) {
                 
         assert(fixedProcessingTimeAverages.length == variableProcessingTimeAverages.length);
         
         this.id = id;
         this.fixedProcessingTimeAverages = fixedProcessingTimeAverages;
         this.variableProcessingTimeAverages = variableProcessingTimeAverages;
-        this.idleTime = idleTime;
+        this.waitingTime = waitingTime;
+        this.priorityWaitingTime = priorityWaitingTime;
     }
     
     /**
@@ -78,14 +85,15 @@ public class PerformanceInformation {
     public ReusableBuffer serialize() {
         
         int length = fixedProcessingTimeAverages.length;
-        ReusableBuffer result = BufferPool.allocate((Integer.SIZE * 2 + Double.SIZE * ((length * 2) + 1)) / 8);
+        ReusableBuffer result = BufferPool.allocate((Integer.SIZE * 2 + Double.SIZE * ((length * 2) + 2)) / 8);
         result.putInt(id);
         result.putInt(length);
         for (int i = 0; i < length; i++) {
             result.putDouble(fixedProcessingTimeAverages[i]);
             result.putDouble(variableProcessingTimeAverages[i]);
         }
-        result.putDouble(idleTime);
+        result.putDouble(waitingTime);
+        result.putDouble(priorityWaitingTime);
         result.flip();
         return result;
     }
@@ -111,7 +119,8 @@ public class PerformanceInformation {
             target.fixedProcessingTimeAverages[i] = serialized.getDouble();
             target.variableProcessingTimeAverages[i] = serialized.getDouble();
         }
-        target.idleTime = serialized.getDouble();
+        target.waitingTime = serialized.getDouble();
+        target.priorityWaitingTime = serialized.getDouble();
         serialized.flip();
     }
 }

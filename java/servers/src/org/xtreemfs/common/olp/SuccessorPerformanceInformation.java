@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicLongArray;
 
 /**
  * 
- * TODO priorities
  * 
  * @author flangner
  * @version 1.00, 09/01/11
@@ -20,14 +19,16 @@ class SuccessorPerformanceInformation {
     
     private final AtomicLongArray[] fixedProcessingTimeAverages;
     private final AtomicLongArray[] variableProcessingTimeAverages;
-    private final AtomicLongArray idleTimes;
-    private final int resultIndex;
+    private final AtomicLongArray   waitingTimes;
+    private final AtomicLongArray   priorityWaitingTimes;
+    private final int               resultIndex;
     
     SuccessorPerformanceInformation(int numTypes, int numSubsequentStages) {
         
         fixedProcessingTimeAverages = new AtomicLongArray[numTypes];
         variableProcessingTimeAverages = new AtomicLongArray[numTypes];
-        idleTimes = new AtomicLongArray(numSubsequentStages+1);
+        waitingTimes = new AtomicLongArray(numSubsequentStages+1);
+        priorityWaitingTimes = new AtomicLongArray(numSubsequentStages+1);
         resultIndex = numSubsequentStages;
         
         for (int i = 0; i < numTypes; i++) {
@@ -40,9 +41,14 @@ class SuccessorPerformanceInformation {
  * methods to be accessed by the Controller
  */
 
-    double getIdleTime() {
+    double getWaitingTime() {
         
-        return Double.longBitsToDouble(idleTimes.get(resultIndex));
+        return Double.longBitsToDouble(waitingTimes.get(resultIndex));
+    }
+    
+    double getPriorityWaitingTime() {
+        
+        return Double.longBitsToDouble(priorityWaitingTimes.get(resultIndex));
     }
     
     double getFixedProcessingTime(int type) {
@@ -58,8 +64,11 @@ class SuccessorPerformanceInformation {
     void updatePerformanceInformation(PerformanceInformation performanceInformation) {
         
         updateArray(performanceInformation.id, 
-                    performanceInformation.idleTime, 
-                    idleTimes);
+                    performanceInformation.waitingTime, 
+                    waitingTimes);
+        updateArray(performanceInformation.id, 
+                    performanceInformation.priorityWaitingTime, 
+                    priorityWaitingTimes);
         updateProcessingTime(performanceInformation.id, 
                              performanceInformation.fixedProcessingTimeAverages, 
                              fixedProcessingTimeAverages);
