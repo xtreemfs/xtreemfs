@@ -9,23 +9,21 @@ package org.xtreemfs.common.olp;
 
 import java.util.concurrent.atomic.AtomicLongArray;
 
+import org.xtreemfs.common.olp.Monitor.PerformanceMeasurementListener;
+
 /**
  * 
  * <p>Methods of this class are not thread safe, because processing of a request is assumed to 
  * be single threaded.</p>
  * 
- * @author flangner
- * @since 08/25/2011
- * @version 1.0
+ * @author fx.langner
+ * @version 1.00, 08/25/11
  */
-class Controller {
+class Controller implements PerformanceMeasurementListener {
     
     private final int[]                           queueComposition;
     private final long[]                          queueBandwidthComposition;
     
-    /**
-     * <p>These arrays are not synchronized at all on purpose, because we don't care about lost updates.</p>
-     */
     private final AtomicLongArray                 fixedProcessingTimeAverages;
     private final AtomicLongArray                 variableProcessingTimeAverages;
     
@@ -46,18 +44,8 @@ class Controller {
         
         successorPerformanceInformation = new SuccessorPerformanceInformation(numTypes, numSubsequentStages);
     }
-   
-/*
- * methods to be accessed by the Actuator
- */ 
-   
-    /**
-     * 
-     * @param type
-     * @param size
-     * @return
-     */
-    double estimateProcessingTime(int type, long size) {
+      
+    double estimateProcessingTime(int type, long size, boolean hasPriority) {
         
         double result = Double.longBitsToDouble(fixedProcessingTimeAverages.get(type));
         if (size > 0L) {
@@ -67,13 +55,13 @@ class Controller {
         return result;
     }
     
-    void enterRequest(int type, long size) {
+    void enterRequest(int type, long size, boolean hasPriority) {
         
         queueComposition[type]++;
         queueBandwidthComposition[type] += size;
     }
     
-    void quitRequest(int type, long size) {
+    void quitRequest(int type, long size, boolean hasPriority) {
         
         queueComposition[type]--;
         queueBandwidthComposition[type] -= size;
@@ -100,18 +88,27 @@ class Controller {
                                           variableProcessingTime, 
                                           estimateIdleTime(fixedProcessingTime, variableProcessingTime));
     }
-    
+
 /*
  * methods to be accessed by the Monitor
  */
-    
-    void updateFixedProcessingTimeAverage(int type, double value) {
+
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.olp.Monitor.PerformanceMeasurementListener#updateFixedProcessingTimeAverage(int, double)
+     */
+    @Override
+    public void updateFixedProcessingTimeAverage(int type, double value) {
         
         fixedProcessingTimeAverages.set(type, 
                 Double.doubleToLongBits(value + successorPerformanceInformation.getFixedProcessingTime(type)));
     }
     
-    void updateVariableProcessingTimeAverage(int type, double value) {
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.olp.Monitor.PerformanceMeasurementListener#
+     *          updateVariableProcessingTimeAverage(int, double)
+     */
+    @Override
+    public void updateVariableProcessingTimeAverage(int type, double value) {
         
         variableProcessingTimeAverages.set(type, 
                 Double.doubleToLongBits(value + successorPerformanceInformation.getVariableProcessingTime(type)));

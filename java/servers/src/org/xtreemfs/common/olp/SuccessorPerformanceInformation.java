@@ -11,10 +11,10 @@ import java.util.concurrent.atomic.AtomicLongArray;
 
 /**
  * 
+ * TODO priorities
  * 
  * @author flangner
- * @since 09/01/2011
- * @version 1.0
+ * @version 1.00, 09/01/11
  */
 class SuccessorPerformanceInformation {
     
@@ -58,8 +58,8 @@ class SuccessorPerformanceInformation {
     void updatePerformanceInformation(PerformanceInformation performanceInformation) {
         
         updateArray(performanceInformation.id, 
-                       performanceInformation.idleTime, 
-                       idleTimes);
+                    performanceInformation.idleTime, 
+                    idleTimes);
         updateProcessingTime(performanceInformation.id, 
                              performanceInformation.fixedProcessingTimeAverages, 
                              fixedProcessingTimeAverages);

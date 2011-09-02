@@ -12,10 +12,24 @@ package org.xtreemfs.common.olp;
  * samples recorded and the metric used to summarize these samples.</p>
  * 
  * @author flangner
- * @since 08/18/2011
- * @version 1.0
+ * @version 1.00, 08/18/11
  */
-interface Monitor {
+abstract class Monitor {
+    
+    /**
+     * <p>Listener to notify about new summaries of collected samples.</p>
+     */
+    protected final PerformanceMeasurementListener listener;
+    
+    /**
+     * <p>Abstract constructor ensuring the essential connection with the receiver of the measured and summarized 
+     * performance information.</p>
+     * 
+     * @param listener - to send the summarized performance information to.
+     */
+    Monitor(PerformanceMeasurementListener listener) {
+        this.listener = listener;
+    }
     
     /**
      * <p>Records monitoring information of the request of the given type.</p>
@@ -24,5 +38,30 @@ interface Monitor {
      * @param fixedProcessingTime - the processing of the request required in ms.
      * @param variableProcessingTime - the duration of the processing normalized to a bandwidth of one in ms/byte.
      */
-    void record(int type, double fixedProcessingTime, double variableProcessingTime);
+    abstract void record(int type, double fixedProcessingTime, double variableProcessingTime);
+    
+    /**
+     * <p>Receiver of summarized performance information measured by the {@link Monitor}.</p> 
+     * 
+     * @author flangner
+     * @version 1.00, 09/02/11
+     */
+    interface PerformanceMeasurementListener {
+        
+        /**
+         * <p>Updates the currently valid performance estimations made by the monitor for the fixed time effort.</p>
+         * 
+         * @param type - request type.
+         * @param value - the summarized performance estimation in ms.
+         */
+        void updateFixedProcessingTimeAverage(int type, double value);
+        
+        /**
+         * <p>Updates the currently valid performance estimations made by the monitor for the variable time effort.</p>
+         * 
+         * @param type - request type.
+         * @param value - the summarized performance estimation in ms/bytes.
+         */
+        void updateVariableProcessingTimeAverage(int type, double value);
+    }
 }

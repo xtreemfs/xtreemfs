@@ -7,7 +7,7 @@
  */
 package org.xtreemfs.common.olp;
 
-import org.xtreemfs.common.olp.Actuator.RequestExpiredException;
+import org.xtreemfs.common.olp.OverloadProtection.RequestExpiredException;
 
 /**
  * <p>Superclass for instrumented requests that provide monitoring information for the 
@@ -17,9 +17,8 @@ import org.xtreemfs.common.olp.Actuator.RequestExpiredException;
  * 
  * <p>Methods of this class are not thread safe, because processing of a request is assumed to be single threaded.</p>
  * 
- * @since 08/18/2011
- * @author flangner
- * @version 1.0
+ * @author fx.langner
+ * @version 1.00, 08/18/11
  */
 public abstract class IRequest {
     
@@ -28,39 +27,56 @@ public abstract class IRequest {
      * Especially processing time that is variable to request in-/output is not measured by this field.</br>
      * Value is reset by its getter.</p>
      */
-    private long        fixedProcessingTime    = 0L;
+    private long          fixedProcessingTime    = 0L;
     
     /**
      * <p>Measured processing time that scales proportional with size of the request's in/output.
      * Value is reset by its getter.</p>
      */
-    private long        variableProcessingTime = 0L;
+    private long          variableProcessingTime = 0L;
     
     /**
      * <p>Time stamp in nanoseconds marking the begin of a measurement. Will be reset on end
      * of the measurement.</p>
      */
-    private long        currentMeasurement     = -1L;
+    private long          currentMeasurement     = -1L;
     
     /**
      * <p>Identifier for requests of this type.</p>
      */
-    private final int   type;
+    private final int     type;
     
     /**
      * <p>Bandwidth occupied by this request.</p>
      */
-    private final long  size;
+    private final long    size;
     
     /**
      * <p>Maximal response time delta for this request.</p>
      */
-    private final long  deltaMaxTime;
+    private final long    deltaMaxTime;
     
     /**
      * <p>The Unix time stamp this request was initially received.</p>
      */
-    private final long  startTime;
+    private final long    startTime;
+    
+    /**
+     * <p>Flag to determine whether this request has high priority or not.</p>
+     */
+    private final boolean highPriority;
+
+    /**
+     * <p>Constructor for requests that do not require a certain amount of bandwidth for being
+     * processed and do not have high priority.</p>
+     * 
+     * @param type - identifier for this kind of request.
+     * @param deltaMaxTime - the time to live for this request.
+     */
+    public IRequest(int type, long deltaMaxTime) {
+        this(type, 0L, deltaMaxTime, false);
+    }
+    
 
     /**
      * <p>Constructor for requests that do not require a certain amount of bandwidth for being
@@ -68,9 +84,10 @@ public abstract class IRequest {
      * 
      * @param type - identifier for this kind of request.
      * @param deltaMaxTime - the time to live for this request.
+     * @param highPriority - if true request will be treated as with high priority, false otherwise.
      */
-    public IRequest(int type, long deltaMaxTime) {
-        this(type, 0L, deltaMaxTime);
+    public IRequest(int type, long deltaMaxTime, boolean highPriority) {
+        this(type, 0L, deltaMaxTime, highPriority);
     }
     
     /**
@@ -80,8 +97,9 @@ public abstract class IRequest {
      * @param type - identifier for this kind of request.
      * @param size - amount of bandwidth occupied during processing of this request.
      * @param deltaMaxTime - the time to live for this request.
+     * @param highPriority - if true request will be treated as with high priority, false otherwise.
      */
-    public IRequest(int type, long size, long deltaMaxTime) {
+    public IRequest(int type, long size, long deltaMaxTime, boolean highPriority) {
         assert (deltaMaxTime > 0);
         assert (type > -1);
         
@@ -89,6 +107,7 @@ public abstract class IRequest {
         this.size = size;
         this.deltaMaxTime = deltaMaxTime;
         this.startTime = System.currentTimeMillis();
+        this.highPriority = highPriority;
     }
     
     /**
@@ -182,6 +201,13 @@ public abstract class IRequest {
     }
     
     /**
+     * @return true if this request has high priority, false otherwise.
+     */
+    boolean hasHighPriority() {
+        return highPriority;
+    }
+    
+    /**
      * <p>Calculates the remaining processing time for this request. If the request has already been expired an 
      * Exception is thrown.</p>
      * 
@@ -218,9 +244,15 @@ public abstract class IRequest {
      */
     double getVariableProcessingTime() {
         assert(currentMeasurement == -1) : "Currently there is a measurement in progress.";
-        assert(size > 0L) : "For proportional processing time measurement size has to be greater 0.";
+      
+        double result = 0.0;
+        if (size > 0L) {
+            result =((double) (variableProcessingTime / size)) / 1000000.0;
+        } else {
+            assert(variableProcessingTime == 0L) : 
+                "For proportional processing time measurement size has to be greater 0.";
+        }
         
-        double result = ((double) (variableProcessingTime / size)) / 1000000.0;
         variableProcessingTime = 0L;
         return result;
     }

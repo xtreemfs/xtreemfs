@@ -14,9 +14,10 @@ import org.xtreemfs.foundation.buffer.ReusableBuffer;
  * <p>Instances of this class encapsulate performance measurements that are exchanged between different stages. It also
  * provides methods to serialize and dezerialize these informations to be able to share them via RPCs.</p>
  * 
+ * TODO priorities
+ * 
  * @author flangner
- * @since 09/01/2011
- * @version 1.0
+ * @version 1.00, 09/01/11
  */
 public class PerformanceInformation {
 

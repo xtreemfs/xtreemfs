@@ -14,10 +14,10 @@ package org.xtreemfs.common.olp;
  * <p>Methods of this class are not thread safe, because processing of a request is assumed to be single threaded.</p>
  * 
  * @author flangner
- * @since 08/18/2011
- * @version 1.0
+ * @version 1.00, 08/18/11
+ * @see Monitor
  */
-class SimpleMonitor implements Monitor {
+class SimpleMonitor extends Monitor {
     
     /**
      * <p>Number of samples to collect before calculating there average.</p>
@@ -38,22 +38,16 @@ class SimpleMonitor implements Monitor {
      * <p>Contains the current indices for the next sample to insert for different types of requests.</p>
      */
     private final int[]      measurmentIndex;
-    
+        
     /**
-     * TODO extract interface (listener will receive information in ms || ms/byte)
-     * <p>Listener to notify about new summaries of collected samples.</p>
-     */
-    private final Controller controller;
-    
-    /**
-     * <p>Default constructor initializing necessary fields for collecting measurement samples.</p>
+     * <p>Constructor initializing necessary fields for collecting measurement samples.</p>
      * 
      * @param numTypes - amount of different request types expected.
-     * @param controller - to send the summarized performance information to.
+     * @param listener - to send the summarized performance information to.
      */
-    SimpleMonitor(int numTypes, Controller controller) {
+    SimpleMonitor(int numTypes, PerformanceMeasurementListener listener) {
+        super(listener);
         
-        this.controller = controller;
         fixedTimeMeasurements = new double[numTypes][SAMPLE_AMOUNT];
         variableTimeMeasurements = new double[numTypes][SAMPLE_AMOUNT];
         measurmentIndex = new int[numTypes];
@@ -83,13 +77,13 @@ class SimpleMonitor implements Monitor {
             for (double sample : fixedTimeMeasurements[type]) {
                 avg += sample;
             }
-            controller.updateFixedProcessingTimeAverage(type, avg / SAMPLE_AMOUNT);
+            listener.updateFixedProcessingTimeAverage(type, avg / SAMPLE_AMOUNT);
             
             avg = 0;
             for (double sample : variableTimeMeasurements[type]) {
                 avg += sample;
             }
-            controller.updateVariableProcessingTimeAverage(type, avg / SAMPLE_AMOUNT);
+            listener.updateVariableProcessingTimeAverage(type, avg / SAMPLE_AMOUNT);
             
             measurmentIndex[type] = 0;
         }
