@@ -72,20 +72,23 @@ class SimpleMonitor extends Monitor {
         // summarize samples if necessary
         if(measurmentIndex[type] == SAMPLE_AMOUNT) {
             
-            // summarize fixed time proportion
-            double avg = 0;
-            for (double sample : fixedTimeMeasurements[type]) {
-                avg += sample;
-            }
-            listener.updateFixedProcessingTimeAverage(type, avg / SAMPLE_AMOUNT);
-            
-            avg = 0;
-            for (double sample : variableTimeMeasurements[type]) {
-                avg += sample;
-            }
-            listener.updateVariableProcessingTimeAverage(type, avg / SAMPLE_AMOUNT);
+            listener.updateFixedProcessingTimeAverage(type, summarizeMeasurements(fixedTimeMeasurements[type]));
+            listener.updateVariableProcessingTimeAverage(type, summarizeMeasurements(variableTimeMeasurements[type]));
             
             measurmentIndex[type] = 0;
         }
+    }
+    
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.olp.Monitor#summarizeMeasurements(double[])
+     */
+    @Override
+    double summarizeMeasurements(double[] measurements) {
+        
+        double avg = 0;
+        for (double sample : measurements) {
+            avg += sample;
+        }
+        return avg / measurements.length;
     }
 }

@@ -2,10 +2,11 @@
  * <p>Contains the <b>O</b>ver<b>l</b>oad-<b>P</p>rotection algorithm OLP for the SEDA based Internet file system
  * XtreemFS.</p>
  * 
- * <p>Entry for further investigations should be the {@link org.xtreemfs.common.olp.OverloadProtection}, which
+ * <p>Entry for further investigations should be the {@link org.xtreemfs.common.olp.OverloadProtectionStage}, which
  * is its main interface.</p>
  * 
  * @author flangner
  * @version 1.00, 08/01/11
+ * @see org.xtreemfs.common.olp.OverloadProtectedStage
  */
 package org.xtreemfs.common.olp;

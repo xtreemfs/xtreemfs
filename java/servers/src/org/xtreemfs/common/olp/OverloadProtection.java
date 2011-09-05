@@ -86,24 +86,32 @@ public class OverloadProtection {
     }
     
     /**
+     * <p>Checks whether request can be processed before its timing out.</p>
+     * 
+     * @param request - the request to check.
+     * @throws AdmissionRefusedException if requests has already expired or will expire before processing has finished.
+     */
+    void hasAdmission(IRequest request) throws AdmissionRefusedException {
+        
+        int type = request.getType();
+        if (!unrefusableTypes[type] && 
+            !actuator.hasAdmission(request.getRemainingProcessingTime(), 
+             controller.estimateProcessingTime(type, request.getSize(), request.hasHighPriority()))) {
+                
+            throw new AdmissionRefusedException();
+        }
+    }
+    
+    /**
      * <p>Method to be executed to determine whether the given request may be processed or not.</p>
      * 
      * @param request - the request to be processed.
-     * @throws AdmissionRefusedException if processing of the given request is not permitted.
+     * @throws AdmissionRefusedException if requests has already expired or will expire before processing has finished.
      */
     void obtainAdmission(IRequest request) throws AdmissionRefusedException {
-        
-        int type = request.getType();
-        long size = request.getSize();
-        boolean hasPriority = request.hasHighPriority();
-        
-        if (!unrefusableTypes[type] && 
-            !actuator.hasAdmission(request.getRemainingProcessingTime(), 
-                                   controller.estimateProcessingTime(type, size, hasPriority))) {
-            
-            throw new AdmissionRefusedException();
-        }
-        controller.enterRequest(type, size, hasPriority);
+                
+        hasAdmission(request);
+        controller.enterRequest(request.getType(), request.getSize(), request.hasHighPriority());
     }
     
     /**
@@ -125,6 +133,7 @@ public class OverloadProtection {
      * @param performanceInformation - information received by another stage.
      */
     public void addPerformanceInformation(PerformanceInformation performanceInformation) {
+        
         controller.updateSuccessorInformation(performanceInformation);
     }
     
@@ -134,6 +143,7 @@ public class OverloadProtection {
      * @return performance information for the protected stage.
      */
     public PerformanceInformation composePerformanceInformation() {
+        
         return controller.composePerformanceInformation(id);
     }
     

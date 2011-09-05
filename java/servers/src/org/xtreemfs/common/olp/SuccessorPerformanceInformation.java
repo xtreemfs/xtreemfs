@@ -10,19 +10,50 @@ package org.xtreemfs.common.olp;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 /**
- * 
+ * <p>Structure to maintain the performance and waiting times of subsequent stages. Synchronization is achieved through
+ * atomic spin-locks for a maximal throughput. Because lost updates on reads are allowed we only need to synchronize 
+ * updates on the maintained information.</p>
  * 
  * @author flangner
  * @version 1.00, 09/01/11
  */
 class SuccessorPerformanceInformation {
     
+    /**
+     * <p>Structure to maintain the fixed processing time averages of straight following successors of this stage and 
+     * their maximum (worst-case assessment).</p>
+     */
     private final AtomicLongArray[] fixedProcessingTimeAverages;
+    
+    /**
+     * <p>Structure to maintain the variable processing time averages of straight following successors of this stage and 
+     * their maximum (worst-case assessment).</p>
+     */
     private final AtomicLongArray[] variableProcessingTimeAverages;
+    
+    /**
+     * <p>Structure to maintain the waiting times of straight following successors of this stage and their maximum 
+     * (worst-case assessment).</p>
+     */
     private final AtomicLongArray   waitingTimes;
+    
+    /**
+     * <p>Structure to maintain the waiting times for priority requests of straight following successors of this stage 
+     * and their maximum (worst-case assessment).</p>
+     */
     private final AtomicLongArray   priorityWaitingTimes;
+    
+    /**
+     * <p>Pointer for the index of maximal values of all collected performance information of the successors.</p>
+     */
     private final int               resultIndex;
     
+    /**
+     * <p>Initializes fields for collecting performance information of straight subsequent stages.</p>
+     * 
+     * @param numTypes - amount of different types of requests.
+     * @param numSubsequentStages - amount of parallel subsequent stages.
+     */
     SuccessorPerformanceInformation(int numTypes, int numSubsequentStages) {
         
         fixedProcessingTimeAverages = new AtomicLongArray[numTypes];
@@ -41,26 +72,55 @@ class SuccessorPerformanceInformation {
  * methods to be accessed by the Controller
  */
 
+    /**
+     * <p>Method to get the worst case waiting time for requests of low priority, that would now approach the subsequent
+     * stages.</p>
+     * 
+     * @return the longest waiting time for a low priority request that would leave this stage right now.
+     */
     double getWaitingTime() {
         
         return Double.longBitsToDouble(waitingTimes.get(resultIndex));
     }
     
+    /**
+     * <p>Method to get the worst case waiting time for requests of high priority, that would now approach the 
+     * subsequent stages.</p>
+     * 
+     * @return the longest waiting time for a high priority request that would leave this stage right now.
+     */
     double getPriorityWaitingTime() {
         
         return Double.longBitsToDouble(priorityWaitingTimes.get(resultIndex));
     }
     
+    /**
+     * <p>Method to get the worst case fixed processing time for requests, that would now approach the subsequent 
+     * stages.</p>
+     * 
+     * @return the longest fixed processing time for a request that would leave this stage right now.
+     */
     double getFixedProcessingTime(int type) {
         
         return Double.longBitsToDouble(fixedProcessingTimeAverages[type].get(resultIndex));
     }
     
+    /**
+     * <p>Method to get the worst case variable processing time for requests, that would now approach the subsequent 
+     * stages.</p>
+     * 
+     * @return the longest variable processing time for a request that would leave this stage right now.
+     */
     double getVariableProcessingTime(int type) {
         
         return Double.longBitsToDouble(variableProcessingTimeAverages[type].get(resultIndex));
     }
     
+    /**
+     * <p>Method to handle {@link PerformanceInformation} received by straight subsequent parallel stages.</p>
+     * 
+     * @param performanceInformation - {@link PerformanceInformation} to process.
+     */
     void updatePerformanceInformation(PerformanceInformation performanceInformation) {
         
         updateArray(performanceInformation.id, 
@@ -82,22 +142,27 @@ class SuccessorPerformanceInformation {
  */
     
     /**
-     * @param id
-     * @param processingTime
-     * @param processingTimeAverages
+     * <p>Will update the maintained processing times to the new received ones.</p>
+     * 
+     * @param id - identifier of the stage that is sender of the received processing information.
+     * @param processingTimes - the new processing times.
+     * @param processingTimeAverages - structures that maintains the old processing times and their maximum.
      */
-    private void updateProcessingTime(int id, double[] processingTime, AtomicLongArray[] processingTimeAverages) {
-        int numTypes = processingTime.length;
+    private void updateProcessingTime(int id, double[] processingTimes, AtomicLongArray[] processingTimeAverages) {
+        int numTypes = processingTimes.length;
         for (int i = 0; i < numTypes; i++) {
-            updateArray(id, processingTime[i], processingTimeAverages[i]);
+            updateArray(id, processingTimes[i], processingTimeAverages[i]);
         }
     }
 
     /**
+     * <p>Thread safe method to update the given value at the given id of the given array. Will compute a new maximum
+     * if necessary. Synchronization is realized using a spin-lock mechanism to avoid the loss of performance on 
+     * updating the information with non or low concurrency.</p>
      * 
-     * @param id
-     * @param newValue
-     * @param array
+     * @param id - identifier of the stage and pointer to the field to update.
+     * @param newValue - the new value to use.
+     * @param array - structure that maintains the old values and their maximum.
      */
     private void updateArray(int id, double newValue, AtomicLongArray array) {
         

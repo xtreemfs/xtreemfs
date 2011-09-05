@@ -41,6 +41,14 @@ abstract class Monitor {
     abstract void record(int type, double fixedProcessingTime, double variableProcessingTime);
     
     /**
+     * <p>Method implementing an algorithm to sum up measured samples.</p>
+     * 
+     * @param measurements - measurements zu summarize.
+     * @return a representative summarization of the given measurements.
+     */
+    abstract double summarizeMeasurements(double[] measurements); 
+    
+    /**
      * <p>Receiver of summarized performance information measured by the {@link Monitor}.</p> 
      * 
      * @author flangner
