@@ -263,6 +263,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 /usr/bin/*.xtreemfs
 /usr/bin/xtfsutil
+/sbin/*.xtreemfs
 #/usr/bin/xtfs_vivaldi
 %dir %{_libdir}/xtreemfs
 %dir %{_libdir}/xtreemfs/policies
@@ -283,6 +284,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/java/protobuf-java-2.3.0.jar
 /usr/share/java/Flease.jar
 /usr/share/java/BabuDB.jar
+/usr/share/java/jdmkrt.jar
+/usr/share/java/jdmktk.jar
 
 %doc LICENSE
 

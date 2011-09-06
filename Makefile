@@ -74,6 +74,7 @@ install-client:
 	@cp   -a  bin/*.xtreemfs bin/xtfsutil $(BIN_DIR)
 	          #bin/xtfs_vivaldi
 	          
+	@mkdir -p $(SBIN_DIR)
 	@ln -s $(BIN_DIR)/mount.xtreemfs $(SBIN_DIR)/mount.xtreemfs
 	@ln -s $(BIN_DIR)/umount.xtreemfs $(SBIN_DIR)/umount.xtreemfs
 
