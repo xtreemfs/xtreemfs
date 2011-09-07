@@ -9,7 +9,7 @@
 Name:           xtreemfs
 Version:        _VERSION_
 Release:        1
-License:        GPL
+License:        BSD
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Group:          System/Filesystems
 Summary:        XtreemFS base package
@@ -128,6 +128,8 @@ export NO_BRP_CHECK_BYTECODE_VERSION=true
 %if %{client_subpackage}
 make install DESTDIR=$RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT%{_libdir}/xtreemfs/policies/
+ln -sf /usr/bin/mount.xtreemfs ${RPM_BUILD_ROOT}/sbin/mount.xtreemfs
+ln -sf /usr/bin/umount.xtreemfs ${RPM_BUILD_ROOT}/sbin/umount.xtreemfs
 %else
 make install-server DESTDIR=$RPM_BUILD_ROOT
 make install-tools DESTDIR=$RPM_BUILD_ROOT

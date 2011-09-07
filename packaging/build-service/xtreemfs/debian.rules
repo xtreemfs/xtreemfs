@@ -73,6 +73,9 @@ install: build
 	         $(BUILD_DIR)/usr/bin/xtfsutil 
 	         #$(BUILD_DIR)/usr/bin/xtfs_vivaldi
 	mkdir -p $(BUILD_DIR)-client/sbin
+	ln    -sf /usr/bin/mount.xtreemfs $(BUILD_DIR)-client/sbin/mount.xtreemfs
+	ln    -sf /usr/bin/umount.xtreemfs $(BUILD_DIR)-client/sbin/umount.xtreemfs
+	mkdir -p $(BUILD_DIR)-client/sbin
 	mkdir -p $(BUILD_DIR)-client/etc/init.d
 	#mv    -t $(BUILD_DIR)-client/etc/init.d \
 	#         $(BUILD_DIR)/etc/init.d/xtreemfs-vivaldi
