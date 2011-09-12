@@ -8,14 +8,15 @@
 
 package org.xtreemfs.common.stage;
 
-import org.xtreemfs.common.stage.StageRequest.Callback;
 import org.xtreemfs.foundation.LifeCycleThread;
 
 /**
  * <p>Generalized stage to be used at all services.</p>
  * 
  * @author fx.langner
- * @version 1.00, 09/05/11
+ * @version 0.50, 09/05/11
+ * 
+ * @param <R> - general interface for requests processed by this stage. Extends {@link Request}.
  */
 public abstract class Stage<R extends Request> extends LifeCycleThread {
     
@@ -48,9 +49,17 @@ public abstract class Stage<R extends Request> extends LifeCycleThread {
      * @param request - the original request.
      * @param callback - for postprocessing the request.
      */
-    public void enqueueOperation(int stageMethodId, Object[] args, R request, Callback callback) {
+    public void enter(int stageMethodId, Object[] args, R request, Callback callback) {
         queue.enqueue(new StageRequest<R>(stageMethodId, args, request, callback));
     }
+    
+    /**
+     * <p>Method that is executed when request is going to leave the stage.</p>
+     * TODO execution of this method has to be translocated to the requests callback
+     * 
+     * @param request - the request that leaves this stage.
+     */
+    public void exit(StageRequest<R> request) {}
     
     /**
      * <p>Handles the actual execution of a stage method. Must be implemented by
@@ -97,7 +106,10 @@ public abstract class Stage<R extends Request> extends LifeCycleThread {
         
         while (!quit) {
             try {
-                processMethod(queue.take());
+                
+                StageRequest<R> request = queue.take();
+                processMethod(request);
+                exit(request);
                 
             } catch (InterruptedException ex) {
                 break;

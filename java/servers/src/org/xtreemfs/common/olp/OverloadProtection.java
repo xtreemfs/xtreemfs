@@ -11,6 +11,9 @@ package org.xtreemfs.common.olp;
  * <p>Main class provides all essential methods to integrate the <b>O</b>ver<b>l</b>oad-<b>P</b>rotection algorithm 
  * <b>OLP</b> into an existing application.</p>
  * 
+ * <p>This class has to be separated from OverloadProtectedStage, because otherwise its methods would not have been 
+ * available to ProtectedQueue.</p>
+ * 
  * @author flangner
  * @version 1.00, 08/31/11
  * @see ProtectedQueue
@@ -20,28 +23,33 @@ public class OverloadProtection {
     /**
      * <p>Identifier that is unique among parallel stages that follow the same predecessor, this stage belongs to.</p>
      */
-    private final int           id;
+    protected final int                         id;
     
     /**
      * <p>Array that indicates whether a request is unrefusable or not.</p>
      */
-    private final boolean[]     unrefusableTypes;
+    private final boolean[]                     unrefusableTypes;
     
     /**
      * <p>Component that throttles the influx of requests by providing admission control.</p>
      */
-    private final Actuator      actuator;
+    private final Actuator                      actuator;
     
     /**
      * <p>Component to interpret measurements and combine them with {@link PerformanceInformation} 
      * from subsequent stages.</p>
      */
-    private final Controller    controller;
+    private final Controller                    controller;
     
     /**
      * <p>Component to measure request processing performance of this stage.</p>
      */
-    private final Monitor       monitor;
+    private final Monitor                       monitor;
+    
+    /**
+     * <p>Component that will continuously send {@link PerformanceInformation} to preceding stages.</p>
+     */
+    final PerformanceInformationSender  sender;
     
     /**
      * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 
@@ -50,7 +58,7 @@ public class OverloadProtection {
      * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
      * @param numTypes - amount of different types of requests.
      */
-    public OverloadProtection(int stageId, int numTypes) {
+    OverloadProtection(int stageId, int numTypes) {
         this (stageId, numTypes, 0, new boolean[numTypes]);
     }
     
@@ -62,7 +70,7 @@ public class OverloadProtection {
      * @param numTypes - amount of different types of requests.
      * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
      */
-    public OverloadProtection(int stageId, int numTypes, int numSubsequentStages) {
+    OverloadProtection(int stageId, int numTypes, int numSubsequentStages) {
         this (stageId, numTypes, numSubsequentStages, new boolean[numTypes]);
     }
     
@@ -74,7 +82,7 @@ public class OverloadProtection {
      * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
      * @param unrefusableTypes - array that decides which types of requests are treated unrefusable and which not.
      */
-    public OverloadProtection(int stageId, int numTypes, int numSubsequentStages, boolean[] unrefusableTypes) {
+    OverloadProtection(int stageId, int numTypes, int numSubsequentStages, boolean[] unrefusableTypes) {
         
         assert (unrefusableTypes.length == numTypes);
         
@@ -83,6 +91,14 @@ public class OverloadProtection {
         this.actuator = new Actuator();
         this.controller = new Controller(numTypes, numSubsequentStages);
         this.monitor = new SimpleMonitor(numTypes, controller);
+        this.sender = new PerformanceInformationSender(this);
+    }
+    
+    /**
+     * <p>Method to stop daemons connected with the overload protection algorithm.</p>
+     */
+    void shutdown() {
+        sender.cancel();
     }
     
     /**
@@ -120,7 +136,7 @@ public class OverloadProtection {
      * 
      * @param request - the request that has been processed.
      */
-    public void depart(IRequest request) {
+    void depart(IRequest request) {
         
         int type = request.getType();
         monitor.record(type, request.getFixedProcessingTime(), request.getVariableProcessingTime());
@@ -132,7 +148,7 @@ public class OverloadProtection {
      * 
      * @param performanceInformation - information received by another stage.
      */
-    public void addPerformanceInformation(PerformanceInformation performanceInformation) {
+    void addPerformanceInformation(PerformanceInformation performanceInformation) {
         
         controller.updateSuccessorInformation(performanceInformation);
     }
@@ -142,7 +158,7 @@ public class OverloadProtection {
      * 
      * @return performance information for the protected stage.
      */
-    public PerformanceInformation composePerformanceInformation() {
+    PerformanceInformation composePerformanceInformation() {
         
         return controller.composePerformanceInformation(id);
     }

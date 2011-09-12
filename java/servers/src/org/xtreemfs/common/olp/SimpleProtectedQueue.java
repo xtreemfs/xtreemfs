@@ -20,9 +20,10 @@ import org.xtreemfs.common.stage.StageRequest;
  *  
  * @author flangner
  * @version 1.00, 09/01/11
- * @see Queue
+ * @see StageQueue
+ * <R> - type for the queued requests. Has to extend {@link IRequest}.
  */
-public class SimpleProtectedQueue<R extends IRequest> implements StageQueue<R> {
+class SimpleProtectedQueue<R extends IRequest> implements StageQueue<R> {
     
     /**
      * <p>The queue to buffer the high priority requests before their processing.</p>
@@ -44,7 +45,7 @@ public class SimpleProtectedQueue<R extends IRequest> implements StageQueue<R> {
      * 
      * @param olp - the interface to the Overload-Protection algorithm.
      */
-    public SimpleProtectedQueue(OverloadProtection olp) {
+    SimpleProtectedQueue(OverloadProtection olp) {
         this.olp = olp;
     }
     

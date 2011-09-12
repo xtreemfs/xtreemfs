@@ -7,6 +7,8 @@
  */
 package org.xtreemfs.common.olp;
 
+import java.util.List;
+
 /**
  * <p>Interface for monitors that record request performance information. Implementations may differ in the amount of 
  * samples recorded and the metric used to summarize these samples.</p>
@@ -43,10 +45,18 @@ abstract class Monitor {
     /**
      * <p>Method implementing an algorithm to sum up measured samples.</p>
      * 
-     * @param measurements - measurements zu summarize.
-     * @return a representative summarization of the given measurements.
+     * @param measurements - measurements to summarize all in ms or ms/byte.
+     * @return a representative summarization of the given measurements in ms or ms/byte.
      */
     abstract double summarizeMeasurements(double[] measurements); 
+    
+    /**
+     * <p>Method implementing an algorithm to sum up measured samples.</p>
+     * 
+     * @param measurements - measurements to summarize all in ms or ms/byte.
+     * @return a representative summarization of the given measurements in ms or ms/byte.
+     */
+    abstract double summarizeMeasurements(List<Double> measurements); 
     
     /**
      * <p>Receiver of summarized performance information measured by the {@link Monitor}.</p> 

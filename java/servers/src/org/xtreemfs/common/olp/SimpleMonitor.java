@@ -7,6 +7,8 @@
  */
 package org.xtreemfs.common.olp;
 
+import java.util.List;
+
 /**
  * <p>Simple Monitor implementation that uses the average-metric on a fixed amount of samples for calculating 
  * performance information of this stage.</p>
@@ -44,6 +46,7 @@ class SimpleMonitor extends Monitor {
      * 
      * @param numTypes - amount of different request types expected.
      * @param listener - to send the summarized performance information to.
+     * @see Monitor
      */
     SimpleMonitor(int numTypes, PerformanceMeasurementListener listener) {
         super(listener);
@@ -90,5 +93,13 @@ class SimpleMonitor extends Monitor {
             avg += sample;
         }
         return avg / measurements.length;
+    }
+
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.olp.Monitor#summarizeMeasurements(java.util.List)
+     */
+    @Override
+    double summarizeMeasurements(List<Double> measurements) {
+        throw new UnsupportedOperationException();
     }
 }

@@ -12,6 +12,8 @@ package org.xtreemfs.common.stage;
  * 
  * @author fx.langner
  * @version 1.00, 09/05/11
+ * 
+ * <R> - general interface for requests attached to this stage request. Extends {@link Request}.
  */    
 public final class StageRequest<R extends Request> {
     
@@ -23,7 +25,7 @@ public final class StageRequest<R extends Request> {
     /**
      * <p>A callback for the postprocessing of the request.</p>
      */
-    private final Callback   callback;
+    private final Callback callback;
     
     /**
      * <p>Additional arguments for the request.</p>
@@ -77,21 +79,5 @@ public final class StageRequest<R extends Request> {
      */
     public R getRequest() {
         return request;
-    }
-    
-    /**
-     * <p>Callback for postprocessing a {@link Request}.</p>
-     * 
-     * @author fx.langner
-     * @version 1.00, 09/03/11
-     */
-    public interface Callback {
-        
-        /**
-         * <p>Method that is called if execution of a request failed because of <code>error</code>.</p>
-         * 
-         * @param error - reason for the failure.
-         */
-        public void failed(Exception error);
     }
 }
