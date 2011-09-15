@@ -16,8 +16,6 @@ import java.util.TimerTask;
  * <p>Thread that will continuously send {@link PerformanceInformation} to preceding stages. Not thread-safe because the
  * sender is meant to be accessed by events fired by a single threaded stage.</p>
  * 
- * TODO optimize mechanism for manually performing an update operation and rescheduling the 
- * 
  * @author fx.langner
  * @version 1.00, 09/09/11
  */
@@ -36,10 +34,10 @@ class PerformanceInformationSender extends Timer {
     /**
      * <p>Reference to the overload protection algorithm for computing required performance information.</p>
      */
-    private final OverloadProtection      olp;
+    private final ProtectionAlgorithmCore olp;
     
     
-    PerformanceInformationSender(OverloadProtection olp) {
+    PerformanceInformationSender(ProtectionAlgorithmCore olp) {
         super("PerformanceInformationSender[" + olp.id + "]", true);
         this.olp = olp;
     }

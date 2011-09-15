@@ -32,7 +32,11 @@ public class GetGlobalTimeOperation extends DIROperation {
 
     @Override
     public void startRequest(DIRRequest rq) {
-        requestFinished(null, rq);
+
+        globalTimeSGetResponse resp = 
+            globalTimeSGetResponse.newBuilder().setTimeInSeconds(System.currentTimeMillis()).build();
+        
+        requestFinished(resp, rq);
     }
 
     @Override
@@ -51,7 +55,6 @@ public class GetGlobalTimeOperation extends DIROperation {
      */
     @Override
     void requestFinished(Object result, DIRRequest rq) {
-        globalTimeSGetResponse resp = globalTimeSGetResponse.newBuilder().setTimeInSeconds(System.currentTimeMillis()).build();
-        rq.sendSuccess(resp);
+        rq.sendSuccess((globalTimeSGetResponse) result);
     }
 }

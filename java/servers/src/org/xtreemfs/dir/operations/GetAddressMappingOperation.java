@@ -42,8 +42,7 @@ public class GetAddressMappingOperation extends DIROperation {
 
     @Override
     public void startRequest(DIRRequest rq) {
-        addressMappingGetRequest request =
-            (addressMappingGetRequest)rq.getRequestMessage();
+        addressMappingGetRequest request = (addressMappingGetRequest) rq.getRequestMessage();
 
         if (request.getUuid().length() > 0) {
             //single mapping was requested
@@ -69,8 +68,7 @@ public class GetAddressMappingOperation extends DIROperation {
                             new DBRequestListener<ResultSet<byte[],byte[]>,AddressMappingSet>(true) {
                         
                         @Override
-                        AddressMappingSet execute(ResultSet<byte[], byte[]> result, 
-                                DIRRequest rq) throws Exception {
+                        AddressMappingSet execute(ResultSet<byte[], byte[]> result, DIRRequest rq) throws Exception {
                             
                             AddressMappingRecords list = new AddressMappingRecords();
                             while (result.hasNext()) {

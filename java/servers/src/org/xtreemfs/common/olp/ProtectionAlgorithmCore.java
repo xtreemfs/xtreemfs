@@ -8,22 +8,18 @@
 package org.xtreemfs.common.olp;
 
 /**
- * <p>Main class provides all essential methods to integrate the <b>O</b>ver<b>l</b>oad-<b>P</b>rotection algorithm 
- * <b>OLP</b> into an existing application.</p>
+ * <p>The algorithm core controlling the interactions between the different parts of the overload-protection algorithm.
+ * </p>
  * 
- * <p>This class has to be separated from OverloadProtectedStage, because otherwise its methods would not have been 
- * available to ProtectedQueue.</p>
- * 
- * @author flangner
- * @version 1.00, 08/31/11
- * @see ProtectedQueue
+ * @author fx.langner
+ * @version 1.00, 09/15/2011
  */
-public class OverloadProtection {
-
+final class ProtectionAlgorithmCore {
+    
     /**
      * <p>Identifier that is unique among parallel stages that follow the same predecessor, this stage belongs to.</p>
      */
-    protected final int                         id;
+    final int                                   id;
     
     /**
      * <p>Array that indicates whether a request is unrefusable or not.</p>
@@ -49,42 +45,22 @@ public class OverloadProtection {
     /**
      * <p>Component that will continuously send {@link PerformanceInformation} to preceding stages.</p>
      */
-    final PerformanceInformationSender  sender;
+    private final PerformanceInformationSender  sender;
     
     /**
-     * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 
-     * unrefusable and no subsequent stages following.</p>
-     * 
-     * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
-     * @param numTypes - amount of different types of requests.
-     */
-    OverloadProtection(int stageId, int numTypes) {
-        this (stageId, numTypes, 0, new boolean[numTypes]);
-    }
-    
-    /**
-     * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 
-     * unrefusable.</p>
-     * 
-     * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
-     * @param numTypes - amount of different types of requests.
-     * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
-     */
-    OverloadProtection(int stageId, int numTypes, int numSubsequentStages) {
-        this (stageId, numTypes, numSubsequentStages, new boolean[numTypes]);
-    }
-    
-    /**
-     * <p>Default constructor for initializing the OLP algorithm for a single stage.</p>
+     * <p>Default constructor for initializing the OLP algorithm.</p>
      * 
      * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
      * @param numTypes - amount of different types of requests.
      * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
      * @param unrefusableTypes - array that decides which types of requests are treated unrefusable and which not.
+     * @param performanceInformationReceiver - receiver of performance information concerning this component.
      */
-    OverloadProtection(int stageId, int numTypes, int numSubsequentStages, boolean[] unrefusableTypes) {
+    ProtectionAlgorithmCore(int stageId, int numTypes, int numSubsequentStages, boolean[] unrefusableTypes, 
+            PerformanceInformationReceiver[] performanceInformationReceiver) {
         
         assert (unrefusableTypes.length == numTypes);
+        assert (performanceInformationReceiver != null);
         
         this.unrefusableTypes = unrefusableTypes;
         this.id = stageId;
@@ -92,55 +68,71 @@ public class OverloadProtection {
         this.controller = new Controller(numTypes, numSubsequentStages);
         this.monitor = new SimpleMonitor(numTypes, controller);
         this.sender = new PerformanceInformationSender(this);
+        for (PerformanceInformationReceiver receiver : performanceInformationReceiver) {
+            sender.addReceiver(receiver);
+        }
     }
     
     /**
      * <p>Method to stop daemons connected with the overload protection algorithm.</p>
      */
     void shutdown() {
+        
         sender.cancel();
     }
     
     /**
-     * <p>Checks whether request can be processed before its timing out.</p>
+     * <p>Checks whether a request can be processed before its time is running out or not.</p>
      * 
-     * @param request - the request to check.
+     * @param metadata - of the request to check.
      * @throws AdmissionRefusedException if requests has already expired or will expire before processing has finished.
      */
-    void hasAdmission(IRequest request) throws AdmissionRefusedException {
+    void hasAdmission(RequestMetadata metadata) throws AdmissionRefusedException {
         
-        int type = request.getType();
+        int type = metadata.getType();
         if (!unrefusableTypes[type] && 
-            !actuator.hasAdmission(request.getRemainingProcessingTime(), 
-             controller.estimateProcessingTime(type, request.getSize(), request.hasHighPriority()))) {
+            !actuator.hasAdmission(metadata.getRemainingProcessingTime(), 
+             controller.estimateProcessingTime(type, metadata.getSize(), metadata.hasHighPriority()))) {
                 
             throw new AdmissionRefusedException();
         }
     }
     
     /**
-     * <p>Method to be executed to determine whether the given request may be processed or not.</p>
+     * <p>Method to be executed to determine whether the request represented by its metadata may be processed or 
+     * not.</p>
      * 
-     * @param request - the request to be processed.
+     * @param metadata - of the request to be processed.
      * @throws AdmissionRefusedException if requests has already expired or will expire before processing has finished.
      */
-    void obtainAdmission(IRequest request) throws AdmissionRefusedException {
+    void obtainAdmission(RequestMetadata metadata) throws AdmissionRefusedException {
                 
-        hasAdmission(request);
-        controller.enterRequest(request.getType(), request.getSize(), request.hasHighPriority());
+        hasAdmission(metadata);
+        controller.enterRequest(metadata.getType(), metadata.getSize(), metadata.hasHighPriority());
     }
     
     /**
      * <p>If the processing of the given request has finished, its departure has to be notified to the algorithm by this
      * method.</p>
      * 
-     * @param request - the request that has been processed.
+     * @param metadata - the request that has been processed.
      */
-    void depart(IRequest request) {
+    void depart(RequestMetadata metadata) {
         
-        int type = request.getType();
-        monitor.record(type, request.getFixedProcessingTime(), request.getVariableProcessingTime());
-        controller.quitRequest(type, request.getSize(), request.hasHighPriority());
+        controller.quitRequest(metadata.getType(), metadata.getSize(), metadata.hasHighPriority());
+        finishRequest(metadata);
+    }
+    
+    /**
+     * <p>Finishes a request represented by its metadata, by collecting its statistical information and performing some
+     * maintenance actions required for the algorithm.</p>
+     * 
+     * @param metadata - the metadata representing the request that just has been finished.
+     */
+    void finishRequest(RequestMetadata metadata) {
+        
+        monitor.record(metadata.getType(), metadata.getFixedProcessingTime(), metadata.getVariableProcessingTime());
+        sendPerformanceInformation(metadata.getPiggybackPerformanceInformationReceiver());
     }
     
     /**
@@ -162,6 +154,19 @@ public class OverloadProtection {
         
         return controller.composePerformanceInformation(id);
     }
+    
+    /**
+     * <p>Method to manually send performance information to a designated receiver.</p>
+     * 
+     * @param receiver - receiver to send performance information to. If null, call will be ignored.
+     */
+    private void sendPerformanceInformation(PerformanceInformationReceiver receiver) {
+        
+        if (receiver != null) {
+            receiver.processPerformanceInformation(composePerformanceInformation());
+            sender.performanceInformationUpdatedPiggyback(receiver);
+        }
+    }  
     
 /*
  * Exceptions

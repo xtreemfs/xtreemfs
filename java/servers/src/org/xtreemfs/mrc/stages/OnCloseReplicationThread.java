@@ -10,11 +10,12 @@ package org.xtreemfs.mrc.stages;
 
 import java.net.InetSocketAddress;
 import java.util.Iterator;
-import java.util.concurrent.LinkedBlockingQueue;
 
+import org.xtreemfs.common.stage.SimpleStageQueue;
+import org.xtreemfs.common.stage.Stage;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
-import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
@@ -30,98 +31,71 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeReque
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 
 /**
- * 
  * @author stender
  */
-public class OnCloseReplicationThread extends LifeCycleThread {
+public class OnCloseReplicationThread extends Stage<MRCRequest> {
+        
+    private final static int MAX_QUEUE_LENGTH = 1000;
     
-    private final MRCRequestDispatcher            master;
-    
-    private boolean                               quit;
-    
-    private final LinkedBlockingQueue<MRCRequest> requests;
+    private final MRCRequestDispatcher master;  
     
     public OnCloseReplicationThread(MRCRequestDispatcher master) {
-        super("OnCloseReplThr");
-        this.master = master;
-        this.requests = new LinkedBlockingQueue<MRCRequest>();
-    }
-    
-    public void shutdown() {
-        this.quit = true;
-        this.interrupt();
-    }
-    
-    public void enqueueRequest(MRCRequest req) {
-        assert (this.isAlive());
-        assert (req != null);
-        requests.add(req);
-    }
-    
-    public void run() {
         
-        notifyStarted();
+        super("OnCloseReplThr", new SimpleStageQueue<MRCRequest>(MAX_QUEUE_LENGTH));
+        this.master = master;
+    }
+
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.Stage#processMethod(org.xtreemfs.common.stage.StageRequest)
+     */
+    @Override
+    public void processMethod(StageRequest<MRCRequest> method) {
+        
+        final MRCRequest req = method.getRequest();
+        final XCap xcap = ((xtreemfs_update_file_sizeRequest) req.getRequestArgs()).getXcap();
+        final XLocSet xlocSet = (XLocSet) req.getDetails().context.get("xLocList");
+        final FileCredentials creds = FileCredentials.newBuilder().setXcap(xcap).setXlocs(xlocSet).build();
+        
         try {
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.lifecycle, this,
-                    "OnCloseReplicationThread started");
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                    "triggering replication for %s", xlocSet.toString());
+            }
             
-            do {
-                final MRCRequest req = requests.take();
-                final XCap xcap = ((xtreemfs_update_file_sizeRequest) req.getRequestArgs()).getXcap();
-                final XLocSet xlocSet = (XLocSet) req.getDetails().context.get("xLocList");
-                final FileCredentials creds = FileCredentials.newBuilder().setXcap(xcap).setXlocs(xlocSet)
-                        .build();
+            for (int i = 1; i < xlocSet.getReplicasCount(); i++) {
                 
-                try {
-                    if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                            "triggering replication for %s", xlocSet.toString());
+                Replica repl = xlocSet.getReplicas(i);
+                StripingPolicyImpl spol = StripingPolicyImpl.getPolicy(repl, 0);
+                
+                for (int j = 0; j < repl.getOsdUuidsCount(); j++) {
                     
-                    for (int i = 1; i < xlocSet.getReplicasCount(); i++) {
+                    Iterator<Long> objs = spol.getObjectsOfOSD(j, 0, Long.MAX_VALUE);
+                    long obj = objs.next();
+                    
+                    RPCResponse<ObjectData> resp = null;
+                    try {
                         
-                        Replica repl = xlocSet.getReplicas(i);
-                        StripingPolicyImpl spol = StripingPolicyImpl.getPolicy(repl, 0);
+                        InetSocketAddress osd = new ServiceUUID(repl.getOsdUuids(j)).getAddress();
                         
-                        for (int j = 0; j < repl.getOsdUuidsCount(); j++) {
-                            
-                            Iterator<Long> objs = spol.getObjectsOfOSD(j, 0, Long.MAX_VALUE);
-                            long obj = objs.next();
-                            
-                            RPCResponse<ObjectData> resp = null;
-                            try {
-                                
-                                InetSocketAddress osd = new ServiceUUID(repl.getOsdUuids(j)).getAddress();
-                                
-                                // read one byte from each OSD in each replica
-                                // to trigger the replication
-                                resp = master.getOSDClient().read(osd, RPCAuthentication.authNone,
-                                    RPCAuthentication.userService, creds, xcap.getFileId(), obj, 0, 0, 1);
-                                resp.get();
-                                
-                            } catch (Exception e) {
-                                Logging.logMessage(Logging.LEVEL_WARN, Category.proc, this, OutputUtils
-                                        .stackTraceToString(e));
-                            } finally {
-                                if (resp != null)
-                                    resp.freeBuffers();
-                            }
-                            
+                        // read one byte from each OSD in each replica
+                        // to trigger the replication
+                        resp = master.getOSDClient().read(osd, RPCAuthentication.authNone, 
+                                RPCAuthentication.userService, creds, xcap.getFileId(), obj, 0, 0, 1);
+                        resp.get();
+                        
+                    } catch (Exception e) {
+                        Logging.logMessage(Logging.LEVEL_WARN, Category.proc, this, OutputUtils.stackTraceToString(e));
+                    } finally {
+                        if (resp != null) {
+                            resp.freeBuffers();
                         }
                     }
-                    
-                } catch (Exception ex) {
-                    Logging.logError(Logging.LEVEL_ERROR, this, ex);
                 }
-            } while (!quit);
-        } catch (InterruptedException ex) {
-            // idontcare
+            }
+            
+        } catch (Exception ex) {
+            
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
-        
-        notifyStopped();
-        
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.lifecycle, this,
-                "OnCloseReplicationThread finished");
     }
 }

@@ -15,15 +15,17 @@ import org.xtreemfs.common.stage.StageRequest;
  * 
  * @author flangner
  * @version 1.00, 08/31/11
- * @see OverloadProtection
+ * @see ProtectionAlgorithmCore
+ * 
+ * @param <R> - the application's original request.
  */
-public abstract class OverloadProtectedStage<R extends IRequest> extends Stage<R> 
+public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends Stage<R>
         implements PerformanceInformationReceiver {
 
     /**
      * <p>Reference to the overload-protection algorithm core.</p>
      */
-    private final OverloadProtection olp;
+    private final ProtectionAlgorithmCore olp;
     
     /**
      * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 
@@ -34,7 +36,8 @@ public abstract class OverloadProtectedStage<R extends IRequest> extends Stage<R
      * @param numTypes - amount of different types of requests.
      */
     public OverloadProtectedStage(String stageName, int stageId, int numTypes) {
-        this(stageName, new OverloadProtection(stageId, numTypes));
+        
+        this(stageName, stageId, numTypes, 0);
     }
     
     /**
@@ -47,7 +50,9 @@ public abstract class OverloadProtectedStage<R extends IRequest> extends Stage<R
      * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
      */
     public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numSubsequentStages) {
-        this(stageName, new OverloadProtection(stageId, numTypes, numSubsequentStages));
+        
+        this(stageName, stageId, numTypes, numSubsequentStages, new boolean[numTypes], 
+                new PerformanceInformationReceiver[] {});
     }
     
     /**
@@ -58,9 +63,13 @@ public abstract class OverloadProtectedStage<R extends IRequest> extends Stage<R
      * @param numTypes - amount of different types of requests.
      * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
      * @param unrefusableTypes - array that decides which types of requests are treated unrefusable and which not.
+     * @param performanceInformationReceiver - receiver of performance information concerning this component.
      */
-    public OverloadProtectedStage(String stageName, int stageId, int numTypes, boolean[] unrefusableTypes) {
-        this(stageName, new OverloadProtection(stageId, numTypes));
+    public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numSubsequentStages, 
+            boolean[] unrefusableTypes, PerformanceInformationReceiver[] performanceInformationReceiver) {
+        
+        this(stageName, new ProtectionAlgorithmCore(stageId, numTypes, numSubsequentStages, unrefusableTypes, 
+                performanceInformationReceiver));
     }
     
     /**
@@ -70,7 +79,8 @@ public abstract class OverloadProtectedStage<R extends IRequest> extends Stage<R
      * @param name - of the stage.
      * @param olp - the initialized algorithm.
      */
-    private OverloadProtectedStage(String name, OverloadProtection olp) {
+    private OverloadProtectedStage(String name, ProtectionAlgorithmCore olp) {
+        
         super(name, new SimpleProtectedQueue<R>(olp));
         this.olp = olp;
     }
@@ -80,6 +90,7 @@ public abstract class OverloadProtectedStage<R extends IRequest> extends Stage<R
      */
     @Override
     public int getStageId() {
+        
         return olp.id;
     }
     
@@ -89,28 +100,41 @@ public abstract class OverloadProtectedStage<R extends IRequest> extends Stage<R
      */
     @Override
     public void processPerformanceInformation(PerformanceInformation performanceInformation) {
+        
         olp.addPerformanceInformation(performanceInformation);
     }
+    
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.Stage#processMethod(org.xtreemfs.common.stage.StageRequest)
+     */
+    @Override
+    public final void processMethod(StageRequest<R> method) {
+        
+        method.getRequest().getRequestMetadata().beginGeneralMeasurement();
+        _processMethod(method);
+    }
+    
+    /**
+     * @see Stage#processMethod(StageRequest)
+     */
+    public abstract void _processMethod(StageRequest<R> method);
     
     /* (non-Javadoc)
      * @see org.xtreemfs.common.stage.Stage#exit(org.xtreemfs.common.stage.StageRequest)
      */
     @Override
-    public void exit(StageRequest<R> request) {
-        olp.depart(request.getRequest());
+    public final void exit(StageRequest<R> request) {
         
-        if (request.getCallback() instanceof PerformanceAugmentedCallback) {
-            PerformanceInformationReceiver receiver = (PerformanceInformationReceiver) request.getCallback();
-            receiver.processPerformanceInformation(olp.composePerformanceInformation());
-            olp.sender.performanceInformationUpdatedPiggyback(receiver);
-        }
+        request.getRequest().getRequestMetadata().endGeneralMeasurement();
+        olp.depart(request.getRequest().getRequestMetadata());
     }
     
     /* (non-Javadoc)
      * @see org.xtreemfs.common.stage.Stage#shutdown()
      */
     @Override
-    public void shutdown() {
+    public void shutdown() throws Exception {
+        
         olp.shutdown();
         super.shutdown();
     }

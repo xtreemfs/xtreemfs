@@ -77,8 +77,6 @@ public class SetConfigurationOperation extends DIROperation {
         
         final String UUID = uuid;
 
-        
-
         database.lookup(DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, uuid.getBytes(), rq).registerListener(
                 new DBRequestListener<byte[], Long>(false) {
                     @Override
@@ -116,13 +114,8 @@ public class SetConfigurationOperation extends DIROperation {
                         });
                         
                         return null;
-
                     }
-
                 });
-
- 
-
 
 //
 //        database.lookup(DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, uuid.getBytes(), rq).registerListener(

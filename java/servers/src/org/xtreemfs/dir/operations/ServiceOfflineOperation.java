@@ -39,16 +39,16 @@ public class ServiceOfflineOperation extends DIROperation {
     
     @Override
     public void startRequest(DIRRequest rq) {
-        final serviceGetByUUIDRequest request =
-            (serviceGetByUUIDRequest) rq.getRequestMessage();
+
+        final serviceGetByUUIDRequest request = (serviceGetByUUIDRequest) rq.getRequestMessage();
   
         database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, 
                 request.getName().getBytes(),rq).registerListener(
                         new DBRequestListener<byte[], Object>(false) {
                     
                     @Override
-                    Object execute(byte[] result, DIRRequest rq) 
-                            throws Exception {
+                    Object execute(byte[] result, DIRRequest rq) throws Exception {
+                        
                         if (result != null) {
                             ReusableBuffer buf = ReusableBuffer.wrap(result);
                             ServiceRecord dbData = new ServiceRecord(buf);

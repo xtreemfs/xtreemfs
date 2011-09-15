@@ -169,6 +169,10 @@ class AdvancedMonitor extends Monitor {
                 tuningKnob[type] *= 2;
                 result = (current + historicData[type]) / 2.0;
             }
+        
+        // there was nothing measured at all (reset to initial sample amount)
+        } else if (current == historicData[type] && current == 0.0) {
+            tuningKnob[type] = INITIAL_SAMPLE_AMOUNT;
             
         // current >= historicData[type]
         } else {

@@ -16,6 +16,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
+import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
 import org.xtreemfs.foundation.util.OutputUtils;
 
 import com.google.protobuf.Message;
@@ -36,7 +37,7 @@ public abstract class Request {
     /**
      * <p>Message that belongs to the request.</p>
      */
-    private Message requestArgs;
+    private Message                message;
     
     /**
      * <p>Constructor to initialize a new request.</p>
@@ -55,28 +56,86 @@ public abstract class Request {
 
     public final Message getRequestArgs() {
         
-        return requestArgs;
+        return message;
     }
 
     public final void setRequestArgs(Message requestArgs) {
         
-        this.requestArgs = requestArgs;
+        this.message = requestArgs;
+    }
+    
+    /**
+     * @deprecated Use deserialization logic of pre-processing stage instead.
+     * 
+     * @param message
+     * @throws IOException
+     */
+    @Deprecated
+    public final void deserializeMessage(Message message) throws IOException {
+        final ReusableBuffer payload = rpcRequest.getMessage();
+        if (message != null) {
+            if (payload != null) {
+                message = message.newBuilderForType().mergeFrom(new ReusableBufferInputStream(payload)).build();
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: %s", message.toString());
+                }
+            } else {
+                message = message.getDefaultInstanceForType();
+            }
+        } else {
+            message = null;
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: empty message (emptyRequest)");
+            }
+        }
+    }
+    
+    /**
+     * @deprecated Use {@link Callback} instead.
+     * 
+     * @param error
+     */
+    @Deprecated
+    public final void sendSuccess(Message response) {
+        sendSuccess(response, null);
     }
 
+    /**
+     * @deprecated Use {@link Callback} instead.
+     * 
+     * @param error
+     */
+    @Deprecated
     public final void sendSuccess(Message response, ReusableBuffer data) {
         
         try {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "sending response: %s",
+                        response.getClass().getSimpleName());
+            }
             rpcRequest.sendResponse(response, data);
         } catch (IOException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }
     
+    /**
+     * @deprecated Use {@link Callback} instead.
+     * 
+     * @param error
+     */
+    @Deprecated
     public final void sendRedirectException(String addr, int port) {
         
         rpcRequest.sendRedirect(addr+":"+port);
     }
 
+    /**
+     * @deprecated Use {@link Callback} instead.
+     * 
+     * @param error
+     */
+    @Deprecated
     public final void sendInternalServerError(Throwable cause) {
         
         if (rpcRequest != null) {
@@ -89,6 +148,12 @@ public abstract class Request {
         }
     }
 
+    /**
+     * @deprecated Use {@link Callback} instead.
+     * 
+     * @param error
+     */
+    @Deprecated
     public final void sendError(ErrorType type, POSIXErrno errno, String message) {
         
         if (Logging.isDebug()) {
@@ -98,6 +163,12 @@ public abstract class Request {
         rpcRequest.sendError(type, errno, message);
     }
 
+    /**
+     * @deprecated Use {@link Callback} instead.
+     * 
+     * @param error
+     */
+    @Deprecated
     public final void sendError(ErrorType type, POSIXErrno errno, String message, String debugInfo) {
         
         if (Logging.isDebug()) {
@@ -107,6 +178,12 @@ public abstract class Request {
         rpcRequest.sendError(type, errno, message, debugInfo);
     }
     
+    /**
+     * @deprecated Use {@link Callback} instead.
+     * 
+     * @param error
+     */
+    @Deprecated
     public final void sendError(ErrorResponse error) {
         
         if (Logging.isDebug()) {

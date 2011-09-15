@@ -56,14 +56,14 @@ public final class StageRequest<R extends Request> {
     /**
      * @return the identifier for the method to use during processing.
      */
-    int getStageMethod() {
+    public int getStageMethod() {
         return stageMethodId;
     }
     
     /**
      * @return additional arguments for the request.
      */
-    Object[] getArgs() {
+    public Object[] getArgs() {
         return args;
     }
     

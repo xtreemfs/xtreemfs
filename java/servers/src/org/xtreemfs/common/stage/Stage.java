@@ -14,21 +14,21 @@ import org.xtreemfs.foundation.LifeCycleThread;
  * <p>Generalized stage to be used at all services.</p>
  * 
  * @author fx.langner
- * @version 0.50, 09/05/11
+ * @version 1.00, 09/05/11
  * 
  * @param <R> - general interface for requests processed by this stage. Extends {@link Request}.
  */
-public abstract class Stage<R extends Request> extends LifeCycleThread {
+public abstract class Stage<R extends Request> extends LifeCycleThread implements AutonomousComponent<StageRequest<R>> {
     
     /**
      * <p>Buffers requests before they are being processed.</p>
      */
-    private final StageQueue<R>      queue;
+    private final StageQueue<R>  queue;
     
     /**
      * <p>Set to true if stage should shut down.</p>
      */
-    protected volatile boolean  quit = false;
+    private volatile boolean     quit = false;
     
     /**
      * <p>Initializes a stage with given name and queue implementation.</p>
@@ -37,6 +37,7 @@ public abstract class Stage<R extends Request> extends LifeCycleThread {
      * @param queue
      */
     public Stage(String name, StageQueue<R> queue) {
+        
         super(name);
         this.queue = queue;
     }
@@ -47,18 +48,27 @@ public abstract class Stage<R extends Request> extends LifeCycleThread {
      * @param stageMethodId - the identifier for the method to use during processing.
      * @param args - additional arguments for the request.
      * @param request - the original request.
-     * @param callback - for postprocessing the request.
+     * @param callback - for postprocessing the request, may be null.
      */
     public void enter(int stageMethodId, Object[] args, R request, Callback callback) {
-        queue.enqueue(new StageRequest<R>(stageMethodId, args, request, callback));
+        
+        enter(new StageRequest<R>(stageMethodId, args, request, 
+                (callback != null) ? callback : Callback.NullCallback.INSTANCE));
     }
     
-    /**
-     * <p>Method that is executed when request is going to leave the stage.</p>
-     * TODO execution of this method has to be translocated to the requests callback
-     * 
-     * @param request - the request that leaves this stage.
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.AutonomousComponent#enter(java.lang.Object)
      */
+    @Override
+    public void enter(StageRequest<R> request) {
+        
+        queue.enqueue(request);
+    }
+    
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.AutonomousComponent#exit(org.xtreemfs.common.stage.StageRequest)
+     */
+    @Override
     public void exit(StageRequest<R> request) {}
     
     /**
@@ -69,12 +79,12 @@ public abstract class Stage<R extends Request> extends LifeCycleThread {
      */
     public abstract void processMethod(StageRequest<R> method);
     
-    /**
-     * <p>Get current number of requests in the queue.</p>
-     * 
-     * @return queue length.
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.AutonomousComponent#getNumberOfRequests()
      */
-    public final int getQueueLength() {
+    @Override
+    public final int getNumberOfRequests() {
+        
         return queue.getLength();
     }
     
@@ -83,6 +93,7 @@ public abstract class Stage<R extends Request> extends LifeCycleThread {
      */
     @Override
     public synchronized void start() {
+        
         quit = false;
         super.start();
     }
@@ -91,7 +102,8 @@ public abstract class Stage<R extends Request> extends LifeCycleThread {
      * @see org.xtreemfs.foundation.LifeCycleThread#shutdown()
      */
     @Override
-    public void shutdown() {
+    public void shutdown() throws Exception {
+        
         quit = true;
         interrupt();
     }
@@ -100,7 +112,7 @@ public abstract class Stage<R extends Request> extends LifeCycleThread {
      * @see java.lang.Thread#run()
      */
     @Override
-    public void run() {
+    public final void run() {
         
         notifyStarted();
         

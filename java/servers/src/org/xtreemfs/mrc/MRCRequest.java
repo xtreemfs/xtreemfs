@@ -8,57 +8,32 @@
 
 package org.xtreemfs.mrc;
 
-import java.io.IOException;
-
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.common.olp.AugmentedRequest;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
-import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
 
 import com.google.protobuf.GeneratedMessage;
-import com.google.protobuf.Message;
 
 /**
  * 
  * @author bjko
  */
-public class MRCRequest {
-    
-    private final RPCServerRequest rpcRequest;
-    
-    private Message                requestArgs;
-    
+public class MRCRequest extends AugmentedRequest {
+        
     private GeneratedMessage       response;
     
     private ErrorRecord            error;
     
     private RequestDetails         details;
-    
-    public MRCRequest() {
-        this(null);
-    }
-    
-    public MRCRequest(RPCServerRequest rpcRequest) {
-        this.rpcRequest = rpcRequest;
+        
+    public MRCRequest(RPCServerRequest rpcRequest, int type, long deltaMaxTime, boolean highPriority) {
+        super(rpcRequest, type, deltaMaxTime, highPriority);
         details = new RequestDetails();
     }
-    
-    public RPCServerRequest getRPCRequest() {
-        return rpcRequest;
-    }
-    
+        
     public ErrorRecord getError() {
         return error;
-    }
-    
-    public void deserializeMessage(Message message) throws IOException {
-        final ReusableBuffer payload = rpcRequest.getMessage();
-        requestArgs = message.newBuilderForType().mergeFrom(new ReusableBufferInputStream(payload)).build();
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: %s", requestArgs.toString());
-        }
     }
     
     public void setError(ErrorType type, POSIXErrno errno, String message, Throwable th) {
@@ -89,14 +64,6 @@ public class MRCRequest {
         this.response = response;
     }
     
-    public Message getRequestArgs() {
-        return requestArgs;
-    }
-    
-    public void setRequestArgs(Message requestArgs) {
-        this.requestArgs = requestArgs;
-    }
-    
     public RequestDetails getDetails() {
         return details;
     }
@@ -107,9 +74,9 @@ public class MRCRequest {
     
     public String toString() {
         
-        if (rpcRequest == null)
+        if (getRPCRequest() == null)
             return null;
         
-        return rpcRequest.toString();
+        return getRPCRequest().toString();
     }
 }

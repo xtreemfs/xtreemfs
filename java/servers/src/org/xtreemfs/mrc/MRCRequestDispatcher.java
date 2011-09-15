@@ -29,6 +29,7 @@ import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.auth.AuthenticationProvider;
 import org.xtreemfs.common.monitoring.StatusMonitor;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -329,7 +330,11 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public void asyncShutdown() {
         
-        onCloseReplicationThread.shutdown();
+        try {
+            onCloseReplicationThread.shutdown();
+        } catch (Exception e) {
+            /* ignored */
+        }
         
         heartbeatThread.shutdown();
         
@@ -339,8 +344,11 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         osdMonitor.shutdown();
         
-        procStage.shutdown();
-        
+        try {
+            procStage.shutdown();
+        } catch (Exception e) {
+            /* ignored */
+        }
         UUIDResolver.shutdown();
         
         volumeManager.shutdown();
@@ -758,7 +766,6 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     @Override
     public void receiveRecord(RPCServerRequest rq) {
         
-        // final ONCRPCRequestHeader hdr = rq.getRequestHeader();
         RPCHeader hdr = rq.getHeader();
         
         if (hdr.getMessageType() != MessageType.RPC_REQUEST) {
@@ -775,11 +782,22 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             return;
         }
         
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "enqueueing request: %s", rq.toString());
+        if (hdr.getMessageType() != MessageType.RPC_REQUEST) {
+            rq.sendError(ErrorType.GARBAGE_ARGS, POSIXErrno.POSIX_ERROR_EIO,
+                "expected RPC request message type but got " + hdr.getMessageType());
+            return;
+        }
         
-        // no callback, special stage which executes the operatios
-        procStage.enqueueOperation(new MRCRequest(rq), ProcessingStage.STAGEOP_PARSE_AND_EXECUTE, null);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "enqueueing request: %s", rq.toString());
+        }
+        
+        int procId = rqHdr.getProcId();
+        int clientTimeout = 10 * 1000;   // TODO retrieve client timeout from header (if available)
+        boolean hasHighPriority = false; // TODO retrieve client priority from header (if available)
+        procStage.enter(procId, null, 
+                new MRCRequest(rq, procStage.requestTypeMap.get(procId), clientTimeout, hasHighPriority), 
+                new RPCRequestCallback(rq));
     }
     
     @Override

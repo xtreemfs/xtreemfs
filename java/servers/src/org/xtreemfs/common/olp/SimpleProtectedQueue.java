@@ -21,31 +21,31 @@ import org.xtreemfs.common.stage.StageRequest;
  * @author flangner
  * @version 1.00, 09/01/11
  * @see StageQueue
- * <R> - type for the queued requests. Has to extend {@link IRequest}.
+ * <R> - type for the queued requests. Has to extend {@link AugmentedRequest}.
  */
-class SimpleProtectedQueue<R extends IRequest> implements StageQueue<R> {
+class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> {
     
     /**
      * <p>The queue to buffer the high priority requests before their processing.</p>
      */
-    private final Queue<StageRequest<R>> high = new LinkedList<StageRequest<R>>();
+    private final Queue<StageRequest<R>>  high = new LinkedList<StageRequest<R>>();
     
     /**
      * <p>The queue to buffer the low priority requests before their processing.</p>
      */
-    private final Queue<StageRequest<R>> low = new LinkedList<StageRequest<R>>();
+    private final Queue<StageRequest<R>>  low = new LinkedList<StageRequest<R>>();
     
     /**
      * <p>The interface to the Overload-Protection algorithm.</p>
      */
-    private final OverloadProtection     olp;
+    private final ProtectionAlgorithmCore olp;
     
     /**
      * <p>Initializes an empty queue with Overload-Protection enabled.</p>
      * 
      * @param olp - the interface to the Overload-Protection algorithm.
      */
-    SimpleProtectedQueue(OverloadProtection olp) {
+    SimpleProtectedQueue(ProtectionAlgorithmCore olp) {
         this.olp = olp;
     }
     
@@ -56,9 +56,9 @@ class SimpleProtectedQueue<R extends IRequest> implements StageQueue<R> {
     public synchronized void enqueue(StageRequest<R> stageRequest) {
         
         try {
-            olp.obtainAdmission(stageRequest.getRequest());
+            olp.obtainAdmission(stageRequest.getRequest().getRequestMetadata());
             
-            if (stageRequest.getRequest().hasHighPriority()) {
+            if (stageRequest.getRequest().getRequestMetadata().hasHighPriority()) {
                 high.add(stageRequest);
                 
                 // check the outdistanced low priority requests 
@@ -66,12 +66,12 @@ class SimpleProtectedQueue<R extends IRequest> implements StageQueue<R> {
                 while (iter.hasNext()) {
                     StageRequest<R> next = iter.next();
                     try {
-                        olp.hasAdmission(stageRequest.getRequest());
+                        olp.hasAdmission(stageRequest.getRequest().getRequestMetadata());
                     } catch (Exception error) {
                         
                         iter.remove();
                         next.getCallback().failed(error);
-                        olp.depart(next.getRequest());
+                        olp.depart(next.getRequest().getRequestMetadata());
                     }
                 }
             } else {

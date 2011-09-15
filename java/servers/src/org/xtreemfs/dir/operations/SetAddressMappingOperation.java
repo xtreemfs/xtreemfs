@@ -71,6 +71,7 @@ public class SetAddressMappingOperation extends DIROperation {
                     
                     @Override
                     Long execute(byte[] result, DIRRequest rq) throws Exception {
+                        
                         long currentVersion = 0;
                         if (result != null) {
                             ReusableBuffer buf = ReusableBuffer.wrap(result);
@@ -96,7 +97,7 @@ public class SetAddressMappingOperation extends DIROperation {
                         ReusableBuffer buf = ReusableBuffer.wrap(newBytes);
                         newData.serialize(buf);
                         database.singleInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, 
-                                UUID.getBytes(), newBytes,rq).registerListener(
+                                UUID.getBytes(), newBytes, rq).registerListener(
                                         new DBRequestListener<Object, Long>(true) {
                                     
                                     @Override

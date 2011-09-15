@@ -242,7 +242,7 @@ public class UpdateFileSizeOperation extends MRCOperation {
                 
                 rq.getDetails().context = new HashMap<String, Object>();
                 rq.getDetails().context.put("xLocList", xLocSet.build());
-                master.getOnCloseReplicationThread().enqueueRequest(rq);
+                master.getOnCloseReplicationThread().enter(0, null, rq, null);
             }
         }
         

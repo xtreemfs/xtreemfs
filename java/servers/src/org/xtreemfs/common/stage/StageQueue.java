@@ -26,7 +26,7 @@ public interface StageQueue<R extends Request> {
 
     /**
      * <p>Method will return the request next request to process. Waits synchronously for a request to become available,
-     * if there is currently none.</p>
+     * if there is currently none. Request will be removed from the queue.</p>
      * 
      * @return the request to be processed next.
      * @throws InterruptedException if waiting for a request was interrupted.

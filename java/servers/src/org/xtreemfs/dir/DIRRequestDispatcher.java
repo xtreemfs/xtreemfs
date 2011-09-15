@@ -18,8 +18,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.api.BabuDB;
@@ -31,6 +29,9 @@ import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.common.monitoring.StatusMonitor;
+import org.xtreemfs.common.olp.OverloadProtectedStage;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.dir.data.ServiceRecords;
 import org.xtreemfs.dir.discovery.DiscoveryMsgThread;
@@ -49,7 +50,6 @@ import org.xtreemfs.dir.operations.SetAddressMappingOperation;
 import org.xtreemfs.dir.operations.SetConfigurationOperation;
 import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.LifeCycleListener;
-import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.SSLOptions.TrustManager;
@@ -65,7 +65,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
 import org.xtreemfs.foundation.pbrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
-import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 
 import com.sun.net.httpserver.BasicAuthenticator;
@@ -78,8 +77,11 @@ import com.sun.net.httpserver.HttpServer;
  * 
  * @author bjko
  */
-public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRequestListener,
+public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> implements RPCServerRequestListener,
     LifeCycleListener {
+    
+    private static final int                      NUM_RQ_TYPES            = 12;
+    private static final int                      STAGE_ID                = 1;
     
     /**
      * index for address mappings, stores uuid -> AddressMappingSet
@@ -105,11 +107,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     private final Map<Integer, DIROperation>      registry;
     
     private final RPCNIOSocketServer              server;
-    
-    private final BlockingQueue<RPCServerRequest> queue;
-    
-    private volatile boolean                      quit;
-    
+            
     private final BabuDB                          database;
     
     private final DiscoveryMsgThread              discoveryThr;
@@ -121,10 +119,13 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     public static final String                    DB_NAME                 = "dirdb";
 
     private List<DIRStatusListener>               statusListener;
+    
+    private final Map<Integer, Integer>           requestTypeMap = new HashMap<Integer, Integer>(NUM_RQ_TYPES);
 
     public DIRRequestDispatcher(final DIRConfig config, final BabuDBConfig dbsConfig) throws IOException,
         BabuDBException {
-        super("DIR RqDisp");
+        super("DIR RqDisp", STAGE_ID, NUM_RQ_TYPES);
+        
         this.config = config;
         
         Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS Direcory Service version "
@@ -163,10 +164,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
                 Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this,
                     "using custom trust manager '%s'", tm.getClass().getName());
         }
-        
-        queue = new LinkedBlockingQueue<RPCServerRequest>();
-        quit = false;
-        
+                
         server = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
         
         if (config.isAutodiscoverEnabled()) {
@@ -249,29 +247,6 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         
     }
     
-    @Override
-    public void run() {
-        try {
-            notifyStarted();
-            while (!quit) {
-                final RPCServerRequest rq = queue.take();
-                synchronized (database) {
-                    processRequest(rq);
-                }
-            }
-        } catch (InterruptedException ex) {
-            quit = true;
-        } catch (Exception ex) {
-            final String report = CrashReporter.createCrashReport("DIR", VersionManagement.RELEASE_VERSION,
-                ex);
-            System.out.println(report);
-            CrashReporter.reportXtreemFSCrash(report);
-            notifyCrashed(ex);
-            System.exit(2);
-        }
-        notifyStopped();
-    }
-    
     public ServiceRecords getServices() throws Exception {
         
         synchronized (database) {
@@ -292,7 +267,25 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     }
     
     public void startup() throws Exception {
-        this.start();
+        
+        // add a handler for stage crash before startup
+        setLifeCycleListener(new LifeCycleListener() {
+            
+            @Override
+            public void startupPerformed() { /* ignored */ }
+            
+            @Override
+            public void shutdownPerformed() { /* ignored */ }
+            
+            @Override
+            public void crashPerformed(Throwable cause) {
+                final String report = CrashReporter.createCrashReport("DIR", VersionManagement.RELEASE_VERSION, cause);
+                System.out.println(report);
+                CrashReporter.reportXtreemFSCrash(report);
+                System.exit(2);
+            }
+        });
+        super.start();
         
         server.start();
         server.waitForStartup();
@@ -308,11 +301,14 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         }
     }
     
+    /*
+     * (non-Javadoc)
+     * @see org.xtreemfs.common.olp.OverloadProtectedStage#shutdown()
+     */
+    @Override
     public void shutdown() throws Exception {
     	
-    	for (DIRStatusListener listener : statusListener) {
-			listener.shuttingDown();
-		}
+    	for (DIRStatusListener listener : statusListener) { listener.shuttingDown(); }
     	
         httpServ.stop(0);
         server.shutdown();
@@ -329,49 +325,61 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             monThr.waitForShutdown();
         }
         
-        this.quit = true;
-        this.interrupt();
-        this.waitForShutdown();
+        super.shutdown();
+        waitForShutdown();
     }
     
     private void registerOperations() {
         
+        int type = 0;
         DIROperation op;
-        op = new GetGlobalTimeOperation(this);
-        registry.put(op.getProcedureId(), op);
-        
         op = new GetAddressMappingOperation(this);
         registry.put(op.getProcedureId(), op);
-        
-        op = new SetAddressMappingOperation(this);
-        registry.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new DeleteAddressMappingOperation(this);
         registry.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
-        op = new RegisterServiceOperation(this);
+        op = new SetAddressMappingOperation(this);
         registry.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
+        
+        op = new GetGlobalTimeOperation(this);
+        registry.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new DeregisterServiceOperation(this);
         registry.put(op.getProcedureId(), op);
-        
-        op = new GetServiceByUuidOperation(this);
-        registry.put(op.getProcedureId(), op);
-        
-        op = new GetServicesByTypeOperation(this);
-        registry.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new GetServiceByNameOperation(this);
         registry.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
+        
+        op = new GetServicesByTypeOperation(this);
+        registry.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
+        
+        op = new GetServiceByUuidOperation(this);
+        registry.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new ServiceOfflineOperation(this);
         registry.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
-        op = new SetConfigurationOperation(this);
+        op = new RegisterServiceOperation(this);
         registry.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new GetConfigurationOperation(this);
         registry.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
+        
+        op = new SetConfigurationOperation(this);
+        registry.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
     }
     
     public Database getDirDatabase() {
@@ -383,15 +391,17 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         }
     }
     
+    /*
+     * (non-Javadoc)
+     * @see org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener#receiveRecord(
+     *          org.xtreemfs.foundation.pbrpc.server.RPCServerRequest)
+     */
     @Override
     public void receiveRecord(RPCServerRequest rq) {
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "received new request: %s", rq
-                    .toString());
-        this.queue.add(rq);
-    }
-    
-    public void processRequest(RPCServerRequest rq) {
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "received new request: %s", rq.toString());
+        }
+        
         RPCHeader hdr = rq.getHeader();
         
         if (hdr.getMessageType() != MessageType.RPC_REQUEST) {
@@ -413,39 +423,52 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             return;
         }
         
+        int procId = rqHdr.getProcId();
+        int clientTimeout = 10 * 1000;   // TODO retrieve client timeout from header (if available)
+        boolean hasHighPriority = false; // TODO retrieve client priority from header (if available)
+        enter(procId, null, new DIRRequest(rq, requestTypeMap.get(procId), clientTimeout, hasHighPriority), 
+                new RPCRequestCallback(rq)); 
+    }
+    
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.Stage#_processMethod(org.xtreemfs.common.stage.StageRequest)
+     */
+    @Override
+    public void _processMethod(StageRequest<DIRRequest> method) {
+        
         // everything ok, find the right operation
-        DIROperation op = registry.get(rqHdr.getProcId());
+        DIROperation op = registry.get(method.getStageMethod());
         if (op == null) {
-            rq.sendError(ErrorType.INVALID_PROC_ID, POSIXErrno.POSIX_ERROR_EIO,
+            ((RPCRequestCallback) method.getCallback()).failed(ErrorType.INVALID_PROC_ID, POSIXErrno.POSIX_ERROR_EIO,
                 "unknown procedure id requested");
             return;
         }
         
-        DIRRequest dirRq = new DIRRequest(rq);
-        try {
-            op.parseRPCMessage(dirRq);
-            numRequests++;
-            op.startRequest(dirRq);
-        } catch (Throwable ex) {
-            ex.printStackTrace();
-            rq.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
-                "internal server error: " + ex.toString(), OutputUtils.stackTraceToString(ex));
-            return;
+        DIRRequest request = method.getRequest();
+        
+        synchronized (database) {
+            try {
+                op.parseRPCMessage(request);
+                numRequests++;
+                op.startRequest(request);
+            } catch (Throwable ex) {
+                ex.printStackTrace();
+                ((RPCRequestCallback) method.getCallback()).failed(ErrorType.INTERNAL_SERVER_ERROR, 
+                        POSIXErrno.POSIX_ERROR_EIO, ex.toString());
+                return;
+            }
         }
     }
     
     @Override
-    public void startupPerformed() {
-    }
+    public void startupPerformed() { /* ignored */ }
     
     @Override
-    public void shutdownPerformed() {
-    }
+    public void shutdownPerformed() { /* ignored */ }
     
     @Override
     public void crashPerformed(Throwable cause) {
-        final String report = CrashReporter
-                .createCrashReport("DIR", VersionManagement.RELEASE_VERSION, cause);
+        final String report = CrashReporter.createCrashReport("DIR", VersionManagement.RELEASE_VERSION, cause);
         System.out.println(report);
         CrashReporter.reportXtreemFSCrash(report);
         try {

@@ -40,15 +40,14 @@ public class GetServiceByUuidOperation extends DIROperation {
     
     @Override
     public void startRequest(DIRRequest rq) {
-        serviceGetByUUIDRequest request =
-            (serviceGetByUUIDRequest) rq.getRequestMessage();
+
+        serviceGetByUUIDRequest request = (serviceGetByUUIDRequest) rq.getRequestMessage();
 
         database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName()
                 .getBytes(),rq).registerListener(new DBRequestListener<byte[], ServiceSet>(true) {
                     
                     @Override
-                    ServiceSet execute(byte[] result, DIRRequest rq) 
-                            throws Exception {
+                    ServiceSet execute(byte[] result, DIRRequest rq) throws Exception {
                         
                         ServiceSet.Builder services = ServiceSet.newBuilder();
                         if (result != null) {

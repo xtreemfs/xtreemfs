@@ -18,7 +18,7 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.mrc.MRCRequest;
 
-public abstract class MRCStage extends LifeCycleThread {
+class MRCStage extends LifeCycleThread {
     
     /**
      * global stage response codes. These codes are sent back by a stage to
@@ -139,7 +139,7 @@ public abstract class MRCStage extends LifeCycleThread {
      * @param method
      *            the stage method to execute
      */
-    protected abstract void processMethod(StageMethod method);
+    protected void processMethod(StageMethod method) {};
     
     protected static final class StageMethod {
         private MRCRequest                rq;

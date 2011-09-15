@@ -14,8 +14,12 @@ import org.xtreemfs.babudb.api.database.DatabaseRequestListener;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
+import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
 
 import com.google.protobuf.Message;
 
@@ -54,90 +58,37 @@ public abstract class DIROperation {
      * parses the RPC request message. Can throw any exception which
      * will result in an error message telling the client that the
      * request message data is garbage.
+     * 
      * @param rq
      * @throws java.lang.Exception
      */
     public void parseRPCMessage(DIRRequest rq) throws IOException {
-        rq.deserializeMessage(getRequestMessagePrototype());
+        
+        RPCServerRequest rpcRequest = rq.getRPCRequest();
+        Message message = rq.getRequestArgs();
+        final ReusableBuffer payload = rpcRequest.getMessage();
+        if (message != null) {
+            if (payload != null) {
+                message = message.newBuilderForType().mergeFrom(new ReusableBufferInputStream(payload)).build();
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: %s", message.toString());
+                }
+            } else {
+                message = message.getDefaultInstanceForType();
+            }
+        } else {
+            message = null;
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: empty message (emptyRequest)");
+            }
+        }
+        rq.setRequestArgs(message);
     }
 
     void requestFailed(BabuDBException error, DIRRequest rq) {
         assert(error != null);
         rq.sendError(ErrorType.ERRNO,POSIXErrno.POSIX_ERROR_EINVAL,error.toString());
     }
-
-    /**
-     * Operation to give a failure back to the client.
-     * Will decide, if a {@link RedirectException} should be returned.
-     * 
-     * @param error - Exception thrown.
-     * @param rq - original {@link DIRRequest}.
-     */
-    /*
-    void requestFailed(Exception error, DIRRequest rq) {
-        // handle connection errors caused by being not the replication master
-        if (error != null && dbsReplicationManager != null
-                && ((error instanceof BabuDBException
-                && ((BabuDBException) error).getErrorCode().equals(NO_ACCESS)) || ( // TODO better exception handling
-                error instanceof ConcurrentModificationException)) // && !dbsReplicationManager.isMaster() ... removed for testing
-                ) {
-
-            InetAddress altMaster = dbsReplicationManager.getMaster();
-            if (altMaster != null) {
-                // retrieve the correct port for the DIR mirror
-                String host = altMaster.getHostAddress();
-                Integer port = this.master.getConfig().getMirrors().get(host);
-                if (port == null) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, this, "The port for "
-                            + "the mirror DIR '%s' could not be retrieved.",
-                            host);
-
-                    rq.sendInternalServerError(error);
-                } else {
-                    rq.sendRedirectException(host, port);
-                }
-            } else {
-                // if there is a handover in progress, redirect to the local
-                // server to notify the client about this process
-                InetAddress host = this.master.getConfig().getAddress();
-                int port = this.master.getConfig().getPort();
-                InetSocketAddress address =
-                        (host == null)
-                        ? new InetSocketAddress(port)
-                        : new InetSocketAddress(host, port);
-
-                rq.sendRedirectException(address.getAddress().getHostAddress(),
-                        port);
-            }
-            // handle errors caused by ServerExceptions
-        } else if (error != null && error instanceof ONCRPCException) {
-            Logging.logError(Logging.LEVEL_ERROR, this, error);
-            rq.sendException((ONCRPCException) error);> Na dann mal schöne Grüße!
-> Christian
-
-            // handle user errors
-        } else if (error != null
-                && error instanceof BabuDBException
-                && (((BabuDBException) error).getErrorCode().equals(NO_SUCH_DB)
-                || ((BabuDBException) error).getErrorCode().equals(DB_EXISTS)
-                || ((BabuDBException) error).getErrorCode().equals(NO_SUCH_INDEX)
-                || ((BabuDBException) error).getErrorCode().equals(NO_SUCH_SNAPSHOT)
-                || ((BabuDBException) error).getErrorCode().equals(SNAP_EXISTS))) { // blame the client
-            Logging.logError(Logging.LEVEL_ERROR, this, error);
-            rq.sendException(new InvalidArgumentException(error.getMessage()));
-            // handle unknown errors
-        } else {
-            if (error != null && !(error instanceof BabuDBException)) {
-                Logging.logError(Logging.LEVEL_ERROR, this, error);
-            }
-
-            if (error != null) {
-                Logging.logError(Logging.LEVEL_ERROR, this, error);
-            }
-
-            rq.sendInternalServerError(error);
-        }
-    }*/
 
     /**
      * Method-interface for sending a response 
