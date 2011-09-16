@@ -8,12 +8,12 @@
 
 package org.xtreemfs.dir.operations;
 
-import com.google.protobuf.Message;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.globalTimeSGetResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
+
 /**
  *
  * @author bjko
@@ -22,39 +22,19 @@ public class GetGlobalTimeOperation extends DIROperation {
 
 
     public GetGlobalTimeOperation(DIRRequestDispatcher master) {
+        
         super(master);
     }
 
     @Override
     public int getProcedureId() {
+        
         return DIRServiceConstants.PROC_ID_XTREEMFS_GLOBAL_TIME_S_GET;
     }
 
     @Override
-    public void startRequest(DIRRequest rq) {
+    public void startRequest(DIRRequest rq, RPCRequestCallback callback) {
 
-        globalTimeSGetResponse resp = 
-            globalTimeSGetResponse.newBuilder().setTimeInSeconds(System.currentTimeMillis()).build();
-        
-        requestFinished(resp, rq);
-    }
-
-    @Override
-    public boolean isAuthRequired() {
-        return false;
-    }
-
-    @Override
-    protected Message getRequestMessagePrototype() {
-        return emptyRequest.getDefaultInstance();
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.xtreemfs.dir.operations.DIROperation#requestFinished(java.lang.Object, org.xtreemfs.dir.DIRRequest)
-     */
-    @Override
-    void requestFinished(Object result, DIRRequest rq) {
-        rq.sendSuccess((globalTimeSGetResponse) result);
+        callback.success(globalTimeSGetResponse.newBuilder().setTimeInSeconds(System.currentTimeMillis()).build());
     }
 }

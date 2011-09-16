@@ -22,10 +22,15 @@ import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 public abstract class AugmentedRequest extends Request {
 
     /**
-     * <p>Metadata for applying overload protection to the application by using monitoring and control information
-     * gathered by this field.</p>
+     * <p>Metadata for applying overload protection to the application using control information gathered by this 
+     * field.</p>
      */
-    private final RequestMetadata metadata;
+    private final RequestMetadata   metadata;
+    
+    /**
+     * <p>Monitoring information of the current processing of this request.</p>
+     */
+    private final RequestMonitoring monitoring;
     
     /**
      * <p>Constructor for requests that do not require a certain amount of bandwidth for being
@@ -70,28 +75,20 @@ public abstract class AugmentedRequest extends Request {
         
         super(rpcRequest);
         this.metadata = new RequestMetadata(type, size, deltaMaxTime, highPriority, piggybackPerformanceReceiver);
+        this.monitoring = new RequestMonitoring();
     }
     
     /**
      * @return {@link RequestMetadata}.
      */
-    RequestMetadata getRequestMetadata() {
+    public RequestMetadata getMetadata() {
         return metadata;
     }
     
     /**
-     * @see RequestMetadata#reset(PerformanceInformationReceiver receiver)
+     * @return {@link RequestMonitoring}.
      */
-    public void reset() {
-        reset(null);
-    }
-    
-    /**
-     * @param receiver - performance information receiver (piggyback) for a succeeding processing step.
-     * 
-     * @see RequestMetadata#reset(PerformanceInformationReceiver receiver)
-     */
-    public void reset(PerformanceInformationReceiver receiver) {
-        metadata.reset(receiver);
+    public RequestMonitoring getMonitoring() {
+        return monitoring;
     }
 }

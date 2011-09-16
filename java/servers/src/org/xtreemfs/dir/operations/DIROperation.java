@@ -10,14 +10,11 @@ package org.xtreemfs.dir.operations;
 
 import java.io.IOException;
 
-import org.xtreemfs.babudb.api.database.DatabaseRequestListener;
-import org.xtreemfs.babudb.api.exception.BabuDBException;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
 
@@ -40,19 +37,23 @@ public abstract class DIROperation {
     /**
      * called after request was parsed and operation assigned.
      * 
-     * @param rq
-     *            the new request
+     * @param rq - the new request.
+     * @param callback - the callback for the request.
+     *            
+     * @throws Exception if request could not have been processed.
+     * 
+     * @return response {@link Message} for the request.
      */
-    public abstract void startRequest(DIRRequest rq);
+    public abstract void startRequest(DIRRequest rq, RPCRequestCallback callback) throws Exception;
 
     /**
      * Method to check if operation needs user authentication.
      * 
      * @return true, if the user needs to be authenticated
      */
-    public abstract boolean isAuthRequired();
-
-    protected abstract Message getRequestMessagePrototype();
+    public boolean isAuthRequired() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     /**
      * parses the RPC request message. Can throw any exception which
@@ -83,69 +84,5 @@ public abstract class DIROperation {
             }
         }
         rq.setRequestArgs(message);
-    }
-
-    void requestFailed(BabuDBException error, DIRRequest rq) {
-        assert(error != null);
-        rq.sendError(ErrorType.ERRNO,POSIXErrno.POSIX_ERROR_EINVAL,error.toString());
-    }
-
-    /**
-     * Method-interface for sending a response 
-     * 
-     * @param result - can be null, if not necessary.
-     * @param rq - original {@link DIRRequest}.
-     */
-    abstract void requestFinished(Object result, DIRRequest rq);
-
-    /**
-     * Listener implementation for non-blocking BabuDB requests.
-     * 
-     * @author flangner
-     * @since 11/16/2009
-     * @param <I> - input type.
-     * @param <O> - output type.
-     */
-    abstract class DBRequestListener<I, O> implements DatabaseRequestListener<I> {
-
-        private final boolean finishRequest;
-
-        DBRequestListener(boolean finishRequest) {
-            this.finishRequest = finishRequest;
-        }
-
-        abstract O execute(I result, DIRRequest rq) throws Exception;
-
-        /*
-         * (non-Javadoc)
-         * @see org.xtreemfs.babudb.BabuDBRequestListener#failed(org.xtreemfs.babudb.BabuDBException, java.lang.Object)
-         */
-        @Override
-        public void failed(BabuDBException error, Object request) {
-            requestFailed(error, (DIRRequest) request);
-        }
-
-        /*
-         * (non-Javadoc)
-         * @see org.xtreemfs.babudb.BabuDBRequestListener#finished(java.lang.Object, java.lang.Object)
-         */
-        @Override
-        public void finished(I data, Object context) {
-            try {
-                O result = execute(data, (DIRRequest) context);
-                if (finishRequest) {
-                    requestFinished(result, (DIRRequest) context);
-                }
-            } catch (IllegalArgumentException ex) {
-                DIRRequest rq = (DIRRequest) context;
-                rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, ex.toString());
-            } catch (java.util.ConcurrentModificationException ex) {
-                DIRRequest rq = (DIRRequest) context;
-                rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EAGAIN, ex.toString());
-            } catch (Exception e) {
-                DIRRequest rq = (DIRRequest) context;
-                rq.sendInternalServerError(e);
-            }
-        }
     }
 }

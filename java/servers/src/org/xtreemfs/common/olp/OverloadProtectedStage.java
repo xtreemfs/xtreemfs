@@ -110,7 +110,7 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
     @Override
     public final void processMethod(StageRequest<R> method) {
         
-        method.getRequest().getRequestMetadata().beginGeneralMeasurement();
+        method.getRequest().getMonitoring().beginGeneralMeasurement();
         _processMethod(method);
     }
     
@@ -125,8 +125,8 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
     @Override
     public final void exit(StageRequest<R> request) {
         
-        request.getRequest().getRequestMetadata().endGeneralMeasurement();
-        olp.depart(request.getRequest().getRequestMetadata());
+        request.getRequest().getMonitoring().endGeneralMeasurement();
+        olp.depart(request.getRequest().getMetadata(), request.getRequest().getMonitoring());
     }
     
     /* (non-Javadoc)

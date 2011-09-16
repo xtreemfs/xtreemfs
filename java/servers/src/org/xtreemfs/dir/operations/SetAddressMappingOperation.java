@@ -9,15 +9,17 @@
 package org.xtreemfs.dir.operations;
 
 import java.util.ConcurrentModificationException;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
-import org.xtreemfs.babudb.api.database.Database;
+import org.xtreemfs.common.stage.BabuDBComponent;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBDatabaseRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.AddressMappingRecord;
 import org.xtreemfs.dir.data.AddressMappingRecords;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
@@ -31,11 +33,11 @@ import com.google.protobuf.Message;
  */
 public class SetAddressMappingOperation extends DIROperation {
 
-    private final Database database;
+    private final BabuDBComponent database;
         
     public SetAddressMappingOperation(DIRRequestDispatcher master) {
         super(master);
-        database = master.getDirDatabase();
+        database = master.getDatabase();
     }
     
     @Override
@@ -44,20 +46,18 @@ public class SetAddressMappingOperation extends DIROperation {
     }
     
     @Override
-    public void startRequest(DIRRequest rq) {
+    public void startRequest(DIRRequest rq, RPCRequestCallback callback) throws Exception {
 
         final AddressMappingSet mappings = (AddressMappingSet) rq.getRequestMessage();
         String uuid = null;
         if (mappings.getMappingsCount() == 0) {
-            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "non-empty address mapping set not allowed");
-            return;
+            throw new IllegalArgumentException("non-empty address mapping set not allowed");
         }
         for (AddressMapping am : mappings.getMappingsList()) {
             if (uuid == null)
                 uuid = am.getUuid();
             if (!am.getUuid().equals(uuid)) {
-                rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "all mappings must have the same UUID");
-                return;
+                throw new IllegalArgumentException("all mappings must have the same UUID");
             }
         }
         
@@ -65,70 +65,60 @@ public class SetAddressMappingOperation extends DIROperation {
         assert (database != null);
         
         final String UUID = uuid;
+        final AtomicLong version = new AtomicLong();
+        final AtomicReference<byte[]> newBytes = new AtomicReference<byte[]>();
         
-        database.lookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, 
-                uuid.getBytes(), rq).registerListener(new DBRequestListener<byte[], Long>(false) {
+        database.lookup(callback, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes(), rq.getMetadata(),
+                database.new BabuDBPostprocessing<byte[]>() {
+            
+            @Override
+            public Message execute(byte[] result, BabuDBDatabaseRequest request) throws Exception {
+                
+                long currentVersion = 0;
+                if (result != null) {
+                    ReusableBuffer buf = ReusableBuffer.wrap(result);
+                    AddressMappingRecords dbData = new AddressMappingRecords(buf);
+                    if (dbData.size() > 0) {
+                        currentVersion = dbData.getRecord(0).getVersion();
+                    }
+                }
+
+                if (mappings.getMappings(0).getVersion() != currentVersion)
+                    throw new ConcurrentModificationException();
+                
+                version.set(++currentVersion);
+
+                AddressMappingSet.Builder newSet = mappings.toBuilder();
+                for (int i = 0; i < mappings.getMappingsCount(); i++) {
+                    newSet.setMappings(i, mappings.getMappings(i).toBuilder().setVersion(currentVersion));
+                }
+                
+                AddressMappingRecords newData = new AddressMappingRecords(newSet.build());
+                final int size = newData.getSize();
+                newBytes.set(new byte[size]);
+                ReusableBuffer buf = ReusableBuffer.wrap(newBytes.get());
+                newData.serialize(buf);
+                
+                // notify all listeners about the insert
+                for (AddressMappingRecord amr : newData.getRecords()) {
+                    master.notifyAddressMappingAdded(amr.getUuid(), amr.getUri());
+                }
+                
+                return null;
+            }
+            
+            @Override
+            public void requeue(BabuDBDatabaseRequest rq) {
+                
+                database.singleInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, UUID.getBytes(), newBytes.get(), rq, 
+                        database.new BabuDBPostprocessing<Object>() {
                     
                     @Override
-                    Long execute(byte[] result, DIRRequest rq) throws Exception {
-                        
-                        long currentVersion = 0;
-                        if (result != null) {
-                            ReusableBuffer buf = ReusableBuffer.wrap(result);
-                            AddressMappingRecords dbData = new AddressMappingRecords(buf);
-                            if (dbData.size() > 0) {
-                                currentVersion = dbData.getRecord(0).getVersion();
-                            }
-                        }
-        
-                        if (mappings.getMappings(0).getVersion() != currentVersion)
-                            throw new ConcurrentModificationException();
-                        
-                        final long version = ++currentVersion;
-
-                        AddressMappingSet.Builder newSet = mappings.toBuilder();
-                        for (int i = 0; i < mappings.getMappingsCount(); i++) {
-                            newSet.setMappings(i, mappings.getMappings(i).toBuilder().setVersion(currentVersion));
-                        }
-        
-                        AddressMappingRecords newData = new AddressMappingRecords(newSet.build());
-                        final int size = newData.getSize();
-                        byte[] newBytes = new byte[size];
-                        ReusableBuffer buf = ReusableBuffer.wrap(newBytes);
-                        newData.serialize(buf);
-                        database.singleInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, 
-                                UUID.getBytes(), newBytes, rq).registerListener(
-                                        new DBRequestListener<Object, Long>(true) {
-                                    
-                                    @Override
-                                    Long execute(Object result, DIRRequest rq) 
-                                             throws Exception {
-                                        return version;
-                                    }
-                                });
-                        
-                        // notify all listeners about the insert
-                        for (AddressMappingRecord amr : newData.getRecords()) {
-                            master.notifyAddressMappingAdded(amr.getUuid(), amr.getUri());
-                        }
-                        
-                        return null;
+                    public Message execute(Object result, BabuDBDatabaseRequest request) throws Exception {
+                        return addressMappingSetResponse.newBuilder().setNewVersion(version.get()).build();
                     }
                 });
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-    
-    @Override
-    protected Message getRequestMessagePrototype() {
-        return AddressMappingSet.getDefaultInstance();
-    }
-    @Override
-    void requestFinished(Object result, DIRRequest rq) {
-        addressMappingSetResponse resp = addressMappingSetResponse.newBuilder().setNewVersion((Long)result).build();
-        rq.sendSuccess(resp);
+            }
+        });
     }
 }

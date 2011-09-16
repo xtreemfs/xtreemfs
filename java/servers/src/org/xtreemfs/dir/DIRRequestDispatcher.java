@@ -30,6 +30,8 @@ import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.common.monitoring.StatusMonitor;
 import org.xtreemfs.common.olp.OverloadProtectedStage;
+import org.xtreemfs.common.olp.RequestMonitoring;
+import org.xtreemfs.common.stage.BabuDBComponent;
 import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.dir.data.ServiceRecord;
@@ -102,8 +104,6 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
     
     private final HttpServer                      httpServ;
     
-    private int                                   numRequests;
-    
     private final Map<Integer, DIROperation>      registry;
     
     private final RPCNIOSocketServer              server;
@@ -122,6 +122,8 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
     
     private final Map<Integer, Integer>           requestTypeMap = new HashMap<Integer, Integer>(NUM_RQ_TYPES);
 
+    private final BabuDBComponent                 babuDBComponent;
+    
     public DIRRequestDispatcher(final DIRConfig config, final BabuDBConfig dbsConfig) throws IOException,
         BabuDBException {
         super("DIR RqDisp", STAGE_ID, NUM_RQ_TYPES);
@@ -214,8 +216,6 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
         
         httpServ.start();
         
-        numRequests = 0;
-        
         if (config.isMonitoringEnabled()) {
             monThr = new MonitoringThread(config, this);
             monThr.setLifeCycleListener(this);
@@ -244,7 +244,7 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
             ex.getMessage());
         }
         
-        
+        this.babuDBComponent = new BabuDBComponent(0, 11, this, getDirDatabase());
     }
     
     public ServiceRecords getServices() throws Exception {
@@ -308,6 +308,8 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
     @Override
     public void shutdown() throws Exception {
     	
+        babuDBComponent.shutdown();
+        
     	for (DIRStatusListener listener : statusListener) { listener.shuttingDown(); }
     	
         httpServ.stop(0);
@@ -345,7 +347,7 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
         registry.put(op.getProcedureId(), op);
         requestTypeMap.put(op.getProcedureId(), type++);
         
-        op = new GetGlobalTimeOperation(this);
+        op = new SetConfigurationOperation(this);
         registry.put(op.getProcedureId(), op);
         requestTypeMap.put(op.getProcedureId(), type++);
         
@@ -377,7 +379,7 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
         registry.put(op.getProcedureId(), op);
         requestTypeMap.put(op.getProcedureId(), type++);
         
-        op = new SetConfigurationOperation(this);
+        op = new GetGlobalTimeOperation(this);
         registry.put(op.getProcedureId(), op);
         requestTypeMap.put(op.getProcedureId(), type++);
     }
@@ -389,6 +391,10 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
             Logging.logError(Logging.LEVEL_ERROR, this, e);
             return null;
         }
+    }
+    
+    public BabuDBComponent getDatabase() {
+        return babuDBComponent;
     }
     
     /*
@@ -445,17 +451,26 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
         }
         
         DIRRequest request = method.getRequest();
+        RPCRequestCallback callback = (RPCRequestCallback) method.getCallback();
+        RequestMonitoring monitoring = method.getRequest().getMonitoring();
         
         synchronized (database) {
             try {
+                
                 op.parseRPCMessage(request);
-                numRequests++;
-                op.startRequest(request);
+                
+                try {
+                    op.startRequest(request, callback);
+                } catch (IllegalArgumentException ex) {
+                    monitoring.voidMeasurments();
+                    callback.failed(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, ex.toString());
+                } catch (java.util.ConcurrentModificationException ex) {
+                    monitoring.voidMeasurments();
+                    callback.failed(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EAGAIN, ex.toString());
+                }
             } catch (Throwable ex) {
-                ex.printStackTrace();
-                ((RPCRequestCallback) method.getCallback()).failed(ErrorType.INTERNAL_SERVER_ERROR, 
-                        POSIXErrno.POSIX_ERROR_EIO, ex.toString());
-                return;
+                monitoring.voidMeasurments();
+                callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
             }
         }
     }

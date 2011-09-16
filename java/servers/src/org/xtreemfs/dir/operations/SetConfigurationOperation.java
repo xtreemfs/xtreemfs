@@ -9,14 +9,16 @@
 package org.xtreemfs.dir.operations;
 
 import java.util.ConcurrentModificationException;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
-import org.xtreemfs.babudb.api.database.Database;
+import org.xtreemfs.common.stage.BabuDBComponent;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBDatabaseRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ConfigurationRecord;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationSetResponse;
@@ -25,11 +27,11 @@ import com.google.protobuf.Message;
 
 public class SetConfigurationOperation extends DIROperation {
 
-    private final Database database;
+    private final BabuDBComponent database;
 
     public SetConfigurationOperation(DIRRequestDispatcher master) {
         super(master);
-        database = master.getDirDatabase();
+        database = master.getDatabase();
 
     }
 
@@ -39,35 +41,14 @@ public class SetConfigurationOperation extends DIROperation {
     }
 
     @Override
-    protected Message getRequestMessagePrototype() {
-
-        return Configuration.getDefaultInstance();
-    }
-
-    @Override
-    public boolean isAuthRequired() {
-        throw new UnsupportedOperationException("Not supported yet.");
-
-    }
-
-    @Override
-    void requestFinished(Object result, DIRRequest rq) {
-
-        configurationSetResponse response = configurationSetResponse.newBuilder().setNewVersion((Long)result).build();
-        rq.sendSuccess(response);
-    }
-
-    @Override
-    public void startRequest(DIRRequest rq) {
+    public void startRequest(DIRRequest rq, RPCRequestCallback callback) throws Exception {
 
         final Configuration conf = (Configuration) rq.getRequestMessage();
 
         String uuid = null;
 
         if (conf.getParameterCount() == 0) {
-            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
-                    "empty configuration set not allowed");
-            return;
+            throw new IllegalArgumentException("empty configuration set not allowed");
         }
 
         uuid = conf.getUuid();
@@ -76,61 +57,50 @@ public class SetConfigurationOperation extends DIROperation {
         assert (database != null);
         
         final String UUID = uuid;
+        final AtomicLong version = new AtomicLong();
+        final AtomicReference<byte[]> newBytes = new AtomicReference<byte[]>();
 
-        database.lookup(DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, uuid.getBytes(), rq).registerListener(
-                new DBRequestListener<byte[], Long>(false) {
+        database.lookup(callback, DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, uuid.getBytes(), rq.getMetadata(), 
+                database.new BabuDBPostprocessing<byte[]>() {
+            
+            @Override
+            public Message execute(byte[] result, BabuDBDatabaseRequest request) throws Exception {
+                long currentVersion = 0;
+                if (result != null) {
+                    ReusableBuffer buf = ReusableBuffer.wrap(result);
+                    ConfigurationRecord dbData = new ConfigurationRecord(buf);
+                    currentVersion = dbData.getVersion();
+
+                }
+                
+                if (conf.getVersion() != currentVersion) {
+                    throw new ConcurrentModificationException();
+                }
+                
+                version.set(++currentVersion);
+                
+                ConfigurationRecord newRec = new ConfigurationRecord(conf);
+                newRec.setVersion(currentVersion);    
+               
+                final int size = newRec.getSize();
+                newBytes.set(new byte[size]);
+                ReusableBuffer buf = ReusableBuffer.wrap(newBytes.get());
+                newRec.serialize(buf);
+                
+                return null;
+            }
+            
+            @Override
+            public void requeue(BabuDBDatabaseRequest rq) {
+                database.singleInsert(DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, UUID.getBytes(), newBytes.get(), rq,
+                        database.new BabuDBPostprocessing<Object>() {
+                    
                     @Override
-                    Long execute(byte[] result, DIRRequest rq) throws Exception {
-                            
-                        long currentVersion = 0;
-                        if (result != null) {
-                            ReusableBuffer buf = ReusableBuffer.wrap(result);
-                            ConfigurationRecord dbData = new ConfigurationRecord(buf);
-                            currentVersion = dbData.getVersion();
-
-                        }
-                        
-                        if (conf.getVersion() != currentVersion) {
-                            throw new ConcurrentModificationException();
-                        }
-                        
-                        final long version = ++currentVersion;
-                        
-                        ConfigurationRecord newRec = new ConfigurationRecord(conf);
-                        newRec.setVersion(version);    
-                       
-                        final int size = newRec.getSize();
-                        byte[] newBytes = new byte[size];
-                        ReusableBuffer buf = ReusableBuffer.wrap(newBytes);
-                        newRec.serialize(buf);
-                        
-                        database.singleInsert(DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, UUID.getBytes(), newBytes, rq)
-                        .registerListener(new DBRequestListener<Object, Long>(true) {
-                            
-                            @Override
-                            Long execute(Object result, DIRRequest rq) throws Exception {
-                                return version;
-                            }
-                        });
-                        
-                        return null;
+                    public Message execute(Object result, BabuDBDatabaseRequest request) throws Exception {
+                        return configurationSetResponse.newBuilder().setNewVersion(version.get()).build();
                     }
                 });
-
-//
-//        database.lookup(DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, uuid.getBytes(), rq).registerListener(
-//                new DBRequestListener<byte[], Configuration>(true) {
-//
-//                    @Override
-//                    Configuration execute(byte[] result, DIRRequest rq) throws Exception {
-//
-//                        if (result == null) {
-//                            return Configuration.getDefaultInstance();
-//                        } else
-//                            return new ConfigurationRecord(ReusableBuffer.wrap(result)).getConfiguration();
-//                    }
-//                });
-
+            }
+        });
     }
-
 }

@@ -13,7 +13,7 @@ package org.xtreemfs.common.olp;
  * @author fx.langner
  * @version 1.00, 09/09/11
  */
-interface PerformanceInformationReceiver {
+public interface PerformanceInformationReceiver {
 
     /**
      * @return a unique identifier for the stage represented by this receiver.

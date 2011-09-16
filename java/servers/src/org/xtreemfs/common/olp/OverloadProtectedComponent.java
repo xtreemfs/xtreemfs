@@ -45,7 +45,7 @@ public abstract class OverloadProtectedComponent<R> implements AutonomousCompone
      * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
      * @param numTypes - amount of different types of requests.
      */
-    OverloadProtectedComponent(int stageId, int numTypes) {
+    protected OverloadProtectedComponent(int stageId, int numTypes) {
         
         this (stageId, numTypes, 0, new boolean[numTypes], new PerformanceInformationReceiver[]{});
     }
@@ -58,7 +58,7 @@ public abstract class OverloadProtectedComponent<R> implements AutonomousCompone
      * @param numTypes - amount of different types of requests.
      * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
      */
-    OverloadProtectedComponent(int stageId, int numTypes, int numSubsequentStages) {
+    protected OverloadProtectedComponent(int stageId, int numTypes, int numSubsequentStages) {
         
         this (stageId, numTypes, numSubsequentStages, new boolean[numTypes], new PerformanceInformationReceiver[]{});
     }
@@ -72,7 +72,7 @@ public abstract class OverloadProtectedComponent<R> implements AutonomousCompone
      * @param unrefusableTypes - array that decides which types of requests are treated unrefusable and which not.
      * @param performanceInformationReceiver - receiver of performance information concerning this component.
      */
-    OverloadProtectedComponent(int stageId, int numTypes, int numSubsequentStages, boolean[] unrefusableTypes, 
+    protected OverloadProtectedComponent(int stageId, int numTypes, int numSubsequentStages, boolean[] unrefusableTypes, 
             PerformanceInformationReceiver[] performanceInformationReceiver) {
                 
         this.olp = new ProtectionAlgorithmCore(stageId, numTypes, numSubsequentStages, unrefusableTypes, 
@@ -80,18 +80,46 @@ public abstract class OverloadProtectedComponent<R> implements AutonomousCompone
     }
     
     /**
+     * <p>Method to announce a temporary interruption of the processing of the request represented by its monitoring 
+     * information. The request will remain at the component until its execution is resumed and finished.</p>
+     * 
+     * @param monitoring - information representing a single request.
+     * 
+     * @see OverloadProtectedComponent#resumeRequestProcessing(RequestMonitoring)
+     */
+    public void suspendRequestProcessing(RequestMonitoring monitoring) {
+        
+        lastRequestFinishedTime = monitoring.endGeneralMeasurement(lastRequestFinishedTime);
+    }
+    
+    /**
+     * <p>Method resume a temporarily interrupted request represented by its monitoring information.</p>
+     * 
+     * @param monitoring - information representing a single request.
+     * 
+     * @see OverloadProtectedComponent#suspendRequestProcessing(RequestMonitoring)
+     */
+    public void resumeRequestProcessing(RequestMonitoring monitoring) {
+        
+        monitoring.beginGeneralMeasurement();
+    }
+    
+    /**
      * <p>Method to delegate a request to this protected component.</p>
      * 
      * @param request - the original request.
-     * @param metadata - its statistical and configuring metadata.
+     * @param metadata - its configuring metadata.
+     * @param monitoring - its statistical information.
+     * 
      * @throws AdmissionRefusedException if a request could not approach the component due violation of timeout 
      *                                   restrictions.
      */
-    public void enter(R request, RequestMetadata metadata) throws AdmissionRefusedException {
+    public void enter(R request, RequestMetadata metadata, RequestMonitoring monitoring) 
+            throws AdmissionRefusedException {
         
-        olp.hasAdmission(metadata);
+        olp.obtainAdmission(metadata);
         enter(request);
-        metadata.beginGeneralMeasurement();
+        resumeRequestProcessing(monitoring);
         requestCounter.incrementAndGet();
     }
     
@@ -100,13 +128,14 @@ public abstract class OverloadProtectedComponent<R> implements AutonomousCompone
      * are prepared.</p>
      * 
      * @param request - the original request.
-     * @param metadata - its statistical and configuring metadata.
+     * @param metadata - its configuring metadata.
+     * @param monitoring - its statistical information.
      */
-    public void exit(R request, RequestMetadata metadata) {
+    public void exit(R request, RequestMetadata metadata, RequestMonitoring monitoring) {
                 
         requestCounter.decrementAndGet();
-        lastRequestFinishedTime = metadata.endGeneralMeasurement(lastRequestFinishedTime);
-        olp.finishRequest(metadata);
+        suspendRequestProcessing(monitoring);
+        olp.depart(metadata, monitoring);
         exit(request);
     }
     

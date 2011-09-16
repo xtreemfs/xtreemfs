@@ -8,7 +8,11 @@
 
 package org.xtreemfs.dir.operations;
 
-import org.xtreemfs.babudb.api.database.Database;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.xtreemfs.common.stage.BabuDBComponent;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBDatabaseRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
@@ -25,11 +29,11 @@ import com.google.protobuf.Message;
  */
 public class ServiceOfflineOperation extends DIROperation {
 
-    private final Database database;
+    private final BabuDBComponent database;
     
     public ServiceOfflineOperation(DIRRequestDispatcher master) {
         super(master);
-        database = master.getDirDatabase();
+        database = master.getDatabase();
     }
     
     @Override
@@ -38,56 +42,46 @@ public class ServiceOfflineOperation extends DIROperation {
     }
     
     @Override
-    public void startRequest(DIRRequest rq) {
+    public void startRequest(DIRRequest rq, RPCRequestCallback callback) throws Exception {
 
         final serviceGetByUUIDRequest request = (serviceGetByUUIDRequest) rq.getRequestMessage();
-  
-        database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, 
-                request.getName().getBytes(),rq).registerListener(
-                        new DBRequestListener<byte[], Object>(false) {
+        final AtomicReference<byte[]> newData = new AtomicReference<byte[]>();
+        
+        database.lookup(callback, DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName().getBytes(),
+                rq.getMetadata(), database.new BabuDBPostprocessing<byte[]>() {
+                    
+            @Override
+            public Message execute(byte[] result, BabuDBDatabaseRequest rq) throws Exception {
+                
+                if (result != null) {
+                    
+                    ReusableBuffer buf = ReusableBuffer.wrap(result);
+                    ServiceRecord dbData = new ServiceRecord(buf);
+                    
+                    dbData.setLast_updated_s(0);
+                    dbData.setVersion(dbData.getVersion()+1);
+
+                    newData.set(new byte[dbData.getSize()]);
+                    dbData.serialize(ReusableBuffer.wrap(newData.get()));
+                    
+                    return null;
+                } else {
+                    return emptyResponse.getDefaultInstance();
+                }
+            }
+            
+            @Override
+            public void requeue(BabuDBDatabaseRequest rq) {
+                
+                database.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName().getBytes(), 
+                        newData.get(), rq, database.new BabuDBPostprocessing<Object>() {
                     
                     @Override
-                    Object execute(byte[] result, DIRRequest rq) throws Exception {
-                        
-                        if (result != null) {
-                            ReusableBuffer buf = ReusableBuffer.wrap(result);
-                            ServiceRecord dbData = new ServiceRecord(buf);
-                            
-                            dbData.setLast_updated_s(0);
-                            dbData.setVersion(dbData.getVersion()+1);
-                            
-                            byte[] newData = new byte[dbData.getSize()];
-                            dbData.serialize(ReusableBuffer.wrap(newData));
-                            database.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, 
-                                    request.getName().getBytes(), newData, rq)
-                                    .registerListener(
-                                            new DBRequestListener<Object, Object>(true) {
-                                        
-                                        @Override
-                                        Object execute(Object result, DIRRequest rq) 
-                                                throws Exception {
-                                            return null;
-                                        }
-                                    });
-                        } else 
-                            requestFinished(null, rq);
-                        
-                        return null;
+                    public Message execute(Object result, BabuDBDatabaseRequest request) throws Exception {
+                        return emptyResponse.getDefaultInstance();
                     }
                 });
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return false;
-    }
-    
-    @Override
-    protected Message getRequestMessagePrototype() {
-        return serviceGetByUUIDRequest.getDefaultInstance();
-    }
-    @Override
-    void requestFinished(Object result, DIRRequest rq) {
-        rq.sendSuccess(emptyResponse.getDefaultInstance());
+            }
+        });
     }
 }

@@ -8,7 +8,9 @@
 
 package org.xtreemfs.dir.operations;
 
-import org.xtreemfs.babudb.api.database.Database;
+import org.xtreemfs.common.stage.BabuDBComponent;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBDatabaseRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ConfigurationRecord;
@@ -21,54 +23,35 @@ import com.google.protobuf.Message;
 
 public class GetConfigurationOperation extends DIROperation {
     
-    private final Database database;
+    private final BabuDBComponent database;
     
     public GetConfigurationOperation(DIRRequestDispatcher master) {
         super(master);
-        database = master.getDirDatabase();
+        database = master.getDatabase();
     }
     
     @Override
     public int getProcedureId() {
+        
         return DIRServiceConstants.PROC_ID_XTREEMFS_CONFIGURATION_GET;
     }
     
     @Override
-    protected Message getRequestMessagePrototype() {
+    public void startRequest(DIRRequest rq, RPCRequestCallback callback) throws Exception {
         
-        return configurationGetRequest.getDefaultInstance();
-    }
-    
-    @Override
-    public boolean isAuthRequired() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-    
-    @Override
-    void requestFinished(Object result, DIRRequest rq) {
-        rq.sendSuccess((Configuration) result);
-        
-    }
-    
-    @Override
-    public void startRequest(DIRRequest rq) {
         configurationGetRequest request = (configurationGetRequest) rq.getRequestMessage();
         
-        database.lookup(DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, request.getUuid().getBytes(), rq)
-                .registerListener(new DBRequestListener<byte[], Configuration>(true) {
+        database.lookup(callback, DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, request.getUuid().getBytes(), 
+            rq.getMetadata(), database.new BabuDBPostprocessing<byte[]>() {
                     
-                    @Override
-                    Configuration execute(byte[] result, DIRRequest rq) throws Exception {
-                        
-                        if (result == null) {
-                            return Configuration.getDefaultInstance();
-                        } else {
-                            return new ConfigurationRecord(ReusableBuffer.wrap(result)).getConfiguration();
-                            
-                        }
-                    }
-                });
+            @Override
+            public Message execute(byte[] result, BabuDBDatabaseRequest request) throws Exception {
+                if (result == null) {
+                    return Configuration.getDefaultInstance();
+                } else {
+                    return new ConfigurationRecord(ReusableBuffer.wrap(result)).getConfiguration();
+                }
+            }
+        });
     }
-    
 }

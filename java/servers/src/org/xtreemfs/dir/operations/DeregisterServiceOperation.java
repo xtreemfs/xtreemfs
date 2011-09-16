@@ -8,14 +8,15 @@
 
 package org.xtreemfs.dir.operations;
 
-import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.database.DatabaseInsertGroup;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
-import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
+import org.xtreemfs.common.stage.BabuDBComponent;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBDatabaseRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceDeregisterRequest;
 
 import com.google.protobuf.Message;
@@ -26,55 +27,35 @@ import com.google.protobuf.Message;
  */
 public class DeregisterServiceOperation extends DIROperation {
     
-    private final Database database;
+    private final BabuDBComponent database;
     
     public DeregisterServiceOperation(DIRRequestDispatcher master) {
+        
         super(master);
-        database = master.getDirDatabase();
+        database = master.getDatabase();
     }
     
     @Override
     public int getProcedureId() {
+        
         return DIRServiceConstants.PROC_ID_XTREEMFS_SERVICE_DEREGISTER;
     }
     
     @Override
-    public void startRequest(DIRRequest rq) {
-        serviceDeregisterRequest request = (serviceDeregisterRequest) rq.getRequestMessage();
+    public void startRequest(DIRRequest rq, RPCRequestCallback callback) throws BabuDBException {
+        
+        final serviceDeregisterRequest request = (serviceDeregisterRequest) rq.getRequestMessage();
         
         DatabaseInsertGroup ig = database.createInsertGroup();
         ig.addDelete(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
-        database.insert(ig, rq).registerListener(new DBRequestListener<Object, Object>(true) {
+        database.insert(callback, ig, rq.getMetadata(), database.new BabuDBPostprocessing<Object>() {
             
             @Override
-            Object execute(Object result, DIRRequest rq) throws Exception {
-                return result;
+            public Message execute(Object result, BabuDBDatabaseRequest rq) throws Exception {
+                
+                master.notifyServiceDeregistred(request.getUuid());
+                return emptyResponse.getDefaultInstance();
             }
         });
-        
-        master.notifyServiceDeregistred(request.getUuid());
     }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return false;
-    }
-    
-    @Override
-    protected Message getRequestMessagePrototype() {
-        return serviceDeregisterRequest.getDefaultInstance();
-    }
-    
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.xtreemfs.dir.operations.DIROperation#requestFinished(java.lang.Object
-     * , org.xtreemfs.dir.DIRRequest)
-     */
-    @Override
-    void requestFinished(Object result, DIRRequest rq) {
-        rq.sendSuccess(emptyResponse.getDefaultInstance());
-    }
-    
 }

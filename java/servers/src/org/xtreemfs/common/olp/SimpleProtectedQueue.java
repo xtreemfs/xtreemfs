@@ -56,9 +56,9 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
     public synchronized void enqueue(StageRequest<R> stageRequest) {
         
         try {
-            olp.obtainAdmission(stageRequest.getRequest().getRequestMetadata());
+            olp.obtainAdmission(stageRequest.getRequest().getMetadata());
             
-            if (stageRequest.getRequest().getRequestMetadata().hasHighPriority()) {
+            if (stageRequest.getRequest().getMetadata().hasHighPriority()) {
                 high.add(stageRequest);
                 
                 // check the outdistanced low priority requests 
@@ -66,12 +66,12 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
                 while (iter.hasNext()) {
                     StageRequest<R> next = iter.next();
                     try {
-                        olp.hasAdmission(stageRequest.getRequest().getRequestMetadata());
+                        olp.hasAdmission(stageRequest.getRequest().getMetadata());
                     } catch (Exception error) {
                         
                         iter.remove();
                         next.getCallback().failed(error);
-                        olp.depart(next.getRequest().getRequestMetadata());
+                        olp.depart(next.getRequest().getMetadata(), next.getRequest().getMonitoring());
                     }
                 }
             } else {
@@ -109,6 +109,7 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
      */
     @Override
     public synchronized int getLength() {
+        
         return high.size() + low.size();
     }
 }

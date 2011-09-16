@@ -116,25 +116,22 @@ final class ProtectionAlgorithmCore {
      * method.</p>
      * 
      * @param metadata - the request that has been processed.
+     * @param monitoring - information about the processing time of the request.
      */
-    void depart(RequestMetadata metadata) {
+    void depart(RequestMetadata metadata, RequestMonitoring monitoring) {
         
         controller.quitRequest(metadata.getType(), metadata.getSize(), metadata.hasHighPriority());
-        finishRequest(metadata);
+        if (monitoring.isValid()) {
+            monitor.record(metadata.getType(), monitoring.getFixedProcessingTime(), 
+                           monitoring.getVariableProcessingTime(metadata.getSize()));
+        }
+        PerformanceInformationReceiver receiver = monitoring.getPiggybackPerformanceInformationReceiver();
+        if (receiver != null) {
+            receiver.processPerformanceInformation(composePerformanceInformation());
+            sender.performanceInformationUpdatedPiggyback(receiver);
+        }
     }
-    
-    /**
-     * <p>Finishes a request represented by its metadata, by collecting its statistical information and performing some
-     * maintenance actions required for the algorithm.</p>
-     * 
-     * @param metadata - the metadata representing the request that just has been finished.
-     */
-    void finishRequest(RequestMetadata metadata) {
         
-        monitor.record(metadata.getType(), metadata.getFixedProcessingTime(), metadata.getVariableProcessingTime());
-        sendPerformanceInformation(metadata.getPiggybackPerformanceInformationReceiver());
-    }
-    
     /**
      * <p>Method to pass aggregated performance information about successive stages to the OLP of this stage.</p>
      * 
@@ -154,19 +151,6 @@ final class ProtectionAlgorithmCore {
         
         return controller.composePerformanceInformation(id);
     }
-    
-    /**
-     * <p>Method to manually send performance information to a designated receiver.</p>
-     * 
-     * @param receiver - receiver to send performance information to. If null, call will be ignored.
-     */
-    private void sendPerformanceInformation(PerformanceInformationReceiver receiver) {
-        
-        if (receiver != null) {
-            receiver.processPerformanceInformation(composePerformanceInformation());
-            sender.performanceInformationUpdatedPiggyback(receiver);
-        }
-    }  
     
 /*
  * Exceptions

@@ -8,7 +8,9 @@
 
 package org.xtreemfs.dir.operations;
 
-import org.xtreemfs.babudb.api.database.Database;
+import org.xtreemfs.common.stage.BabuDBComponent;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBDatabaseRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
@@ -26,11 +28,11 @@ import com.google.protobuf.Message;
 public class GetServiceByUuidOperation extends DIROperation {
     
     
-    private final Database database;
+    private final BabuDBComponent database;
         
     public GetServiceByUuidOperation(DIRRequestDispatcher master) {
         super(master);
-        database = master.getDirDatabase();
+        database = master.getDatabase();
     }
     
     @Override
@@ -39,45 +41,23 @@ public class GetServiceByUuidOperation extends DIROperation {
     }
     
     @Override
-    public void startRequest(DIRRequest rq) {
+    public void startRequest(DIRRequest rq, RPCRequestCallback callback) throws Exception {
 
         serviceGetByUUIDRequest request = (serviceGetByUUIDRequest) rq.getRequestMessage();
 
-        database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName()
-                .getBytes(),rq).registerListener(new DBRequestListener<byte[], ServiceSet>(true) {
-                    
-                    @Override
-                    ServiceSet execute(byte[] result, DIRRequest rq) throws Exception {
-                        
-                        ServiceSet.Builder services = ServiceSet.newBuilder();
-                        if (result != null) {
-                            ServiceRecord dbData = new ServiceRecord(
-                                    ReusableBuffer.wrap(result));
-                            services.addServices(dbData.getService());
-                        }
-                        return services.build();
-                    }
-                });
+        database.lookup(callback, DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName().getBytes(), rq.getMetadata(),
+                database.new BabuDBPostprocessing<byte[]>() {
+            
+            @Override
+            public Message execute(byte[] result, BabuDBDatabaseRequest request) throws Exception {
+                
+                ServiceSet.Builder services = ServiceSet.newBuilder();
+                if (result != null) {
+                    ServiceRecord dbData = new ServiceRecord(ReusableBuffer.wrap(result));
+                    services.addServices(dbData.getService());
+                }
+                return services.build();
+            }
+        });
     }
-    
-    @Override
-    public boolean isAuthRequired() {
-        return false;
-    }
-    
-    @Override
-    protected Message getRequestMessagePrototype() {
-        return serviceGetByUUIDRequest.getDefaultInstance();
-    }
-
-
-    /*
-     * (non-Javadoc)
-     * @see org.xtreemfs.dir.operations.DIROperation#requestFinished(java.lang.Object, org.xtreemfs.dir.DIRRequest)
-     */
-    @Override
-    void requestFinished(Object result, DIRRequest rq) {
-        rq.sendSuccess((ServiceSet) result);
-    }
-    
 }
