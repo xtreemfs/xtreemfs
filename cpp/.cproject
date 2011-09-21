@@ -23,6 +23,11 @@
 							<builder buildPath="${workspace_loc:/xtreemfs_trunk_cpp/build}" id="cdt.managedbuild.target.gnu.builder.base.811551994" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.134758692" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.396597261" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
+								<option id="gnu.cpp.compiler.option.include.paths.690711818" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/xtreemfs_trunk_cpp/generated}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/xtreemfs_trunk_cpp/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/xtreemfs_trunk_cpp/test/}&quot;"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.2062866380" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.580041795" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
