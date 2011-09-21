@@ -132,6 +132,12 @@ void UserMappingGridmap::DNToOUs(std::string dn, std::list<std::string>* ous) {
 }
 
 void UserMappingGridmap::Start() {
+  struct stat st;
+
+  if (stat(gridmap_file_.c_str(), &st) != 0) {
+    throw XtreemFSException("Failed to open gridmap file: " + gridmap_file_);
+  }
+
   // read the grid-map-file once
   ReadGridmapFile();
 
@@ -141,8 +147,10 @@ void UserMappingGridmap::Start() {
 }
 
 void UserMappingGridmap::Stop() {
-  monitor_thread_->interrupt();
-  monitor_thread_->join();
+  if (monitor_thread_) {
+    monitor_thread_->interrupt();
+    monitor_thread_->join();
+  }
 }
 
 void UserMappingGridmap::PeriodicGridmapFileReload() {
