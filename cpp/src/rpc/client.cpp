@@ -345,6 +345,7 @@ void Client::handleTimeout(const boost::system::error_code& error) {
 
         to_be_removed2.push_back(addr);
         con->Close();
+        delete con;
       }
     }
 
