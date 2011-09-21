@@ -668,18 +668,26 @@ int FuseAdapter::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   int i;
   for (i = offset; i < dir_entries_offset + dir_entries->entries_size(); i++) {
     boost::uint64_t dir_entries_index = i -  dir_entries_offset;
-    assert(dir_entries->entries(dir_entries_index).has_stbuf());
-    // Only set here st_ino and st_mode for the struct dirent.
-    fuse_statbuf.st_ino
-        = dir_entries->entries(dir_entries_index).stbuf().ino();
-    fuse_statbuf.st_mode
-        = dir_entries->entries(dir_entries_index).stbuf().mode();
+    if (dir_entries->entries(dir_entries_index).has_stbuf()) {
+      // Only set here st_ino and st_mode for the struct dirent.
+      fuse_statbuf.st_ino
+          = dir_entries->entries(dir_entries_index).stbuf().ino();
+      fuse_statbuf.st_mode
+          = dir_entries->entries(dir_entries_index).stbuf().mode();
 
-    if (filler(buf,
-               dir_entries->entries(dir_entries_index).name().c_str(),
-               &fuse_statbuf,
-               i + 1)) {
-      break;
+      if (filler(buf,
+                 dir_entries->entries(dir_entries_index).name().c_str(),
+                 &fuse_statbuf,
+                 i + 1)) {
+        break;
+      }
+    } else {
+      if (filler(buf,
+                 dir_entries->entries(dir_entries_index).name().c_str(),
+                 NULL,
+                 i + 1)) {
+        break;
+      }
     }
   }
 

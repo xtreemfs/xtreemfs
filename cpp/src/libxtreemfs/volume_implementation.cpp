@@ -924,12 +924,14 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
        i < min(volume_options_.metadata_cache_size,
                static_cast<boost::uint64_t>(result->entries_size()));
        i++) {
-    if (result->entries(i).stbuf().nlink() > 1) {  // Do not cache hard links.
-      metadata_cache_.Invalidate(path);
-    } else {
-      metadata_cache_.UpdateStat(
-          ConcatenatePath(path, result->entries(i).name()),
-          result->entries(i).stbuf());
+    if (result->entries(i).has_stbuf()) {
+      if (result->entries(i).stbuf().nlink() > 1) {  // Do not cache hard links.
+        metadata_cache_.Invalidate(path);
+      } else {
+        metadata_cache_.UpdateStat(
+            ConcatenatePath(path, result->entries(i).name()),
+            result->entries(i).stbuf());
+      }
     }
   }
 

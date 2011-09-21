@@ -272,6 +272,10 @@ class Volume {
    * DirectoryEntries will contain the names of the entries and, if not disabled
    * by "names_only", a Stat object for every entry.
    *
+   * @remark Even if names_only is set to false, an entry does _not_ need to
+   *         contain a stat buffer. Always check with entries(i).has_stbuf()
+   *         if the i'th entry does have a stat buffer before accessing it.
+   *
    * @param user_credentials    Name and Groups of the user.
    * @param path    Path to the directory.
    * @param offset  Index of first requested entry.
