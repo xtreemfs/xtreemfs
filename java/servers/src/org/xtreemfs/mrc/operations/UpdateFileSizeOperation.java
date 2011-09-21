@@ -15,6 +15,9 @@ import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
@@ -40,6 +43,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeRequest;
 
+import com.google.protobuf.Message;
+
 /**
  * Sets attributes of a file.
  * 
@@ -52,7 +57,7 @@ public class UpdateFileSizeOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         // perform master redirect if necessary
         if (master.getReplMasterUUID() != null && !master.getReplMasterUUID().equals(master.getConfig().getUUID().toString()))
@@ -81,7 +86,14 @@ public class UpdateFileSizeOperation extends MRCOperation {
             throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "file '" + cap.getFileId()
                 + "' does not exist");
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+            
+            @Override
+            public Message execute(Object result, BabuDBRequest request) throws Exception {
+
+                return emptyResponse.getDefaultInstance();
+            }
+        });
         
         // update the file size if necessary
         if (rqArgs.getOsdWriteResponse().hasSizeInBytes()) {
@@ -246,10 +258,7 @@ public class UpdateFileSizeOperation extends MRCOperation {
             }
         }
         
-        // set the response
-        rq.setResponse(emptyResponse.getDefaultInstance());
-        
-        update.execute();
+        update.execute(callback, rq.getMetadata());
         
     }
     

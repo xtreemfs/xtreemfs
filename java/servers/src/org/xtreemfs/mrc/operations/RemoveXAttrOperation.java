@@ -8,6 +8,9 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -22,6 +25,8 @@ import org.xtreemfs.mrc.utils.PathResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.removexattrRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.timestampResponse;
 
+import com.google.protobuf.Message;
+
 /**
  * 
  * @author stender
@@ -33,7 +38,7 @@ public class RemoveXAttrOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final removexattrRequest rqArgs = (removexattrRequest) rq.getRequestArgs();
         
@@ -56,8 +61,18 @@ public class RemoveXAttrOperation extends MRCOperation {
         
         // retrieve and prepare the metadata to return
         FileMetadata file = res.getFile();
+        
+        final timestampResponse.Builder rp = timestampResponse.newBuilder();
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+            
+            @Override
+            public Message execute(Object result, BabuDBRequest request) throws Exception {
                 
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+                // set the response
+                return rp.build();
+            }
+        });
         
         // if the attribute is a system attribute, set it
         
@@ -85,10 +100,8 @@ public class RemoveXAttrOperation extends MRCOperation {
         int time = (int) (TimeSync.getGlobalTime() / 1000);
         MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, time, update);
         
-        // set the response
-        rq.setResponse(timestampResponse.newBuilder().setTimestampS(time).build());
+        rp.setTimestampS(time);
         
-        update.execute();
+        update.execute(callback, rq.getMetadata());
     }
-    
 }

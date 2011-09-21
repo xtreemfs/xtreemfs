@@ -13,7 +13,7 @@ package org.xtreemfs.common.stage;
  * @author fx.langner
  * @version 1.00, 09/02/11
  * 
- * <R> - type for the queued requests. Has to extend {@link Request}.
+ * <R> - type for the queued requests. Has to extend {@link AbstractServiceRequest}.
  */
 public interface StageQueue<R extends Request> {
 

@@ -10,13 +10,12 @@ package org.xtreemfs.mrc.operations;
 
 import java.io.IOException;
 
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -39,70 +38,56 @@ public abstract class MRCOperation {
     /**
      * called after request was parsed and operation assigned.
      * 
-     * @param rq
-     *            the new request
+     * @param rq - the new request.
+     * @param callback - the callback for the request.
+     *            
+     * @throws Exception if request could not have been processed.
      */
-    public abstract void startRequest(MRCRequest rq) throws Throwable;
+    public abstract void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception;
     
     /**
      * Parses the request arguments.
      * 
-     * @param rq
-     *            the request
-     * 
-     * @return null if successful, error message otherwise
+     * @param rq - the request.
+     * @throws Exception if request could not have been parsed.
      */
-    public ErrorRecord parseRequestArgs(MRCRequest rq) {
+    public void parseRequestArgs(MRCRequest rq) throws Exception {
+                    
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "parsing request arguments");
         
-        try {
-            
+        final Message rqPrototype = MRCServiceConstants.getRequestMessage(rq.getRPCRequest().getHeader()
+                .getRequestHeader().getProcId());
+        if (rqPrototype == null) {
+            rq.setRequestArgs(null);
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "parsing request arguments");
-            
-            final Message rqPrototype = MRCServiceConstants.getRequestMessage(rq.getRPCRequest().getHeader()
-                    .getRequestHeader().getProcId());
-            if (rqPrototype == null) {
-                rq.setRequestArgs(null);
-                if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                    "received request with empty message");
+        } else {
+            if (rq.getRPCRequest().getMessage() != null) {
+                rq.setRequestArgs(rqPrototype.newBuilderForType().mergeFrom(
+                    new ReusableBufferInputStream(rq.getRPCRequest().getMessage())).build());
+                if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                        "received request with empty message");
+                        "received request of type %s", rq.getRequestArgs().getClass().getName());
+                }
             } else {
-                if (rq.getRPCRequest().getMessage() != null) {
-                    rq.setRequestArgs(rqPrototype.newBuilderForType().mergeFrom(
-                        new ReusableBufferInputStream(rq.getRPCRequest().getMessage())).build());
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                            "received request of type %s", rq.getRequestArgs().getClass().getName());
-                    }
-                } else {
-                    rq.setRequestArgs(rqPrototype.getDefaultInstanceForType());
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                            "received request of type %s (empty message)", rq.getRequestArgs().getClass()
-                                    .getName());
-                    }
+                rq.setRequestArgs(rqPrototype.getDefaultInstanceForType());
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                        "received request of type %s (empty message)", rq.getRequestArgs().getClass()
+                                .getName());
                 }
             }
-            
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: %s", rqPrototype);
-            }
-            
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
-                    "successfully parsed request arguments:");
-            
-            return null;
-            
-        } catch (Throwable exc) {
-            
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
-                    "could not parse request arguments:");
-                Logging.logUserError(Logging.LEVEL_DEBUG, Category.stage, this, exc);
-            }
-            return new ErrorRecord(ErrorType.GARBAGE_ARGS, POSIXErrno.POSIX_ERROR_EINVAL, exc.getMessage(),
-                exc);
+        }
+        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: %s", rqPrototype);
+        }
+        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                "successfully parsed request arguments:");
         }
     }
     
@@ -119,34 +104,12 @@ public abstract class MRCOperation {
                 .getUserCreds();
         return cred;
     }
-    
-    /**
-     * Completes a request. This method should be used if no error has occurred.
-     * 
-     * @param rq
-     */
-    public void finishRequest(MRCRequest rq) {
-        master.requestFinished(rq);
-    }
-    
-    /**
-     * Completes a request. This method should be used if an error has occurred.
-     * 
-     * @param rq
-     * @param error
-     */
-    public void finishRequest(MRCRequest rq, ErrorRecord error) {
-        rq.setError(error);
-        master.requestFinished(rq);
-    }
-    
+        
     protected void validateContext(MRCRequest rq) throws UserException, IOException {
         UserCredentials ctx = getUserCredentials(rq);
         if ((ctx == null) || (ctx.getGroupsCount() == 0) || (ctx.getUsername().length() == 0)) {
             throw new UserException(POSIXErrno.POSIX_ERROR_EACCES,
                 "UserCredentials must contain a non-empty userID and at least one groupID!");
         }
-        
     }
-        
 }

@@ -9,8 +9,12 @@
 package org.xtreemfs.mrc.operations;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
@@ -35,6 +39,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.renameRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.renameResponse;
 
+import com.google.protobuf.Message;
+
 /**
  * 
  * @author stender
@@ -46,7 +52,7 @@ public class MoveOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         // perform master redirect if necessary
         if (master.getReplMasterUUID() != null && !master.getReplMasterUUID().equals(master.getConfig().getUUID().toString()))
@@ -97,7 +103,18 @@ public class MoveOperation extends MRCOperation {
         // find out what the source path refers to (1 = directory, 2 = file)
         FileType sourceType = source.isDirectory() ? FileType.dir : FileType.file;
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        final int time = (int) (TimeSync.getGlobalTime() / 1000);
+        final AtomicReference<FileCredentials.Builder> creds = new AtomicReference<FileCredentials.Builder>();
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+            
+            @Override
+            public Message execute(Object result, BabuDBRequest request) throws Exception {
+                
+                // set the response
+                return buildResponse(time, creds.get());
+            }
+        });
         
         PathResolver tRes = null;
         //        
@@ -152,14 +169,11 @@ public class MoveOperation extends MRCOperation {
         // directory, 2 = file)
         FileType targetType = tp.getCompCount() == 1 ? FileType.dir : target == null ? FileType.nexists
             : target.isDirectory() ? FileType.dir : FileType.file;
-        
-        FileCredentials.Builder creds = null;
-        
+                
         // if both the old and the new directory point to the same
         // entity, do nothing
         if (sp.equals(tp)) {
-            rq.setResponse(buildResponse(0, creds));
-            finishRequest(rq);
+            callback.success(buildResponse(0, creds.get()));
             return;
         }
         
@@ -173,8 +187,6 @@ public class MoveOperation extends MRCOperation {
         faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, tRes.getParentDir(), tRes
                 .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
             rq.getDetails().groupIds);
-        
-        int time = (int) (TimeSync.getGlobalTime() / 1000);
         
         switch (sourceType) {
         
@@ -283,8 +295,8 @@ public class MoveOperation extends MRCOperation {
                             : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), master
                                 .getConfig().getCapabilitySecret());
                     
-                    creds = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(
-                        Converter.xLocListToXLocSet(target.getXLocList()));
+                    creds.set(FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(
+                        Converter.xLocListToXLocSet(target.getXLocList())));
                 }
                 
                 // delete the target
@@ -309,10 +321,7 @@ public class MoveOperation extends MRCOperation {
         MRCHelper.updateFileTimes(tRes.getParentsParentId(), tRes.getParentDir(), false, true, true, sMan,
             time, update);
         
-        // set the response
-        rq.setResponse(buildResponse(time, creds));
-        
-        update.execute();
+        update.execute(callback, rq.getMetadata());
         
     }
     

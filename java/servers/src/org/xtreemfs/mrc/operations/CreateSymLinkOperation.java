@@ -8,6 +8,9 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -23,6 +26,8 @@ import org.xtreemfs.mrc.utils.PathResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.symlinkRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.timestampResponse;
 
+import com.google.protobuf.Message;
+
 /**
  * 
  * @author stender
@@ -34,7 +39,7 @@ public class CreateSymLinkOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         // perform master redirect if necessary
         if (master.getReplMasterUUID() != null && !master.getReplMasterUUID().equals(master.getConfig().getUUID().toString()))
@@ -63,11 +68,19 @@ public class CreateSymLinkOperation extends MRCOperation {
         // check whether the file/directory exists already
         res.checkIfFileExistsAlready();
         
-        // prepare file creation in database
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-        
         // atime, ctime, mtime
-        int time = (int) (TimeSync.getGlobalTime() / 1000);
+        final int time = (int) (TimeSync.getGlobalTime() / 1000);
+        
+        // prepare file creation in database
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+            
+            @Override
+            public Message execute(Object result, BabuDBRequest request) throws Exception {
+
+                // set the response
+                return (timestampResponse.newBuilder().setTimestampS(time).build());
+            }
+        });
         
         // get the next free file ID
         long fileId = sMan.getNextFileId();
@@ -83,10 +96,7 @@ public class CreateSymLinkOperation extends MRCOperation {
         MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan,
             time, update);
         
-        // set the response
-        rq.setResponse(timestampResponse.newBuilder().setTimestampS(time).build());
-        
-        update.execute();
+        update.execute(callback, rq.getMetadata());
     }
     
 }

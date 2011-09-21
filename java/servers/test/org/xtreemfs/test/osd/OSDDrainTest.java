@@ -78,6 +78,8 @@ public class OSDDrainTest extends TestCase {
     private UUIDResolver          resolver;
 
     private OSDDrain              osdDrain;
+    
+    private DIRClient             dir;
 
     public OSDDrainTest(String testName) throws IOException {
         super(testName);
@@ -111,7 +113,7 @@ public class OSDDrainTest extends TestCase {
         mrcClient = testEnv.getMrcClient();
 
 
-        DIRClient dir = new DIRClient(testEnv.getDirClient(), new InetSocketAddress[]{testEnv.getDIRAddress()}, 10, 1000 * 5);
+        dir = new DIRClient(testEnv.getDirClient(), new InetSocketAddress[]{testEnv.getDIRAddress()}, 10, 1000 * 5);
         resolver = UUIDResolver.startNonSingelton(dir, 1000, 10 * 10 * 1000);
 
         osdDrain = new OSDDrain(dir, testEnv.getOSDClient(), testEnv.getMrcClient(),
@@ -121,6 +123,7 @@ public class OSDDrainTest extends TestCase {
 
     protected void tearDown() throws Exception {
 
+        dir.stop();
         testEnv.shutdown();
     }
 

@@ -18,8 +18,8 @@ import org.xtreemfs.babudb.api.SnapshotManager;
 import org.xtreemfs.babudb.api.database.DatabaseRO;
 import org.xtreemfs.babudb.api.database.ResultSet;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
-import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseResultSet;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -399,15 +399,9 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     }
     
     @Override
-    public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener<Object> listener, Object context)
-        throws DatabaseException {
+    public AtomicDBUpdate createAtomicDBUpdate(BabuDBPostprocessing<Object> postprocessing) {
         
-        try {
-            return new AtomicBabuDBSnapshotUpdate(listener == null ? null
-                : new BabuDBRequestListenerWrapper<Object>(listener), context);
-        } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
-        }
+        return new AtomicBabuDBSnapshotUpdate(postprocessing);
     }
     
     @Override

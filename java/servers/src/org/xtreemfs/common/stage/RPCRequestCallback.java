@@ -88,15 +88,11 @@ public class RPCRequestCallback implements Callback {
      * 
      * @param errType
      * @param posixErr
-     * @param message
+     * @param exc.
      */
-    public void failed(ErrorType errType, POSIXErrno posixErr, String message) {
+    public void failed(ErrorType errType, POSIXErrno posixErr, Throwable exc) {
         
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending errno exception %s/%s/%s", errType, 
-                    posixErr, message);
-        }
-        request.sendError(errType, posixErr, message);
+        failed(errType, posixErr, exc.getMessage(), OutputUtils.stackTraceToString(exc));
     }
     
     /**
@@ -104,11 +100,62 @@ public class RPCRequestCallback implements Callback {
      * 
      * @param errType
      * @param posixErr
-     * @param e
+     * @param message
+     * @param sTrace
      */
-    public void failed(ErrorType errType, POSIXErrno posixErr, Exception e) {
+    public void failed(ErrorType errType, POSIXErrno posixErr, String message) {
         
-        request.sendError(errType, posixErr, "internal server error: " + e.getMessage(), 
-                OutputUtils.stackTraceToString(e));
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending errno exception %s/%s/%s", errType, 
+                    posixErr, message);
+        }
+        request.sendError(errType, posixErr, message);  
+    }
+    
+    /**
+     * <p>Sends an error with given errType, posixErr and messages retrieved from e to the sender of the request.</p>
+     * 
+     * @param errType
+     * @param posixErr
+     * @param message
+     * @param sTrace
+     */
+    public void failed(ErrorType errType, POSIXErrno posixErr, String message, Throwable e) {
+        
+        failed(errType, posixErr, message, OutputUtils.stackTraceToString(e));
+    }
+    
+    /**
+     * <p>Sends an error with given errType, posixErr and messages retrieved from e to the sender of the request.</p>
+     * 
+     * @param errType
+     * @param posixErr
+     * @param message
+     * @param sTrace
+     */
+    public void failed(ErrorType errType, POSIXErrno posixErr, String message, String sTrace) {
+        
+        if (sTrace != null) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending errno exception %s/%s/%s/%s", errType, 
+                        posixErr, message, sTrace);
+            }
+            request.sendError(errType, posixErr, message, sTrace);
+        } else {
+            failed(errType, posixErr, message);
+        }
+    }
+    
+    /**
+     * <p>Sends a redirect-response together with a given targetUUID back to the sender of the request.</p>
+     * 
+     * @param targetUUID
+     */
+    public void redirect(String targetUUID) {
+        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending redirect to %s", targetUUID);
+        }
+        request.sendRedirect(targetUUID);
     }
 }

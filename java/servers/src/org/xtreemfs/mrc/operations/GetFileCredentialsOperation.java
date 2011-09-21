@@ -11,6 +11,7 @@ package org.xtreemfs.mrc.operations;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
@@ -35,7 +36,7 @@ public class GetFileCredentialsOperation extends MRCOperation {
     }
 
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         final xtreemfs_get_file_credentialsRequest rqArgs = (xtreemfs_get_file_credentialsRequest) rq
                 .getRequestArgs();
 
@@ -82,9 +83,6 @@ public class GetFileCredentialsOperation extends MRCOperation {
             newXlocSet = Converter.xLocListToXLocSet(file.getXLocList()).build();
         }
 
-        FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(newXlocSet).build();
-
-        rq.setResponse(fc);
-        finishRequest(rq);
+        callback.success(FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(newXlocSet).build());
     }
 }

@@ -8,7 +8,7 @@
 package org.xtreemfs.common.stage;
 
 /**
- * <p>Callback for postprocessing a {@link Request}.</p>
+ * <p>Callback for postprocessing a {@link AbstractServiceRequest}.</p>
  * 
  * @author fx.langner
  * @version 1.00, 09/03/11
@@ -33,7 +33,7 @@ public interface Callback {
      * <p>Callback implementation that simply ignores all incoming calls.</p>
      * 
      * @author fx.langner
-     * @version 1.00, 09/13/2011
+     * @version 1.00, 09/13/11
      */
     final static class NullCallback implements Callback {
         

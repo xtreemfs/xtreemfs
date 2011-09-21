@@ -9,6 +9,9 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
@@ -29,6 +32,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_restore_fileRequest;
 
+import com.google.protobuf.Message;
+
 /**
  * 
  * @author stender
@@ -40,7 +45,7 @@ public class RestoreFileOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         // perform master redirect if necessary
         if (master.getReplMasterUUID() != null && !master.getReplMasterUUID().equals(master.getConfig().getUUID()))
@@ -63,7 +68,15 @@ public class RestoreFileOperation extends MRCOperation {
         final StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
         
         // prepare file creation in database
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+            
+            @Override
+            public Message execute(Object result, BabuDBRequest request) throws Exception {
+                
+                // set the response
+                return emptyResponse.getDefaultInstance();
+            }
+        });
         
         int time = (int) (TimeSync.getGlobalTime() / 1000);
         long nextFileId = sMan.getNextFileId();
@@ -106,12 +119,8 @@ public class RestoreFileOperation extends MRCOperation {
         
         file.setXLocList(xLocList);
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
-        
-        // set the response
-        rq.setResponse(emptyResponse.getDefaultInstance());
-        
-        update.execute();
+                
+        update.execute(callback, rq.getMetadata());
         
     }
-
 }

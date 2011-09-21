@@ -10,9 +10,11 @@ package org.xtreemfs.dir.operations;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.common.stage.BabuDBComponent;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBDatabaseRequest;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
@@ -29,11 +31,13 @@ import com.google.protobuf.Message;
  */
 public class ServiceOfflineOperation extends DIROperation {
 
-    private final BabuDBComponent database;
+    private final BabuDBComponent component;
+    private final Database database;
     
     public ServiceOfflineOperation(DIRRequestDispatcher master) {
         super(master);
-        database = master.getDatabase();
+        component = master.getBabuDBComponent();
+        database = master.getDirDatabase();
     }
     
     @Override
@@ -47,11 +51,11 @@ public class ServiceOfflineOperation extends DIROperation {
         final serviceGetByUUIDRequest request = (serviceGetByUUIDRequest) rq.getRequestMessage();
         final AtomicReference<byte[]> newData = new AtomicReference<byte[]>();
         
-        database.lookup(callback, DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName().getBytes(),
-                rq.getMetadata(), database.new BabuDBPostprocessing<byte[]>() {
+        component.lookup(database, callback, DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName().getBytes(),
+                rq.getMetadata(), new BabuDBPostprocessing<byte[]>() {
                     
             @Override
-            public Message execute(byte[] result, BabuDBDatabaseRequest rq) throws Exception {
+            public Message execute(byte[] result, BabuDBRequest rq) throws Exception {
                 
                 if (result != null) {
                     
@@ -71,13 +75,13 @@ public class ServiceOfflineOperation extends DIROperation {
             }
             
             @Override
-            public void requeue(BabuDBDatabaseRequest rq) {
+            public void requeue(BabuDBRequest rq) {
                 
-                database.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName().getBytes(), 
-                        newData.get(), rq, database.new BabuDBPostprocessing<Object>() {
+                component.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName().getBytes(), 
+                        newData.get(), rq, new BabuDBPostprocessing<Object>() {
                     
                     @Override
-                    public Message execute(Object result, BabuDBDatabaseRequest request) throws Exception {
+                    public Message execute(Object result, BabuDBRequest request) throws Exception {
                         return emptyResponse.getDefaultInstance();
                     }
                 });

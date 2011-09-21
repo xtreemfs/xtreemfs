@@ -15,6 +15,8 @@ import org.xtreemfs.babudb.api.DatabaseManager;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.babudb.api.exception.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.api.transaction.Transaction;
+import org.xtreemfs.common.olp.RequestMetadata;
+import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
@@ -48,7 +50,7 @@ public class TransactionalBabuDBUpdate implements AtomicDBUpdate {
     }
 
     @Override
-    public void execute() throws DatabaseException {
+    public void execute(Callback callback, RequestMetadata metadata) throws DatabaseException {
         
         try {
             dbMan.executeTransaction(txn);

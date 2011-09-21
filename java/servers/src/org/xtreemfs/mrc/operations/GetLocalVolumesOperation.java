@@ -9,8 +9,8 @@
 package org.xtreemfs.mrc.operations;
 
 import java.util.Collection;
-import java.util.Iterator;
 
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -35,7 +35,7 @@ public class GetLocalVolumesOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         Collection<StorageManager> sMans = master.getVolumeManager().getStorageManagers();
         if (sMans == null)
@@ -66,8 +66,7 @@ public class GetLocalVolumesOperation extends MRCOperation {
             vSet.addVolumes(vol);
         }
         
-        rq.setResponse(vSet.build());
-        finishRequest(rq);
+        callback.success(vSet.build());
     }
     
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 by Bjoern Kolbeck,
+ * Copyright (c) 2008-2011 by Bjoern Kolbeck,
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
@@ -55,7 +55,6 @@ import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.mrc.ac.FileAccessManager;
-import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
@@ -90,8 +89,7 @@ import com.sun.net.httpserver.HttpServer;
  * 
  * @author bjko
  */
-public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
-        DBAccessResultListener<Object> {
+public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycleListener {
     
     private static final int               RPC_TIMEOUT        = 10000;
     
@@ -427,6 +425,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         serverStage.shutdown();
         serverStage.waitForShutdown();
         
+        dirClient.stop();
         clientStage.shutdown();
         clientStage.waitForShutdown();
         
@@ -449,107 +448,6 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         if (Logging.isInfo())
             Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "MRC shutdown complete");
-    }
-    
-    public void requestFinished(MRCRequest request) {
-        // send response back to client, if a pinky request is present
-        assert (request != null);
-        
-        final RPCServerRequest rpcRequest = request.getRPCRequest();
-        assert (rpcRequest != null);
-        
-        if (request.getError() != null) {
-            
-            final ErrorRecord error = request.getError();
-            final String errorMessage = error.getErrorMessage() == null ? "" : error.getErrorMessage();
-            
-            switch (error.getErrorType()) {
-            
-            case INTERNAL_SERVER_ERROR: {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, "%s / request: %s", errorMessage, request.toString());
-                if (error.getThrowable() != null)
-                    Logging.logError(Logging.LEVEL_ERROR, this, error.getThrowable());
-                rpcRequest.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO, errorMessage,
-                        error.getStackTrace());
-                break;
-            }
-            case ERRNO: {
-                if (Logging.isDebug()) {
-                    Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, error.getThrowable());
-                }
-                rpcRequest.sendError(ErrorType.ERRNO, error.getErrorCode(), errorMessage, "");
-                break;
-            }
-            case AUTH_FAILED: {
-                if (Logging.isDebug()) {
-                    Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, error.getThrowable());
-                }
-                rpcRequest.sendError(ErrorType.AUTH_FAILED, error.getErrorCode(), errorMessage, "");
-                break;
-            }
-            case GARBAGE_ARGS: {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "invalid request arguments");
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, errorMessage);
-                }
-                rpcRequest.sendError(ErrorType.GARBAGE_ARGS, POSIXErrno.POSIX_ERROR_EINVAL, errorMessage,
-                        error.getStackTrace());
-                break;
-            }
-            case INVALID_INTERFACE_ID: {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "invalid interface: %d", request
-                            .getRPCRequest().getHeader().getRequestHeader().getInterfaceId());
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, errorMessage);
-                }
-                rpcRequest.sendError(ErrorType.INVALID_INTERFACE_ID, POSIXErrno.POSIX_ERROR_EINVAL, errorMessage,
-                        error.getStackTrace());
-                break;
-            }
-            
-            case INVALID_PROC_ID: {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "unknown operation: %d", request
-                            .getRPCRequest().getHeader().getRequestHeader().getProcId());
-                }
-                rpcRequest.sendError(ErrorType.INVALID_PROC_ID, POSIXErrno.POSIX_ERROR_EINVAL, errorMessage,
-                        error.getStackTrace());
-                break;
-            }
-            
-            case REDIRECT: {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "redirect to: %s", errorMessage);
-                }
-                rpcRequest.sendRedirect(errorMessage);
-                break;
-            }
-            
-            default: {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, "some unexpected exception occurred");
-                Logging.logError(Logging.LEVEL_ERROR, this, error.getThrowable());
-                rpcRequest.sendError(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EIO, errorMessage,
-                        error.getStackTrace());
-                break;
-            }
-            }
-        }
-        
-        else {
-            assert (request.getResponse() != null);
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "sending response for request %d", request
-                        .getRPCRequest().getHeader().getCallId());
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, request.getResponse().toString());
-            }
-            
-            try {
-                rpcRequest.sendResponse(request.getResponse(), null);
-            } catch (IOException e) {
-                Logging.logError(Logging.LEVEL_ERROR, this, e);
-            }
-        }
-        
     }
     
     public int getNumConnections() {
@@ -799,25 +697,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 new MRCRequest(rq, procStage.requestTypeMap.get(procId), clientTimeout, hasHighPriority), 
                 new RPCRequestCallback(rq));
     }
-    
-    @Override
-    public void failed(Throwable error, Object context) {
-        MRCRequest request = (MRCRequest) context;
-        assert (request != null);
         
-        final RPCServerRequest rpcRequest = request.getRPCRequest();
-        assert (rpcRequest != null);
-        
-        if (request.getError() == null)
-            request.setError(ErrorType.INTERNAL_SERVER_ERROR, error.getMessage());
-        requestFinished(request);
-    }
-    
-    @Override
-    public void finished(Object result, Object context) {
-        requestFinished((MRCRequest) context);
-    }
-    
     public void addStatusListener(MRCStatusListener listener) {
         this.statusListener.add(listener);
     }
@@ -861,6 +741,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public Map<String, Object> getDBStatus() {
         return volumeManager == null ? null : volumeManager.getDBStatus();
+    }
+    
+    public ProcessingStage getProcessingStage() {
+        return procStage;
     }
     
     public String getReplMasterUUID() throws MRCException {

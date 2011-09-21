@@ -244,6 +244,8 @@ public class Client {
     
     public synchronized void stop() {
         if (dirClient != null) {
+            
+            dirClient.stop();
             try {
                 mdClient.shutdown();
                 osdClient.shutdown();

@@ -8,22 +8,18 @@
 
 package org.xtreemfs.mrc.database.babudb;
 
-import org.xtreemfs.babudb.api.database.DatabaseRequestListener;
-import org.xtreemfs.babudb.api.exception.BabuDBException;
+import org.xtreemfs.common.olp.RequestMetadata;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
-import org.xtreemfs.mrc.database.DatabaseException;
 
 public class AtomicBabuDBSnapshotUpdate implements AtomicDBUpdate {
     
-    private DatabaseRequestListener<Object> listener;
+    private BabuDBPostprocessing<Object> postprocessing;
     
-    private Object                context;
-    
-    public AtomicBabuDBSnapshotUpdate(DatabaseRequestListener<Object> listener, Object context)
-        throws BabuDBException {
+    public AtomicBabuDBSnapshotUpdate(BabuDBPostprocessing<Object> postprocessing) {
         
-        this.listener = listener;
-        this.context = context;
+        this.postprocessing = postprocessing;
     }
     
     @Override
@@ -31,9 +27,13 @@ public class AtomicBabuDBSnapshotUpdate implements AtomicDBUpdate {
     }
     
     @Override
-    public void execute() throws DatabaseException {
-        if (listener != null)
-            listener.finished(null, context);
+    public void execute(Callback callback, RequestMetadata metadata) {
+        
+        try {
+            callback.success(postprocessing.execute(null, null));
+        } catch (Exception e) {
+            callback.failed(e);
+        }
     }
     
 }

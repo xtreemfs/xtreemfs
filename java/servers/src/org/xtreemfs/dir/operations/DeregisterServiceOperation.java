@@ -8,11 +8,13 @@
 
 package org.xtreemfs.dir.operations;
 
+import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.database.DatabaseInsertGroup;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.common.stage.BabuDBComponent;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBDatabaseRequest;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
@@ -27,12 +29,14 @@ import com.google.protobuf.Message;
  */
 public class DeregisterServiceOperation extends DIROperation {
     
-    private final BabuDBComponent database;
+    private final BabuDBComponent component;
+    private final Database database;
     
     public DeregisterServiceOperation(DIRRequestDispatcher master) {
         
         super(master);
-        database = master.getDatabase();
+        component = master.getBabuDBComponent();
+        database = master.getDirDatabase();
     }
     
     @Override
@@ -48,10 +52,10 @@ public class DeregisterServiceOperation extends DIROperation {
         
         DatabaseInsertGroup ig = database.createInsertGroup();
         ig.addDelete(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
-        database.insert(callback, ig, rq.getMetadata(), database.new BabuDBPostprocessing<Object>() {
+        component.insert(database, callback, ig, rq.getMetadata(), new BabuDBPostprocessing<Object>() {
             
             @Override
-            public Message execute(Object result, BabuDBDatabaseRequest rq) throws Exception {
+            public Message execute(Object result, BabuDBRequest rq) throws Exception {
                 
                 master.notifyServiceDeregistred(request.getUuid());
                 return emptyResponse.getDefaultInstance();

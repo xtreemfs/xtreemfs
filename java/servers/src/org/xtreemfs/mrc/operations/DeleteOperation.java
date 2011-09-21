@@ -11,6 +11,9 @@ package org.xtreemfs.mrc.operations;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
@@ -37,6 +40,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.timestampResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.unlinkRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.unlinkResponse;
 
+import com.google.protobuf.Message;
+
 /**
  * 
  * @author stender
@@ -48,7 +53,7 @@ public class DeleteOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(final MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         // perform master redirect if necessary
         if (master.getReplMasterUUID() != null && !master.getReplMasterUUID().equals(master.getConfig().getUUID().toString()))
@@ -117,15 +122,38 @@ public class DeleteOperation extends MRCOperation {
                     Converter.xLocListToXLocSet(xloc));
         }
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        final int time = (int) (TimeSync.getGlobalTime() / 1000);
+        
+        final FileCredentials.Builder credentials;
+        if (file.getLinkCount() > 1) {
+            credentials = null;
+        } else {
+            credentials = creds;
+        }
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+            
+            @Override
+            public Message execute(Object result, BabuDBRequest request) throws Exception {
+                
+                // set the response, depending on whether the request was for
+                // deleting a
+                // file or directory
+                if (rq.getRequestArgs() instanceof unlinkRequest) {
+                    
+                    unlinkResponse.Builder builder = unlinkResponse.newBuilder().setTimestampS(time);
+                    if (credentials != null) builder.setCreds(credentials);
+                    return builder.build();
+                } else {
+                    
+                    return timestampResponse.newBuilder().setTimestampS(time).build();
+                }
+            }
+        });
         
         // unlink the file; if there are still links to the file, reset the
         // X-headers to null, as the file content must not be deleted
         sMan.delete(res.getParentDirId(), res.getFileName(), update);
-        if (file.getLinkCount() > 1)
-            creds = null;
-        
-        int time = (int) (TimeSync.getGlobalTime() / 1000);
         
         // update POSIX timestamps of parent directory
         MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan,
@@ -134,22 +162,7 @@ public class DeleteOperation extends MRCOperation {
         if (file.getLinkCount() > 1)
             MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, time, update);
         
-        // set the response, depending on whether the request was for
-        // deleting a
-        // file or directory
-        if (rq.getRequestArgs() instanceof unlinkRequest) {
-            
-            unlinkResponse.Builder builder = unlinkResponse.newBuilder().setTimestampS(time);
-            if (creds != null)
-                builder.setCreds(creds);
-            rq.setResponse(builder.build());
-        }
-
-        else {
-            rq.setResponse(timestampResponse.newBuilder().setTimestampS(time).build());
-        }
-        
-        update.execute();
+        update.execute(callback, rq.getMetadata());
         
     }
 }

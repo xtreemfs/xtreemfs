@@ -34,6 +34,7 @@ import org.xtreemfs.babudb.api.transaction.Transaction;
 import org.xtreemfs.babudb.api.transaction.TransactionListener;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.KeyValuePairs;
+import org.xtreemfs.common.stage.BabuDBComponent;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.logging.Logging;
@@ -42,7 +43,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
-import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -55,6 +55,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 
 public class BabuDBVolumeManager implements VolumeManager {
+    
+    private static final int                       NUM_RQ_TYPES          = 18;
+    private static final int                       STAGE_ID              = 0;
     
     private static final String                    VERSION_DB_NAME       = "V";
     
@@ -83,6 +86,8 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     private final AtomicBoolean                    waitLock;
     
+    private final BabuDBComponent                  component;
+    
     public BabuDBVolumeManager(MRCRequestDispatcher master, BabuDBConfig dbconfig) {
         initialized = new AtomicBoolean(false);
         volsById = Collections.synchronizedMap(new HashMap<String, StorageManager>());
@@ -90,6 +95,7 @@ public class BabuDBVolumeManager implements VolumeManager {
         listeners = new LinkedList<VolumeChangeListener>();
         config = dbconfig;
         waitLock = new AtomicBoolean(false);
+        component = new BabuDBComponent(STAGE_ID, NUM_RQ_TYPES, master.getProcessingStage());
     }
     
     /*
@@ -174,7 +180,7 @@ public class BabuDBVolumeManager implements VolumeManager {
         // the transaction listener)
         new BabuDBStorageManager(database, volumeId, volumeName, fileAccessPolicyId, DEFAULT_OSD_POLICY,
                 DEFAULT_REPL_POLICY, ownerId, owningGroupId, initialAccessMode, acl, defaultStripingPolicy,
-                DEFAULT_ALLOW_SNAPS, KeyValuePairs.toMap(attrs));
+                DEFAULT_ALLOW_SNAPS, KeyValuePairs.toMap(attrs), component);
         
         // wait for the notification from the transaction listener before
         // continuing
@@ -202,8 +208,7 @@ public class BabuDBVolumeManager implements VolumeManager {
     }
     
     @Override
-    public void deleteVolume(String volumeId, DBAccessResultListener<Object> listener, Object context)
-            throws DatabaseException, UserException {
+    public void deleteVolume(String volumeId) throws DatabaseException, UserException {
         
         // check if the volume exists
         StorageManager sMan = getStorageManager(volumeId);
@@ -509,7 +514,7 @@ public class BabuDBVolumeManager implements VolumeManager {
             if (dbEntry.getKey().equals(VERSION_DB_NAME) || dbEntry.getKey().equals(SNAP_VERSIONS_DB_NAME))
                 continue;
             
-            BabuDBStorageManager sMan = new BabuDBStorageManager(dbMan, snapMan, dbEntry.getValue());
+            BabuDBStorageManager sMan = new BabuDBStorageManager(dbMan, snapMan, dbEntry.getValue(), component);
             VolumeInfo vol = sMan.getVolumeInfo();
             
             volsById.put(vol.getId(), sMan);
@@ -559,7 +564,7 @@ public class BabuDBVolumeManager implements VolumeManager {
         try {
             
             BabuDBStorageManager sMan = new BabuDBStorageManager(dbMan, database.getSnapshotManager(),
-                    dbMan.getDatabase(volumeId));
+                    dbMan.getDatabase(volumeId), component);
             
             VolumeInfo vol = sMan.getVolumeInfo();
             

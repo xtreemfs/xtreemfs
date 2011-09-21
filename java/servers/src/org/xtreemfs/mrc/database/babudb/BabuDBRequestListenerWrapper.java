@@ -21,6 +21,7 @@ public class BabuDBRequestListenerWrapper<T> implements DatabaseRequestListener<
     private DBAccessResultListener<T> listener;
     
     public BabuDBRequestListenerWrapper(DBAccessResultListener<T> listener) {
+        
         this.listener = listener;
     }
 
@@ -30,7 +31,8 @@ public class BabuDBRequestListenerWrapper<T> implements DatabaseRequestListener<
      */
     @Override
     public void failed(BabuDBException arg0, Object arg1) {
-        listener.failed(arg0,arg1);
+        
+        listener.failed(arg0, arg1);
     }
 
     /*
@@ -39,6 +41,7 @@ public class BabuDBRequestListenerWrapper<T> implements DatabaseRequestListener<
      */
     @Override
     public void finished(T arg0, Object arg1) {
+        
         listener.finished(arg0, arg1);
     }
 }

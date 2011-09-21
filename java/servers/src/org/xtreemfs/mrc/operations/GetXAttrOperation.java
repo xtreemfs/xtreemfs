@@ -8,6 +8,7 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -33,7 +34,7 @@ public class GetXAttrOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final getxattrRequest rqArgs = (getxattrRequest) rq.getRequestArgs();
         
@@ -75,8 +76,6 @@ public class GetXAttrOperation extends MRCOperation {
             throw new UserException(POSIXErrno.POSIX_ERROR_ENODATA);
         
         // set the response
-        rq.setResponse(getxattrResponse.newBuilder().setValue(value).build());
-        finishRequest(rq);
+        callback.success(getxattrResponse.newBuilder().setValue(value).build());
     }
-    
 }

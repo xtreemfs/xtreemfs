@@ -10,6 +10,7 @@ package org.xtreemfs.mrc.operations;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
@@ -17,8 +18,6 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.stringMessage;
-
-import com.google.protobuf.Message;
 
 /**
  * 
@@ -36,7 +35,7 @@ public class InternalDebugOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final stringMessage rqArgs = (stringMessage) rq.getRequestArgs();
         
@@ -50,10 +49,10 @@ public class InternalDebugOperation extends MRCOperation {
             master.getVolumeManager().shutdown();
             
             // set the response
-            rq.setResponse(stringMessage.newBuilder().setAString("ok").build());
+            callback.success(stringMessage.newBuilder().setAString("ok").build());
         } else if (rqArgs.getAString().equals("startup_babudb")) {
             master.getVolumeManager().init();
-            rq.setResponse(stringMessage.newBuilder().setAString("ok").build());
+            callback.success(stringMessage.newBuilder().setAString("ok").build());
         } else if (rqArgs.getAString().equals("async_checkpoint")) {
             Runnable asynChkpt = new Runnable() {
                 
@@ -74,17 +73,14 @@ public class InternalDebugOperation extends MRCOperation {
             };
             bgrChkptr = new Thread(asynChkpt);
             bgrChkptr.start();
-            rq.setResponse(stringMessage.newBuilder().setAString("ok").build());
+            callback.success(stringMessage.newBuilder().setAString("ok").build());
         } else if (rqArgs.getAString().equals("checkpoint_done")) {
             if (asyncChkptRunning.get() == false)
-                rq.setResponse(stringMessage.newBuilder().setAString("yes").build());
+                callback.success(stringMessage.newBuilder().setAString("yes").build());
             else
-                rq.setResponse(stringMessage.newBuilder().setAString("no").build());
+                callback.success(stringMessage.newBuilder().setAString("no").build());
         } else {
-            rq.setResponse(stringMessage.newBuilder().setAString("unknown command").build());
+            callback.success(stringMessage.newBuilder().setAString("unknown command").build());
         }
-        finishRequest(rq);
-        
     }
-    
 }

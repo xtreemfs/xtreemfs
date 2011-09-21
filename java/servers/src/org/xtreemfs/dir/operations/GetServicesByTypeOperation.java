@@ -10,10 +10,12 @@ package org.xtreemfs.dir.operations;
 
 import java.util.Map.Entry;
 
+import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.database.ResultSet;
 import org.xtreemfs.common.stage.BabuDBComponent;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBDatabaseRequest;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
@@ -31,11 +33,13 @@ import com.google.protobuf.Message;
  */
 public class GetServicesByTypeOperation extends DIROperation {
     
-    private final BabuDBComponent database;
+    private final BabuDBComponent component;
+    private final Database database;
     
     public GetServicesByTypeOperation(DIRRequestDispatcher master) {
         super(master);
-        database = master.getDatabase();
+        component = master.getBabuDBComponent();
+        database = master.getDirDatabase();
     }
     
     @Override
@@ -47,11 +51,11 @@ public class GetServicesByTypeOperation extends DIROperation {
     public void startRequest(DIRRequest rq, RPCRequestCallback callback) throws Exception {
         final serviceGetByTypeRequest request = (serviceGetByTypeRequest) rq.getRequestMessage();
         
-        database.prefixLookup(callback, DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], rq.getMetadata(), 
-                database.new BabuDBPostprocessing<ResultSet<byte[], byte[]>>() {
+        component.prefixLookup(database, callback, DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], rq.getMetadata(), 
+                new BabuDBPostprocessing<ResultSet<byte[], byte[]>>() {
             
             @Override
-            public Message execute(ResultSet<byte[], byte[]> result, BabuDBDatabaseRequest rq) throws Exception {
+            public Message execute(ResultSet<byte[], byte[]> result, BabuDBRequest rq) throws Exception {
                 
                 ServiceSet.Builder services = ServiceSet.newBuilder();
                 long now = System.currentTimeMillis() / 1000l;

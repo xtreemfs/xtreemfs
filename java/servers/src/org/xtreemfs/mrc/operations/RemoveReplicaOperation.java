@@ -11,6 +11,9 @@ package org.xtreemfs.mrc.operations;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -33,6 +36,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
 
+import com.google.protobuf.Message;
+
 /**
  * 
  * @author stender
@@ -44,7 +49,7 @@ public class RemoveReplicaOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         // perform master redirect if necessary
         if (master.getReplMasterUUID() != null && !master.getReplMasterUUID().equals(master.getConfig().getUUID().toString()))
@@ -137,7 +142,17 @@ public class RemoveReplicaOperation extends MRCOperation {
         if (newXLocList.getReplicaCount() == 1)
             file.setReadOnly(false);
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        final FileCredentials.Builder fc = FileCredentials.newBuilder();
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+            
+            @Override
+            public Message execute(Object result, BabuDBRequest request) throws Exception {
+                
+                // set the response
+                return fc.build();
+            }
+        });
         
         // update the X-Locations list
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
@@ -156,13 +171,8 @@ public class RemoveReplicaOperation extends MRCOperation {
         XLocSet.Builder xLocSet = Converter.xLocListToXLocSet(oldXLocList);
         
         // wrap xcap and xloc list
-        FileCredentials fc = FileCredentials.newBuilder().setXcap(deleteCap.getXCap()).setXlocs(xLocSet)
-                .build();
+        fc.setXcap(deleteCap.getXCap()).setXlocs(xLocSet);
         
-        // set the response
-        rq.setResponse(fc);
-        
-        update.execute();
+        update.execute(callback, rq.getMetadata());
     }
-    
 }

@@ -10,8 +10,12 @@
 package org.xtreemfs.mrc.operations;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
@@ -27,6 +31,8 @@ import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 
+import com.google.protobuf.Message;
+
 /**
  * 
  * @author stender
@@ -38,7 +44,7 @@ public class TruncateOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         // perform master redirect if necessary
         if (master.getReplMasterUUID() != null && !master.getReplMasterUUID().equals(master.getConfig().getUUID().toString()))
@@ -73,24 +79,30 @@ public class TruncateOperation extends MRCOperation {
         
         // get the current epoch, use (and increase) the truncate number if
         // the open mode is truncate
+        final AtomicReference<Capability> truncCap = new AtomicReference<Capability>();
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+            
+            @Override
+            public Message execute(Object result, BabuDBRequest request) throws Exception {
+                
+                return truncCap.get().getXCap();
+            }
+        });
         
         int newEpoch = file.getIssuedEpoch() + 1;
         file.setIssuedEpoch(newEpoch);
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         
-        Capability truncCap = new Capability(writeCap.getFileId(), writeCap.getAccessMode()
+        truncCap.set(new Capability(writeCap.getFileId(), writeCap.getAccessMode()
             | FileAccessManager.O_TRUNC, master.getConfig().getCapabilityTimeout(), TimeSync.getGlobalTime()
             / 1000 + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq.getRPCRequest()
                 .getSenderAddress()).getAddress().getHostAddress(), newEpoch, false, !sMan.getVolumeInfo()
                 .isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED : sMan.getVolumeInfo()
                 .isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT,
-            sMan.getVolumeInfo().getCreationTime(), master.getConfig().getCapabilitySecret());
+            sMan.getVolumeInfo().getCreationTime(), master.getConfig().getCapabilitySecret()));
         
-        // set the response
-        rq.setResponse(truncCap.getXCap());
-        update.execute();
+        update.execute(callback, rq.getMetadata());
     }
     
 }

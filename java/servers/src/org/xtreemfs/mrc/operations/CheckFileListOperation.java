@@ -11,6 +11,7 @@ package org.xtreemfs.mrc.operations;
 import java.util.Iterator;
 
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.MRCRequest;
@@ -25,8 +26,6 @@ import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_check_file_existsResponse;
 
-import com.google.protobuf.Message;
-
 /**
  * 
  * @author stender
@@ -38,7 +37,7 @@ public class CheckFileListOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final xtreemfs_check_file_existsRequest rqArgs = (xtreemfs_check_file_existsRequest) rq
                 .getRequestArgs();
@@ -98,8 +97,7 @@ public class CheckFileListOperation extends MRCOperation {
             }
         
         // set the response
-        rq.setResponse(xtreemfs_check_file_existsResponse.newBuilder().setBitmap(response).build());
-        finishRequest(rq);
+        callback.success(xtreemfs_check_file_existsResponse.newBuilder().setBitmap(response).build());
     }
     
 }

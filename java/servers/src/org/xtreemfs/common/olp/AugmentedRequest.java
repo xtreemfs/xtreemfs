@@ -7,7 +7,7 @@
  */
 package org.xtreemfs.common.olp;
 
-import org.xtreemfs.common.stage.Request;
+import org.xtreemfs.common.stage.AbstractServiceRequest;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 
 /**
@@ -19,7 +19,7 @@ import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
  * @author fx.langner
  * @version 1.00, 08/18/11
  */
-public abstract class AugmentedRequest extends Request {
+public abstract class AugmentedRequest extends AbstractServiceRequest {
 
     /**
      * <p>Metadata for applying overload protection to the application using control information gathered by this 

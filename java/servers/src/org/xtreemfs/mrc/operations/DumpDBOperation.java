@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -83,7 +84,7 @@ public class DumpDBOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final xtreemfs_dump_restore_databaseRequest rqArgs = (xtreemfs_dump_restore_databaseRequest) rq
                 .getRequestArgs();
@@ -130,8 +131,7 @@ public class DumpDBOperation extends MRCOperation {
         }
         
         // set the response
-        rq.setResponse(emptyResponse.getDefaultInstance());
-        finishRequest(rq);
+        callback.success(emptyResponse.getDefaultInstance());
     }
     
 }

@@ -8,9 +8,11 @@
 
 package org.xtreemfs.dir.operations;
 
+import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.common.stage.BabuDBComponent;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBDatabaseRequest;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ConfigurationRecord;
@@ -23,11 +25,13 @@ import com.google.protobuf.Message;
 
 public class GetConfigurationOperation extends DIROperation {
     
-    private final BabuDBComponent database;
+    private final BabuDBComponent component;
+    private final Database database;
     
     public GetConfigurationOperation(DIRRequestDispatcher master) {
         super(master);
-        database = master.getDatabase();
+        component = master.getBabuDBComponent();
+        database = master.getDirDatabase();
     }
     
     @Override
@@ -41,11 +45,11 @@ public class GetConfigurationOperation extends DIROperation {
         
         configurationGetRequest request = (configurationGetRequest) rq.getRequestMessage();
         
-        database.lookup(callback, DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, request.getUuid().getBytes(), 
-            rq.getMetadata(), database.new BabuDBPostprocessing<byte[]>() {
+        component.lookup(database, callback, DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, request.getUuid().getBytes(), 
+            rq.getMetadata(), new BabuDBPostprocessing<byte[]>() {
                     
             @Override
-            public Message execute(byte[] result, BabuDBDatabaseRequest request) throws Exception {
+            public Message execute(byte[] result, BabuDBRequest request) throws Exception {
                 if (result == null) {
                     return Configuration.getDefaultInstance();
                 } else {

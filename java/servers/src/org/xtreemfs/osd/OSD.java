@@ -168,6 +168,7 @@ public class OSD {
         Configuration conf = dirClient.xtreemfs_configuration_get(null, authNone, uc, config.getUUID()
                     .toString());
         
+        dirClient.stop();
         clientStage.shutdown();
         clientStage.waitForShutdown();
         

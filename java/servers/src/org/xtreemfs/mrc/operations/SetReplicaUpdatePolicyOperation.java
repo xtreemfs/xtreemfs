@@ -9,6 +9,9 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
@@ -26,6 +29,8 @@ import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse;
 
+import com.google.protobuf.Message;
+
 public class SetReplicaUpdatePolicyOperation extends MRCOperation {
 
     public SetReplicaUpdatePolicyOperation(MRCRequestDispatcher master) {
@@ -33,7 +38,7 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
     }
 
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
 
         final xtreemfs_set_replica_update_policyRequest rqArgs = (xtreemfs_set_replica_update_policyRequest) rq
                 .getRequestArgs();
@@ -94,7 +99,16 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
         String oldPolicy = file.getXLocList().getReplUpdatePolicy();
 
         // Set the Xattr value
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        final xtreemfs_set_replica_update_policyResponse.Builder rp = 
+            xtreemfs_set_replica_update_policyResponse.newBuilder();
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+            
+            @Override
+            public Message execute(Object result, BabuDBRequest request) throws Exception {
+                
+                return rp.build();
+            }
+        });
 
         XLoc[] xLocs = new XLoc[file.getXLocList().getReplicaCount()];
         for (int i = 0; i < file.getXLocList().getReplicaCount(); i++) {
@@ -106,11 +120,8 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
 
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
 
-        rq.setResponse(xtreemfs_set_replica_update_policyResponse.newBuilder()
-                .setOldUpdatePolicy(oldPolicy).build());
+        rp.setOldUpdatePolicy(oldPolicy);
         
-        update.execute();
-
+        update.execute(callback, rq.getMetadata());
     }
-
 }

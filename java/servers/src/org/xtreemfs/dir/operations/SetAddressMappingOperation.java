@@ -12,9 +12,11 @@ import java.util.ConcurrentModificationException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.common.stage.BabuDBComponent;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBDatabaseRequest;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.AddressMappingRecord;
@@ -33,11 +35,13 @@ import com.google.protobuf.Message;
  */
 public class SetAddressMappingOperation extends DIROperation {
 
-    private final BabuDBComponent database;
+    private final BabuDBComponent component;
+    private final Database database;
         
     public SetAddressMappingOperation(DIRRequestDispatcher master) {
         super(master);
-        database = master.getDatabase();
+        component = master.getBabuDBComponent();
+        database = master.getDirDatabase();
     }
     
     @Override
@@ -62,17 +66,17 @@ public class SetAddressMappingOperation extends DIROperation {
         }
         
         assert (uuid != null);
-        assert (database != null);
+        assert (component != null);
         
         final String UUID = uuid;
         final AtomicLong version = new AtomicLong();
         final AtomicReference<byte[]> newBytes = new AtomicReference<byte[]>();
         
-        database.lookup(callback, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes(), rq.getMetadata(),
-                database.new BabuDBPostprocessing<byte[]>() {
+        component.lookup(database, callback, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes(), rq.getMetadata(),
+                new BabuDBPostprocessing<byte[]>() {
             
             @Override
-            public Message execute(byte[] result, BabuDBDatabaseRequest request) throws Exception {
+            public Message execute(byte[] result, BabuDBRequest request) throws Exception {
                 
                 long currentVersion = 0;
                 if (result != null) {
@@ -108,13 +112,13 @@ public class SetAddressMappingOperation extends DIROperation {
             }
             
             @Override
-            public void requeue(BabuDBDatabaseRequest rq) {
+            public void requeue(BabuDBRequest rq) {
                 
-                database.singleInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, UUID.getBytes(), newBytes.get(), rq, 
-                        database.new BabuDBPostprocessing<Object>() {
+                component.singleInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, UUID.getBytes(), newBytes.get(), rq, 
+                        new BabuDBPostprocessing<Object>() {
                     
                     @Override
-                    public Message execute(Object result, BabuDBDatabaseRequest request) throws Exception {
+                    public Message execute(Object result, BabuDBRequest request) throws Exception {
                         return addressMappingSetResponse.newBuilder().setNewVersion(version.get()).build();
                     }
                 });

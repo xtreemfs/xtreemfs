@@ -28,9 +28,10 @@ import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.babudb.index.DefaultByteRangeComparator;
 import org.xtreemfs.babudb.snapshots.DefaultSnapshotConfig;
 import org.xtreemfs.babudb.snapshots.SnapshotConfig;
+import org.xtreemfs.common.stage.BabuDBComponent;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
-import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseResultSet;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -109,25 +110,8 @@ public class BabuDBStorageManager implements StorageManager {
     
     private final BabuDBVolumeInfo           volume;
     
-    /**
-     * Instantiates a storage manager by loading an existing volume database.
-     * 
-     * @param dbs
-     *            the database system
-     * @param db
-     *            the database
-     */
-    public BabuDBStorageManager(BabuDB dbs, Database db) throws DatabaseException {
+    private final BabuDBComponent            component;
         
-        this.dbMan = dbs.getDatabaseManager();
-        this.snapMan = dbs.getSnapshotManager();
-        this.database = db;
-        this.vcListeners = new LinkedList<VolumeChangeListener>();
-        
-        volume = new BabuDBVolumeInfo();
-        volume.init(this);
-    }
-    
     /**
      * Instantiates a storage manager by loading an existing volume database.
      * 
@@ -137,14 +121,16 @@ public class BabuDBStorageManager implements StorageManager {
      *            the snapshot manager
      * @param db
      *            the database
+     * @param component 
      */
-    public BabuDBStorageManager(DatabaseManager dbMan, SnapshotManager sMan, Database db)
+    public BabuDBStorageManager(DatabaseManager dbMan, SnapshotManager sMan, Database db, BabuDBComponent component)
         throws DatabaseException {
         
         this.dbMan = dbMan;
         this.snapMan = sMan;
         this.database = db;
         this.vcListeners = new LinkedList<VolumeChangeListener>();
+        this.component = component;
         
         volume = new BabuDBVolumeInfo();
         volume.init(this);
@@ -161,12 +147,13 @@ public class BabuDBStorageManager implements StorageManager {
     public BabuDBStorageManager(BabuDB dbs, String volumeId, String volumeName, short fileAccessPolicyId,
         short[] osdPolicy, short[] replPolicy, String ownerId, String owningGroupId, int perms,
         ACLEntry[] acl, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy rootDirDefSp,
-        boolean allowSnaps, Map<String, String> attrs) throws DatabaseException {
+        boolean allowSnaps, Map<String, String> attrs, BabuDBComponent component) throws DatabaseException {
         
         this.dbMan = dbs.getDatabaseManager();
         this.snapMan = dbs.getSnapshotManager();
         this.vcListeners = new LinkedList<VolumeChangeListener>();
         this.volume = new BabuDBVolumeInfo();
+        this.component = component;
         
         TransactionalBabuDBUpdate update = new TransactionalBabuDBUpdate(dbMan);
         update.createDatabase(volumeId, 5);
@@ -193,7 +180,7 @@ public class BabuDBStorageManager implements StorageManager {
             for (Entry<String, String> attr : attrs.entrySet())
                 setXAttr(1L, SYSTEM_UID, "xtreemfs.volattr." + attr.getKey(), attr.getValue(), true, update);
         
-        update.execute();
+        update.execute(null, null);
         
         try {
             database = dbMan.getDatabase(update.getDatabaseName());
@@ -226,14 +213,9 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener<Object> listener, Object context)
-        throws DatabaseException {
-        try {
-            return new AtomicBabuDBUpdate(database, listener == null ? null
-                : new BabuDBRequestListenerWrapper<Object>(listener), context);
-        } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
-        }
+    public AtomicDBUpdate createAtomicDBUpdate(BabuDBPostprocessing<Object> postprocessing) {
+        
+        return new AtomicBabuDBUpdate(database, component, postprocessing);
     }
     
     @Override

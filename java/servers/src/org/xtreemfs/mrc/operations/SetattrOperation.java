@@ -8,6 +8,9 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -27,6 +30,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.setattrRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.timestampResponse;
 
+import com.google.protobuf.Message;
+
 /**
  * Sets attributes of a file.
  * 
@@ -39,7 +44,7 @@ public class SetattrOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final setattrRequest rqArgs = (setattrRequest) rq.getRequestArgs();
         
@@ -82,7 +87,16 @@ public class SetattrOperation extends MRCOperation {
         boolean setAttributes = (rqArgs.getToSet() & MRC.Setattrs.SETATTR_ATTRIBUTES.getNumber()) == MRC.Setattrs.SETATTR_ATTRIBUTES
                 .getNumber();
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        final timestampResponse.Builder rp = timestampResponse.newBuilder();
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+            
+            @Override
+            public Message execute(Object result, BabuDBRequest request) throws Exception {
+                
+                return rp.build();
+            }
+        });
         
         // if MODE bit is set, peform 'chmod'
         if (setMode) {
@@ -227,10 +241,10 @@ public class SetattrOperation extends MRCOperation {
         if (setAtime || setCtime || setMtime || setSize)
             sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
         
+        
         // set the response
-        rq.setResponse(timestampResponse.newBuilder().setTimestampS(time).build());
+        rp.setTimestampS(time);
         
-        update.execute();
-        
+        update.execute(callback, rq.getMetadata());
     }
 }

@@ -8,6 +8,9 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
@@ -26,6 +29,8 @@ import org.xtreemfs.mrc.utils.PathResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.linkRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.timestampResponse;
 
+import com.google.protobuf.Message;
+
 /**
  * 
  * @author stender
@@ -37,7 +42,7 @@ public class CreateLinkOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         // perform master redirect if necessary
         if (master.getReplMasterUUID() != null && !master.getReplMasterUUID().equals(master.getConfig().getUUID().toString()))
@@ -88,22 +93,28 @@ public class CreateLinkOperation extends MRCOperation {
         faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, target, tRes.getParentDirId(), rq
                 .getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
         
+        final int time = (int) (TimeSync.getGlobalTime() / 1000);
+        
         // prepare file creation in database
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+            
+            @Override
+            public Message execute(Object result, BabuDBRequest request) throws Exception {
+                
+                // set the response
+                return timestampResponse.newBuilder().setTimestampS(time).build();
+            }
+        });
         
         // create the link
         sMan.link(target, lRes.getParentDirId(), lRes.getFileName(), update);
         
         // update POSIX timestamps
-        int time = (int) (TimeSync.getGlobalTime() / 1000);
         MRCHelper.updateFileTimes(lRes.getParentsParentId(), lRes.getParentDir(), false, true, true, sMan,
             time, update);
         MRCHelper.updateFileTimes(tRes.getParentDirId(), target, false, true, false, sMan, time, update);
         
-        // set the response
-        rq.setResponse(timestampResponse.newBuilder().setTimestampS(time).build());
-        
-        update.execute();
+        update.execute(callback, rq.getMetadata());
     }
     
 }

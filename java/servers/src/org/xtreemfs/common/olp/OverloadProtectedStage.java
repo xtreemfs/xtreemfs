@@ -94,6 +94,31 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
         return olp.id;
     }
     
+    /**
+     * <p>Method to announce a temporary interruption of the processing of the request represented by its monitoring 
+     * information. The request will remain at the component until its execution is resumed and finished.</p>
+     * 
+     * @param monitoring - information representing a single request.
+     * 
+     * @see OverloadProtectedComponent#resumeRequestProcessing(RequestMonitoring)
+     */
+    public void suspendRequestProcessing(RequestMonitoring monitoring) {
+        
+        monitoring.endGeneralMeasurement();
+    }
+    
+    /**
+     * <p>Method resume a temporarily interrupted request represented by its monitoring information.</p>
+     * 
+     * @param monitoring - information representing a single request.
+     * 
+     * @see OverloadProtectedComponent#suspendRequestProcessing(RequestMonitoring)
+     */
+    public void resumeRequestProcessing(RequestMonitoring monitoring) {
+        
+        monitoring.beginGeneralMeasurement();
+    }
+    
     /* (non-Javadoc)
      * @see org.xtreemfs.common.olp.PerformanceInformationReceiver#processPerformanceInformation(
      *          org.xtreemfs.common.olp.PerformanceInformation)
@@ -110,7 +135,7 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
     @Override
     public final void processMethod(StageRequest<R> method) {
         
-        method.getRequest().getMonitoring().beginGeneralMeasurement();
+        resumeRequestProcessing(method.getRequest().getMonitoring());
         _processMethod(method);
     }
     
@@ -125,7 +150,7 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
     @Override
     public final void exit(StageRequest<R> request) {
         
-        request.getRequest().getMonitoring().endGeneralMeasurement();
+        suspendRequestProcessing(request.getRequest().getMonitoring());
         olp.depart(request.getRequest().getMetadata(), request.getRequest().getMonitoring());
     }
     

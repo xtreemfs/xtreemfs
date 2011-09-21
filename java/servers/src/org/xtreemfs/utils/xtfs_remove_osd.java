@@ -258,6 +258,7 @@ public class xtfs_remove_osd {
     public void shutdown() {
         try {
 
+            dir.stop();
             UUIDResolver.shutdown(resolver);
             resolverClient.shutdown();
 

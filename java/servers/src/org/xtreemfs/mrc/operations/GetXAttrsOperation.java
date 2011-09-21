@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.ac.FileAccessManager;
@@ -40,7 +41,7 @@ public class GetXAttrsOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final listxattrRequest rqArgs = (listxattrRequest) rq.getRequestArgs();
         
@@ -112,8 +113,6 @@ public class GetXAttrsOperation extends MRCOperation {
         }
         
         // set the response
-        rq.setResponse(result.build());
-        finishRequest(rq);
-        
+        callback.success(result.build());
     }
 }

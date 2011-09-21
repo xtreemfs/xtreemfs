@@ -10,10 +10,12 @@ package org.xtreemfs.dir.operations;
 
 import java.util.ConcurrentModificationException;
 
+import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.stage.BabuDBComponent;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBDatabaseRequest;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
@@ -31,11 +33,13 @@ import com.google.protobuf.Message;
  */
 public class RegisterServiceOperation extends DIROperation {
     
-    private final BabuDBComponent database;
+    private final BabuDBComponent component;
+    private final Database database;
     
     public RegisterServiceOperation(DIRRequestDispatcher master) {
         super(master);
-        database = master.getDatabase();
+        component = master.getBabuDBComponent();
+        database = master.getDirDatabase();
     }
     
     @Override
@@ -50,11 +54,11 @@ public class RegisterServiceOperation extends DIROperation {
         
         final Service.Builder reg = request.getService().toBuilder();
                 
-        database.lookup(callback, DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), 
-                rq.getMetadata(), database.new BabuDBPostprocessing<byte[]>() {
+        component.lookup(database, callback, DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), 
+                rq.getMetadata(), new BabuDBPostprocessing<byte[]>() {
                     
             @Override
-            public Message execute(byte[] result, BabuDBDatabaseRequest rq) throws Exception {
+            public Message execute(byte[] result, BabuDBRequest rq) throws Exception {
                 
                 long currentVersion = 0;
                 if (result != null) {
@@ -122,17 +126,17 @@ public class RegisterServiceOperation extends DIROperation {
             }
             
             @Override
-            public void requeue(BabuDBDatabaseRequest request) {
+            public void requeue(BabuDBRequest request) {
                                 
                 ServiceRecord newRec = new ServiceRecord(reg.build());
                 byte[] newData = new byte[newRec.getSize()];
                 newRec.serialize(ReusableBuffer.wrap(newData));
                 
-                database.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, newRec.getUuid().getBytes(), 
-                        newData, request, database.new BabuDBPostprocessing<Object>() {
+                component.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, newRec.getUuid().getBytes(), 
+                        newData, request, new BabuDBPostprocessing<Object>() {
                             
                     @Override
-                    public Message execute(Object result, BabuDBDatabaseRequest request) throws Exception {
+                    public Message execute(Object result, BabuDBRequest request) throws Exception {
                         
                         return serviceRegisterResponse.newBuilder().setNewVersion(reg.getVersion()).build();
                     }

@@ -99,8 +99,7 @@ public interface VolumeManager {
      * @throws UserException
      * @throws DatabaseException
      */
-    public void deleteVolume(String volumeName, DBAccessResultListener<Object> listener, Object context)
-        throws DatabaseException, UserException;
+    public void deleteVolume(String volumeName) throws DatabaseException, UserException;
     
     /**
      * Returns the storage manager for a given volume.

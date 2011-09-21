@@ -8,6 +8,9 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
@@ -23,6 +26,8 @@ import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_read_only_xattrRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_read_only_xattrResponse;
 
+import com.google.protobuf.Message;
+
 public class SetReadOnlyXattrOperation extends MRCOperation {
 
     public SetReadOnlyXattrOperation(MRCRequestDispatcher master) {
@@ -30,7 +35,7 @@ public class SetReadOnlyXattrOperation extends MRCOperation {
     }
 
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
 
         final xtreemfs_set_read_only_xattrRequest rqArgs = (xtreemfs_set_read_only_xattrRequest) rq
                 .getRequestArgs();
@@ -70,18 +75,26 @@ public class SetReadOnlyXattrOperation extends MRCOperation {
                         "File with fileID %s has already set Xattr xtreemfs.read_only=%s", localFileID,
                         currentMode.toString());
             }
-            rq.setResponse(xtreemfs_set_read_only_xattrResponse.newBuilder().setWasSet(false).build());
-            finishRequest(rq);
+            callback.success(xtreemfs_set_read_only_xattrResponse.newBuilder().setWasSet(false).build());
             
         } else {
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+            
+            final xtreemfs_set_read_only_xattrResponse.Builder rp = xtreemfs_set_read_only_xattrResponse.newBuilder();
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+                
+                @Override
+                public Message execute(Object result, BabuDBRequest request) throws Exception {
+                    
+                    return rp.build();
+                }
+            });
 
             file.setReadOnly(rqArgs.getValue());
             
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
-            rq.setResponse(xtreemfs_set_read_only_xattrResponse.newBuilder().setWasSet(true).build());
-            update.execute();            
+            rp.setWasSet(true);
+            update.execute(callback, rq.getMetadata());            
         }
      
     }

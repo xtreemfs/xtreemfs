@@ -10,6 +10,7 @@ package org.xtreemfs.mrc.operations;
 
 import java.net.InetSocketAddress;
 
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -36,7 +37,7 @@ public class GetSuitableOSDsOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final xtreemfs_get_suitable_osdsRequest rqArgs = (xtreemfs_get_suitable_osdsRequest) rq
                 .getRequestArgs();
@@ -91,8 +92,6 @@ public class GetSuitableOSDsOperation extends MRCOperation {
             resp.addOsdUuids(usableOSDs.getServices(i).getUuid());
         
         // set the response
-        rq.setResponse(resp.build());
-        finishRequest(rq);
+        callback.success(resp.build());
     }
-    
 }

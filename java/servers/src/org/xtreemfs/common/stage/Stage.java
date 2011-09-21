@@ -16,7 +16,7 @@ import org.xtreemfs.foundation.LifeCycleThread;
  * @author fx.langner
  * @version 1.00, 09/05/11
  * 
- * @param <R> - general interface for requests processed by this stage. Extends {@link Request}.
+ * @param <R> - general interface for requests processed by this stage. Extends {@link AbstractServiceRequest}.
  */
 public abstract class Stage<R extends Request> extends LifeCycleThread implements AutonomousComponent<StageRequest<R>> {
     
@@ -40,6 +40,39 @@ public abstract class Stage<R extends Request> extends LifeCycleThread implement
         
         super(name);
         this.queue = queue;
+    }
+
+    /**
+     * <p>Enqueues a request including all necessary information for its processing at this stage.</p>
+     * 
+     * @param request - the original request.
+     */
+    public void enter(R request) {
+        
+        enter(request, null);
+    }
+    
+    /**
+     * <p>Enqueues a request including all necessary information for its processing at this stage.</p>
+     * 
+     * @param request - the original request.
+     * @param callback - for postprocessing the request, may be null.
+     */
+    public void enter(R request, Callback callback) {
+        
+        enter(null, request, callback);
+    }
+    
+    /**
+     * <p>Enqueues a request including all necessary information for its processing at this stage.</p>
+     * 
+     * @param args - additional arguments for the request.
+     * @param request - the original request.
+     * @param callback - for postprocessing the request, may be null.
+     */
+    public void enter(Object[] args, R request, Callback callback) {
+        
+        enter(0, args, request, callback);
     }
     
     /**

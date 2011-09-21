@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -97,7 +98,7 @@ public class StatusPageOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         // ignore
     }
     

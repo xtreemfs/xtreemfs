@@ -16,11 +16,10 @@ import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -44,139 +43,129 @@ public class RestoreDBOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
+                    
+        final xtreemfs_dump_restore_databaseRequest rqArgs = (xtreemfs_dump_restore_databaseRequest) rq
+                .getRequestArgs();
         
-        try {
+        // check password to ensure that user is authorized
+        if (master.getConfig().getAdminPassword().length() > 0
+            && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
+            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "invalid password");
+        
+        final VolumeManager vMan = master.getVolumeManager();
+        
+        if (vMan.getStorageManagers() == null)
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                    "cannot restore database because volume manager has not yet been initialized");
+        
+        // First, check if any volume exists already. If so, deny the
+        // operation for security reasons.
+        if (vMan.getStorageManagers().size() != 0)
+            throw new UserException(
+                POSIXErrno.POSIX_ERROR_EPERM,
+                "Restoring from a dump is only possible on an MRC with no database. Please delete the existing MRC database on the server and restart the MRC!");
+        
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        SAXParser sp = spf.newSAXParser();
+        sp.parse(new File(rqArgs.getDumpFile()), new DefaultHandler() {
             
-            final xtreemfs_dump_restore_databaseRequest rqArgs = (xtreemfs_dump_restore_databaseRequest) rq
-                    .getRequestArgs();
+            private DBRestoreState state;
             
-            // check password to ensure that user is authorized
-            if (master.getConfig().getAdminPassword().length() > 0
-                && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
-                throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "invalid password");
+            private int            dbVersion = 1;
             
-            final VolumeManager vMan = master.getVolumeManager();
-            
-            if (vMan.getStorageManagers() == null)
-                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
-                        "cannot restore database because volume manager has not yet been initialized");
-            
-            // First, check if any volume exists already. If so, deny the
-            // operation for security reasons.
-            if (vMan.getStorageManagers().size() != 0)
-                throw new UserException(
-                    POSIXErrno.POSIX_ERROR_EPERM,
-                    "Restoring from a dump is only possible on an MRC with no database. Please delete the existing MRC database on the server and restart the MRC!");
-            
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            SAXParser sp = spf.newSAXParser();
-            sp.parse(new File(rqArgs.getDumpFile()), new DefaultHandler() {
+            public void startElement(String uri, String localName, String qName, Attributes attributes)
+                throws SAXException {
                 
-                private DBRestoreState state;
-                
-                private int            dbVersion = 1;
-                
-                public void startElement(String uri, String localName, String qName, Attributes attributes)
-                    throws SAXException {
+                try {
                     
-                    try {
+                    if (qName.equals("volume")) {
                         
-                        if (qName.equals("volume")) {
-                            
-                            state = new DBRestoreState();
-                            state.currentVolumeId = attributes.getValue(attributes.getIndex("id"));
-                            state.currentVolumeName = attributes.getValue(attributes.getIndex("name"));
-                            state.currentVolumeACPolicy = Short.parseShort(attributes.getValue(attributes
-                                    .getIndex("acPolicy")));
-                            
-                        }
+                        state = new DBRestoreState();
+                        state.currentVolumeId = attributes.getValue(attributes.getIndex("id"));
+                        state.currentVolumeName = attributes.getValue(attributes.getIndex("name"));
+                        state.currentVolumeACPolicy = Short.parseShort(attributes.getValue(attributes
+                                .getIndex("acPolicy")));
+                        
+                    }
 
-                        else if (qName.equals("filesystem"))
-                            try {
-                                dbVersion = Integer.parseInt(attributes.getValue(attributes
-                                        .getIndex("dbversion")));
-                            } catch (Exception exc) {
-                                Logging.logMessage(Logging.LEVEL_WARN, Category.storage, this,
-                                    "restoring database with invalid version number");
-                            }
-                        
-                        else
-                            handleNestedElement(qName, attributes, true);
-                        
-                    } catch (Exception exc) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
-                            "could not restore DB from XML dump");
-                        Logging.logUserError(Logging.LEVEL_ERROR, Category.storage, this, exc);
-                        throw new SAXException(exc);
-                    }
-                }
-                
-                public void endElement(String uri, String localName, String qName) throws SAXException {
+                    else if (qName.equals("filesystem"))
+                        try {
+                            dbVersion = Integer.parseInt(attributes.getValue(attributes
+                                    .getIndex("dbversion")));
+                        } catch (Exception exc) {
+                            Logging.logMessage(Logging.LEVEL_WARN, Category.storage, this,
+                                "restoring database with invalid version number");
+                        }
                     
-                    try {
-                        if (qName.equals("slice") || qName.equals("filesystem"))
-                            return;
-                        
-                        handleNestedElement(qName, null, false);
-                        
-                    } catch (Exception exc) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
-                            "could not restore DB from XML dump");
-                        Logging.logUserError(Logging.LEVEL_ERROR, Category.storage, this, exc);
-                        throw new SAXException(exc);
-                    }
+                    else
+                        handleNestedElement(qName, attributes, true);
+                    
+                } catch (Exception exc) {
+                    Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
+                        "could not restore DB from XML dump");
+                    Logging.logUserError(Logging.LEVEL_ERROR, Category.storage, this, exc);
+                    throw new SAXException(exc);
                 }
+            }
+            
+            public void endElement(String uri, String localName, String qName) throws SAXException {
                 
-                private void handleNestedElement(String qName, Attributes attributes, boolean openTag)
+                try {
+                    if (qName.equals("slice") || qName.equals("filesystem"))
+                        return;
+                    
+                    handleNestedElement(qName, null, false);
+                    
+                } catch (Exception exc) {
+                    Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
+                        "could not restore DB from XML dump");
+                    Logging.logUserError(Logging.LEVEL_ERROR, Category.storage, this, exc);
+                    throw new SAXException(exc);
+                }
+            }
+            
+            private void handleNestedElement(String qName, Attributes attributes, boolean openTag) 
                     throws UserException, DatabaseException {
-                    
-                    if (qName.equalsIgnoreCase("volume")) {
-                        
-                        // set the largest file ID
-                        StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
-                        AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
-                        sMan.setLastFileId(state.largestFileId, update);
-                        update.execute();
-                        state.largestFileId = 0;
-                        
-                    } else if (qName.equalsIgnoreCase("dir"))
-                        DBAdminHelper.restoreDir(vMan, master.getFileAccessManager(), attributes, state,
-                            dbVersion, openTag);
-                    else if (qName.equalsIgnoreCase("file"))
-                        DBAdminHelper.restoreFile(vMan, master.getFileAccessManager(), attributes, state,
-                            dbVersion, openTag);
-                    else if (qName.equalsIgnoreCase("xLocList"))
-                        DBAdminHelper.restoreXLocList(vMan, master.getFileAccessManager(), attributes, state,
-                            dbVersion, openTag);
-                    else if (qName.equalsIgnoreCase("xLoc"))
-                        DBAdminHelper.restoreXLoc(vMan, master.getFileAccessManager(), attributes, state,
-                            dbVersion, openTag);
-                    else if (qName.equalsIgnoreCase("osd"))
-                        DBAdminHelper.restoreOSD(vMan, master.getFileAccessManager(), attributes, state,
-                            dbVersion, openTag);
-                    else if (qName.equalsIgnoreCase("acl"))
-                        DBAdminHelper.restoreACL(vMan, master.getFileAccessManager(), attributes, state,
-                            dbVersion, openTag);
-                    else if (qName.equalsIgnoreCase("entry"))
-                        DBAdminHelper.restoreEntry(vMan, master.getFileAccessManager(), attributes, state,
-                            dbVersion, openTag);
-                    else if (qName.equalsIgnoreCase("attr"))
-                        DBAdminHelper.restoreAttr(vMan, master.getFileAccessManager(), attributes, state,
-                            dbVersion, openTag);
-                }
                 
-            });
+                if (qName.equalsIgnoreCase("volume")) {
+                    
+                    // set the largest file ID
+                    StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
+                    AtomicDBUpdate update = sMan.createAtomicDBUpdate(null);
+                    sMan.setLastFileId(state.largestFileId, update);
+                    update.execute(null, null);
+                    state.largestFileId = 0;
+                    
+                } else if (qName.equalsIgnoreCase("dir"))
+                    DBAdminHelper.restoreDir(vMan, master.getFileAccessManager(), attributes, state,
+                        dbVersion, openTag);
+                else if (qName.equalsIgnoreCase("file"))
+                    DBAdminHelper.restoreFile(vMan, master.getFileAccessManager(), attributes, state,
+                        dbVersion, openTag);
+                else if (qName.equalsIgnoreCase("xLocList"))
+                    DBAdminHelper.restoreXLocList(vMan, master.getFileAccessManager(), attributes, state,
+                        dbVersion, openTag);
+                else if (qName.equalsIgnoreCase("xLoc"))
+                    DBAdminHelper.restoreXLoc(vMan, master.getFileAccessManager(), attributes, state,
+                        dbVersion, openTag);
+                else if (qName.equalsIgnoreCase("osd"))
+                    DBAdminHelper.restoreOSD(vMan, master.getFileAccessManager(), attributes, state,
+                        dbVersion, openTag);
+                else if (qName.equalsIgnoreCase("acl"))
+                    DBAdminHelper.restoreACL(vMan, master.getFileAccessManager(), attributes, state,
+                        dbVersion, openTag);
+                else if (qName.equalsIgnoreCase("entry"))
+                    DBAdminHelper.restoreEntry(vMan, master.getFileAccessManager(), attributes, state,
+                        dbVersion, openTag);
+                else if (qName.equalsIgnoreCase("attr"))
+                    DBAdminHelper.restoreAttr(vMan, master.getFileAccessManager(), attributes, state,
+                        dbVersion, openTag);
+            }
             
-            // set the response
-            rq.setResponse(emptyResponse.getDefaultInstance());
-            finishRequest(rq);
-            
-        } catch (SAXException exc) {
-            finishRequest(rq, new ErrorRecord(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_NONE, exc
-                    .getException().getMessage() == null ? "an error has occured" : exc.getException()
-                    .getMessage(), exc.getException()));
-        }
+        });
+        
+        // set the response
+        callback.success(emptyResponse.getDefaultInstance());
     }
-    
 }

@@ -8,6 +8,9 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
@@ -25,6 +28,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.setxattrRequest;
 
+import com.google.protobuf.Message;
+
 /**
  * 
  * @author stender
@@ -36,7 +41,7 @@ public class SetXAttrOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final setxattrRequest rqArgs = (setxattrRequest) rq.getRequestArgs();
         
@@ -60,7 +65,15 @@ public class SetXAttrOperation extends MRCOperation {
         // retrieve and prepare the metadata to return
         FileMetadata file = res.getFile();
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+            
+            @Override
+            public Message execute(Object result, BabuDBRequest request) throws Exception {
+                
+                // set the response
+                return emptyResponse.getDefaultInstance();
+            }
+        });
         
         // if the attribute is a system attribute, set it
         
@@ -98,11 +111,6 @@ public class SetXAttrOperation extends MRCOperation {
         int time = (int) (TimeSync.getGlobalTime() / 1000);
         MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, time, update);
         
-        // set the response
-        rq.setResponse(emptyResponse.getDefaultInstance());
-        
-        update.execute();
-        
+        update.execute(callback, rq.getMetadata());
     }
-    
 }

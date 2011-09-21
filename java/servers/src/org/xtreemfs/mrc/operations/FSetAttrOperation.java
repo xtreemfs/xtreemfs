@@ -9,6 +9,9 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -20,6 +23,8 @@ import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.fsetattrRequest;
+
+import com.google.protobuf.Message;
 
 /**
  * Sets attributes of a file.
@@ -33,7 +38,7 @@ public class FSetAttrOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final fsetattrRequest rqArgs = (fsetattrRequest) rq.getRequestArgs();
         
@@ -83,7 +88,15 @@ public class FSetAttrOperation extends MRCOperation {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                 "setting modes, UIDs, GIDs and Win32 attributes not allowed on open files");
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+            
+            @Override
+            public Message execute(Object result, BabuDBRequest request) throws Exception {
+                
+                // set the response
+                return emptyResponse.getDefaultInstance();
+            }
+        });
         
         // if ATIME, CTIME or MTIME bits are set, peform 'utimens'
         if (setAtime || setCtime || setMtime) {
@@ -107,11 +120,6 @@ public class FSetAttrOperation extends MRCOperation {
         if (setAtime || setCtime || setMtime || setSize)
             sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
         
-        // set the response
-        rq.setResponse(emptyResponse.getDefaultInstance());
-        
-        update.execute();
-        
+        update.execute(callback, rq.getMetadata());
     }
-    
 }

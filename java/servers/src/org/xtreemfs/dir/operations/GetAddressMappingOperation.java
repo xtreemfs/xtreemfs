@@ -10,10 +10,12 @@ package org.xtreemfs.dir.operations;
 
 import java.util.Map.Entry;
 
+import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.database.ResultSet;
 import org.xtreemfs.common.stage.BabuDBComponent;
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBDatabaseRequest;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.AddressMappingRecords;
@@ -30,11 +32,13 @@ import com.google.protobuf.Message;
  */
 public class GetAddressMappingOperation extends DIROperation {
 
-    private final BabuDBComponent database;
-
+    private final BabuDBComponent component;
+    private final Database database;
+    
     public GetAddressMappingOperation(DIRRequestDispatcher master) {
         super(master);
-        database = master.getDatabase();
+        component = master.getBabuDBComponent();
+        database = master.getDirDatabase();
     }
 
     @Override
@@ -49,11 +53,11 @@ public class GetAddressMappingOperation extends DIROperation {
         if (request.getUuid().length() > 0) {
             
             //single mapping was requested
-            database.lookup(callback, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes(), 
-                    rq.getMetadata(), database.new BabuDBPostprocessing<byte[]>() {
+            component.lookup(database, callback, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes(), 
+                    rq.getMetadata(), new BabuDBPostprocessing<byte[]>() {
                         
                         @Override
-                        public Message execute(byte[] result, BabuDBDatabaseRequest request) throws Exception {
+                        public Message execute(byte[] result, BabuDBRequest request) throws Exception {
                             if (result == null) {
                                 return AddressMappingSet.getDefaultInstance();
                             } else {
@@ -64,11 +68,11 @@ public class GetAddressMappingOperation extends DIROperation {
         } else {
             
             //full list requested
-            database.prefixLookup(callback, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, new byte[0], rq.getMetadata(), 
-                    database.new BabuDBPostprocessing<ResultSet<byte[], byte[]>>() {
+            component.prefixLookup(database, callback, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, new byte[0], 
+                    rq.getMetadata(), new BabuDBPostprocessing<ResultSet<byte[], byte[]>>() {
                         
                         @Override
-                        public Message execute(ResultSet<byte[], byte[]> result, BabuDBDatabaseRequest request) 
+                        public Message execute(ResultSet<byte[], byte[]> result, BabuDBRequest request) 
                                 throws Exception {
                             
                             AddressMappingRecords list = new AddressMappingRecords();

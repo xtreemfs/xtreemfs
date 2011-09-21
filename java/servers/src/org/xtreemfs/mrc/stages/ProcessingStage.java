@@ -15,6 +15,8 @@ import java.util.Map.Entry;
 import org.xtreemfs.common.auth.AuthenticationException;
 import org.xtreemfs.common.auth.UserCredentials;
 import org.xtreemfs.common.olp.OverloadProtectedStage;
+import org.xtreemfs.common.olp.RequestMonitoring;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -23,7 +25,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
-import org.xtreemfs.mrc.ErrorRecord;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -81,7 +83,7 @@ import static org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceConstants.*;
 public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
     
     private static final int                 NUM_RQ_TYPES              = 38;
-    private static final int                 STAGE_ID                  = 2;
+    private static final int                 STAGE_ID                  = 1;
     
     private final MRCRequestDispatcher       master;
     
@@ -101,25 +103,27 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
         installOperations();
         
         if (statisticsEnabled) {
+            
             // initialize operations counter
             _opCountMap = new HashMap<Integer, Integer>();
-            for (Integer i : operations.keySet())
+            for (Integer i : operations.keySet()) {
                 _opCountMap.put(i, 0);
+            }
         }
     }
     
-    public void installOperations() {
+    private void installOperations() {
         int type = 0;
-        operations.put(PROC_ID_XTREEMFS_SHUTDOWN, new ShutdownOperation(master));
-        requestTypeMap.put(PROC_ID_XTREEMFS_SHUTDOWN, type++);
-        operations.put(PROC_ID_XTREEMFS_MKVOL, new CreateVolumeOperation(master));
-        requestTypeMap.put(PROC_ID_XTREEMFS_MKVOL, type++);
-        operations.put(PROC_ID_XTREEMFS_RMVOL, new DeleteVolumeOperation(master));
-        requestTypeMap.put(PROC_ID_XTREEMFS_RMVOL, type++);
-        operations.put(PROC_ID_XTREEMFS_LSVOL, new GetLocalVolumesOperation(master));
-        requestTypeMap.put(PROC_ID_XTREEMFS_LSVOL, type++);
-        operations.put(PROC_ID_GETATTR, new StatOperation(master));
-        requestTypeMap.put(PROC_ID_GETATTR, type++);
+        operations.put(PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR, new SetReadOnlyXattrOperation(master));
+        requestTypeMap.put(PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR, type++);
+        operations.put(PROC_ID_XTREEMFS_SET_REPLICA_UPDATE_POLICY, new SetReplicaUpdatePolicyOperation(master));
+        requestTypeMap.put(PROC_ID_XTREEMFS_SET_REPLICA_UPDATE_POLICY, type++);
+        operations.put(PROC_ID_XTREEMFS_UPDATE_FILE_SIZE, new UpdateFileSizeOperation(master));
+        requestTypeMap.put(PROC_ID_XTREEMFS_UPDATE_FILE_SIZE, type++);
+        operations.put(PROC_ID_FTRUNCATE, new TruncateOperation(master));
+        requestTypeMap.put(PROC_ID_FTRUNCATE, type++);
+        operations.put(PROC_ID_FSETATTR, new FSetAttrOperation(master));
+        requestTypeMap.put(PROC_ID_FSETATTR, type++);
         operations.put(PROC_ID_READDIR, new ReadDirAndStatOperation(master));
         requestTypeMap.put(PROC_ID_READDIR, type++);
         operations.put(PROC_ID_MKDIR, new CreateDirOperation(master));
@@ -127,77 +131,70 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
         operations.put(PROC_ID_SYMLINK, new CreateSymLinkOperation(master));
         requestTypeMap.put(PROC_ID_SYMLINK, type++);
         operations.put(PROC_ID_UNLINK, new DeleteOperation(master));
-        requestTypeMap.put(PROC_ID_UNLINK, type++);
+        requestTypeMap.put(PROC_ID_UNLINK, type);
         operations.put(PROC_ID_RMDIR, new DeleteOperation(master));
         requestTypeMap.put(PROC_ID_RMDIR, type++);
-        operations.put(PROC_ID_GETXATTR, new GetXAttrOperation(master));
-        requestTypeMap.put(PROC_ID_GETXATTR, type++);
-        operations.put(PROC_ID_LISTXATTR, new GetXAttrsOperation(master));
-        requestTypeMap.put(PROC_ID_LISTXATTR, type++);
+        operations.put(PROC_ID_SETATTR, new SetattrOperation(master));
+        requestTypeMap.put(PROC_ID_SETATTR, type++);
+        operations.put(PROC_ID_XTREEMFS_RESTORE_FILE, new RestoreFileOperation(master));
+        requestTypeMap.put(PROC_ID_XTREEMFS_RESTORE_FILE, type++);
         operations.put(PROC_ID_SETXATTR, new SetXAttrOperation(master));
         requestTypeMap.put(PROC_ID_SETXATTR, type++);
         operations.put(PROC_ID_REMOVEXATTR, new RemoveXAttrOperation(master));
         requestTypeMap.put(PROC_ID_REMOVEXATTR, type++);
         operations.put(PROC_ID_OPEN, new OpenOperation(master));
         requestTypeMap.put(PROC_ID_OPEN, type++);
-        operations.put(PROC_ID_XTREEMFS_RENEW_CAPABILITY, new RenewOperation(master));
-        requestTypeMap.put(PROC_ID_XTREEMFS_RENEW_CAPABILITY, type++);
+        operations.put(PROC_ID_RENAME, new MoveOperation(master));
+        requestTypeMap.put(PROC_ID_RENAME, type++);
         operations.put(PROC_ID_XTREEMFS_REPLICA_ADD, new AddReplicaOperation(master));
         requestTypeMap.put(PROC_ID_XTREEMFS_REPLICA_ADD, type++);
         operations.put(PROC_ID_XTREEMFS_REPLICA_REMOVE, new RemoveReplicaOperation(master));
         requestTypeMap.put(PROC_ID_XTREEMFS_REPLICA_REMOVE, type++);
-        operations.put(PROC_ID_XTREEMFS_REPLICA_LIST, new GetXLocListOperation(master));
-        requestTypeMap.put(PROC_ID_XTREEMFS_REPLICA_LIST, type++);
-        operations.put(PROC_ID_RENAME, new MoveOperation(master));
-        requestTypeMap.put(PROC_ID_RENAME, type++);
         operations.put(PROC_ID_LINK, new CreateLinkOperation(master));
         requestTypeMap.put(PROC_ID_LINK, type++);
+        operations.put(PROC_ID_XTREEMFS_RESTORE_DATABASE, new RestoreDBOperation(master));
+        requestTypeMap.put(PROC_ID_XTREEMFS_RESTORE_DATABASE, type++);
+        operations.put(PROC_ID_XTREEMFS_REPLICA_LIST, new GetXLocListOperation(master));
+        requestTypeMap.put(PROC_ID_XTREEMFS_REPLICA_LIST, type++);
         operations.put(PROC_ID_STATVFS, new StatFSOperation(master));
         requestTypeMap.put(PROC_ID_STATVFS, type++);
         operations.put(PROC_ID_READLINK, new ReadLinkOperation(master));
         requestTypeMap.put(PROC_ID_READLINK, type++);
         operations.put(PROC_ID_XTREEMFS_DUMP_DATABASE, new DumpDBOperation(master));
         requestTypeMap.put(PROC_ID_XTREEMFS_DUMP_DATABASE, type++);
-        operations.put(PROC_ID_XTREEMFS_RESTORE_DATABASE, new RestoreDBOperation(master));
-        requestTypeMap.put(PROC_ID_XTREEMFS_RESTORE_DATABASE, type++);
+        operations.put(PROC_ID_XTREEMFS_RENEW_CAPABILITY, new RenewOperation(master));
+        requestTypeMap.put(PROC_ID_XTREEMFS_RENEW_CAPABILITY, type++);
         operations.put(PROC_ID_XTREEMFS_CHECK_FILE_EXISTS, new CheckFileListOperation(master));
         requestTypeMap.put(PROC_ID_XTREEMFS_CHECK_FILE_EXISTS, type++);
-        operations.put(PROC_ID_XTREEMFS_RESTORE_FILE, new RestoreFileOperation(master));
-        requestTypeMap.put(PROC_ID_XTREEMFS_RESTORE_FILE, type++);
+        operations.put(PROC_ID_LISTXATTR, new GetXAttrsOperation(master));
+        requestTypeMap.put(PROC_ID_LISTXATTR, type++);
         operations.put(PROC_ID_XTREEMFS_CHECKPOINT, new CheckpointOperation(master));
         requestTypeMap.put(PROC_ID_XTREEMFS_CHECKPOINT, type++);
-        operations.put(PROC_ID_SETATTR, new SetattrOperation(master));
-        requestTypeMap.put(PROC_ID_SETATTR, type++);
-        operations.put(PROC_ID_FSETATTR, new FSetAttrOperation(master));
-        requestTypeMap.put(PROC_ID_FSETATTR, type++);
+        operations.put(PROC_ID_GETXATTR, new GetXAttrOperation(master));
+        requestTypeMap.put(PROC_ID_GETXATTR, type++);
+        operations.put(PROC_ID_GETATTR, new StatOperation(master));
+        requestTypeMap.put(PROC_ID_GETATTR, type++);
         operations.put(PROC_ID_XTREEMFS_GET_SUITABLE_OSDS, new GetSuitableOSDsOperation(master));
         requestTypeMap.put(PROC_ID_XTREEMFS_GET_SUITABLE_OSDS, type++);
-        operations.put(PROC_ID_FTRUNCATE, new TruncateOperation(master));
-        requestTypeMap.put(PROC_ID_FTRUNCATE, type++);
+        operations.put(PROC_ID_XTREEMFS_LSVOL, new GetLocalVolumesOperation(master));
+        requestTypeMap.put(PROC_ID_XTREEMFS_LSVOL, type++);
         operations.put(PROC_ID_XTREEMFS_INTERNAL_DEBUG, new InternalDebugOperation(master));
         requestTypeMap.put(PROC_ID_XTREEMFS_INTERNAL_DEBUG, type++);
-        operations.put(PROC_ID_XTREEMFS_UPDATE_FILE_SIZE, new UpdateFileSizeOperation(master));
-        requestTypeMap.put(PROC_ID_XTREEMFS_UPDATE_FILE_SIZE, type++);
+        operations.put(PROC_ID_XTREEMFS_RMVOL, new DeleteVolumeOperation(master));
+        requestTypeMap.put(PROC_ID_XTREEMFS_RMVOL, type++);
         operations.put(PROC_ID_ACCESS, new AccessOperation(master));
         requestTypeMap.put(PROC_ID_ACCESS, type++);
-        operations.put(PROC_ID_XTREEMFS_SET_REPLICA_UPDATE_POLICY, new SetReplicaUpdatePolicyOperation(master));
-        requestTypeMap.put(PROC_ID_XTREEMFS_SET_REPLICA_UPDATE_POLICY, type++);
-        operations.put(PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR, new SetReadOnlyXattrOperation(master));
-        requestTypeMap.put(PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR, type++);
+        operations.put(PROC_ID_XTREEMFS_MKVOL, new CreateVolumeOperation(master));
+        requestTypeMap.put(PROC_ID_XTREEMFS_MKVOL, type++);
+        operations.put(PROC_ID_XTREEMFS_SHUTDOWN, new ShutdownOperation(master));
+        requestTypeMap.put(PROC_ID_XTREEMFS_SHUTDOWN, type++);
         operations.put(PROC_ID_XTREEMFS_GET_FILE_CREDENTIALS, new GetFileCredentialsOperation(master));
         requestTypeMap.put(PROC_ID_XTREEMFS_GET_FILE_CREDENTIALS, type++);
-        // TODO operations.put(replication_toMasterRequest.TAG, new
-        // ReplicationToMasterOperation(master));
     }
     
     public Map<Integer, Integer> get_opCountMap() {
         return _opCountMap;
     }
-    
-//    public String getOpName(int opId) {
-//        String opName = operations.get(opId).getClass().getSimpleName();
-//        return (opName.charAt(0) + "").toLowerCase() + opName.substring(0, opName.length() - "Operation".length()).substring(1);
-//    }
 
     /* (non-Javadoc)
      * @see org.xtreemfs.common.stage.Stage#_processMethod(org.xtreemfs.common.stage.StageRequest)
@@ -209,11 +206,13 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
         final RPCServerRequest rpcRequest = rq.getRPCRequest();
         final RPCHeader.RequestHeader rqHeader = rpcRequest.getHeader().getRequestHeader();
         final MRCOperation op = operations.get(method.getStageMethod());
+        final RPCRequestCallback callback = (RPCRequestCallback) method.getCallback();
+        final RequestMonitoring monitoring = method.getRequest().getMonitoring();
         
         if (op == null) {
-            rq.setError(ErrorType.INVALID_PROC_ID, "requested operation (" + rqHeader.getProcId()
-                + ") is not available on this MRC");
-            master.requestFinished(rq);
+            monitoring.voidMeasurments();
+            callback.failed(ErrorType.INVALID_PROC_ID, POSIXErrno.POSIX_ERROR_NONE, "requested operation (" + 
+                    rqHeader.getProcId() + ") is not available on this MRC");
             return;
         }
         
@@ -227,10 +226,17 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
         }
         
         // parse request arguments
-        ErrorRecord error = op.parseRequestArgs(rq);
-        if (error != null) {
-            rq.setError(error);
-            master.requestFinished(rq);
+        try {
+            op.parseRequestArgs(rq);
+        } catch (Exception e) {
+            
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                    "could not parse request arguments:");
+                Logging.logUserError(Logging.LEVEL_DEBUG, Category.stage, this, e);
+            }
+            monitoring.voidMeasurments();
+            callback.failed(ErrorType.GARBAGE_ARGS, POSIXErrno.POSIX_ERROR_EINVAL, e);
             return;
         }
         
@@ -243,7 +249,7 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
             org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials ctx = op
                     .getUserCredentials(rq);
             
-            if (ctx != null)
+            if (ctx != null) {
                 try {
                     UserCredentials cred = master.getAuthProvider().getEffectiveCredentials(ctx,
                         rpcRequest.getConnection().getChannel());
@@ -256,11 +262,11 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
                 } catch (AuthenticationException ex) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, ex.getMessage());
                 }
-            
+            }
         } catch (Exception exc) {
-            
-            rq.setError(ErrorType.INTERNAL_SERVER_ERROR, "could not initialize authentication module", exc);
-            master.requestFinished(rq);
+            monitoring.voidMeasurments();
+            callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO, 
+                    "could not initialize authentication module");
             return;
         }
         
@@ -283,50 +289,45 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
                     StatusPageOperation.getOpName(rqHeader.getProcId()), params.toString());
             }
             
-            op.startRequest(rq);
+            op.startRequest(rq, callback);
             
         } catch (UserException exc) {
-            reportUserError(op, rq, exc, exc.getErrno());
             
+            monitoring.voidMeasurments();
+            callback.failed(ErrorType.ERRNO, exc.getErrno(), exc);
         } catch (MRCException exc) {
-            Throwable cause = exc.getCause();
-            if (cause instanceof DatabaseException
-                && ((DatabaseException) cause).getType() == ExceptionType.NOT_ALLOWED)
-                reportUserError(op, rq, exc, POSIXErrno.POSIX_ERROR_EPERM);
-            else
-                reportServerError(op, rq, exc);
             
+            monitoring.voidMeasurments();
+            Throwable cause = exc.getCause();
+            if (cause instanceof DatabaseException 
+                && ((DatabaseException) cause).getType() == ExceptionType.NOT_ALLOWED) {
+                callback.failed(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EPERM, exc);
+            } else {
+                callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "an error has occurred", 
+                        OutputUtils.stackTraceToString(exc));
+            }
         } catch (DatabaseException exc) {
+            
+            monitoring.voidMeasurments();
             if (exc.getType() == ExceptionType.NOT_ALLOWED) {
-                reportUserError(op, rq, exc, POSIXErrno.POSIX_ERROR_EPERM);
+                callback.failed(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EPERM, exc);
             } else if (exc.getType() == ExceptionType.REDIRECT) {
                 try {
-                    redirect(rq, exc.getAttachment() != null? (String) exc.getAttachment(): master.getReplMasterUUID());
+                    callback.redirect(
+                            exc.getAttachment() != null? (String) exc.getAttachment(): master.getReplMasterUUID());
                 } catch (MRCException e) {
-                    reportServerError(op, rq, e);
+                    callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, 
+                            "an error has occurred", OutputUtils.stackTraceToString(e));
                 }
-            } else
-                reportServerError(op, rq, exc);
-            
+            } else {
+                callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "an error has occurred", 
+                        OutputUtils.stackTraceToString(exc));
+            }
         } catch (Throwable exc) {
-            reportServerError(op, rq, exc);
+            
+            monitoring.voidMeasurments();
+            callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "an error has occurred", 
+                    OutputUtils.stackTraceToString(exc));
         }
     }
-    
-    private void reportUserError(MRCOperation op, MRCRequest rq, Throwable exc, POSIXErrno errno) {
-        if (Logging.isDebug())
-            Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
-        op.finishRequest(rq, new ErrorRecord(ErrorType.ERRNO, errno, exc.getMessage(), exc));
-    }
-    
-    private void reportServerError(MRCOperation op, MRCRequest rq, Throwable exc) {
-        if (Logging.isDebug())
-            Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
-        op.finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-            "an error has occurred", exc));
-    }
-    
-    private void redirect(MRCRequest rq, String uuid) {
-        rq.getRPCRequest().sendRedirect(uuid);
-    }    
 }

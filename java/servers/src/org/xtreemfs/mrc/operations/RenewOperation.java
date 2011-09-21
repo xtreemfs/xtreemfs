@@ -9,14 +9,13 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
-
-import com.google.protobuf.Message;
 
 /**
  * 
@@ -32,7 +31,7 @@ public class RenewOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final XCap xcap = (XCap) rq.getRequestArgs();
         
@@ -54,8 +53,6 @@ public class RenewOperation extends MRCOperation {
                 .getCapabilitySecret());
         
         // set the response
-        rq.setResponse(newCap.getXCap());
-        finishRequest(rq);
+        callback.success(newCap.getXCap());
     }
-
 }

@@ -244,7 +244,7 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
             ex.getMessage());
         }
         
-        this.babuDBComponent = new BabuDBComponent(0, 11, this, getDirDatabase());
+        this.babuDBComponent = new BabuDBComponent(0, 11, this);
     }
     
     public ServiceRecords getServices() throws Exception {
@@ -393,7 +393,7 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
         }
     }
     
-    public BabuDBComponent getDatabase() {
+    public BabuDBComponent getBabuDBComponent() {
         return babuDBComponent;
     }
     

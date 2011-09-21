@@ -41,8 +41,6 @@ public abstract class DIROperation {
      * @param callback - the callback for the request.
      *            
      * @throws Exception if request could not have been processed.
-     * 
-     * @return response {@link Message} for the request.
      */
     public abstract void startRequest(DIRRequest rq, RPCRequestCallback callback) throws Exception;
 

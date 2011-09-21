@@ -8,6 +8,7 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -36,7 +37,7 @@ public class GetXLocListOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final xtreemfs_replica_listRequest rqArgs = (xtreemfs_replica_listRequest) rq.getRequestArgs();
         
@@ -95,8 +96,6 @@ public class GetXLocListOperation extends MRCOperation {
             replicas.addReplicas(repl);
         
         // set the response
-        rq.setResponse(replicas.build());
-        finishRequest(rq);
+        callback.success(replicas.build());
     }
-    
 }

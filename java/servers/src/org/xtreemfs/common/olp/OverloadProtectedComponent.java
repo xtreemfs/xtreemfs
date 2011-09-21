@@ -117,10 +117,12 @@ public abstract class OverloadProtectedComponent<R> implements AutonomousCompone
     public void enter(R request, RequestMetadata metadata, RequestMonitoring monitoring) 
             throws AdmissionRefusedException {
         
-        olp.obtainAdmission(metadata);
-        enter(request);
-        resumeRequestProcessing(monitoring);
-        requestCounter.incrementAndGet();
+        if (metadata != null) {
+            olp.obtainAdmission(metadata);
+            enter(request);
+            resumeRequestProcessing(monitoring);
+            requestCounter.incrementAndGet();
+        }
     }
     
     /**
@@ -133,10 +135,12 @@ public abstract class OverloadProtectedComponent<R> implements AutonomousCompone
      */
     public void exit(R request, RequestMetadata metadata, RequestMonitoring monitoring) {
                 
-        requestCounter.decrementAndGet();
-        suspendRequestProcessing(monitoring);
-        olp.depart(metadata, monitoring);
-        exit(request);
+        if (metadata != null) {
+            requestCounter.decrementAndGet();
+            suspendRequestProcessing(monitoring);
+            olp.depart(metadata, monitoring);
+            exit(request);
+        }
     }
     
     /**

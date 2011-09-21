@@ -8,13 +8,14 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -37,7 +38,7 @@ public class DeleteVolumeOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(final MRCRequest rq) throws Throwable {
+    public void startRequest(final MRCRequest rq, final RPCRequestCallback callback) throws Exception {
         
         // perform master redirect if replicated and required
         String replMasterUUID = master.getReplMasterUUID();
@@ -67,42 +68,41 @@ public class DeleteVolumeOperation extends MRCOperation {
                     rq.getDetails().superUser, rq.getDetails().groupIds);
         
         // deregister the volume from the Directory Service
-        // Ugly workaround for async call.
-        Runnable rqThr = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    master.getDirClient().xtreemfs_service_deregister(null, rq.getDetails().auth,
-                            RPCAuthentication.userService, volume.getId());
-                    processStep2(rqArgs, volume.getId(), rq);
-                } catch (Exception ex) {
-                    finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-                            "an error has occurred", ex));
-                }
-            }
-        };
-        Thread thr = new Thread(rqThr);
-        thr.start();
+        master.getDirClient().xtreemfs_service_deregister(null, rq.getDetails().auth,
+                RPCAuthentication.userService, volume.getId(), new Callback() {
+                    
+                    @Override
+                    public void success(Object result) {
+                        
+                        processStep2(rqArgs, volume.getId(), rq, callback);
+                    }
+                    
+                    @Override
+                    public void failed(Exception e) {
+                        
+                        callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, e);
+                    }
+                });
     }
     
-    private void processStep2(xtreemfs_rmvolRequest rqArgs, final String volumeId, final MRCRequest rq) {
+    private void processStep2(xtreemfs_rmvolRequest rqArgs, String volumeId, MRCRequest rq, 
+            RPCRequestCallback callback) {
+        
         try {
             // delete the volume from the local database
-            master.getVolumeManager().deleteVolume(volumeId, master, rq);
+            master.getVolumeManager().deleteVolume(volumeId);
             master.notifyVolumeDeleted();
             
             // set the response
-            rq.setResponse(emptyResponse.getDefaultInstance());
-            finishRequest(rq);
+            callback.success(emptyResponse.getDefaultInstance());
             
         } catch (UserException exc) {
-            if (Logging.isDebug())
-                Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
-            finishRequest(rq, new ErrorRecord(ErrorType.ERRNO, exc.getErrno(), exc.getMessage(), exc));
+            
+            if (Logging.isDebug()) Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
+            callback.failed(ErrorType.ERRNO, exc.getErrno(), exc.getMessage(), exc);
         } catch (Throwable exc) {
-            finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-                    "an error has occurred", exc));
+            
+            callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, exc);
         }
-    }
-    
+    }   
 }

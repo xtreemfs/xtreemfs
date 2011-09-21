@@ -8,6 +8,7 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.ac.FileAccessManager;
@@ -34,7 +35,7 @@ public class StatOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final getattrRequest rqArgs = (getattrRequest) rq.getRequestArgs();
         
@@ -96,10 +97,6 @@ public class StatOperation extends MRCOperation {
         }
         
         // set the response
-        rq.setResponse(stat.build());
-        
-        finishRequest(rq);
-        
+        callback.success(stat.build());
     }
-    
 }

@@ -8,6 +8,7 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -21,8 +22,6 @@ import org.xtreemfs.mrc.utils.PathResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.readlinkRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.readlinkResponse;
 
-import com.google.protobuf.Message;
-
 /**
  * 
  * @author stender
@@ -34,7 +33,7 @@ public class ReadLinkOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final readlinkRequest rqArgs = (readlinkRequest) rq.getRequestArgs();
         
@@ -63,9 +62,6 @@ public class ReadLinkOperation extends MRCOperation {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, rqArgs.getPath() + " is not a softlink");
         
         // set the response
-        rq.setResponse(readlinkResponse.newBuilder().addLinkTargetPath(target).build());
-        finishRequest(rq);
-        
-    }
-    
+        callback.success(readlinkResponse.newBuilder().addLinkTargetPath(target).build());
+    }    
 }

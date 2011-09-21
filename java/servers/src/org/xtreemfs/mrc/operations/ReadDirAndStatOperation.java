@@ -10,6 +10,9 @@ package org.xtreemfs.mrc.operations;
 
 import java.io.File;
 
+import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
@@ -35,6 +38,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntry;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.readdirRequest;
 
+import com.google.protobuf.Message;
+
 /**
  * 
  * @author stender
@@ -46,7 +51,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final readdirRequest rqArgs = (readdirRequest) rq.getRequestArgs();
         
@@ -92,9 +97,17 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 throw exc;
         }
         
-        DirectoryEntries.Builder dirContent = DirectoryEntries.newBuilder();
+        final DirectoryEntries.Builder dirContent = DirectoryEntries.newBuilder();
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
+            
+            @Override
+            public Message execute(Object result, BabuDBRequest request) throws Exception {
+                
+                // set the response
+                return dirContent.build();
+            }
+        });
         
         // if required, update POSIX timestamps
         int time = (int) (TimeSync.getGlobalTime() / 1000);
@@ -167,10 +180,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
             
         }
         
-        // set the response
-        rq.setResponse(dirContent.build());
-        
-        update.execute();
+        update.execute(callback, rq.getMetadata());
     }
     
     private Stat getStat(StorageManager sMan, FileAccessManager faMan, MRCRequest rq, VolumeInfo volume,

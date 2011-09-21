@@ -255,6 +255,7 @@ public class xtfs_cleanup_osd {
             } catch (Exception e) {
                 error("Operation could not be performed because: " + e.getMessage(), options);
             } finally {
+                dir.stop();
                 dirClient.shutdown();
                 osdClient.shutdown();
                 dirClient.waitForShutdown();

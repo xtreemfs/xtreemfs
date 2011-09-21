@@ -9,6 +9,7 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -33,7 +34,7 @@ public class AccessOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final accessRequest rqArgs = (accessRequest) rq.getRequestArgs();
         
@@ -75,8 +76,6 @@ public class AccessOperation extends MRCOperation {
         }
         
         // set the response
-        rq.setResponse(emptyResponse.getDefaultInstance());
-        
-        finishRequest(rq);
+        callback.success(emptyResponse.getDefaultInstance());
     }
 }

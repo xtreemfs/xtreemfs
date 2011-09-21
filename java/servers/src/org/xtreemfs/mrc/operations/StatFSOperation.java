@@ -8,6 +8,7 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.database.DatabaseException;
@@ -21,8 +22,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.statvfsRequest;
 
-import com.google.protobuf.Message;
-
 /**
  * 
  * @author stender
@@ -34,7 +33,7 @@ public class StatFSOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq) throws Throwable {
+    public void startRequest(MRCRequest rq, RPCRequestCallback callback) throws Exception {
         
         final statvfsRequest rqArgs = (statvfsRequest) rq.getRequestArgs();
         
@@ -49,8 +48,7 @@ public class StatFSOperation extends MRCOperation {
         // set.add(volumeInfo);
         
         // set the response
-        rq.setResponse(volumeInfo);
-        finishRequest(rq);
+        callback.success(volumeInfo);
         
     }
     

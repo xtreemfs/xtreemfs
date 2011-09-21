@@ -132,6 +132,8 @@ public class TestEnvironment {
     
     private TimeSync               tsInstance;
     
+    private DIRClient              dir;
+    
     public TestEnvironment(Services... servs) {
         enabledServs = new ArrayList(servs.length);
         for (Services serv : servs)
@@ -165,8 +167,8 @@ public class TestEnvironment {
             }
 
             if (enabledServs.contains(Services.UUID_RESOLVER)) {
-                DIRClient dc = new DIRClient(dirClient, new InetSocketAddress[]{getDIRAddress()}, 10, 1000 * 5);
-                UUIDResolver.start(dc, 1000, 10 * 10 * 1000);
+                dir = new DIRClient(dirClient, new InetSocketAddress[]{getDIRAddress()}, 10, 1000 * 5);
+                UUIDResolver.start(dir, 1000, 10 * 10 * 1000);
                 SetupUtils.localResolver();
             }
 
@@ -278,6 +280,7 @@ public class TestEnvironment {
         if (enabledServs.contains(Services.UUID_RESOLVER)) {
             try {
                 UUIDResolver.shutdown();
+                dir.stop();
             } catch (Throwable th) {
             }
         }
