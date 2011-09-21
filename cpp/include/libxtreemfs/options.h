@@ -59,6 +59,9 @@ class Options {
   /** Returns the version string and prepends "component". */
   std::string ShowVersion(const std::string& component);
 
+  /** Returns true if required SSL options are set. */
+  bool SSLEnabled() const;
+
   /** Creates a new SSLOptions object based on the value of the members:
    *  - ssl_pem_path
    *  - ssl_pem_cert_path

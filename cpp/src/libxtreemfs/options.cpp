@@ -414,9 +414,13 @@ std::string Options::ShowVersion(const std::string& component) {
   return component + " " + version_string;
 }
 
+bool Options::SSLEnabled() const {
+  return !ssl_pem_cert_path.empty() || !ssl_pkcs12_path.empty();
+}
+
 xtreemfs::rpc::SSLOptions* Options::GenerateSSLOptions() const {
   xtreemfs::rpc::SSLOptions* opts = NULL;
-  if (!ssl_pem_cert_path.empty() || !ssl_pkcs12_path.empty()) {
+  if (SSLEnabled()) {
     opts = new xtreemfs::rpc::SSLOptions(
         ssl_pem_path, ssl_pem_cert_path, ssl_pem_key_pass,  // PEM.
         ssl_pkcs12_path, ssl_pkcs12_pass,  // PKCS12.

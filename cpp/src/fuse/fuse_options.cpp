@@ -69,14 +69,19 @@ FuseOptions::FuseOptions() : Options(), fuse_descriptions_("Fuse Options") {
 #endif  // __APPLE__
   foreground = false;
   use_fuse_permission_checks = true;
+  fuse_permission_checks_explicitly_disabled = false;
 
   fuse_descriptions_.add_options()
     ("foreground,f", po::value(&foreground)->zero_tokens(),
         "Do not fork into background.")
     ("fuse_option,o",
         po::value< vector<string> >(&fuse_options),
-        "Passes -o=<option> to Fuse.");
-  po::options_description fuse_acl_information(
+        "Passes -o=<option> to Fuse.")
+    ("no-default-permissions",
+        po::value(&fuse_permission_checks_explicitly_disabled)->zero_tokens(),
+        "Do not pass -o default_permissions to Fuse (disables local Fuse"
+        " permissions checks).");
+  po::options_description fuse_options_information(
       "ACL and extended attributes Support:\n"
       "  -o xtreemfs_acl Enable the correct evaluation of XtreemFS ACLs.\n"
       "                  (Note that you cannot use the system tools getfattr\n"
@@ -87,7 +92,7 @@ FuseOptions::FuseOptions() : Options(), fuse_descriptions_("Fuse Options") {
 #else
       );
 #endif  // __APPLE__
-  fuse_descriptions_.add(fuse_acl_information);
+  fuse_descriptions_.add(fuse_options_information);
 
   helptext_usage_ =
       "mount.xtreemfs: Mounts an XtreemFS Volume.\n"
