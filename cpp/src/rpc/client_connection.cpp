@@ -325,6 +325,10 @@ void ClientConnection::PostWrite(const boost::system::error_code& err,
 void ClientConnection::PostReadRecordMarker(
     const boost::system::error_code& err) {
   if (err) {
+    if (err == boost::asio::error::operation_aborted) {
+      // Connection was closed. Ignore error.
+      return;
+    }
     Reset();
     SendError(POSIX_ERROR_EIO,
               "could not read record marker in response from '" + server_name_
