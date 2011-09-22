@@ -49,6 +49,12 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // Start logging manually (altough it would be automatically started by
+  // ClientImplementation()) as its required by UserMapping.
+  initialize_logger(options.log_level_string,
+                    options.log_file_path,
+                    LEVEL_WARN);
+
   // Set user_credentials.
   boost::scoped_ptr<UserMapping> user_mapping(UserMapping::CreateUserMapping(
       options.user_mapping_type,
