@@ -88,6 +88,7 @@ Client::Client(int32_t connect_timeout_s,
       if (!p12_file) {
         Logging::log->getLog(LEVEL_ERROR) << "Error opening pkcs12 file:"
             << options->pkcs12_file_name() << ". (file not found)" << endl;
+        //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
       PKCS12 *p12 = d2i_PKCS12_fp(p12_file, NULL);
@@ -97,6 +98,7 @@ Client::Client(int32_t connect_timeout_s,
         Logging::log->getLog(LEVEL_ERROR) << "Error reading pkcs12 file:"
             << options->pkcs12_file_name() << ". (no access rights?)" << endl;
         ERR_print_errors_fp(stderr);
+        //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
 
@@ -113,6 +115,7 @@ Client::Client(int32_t connect_timeout_s,
         Logging::log->getLog(LEVEL_ERROR) << "Error parsing pkcs12 file:"
             << options->pkcs12_file_name() << endl;
         ERR_print_errors_fp(stderr);
+        //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
       PKCS12_free(p12);
@@ -123,6 +126,7 @@ Client::Client(int32_t connect_timeout_s,
       int tmpCert = mkstemp(tmplate2);
       if (tmpPem == -1 || tmpCert == -1) {
         std::cerr << "Couldn't create temp file name.\n";
+        //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
       FILE* pemFile = fdopen(tmpPem, "wb+");
@@ -139,10 +143,13 @@ Client::Client(int32_t connect_timeout_s,
       if (!PEM_write_PrivateKey(pemFile, pkey, NULL, NULL, 0, 0, password)) {
         Logging::log->getLog(LEVEL_ERROR)
             << "Error writing pem file:" << tmplate1 << endl;
+        free(password);
         unlink(tmplate1);
         unlink(tmplate2);
+        //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
+      free(password);
 
       // write ca certificate
       if (!PEM_write_X509(certFile, cert)) {
@@ -150,14 +157,17 @@ Client::Client(int32_t connect_timeout_s,
             << tmplate2 << endl;
         unlink(tmplate1);
         unlink(tmplate2);
+        //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
 
       fclose(pemFile);
       fclose(certFile);
 
-      pemFileName = tmplate1;
-      certFileName = tmplate2;
+      pemFileName = new char[sizeof(tmplate1)];
+      strncpy(pemFileName, tmplate1, sizeof(tmplate1));
+      certFileName = new char[sizeof(tmplate2)];
+      strncpy(certFileName, tmplate2, sizeof(tmplate2));
 
       ssl_context_->set_password_callback(
           boost::bind(&Client::get_pkcs12_password_callback, this));
@@ -179,6 +189,7 @@ Client::Client(int32_t connect_timeout_s,
       } catch(invalid_argument& ia) {
          cerr << "Invalid argument: " << ia.what() << endl;
          cerr << "Please check your private key and certificate file."<< endl;
+         //TODO(mberlin): Use a better approach than exit - throw?
          exit(1);
       }
     }
@@ -404,7 +415,6 @@ void Client::shutdown() {
 }
 
 Client::~Client() {
-  delete ssl_options;
   // remove temporary cert and pem files
   if (pemFileName != NULL) {
     unlink(pemFileName);
@@ -412,6 +422,16 @@ Client::~Client() {
   if (certFileName != NULL) {
     unlink(certFileName);
   }
+
+  delete[] pemFileName;
+  delete[] certFileName;
+
+  if (ssl_options) {
+    ERR_remove_state(0);
+    ERR_free_strings();
+  }
+  delete ssl_options;
+  delete ssl_context_;
 }
 
 }  // namespace rpc
