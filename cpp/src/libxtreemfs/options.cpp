@@ -258,7 +258,7 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&grid_gridmap_reload_interval_m)
             ->default_value(grid_gridmap_reload_interval_m),
         "Interval (in minutes) after which the gridmap file will be checked for"
-        " changes and reloaded if necessary.")
+        " changes and reloaded if necessary.");
 #endif  // WIN32
 
   xtreemfs_advanced_options_.add_options()

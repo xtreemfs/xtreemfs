@@ -67,9 +67,12 @@ if (NOT Boost_FOUND)
 endif(NOT Boost_FOUND)
 include_directories(${Boost_INCLUDE_DIRS})
 
-find_package(OpenSSL REQUIRED)
+find_package(OpenSSL QUIET)
 if (NOT OPENSSL_FOUND)
-  message(FATAL_ERROR "The OpenSSL library was not found.")
+# OpenSSL find_package script cannot cope with /usr/lib64 directory under Cmake 2.8.3.
+  set(LIBCRYPTO "crypto")
+  set(LIBSSL "ssl")
+  set(OPENSSL_LIBRARIES ${LIBCRYPTO} ${LIBSSL})
 endif(NOT OPENSSL_FOUND)
 include_directories(${OPENSSL_INCLUDE_DIR})
 
@@ -108,7 +111,7 @@ if(UNIX AND NOT WIN32)
   endif(CMAKE_SIZEOF_VOID_P MATCHES "8")
 endif(UNIX AND NOT WIN32)
 
-SET(REQUIRED_LIBRARIES ${LIBFUSE} ${LIBATTR} ${LIBPTHREAD})
+SET(REQUIRED_LIBRARIES ${LIBFUSE} ${LIBATTR} ${LIBCRYPTO} ${LIBSSL} ${LIBPTHREAD})
 foreach(LIB ${REQUIRED_LIBRARIES})
   #message(STATUS "checking for library: ${LIB}")
   # For unknown reasons, setting "FIND_LIBRARY_USE_LIB64_PATHS" does not fix the issue that libraries in /usr/lib64/ are not found under openSuse.
