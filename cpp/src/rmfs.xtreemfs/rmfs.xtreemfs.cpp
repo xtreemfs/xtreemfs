@@ -49,47 +49,51 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  // Start logging manually (altough it would be automatically started by
-  // ClientImplementation()) as its required by UserMapping.
-  initialize_logger(options.log_level_string,
-                    options.log_file_path,
-                    LEVEL_WARN);
-
-  // Set user_credentials.
-  boost::scoped_ptr<UserMapping> user_mapping(UserMapping::CreateUserMapping(
-      options.user_mapping_type,
-      UserMapping::kUnix,
-      options));
-  UserCredentials user_credentials;
-  user_credentials.set_username(user_mapping->UIDToUsername(geteuid()));
-  if (user_credentials.username().empty()) {
-    cout << "Error: No name found for the current user (using the configured "
-        "UserMapping: " << options.user_mapping_type << ")\n";
-    return 1;
-  }
-  // The groups won't be checked and maybe therefore empty.
-  user_credentials.add_groups(user_mapping->GIDToGroupname(getegid()));
-
-  // Create a new client and start it.
-  boost::scoped_ptr<Client> client(Client::CreateClient(
-      "DIR-host-not-required-for-rmfs",  // Using a bogus value as DIR address.
-      user_credentials,
-      options.GenerateSSLOptions(),
-      options));
-  client->Start();
-
-  // Create the volume.
-  Auth auth;
-  if (options.admin_password.empty()) {
-    auth.set_auth_type(AUTH_NONE);
-  } else {
-    auth.set_auth_type(AUTH_PASSWORD);
-    auth.mutable_auth_passwd()->set_password(options.admin_password);
-  }
-  cout << "Trying to delete the volume: " << options.xtreemfs_url << endl;
-
   bool success = true;
+  boost::scoped_ptr<UserMapping> user_mapping;
+  boost::scoped_ptr<Client> client;
   try {
+    // Start logging manually (altough it would be automatically started by
+    // ClientImplementation()) as its required by UserMapping.
+    initialize_logger(options.log_level_string,
+                      options.log_file_path,
+                      LEVEL_WARN);
+
+    // Set user_credentials.
+    user_mapping.reset(UserMapping::CreateUserMapping(
+        options.user_mapping_type,
+        UserMapping::kUnix,
+        options));
+    user_mapping->Start();
+
+    UserCredentials user_credentials;
+    user_credentials.set_username(user_mapping->UIDToUsername(geteuid()));
+    if (user_credentials.username().empty()) {
+      cout << "Error: No name found for the current user (using the configured "
+          "UserMapping: " << options.user_mapping_type << ")\n";
+      return 1;
+    }
+    // The groups won't be checked and maybe therefore empty.
+    user_credentials.add_groups(user_mapping->GIDToGroupname(getegid()));
+
+    // Create a new client and start it.
+    client.reset(Client::CreateClient(
+        "DIR-host-not-required-for-rmfs",  // Using a bogus value as DIR address
+        user_credentials,
+        options.GenerateSSLOptions(),
+        options));
+    client->Start();
+
+    // Create the volume.
+    Auth auth;
+    if (options.admin_password.empty()) {
+      auth.set_auth_type(AUTH_NONE);
+    } else {
+      auth.set_auth_type(AUTH_PASSWORD);
+      auth.mutable_auth_passwd()->set_password(options.admin_password);
+    }
+    cout << "Trying to delete the volume: " << options.xtreemfs_url << endl;
+
     client->DeleteVolume(options.service_address,
                          auth,
                          user_credentials,
@@ -101,7 +105,10 @@ int main(int argc, char* argv[]) {
   }
 
   // Cleanup.
-  client->Shutdown();
+  if (client) {
+    client->Shutdown();
+  }
+  user_mapping->Stop();
 
   if (success) {
     cout << "Successfully deleted the volume \"" << options.volume_name

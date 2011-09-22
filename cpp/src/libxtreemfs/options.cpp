@@ -393,7 +393,7 @@ std::string Options::ShowCommandLineHelp() {
   return stream.str();
 }
 
-std::string Options::ShowCommandLineHelpVolumeCreation() {
+std::string Options::ShowCommandLineHelpVolumeCreationAndDeletion() {
   GenerateProgramOptionsDescriptions();
   ostringstream stream;
   stream << general_ << endl
@@ -402,7 +402,7 @@ std::string Options::ShowCommandLineHelpVolumeCreation() {
   return stream.str();
 }
 
-std::string Options::ShowCommandLineHelpVolumeDeletionAndListing() {
+std::string Options::ShowCommandLineHelpVolumeListing() {
   GenerateProgramOptionsDescriptions();
   ostringstream stream;
   stream << general_ << endl

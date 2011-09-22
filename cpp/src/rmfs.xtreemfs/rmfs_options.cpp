@@ -110,7 +110,7 @@ std::string RmfsOptions::ShowCommandLineHelp() {
          << rmfs_descriptions_
          // Descriptions of the general options.
          << endl
-         << Options::ShowCommandLineHelpVolumeDeletionAndListing();
+         << Options::ShowCommandLineHelpVolumeCreationAndDeletion();
   return stream.str();
 }
 

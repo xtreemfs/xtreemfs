@@ -50,21 +50,10 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  // Start logging manually (altough it would be automatically started by
-  // ClientImplementation()) as its required by UserMapping.
-  initialize_logger(options.log_level_string,
-                    options.log_file_path,
-                    LEVEL_WARN);
-
   // Set user_credentials.
-  boost::scoped_ptr<UserMapping> user_mapping(UserMapping::CreateUserMapping(
-      options.user_mapping_type,
-      UserMapping::kUnix,
-      options));
-  // TODO(mberlin): Ask Jan/Bjoern if the user_credentials are needed here.
   UserCredentials user_credentials;
-  user_credentials.set_username(user_mapping->UIDToUsername(geteuid()));
-  user_credentials.add_groups(user_mapping->GIDToGroupname(getegid()));
+  user_credentials.set_username("xtreemfs");
+  user_credentials.add_groups("xtreemfs");
 
   // Create a new client and start it.
   boost::scoped_ptr<Client> client(Client::CreateClient(

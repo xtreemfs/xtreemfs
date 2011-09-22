@@ -50,11 +50,11 @@ class Options {
 
   /** Outputs usage of the command line parameters of volume creation
    *  relevant options. */
-  std::string ShowCommandLineHelpVolumeCreation();
+  std::string ShowCommandLineHelpVolumeCreationAndDeletion();
 
   /** Outputs usage of the command line parameters of volume deletion/listing
    *  relevant options. */
-  std::string ShowCommandLineHelpVolumeDeletionAndListing();
+  std::string ShowCommandLineHelpVolumeListing();
 
   /** Returns the version string and prepends "component". */
   std::string ShowVersion(const std::string& component);
