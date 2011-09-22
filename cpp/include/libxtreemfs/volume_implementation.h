@@ -142,12 +142,12 @@ class VolumeImplementation : public Volume {
       const std::string& path,
       const std::string& new_path);
 
-  virtual void CreateDirectory(
+  virtual void MakeDirectory(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path,
-      mode_t mode);
+      unsigned int mode);
 
-  virtual void RemoveDirectory(
+  virtual void DeleteDirectory(
         const xtreemfs::pbrpc::UserCredentials& user_credentials,
         const std::string& path);
 

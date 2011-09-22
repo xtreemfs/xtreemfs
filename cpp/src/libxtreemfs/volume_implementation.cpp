@@ -760,10 +760,10 @@ void VolumeImplementation::Rename(
   response->DeleteBuffers();
 }
 
-void VolumeImplementation::CreateDirectory(
+void VolumeImplementation::MakeDirectory(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
-    mode_t mode) {
+    unsigned int mode) {
   mkdirRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
@@ -795,7 +795,7 @@ void VolumeImplementation::CreateDirectory(
   response->DeleteBuffers();
 }
 
-void VolumeImplementation::RemoveDirectory(
+void VolumeImplementation::DeleteDirectory(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path) {
   rmdirRequest rq;

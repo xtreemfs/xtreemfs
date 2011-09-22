@@ -923,7 +923,7 @@ int FuseAdapter::mkdir(const char *path, mode_t mode) {
   GenerateUserCredentials(fuse_get_context(), &user_credentials);
 
   try {
-    volume_->CreateDirectory(user_credentials, string(path), mode);
+    volume_->MakeDirectory(user_credentials, string(path), mode);
   } catch(const PosixErrorException& e) {
     return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
@@ -1212,7 +1212,7 @@ int FuseAdapter::rmdir(const char *path) {
   GenerateUserCredentials(fuse_get_context(), &user_credentials);
 
   try {
-    volume_->RemoveDirectory(user_credentials, string(path));
+    volume_->DeleteDirectory(user_credentials, string(path));
   } catch(const PosixErrorException& e) {
     return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {

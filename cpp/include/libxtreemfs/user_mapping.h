@@ -22,6 +22,8 @@ class UserMapping {
     kUnix, kUnicore, kGlobus
   };
 
+  // TODO(mberlin): Replace uid_t & co by Windows compatible types.
+#ifndef WIN32
   /** Returns an instance of the chosen UserMapping.
    *
    * @param type        Type of the user mapping to be created.
@@ -69,6 +71,7 @@ class UserMapping {
                                     gid_t gid,
                                     pid_t pid,
                                     std::list<std::string>* groupnames) = 0;
+#endif // !WIN32
 };
 
 }  // namespace xtreemfs

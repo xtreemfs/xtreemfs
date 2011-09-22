@@ -14,7 +14,11 @@
 #include <openssl/rand.h>
 #include <openssl/x509.h>
 #include <openssl/evp.h>
+#ifdef WIN32
+#include <tchar.h>
+#else
 #include <unistd.h>
+#endif  // WIN32
 
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/interprocess/detail/atomic.hpp>
@@ -122,6 +126,37 @@ Client::Client(int32_t connect_timeout_s,
 
       // create two tmp files containing the PEM certificates.
       // these which be deleted when exiting the program
+#ifdef WIN32
+      //  Gets the temp path env string (no guarantee it's a valid path).
+      TCHAR temp_path[MAX_PATH];
+      TCHAR filename_temp_pem[MAX_PATH];  
+      TCHAR filename_temp_cert[MAX_PATH];  
+
+      DWORD dwRetVal = 0;
+      dwRetVal = GetTempPath(MAX_PATH,          // length of the buffer
+                             temp_path); // buffer for path 
+      if (dwRetVal > MAX_PATH || (dwRetVal == 0)) {
+        _tcsncpy_s(temp_path, TEXT("."), 1);
+      }
+
+      //  Generates a temporary file name. 
+      if (!GetTempFileName(temp_path, // directory for tmp files     
+                                TEXT("DEMO"),     // temp file name prefix 
+                                0,                // create unique name 
+                                filename_temp_pem)) {  // buffer for name 
+        std::cerr << "Couldn't create temp file name.\n";
+        exit(1);
+      }
+      if (!GetTempFileName(temp_path, // directory for tmp files     
+                                TEXT("DEMO"),     // temp file name prefix 
+                                0,                // create unique name 
+                                filename_temp_cert)) {  // buffer for name 
+        std::cerr << "Couldn't create temp file name.\n";
+        exit(1);
+      }
+      FILE* pemFile = _tfopen(filename_temp_pem, TEXT("wb+"));
+      FILE* certFile = _tfopen(filename_temp_cert, TEXT("wb+"));
+#else
       int tmpPem = mkstemp(tmplate1);
       int tmpCert = mkstemp(tmplate2);
       if (tmpPem == -1 || tmpCert == -1) {
@@ -131,6 +166,7 @@ Client::Client(int32_t connect_timeout_s,
       }
       FILE* pemFile = fdopen(tmpPem, "wb+");
       FILE* certFile = fdopen(tmpCert, "wb+");
+#endif
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG) << "tmp file name:"
@@ -234,7 +270,7 @@ void Client::sendRequest(const string& address,
   bool wasEmpty = requests_.empty();
   requests_.push(rq);
   if (wasEmpty) {
-    service_.post(bind(&Client::sendInternalRequest, this));
+    service_.post(boost::bind(&Client::sendInternalRequest, this));
   }
 }
 
@@ -368,17 +404,17 @@ void Client::handleTimeout(const boost::system::error_code& error) {
     cerr << "exception: " << e.what() << endl;
   }
   rq_timeout_timer_.expires_from_now(posix_time::seconds(rq_timeout_s_));
-  rq_timeout_timer_.async_wait(bind(&Client::handleTimeout,
-                                    this,
-                                    asio::placeholders::error));
+  rq_timeout_timer_.async_wait(boost::bind(&Client::handleTimeout,
+                                           this,
+                                           asio::placeholders::error));
 }
 
 void Client::run() {
   asio::io_service::work work(service_);
   rq_timeout_timer_.expires_from_now(posix_time::seconds(rq_timeout_s_));
-  rq_timeout_timer_.async_wait(bind(&Client::handleTimeout,
-                                    this,
-                                    asio::placeholders::error));
+  rq_timeout_timer_.async_wait(boost::bind(&Client::handleTimeout,
+                                           this,
+                                           asio::placeholders::error));
 
   if (Logging::log->loggingActive(LEVEL_INFO)) {
     Logging::log->getLog(LEVEL_INFO) << "starting rpc client" << endl;

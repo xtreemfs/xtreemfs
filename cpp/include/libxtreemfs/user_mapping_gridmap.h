@@ -26,6 +26,7 @@ class UserMappingGridmap : public UserMapping {
                      const std::string& gridmap_file,
                      int gridmap_reload_interval_s);
 
+#ifndef WIN32
   virtual void Start();
 
   virtual void Stop();
@@ -106,6 +107,7 @@ class UserMappingGridmap : public UserMapping {
 
   /** Required base usermapping to retrieve IDs or names from the system. */
   boost::scoped_ptr<UserMapping> system_user_mapping_;
+#endif // !WIN32
 };
 
 }  // namespace xtreemfs

@@ -245,10 +245,10 @@ class Volume {
    * @throws PosixErrorException
    * @throws UnknownAddressSchemeException
    */
-  virtual void CreateDirectory(
+  virtual void MakeDirectory(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path,
-      mode_t mode) = 0;
+      unsigned int mode) = 0;
 
   /** Removes the directory at "path" which has to be empty.
    *
@@ -260,7 +260,7 @@ class Volume {
    * @throws PosixErrorException
    * @throws UnknownAddressSchemeException
    */
-  virtual void RemoveDirectory(
+  virtual void DeleteDirectory(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path) = 0;
 

@@ -8,6 +8,8 @@
 
 #include "libxtreemfs/user_mapping_gridmap_unicore.h"
 
+#ifndef WIN32
+
 #include <boost/tokenizer.hpp>
 #include <boost/algorithm/string/trim.hpp>
 #include <vector>
@@ -153,3 +155,4 @@ void UserMappingGridmapUnicore::ReadGridmapFileUnicore6(
 }
 
 }  // namespace xtreemfs
+#endif // !WIN32

@@ -16,7 +16,7 @@
 
 namespace xtreemfs {
 
-class AsyncWriteBuffer;
+struct AsyncWriteBuffer;
 class FileInfo;
 class UUIDResolver;
 class UUIDIterator;

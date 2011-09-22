@@ -5,87 +5,105 @@
  *
  */
 
+#include <cstring>
+
 #include <iostream>
 #include <string>
-
-#include "util/logging.h"
 
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
+#include "pbrpc/RPC.pb.h"  // xtreemfs::pbrpc::UserCredentials
+#include "xtreemfs/MRC.pb.h"  // xtreemfs::pbrpc::Stat
 
 using namespace std;
 
-#include "xtreemfs/MRC.pb.h"
-
 int main() {
   // Every operation is executed in the context of a given user and his groups.
-  // The UserCredentials object does store this information.
+  // The UserCredentials object does store this information and is currently
+  // (08/2011) *only* evaluated by the MRC (although the protocol requires to
+  // send user_credentials to DIR and OSD, too).
   xtreemfs::pbrpc::UserCredentials user_credentials;
-  user_credentials.set_username("mberlin");
-  user_credentials.add_groups("mberlin");
-  const xtreemfs::Options options;
+  user_credentials.set_username("example_libxtreemfs");
+  user_credentials.add_groups("example_libxtreemfs");
 
-  // Create a new instance of a client using the DIR service at 'localhost'
-  // at port 32638 using the default implementation.
-  xtreemfs::Client* client = xtreemfs::Client::CreateClient(
-      "localhost:32638",
-      user_credentials,
-      NULL,  // No SSL options.
-      options);
+  // Class which allows to change options of the librray.
+  xtreemfs::Options options;
 
-  // Start the client (a connection to the DIR service will be setup).
-  client->Start();
-
-  // Open a volume named 'test'.
-  xtreemfs::Volume *volume = NULL;
   try {
-    volume = client->OpenVolume(
-        "test",
+    // Create a new instance of a client using the DIR service at
+    // 'demo.xtreemfs.org' (default port 32638).
+    xtreemfs::Client* client = xtreemfs::Client::CreateClient(
+        "demo.xtreemfs.org:32638",
+        user_credentials,
         NULL,  // No SSL options.
         options);
+
+    // Start the client (a connection to the DIR service will be setup).
+    client->Start();
+
+    // Open a volume named 'demo'.
+    xtreemfs::Volume *volume = NULL;
+    volume = client->OpenVolume(
+        "demo",
+        NULL,  // No SSL options.
+        options);
+
+    // Open a file.
+    xtreemfs::FileHandle* file = volume->OpenFile(
+        user_credentials,
+        "/example_libxtreemfs.txt",
+        static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(
+            xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT |
+            xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC |
+            xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
+        511);  // = 777 Octal.
+
+    // Write to file.
+    cout << "Writing the string\n"
+            "\n"
+            "\t\"Accessed XtreemFS through the C++ libxtreemfs.\"\n"
+            "\n"
+            "to the file example_libxtreemfs.txt..." << endl;
+    char write_buf[] = "Accessed XtreemFS through the C++ libxtreemfs.";
+    file->Write(user_credentials,
+                reinterpret_cast<const char*>(&write_buf),
+                sizeof(write_buf),
+                0);
+
+    // Get file attributes.
+    xtreemfs::pbrpc::Stat stat;
+    volume->GetAttr(user_credentials, "/example_libxtreemfs.txt", &stat);
+    cout << "\nNew file size of example_libxtreemfs.txt: "
+         << stat.size() << " Bytes." << endl;
+    // Once again, now hopefully from the Cache.
+    volume->GetAttr(user_credentials, "/example_libxtreemfs.txt", &stat);
+    cout << "\nFile size of example_libxtreemfs.txt again (this time retrieved"
+            " from the enabled metadata cache): " << stat.size() << endl;
+
+    // Read from the file.
+    const size_t buffer_size = 128 * 1024;  // 128kB, default object size.
+    char read_buf[buffer_size];
+    memset(&read_buf, 0, buffer_size);
+    file->Read(user_credentials,
+               reinterpret_cast<char*>(&read_buf),
+               buffer_size,  // Length.
+               0);  // Offset.
+    cout << "\nReading the content of the file example_libxtreemfs.txt:\n\n"
+         << read_buf << endl;
+
+    // Close the file (no need to delete it, see documentation volume.h).
+    file->Close();
+
+    // Shutdown() does also invoke a volume->Close().
+    client->Shutdown();
+    delete client;
   } catch(const xtreemfs::XtreemFSException& e) {
-    cout << e.what() << endl;
+    cout << "An error occured:\n" << e.what() << endl;
+    return 1;
   }
-
-  // Open a file.
-  xtreemfs::FileHandle* file = volume->OpenFile(
-      user_credentials,
-      "/test.txt",
-      xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDONLY);  // Flags.
-
-  // Get file attributes.
-  xtreemfs::pbrpc::Stat stat;
-  volume->GetAttr(user_credentials, "/test.txt", &stat);
-  cout << stat.size() << endl;
-
-  // Write to file.
-  char write_buf[] = "Testing :-).";
-  file->Write(user_credentials,
-              reinterpret_cast<const char*>(&write_buf),
-              sizeof(write_buf),
-              0);
-
-  // Once again, now hopefully from the Cache.
-  volume->GetAttr(user_credentials, "/test.txt", &stat);
-  cout << stat.size() << endl;
-
-  // Read from the file.
-  char read_buf[128*1024];
-  file->Read(user_credentials,
-             reinterpret_cast<char*>(&read_buf),
-             128 * 1024,
-             0);
-  cout << "Read from file: " << read_buf << endl;
-
-  // Close the file.
-  file->Close();
-
-  // Shutdown() does also invoke a volume->Close().
-  client->Shutdown();
-  delete client;
 
   return 0;
 }
