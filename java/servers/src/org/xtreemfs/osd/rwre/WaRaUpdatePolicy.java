@@ -25,7 +25,7 @@ public class WaRaUpdatePolicy extends CoordinatedReplicaUpdatePolicy {
 
     public WaRaUpdatePolicy(List<ServiceUUID> remoteOSDUUIDs, String localUUID, String fileId, OSDServiceClient client) throws IOException {
         super(remoteOSDUUIDs, localUUID, fileId, client);
-        this.numResponses = remoteOSDUUIDs.size() - 1;
+        this.numResponses = remoteOSDUUIDs.size();
     }
 
     @Override
