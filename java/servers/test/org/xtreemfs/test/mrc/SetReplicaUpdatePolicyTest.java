@@ -8,48 +8,33 @@
 
 package org.xtreemfs.test.mrc;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.xtreemfs.common.KeyValuePairs;
+import junit.framework.TestCase;
+
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.File;
 import org.xtreemfs.common.clients.Volume;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
-import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
-import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.ac.FileAccessManager;
-import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.utils.Path;
-import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.osd.storage.FileMetadata;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
-
-import com.google.protobuf.Message;
-
-import junit.framework.TestCase;
 
 public class SetReplicaUpdatePolicyTest extends TestCase {
 
@@ -129,11 +114,6 @@ public class SetReplicaUpdatePolicyTest extends TestCase {
         client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, fileId,
                 ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY).get();
         assert(f.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY));
-        
-        //REPL_UPDATE_PC_WARA
-        client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, fileId,
-                ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA).get();       
-        assert(f.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA));
         
         //REPL_UPDATE_PC_WARONE
         client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, fileId,

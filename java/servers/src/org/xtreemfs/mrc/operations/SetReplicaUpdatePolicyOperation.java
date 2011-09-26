@@ -9,7 +9,6 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.ReplicaUpdatePolicies;
-
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -21,7 +20,6 @@ import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
-
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse;
@@ -81,9 +79,13 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
                                 + ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE + " (current replica count = "
                                 + xlocs.getReplicaCount() + ")");
         }
+        
+        if (ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA.equals(newReplUpdatePolicy)) {
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "Do no longer use the policy WaRa. Instead you're probably looking for the WaR1 policy (write all replicas, read from one)."
+                    + newReplUpdatePolicy);
+        }
 
-        if (!ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA.equals(newReplUpdatePolicy)
-                && !ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE.equals(newReplUpdatePolicy)
+        if (!ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE.equals(newReplUpdatePolicy)
                 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(newReplUpdatePolicy)
                 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(newReplUpdatePolicy)
                 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(newReplUpdatePolicy))

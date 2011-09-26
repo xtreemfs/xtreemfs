@@ -30,7 +30,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.utils.Converter;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
@@ -48,6 +47,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
@@ -1151,7 +1151,7 @@ public class MRCTest extends TestCase {
             
             @Override
             public String getName() {
-                return ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA;
+                return ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE;
             }
             
             @Override
@@ -1179,7 +1179,7 @@ public class MRCTest extends TestCase {
                         "xtreemfs.default_rp")).getValue();
         ReplicationPolicy pol = Converter.jsonStringToReplicationPolicy(val);
         
-        assertEquals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA, pol.getName());
+        assertEquals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE, pol.getName());
         assertEquals(rp.getFactor(), pol.getFactor());
         assertEquals(rp.getFlags(), pol.getFlags());
         

@@ -18,8 +18,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -724,13 +724,17 @@ public class MRCHelper {
                 // if there are more than one replica, report an error
                 if (xlocs.getReplicaCount() > 1)
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
-                        "number of replicas has to be reduced 1 before replica update policy can be set to "
+                        "number of replicas has to be reduced to 1 before replica update policy can be set to "
                             + ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE + " (current replica count = "
                             + xlocs.getReplicaCount() + ")");
             }
             
-            if (!ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA.equals(value)
-                && !ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(value)
+            if (ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA.equals(value)) {
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "Do no longer use the policy WaRa. Instead you're probably looking for the WaR1 policy (write all replicas, read from one)."
+                        + value);
+            }
+            
+            if (!ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(value)
                 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE.equals(value)
                 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(value)
                 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(value))

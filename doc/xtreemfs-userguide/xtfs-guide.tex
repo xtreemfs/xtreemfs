@@ -2012,12 +2012,12 @@ To change the replication policy, execute \texttt{xtfsutil} with the following o
 $> xtfsutil --set-replication-policy ronly /xtreemfs/test.txt
 \end{verbatim}
 
-The following values can be passed to \verb|--set-replication-policy|:
+The following values (or its aliases stated in parentheses) can be passed to \verb|--set-replication-policy|:
 \begin{description}
   \item[none] File is not replicated.
-  \item[ronly] File is read-only replicated, the file cannot be modified.
-  \item[WqRq] File is read-write replicated and can be modified. Updates are sent to a majority, replicas can fail.
-  \item[WaRa] Like WqRq but updates are sent to all replicas and no replica may fail.
+  \item[ronly (readonly)] File is read-only replicated, the file cannot be modified.
+  \item[WqRq (quorum)] File is read-write replicated and can be modified. Updates have to be sent to a majority of replicas (\textit{write quorum}) and data has to be read from a majority (\textit{read quorum}), i.e. a minority of replicas can fail. For instance, in case of three replicas the WqRq policy requires at least two replicas (majority) to be online while one replica (minority) may be offline. If you have only two replicas, consider using the \textbf{WaR1} policy instead.
+  \item[WaR1 (all)] File is read-write replicated and can be modified. Unlike WqRq, this policy requires that updates have to be send to all replicas (\textit{write all}) and no replica may fail. In consequence all replicas are always synchronized and therefore it is sufficient to read from any replica (\textit{read 1}), i.e. the OSD can always use its local replica.
 \end{description}
 
 
@@ -2105,7 +2105,7 @@ The following values can be passed to \verb|--replication-policy|:
 \begin{description}
   \item[none] New files are not replicated.
   \item[ronly] Files are initially created without replicas and can be modified until they are closed. On close, the file is set to read-only and the replicas are created. Replicas are partial by default, full replicas will be created if the \verb|--full| flag is set.
-  \item[WqRq, WaRa] New files are read-write replicated and can be modified.
+  \item[WqRq, WaR1] New files are read-write replicated and can be modified.
 \end{description}
 
 
@@ -2214,16 +2214,16 @@ Internally, the read/write replication is implemented using the primary/backup a
 Once a replica has acquired the lease to become primary, it checks with the other replicas to ensure all replicas are in a consistent state. After this so called replica reset phase, the primary processes client operations.
 Reads can be executed locally on the primary. However, operations that modify data such as write and truncate, are executed on the primary which passes these updates on to the other replicas (backups).
 
-The replication of files adds significant communication overhead to keep replicas in sync. When a file is opened, the OSD which the client contacts requires at least three message round-trips to acquires the lease and to execute the replica reset. Once a primary was elected, read operations can be executed locally without any communication. Truncate and write require a single round-trip between the primary and the backup OSDs.
+The replication of files adds significant communication overhead to keep replicas in sync. When a file is opened, the OSD which the client contacts requires at least three message round-trips to acquire the lease and to execute the replica reset. Once a primary was elected, read operations can be executed locally without any communication. Truncate and write require a single round-trip between the primary and the backup OSDs.
 
-Depending on the selected replication policy, the read/write replication can tolerate some replica failures. The \textbf{WqRq} policy employs majority voting and can tolerate replica failures as long as a majority of replicas is available. This is the most fault-tolerant strategy in XtreemFS. However, it guarantees only that data is stored on a majority of the replicas. If you lose more replicas permanently, data might be lost.
-The \textbf{WaRa} policy writes updates to all replicas which yields higher data safety. However, this policy cannot tolerate replica failures.
+Depending on the selected replication policy, the read/write replication can tolerate some replica failures. The \textbf{WqRq} (\textit{write quorum, read quorum}) policy employs majority voting and can tolerate replica failures as long as a majority of replicas is available. This is the most fault-tolerant strategy in XtreemFS. However, it guarantees only that data is stored on a majority of the replicas. If you lose more replicas permanently, data might be lost.
+The \textbf{WaR1} (\textit{write all, read 1}) policy writes updates to all replicas which yields higher data safety. However, if any replica is unavailable, modifications are not possible and the client will receive a write error. Local data can be still read from an OSD.
 
 \subsection{Limitations}
 Due to the communication overhead, the read/write replication should only be used for up to ten replicas. If you need more replicas or if you need replicas for caching, you should consider the read-only replication.
 
 \subsection{Setup}
-To enable read/write replication, it is necessary to specify a respective replication policy. Replication policies that enable read/write replication are \textbf{WqRq} and \textbf{WaRa}.
+To enable read/write replication, it is necessary to specify a respective replication policy. Replication policies that enable read/write replication are \textbf{WqRq} and \textbf{WaR1}.
 
 A replication policy can either be specified for an existing file or as a default policy for the entire volume. In the former case, replicas need to be added manually. In the latter case, a default replication factor needs to be specified that defines the number of replicas that are initially created. Please be aware that a default replication policy only affects newly created files, i.e.\ does not automatically add replicas to existing files!
 
@@ -2461,7 +2461,7 @@ XtreemFS allows the content, i.e.\ the objects of a file to be distributed among
 
 A striping policy\index{Striping Policy}\index{Policy!Striping Policy}\index{RAID0} is a rule that defines how the objects are distributed on the available OSDs. Currently, XtreemFS implements only the \texttt{RAID0} policy which simply stores the objects in a round robin fashion on the OSDs. The \texttt{RAID0} policy has two parameters. The \emph{striping width}\index{Striping Width} defines to how many OSDs the file is distributed. If not enough OSDs are available when the file is created, the number of available OSDs will be used instead; if it is 0, an I/O error is reported to the client. The \emph{stripe size}\index{Striping!Stripe Size}\index{Stripe Size} defines the size of each object.
 
-Striping over several OSDs enhances the read and write throughput to a file. The maximum throughput depends on the striping width. However, using \texttt{RAID0} also increases the probability of data loss. If a single OSD fails, parts of the file are no longer accessible, which generally renders the entire file useless. Replication can mitigate the problem but has all the restrictions described in Sec.\ \ref{sec:roreplication}.
+Striping over several OSDs enhances the read and write throughput to a file. The maximum throughput depends on the striping width. However, using \texttt{RAID0} also increases the probability of data loss. If a single OSD fails, parts of the file are no longer accessible, which generally renders the entire file useless. Replication can mitigate the problem but has all the restrictions described in Sec.\ \ref{sec:ronly_replication}.
 
 
 \section{Plug-in Policies}

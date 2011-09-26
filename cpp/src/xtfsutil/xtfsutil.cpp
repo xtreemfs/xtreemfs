@@ -320,12 +320,12 @@ bool SetDefaultRP(const string& xctl_file,
   Json::Value request(Json::objectValue);
   request["operation"] = "setDefaultRP";
   request["path"] = path;
-  if (policy == "RONLY") {
+  if (policy == "RONLY" || policy == "READONLY") {
     request["update-policy"] = "ronly";
-  } else if (policy == "WQRQ") {
+  } else if (policy == "WQRQ" || policy == "QUORUM") {
     request["update-policy"] = "WqRq";
-  } else if (policy == "WARA") {
-    request["update-policy"] = "WaRa";
+  } else if (policy == "WAR1" || policy == "ALL") {
+    request["update-policy"] = "WaR1";
   } else if (policy == "NONE") {
     request["update-policy"] = "";
   } else {
@@ -381,12 +381,12 @@ bool SetReplicationPolicy(const string& xctl_file,
   Json::Value request(Json::objectValue);
   request["operation"] = "setReplicationPolicy";
   request["path"] = path;
-  if (policy == "RONLY") {
+  if (policy == "RONLY" || policy == "READONLY") {
     request["policy"] = "ronly";
-  } else if (policy == "WQRQ") {
+  } else if (policy == "WQRQ" || policy == "QUORUM") {
     request["policy"] = "WqRq";
-  } else if (policy == "WARA") {
-    request["policy"] = "WaRa";
+  } else if (policy == "WAR1" || policy == "ALL") {
+    request["policy"] = "WaR1";
   } else if (policy == "NONE") {
     request["policy"] = "";
   } else {
@@ -708,7 +708,8 @@ int main(int argc, char **argv) {
        "deletes the replica on the OSD with the given UUID")
       ("list-osds,l", "list suitable OSDs for a file")
       ("replication-policy", value<string>(),
-       "RONLY, WQRQ, WARA or NONE to disable replication")
+       "RONLY, WqRq, WaR1 or NONE to disable replication. The aliases"
+       " 'readonly', 'quorum' and 'all' are also allowed.")
       ("replication-factor", value<int>(),
        "number of replicas to create for a file")
       ("full", "full replica (readonly replication only)")

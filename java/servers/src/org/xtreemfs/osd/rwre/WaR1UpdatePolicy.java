@@ -9,8 +9,8 @@
 package org.xtreemfs.osd.rwre;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.List;
+
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.osd.rwre.RWReplicationStage.Operation;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
@@ -35,7 +35,7 @@ public class WaR1UpdatePolicy extends CoordinatedReplicaUpdatePolicy {
 
     @Override
     protected boolean backupCanRead() {
-        return false;
+        return true;
     }
 
 }
