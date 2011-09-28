@@ -127,9 +127,9 @@ public class StatusPage {
                 .getDebugLevel()));
         tmp = tmp.replace(Vars.NUMCON.toString(), Integer.toString(master.getNumClientConnections()));
         tmp = tmp.replace(Vars.PINKYQ.toString(), Long.toString(master.getPendingRequests()));
-        tmp = tmp.replace(Vars.PARSERQ.toString(), Integer.toString(master.getPreprocStage().getQueueLength()));
+        tmp = tmp.replace(Vars.PARSERQ.toString(), Integer.toString(master.getPreprocStage().getNumberOfRequests()));
         tmp = tmp.replace(Vars.STORAGEQ.toString(), Integer.toString(master.getStorageStage().getQueueLength()));
-        tmp = tmp.replace(Vars.DELETIONQ.toString(), Integer.toString(master.getDeletionStage().getQueueLength()));
+        tmp = tmp.replace(Vars.DELETIONQ.toString(), Integer.toString(master.getDeletionStage().getNumberOfRequests()));
         tmp = tmp.replace(Vars.OPENFILES.toString(), Integer.toString(master.getPreprocStage().getNumOpenFiles()));
         tmp = tmp.replace(Vars.OBJWRITE.toString(), Long.toString(master.getObjectsReceived()));
         tmp = tmp.replace(Vars.OBJREAD.toString(), Long.toString(master.getObjectsSent()));

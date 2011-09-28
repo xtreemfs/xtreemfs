@@ -8,23 +8,22 @@
 
 package org.xtreemfs.osd.operations;
 
-import com.google.protobuf.Message;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 
+import com.google.protobuf.Message;
+
 
 public abstract class OSDOperation {
 
-
     protected OSDRequestDispatcher master;
-
-
+    
     public OSDOperation(OSDRequestDispatcher master) {
         this.master = master;
     }
@@ -34,8 +33,10 @@ public abstract class OSDOperation {
     /**
      * called after request was parsed and operation assigned.
      * @param rq the new request
+     * 
+     * @return {@link ErrorResponse} if request could not be processed, null otherwise.
      */
-    public abstract void startRequest(OSDRequest rq);
+    public abstract ErrorResponse startRequest(OSDRequest rq, RPCRequestCallback callback);
 
     public abstract void startInternalEvent(Object[] args);
 
@@ -48,39 +49,30 @@ public abstract class OSDOperation {
 
     public abstract boolean requiresCapability();
 
-    public void waitForResponses(final RPCResponse[] responses, final ResponsesListener listener) {
+    public final static void waitForResponses(final RPCResponse<Message>[] responses, 
+            final ResponsesListener listener) {
 
         assert(responses.length > 0);
 
         final AtomicInteger count = new AtomicInteger(0);
-        final RPCResponseAvailableListener l = new RPCResponseAvailableListener() {
+        final RPCResponseAvailableListener<Message> l = new RPCResponseAvailableListener<Message>() {
 
             @Override
-            public void responseAvailable(RPCResponse r) {
+            public void responseAvailable(RPCResponse<Message> r) {
                 if (count.incrementAndGet() == responses.length) {
                     listener.responsesAvailable();
                 }
             }
         };
 
-        for (RPCResponse r : responses) {
+        for (RPCResponse<Message> r : responses) {
             r.registerListener(l);
         }
-
     }
-
-    /*public void sendError(OSDRequest rq, Exception error) {
-        if (error instanceof ONCRPCException) {
-            rq.sendException((ONCRPCException) error);
-        } else {
-            rq.sendInternalServerError(error);
-        }
-    }*/
 
     public static interface ResponsesListener {
 
         public void responsesAvailable();
 
     }
-
 }

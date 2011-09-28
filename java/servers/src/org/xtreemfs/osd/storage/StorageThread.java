@@ -11,12 +11,19 @@ package org.xtreemfs.osd.storage;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.olp.OverloadProtectedStage;
+import org.xtreemfs.common.olp.PerformanceInformationReceiver;
+import org.xtreemfs.common.olp.RequestMonitoring;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
+import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -31,23 +38,10 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.replication.ObjectSet;
-import org.xtreemfs.osd.stages.Stage;
-import org.xtreemfs.osd.stages.StorageStage.CachesFlushedCallback;
-import org.xtreemfs.osd.stages.StorageStage.CreateFileVersionCallback;
-import org.xtreemfs.osd.stages.StorageStage.DeleteObjectsCallback;
-import org.xtreemfs.osd.stages.StorageStage.GetFileIDListCallback;
-import org.xtreemfs.osd.stages.StorageStage.GetFileSizeCallback;
-import org.xtreemfs.osd.stages.StorageStage.GetObjectListCallback;
-import org.xtreemfs.osd.stages.StorageStage.InternalGetGmaxCallback;
-import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
-import org.xtreemfs.osd.stages.StorageStage.InternalGetReplicaStateCallback;
-import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
-import org.xtreemfs.osd.stages.StorageStage.TruncateCallback;
-import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
 import org.xtreemfs.osd.storage.VersionTable.Version;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax;
@@ -58,7 +52,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
-public class StorageThread extends Stage {
+public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
+    
+    private final static int     NUM_RQ_TYPES                  = 1;
+    private final static int     STAGE_ID                      = 3;
     
     public static final int      STAGEOP_READ_OBJECT           = 1;
     
@@ -96,84 +93,96 @@ public class StorageThread extends Stage {
     
     private final boolean        checksumsEnabled;
     
-    public StorageThread(int id, OSDRequestDispatcher dispatcher, MetadataCache cache, StorageLayout layout,
-        int maxQueueLength) {
+    public StorageThread(int id, OSDRequestDispatcher master, MetadataCache cache, StorageLayout layout) {
         
-        super("OSD StThr " + id, maxQueueLength);
+        // TODO find additional predecessors
+        super("OSD StThr " + id, STAGE_ID + id, NUM_RQ_TYPES, 
+                new PerformanceInformationReceiver [] { master.getPreprocStage() });
         
         this.cache = cache;
         this.layout = layout;
-        this.master = dispatcher;
+        this.master = master;
         this.checksumsEnabled = master.getConfig().isUseChecksums();
     }
     
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.olp.OverloadProtectedStage#_processMethod(org.xtreemfs.common.stage.StageRequest)
+     */
     @Override
-    protected void processMethod(StageRequest method) {
+    protected void _processMethod(StageRequest<AugmentedRequest> method) {
+                
+        Callback callback = method.getCallback();
+        RequestMonitoring monitoring = method.getRequest().getMonitoring();
         
-        try {
-            
-            switch (method.getStageMethod()) {
-            case STAGEOP_READ_OBJECT:
-                processRead(method);
-                break;
-            case STAGEOP_WRITE_OBJECT:
-                processWrite(method);
-                break;
-            case STAGEOP_TRUNCATE:
-                processTruncate(method);
-                break;
-            case STAGEOP_FLUSH_CACHES:
-                processFlushCaches(method);
-                break;
-            case STAGEOP_GMAX_RECEIVED:
-                processGmax(method);
-                break;
-            case STAGEOP_GET_GMAX:
-                processGetGmax(method);
-                break;
-            case STAGEOP_GET_FILE_SIZE:
-                processGetFileSize(method);
-                break;
-            case STAGEOP_GET_OBJECT_SET:
-                processGetObjectSet(method);
-                break;
-            case STAGEOP_INSERT_PADDING_OBJECT:
-                processInsertPaddingObject(method);
-                break;
-            case STAGEOP_GET_MAX_OBJNO:
-                processGetMaxObjNo(method);
-                break;
-            case STAGEOP_CREATE_FILE_VERSION:
-                processCreateFileVersion(method);
-                break;
-            case STAGEOP_GET_REPLICA_STATE:
-                processGetReplicaState(method);
-                break;
-            case STAGEOP_GET_FILEID_LIST:
-                processGetFileIDList(method);
-                break;
-            case STAGEOP_DELETE_OBJECTS:
-                processDeleteObjects(method);
-                break;
+        ErrorResponse error = null;
+        
+        switch (method.getStageMethod()) {
+        case STAGEOP_READ_OBJECT:
+            error = processRead(method);
+            break;
+        case STAGEOP_WRITE_OBJECT:
+            error = processWrite(method);
+            break;
+        case STAGEOP_TRUNCATE:
+            error = processTruncate(method);
+            break;
+        case STAGEOP_FLUSH_CACHES:
+            error = processFlushCaches(method);
+            break;
+        case STAGEOP_GMAX_RECEIVED:
+            error = processGmax(method);
+            break;
+        case STAGEOP_GET_GMAX:
+            error = processGetGmax(method);
+            break;
+        case STAGEOP_GET_FILE_SIZE:
+            error = processGetFileSize(method);
+            break;
+        case STAGEOP_GET_OBJECT_SET:
+            error = processGetObjectSet(method);
+            break;
+        case STAGEOP_INSERT_PADDING_OBJECT:
+            error = processInsertPaddingObject(method);
+            break;
+        case STAGEOP_GET_MAX_OBJNO:
+            error = processGetMaxObjNo(method);
+            break;
+        case STAGEOP_CREATE_FILE_VERSION:
+            error = processCreateFileVersion(method);
+            break;
+        case STAGEOP_GET_REPLICA_STATE:
+            error = processGetReplicaState(method);
+            break;
+        case STAGEOP_GET_FILEID_LIST:
+            error = processGetFileIDList(method);
+            break;
+        case STAGEOP_DELETE_OBJECTS:
+            error = processDeleteObjects(method);
+            break;
+        }
+        
+        if (error != null) {
+            monitoring.voidMeasurments();
+            if (callback instanceof AbstractRPCRequestCallback) {
+                ((AbstractRPCRequestCallback) callback).failed(error);
+            } else {
+                callback.failed(ErrorUtils.formatError(error));
             }
-            
-        } catch (Throwable th) {
-            method.sendInternalServerError(th);
-            Logging.logError(Logging.LEVEL_ERROR, this, th);
         }
     }
     
-    private void processGetMaxObjNo(StageRequest rq) {
-        final InternalGetMaxObjectNoCallback cback = (InternalGetMaxObjectNoCallback) rq.getCallback();
+    private ErrorResponse processGetMaxObjNo(StageRequest<AugmentedRequest> m) {
+        
+        Callback callback = m.getCallback();
         try {
-            final String fileId = (String) rq.getArgs()[0];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
+            final String fileId = (String) m.getArgs()[0];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[1];
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             
             long currentMax = -1l;
             
             for (int i = 0; i < fi.getLastObjectNumber(); i++) {
-                final long objVer = fi.getLargestObjectVersion(i);
+                long objVer = fi.getLargestObjectVersion(i);
                 if (objVer > currentMax)
                     currentMax = objVer;
             }
@@ -183,81 +192,85 @@ public class StorageThread extends Stage {
                     fileId, currentMax);
             }
             
-            cback.maxObjectNoCompleted(currentMax, fi.getFilesize(), fi.getTruncateEpoch(), null);
+            if (!callback.success(new Object[] { currentMax, fi.getFilesize(), fi.getTruncateEpoch() })) {
+                m.getRequest().getMonitoring().voidMeasurments();
+            }
+            
+            return null;
         } catch (Exception ex) {
-            cback.maxObjectNoCompleted(0l, 0l, 0l, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
-                POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
+            
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
         }
     }
     
-    private void processGmax(StageRequest rq) {
-        try {
-            final String fileId = (String) rq.getArgs()[0];
-            final long epoch = (Long) rq.getArgs()[1];
-            final long lastObject = (Long) rq.getArgs()[2];
-            
-            FileMetadata fi = cache.getFileInfo(fileId);
-            
-            if (fi == null) {
-                // file is not open, discard GMAX
-                return;
-            }
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                    "received new GMAX: %d/%d for %s", lastObject, epoch, fileId);
-            
-            if ((epoch == fi.getTruncateEpoch() && fi.getLastObjectNumber() < lastObject)
-                || epoch > fi.getTruncateEpoch()) {
-                
-                // valid file size update
-                fi.setGlobalLastObjectNumber(lastObject);
-                
-                if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                        "received GMAX is valid; for %s, current (fs, epoch) = (%d, %d)", fileId, fi
-                                .getFilesize(), fi.getTruncateEpoch());
-                
-            } else {
-                
-                // outdated file size udpate
-                
-                if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                        "received GMAX is outdated; for %s, current (fs, epoch) = (%d, %d)", fileId, fi
-                                .getFilesize(), fi.getTruncateEpoch());
-            }
-            
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_DEBUG, this, ex);
-            return;
+    private ErrorResponse processGmax(StageRequest<AugmentedRequest> rq) {
+        
+        final String fileId = (String) rq.getArgs()[0];
+        final long epoch = (Long) rq.getArgs()[1];
+        final long lastObject = (Long) rq.getArgs()[2];
+        
+        FileMetadata fi = cache.getFileInfo(fileId);
+        
+        if (fi == null) {
+            // file is not open, discard GMAX
+            return null;
         }
-    }
-    
-    private void processFlushCaches(StageRequest rq) {
-        final CachesFlushedCallback cback = (CachesFlushedCallback) rq.getCallback();
-        try {
-            final String fileId = (String) rq.getArgs()[0];
-            FileMetadata md = cache.removeFileInfo(fileId);
-            if (md != null)
-                layout.closeFile(null);
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                "received new GMAX: %d/%d for %s", lastObject, epoch, fileId);
+        
+        if ((epoch == fi.getTruncateEpoch() && fi.getLastObjectNumber() < lastObject)
+            || epoch > fi.getTruncateEpoch()) {
+            
+            // valid file size update
+            fi.setGlobalLastObjectNumber(lastObject);
             
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                    "removed file info from cache for file %s", fileId);
+                    "received GMAX is valid; for %s, current (fs, epoch) = (%d, %d)", fileId, fi
+                            .getFilesize(), fi.getTruncateEpoch());
             
-            cback.cachesFlushed(null);
-        } catch (Exception ex) {
-            rq.sendInternalServerError(ex);
-            return;
+        } else {
+            
+            // outdated file size udpate
+            
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                    "received GMAX is outdated; for %s, current (fs, epoch) = (%d, %d)", fileId, fi
+                            .getFilesize(), fi.getTruncateEpoch());
         }
+        
+        return null;
     }
     
-    private void processGetGmax(StageRequest rq) {
-        final InternalGetGmaxCallback cback = (InternalGetGmaxCallback) rq.getCallback();
+    private ErrorResponse processFlushCaches(StageRequest<AugmentedRequest> m) {
+        
+        final Callback callback = m.getCallback();
+        
+        final String fileId = (String) m.getArgs()[0];
+        FileMetadata md = cache.removeFileInfo(fileId);
+        if (md != null) {
+            layout.closeFile(null);
+        }
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                "removed file info from cache for file %s", fileId);
+        }
+        if (!callback.success(null)) {
+            m.getRequest().getMonitoring().voidMeasurments();
+        }
+        
+        return null;
+    }
+    
+    private ErrorResponse processGetGmax(StageRequest<AugmentedRequest> m) {
+        
+        final RPCRequestCallback callback = (RPCRequestCallback) m.getCallback();
+        
         try {
-            final String fileId = (String) rq.getArgs()[0];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
-            final long snapTimestamp = (Long) rq.getArgs()[2];
+            final String fileId = (String) m.getArgs()[0];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[1];
+            final long snapTimestamp = (Long) m.getArgs()[2];
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
@@ -287,23 +300,25 @@ public class StorageThread extends Stage {
                 fileSize = fi.getFilesize();
             }
             
-            InternalGmax gmax = InternalGmax.newBuilder().setEpoch(fi.getTruncateEpoch()).setFileSize(
-                fileSize).setLastObjectId(lastObj).build();
+            if (!callback.success(InternalGmax.newBuilder().setEpoch(fi.getTruncateEpoch()).setFileSize(
+                fileSize).setLastObjectId(lastObj).build())) {
+                m.getRequest().getMonitoring().voidMeasurments();
+            }
             
-            cback.gmaxComplete(gmax, null);
+            return null;
         } catch (IOException ex) {
-            cback.gmaxComplete(null, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
-                ex.toString()));
+            
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
         }
-        
     }
     
-    private void processGetReplicaState(StageRequest rq) {
-        final InternalGetReplicaStateCallback cback = (InternalGetReplicaStateCallback) rq.getCallback();
+    private ErrorResponse processGetReplicaState(StageRequest<AugmentedRequest> m) {
+        
+        final Callback callback = m.getCallback();
         try {
-            final String fileId = (String) rq.getArgs()[0];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
-            final long remoteMaxObjVer = (Long) rq.getArgs()[2];
+            final String fileId = (String) m.getArgs()[0];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[1];
+            final long remoteMaxObjVer = (Long) m.getArgs()[2];
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
@@ -332,28 +347,31 @@ public class StorageThread extends Stage {
             result.setPrimaryEpoch(0);
             result.setTruncateLog(layout.getTruncateLog(fileId));
             
-            cback.getReplicaStateComplete(result.build(), null);
+            if (!callback.success(result.build())) {
+                m.getRequest().getMonitoring().voidMeasurments();
+            }
+            
+            return null;
         } catch (IOException ex) {
-            cback.getReplicaStateComplete(null, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
-                POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
         }
-        
     }
     
     /**
      * Reads an object from disk and checks the checksum
      * 
-     * @param rq
+     * @param m
      */
-    private void processRead(StageRequest rq) {
-        final ReadObjectCallback cback = (ReadObjectCallback) rq.getCallback();
+    private ErrorResponse processRead(StageRequest<AugmentedRequest> m) {
+        
+        AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) m.getCallback();
         try {
-            final String fileId = (String) rq.getArgs()[0];
-            final long objNo = (Long) rq.getArgs()[1];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[2];
-            final int offset = (Integer) rq.getArgs()[3];
-            final int length = (Integer) rq.getArgs()[4];
-            final long versionTimestamp = (Long) rq.getArgs()[5];
+            final String fileId = (String) m.getArgs()[0];
+            final long objNo = (Long) m.getArgs()[1];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[2];
+            final int offset = (Integer) m.getArgs()[3];
+            final int length = (Integer) m.getArgs()[4];
+            final long versionTimestamp = (Long) m.getArgs()[5];
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
@@ -377,7 +395,10 @@ public class StorageThread extends Stage {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "checksum is %d", objChksm);
             }
             
+            // custom processing time measurement for on-disk operation that depends on the buffer size
+            m.getRequest().getMonitoring().beginMeasurement();
             ObjectInformation obj = layout.readObject(fileId, fi, objNo, offset, length, objVer);
+            m.getRequest().getMonitoring().endMeasurement();
             
             if (versionTimestamp != 0) {
                 int lastObj = fi.getVersionTable().getLatestVersionBefore(versionTimestamp).getObjCount() - 1;
@@ -388,25 +409,29 @@ public class StorageThread extends Stage {
                 obj.setGlobalLastObjectNo(fi.getGlobalLastObjectNumber());
             }
             
-            cback.readComplete(obj, null);
+            if (!callback.success(obj)){
+                m.getRequest().getMonitoring().voidMeasurments();
+            }
+            
+            return null;
         } catch (IOException ex) {
-            cback.readComplete(null, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
-                ex.toString()));
+            
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
         }
-        
     }
     
     /**
      * Reads an object from disk and checks the checksum
      * 
-     * @param rq
+     * @param m
      */
-    private void processGetFileSize(StageRequest rq) {
-        final GetFileSizeCallback cback = (GetFileSizeCallback) rq.getCallback();
+    private ErrorResponse processGetFileSize(StageRequest<AugmentedRequest> m) {
+        
+        AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) m.getCallback();
         try {
-            final String fileId = (String) rq.getArgs()[0];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
-            final long snapTimestamp = (Long) rq.getArgs()[2];
+            final String fileId = (String) m.getArgs()[0];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[1];
+            final long snapTimestamp = (Long) m.getArgs()[2];
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
@@ -416,54 +441,63 @@ public class StorageThread extends Stage {
             // file size from the version table / data on disk
             if (snapTimestamp > 0) {
                 Version v = fi.getVersionTable().getLatestVersionBefore(snapTimestamp);
-                cback.getFileSizeComplete(v.getFileSize(), null);
+                if (!callback.success(v.getFileSize())) {
+                    m.getRequest().getMonitoring().voidMeasurments();
+                }
+            } else {
+                if (!callback.success(fi.getFilesize())) {
+                    m.getRequest().getMonitoring().voidMeasurments();
+                }
             }
-
-            else
-                cback.getFileSizeComplete(fi.getFilesize(), null);
+            
+            return null;
         } catch (IOException ex) {
-            cback.getFileSizeComplete(-1, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
-                POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
+            
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
         }
+    }
+    
+    private ErrorResponse processInsertPaddingObject(StageRequest<AugmentedRequest> m) {
         
-    }
-    
-    private void processInsertPaddingObject(StageRequest rq) {
-        final WriteObjectCallback cback = (WriteObjectCallback) rq.getCallback();
+        Callback callback = m.getCallback();
         try {
-            final String fileId = (String) rq.getArgs()[0];
-            final long objNo = (Long) rq.getArgs()[1];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[2];
-            final int size = (Integer) rq.getArgs()[3];
-            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
-            final long version = fi.getLatestObjectVersion(objNo) + 1;
+            String fileId = (String) m.getArgs()[0];
+            long objNo = (Long) m.getArgs()[1];
+            StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[2];
+            int size = (Integer) m.getArgs()[3];
+            FileMetadata fi = layout.getFileMetadata(sp, fileId);
+            long version = fi.getLatestObjectVersion(objNo) + 1;
             
+            // custom processing time measurement for on-disk operation that depends on the buffer size
+            m.getRequest().getMonitoring().beginMeasurement();
             layout.createPaddingObject(fileId, fi, objNo, version, size);
+            m.getRequest().getMonitoring().endMeasurement();
             
-            OSDWriteResponse response = OSDWriteResponse.newBuilder().build();
-            cback.writeComplete(response, null);
+            if (!callback.success(OSDWriteResponse.newBuilder().build())) {
+                m.getRequest().getMonitoring().voidMeasurments();
+            }
             
+            return null;
         } catch (IOException ex) {
-            ex.printStackTrace();
-            cback.writeComplete(null, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
-                POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
         }
     }
     
-    private void processWrite(StageRequest rq) {
-        final WriteObjectCallback cback = (WriteObjectCallback) rq.getCallback();
+    private ErrorResponse processWrite(StageRequest<AugmentedRequest> m) {
+        
+        Callback callback = m.getCallback();
         try {
-            final String fileId = (String) rq.getArgs()[0];
-            final long objNo = (Long) rq.getArgs()[1];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[2];
-            int offset = (Integer) rq.getArgs()[3];
-            final ReusableBuffer data = (ReusableBuffer) rq.getArgs()[4];
-            final CowPolicy cow = (CowPolicy) rq.getArgs()[5];
-            final XLocations xloc = (XLocations) rq.getArgs()[6];
-            final boolean gMaxOff = (Boolean) rq.getArgs()[7];
-            final boolean syncWrite = (Boolean) rq.getArgs()[8];
+            final String fileId = (String) m.getArgs()[0];
+            final long objNo = (Long) m.getArgs()[1];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[2];
+            final int offset = (Integer) m.getArgs()[3];
+            final ReusableBuffer data = (ReusableBuffer) m.getArgs()[4];
+            final CowPolicy cow = (CowPolicy) m.getArgs()[5];
+            final XLocations xloc = (XLocations) m.getArgs()[6];
+            final boolean gMaxOff = (Boolean) m.getArgs()[7];
+            final boolean syncWrite = (Boolean) m.getArgs()[8];
             // use only if != null
-            final Long newVersionArg = (Long) rq.getArgs()[9];
+            final Long newVersionArg = (Long) m.getArgs()[9];
             
             final int dataLength = data.remaining();
             final int stripeSize = sp.getStripeSizeForObject(objNo);
@@ -477,10 +511,9 @@ public class StorageThread extends Stage {
             final int dataCapacity = data.capacity();
             if (offset + dataCapacity > stripeSize) {
                 BufferPool.free(data);
-                cback.writeComplete(null, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
-                    POSIXErrno.POSIX_ERROR_EINVAL, "offset+data.length must be <= stripe size (offset="
-                        + offset + " data.length=" + dataCapacity + " stripe size=" + stripeSize + ")"));
-                return;
+                return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, 
+                        "offset+data.length must be <= stripe size (offset=" + offset + " data.length=" + dataCapacity + 
+                        " stripe size=" + stripeSize + ")");
             }
             
             // assign the number of objects to the COW policy if necessary (this
@@ -505,7 +538,10 @@ public class StorageThread extends Stage {
                 fi.setLastObjectNumber(objNo);
             }
             
+            // custom processing time measurement for on-disk operation that depends on the buffer size
+            m.getRequest().getMonitoring().beginMeasurement();
             layout.writeObject(fileId, fi, data, objNo, offset, newVersion, syncWrite, isCow);
+            m.getRequest().getMonitoring().endMeasurement();
             
             // if a new version was created, update the "latest versions" file
             if (cow.cowEnabled() && (isCow || largestV == 0))
@@ -584,24 +620,26 @@ public class StorageThread extends Stage {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "new last object=%d gmax=%d", fi
                         .getLastObjectNumber(), fi.getGlobalLastObjectNumber());
-            // BufferPool.free(data);
-            cback.writeComplete(response.build(), null);
+
+            if (!callback.success(response.build())) {
+                m.getRequest().getMonitoring().voidMeasurments();
+            }
             
+            return null;
         } catch (IOException ex) {
-            ex.printStackTrace();
-            cback.writeComplete(null, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
-                POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
         }
     }
 
-    private void processDeleteObjects(StageRequest rq) throws IOException {
+    @SuppressWarnings("unchecked")
+    private ErrorResponse processDeleteObjects(StageRequest<AugmentedRequest> m) {
 
-        final DeleteObjectsCallback cback = (DeleteObjectsCallback) rq.getCallback();
+        Callback callback = m.getCallback();
         try {
-            final String fileId = (String) rq.getArgs()[0];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
-            final long epochNumber = (Long) rq.getArgs()[2];
-            final Map<Long,Long> objectsToBeDeleted = (Map<Long,Long>) rq.getArgs()[3];
+            final String fileId = (String) m.getArgs()[0];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[1];
+            final long epochNumber = (Long) m.getArgs()[2];
+            final Map<Long,Long> objectsToBeDeleted = (Map<Long,Long>) m.getArgs()[3];
 
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
 
@@ -613,30 +651,36 @@ public class StorageThread extends Stage {
 
             // Remove file info from cache to make sure it is reloaded with the next operation.
             cache.removeFileInfo(fileId);
-            cback.deleteObjectsComplete(null);
+            if (!callback.success(null)) {
+                m.getRequest().getMonitoring().voidMeasurments();
+            }
+            
+            return null;
         } catch (Exception ex) {
-            cback.deleteObjectsComplete(ErrorUtils.getErrorResponse(ErrorType.ERRNO,
-                POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
         }
     }
     
-    private void processTruncate(StageRequest rq) throws IOException {
+    private ErrorResponse processTruncate(StageRequest<AugmentedRequest> m) {
         
-        final TruncateCallback cback = (TruncateCallback) rq.getCallback();
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) m.getCallback();
         try {
-            final String fileId = (String) rq.getArgs()[0];
-            final long newFileSize = (Long) rq.getArgs()[1];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[2];
-            final Replica currentReplica = (Replica) rq.getArgs()[3];
-            final long epochNumber = (Long) rq.getArgs()[4];
-            final CowPolicy cow = (CowPolicy) rq.getArgs()[5];
-            final Long newObjVer = (Long) rq.getArgs()[6];
-            final Boolean createTLogEntry = (Boolean) rq.getArgs()[7];
+            final String fileId = (String) m.getArgs()[0];
+            final long newFileSize = (Long) m.getArgs()[1];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[2];
+            final Replica currentReplica = (Replica) m.getArgs()[3];
+            final long epochNumber = (Long) m.getArgs()[4];
+            final CowPolicy cow = (CowPolicy) m.getArgs()[5];
+            final Long newObjVer = (Long) m.getArgs()[6];
+            final Boolean createTLogEntry = (Boolean) m.getArgs()[7];
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             
             if (fi.getTruncateEpoch() >= epochNumber) {
-                cback.truncateComplete(OSDWriteResponse.newBuilder().build(), null);
+                
+                if (!callback.success(OSDWriteResponse.newBuilder().build())) {
+                    m.getRequest().getMonitoring().voidMeasurments();
+                }
                 /*
                  * cback.truncateComplete(null, new
                  * OSDException(ErrorCodes.EPOCH_OUTDATED,
@@ -644,7 +688,7 @@ public class StorageThread extends Stage {
                  * epochNumber + ", current one is " + fi.getTruncateEpoch(),
                  * ""));
                  */
-                return;
+                return null;
             }
             
             // assign the number of objects to the COW policy if necessary (this
@@ -732,13 +776,14 @@ public class StorageThread extends Stage {
             }
             
             // append the new file size and epoch number to the response
-            OSDWriteResponse response = OSDWriteResponse.newBuilder().setSizeInBytes(newFileSize)
-                    .setTruncateEpoch((int) epochNumber).build();
-            cback.truncateComplete(response, null);
+            if (!callback.success(OSDWriteResponse.newBuilder().setSizeInBytes(newFileSize).setTruncateEpoch(
+                    (int) epochNumber).build())) {
+                m.getRequest().getMonitoring().voidMeasurments();
+            }
             
+            return null;
         } catch (Exception ex) {
-            cback.truncateComplete(null, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
-                POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
         }
         
     }
@@ -746,30 +791,32 @@ public class StorageThread extends Stage {
     /**
      * @param method
      */
-    private void processGetObjectSet(StageRequest rq) {
-        final GetObjectListCallback cback = (GetObjectListCallback) rq.getCallback();
-        final String fileId = (String) rq.getArgs()[0];
-        final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
+    private ErrorResponse processGetObjectSet(StageRequest<AugmentedRequest> m) {
+        
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) m.getCallback();
+        final String fileId = (String) m.getArgs()[0];
+        final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[1];
         
         try {
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
-            ObjectSet objectSet = layout.getObjectSet(fileId, fi);
-            cback.getObjectSetComplete(objectSet, null);
+            if (!callback.success(layout.getObjectSet(fileId, fi))) {
+                m.getRequest().getMonitoring().voidMeasurments();
+            }
+            
+            return null;
         } catch (Exception ex) {
-            cback.getObjectSetComplete(null, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
-                POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
         }
     }
     
     /**
-     * @param method
+     * @param m
      */
-    private void processCreateFileVersion(StageRequest rq) {
+    private ErrorResponse processCreateFileVersion(StageRequest<AugmentedRequest> m) {
         
-        final CreateFileVersionCallback cback = (CreateFileVersionCallback) rq.getCallback();
-        final String fileId = (String) rq.getArgs()[0];
-        
-        FileMetadata fi = (FileMetadata) rq.getArgs()[1];
+        final Callback callback = m.getCallback();
+        final String fileId = (String) m.getArgs()[0];
+        FileMetadata fi = (FileMetadata) m.getArgs()[1];
         
         try {
             
@@ -805,19 +852,20 @@ public class StorageThread extends Stage {
                         .stackTraceToString(e));
             }
             
-            cback.createFileVersionComplete(fileSize, null);
+            if (!callback.success(fileSize)) {
+                m.getRequest().getMonitoring().voidMeasurments();
+            }
             
+            return null;
         } catch (Exception ex) {
             
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            cback.createFileVersionComplete(0, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
-                POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
         }
-        
     }
     
-    private void processGetFileIDList(StageRequest rq) {
-        final GetFileIDListCallback cback = (GetFileIDListCallback) rq.getCallback();
+    private ErrorResponse processGetFileIDList(StageRequest<AugmentedRequest> m) {
+        
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) m.getCallback();
         ArrayList<String> fileIDList = null;
         try {
             
@@ -825,13 +873,13 @@ public class StorageThread extends Stage {
                 fileIDList = layout.getFileIDList();
             }
             
-            cback.createGetFileIDListComplete(fileIDList, null);
-            
+            if (!callback.success(fileIDList)) {
+                m.getRequest().getMonitoring().voidMeasurments();
+            }
+            return null;
         } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            cback.createGetFileIDListComplete(null, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
-                POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
             
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
         }
     }
     

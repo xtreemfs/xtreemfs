@@ -9,6 +9,7 @@
 package org.xtreemfs.osd.operations;
 
 
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -20,8 +21,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 /**
  *
+ * @deprecated this event is not used anymore.
+ * 
  * <br>15.06.2009
  */
+@Deprecated
 public class EventGmax extends OSDOperation {
 
     final String sharedSecret;
@@ -40,15 +44,18 @@ public class EventGmax extends OSDOperation {
     }
 
     @Override
-    public void startRequest(final OSDRequest rq) {
+    public ErrorResponse startRequest(final OSDRequest rq, RPCRequestCallback callback) {
+        
         final xtreemfs_broadcast_gmaxRequest args = (xtreemfs_broadcast_gmaxRequest) rq
                 .getRequestArgs();
+        
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
                 "received GMAX packet for: %s from %s", rq.getFileId(), rq.getRPCRequest().getSenderAddress());
 
         master.getStorageStage().receivedGMAX_ASYNC(args.getFileId(), args.getTruncateEpoch(), args.getLastObject());
 
+        return null;
     }
 
 

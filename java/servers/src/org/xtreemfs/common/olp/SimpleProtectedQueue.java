@@ -54,11 +54,13 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
      */
     @Override
     public synchronized void enqueue(StageRequest<R> stageRequest) {
-        
+                
         try {
+            
             olp.obtainAdmission(stageRequest.getRequest().getMetadata());
             
             if (stageRequest.getRequest().getMetadata().hasHighPriority()) {
+                
                 high.add(stageRequest);
                 
                 // check the outdistanced low priority requests 
@@ -66,10 +68,12 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
                 while (iter.hasNext()) {
                     StageRequest<R> next = iter.next();
                     try {
+                        
                         olp.hasAdmission(stageRequest.getRequest().getMetadata());
                     } catch (Exception error) {
                         
                         iter.remove();
+                        next.getRequest().getMonitoring().voidMeasurments();
                         next.getCallback().failed(error);
                         olp.depart(next.getRequest().getMetadata(), next.getRequest().getMonitoring());
                     }
@@ -82,6 +86,7 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
             // wake up the stage if necessary
             if ((high.size() == 0 && low.size() == 1) ||
                 (high.size() == 1 && low.size() == 0)) {
+                
                 notify();
             }
         } catch (Exception error) {
@@ -91,13 +96,13 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
     }
     
     /* (non-Javadoc)
-     * @see org.xtreemfs.common.olp.InstrumentedQueue#take()
+     * @see org.xtreemfs.common.stage.StageQueue#take(long)
      */
     @Override
-    public synchronized StageRequest<R> take() throws InterruptedException {
+    public synchronized StageRequest<R> take(long timeout) throws InterruptedException {
         
         if (high.size() == 0 && low.size() == 0) {
-            wait();
+            wait(timeout);
         }
         
         StageRequest<R> result = high.poll();

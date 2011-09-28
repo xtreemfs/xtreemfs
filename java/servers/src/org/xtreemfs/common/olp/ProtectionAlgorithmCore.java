@@ -164,6 +164,7 @@ final class ProtectionAlgorithmCore {
      * @version 1.00, 08/31/11
      */
     public final static class RequestExpiredException extends AdmissionRefusedException {
+        
         private static final long serialVersionUID = 6042472641208133509L;       
     }
     
@@ -174,6 +175,7 @@ final class ProtectionAlgorithmCore {
      * @version 1.00, 08/31/11
      */
     public static class AdmissionRefusedException extends Exception {
+        
         private static final long serialVersionUID = -1182382280938989776L;      
     }
 }

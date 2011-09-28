@@ -11,10 +11,15 @@ package org.xtreemfs.osd.stages;
 import java.io.IOException;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.olp.OverloadProtectedStage;
+import org.xtreemfs.common.olp.PerformanceInformationReceiver;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
+import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.BufferPool;
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
@@ -26,7 +31,6 @@ import org.xtreemfs.osd.replication.ObjectDissemination;
 import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.ObjectInformation;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
 
 /**
@@ -35,34 +39,40 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
  * 
  * @author clorenz
  */
-public class ReplicationStage extends Stage {
+public class ReplicationStage extends OverloadProtectedStage<AugmentedRequest> {
+    
+    private final static int  NUM_RQ_TYPES                              = 2;
+    private final static int  STAGE_ID                                  = 1;
+    private final static long DELTA_MAX_TIME                            = 60 * 1000;
+    
     /**
      * fetching an object from another replica
      */
-    public static final int STAGEOP_FETCH_OBJECT = 1;
+    public static final int STAGEOP_FETCH_OBJECT                        = 1;
 
-    public static final int STAGEOP_INTERNAL_OBJECT_FETCHED = 2;
+    public static final int STAGEOP_INTERNAL_OBJECT_FETCHED             = 2;
 
-    public static final int STAGEOP_CANCEL_REPLICATION_FOR_FILE = 3;
+    public static final int STAGEOP_CANCEL_REPLICATION_FOR_FILE         = 3;
 
-    public static final int STAGEOP_START_NEW_REPLICATION_FOR_FILE = 4;
-
-    private OSDRequestDispatcher master;
+    public static final int STAGEOP_START_NEW_REPLICATION_FOR_FILE      = 4;
 
     private ObjectDissemination disseminationLayer;
     
+    private final PerformanceInformationReceiver predecessor;
+    
     public ReplicationStage(OSDRequestDispatcher master) {
-        super("OSD ReplSt");
+        super("OSD ReplSt", STAGE_ID, NUM_RQ_TYPES, new PerformanceInformationReceiver[] { master.getPreprocStage() });
 
-        // FIXME: test stuff
-//        Monitoring.enable();
-
-        this.master = master;
         this.disseminationLayer = new ObjectDissemination(master);
+        this.predecessor = master.getPreprocStage();
     }
 
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.olp.OverloadProtectedStage#shutdown()
+     */
     @Override
-    public void shutdown() {
+    public void shutdown() throws Exception {
+        
         disseminationLayer.shutdown();
         super.shutdown();
     }
@@ -71,26 +81,26 @@ public class ReplicationStage extends Stage {
      * fetching an object from another replica
      */
     public void fetchObject(String fileId, long objectNo, XLocations xLoc, Capability cap, CowPolicy cow,
-            final OSDRequest request, FetchObjectCallback listener) {
-        this.enqueueOperation(STAGEOP_FETCH_OBJECT, new Object[] { fileId, objectNo, xLoc, cap, cow },
-                request, listener);
-    }
-
-    public static interface FetchObjectCallback {
-        public void fetchComplete(ObjectInformation objectInfo, ErrorResponse error);
+            OSDRequest request, AbstractRPCRequestCallback callback) {
+        
+        enter(STAGEOP_FETCH_OBJECT, new Object[] { fileId, objectNo, xLoc, cap, cow }, new StageInternalRequest(request,
+                predecessor), callback);
     }
 
     /**
      * Checks the response from a requested replica.
      * Only for internal use. 
+     * 
      * @param usedOSD
      * @param objectList
      * @param error
      */
     public void internalObjectFetched(String fileId, long objectNo, ServiceUUID usedOSD, InternalObjectData data,
             ObjectList objectList, ErrorResponse error) {
-        this.enqueueOperation(STAGEOP_INTERNAL_OBJECT_FETCHED, new Object[] { fileId, objectNo, usedOSD,
-                data, objectList, error }, null, null);
+        
+        // TODO fix request metadata
+        enter(STAGEOP_INTERNAL_OBJECT_FETCHED, new Object[] { fileId, objectNo, usedOSD, data, objectList, error }, 
+                new StageInternalRequest(1, 0, DELTA_MAX_TIME, false, null), null);
     }
 
     /**
@@ -98,8 +108,10 @@ public class ReplicationStage extends Stage {
      * Only for internal use. 
      */
     public void cancelReplicationForFile(String fileId) {
-        this.enqueueOperation(STAGEOP_CANCEL_REPLICATION_FOR_FILE, new Object[] { fileId }, null,
-                null);
+        
+        // TODO fix request metadata
+        enter(STAGEOP_CANCEL_REPLICATION_FOR_FILE, new Object[] { fileId }, 
+                new StageInternalRequest(1, 0, DELTA_MAX_TIME, false, null), null);
     }
 
     /**
@@ -107,12 +119,17 @@ public class ReplicationStage extends Stage {
      * Only for internal use. 
      */
     public void triggerReplicationForFile(String fileId) {
-        this.enqueueOperation(STAGEOP_START_NEW_REPLICATION_FOR_FILE, new Object[] { fileId }, null,
-                null);
+        
+        // TODO fix request metadata
+        enter(STAGEOP_START_NEW_REPLICATION_FOR_FILE, new Object[] { fileId }, 
+                new StageInternalRequest(1, 0, DELTA_MAX_TIME, false, null), null);
     }
 
     @Override
-    protected void processMethod(StageRequest rq) {
+    protected void _processMethod(StageRequest<AugmentedRequest> rq) {
+        
+        final Callback callback = rq.getCallback();
+        
         try {
             switch (rq.getStageMethod()) {
             case STAGEOP_FETCH_OBJECT: {
@@ -132,17 +149,21 @@ public class ReplicationStage extends Stage {
                 break;
             }
             default:
-                rq.sendInternalServerError(new RuntimeException("unknown stage op request"));
+                rq.getRequest().getMonitoring().voidMeasurments();
+                callback.failed(new RuntimeException("unknown stage op request"));
             }
         } catch (Throwable exc) {
+            
             Logging.logError(Logging.LEVEL_ERROR, this, exc);
-            rq.sendInternalServerError(exc);
+            rq.getRequest().getMonitoring().voidMeasurments();
+            callback.failed(exc);
             return;
         }
     }
 
-    private void processFetchObject(StageRequest rq) throws IOException, JSONException {
-        final FetchObjectCallback callback = (FetchObjectCallback) rq.getCallback();
+    private void processFetchObject(StageRequest<AugmentedRequest> rq) throws IOException, JSONException {
+        
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) rq.getCallback();
         String fileId = (String) rq.getArgs()[0];
         long objectNo = (Long) rq.getArgs()[1];
         XLocations xLoc = (XLocations) rq.getArgs()[2];
@@ -150,15 +171,20 @@ public class ReplicationStage extends Stage {
         CowPolicy cow = (CowPolicy) rq.getArgs()[4];
 
         // if replica exist and stripe size of all replicas is the same
-        if (xLoc.getNumReplicas() > 1 && !xLoc.getLocalReplica().isComplete())
+        if (xLoc.getNumReplicas() > 1 && !xLoc.getLocalReplica().isComplete()) {
             disseminationLayer.fetchObject(fileId, objectNo, xLoc, cap, cow, rq);
-        else
+        } else {
+            
             // object does not exist locally and no replica exists => hole
-            callback.fetchComplete(new ObjectInformation(ObjectInformation.ObjectStatus.PADDING_OBJECT, null,
-                    xLoc.getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo)), null);
+            if (!callback.success(new ObjectInformation(ObjectInformation.ObjectStatus.PADDING_OBJECT, null,
+                    xLoc.getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo)))){
+                rq.getRequest().getMonitoring().voidMeasurments();
+            }
+        }
     }
 
-    private void processInternalObjectFetched(StageRequest rq) {
+    private void processInternalObjectFetched(StageRequest<AugmentedRequest> rq) {
+        
         String fileId = (String) rq.getArgs()[0];
         long objectNo = (Long) rq.getArgs()[1];
         final ServiceUUID usedOSD = (ServiceUUID) rq.getArgs()[2];
@@ -167,6 +193,7 @@ public class ReplicationStage extends Stage {
         final ErrorResponse error = (ErrorResponse) rq.getArgs()[5];
 
         if (error != null) {
+            
             if (error.getPosixErrno() == POSIXErrno.POSIX_ERROR_EAGAIN) {
                 // it could happen the request is rejected, because the XLoc is outdated caused by removing
                 // the replica of this OSD
@@ -178,6 +205,7 @@ public class ReplicationStage extends Stage {
                     BufferPool.free(data.getData());
             }
         } else {
+            
             // decode object list, if attached
             if (objectList != null) {
                 try {
@@ -204,7 +232,8 @@ public class ReplicationStage extends Stage {
         }
     }
 
-    private void processInternalCancelFile(StageRequest rq) {
+    private void processInternalCancelFile(StageRequest<AugmentedRequest> rq) {
+        
         String fileId = (String) rq.getArgs()[0];
         disseminationLayer.cancelFile(fileId);
     }
@@ -212,7 +241,8 @@ public class ReplicationStage extends Stage {
     /**
      * @param rq
      */
-    private void processInternalStartFile(StageRequest rq) {
+    private void processInternalStartFile(StageRequest<AugmentedRequest> rq) {
+        
         String fileId = (String) rq.getArgs()[0];
         disseminationLayer.startNewReplication(fileId);
     }

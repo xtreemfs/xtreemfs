@@ -8,15 +8,13 @@
 
 package org.xtreemfs.osd.operations;
 
+import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
-import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 
 /**
  * Writes an object to disk without sending GMax-messages. 
@@ -35,11 +33,9 @@ public class EventInsertPaddingObject extends OSDOperation {
     }
 
     @Override
-    public void startRequest(OSDRequest rq) {
+    public ErrorResponse startRequest(OSDRequest rq, RPCRequestCallback callback) {
         throw new UnsupportedOperationException("Not supported yet.");
-
     }
-
 
     @Override
     public boolean requiresCapability() {
@@ -48,6 +44,7 @@ public class EventInsertPaddingObject extends OSDOperation {
 
     @Override
     public void startInternalEvent(Object[] args) {
+        
         final String fileId = (String) args[0];
         final long objectNo = (Long) args[1];
         final XLocations xloc = (XLocations) args[2];
@@ -55,27 +52,34 @@ public class EventInsertPaddingObject extends OSDOperation {
 
         master.objectReplicated();
 
-        master.getStorageStage().insertPaddingObject(fileId, objectNo,
-            xloc.getLocalReplica().getStripingPolicy(), size, null,
-            new WriteObjectCallback() {
+        master.getStorageStage().insertPaddingObject(fileId, objectNo, xloc.getLocalReplica().getStripingPolicy(), size, 
+                new Callback() {
+                
                 @Override
-                public void writeComplete(OSDWriteResponse result, ErrorResponse error) {
-                    if (error != null) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: %s",
-                            ErrorUtils.formatError(error));
-                    } else
-                        triggerReplication(fileId);
+                public boolean success(Object result) {
+                    
+                    triggerReplication(fileId);
+                    return true;
+                }
+                
+                @Override
+                public void failed(Throwable error) {
+                    
+                    Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: %s", 
+                            error.getMessage());
                 }
             });
     }
     
     public void triggerReplication(String fileId) {
+        
         // cancel replication of file
         master.getReplicationStage().triggerReplicationForFile(fileId);
     }
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

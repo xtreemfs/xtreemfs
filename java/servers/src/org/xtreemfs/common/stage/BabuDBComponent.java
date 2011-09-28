@@ -53,7 +53,6 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
      * @param master
      */
     public BabuDBComponent(int stageId, int numRqTypes, PerformanceInformationReceiver master) {
-        
         super(stageId, numRqTypes, 0, new boolean[numRqTypes], new PerformanceInformationReceiver[] { master });
         
         this.piggybackReceiver = master;
@@ -122,8 +121,8 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
     /**
      * @see org.xtreemfs.babudb.api.database.DatabaseRO#reverseRangeLookup(int, byte[], byte[], java.lang.Object)
      */
-    public void reverseRangeLookup(Database database, RPCRequestCallback callback, int indexId, byte[] from, byte[] to, 
-            RequestMetadata metadata, BabuDBPostprocessing postprocessing) {
+    public void reverseRangeLookup(Database database, RPCRequestCallback callback, int indexId, byte[] from, 
+            byte[] to, RequestMetadata metadata, BabuDBPostprocessing postprocessing) {
                 
         try {
             RequestMonitoring monitoring = new RequestMonitoring(piggybackReceiver);
@@ -138,8 +137,8 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
      * @see org.xtreemfs.babudb.api.database.DatabaseRO#
      *          userDefinedLookup(org.xtreemfs.babudb.api.database.UserDefinedLookup, java.lang.Object)
      */
-    public void userDefinedLookup(Database database, RPCRequestCallback callback, UserDefinedLookup udl, RequestMetadata metadata, 
-            BabuDBPostprocessing postprocessing) {
+    public void userDefinedLookup(Database database, RPCRequestCallback callback, UserDefinedLookup udl, 
+            RequestMetadata metadata, BabuDBPostprocessing postprocessing) {
         
         try {
             RequestMonitoring monitoring = new RequestMonitoring(piggybackReceiver);
@@ -237,19 +236,6 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
             assert(false);
         }
     }
-    
-    /* (non-Javadoc)
-     * @see org.xtreemfs.common.stage.AutonomousComponent#exit(java.lang.Object)
-     */
-    @Override
-    public void exit(BabuDBRequest request) {
-        
-        if (request.error != null) {
-            request.callback.failed(request.error);
-        } else {
-            request.callback.success(request.result);
-        }
-    }
 
     /* (non-Javadoc)
      * @see org.xtreemfs.babudb.api.database.DatabaseRequestListener#failed(org.xtreemfs.babudb.api.exception.BabuDBException, java.lang.Object)
@@ -258,7 +244,7 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
     public void failed(BabuDBException error, Object context) {
         
         BabuDBRequest request = (BabuDBRequest) context;
-        request.error = error;
+        request.callback.failed(error);
         request.monitoring.voidMeasurments();
         exit(request, request.metadata, request.monitoring);
     }
@@ -272,16 +258,23 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
         
         BabuDBRequest request = (BabuDBRequest) context;
         try {
-            request.result = request.postprocessing.execute(result, request);
+            
+            Message response = request.postprocessing.execute(result, request);
             
             // rerun
-            if (request.result == null) {
+            if (response == null) {
                 suspendRequestProcessing(request.monitoring);
                 request.postprocessing.requeue(request);
                 return;
             }
+            
+            if (!request.callback.success(response)) {
+                request.monitoring.voidMeasurments();
+            }
         } catch (Exception e) {
-            request.error = e;
+            
+            request.monitoring.voidMeasurments();
+            request.callback.failed(e);
         }
         
         exit(request, request.metadata, request.monitoring);
@@ -296,8 +289,6 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
         final RequestMetadata      metadata;
         BabuDBPostprocessing       postprocessing;
         final Callback             callback;
-        Exception                  error = null;
-        Message                    result = null;
         
         public BabuDBRequest(Database database, Callback callback, RequestMetadata metadata, 
                 RequestMonitoring monitoring, BabuDBPostprocessing postprocessing, 

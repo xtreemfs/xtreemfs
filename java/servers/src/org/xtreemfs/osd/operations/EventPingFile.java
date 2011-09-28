@@ -8,7 +8,7 @@
 
 package org.xtreemfs.osd.operations;
 
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -17,7 +17,10 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
  * Writes an object to disk without sending GMax-messages. 
  *
  * 01.04.2009
+ * 
+ * @deprecated currently unused.
  */
+@Deprecated
 public class EventPingFile extends OSDOperation {
 
     public EventPingFile(OSDRequestDispatcher master) {
@@ -30,7 +33,7 @@ public class EventPingFile extends OSDOperation {
     }
 
     @Override
-    public void startRequest(OSDRequest rq) {
+    public ErrorResponse startRequest(OSDRequest rq, RPCRequestCallback callback) {
         throw new UnsupportedOperationException("Not supported yet.");
 
     }
@@ -42,9 +45,10 @@ public class EventPingFile extends OSDOperation {
 
     @Override
     public void startInternalEvent(Object[] args) {
-        final String fileId = (String) args[0];
+        
+        // final String fileId = (String) args[0];
 
-        master.getPreprocStage().pingFile(fileId);
+        // XXX master.getPreprocStage().pingFile(fileId);
     }
 
     @Override

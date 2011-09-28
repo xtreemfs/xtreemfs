@@ -8,14 +8,14 @@
 
 package org.xtreemfs.mrc;
 
-import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.stage.AugmentedServiceRequest;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 
 /**
  * 
  * @author bjko
  */
-public class MRCRequest extends AugmentedRequest {
+public class MRCRequest extends AugmentedServiceRequest {
             
     private RequestDetails         details;
         

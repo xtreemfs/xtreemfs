@@ -366,7 +366,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"replicated %s successfull for %s",operation,fileId);
                     }
-                    callback.finsihed();
+                    callback.finished();
                 }
 
             }

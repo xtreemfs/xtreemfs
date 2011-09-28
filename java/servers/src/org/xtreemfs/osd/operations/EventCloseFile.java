@@ -9,15 +9,13 @@
 package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.foundation.LRUCache;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
-import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.stages.DeletionStage.DeleteObjectsCallback;
-import org.xtreemfs.osd.stages.StorageStage.CachesFlushedCallback;
-import org.xtreemfs.osd.stages.StorageStage.CreateFileVersionCallback;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.FileMetadata;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
@@ -29,26 +27,30 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 public class EventCloseFile extends OSDOperation {
     
     public EventCloseFile(OSDRequestDispatcher master) {
+        
         super(master);
     }
     
     @Override
     public int getProcedureId() {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
     @Override
-    public void startRequest(OSDRequest rq) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public ErrorResponse startRequest(OSDRequest rq, final RPCRequestCallback callback) {
         
+        throw new UnsupportedOperationException("Not supported yet.");
     }
     
     
     @Override
     public boolean requiresCapability() {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
+    @SuppressWarnings("unchecked")
     @Override
     public void startInternalEvent(Object[] args) {
         
@@ -58,13 +60,10 @@ public class EventCloseFile extends OSDOperation {
         final CowPolicy cow = (CowPolicy) args[3];
         final LRUCache<String, Capability> cachedCaps = (LRUCache<String, Capability>) args[4];
         
-        master.getStorageStage().flushCaches(fileId, new CachesFlushedCallback() {
-            
+        master.getStorageStage().flushCaches(fileId, new Callback() {
+
             @Override
-            public void cachesFlushed(ErrorResponse error) {
-                
-                if (error != null)
-                    Logging.logMessage(Logging.LEVEL_ERROR, this, ErrorUtils.formatError(error));
+            public boolean success(Object result) {
                 
                 // if COW is enabled, create a new version
                 if (cow.cowEnabled())
@@ -74,32 +73,37 @@ public class EventCloseFile extends OSDOperation {
                 else if (isDeleteOnClose)
                     deleteObjects(fileId, fi, cow.cowEnabled());
                 
+                return true;
+            }
+
+            @Override
+            public void failed(Throwable error) {
+                
+                Logging.logMessage(Logging.LEVEL_ERROR, this, error.getMessage());
             }
         });
-
-        master.getRWReplicationStage().fileClosed(fileId);
-        
+        master.getRWReplicationStage().fileClosed(fileId);      
     }
     
-    public void deleteObjects(String fileId, FileMetadata fi, boolean isCow) {
+    private void deleteObjects(String fileId, FileMetadata fi, boolean isCow) {
         
         // cancel replication of file
         master.getReplicationStage().cancelReplicationForFile(fileId);
         
-        master.getDeletionStage().deleteObjects(fileId, fi, isCow, null, new DeleteObjectsCallback() {
-            
+        master.getDeletionStage().deleteObjects(fileId, fi, isCow, new Callback() {
+
             @Override
-            public void deleteComplete(ErrorResponse error) {
-                if (error != null) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: %s", ErrorUtils.formatError(error));
-                }
-                
+            public boolean success(Object result) { return true; }
+
+            @Override
+            public void failed(Throwable error) {
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: %s", error.getMessage());
             }
         });
     }
     
-    public void createNewVersion(final String fileId, final FileMetadata fi,
-        LRUCache<String, Capability> cachedCaps, final boolean isDeleteOnClose) {
+    private void createNewVersion(final String fileId, final FileMetadata fi, LRUCache<String, Capability> cachedCaps, 
+            final boolean isDeleteOnClose) {
         
         // first, check if there are any write capabilities among the cached
         // capabilities
@@ -121,23 +125,28 @@ public class EventCloseFile extends OSDOperation {
         if (!writeCap)
             return;
         
-        master.getStorageStage().createFileVersion(fileId, fi, null, new CreateFileVersionCallback() {
-            public void createFileVersionComplete(long fileSize, ErrorResponse error) {
+        master.getStorageStage().createFileVersion(fileId, fi, new Callback() {
+            
+            @Override
+            public boolean success(Object fileSize) {
                 
-                if (error != null) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: %s", ErrorUtils.formatError(error));
-                }
-                
-                // if the file is marked for deletion, delete it
-                if (isDeleteOnClose)
+                if (isDeleteOnClose) {
                     deleteObjects(fileId, fi, true);
+                }
+                return true;
+            }
+            
+            @Override
+            public void failed(Throwable error) {
+
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: %s", error.getMessage());
             }
         });
-        
     }
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

@@ -9,6 +9,8 @@
 package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -20,70 +22,64 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class InternalRWRFetchOperation extends OSDOperation {
 
-    final String sharedSecret;
-    final ServiceUUID localUUID;
+    private final String sharedSecret;
+    private final ServiceUUID localUUID;
 
     public InternalRWRFetchOperation(OSDRequestDispatcher master) {
         super(master);
+        
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }
 
     @Override
     public int getProcedureId() {
+        
         return OSDServiceConstants.PROC_ID_XTREEMFS_RWR_FETCH;
     }
 
     @Override
-    public void startRequest(final OSDRequest rq) {
-        final xtreemfs_rwr_fetchRequest args = (xtreemfs_rwr_fetchRequest)rq.getRequestArgs();
+    public ErrorResponse startRequest(OSDRequest rq, RPCRequestCallback callback) {
+        
+        final xtreemfs_rwr_fetchRequest args = (xtreemfs_rwr_fetchRequest) rq.getRequestArgs();
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"RWR fetch request for file %s-%d",args.getFileId(),args.getObjectNumber());
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "RWR fetch request for file %s-%d", rq.getFileId(),
+                    args.getObjectNumber());
         }
 
-        fetchObject(rq,args);
-
+        fetchObject(rq, args, callback);
+        
+        return null;
     }
     
-    public void fetchObject(final OSDRequest rq, final xtreemfs_rwr_fetchRequest args) {
-        master.getStorageStage().readObject(rq.getFileId(), args.getObjectNumber(),
-                rq.getLocationList().getLocalReplica().getStripingPolicy(), 0, -1, 0, rq, new ReadObjectCallback() {
-
-            @Override
-            public void readComplete(ObjectInformation result, ErrorResponse error) {
-                if (error != null)
-                    sendResult(rq, null, error);
-                else {
-                    InternalObjectData odata = new InternalObjectData(0, false, 0, result.getData());
-                    sendResult(rq, odata, null);
-                }
-            }
-        });
+    private void fetchObject(OSDRequest rq, xtreemfs_rwr_fetchRequest args, final RPCRequestCallback callback) {
+        
+        master.getStorageStage().readObject(args.getObjectNumber(), 
+                rq.getLocationList().getLocalReplica().getStripingPolicy(), 0, -1, 0, rq, 
+                new AbstractRPCRequestCallback(callback) {
+                    
+                    @Override
+                    public boolean success(Object result) {
+                        
+                        InternalObjectData odata = new InternalObjectData(0, false, 0, 
+                                ((ObjectInformation) result).getData());
+                        return callback.success(odata.getMetadata(), odata.getData());
+                    }
+                });
     }
-
-    public void sendResult(final OSDRequest rq, InternalObjectData response, ErrorResponse error) {
-
-        if (error != null) {
-            rq.sendError(error);
-        } else {
-            //only locally
-           rq.sendSuccess(response.getMetadata(),response.getData());
-        }
-    }
-
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
+        
         try {
-            xtreemfs_rwr_fetchRequest rpcrq = (xtreemfs_rwr_fetchRequest)rq.getRequestArgs();
+            xtreemfs_rwr_fetchRequest rpcrq = (xtreemfs_rwr_fetchRequest) rq.getRequestArgs();
             rq.setFileId(rpcrq.getFileId());
             rq.setCapability(new Capability(rpcrq.getFileCredentials().getXcap(), sharedSecret));
             rq.setLocationList(new XLocations(rpcrq.getFileCredentials().getXlocs(), localUUID));
@@ -98,14 +94,13 @@ public final class InternalRWRFetchOperation extends OSDOperation {
 
     @Override
     public boolean requiresCapability() {
+        
         return true;
     }
 
     @Override
     public void startInternalEvent(Object[] args) {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
-
 }

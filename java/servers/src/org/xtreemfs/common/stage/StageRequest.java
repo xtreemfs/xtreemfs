@@ -13,7 +13,7 @@ package org.xtreemfs.common.stage;
  * @author fx.langner
  * @version 1.00, 09/05/11
  * 
- * <R> - general interface for requests attached to this stage request. Extends {@link AbstractServiceRequest}.
+ * <R> - general interface for requests attached to this stage request. Extends {@link AugmentedServiceRequest}.
  */    
 public final class StageRequest<R extends Request> {
     
@@ -57,6 +57,7 @@ public final class StageRequest<R extends Request> {
      * @return the identifier for the method to use during processing.
      */
     public int getStageMethod() {
+        
         return stageMethodId;
     }
     
@@ -64,6 +65,7 @@ public final class StageRequest<R extends Request> {
      * @return additional arguments for the request.
      */
     public Object[] getArgs() {
+        
         return args;
     }
     
@@ -71,6 +73,7 @@ public final class StageRequest<R extends Request> {
      * @return for postprocessing the request.
      */
     public Callback getCallback() {
+        
         return callback;
     }
     
@@ -78,6 +81,7 @@ public final class StageRequest<R extends Request> {
      * @return the original request.
      */
     public R getRequest() {
+        
         return request;
     }
 }

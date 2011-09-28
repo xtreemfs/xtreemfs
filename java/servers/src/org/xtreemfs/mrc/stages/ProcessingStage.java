@@ -82,8 +82,9 @@ import static org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceConstants.*;
  */
 public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
     
-    private static final int                 NUM_RQ_TYPES              = 38;
-    private static final int                 STAGE_ID                  = 1;
+    private final static int                 NUM_RQ_TYPES              = 38;
+    private final static int                 STAGE_ID                  = 1;
+    private final static int                 NUM_SUB_SEQ_STAGES        = 1;
     
     private final MRCRequestDispatcher       master;
     
@@ -96,7 +97,7 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
     public final Map<Integer, Integer>       requestTypeMap = new HashMap<Integer, Integer>(NUM_RQ_TYPES);
     
     public ProcessingStage(MRCRequestDispatcher master) {
-        super("ProcSt", STAGE_ID, NUM_RQ_TYPES);
+        super("ProcSt", STAGE_ID, NUM_RQ_TYPES, NUM_SUB_SEQ_STAGES);
         this.master = master;
         
         operations = new HashMap<Integer, MRCOperation>();
@@ -200,7 +201,7 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
      * @see org.xtreemfs.common.stage.Stage#_processMethod(org.xtreemfs.common.stage.StageRequest)
      */
     @Override
-    public void _processMethod(StageRequest<MRCRequest> method) {
+    protected void _processMethod(StageRequest<MRCRequest> method) {
         
         final MRCRequest rq = method.getRequest();
         final RPCServerRequest rpcRequest = rq.getRPCRequest();
@@ -264,6 +265,7 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
                 }
             }
         } catch (Exception exc) {
+            
             monitoring.voidMeasurments();
             callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO, 
                     "could not initialize authentication module");

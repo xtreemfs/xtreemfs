@@ -91,13 +91,14 @@ public class CreateVolumeOperation extends MRCOperation {
                 RPCAuthentication.userService, ServiceType.SERVICE_TYPE_VOLUME, new Callback() {
                     
                     @Override
-                    public void success(Object sset) {
+                    public boolean success(Object sset) {
                         
                         processStep2(volData, volumeId, rq, (ServiceSet) sset, callback);
+                        return true;
                     }
                     
                     @Override
-                    public void failed(Exception e) {
+                    public void failed(Throwable e) {
                         
                         callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, e);
                     }
@@ -149,13 +150,14 @@ public class CreateVolumeOperation extends MRCOperation {
                     RPCAuthentication.userService, vol, new Callback() {
                         
                         @Override
-                        public void success(Object result) {
+                        public boolean success(Object result) {
                             
                             processStep3(callback);
+                            return true;
                         }
                         
                         @Override
-                        public void failed(Exception e) {
+                        public void failed(Throwable e) {
                             
                             callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, e);
                         }

@@ -9,6 +9,7 @@
 package org.xtreemfs.common.stage;
 
 import org.xtreemfs.foundation.LifeCycleThread;
+import org.xtreemfs.foundation.TimeSync;
 
 /**
  * <p>Generalized stage to be used at all services.</p>
@@ -16,7 +17,7 @@ import org.xtreemfs.foundation.LifeCycleThread;
  * @author fx.langner
  * @version 1.00, 09/05/11
  * 
- * @param <R> - general interface for requests processed by this stage. Extends {@link AbstractServiceRequest}.
+ * @param <R> - general interface for requests processed by this stage. Extends {@link AugmentedServiceRequest}.
  */
 public abstract class Stage<R extends Request> extends LifeCycleThread implements AutonomousComponent<StageRequest<R>> {
     
@@ -31,6 +32,11 @@ public abstract class Stage<R extends Request> extends LifeCycleThread implement
     private volatile boolean     quit = false;
     
     /**
+     * <p>Delay in ms between two cron-Jobs.</p>
+     */
+    private final long           period;
+    
+    /**
      * <p>Initializes a stage with given name and queue implementation.</p>
      * 
      * @param name
@@ -38,8 +44,21 @@ public abstract class Stage<R extends Request> extends LifeCycleThread implement
      */
     public Stage(String name, StageQueue<R> queue) {
         
+        this(name, queue, 0);
+    }
+    
+    /**
+     * <p>Initializes a stage with given name and queue implementation.</p>
+     * 
+     * @param name
+     * @param queue
+     * @param period - delay in ms between two cron-Jobs.
+     */
+    public Stage(String name, StageQueue<R> queue, long period) {
+        
         super(name);
         this.queue = queue;
+        this.period = period;
     }
 
     /**
@@ -110,7 +129,15 @@ public abstract class Stage<R extends Request> extends LifeCycleThread implement
      * 
      * @param method - the stage method to execute.
      */
-    public abstract void processMethod(StageRequest<R> method);
+    protected abstract void processMethod(StageRequest<R> method);
+    
+    /**
+     * <p>Optional method that is executed if a period was defined within the constructor and is overridden by a 
+     * stage implementation.</p>
+     */
+    protected void chronJob() {
+        throw new UnsupportedOperationException();
+    }
     
     /* (non-Javadoc)
      * @see org.xtreemfs.common.stage.AutonomousComponent#getNumberOfRequests()
@@ -148,22 +175,47 @@ public abstract class Stage<R extends Request> extends LifeCycleThread implement
     public final void run() {
         
         notifyStarted();
+        long lastCronJob = 0;
+        long nextCronJob = period;
         
         while (!quit) {
             try {
                 
-                StageRequest<R> request = queue.take();
-                processMethod(request);
-                exit(request);
+                StageRequest<R> request = queue.take(nextCronJob);
+                
+                // calculate the delay for the next cron-job
+                long timePassed = TimeSync.getLocalSystemTime() - lastCronJob;
+                nextCronJob = nextCronJob - timePassed;
+                if (period > 0 && nextCronJob <= 0) {
+                    
+                    chronJob();
+                    lastCronJob = TimeSync.getLocalSystemTime();
+                    nextCronJob = nextChronJobDelay();
+                }
+                
+                if (request != null) {
+                    processMethod(request);
+                    exit(request);
+                }
                 
             } catch (InterruptedException ex) {
+                
                 break;
             } catch (Exception ex) {
+                
                 notifyCrashed(ex);
                 break;
             }
         }
         
         notifyStopped();
+    }
+    
+    /**
+     * @return the delay until the next chron-job is executed.
+     */
+    protected long nextChronJobDelay() {
+        
+        return period;
     }
 }

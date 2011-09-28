@@ -17,6 +17,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.olp.OverloadProtectedStage;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
+import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -42,19 +48,16 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.operations.EventRWRStatus;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
-import org.xtreemfs.osd.stages.Stage;
-import org.xtreemfs.osd.stages.StorageStage.DeleteObjectsCallback;
-import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
-import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
+import org.xtreemfs.osd.stages.StageInternalRequest;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion;
@@ -66,23 +69,27 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  *
  * @author bjko
  */
-public class RWReplicationStage extends Stage implements FleaseMessageSenderInterface {
+public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest> 
+        implements FleaseMessageSenderInterface {
 
-    public static final int STAGEOP_REPLICATED_WRITE = 1;
-    public static final int STAGEOP_CLOSE = 2;
-    public static final int STAGEOP_PROCESS_FLEASE_MSG = 3;
-    public static final int STAGEOP_PREPAREOP = 5;
-    public static final int STAGEOP_TRUNCATE = 6;
-    public static final int STAGEOP_GETSTATUS = 7;
+    private final static int NUM_RQ_TYPES                       = 1;
+    private final static int STAGE_ID                           = 2;
+    
+    public static final int  STAGEOP_REPLICATED_WRITE           = 1;
+    public static final int  STAGEOP_CLOSE                      = 2;
+    public static final int  STAGEOP_PROCESS_FLEASE_MSG         = 3;
+    public static final int  STAGEOP_PREPAREOP                  = 5;
+    public static final int  STAGEOP_TRUNCATE                   = 6;
+    public static final int  STAGEOP_GETSTATUS                  = 7;
 
-    public static final int STAGEOP_INTERNAL_AUTHSTATE = 10;
-    public static final int STAGEOP_INTERNAL_OBJFETCHED = 11;
+    public static final int  STAGEOP_INTERNAL_AUTHSTATE         = 10;
+    public static final int  STAGEOP_INTERNAL_OBJFETCHED        = 11;
 
-    public static final int STAGEOP_LEASE_STATE_CHANGED = 13;
-    public static final int STAGEOP_INTERNAL_STATEAVAIL = 14;
-    public static final int STAGEOP_INTERNAL_DELETE_COMPLETE = 15;
-    public static final int STAGEOP_FORCE_RESET = 16;
-    public static final int STAGEOP_INTERNAL_MAXOBJ_AVAIL = 17;
+    public static final int  STAGEOP_LEASE_STATE_CHANGED        = 13;
+    public static final int  STAGEOP_INTERNAL_STATEAVAIL        = 14;
+    public static final int  STAGEOP_INTERNAL_DELETE_COMPLETE   = 15;
+    public static final int  STAGEOP_FORCE_RESET                = 16;
+    public static final int  STAGEOP_INTERNAL_MAXOBJ_AVAIL      = 17;
 
     public  static enum Operation {
         READ,
@@ -91,7 +98,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         INTERNAL_UPDATE,
         INTERNAL_TRUNCATE
     };
-
 
     private final RPCNIOSocketClient client;
 
@@ -116,9 +122,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     private static final int           MAX_OBJS_IN_FLIGHT = 10;
 
-    private static final int MAX_PENDING_PER_FILE = 10;
+    private static final int           MAX_PENDING_PER_FILE = 10;
 
-    private static final int MAX_EXTERNAL_REQUESTS_IN_Q = 250;
+    private static final int           MAX_EXTERNAL_REQUESTS_IN_Q = 250;
 
     private final Queue<ReplicatedFileState> filesInReset;
 
@@ -126,10 +132,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     private final AtomicInteger externalRequestsInQueue;
 
-
-
     public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts) throws IOException {
-        super("RWReplSt");
+        
+        // TODO
+        super("RWReplSt", STAGE_ID, NUM_RQ_TYPES);
+        
         this.master = master;
         client = new RPCNIOSocketClient(sslOpts, 15000, 60000*5);
         fleaseClient = new RPCNIOSocketClient(sslOpts, 15000, 60000*5);
@@ -138,7 +145,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         files = new HashMap<String, ReplicatedFileState>();
         cellToFileId = new HashMap<ASCIIString,String>();
         numObjsInFlight = 0;
-        filesInReset = new LinkedList();
+        filesInReset = new LinkedList<ReplicatedFileState>();
         externalRequestsInQueue = new AtomicInteger(0);
 
         localID = new ASCIIString(master.getConfig().getUUID().toString());
@@ -154,6 +161,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
             @Override
             public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
+                
                 throw new UnsupportedOperationException("Not supported yet.");
             }
         }, new FleaseStatusListener() {
@@ -175,6 +183,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     @Override
     public void start() {
+        
         masterEpochThread.start();
         client.start();
         fleaseClient.start();
@@ -183,7 +192,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     @Override
-    public void shutdown() {
+    public void shutdown() throws Exception {
+        
         client.shutdown();
         fleaseClient.shutdown();
         fstage.shutdown();
@@ -209,193 +219,205 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     public void eventReplicaStateAvailable(String fileId, ReplicaStatus localState, ErrorResponse error) {
-         this.enqueueOperation(STAGEOP_INTERNAL_STATEAVAIL, new Object[]{fileId,localState,error}, null, null);
+         enter(STAGEOP_INTERNAL_STATEAVAIL, new Object[] { fileId, localState, error }, null, null);
     }
 
     public void eventForceReset(FileCredentials credentials, XLocations xloc) {
-         this.enqueueOperation(STAGEOP_FORCE_RESET, new Object[]{credentials, xloc}, null, null);
+         enter(STAGEOP_FORCE_RESET, new Object[]{credentials, xloc}, null, null);
     }
 
     public void eventDeleteObjectsComplete(String fileId, ErrorResponse error) {
-         this.enqueueOperation(STAGEOP_INTERNAL_DELETE_COMPLETE, new Object[]{fileId,error}, null, null);
+         enter(STAGEOP_INTERNAL_DELETE_COMPLETE, new Object[]{ fileId, error }, null, null);
     }
 
     void eventObjectFetched(String fileId, ObjectVersionMapping object, InternalObjectData data, ErrorResponse error) {
-         this.enqueueOperation(STAGEOP_INTERNAL_OBJFETCHED, new Object[]{fileId,object,data,error}, null, null);
+         enter(STAGEOP_INTERNAL_OBJFETCHED, new Object[]{ fileId, object, data, error}, null, null);
     }
 
 
-    void eventSetAuthState(String fileId, AuthoritativeReplicaState authState, ReplicaStatus localState, ErrorResponse error) {
-        this.enqueueOperation(STAGEOP_INTERNAL_AUTHSTATE, new Object[]{fileId,authState, localState, error}, null, null);
+    void eventSetAuthState(String fileId, AuthoritativeReplicaState authState, ReplicaStatus localState, 
+            ErrorResponse error) {
+        enter(STAGEOP_INTERNAL_AUTHSTATE, new Object[]{ fileId, authState, localState, error}, null, null);
     }
 
     void eventLeaseStateChanged(ASCIIString cellId, Flease lease, FleaseException error) {
-        this.enqueueOperation(STAGEOP_LEASE_STATE_CHANGED, new Object[]{cellId,lease,error}, null, null);
+        enter(STAGEOP_LEASE_STATE_CHANGED, new Object[]{ cellId, lease, error}, null, null);
     }
 
     void eventMaxObjAvail(String fileId, long maxObjVer, long fileSize, long truncateEpoch, ErrorResponse error) {
-        this.enqueueOperation(STAGEOP_INTERNAL_MAXOBJ_AVAIL, new Object[]{fileId,maxObjVer,error}, null, null);
+        enter(STAGEOP_INTERNAL_MAXOBJ_AVAIL, new Object[]{ fileId, maxObjVer, error}, null, null);
     }
 
-    private void processLeaseStateChanged(StageRequest method) {
-        try {
-            final ASCIIString cellId = (ASCIIString) method.getArgs()[0];
-            final Flease lease = (Flease) method.getArgs()[1];
-            final FleaseException error = (FleaseException) method.getArgs()[2];
+    private void processLeaseStateChanged(StageRequest<AugmentedRequest> method) {
+
+        final ASCIIString cellId = (ASCIIString) method.getArgs()[0];
+        final Flease lease = (Flease) method.getArgs()[1];
+        final FleaseException error = (FleaseException) method.getArgs()[2];
+
+        if (error == null) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "(R:%s) lease change event: %s, %s", localID, cellId, lease);
+            }
+        } else {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this, "(R:%s) lease error in cell %s: %s",
+                    localID, cellId, error);
+        }
+
+        final String fileId = cellToFileId.get(cellId);
+        if (fileId != null) {
+            ReplicatedFileState state = files.get(fileId);
+            assert(state != null);
 
             if (error == null) {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) lease change event: %s, %s",localID, cellId, lease);
+                boolean localIsPrimary = (lease.getLeaseHolder() != null) && (lease.getLeaseHolder().equals(localID));
+                ReplicaState oldState = state.getState();
+                state.setLocalIsPrimary(localIsPrimary);
+                state.setLease(lease);
+
+                // Error handling for timeouts on the primary.
+                if (oldState == ReplicaState.PRIMARY
+                    &&lease.getLeaseHolder() == null
+                    && lease.getLeaseTimeout_ms() == 0) {
+                    Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
+                            "(R:%s) was primary, lease error in cell %s, restarting replication: %s",localID, cellId,
+                            lease, error);
+                    failed(state, ErrorUtils.getInternalServerError(new IOException(fileId +
+                            ": lease timed out, renew failed")));
+                } else {
+                    if ( (state.getState() == ReplicaState.BACKUP)
+                        || (state.getState() == ReplicaState.PRIMARY)
+                        || (state.getState() == ReplicaState.WAITING_FOR_LEASE) ) {
+                            if (localIsPrimary) {
+                                //notify onPrimary
+                                if (oldState != ReplicaState.PRIMARY) {
+                                    state.setMasterEpoch(lease.getMasterEpochNumber());
+                                    doPrimary(state);
+                                }
+                            } else {
+                                if (oldState != ReplicaState.BACKUP) {
+                                    state.setMasterEpoch(FleaseMessage.IGNORE_MASTER_EPOCH);
+                                    doBackup(state);
+                                }
+                            }
+                    }
                 }
             } else {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) lease error in cell %s: %s",localID, cellId, error);
+                failed(state, ErrorUtils.getInternalServerError(error));
             }
-
-            final String fileId = cellToFileId.get(cellId);
-            if (fileId != null) {
-                ReplicatedFileState state = files.get(fileId);
-                assert(state != null);
-
-                boolean leaseOk = false;
-                if (error == null) {
-                    boolean localIsPrimary = (lease.getLeaseHolder() != null) && (lease.getLeaseHolder().equals(localID));
-                    ReplicaState oldState = state.getState();
-                    state.setLocalIsPrimary(localIsPrimary);
-                    state.setLease(lease);
-
-                    // Error handling for timeouts on the primary.
-                    if (oldState == ReplicaState.PRIMARY
-                        &&lease.getLeaseHolder() == null
-                        && lease.getLeaseTimeout_ms() == 0) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,"(R:%s) was primary, lease error in cell %s, restarting replication: %s",localID, cellId,lease,error);
-                        failed(state, ErrorUtils.getInternalServerError(new IOException(fileId +": lease timed out, renew failed")));
-                    } else {
-                        if ( (state.getState() == ReplicaState.BACKUP)
-                            || (state.getState() == ReplicaState.PRIMARY)
-                            || (state.getState() == ReplicaState.WAITING_FOR_LEASE) ) {
-                                if (localIsPrimary) {
-                                    //notify onPrimary
-                                    if (oldState != ReplicaState.PRIMARY) {
-                                        state.setMasterEpoch(lease.getMasterEpochNumber());
-                                        doPrimary(state);
-                                    }
-                                } else {
-                                    if (oldState != ReplicaState.BACKUP) {
-                                        state.setMasterEpoch(FleaseMessage.IGNORE_MASTER_EPOCH);
-                                        doBackup(state);
-                                    }
-                                }
-                        }
-                    }
-                } else {
-                    failed(state, ErrorUtils.getInternalServerError(error));
-                }
-            }
-
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this,ex);
         }
     }
 
-    private void processSetAuthoritativeState(StageRequest method) {
-        try {
-            final String fileId = (String) method.getArgs()[0];
-            final AuthoritativeReplicaState authState = (AuthoritativeReplicaState) method.getArgs()[1];
-            final ReplicaStatus localState = (ReplicaStatus) method.getArgs()[2];
-            final ErrorResponse error = (ErrorResponse) method.getArgs()[3];
+    private ErrorResponse processSetAuthoritativeState(StageRequest<AugmentedRequest> method) {
+        
+        final String fileId = (String) method.getArgs()[0];
+        final AuthoritativeReplicaState authState = (AuthoritativeReplicaState) method.getArgs()[1];
+        final ReplicaStatus localState = (ReplicaStatus) method.getArgs()[2];
+        final ErrorResponse error = (ErrorResponse) method.getArgs()[3];
 
-            ReplicatedFileState state = files.get(fileId);
-            if (state == null) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) set AUTH for unknown file: %s",localID, fileId);
-                return;
+        final ReplicatedFileState state = files.get(fileId);
+        if (state == null) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this, "(R:%s) set AUTH for unknown file: %s",
+                    localID, fileId);
+            if (error != null) {
+                return error;
+            } else {
+                return ErrorUtils.getInternalServerError(new Exception("(R:" + localID + 
+                        ") set AUTH for unknown file: " + fileId));
+            }
+        }
+
+        if (error != null) {
+            failed(state, error);
+            return error;
+        } else {
+            // Calculate what we need to do locally based on the local state. XXX dead code
+            //boolean resetRequired = localState.getTruncateEpoch() < authState.getTruncateEpoch();
+
+            // Create a list of missing objects.
+            Map<Long, Long> objectsToBeDeleted = new HashMap<Long, Long>();
+
+            for (ObjectVersion localObject : localState.getObjectVersionsList()) {
+                // Never delete any object which is newer than auth state!
+                if (localObject.getObjectVersion() <= authState.getMaxObjVersion()) {
+                    objectsToBeDeleted.put(localObject.getObjectNumber(), localObject.getObjectVersion());
+                }
+            }
+            // Delete everything that is older or not part of the authoritative state.
+            for (ObjectVersionMapping authObject : authState.getObjectVersionsList()) {
+                Long version = objectsToBeDeleted.get(authObject.getObjectNumber());
+                if ((version != null) && (version == authObject.getObjectVersion())) {
+                    objectsToBeDeleted.remove(authObject.getObjectNumber());
+                }
             }
 
+            Map<Long, ObjectVersionMapping> missingObjects = new HashMap<Long, ObjectVersionMapping>();
+            for (ObjectVersionMapping authObject : authState.getObjectVersionsList()) {
+                missingObjects.put(authObject.getObjectNumber(), authObject);
+            }
+            for (ObjectVersion localObject : localState.getObjectVersionsList()) {
+                ObjectVersionMapping object = missingObjects.get(localObject.getObjectNumber());
+                if ((object != null) && (localObject.getObjectVersion() >= object.getObjectVersion())) {
+                    missingObjects.remove(localObject.getObjectNumber());
+                }
+            }
+
+            if (!missingObjects.isEmpty()
+                || !objectsToBeDeleted.isEmpty()
+                || (localState.getTruncateEpoch() < authState.getTruncateEpoch())) {
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "(R:%s) replica RESET required updates for: %s", localID, state.getFileId());
+                }
+
+                state.setObjectsToFetch(new LinkedList<ObjectVersionMapping>(missingObjects.values()));
+                filesInReset.add(state);
+
+                // Start by deleting the old objects.
+                master.getStorageStage().deleteObjects(fileId, state.getsPolicy(), authState.getTruncateEpoch(), 
+                        objectsToBeDeleted, new Callback() {
+                            
+                            @Override
+                            public boolean success(Object result) {
+                                eventDeleteObjectsComplete(fileId, null);
+                                return true;
+                            }
+                            
+                            @Override
+                            public void failed(Throwable error) {
+                                eventDeleteObjectsComplete(fileId, ((ErrorResponseException) error).getRPCError());
+                            }
+                });
+
+            } else {
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "(R:%s) replica RESET finished (replica is up-to-date): %s", localID, state.getFileId());
+                }
+                doOpen(state);
+            }
+        }
+
+        return null;
+    }
+
+    private void processDeleteObjectsComplete(StageRequest<AugmentedRequest> method) {
+        
+        final String fileId = (String) method.getArgs()[0];
+        final ErrorResponse error = (ErrorResponse) method.getArgs()[1];
+
+        ReplicatedFileState state = files.get(fileId);
+        if (state != null) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "(R:%s) deleted all objects requested by RESET for %s with %s", localID, state.getFileId(),
+                        ErrorUtils.formatError(error));
+            }
             if (error != null) {
                 failed(state, error);
             } else {
-                // Calculate what we need to do locally based on the local state.
-                boolean resetRequired = localState.getTruncateEpoch() < authState.getTruncateEpoch();
-
-                // Create a list of missing objects.
-                Map<Long,Long> objectsToBeDeleted = new HashMap();
-
-                for (ObjectVersion localObject : localState.getObjectVersionsList()) {
-                    // Never delete any object which is newer than auth state!
-                    if (localObject.getObjectVersion() <= authState.getMaxObjVersion()) {
-                        objectsToBeDeleted.put(localObject.getObjectNumber(), localObject.getObjectVersion());
-                    }
-                }
-                // Delete everything that is older or not part of the authoritative state.
-                for (ObjectVersionMapping authObject : authState.getObjectVersionsList()) {
-                    Long version = objectsToBeDeleted.get(authObject.getObjectNumber());
-                    if ((version != null) && (version == authObject.getObjectVersion())) {
-                        objectsToBeDeleted.remove(authObject.getObjectNumber());
-                    }
-                }
-
-                Map<Long,ObjectVersionMapping> missingObjects = new HashMap();
-                for (ObjectVersionMapping authObject : authState.getObjectVersionsList()) {
-                    missingObjects.put(authObject.getObjectNumber(), authObject);
-                }
-                for (ObjectVersion localObject : localState.getObjectVersionsList()) {
-                    ObjectVersionMapping object = missingObjects.get(localObject.getObjectNumber());
-                    if ((object != null) && (localObject.getObjectVersion() >= object.getObjectVersion())) {
-                        missingObjects.remove(localObject.getObjectNumber());
-                    }
-                }
-
-                if (!missingObjects.isEmpty()
-                    || !objectsToBeDeleted.isEmpty()
-                    || (localState.getTruncateEpoch() < authState.getTruncateEpoch())) {
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) replica RESET required updates for: %s", localID, state.getFileId());
-                    }
-
-                    state.setObjectsToFetch(new LinkedList(missingObjects.values()));
-                    filesInReset.add(state);
-
-                    // Start by deleting the old objects.
-                    master.getStorageStage().deleteObjects(fileId, state.getsPolicy(), authState.getTruncateEpoch(), objectsToBeDeleted, new DeleteObjectsCallback() {
-
-                        @Override
-                        public void deleteObjectsComplete(ErrorResponse error) {
-                            eventDeleteObjectsComplete(fileId, error);
-                        }
-                    });
-
-                } else {
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) replica RESET finished (replica is up-to-date): %s",localID, state.getFileId());
-                    }
-                    doOpen(state);
-                }
+                fetchObjects();
             }
-
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this,ex);
-        }
-    }
-
-    private void processDeleteObjectsComplete(StageRequest method) {
-        try {
-            final String fileId = (String) method.getArgs()[0];
-            final ErrorResponse error = (ErrorResponse) method.getArgs()[1];
-
-            ReplicatedFileState state = files.get(fileId);
-            if (state != null) {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) deleted all objects requested by RESET for %s with %s",localID,state.getFileId(),
-                            ErrorUtils.formatError(error));
-                }
-                if (error != null) {
-                    failed(state, error);
-                } else {
-                   fetchObjects();
-                }
-            }
-
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this,ex);
         }
     }
 
@@ -422,6 +444,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void fetchObject(final String fileId, final ObjectVersionMapping record) {
+        
         ReplicatedFileState state = files.get(fileId);
         if (state == null) {
             return;
@@ -431,77 +454,87 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             final ServiceUUID osd = new ServiceUUID(record.getOsdUuidsList().get(0));
             //fetch that object
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) file %s, fetch object %d (version %d) from %s",
-                        localID, fileId,record.getObjectNumber(),record.getObjectVersion(),osd);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "(R:%s) file %s, fetch object %d (version %d) from %s", localID, fileId, 
+                        record.getObjectNumber(), record.getObjectVersion(), osd);
 
-            RPCResponse r = osdClient.xtreemfs_rwr_fetch(osd.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    state.getCredentials(), fileId, record.getObjectNumber(), record.getObjectVersion());
-            r.registerListener(new RPCResponseAvailableListener() {
+            RPCResponse<ObjectData> r = osdClient.xtreemfs_rwr_fetch(osd.getAddress(), RPCAuthentication.authNone, 
+                    RPCAuthentication.userService, state.getCredentials(), fileId, record.getObjectNumber(), 
+                    record.getObjectVersion());
+            r.registerListener(new RPCResponseAvailableListener<ObjectData>() {
 
                 @Override
-                public void responseAvailable(RPCResponse r) {
+                public void responseAvailable(RPCResponse<ObjectData> r) {
                     try {
-                        ObjectData metadata = (ObjectData) r.get();
-                        InternalObjectData data = new InternalObjectData(metadata, r.getData());
+                        InternalObjectData data = new InternalObjectData(r.get(), r.getData());
                         eventObjectFetched(fileId, record, data, null);
                     } catch (Exception ex) {
-                        eventObjectFetched(fileId, record, null, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
+                        eventObjectFetched(fileId, record, null, 
+                                ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), 
+                                        ex));
                     } finally {
                         r.freeBuffers();
                     }
                 }
             });
         } catch (IOException ex) {
-            eventObjectFetched(fileId, record, null, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
+            eventObjectFetched(fileId, record, null, ErrorUtils.getErrorResponse(ErrorType.ERRNO, 
+                    POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
         }
         
     }
     
-    private void processObjectFetched(StageRequest method) {
-        try {
-            final String fileId = (String) method.getArgs()[0];
-            final ObjectVersionMapping record = (ObjectVersionMapping) method.getArgs()[1];
-            final InternalObjectData data = (InternalObjectData) method.getArgs()[2];
-            final ErrorResponse error = (ErrorResponse) method.getArgs()[3];
+    private void processObjectFetched(StageRequest<AugmentedRequest> method) {
 
-            ReplicatedFileState state = files.get(fileId);
-            if (state != null) {
+        final String fileId = (String) method.getArgs()[0];
+        final ObjectVersionMapping record = (ObjectVersionMapping) method.getArgs()[1];
+        final InternalObjectData data = (InternalObjectData) method.getArgs()[2];
+        final ErrorResponse error = (ErrorResponse) method.getArgs()[3];
 
-                if (error != null) {
-                    numObjsInFlight--;
-                    fetchObjects();
-                    failed(state, error);
-                } else {
-                    master.getStorageStage().writeObjectWithoutGMax(fileId, record.getObjectNumber(),
-                            state.getsPolicy(), 0, data.getData(), CowPolicy.PolicyNoCow, null, false,
-                            record.getObjectVersion(), null, new WriteObjectCallback() {
+        ReplicatedFileState state = files.get(fileId);
+        if (state != null) {
 
-                        @Override
-                        public void writeComplete(OSDWriteResponse result, ErrorResponse error) {
-                            if (error != null) {
-                                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,"cannot write object locally: %s",ErrorUtils.formatError(error));
+            if (error != null) {
+                
+                numObjsInFlight--;
+                fetchObjects();
+                failed(state, error);
+            } else {
+                
+                master.getStorageStage().writeObjectWithoutGMax(fileId, record.getObjectNumber(),
+                        state.getsPolicy(), 0, data.getData(), CowPolicy.PolicyNoCow, null, false,
+                        record.getObjectVersion(), new Callback() {
+                            
+                            @Override
+                            public boolean success(Object result) {
+                                /* ignored */
+                                return true;
                             }
-                        }
-                    });
-                    master.getPreprocStage().pingFile(fileId);
+                            
+                            @Override
+                            public void failed(Throwable error) {
+                                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
+                                        "cannot write object locally: %s", error.getMessage());
+                            }
+                        });
+                
+                master.getPreprocStage().pingFile(fileId);
 
-                    numObjsInFlight--;
-                    final int numPendingFile = state.getNumObjectsPending()-1;
-                    state.setNumObjectsPending(numPendingFile);
-                    state.getPolicy().objectFetched(record.getObjectVersion());
-                    if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) fetched object for replica, file %s, remaining %d",localID, fileId,numPendingFile);
-                    fetchObjects();
-                    if (numPendingFile == 0) {
-                        //reset complete!
-                        Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this,"(R:%s) RESET complete for file %s",localID, fileId);
-                        doOpen(state);
-                    }
+                numObjsInFlight--;
+                final int numPendingFile = state.getNumObjectsPending()-1;
+                state.setNumObjectsPending(numPendingFile);
+                state.getPolicy().objectFetched(record.getObjectVersion());
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "(R:%s) fetched object for replica, file %s, remaining %d", localID, fileId,numPendingFile);
+                fetchObjects();
+                if (numPendingFile == 0) {
+                    //reset complete!
+                    Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this,
+                            "(R:%s) RESET complete for file %s", localID, fileId);
+                    doOpen(state);
                 }
             }
-
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this,ex);
         }
     }
 
@@ -509,15 +542,19 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
         if (file.getState() == ReplicaState.RESET) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"file %s is already in RESET",file.getFileId());
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "file %s is already in RESET",
+                        file.getFileId());
             return;
         }
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) replica state changed for %s from %s to %s",localID, file.getFileId(),file.getState(),ReplicaState.RESET);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                    "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(), file.getState(),
+                    ReplicaState.RESET);
         }
         file.setState(ReplicaState.RESET);
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) replica RESET started: %s (update objVer=%d)",localID, file.getFileId(),updateObjVer);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                    "(R:%s) replica RESET started: %s (update objVer=%d)", localID, file.getFileId(), updateObjVer);
         }
 
         OSDOperation op = master.getInternalEvent(EventRWRStatus.class);
@@ -525,44 +562,42 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         
     }
 
-    private void processReplicaStateAvailExecReset(StageRequest method) {
-        try {
-            final String fileId = (String) method.getArgs()[0];
-            final ReplicaStatus localReplicaState = (ReplicaStatus) method.getArgs()[1];
-            final ErrorResponse error = (ErrorResponse) method.getArgs()[2];
+    private void processReplicaStateAvailExecReset(StageRequest<AugmentedRequest> method) {
+        
+        final String fileId = (String) method.getArgs()[0];
+        final ReplicaStatus localReplicaState = (ReplicaStatus) method.getArgs()[1];
+        final ErrorResponse error = (ErrorResponse) method.getArgs()[2];
 
-            final ReplicatedFileState state = files.get(fileId);
-            if (state != null) {
-                if (error != null) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,"local state for %s failed: %s",
-                                state.getFileId(), error);
-                    failed(state, error);
-                } else {
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) local state for %s available.",
-                                localID, state.getFileId());
-                    }
-                    state.getPolicy().executeReset(state.getCredentials(), localReplicaState, new ReplicaUpdatePolicy.ExecuteResetCallback() {
-
-                        @Override
-                        public void finished(AuthoritativeReplicaState authState) {
-                            eventSetAuthState(state.getFileId(), authState, localReplicaState, null);
-                        }
-
-                        @Override
-                        public void failed(ErrorResponse error) {
-                            eventSetAuthState(state.getFileId(), null, null, error);
-                        }
-                    });
+        final ReplicatedFileState state = files.get(fileId);
+        if (state != null) {
+            if (error != null) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,"local state for %s failed: %s",
+                            state.getFileId(), error);
+                failed(state, error);
+            } else {
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "(R:%s) local state for %s available.", localID, state.getFileId());
                 }
-            }
+                state.getPolicy().executeReset(state.getCredentials(), localReplicaState, 
+                        new ReplicaUpdatePolicy.ExecuteResetCallback() {
 
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this,ex);
+                    @Override
+                    public void finished(AuthoritativeReplicaState authState) {
+                        eventSetAuthState(state.getFileId(), authState, localReplicaState, null);
+                    }
+
+                    @Override
+                    public void failed(ErrorResponse error) {
+                        eventSetAuthState(state.getFileId(), null, null, error);
+                    }
+                });
+            }
         }
     }
 
-    private void processForceReset(StageRequest method) {
+    private ErrorResponse processForceReset(StageRequest<AugmentedRequest> method) {
+        
         try {
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
             final XLocations loc = (XLocations) method.getArgs()[1];
@@ -571,8 +606,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             if (!state.isForceReset()) {
                 state.setForceReset(true);
             }
+            
+            return null;
         } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this,ex);
+            
+            return ErrorUtils.getInternalServerError(ex);
         }
     }
 
@@ -587,19 +625,21 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             } else {
                 file.setCellOpen(true);
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) replica state changed for %s from %s to %s",
-                            localID,file.getFileId(),file.getState(),ReplicaState.WAITING_FOR_LEASE);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(),
+                            file.getState(), ReplicaState.WAITING_FOR_LEASE);
                 }
                 try {
                     file.setState(ReplicaState.WAITING_FOR_LEASE);
-                    List<InetSocketAddress> osdAddresses = new ArrayList();
+                    List<InetSocketAddress> osdAddresses = new ArrayList<InetSocketAddress>();
                     for (ServiceUUID osd : file.getPolicy().getRemoteOSDUUIDs()) {
                         osdAddresses.add(osd.getAddress());
                     }
                     fstage.openCell(file.getPolicy().getCellId(), osdAddresses, true);
                     //wait for lease...
                 } catch (UnknownUUIDException ex) {
-                    failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
+                    failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), 
+                            ex));
                 }
             }
 
@@ -611,7 +651,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     private void doOpen(final ReplicatedFileState file) {
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"(R:%s) replica state changed for %s from %s to %s",localID, file.getFileId(),file.getState(),ReplicaState.OPEN);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "(R:%s) replica state changed for %s from %s to %s", localID, 
+                    file.getFileId(), file.getState(), ReplicaState.OPEN);
         }
         file.setState(ReplicaState.OPEN);
         if (file.getPendingRequests().size() > 0) {
@@ -620,20 +661,23 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void doPrimary(final ReplicatedFileState file) {
+        
         assert(file.isLocalIsPrimary());
+        
         try {
             if (file.getPolicy().onPrimary((int)file.getMasterEpoch()) && !file.isPrimaryReset()) {
                 file.setPrimaryReset(true);
                 doReset(file,ReplicaUpdatePolicy.UNLIMITED_RESET);
             } else {
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) replica state changed for %s from %s to %s",
-                            localID, file.getFileId(),file.getState(),ReplicaState.PRIMARY);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(), 
+                            file.getState(), ReplicaState.PRIMARY);
                 }
                 file.setPrimaryReset(false);
                 file.setState(ReplicaState.PRIMARY);
                 while (!file.getPendingRequests().isEmpty()) {
-                    StageRequest m = file.getPendingRequests().remove(0);
+                    StageRequest<AugmentedRequest> m = file.getPendingRequests().remove(0);
                     enqueuePrioritized(m);
                 }
             }
@@ -643,87 +687,86 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void doBackup(final ReplicatedFileState file) {
+        
         assert(!file.isLocalIsPrimary());
-        //try {
+        
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) replica state changed for %s from %s to %s",
-                    localID, file.getFileId(),file.getState(),ReplicaState.BACKUP);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                    "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(), file.getState(),
+                    ReplicaState.BACKUP);
         }
         file.setPrimaryReset(false);
         file.setState(ReplicaState.BACKUP);
         while (!file.getPendingRequests().isEmpty()) {
-            StageRequest m = file.getPendingRequests().remove(0);
+            StageRequest<AugmentedRequest> m = file.getPendingRequests().remove(0);
             enqueuePrioritized(m);
         }
-        /*} catch (IOException ex) {
-            failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
-        }*/
     }
 
     private void failed(ReplicatedFileState file, ErrorResponse ex) {
-        Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) replica for file %s failed: %s",localID, file.getFileId(),ErrorUtils.formatError(ex));
+        
+        Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this, "(R:%s) replica for file %s failed: %s",
+                localID, file.getFileId(), ErrorUtils.formatError(ex));
         file.setPrimaryReset(false);
         file.setState(ReplicaState.OPEN);
         file.setCellOpen(false);
         fstage.closeCell(file.getPolicy().getCellId(), false);
-        for (StageRequest rq : file.getPendingRequests()) {
-            RWReplicationCallback callback = (RWReplicationCallback) rq.getCallback();
+        for (StageRequest<AugmentedRequest> rq : file.getPendingRequests()) {
+            AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) rq.getCallback();
             callback.failed(ex);
         }
         file.getPendingRequests().clear();
     }
 
-    private void enqueuePrioritized(StageRequest rq) {
-        while (!q.offer(rq)) {
-            StageRequest otherRq = q.poll();
-            otherRq.sendInternalServerError(new IllegalStateException("internal queue overflow, cannot enqueue operation for processing."));
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Dropping request from rwre queue due to overload");
-        }
+    private void enqueuePrioritized(StageRequest<AugmentedRequest> rq) {
+                
+        rq.getRequest().getMetadata().increasePriority();
+        
+        enter(rq);
     }
 
-
-    public static interface RWReplicationCallback {
-        public void success(long newObjectVersion);
-        public void redirect(String redirectTo);
-        public void failed(ErrorResponse ex);
-    }
-
-    /*public void openFile(FileCredentials credentials, XLocations locations, boolean forceReset,
-            RWReplicationCallback callback, OSDRequest request) {
-        this.enqueueOperation(STAGEOP_OPEN, new Object[]{credentials,locations,forceReset}, request, callback);
-    }*/
-
-    protected void enqueueExternalOperation(int stageOp, Object[] arguments, OSDRequest request, Object callback) {
+    private void enqueueExternalOperation(int stageOp, Object[] arguments, OSDRequest rq, 
+            AbstractRPCRequestCallback callback) {
+        
         if (externalRequestsInQueue.get() >= MAX_EXTERNAL_REQUESTS_IN_Q) {
-            Logging.logMessage(Logging.LEVEL_WARN, this, "RW replication stage is overloaded, request %d for %s dropped", request.getRequestId(), request.getFileId());
-            request.sendInternalServerError(new IllegalStateException("RW replication stage is overloaded, request dropped"));
+            Logging.logMessage(Logging.LEVEL_WARN, this, 
+                    "RW replication stage is overloaded, request %s dropped", rq.toString());
+            callback.failed(new IllegalStateException("RW replication stage is overloaded, request dropped"));
         } else {
             externalRequestsInQueue.incrementAndGet();
-            this.enqueueOperation(stageOp, arguments, request, callback);
+            // TODO find predecessors
+            StageInternalRequest request = new StageInternalRequest(rq, null);
+            enter(stageOp, arguments, request, callback);
         }
     }
 
-    public void prepareOperation(FileCredentials credentials, XLocations xloc, long objNo, long objVersion, Operation op, RWReplicationCallback callback,
-            OSDRequest request) {
-        this.enqueueExternalOperation(STAGEOP_PREPAREOP, new Object[]{credentials,xloc,objNo,objVersion,op}, request, callback);
+    public void prepareOperation(FileCredentials credentials, XLocations xloc, long objNo, long objVersion, 
+            Operation op, AbstractRPCRequestCallback callback, OSDRequest request) {
+
+        enqueueExternalOperation(STAGEOP_PREPAREOP, new Object[]{ credentials, xloc, objNo, objVersion, op}, request, 
+                callback);
     }
     
-    public void replicatedWrite(FileCredentials credentials, XLocations xloc, long objNo, long objVersion, InternalObjectData data,
-            RWReplicationCallback callback, OSDRequest request) {
-        this.enqueueExternalOperation(STAGEOP_REPLICATED_WRITE, new Object[]{credentials,xloc,objNo,objVersion,data}, request, callback);
+    public void replicatedWrite(FileCredentials credentials, XLocations xloc, long objNo, long objVersion, 
+            InternalObjectData data, AbstractRPCRequestCallback callback, OSDRequest request) {
+        
+        enqueueExternalOperation(STAGEOP_REPLICATED_WRITE, new Object[] { credentials, xloc, objNo, objVersion, data }, 
+                request, callback);
     }
 
     public void replicateTruncate(FileCredentials credentials, XLocations xloc, long newFileSize, long newObjectVersion,
-            RWReplicationCallback callback, OSDRequest request) {
-        this.enqueueExternalOperation(STAGEOP_TRUNCATE, new Object[]{credentials,xloc,newFileSize,newObjectVersion}, request, callback);
+            AbstractRPCRequestCallback callback, OSDRequest request) {
+        
+        enqueueExternalOperation(STAGEOP_TRUNCATE, new Object[]{credentials,xloc,newFileSize,newObjectVersion}, request, 
+                callback);
     }
 
     public void fileClosed(String fileId) {
-        this.enqueueOperation(STAGEOP_CLOSE, new Object[]{fileId}, null, null);
+        enter(STAGEOP_CLOSE, new Object[]{fileId}, null, null);
     }
 
     public void receiveFleaseMessage(ReusableBuffer message, InetSocketAddress sender) {
-        //this.enqueueOperation(STAGEOP_PROCESS_FLEASE_MSG, new Object[]{message,sender}, null, null);
+
         try {
             FleaseMessage msg = new FleaseMessage(message);
             BufferPool.free(message);
@@ -734,21 +777,20 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
     }
 
-    public void getStatus(StatusCallback callback) {
-        this.enqueueOperation(STAGEOP_GETSTATUS, new Object[]{}, null, callback);
+    public void getStatus(Callback callback) {
+        enter(STAGEOP_GETSTATUS, new Object[]{}, null, callback);
     }
 
-    public static interface StatusCallback {
-        public void statusComplete(Map<String,Map<String,String>> status);
-    }
-
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public void sendMessage(FleaseMessage message, InetSocketAddress recipient) {
+        
         ReusableBuffer data = BufferPool.allocate(message.getSize());
         message.serialize(data);
         data.flip();
         try {
-            RPCResponse r = fleaseOsdClient.xtreemfs_rwr_flease_msg(recipient, RPCAuthentication.authNone, RPCAuthentication.userService, master.getHostName(),master.getConfig().getPort(),data);
+            RPCResponse r = fleaseOsdClient.xtreemfs_rwr_flease_msg(recipient, RPCAuthentication.authNone, 
+                    RPCAuthentication.userService, master.getHostName(), master.getConfig().getPort(), data);
             r.registerListener(new RPCResponseAvailableListener() {
 
                 @Override
@@ -763,7 +805,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
 
     @Override
-    protected void processMethod(StageRequest method) {
+    protected void _processMethod(StageRequest<AugmentedRequest> method) {
+        
+        final Callback callback = method.getCallback();
+        ErrorResponse error = null;
+        
         switch (method.getStageMethod()) {
             case STAGEOP_REPLICATED_WRITE : {
                 externalRequestsInQueue.decrementAndGet();
@@ -779,56 +825,54 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             case STAGEOP_PROCESS_FLEASE_MSG : processFleaseMessage(method); break;
             case STAGEOP_PREPAREOP : {
                 externalRequestsInQueue.decrementAndGet();
-                processPrepareOp(method);
+                error = processPrepareOp(method);
                 break;
             }
-            case STAGEOP_INTERNAL_AUTHSTATE : processSetAuthoritativeState(method); break;
+            case STAGEOP_INTERNAL_AUTHSTATE : error = processSetAuthoritativeState(method); break;
             case STAGEOP_LEASE_STATE_CHANGED : processLeaseStateChanged(method); break;
             case STAGEOP_INTERNAL_OBJFETCHED : processObjectFetched(method); break;
             case STAGEOP_INTERNAL_STATEAVAIL : processReplicaStateAvailExecReset(method); break;
             case STAGEOP_INTERNAL_DELETE_COMPLETE : processDeleteObjectsComplete(method); break;
-            case STAGEOP_INTERNAL_MAXOBJ_AVAIL : processMaxObjAvail(method); break;
-            case STAGEOP_FORCE_RESET : processForceReset(method); break;
-            case STAGEOP_GETSTATUS : processGetStatus(method); break;
+            case STAGEOP_INTERNAL_MAXOBJ_AVAIL : error = processMaxObjAvail(method); break;
+            case STAGEOP_FORCE_RESET : error = processForceReset(method); break;
+            case STAGEOP_GETSTATUS : error = processGetStatus(method); break;
             default : throw new IllegalArgumentException("no such stageop");
         }
-    }
-
-
-    private void processFleaseMessage(StageRequest method) {
-        try {
-            final ReusableBuffer data = (ReusableBuffer) method.getArgs()[0];
-            final InetSocketAddress sender = (InetSocketAddress) method.getArgs()[1];
-
-            FleaseMessage msg = new FleaseMessage(data);
-            BufferPool.free(data);
-            msg.setSender(sender);
-            fstage.receiveMessage(msg);
-
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this,ex);
+        
+        if (error != null) {
+            method.getRequest().getMonitoring().voidMeasurments();
+            callback.failed(ErrorUtils.formatError(error));
         }
     }
 
-    private void processFileClosed(StageRequest method) {
-        try {
-            final String fileId = (String) method.getArgs()[0];
-            ReplicatedFileState state = files.remove(fileId);
-            if (state != null) {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"closing file %s",fileId);
-                }
-                state.getPolicy().closeFile();
-                if (state.getPolicy().requiresLease())
-                    fstage.closeCell(state.getPolicy().getCellId(), false);
-                cellToFileId.remove(state.getPolicy().getCellId());
+    private void processFleaseMessage(StageRequest<AugmentedRequest> method) {
+        
+        final ReusableBuffer data = (ReusableBuffer) method.getArgs()[0];
+        final InetSocketAddress sender = (InetSocketAddress) method.getArgs()[1];
+
+        FleaseMessage msg = new FleaseMessage(data);
+        BufferPool.free(data);
+        msg.setSender(sender);
+        fstage.receiveMessage(msg);
+    }
+
+    private void processFileClosed(StageRequest<AugmentedRequest> method) {
+        
+        final String fileId = (String) method.getArgs()[0];
+        ReplicatedFileState state = files.remove(fileId);
+        if (state != null) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"closing file %s",fileId);
             }
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this,ex);
+            state.getPolicy().closeFile();
+            if (state.getPolicy().requiresLease())
+                fstage.closeCell(state.getPolicy().getCellId(), false);
+            cellToFileId.remove(state.getPolicy().getCellId());
         }
     }
 
-    private ReplicatedFileState getState(FileCredentials credentials, XLocations loc, boolean forceReset) throws IOException {
+    private ReplicatedFileState getState(FileCredentials credentials, XLocations loc, boolean forceReset) 
+            throws IOException {
 
         final String fileId = credentials.getXcap().getFileId();
 
@@ -844,116 +888,124 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             cellToFileId.put(state.getPolicy().getCellId(),fileId);
             assert(state.getState() == ReplicaState.INITIALIZING);
 
-            master.getStorageStage().internalGetMaxObjectNo(fileId, loc.getLocalReplica().getStripingPolicy(), new InternalGetMaxObjectNoCallback() {
-
-                @Override
-                public void maxObjectNoCompleted(long maxObjNo, long fileSize, long truncateEpoch, ErrorResponse error) {
-                    eventMaxObjAvail(fileId, maxObjNo, fileSize, truncateEpoch, error);
-                }
+            master.getStorageStage().internalGetMaxObjectNo(fileId, loc.getLocalReplica().getStripingPolicy(), 
+                    new Callback() {
+                        
+                        @Override
+                        public boolean success(Object result) {
+                            
+                            Object[] r = (Object[]) result;
+                            eventMaxObjAvail(fileId, (Long) r[0], (Long) r[1], (Long) r[2], null);
+                            return true;
+                        }
+                        
+                        @Override
+                        public void failed(Throwable error) {
+                            eventMaxObjAvail(fileId, 0L, 0L, 0L, ((ErrorResponseException) error).getRPCError());
+                        }
             });
         }
         return state;
     }
 
-    private void processMaxObjAvail(StageRequest method) {
-        try {
-            final String fileId = (String) method.getArgs()[0];
-            final Long maxObjVersion = (Long) method.getArgs()[1];
-            final ErrorResponse error = (ErrorResponse) method.getArgs()[2];
+    private ErrorResponse processMaxObjAvail(StageRequest<AugmentedRequest> method) {
+        
+        final String fileId = (String) method.getArgs()[0];
+        final Long maxObjVersion = (Long) method.getArgs()[1];
+        final ErrorResponse error = (ErrorResponse) method.getArgs()[2];
 
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) max obj avail for file: "+fileId+" max="+maxObjVersion, localID);
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) max obj avail for file: " +
+                    fileId + " max=" + maxObjVersion, localID);
 
 
-            ReplicatedFileState state = files.get(fileId);
-            if (state == null) {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,"received maxObjAvail event for unknow file: %s",fileId);
-                return;
-            }
-
-            assert(state.getState() == ReplicaState.INITIALIZING);
-            state.getPolicy().setLocalObjectVersion(maxObjVersion);
-            doOpen(state);
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-        }
-    }
-
-    private void processReplicatedWrite(StageRequest method) {
-        final RWReplicationCallback callback = (RWReplicationCallback) method.getCallback();
-        try {
-            final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
-            final XLocations loc = (XLocations) method.getArgs()[1];
-            final Long objNo = (Long) method.getArgs()[2];
-            final Long objVersion = (Long) method.getArgs()[3];
-            final InternalObjectData objData  = (InternalObjectData) method.getArgs()[4];
+        final ReplicatedFileState state = files.get(fileId);
+        if (state == null) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this, "received maxObjAvail event for " +
+            		"unknown file: %s", fileId);
             
-
-            final String fileId = credentials.getXcap().getFileId();
-
-            ReplicatedFileState state = files.get(fileId);
-            if (state == null) {
-                BufferPool.free(objData.getData());
-                callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO, "file is not open!"));
-            }
-            state.setCredentials(credentials);
-
-            state.getPolicy().executeWrite(credentials, objNo, objVersion, objData, new ReplicaUpdatePolicy.ClientOperationCallback() {
-
-                @Override
-                public void finsihed() {
-                    callback.success(objVersion);
-                }
-
-                @Override
-                public void failed(ErrorResponse error) {
-                    callback.failed(error);
-                }
-            });
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            callback.failed(ErrorUtils.getInternalServerError(ex));
+            if (error != null) return error;
+            else return ErrorUtils.getInternalServerError(new Exception("received maxObjAvail event for " + 
+                            "unknown file: " + fileId));
         }
+
+        assert(state.getState() == ReplicaState.INITIALIZING);
+        state.getPolicy().setLocalObjectVersion(maxObjVersion);
+        doOpen(state);
+        
+        return null;
     }
 
-    private void processReplicatedTruncate(StageRequest method) {
-        final RWReplicationCallback callback = (RWReplicationCallback) method.getCallback();
-        try {
-            final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
-            final XLocations loc = (XLocations) method.getArgs()[1];
-            final Long newFileSize = (Long) method.getArgs()[2];
-            final Long newObjVersion = (Long) method.getArgs()[3];
-            
-            final String fileId = credentials.getXcap().getFileId();
+    private void processReplicatedWrite(StageRequest<AugmentedRequest> method) {
+        
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) method.getCallback();
+        final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
+        // final XLocations loc = (XLocations) method.getArgs()[1]; XXX dead code
+        final Long objNo = (Long) method.getArgs()[2];
+        final Long objVersion = (Long) method.getArgs()[3];
+        final InternalObjectData objData  = (InternalObjectData) method.getArgs()[4];
+        
 
-            ReplicatedFileState state = files.get(fileId);
-            if (state == null) {
-                callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO, "file is not open!"));
-            }
-            state.setCredentials(credentials);
+        final String fileId = credentials.getXcap().getFileId();
 
-            state.getPolicy().executeTruncate(credentials, newFileSize, newObjVersion, new ReplicaUpdatePolicy.ClientOperationCallback() {
-
-                @Override
-                public void finsihed() {
-                    callback.success(newObjVersion);
-                }
-
-                @Override
-                public void failed(ErrorResponse error) {
-                    callback.failed(error);
-                }
-            });
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            callback.failed(ErrorUtils.getInternalServerError(ex));
+        ReplicatedFileState state = files.get(fileId);
+        if (state == null) {
+            BufferPool.free(objData.getData());
+            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO, 
+                    "file is not open!"));
         }
+        state.setCredentials(credentials);
+
+        state.getPolicy().executeWrite(credentials, objNo, objVersion, objData, 
+                new ReplicaUpdatePolicy.ClientOperationCallback() {
+
+            @Override
+            public void finished() {
+                callback.success(objVersion);
+            }
+
+            @Override
+            public void failed(ErrorResponse error) {
+                callback.failed(error);
+            }
+        });
     }
 
-    private void processPrepareOp(StageRequest method) {
-        final RWReplicationCallback callback = (RWReplicationCallback)method.getCallback();
+    private void processReplicatedTruncate(StageRequest<AugmentedRequest> method) {
+        
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) method.getCallback();
+        final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
+        //final XLocations loc = (XLocations) method.getArgs()[1]; XXX dead code
+        final Long newFileSize = (Long) method.getArgs()[2];
+        final Long newObjVersion = (Long) method.getArgs()[3];
+        
+        final String fileId = credentials.getXcap().getFileId();
+
+        final ReplicatedFileState state = files.get(fileId);
+        if (state == null) {
+            Logging.logMessage(Logging.LEVEL_WARN, this, "file is not open!");
+        }
+        state.setCredentials(credentials);
+
+        state.getPolicy().executeTruncate(credentials, newFileSize, newObjVersion, 
+                new ReplicaUpdatePolicy.ClientOperationCallback() {
+
+            @Override
+            public void finished() {
+                callback.success(newObjVersion);
+            }
+
+            @Override
+            public void failed(ErrorResponse error) {
+                callback.failed(error);
+            }
+        });
+    }
+
+    private ErrorResponse processPrepareOp(StageRequest<AugmentedRequest> method) {
+        
+        ErrorResponse result = null;
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) method.getCallback();
         try {
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
             final XLocations loc = (XLocations) method.getArgs()[1];
@@ -971,7 +1023,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     case RESET:
                     case OPEN: {
                         if (Logging.isDebug()) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"enqeue update for %s (state is %s)",fileId,state.getState());
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                                    "enqeue update for %s (state is %s)",fileId,state.getState());
                         }
                         if (state.getPendingRequests().size() > MAX_PENDING_PER_FILE) {
                             if (Logging.isDebug()) {
@@ -979,7 +1032,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                                         "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
                                         state.getPendingRequests().size(), MAX_PENDING_PER_FILE, fileId);
                             }
-                            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                            result = ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, 
+                                    POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file");
                         } else {
                             state.getPendingRequests().add(method);
                         }
@@ -987,18 +1041,21 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                             //immediately change to backup mode...no need to check the lease
                             doWaitingForLease(state);
                         }
-                        return;
+                        return result;
                     }
                 }
                 boolean needsReset = state.getPolicy().onRemoteUpdate(objVersion, state.getState());
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"%s needs reset: %s",fileId,needsReset);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "%s needs reset: %s", fileId, needsReset);
                 }
                 if (needsReset) {
                     state.getPendingRequests().add(method);
                     doReset(state,objVersion);
                 } else {
-                    callback.success(0);
+                    if (!callback.success(0)) {
+                        method.getRequest().getMonitoring().voidMeasurments();
+                    }
                 }
             } else {
                 state.setCredentials(credentials);
@@ -1013,64 +1070,80 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                                         "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
                                         state.getPendingRequests().size(), MAX_PENDING_PER_FILE, fileId);
                             }
-                            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                            result = ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, 
+                                    POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file");
                         } else {
                             state.getPendingRequests().add(method);
                         }
-                        return;
+                        return result;
                     }
                     case OPEN : {
+                        
                         if (state.getPendingRequests().size() > MAX_PENDING_PER_FILE) {
                             if (Logging.isDebug()) {
                                 Logging.logMessage(Logging.LEVEL_DEBUG, this,
                                         "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
                                         state.getPendingRequests().size(), MAX_PENDING_PER_FILE, fileId);
                             }
-                            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                            result = ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, 
+                                    POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file");
                         } else {
                             state.getPendingRequests().add(method);
                         }
                         doWaitingForLease(state);
-                        return;
+                        return result;
                     }
                 }
 
                 try {
-                    long newVersion = state.getPolicy().onClientOperation(op,objVersion,state.getState(),state.getLease());
-                    callback.success(newVersion);
+                    
+                    long newVersion = state.getPolicy().onClientOperation(op, objVersion, state.getState(),
+                            state.getLease());
+                    if (!callback.success(newVersion)) {
+                        method.getRequest().getMonitoring().voidMeasurments();
+                    }
                 } catch (RedirectToMasterException ex) {
+                    
+                    method.getRequest().getMonitoring().voidMeasurments();
                     callback.redirect(ex.getMasterUUID());
                 } catch (RetryException ex) {
+                    
                     final ErrorResponse err = ErrorUtils.getInternalServerError(ex);
                     failed(state, err);
-                    if (state.getState() == ReplicaState.BACKUP
-                        || state.getState() == ReplicaState.PRIMARY) {
+                    if (state.getState() == ReplicaState.BACKUP || 
+                        state.getState() == ReplicaState.PRIMARY) {
+                        
                         // Request is not in queue, we must notify
                         // callback.
-                        callback.failed(err);
+                        result = err;
                     }
                 }
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
-            callback.failed(ErrorUtils.getInternalServerError(ex));
+            
+            result = ErrorUtils.getInternalServerError(ex);
         }
+
+        return result;
     }
 
-    private void processGetStatus(StageRequest method) {
-        final StatusCallback callback = (StatusCallback)method.getCallback();
+    private ErrorResponse processGetStatus(StageRequest<AugmentedRequest> method) {
+        
+        final Callback callback = method.getCallback();
         try {
-            Map<String,Map<String,String>> status = new HashMap();
+            Map<String, Map<String, String>> status = new HashMap<String, Map<String, String>>();
 
-            Map<ASCIIString,FleaseMessage> fleaseState = fstage.getLocalState();
+            // Map<ASCIIString,FleaseMessage> fleaseState = XXX dead code
+            fstage.getLocalState();
 
             for (String fileId : this.files.keySet()) {
-                Map<String,String> fStatus = new HashMap();
+                Map<String, String> fStatus = new HashMap<String, String>();
                 final ReplicatedFileState fState = files.get(fileId);
                 final ASCIIString cellId = fState.getPolicy().getCellId();
                 fStatus.put("policy",fState.getPolicy().getClass().getSimpleName());
                 fStatus.put("peers (OSDs)",fState.getPolicy().getRemoteOSDUUIDs().toString());
-                fStatus.put("pending requests", fState.getPendingRequests() == null ? "0" : ""+fState.getPendingRequests().size());
+                fStatus.put("pending requests", fState.getPendingRequests() == null ? 
+                        "0" : "" + fState.getPendingRequests().size());
                 fStatus.put("cellId", cellId.toString());
                 String primary = "unknown";
                 if ((fState.getLease() != null) && (!fState.getLease().isEmptyLease())) {
@@ -1085,15 +1158,15 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     }
                 }
                 fStatus.put("role", primary);
-                status.put(fileId,fStatus);
+                status.put(fileId, fStatus);
             }
-            callback.statusComplete(status);
+            if (!callback.success(status)) {
+                method.getRequest().getMonitoring().voidMeasurments();
+            }
+            
+            return null;
         } catch (Exception ex) {
-            ex.printStackTrace();
-            callback.statusComplete(null);
+            return ErrorUtils.getInternalServerError(ex);
         }
     }
-
-    
-
 }

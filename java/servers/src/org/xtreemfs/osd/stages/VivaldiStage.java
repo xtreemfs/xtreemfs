@@ -12,9 +12,12 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.concurrent.TimeUnit;
 
 import org.xtreemfs.common.KeyValuePairs;
+import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.common.stage.SimpleStageQueue;
+import org.xtreemfs.common.stage.Stage;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.Mapping;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -23,10 +26,8 @@ import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.server.UDPMessage;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -44,14 +45,12 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage;
  *
  * @author Juan Gonzalez de Benito (BSC) & Björn Kolbeck (ZIB)
  */
-public class VivaldiStage extends Stage {
+public class VivaldiStage extends Stage<OSDRequest> {
 
+    private static final int MAX_QUEUE_LENGTH   = 1000;
+    
     private static final int STAGEOP_ASYNC_PING = 1;
-    private static final int STAGEOP_SYNC_PING = 2;
-    /**
-     * System time when the timer was last executed.
-     */
-    private long lastCheck;
+    private static final int STAGEOP_SYNC_PING  = 2;
     /**
      * The main OSDRequestDispatcher used by the OSD.
      */
@@ -73,14 +72,6 @@ public class VivaldiStage extends Stage {
      */
     private VivaldiNode vNode;
     /**
-     * Number of milliseconds until the next Vivaldi recalculation
-     */
-    private long nextRecalculationInMS;
-    /**
-     * Number of milliseconds until the next timer execution
-     */
-    private long nextTimerRunInMS;
-    /**
      * List of existent OSDs. The OSD contact them to get their Vivaldi information
      * and use it to recalculate its position
      */
@@ -88,7 +79,7 @@ public class VivaldiStage extends Stage {
     /**
      * Number of elapsed Vivaldi iterations
      */
-    private long vivaldiIterations;
+    private long vivaldiIterations = 0L;
     private ZipfGenerator rankGenerator;
     private static final double ZIPF_GENERATOR_SKEW = 0.5;
     /**
@@ -126,7 +117,8 @@ public class VivaldiStage extends Stage {
     private static final int TIMER_INTERVAL_IN_MS = 1000 * 60;
 
     public VivaldiStage(OSDRequestDispatcher master) {
-        super("VivaldiSt");
+        super("VivaldiSt", new SimpleStageQueue<OSDRequest>(MAX_QUEUE_LENGTH), TIMER_INTERVAL_IN_MS);
+        
         this.master = master;
         this.dirClient = master.getDIRClient();
 
@@ -145,8 +137,6 @@ public class VivaldiStage extends Stage {
         }
         this.knownOSDs = null;
         this.rankGenerator = null;
-
-        this.lastCheck = 0;
     }
 
     /**
@@ -195,21 +185,23 @@ public class VivaldiStage extends Stage {
         }
     }
 
-    public void getVivaldiCoordinatesAsync(xtreemfs_pingMesssage coordinates, InetSocketAddress sender, OSDRequest request) {
-        this.enqueueOperation(STAGEOP_ASYNC_PING, new Object[]{coordinates, sender}, request, null);
+    public void getVivaldiCoordinatesAsync(xtreemfs_pingMesssage coordinates, InetSocketAddress sender, 
+            OSDRequest request) {
+        
+        enter(STAGEOP_ASYNC_PING, new Object[]{coordinates, sender}, request, null);
     }
 
-    public void getVivaldiCoordinatesSync(xtreemfs_pingMesssage coordinates, OSDRequest request, VivaldiPingCallback listener) {
-        this.enqueueOperation(STAGEOP_SYNC_PING, new Object[]{coordinates}, request, listener);
+    public void getVivaldiCoordinatesSync(xtreemfs_pingMesssage coordinates, OSDRequest request, 
+            Callback listener) {
+        
+        enter(STAGEOP_SYNC_PING, new Object[]{coordinates}, request, listener);
     }
 
-    public static interface VivaldiPingCallback {
-
-        public void coordinatesCallback(VivaldiCoordinates myCoordinates, ErrorResponse error);
-    }
-
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.Stage#processMethod(org.xtreemfs.common.stage.StageRequest)
+     */
     @Override
-    protected void processMethod(StageRequest method) {
+    public void processMethod(StageRequest<OSDRequest> method) {
 
         xtreemfs_pingMesssage msg = (xtreemfs_pingMesssage) method.getArgs()[0];
         VivaldiCoordinates coordinatesJ = null;
@@ -231,8 +223,7 @@ public class VivaldiStage extends Stage {
                 Logging.logError(Logging.LEVEL_WARN, this, ex);
             }
         } else {
-            VivaldiPingCallback callback = (VivaldiPingCallback) method.getCallback();
-            callback.coordinatesCallback(this.vNode.getCoordinates(), null);
+            method.getCallback().success(vNode.getCoordinates());
         }
     }
 
@@ -418,20 +409,6 @@ public class VivaldiStage extends Stage {
     }
 
     /**
-     * Creates and sends a response for a given request.
-     *
-     * @param request The request we are responding to.
-     * @param myCoordinates Our own coordinates, to be included in the response.
-     */
-    private void sendVivaldiResponse(UDPMessage request, VivaldiCoordinates myCoordinates) {
-//    xtreemfs_pingResponse resp = new xtreemfs_pingResponse(myCoordinates);
-//
-//    UDPMessage msg = request.createResponse(resp);
-//
-//    master.getUdpComStage().send(msg);
-    }
-
-    /**
      * Sends a message to a OSD requesting its coordinates.
      *
      * @param osd Address of the OSD we want to contact.
@@ -560,9 +537,8 @@ public class VivaldiStage extends Stage {
     }
 
     public void receiveVivaldiMessage(UDPMessage msg) {
-        enqueueOperation(STAGEOP_ASYNC_PING, new Object[]{msg}, null, null);
-
-
+        
+        enter(STAGEOP_ASYNC_PING, new Object[]{msg}, null, null);
     }
 
     /**
@@ -772,121 +748,24 @@ public class VivaldiStage extends Stage {
 
     }
 
-    /**
-     * Main function of the stage. It keeps polling request methods from the stage
-     * queue and processing them. If there are no methods available, the function
-     * blocks until a new request is enqueued or the defined timer expires.
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.Stage#chronJob()
      */
     @Override
-    public void run() {
-
-        notifyStarted();
-
-        vivaldiIterations = 0;
-
-
-
-        long pollTimeoutInMS;
-
-        nextRecalculationInMS = -1;
-        nextTimerRunInMS = -1;
-
-
-
-        while (!quit) {
-            try {
-
-                pollTimeoutInMS = checkTimer();
-
-                final StageRequest op = q.poll(pollTimeoutInMS, TimeUnit.MILLISECONDS);
-
-
-
-                if (op != null) {
-                    processMethod(op);
-
-
-                }
-
-            } catch (InterruptedException ex) {
-                break;
-
-
-            } catch (Exception ex) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this, "Error detected:" + ex);
-                notifyCrashed(
-                        ex);
-
-
-                break;
-
-
-            }
-
-        }
-
-        notifyStopped();
-
-
+    protected void chronJob() {
+        
+        //We must recalculate our position now
+        iterateVivaldi();
     }
-
-    /**
-     * Checks if the main timer or the last recalculation period have expired
-     * and executes, depending on the case, the {@code executeTimer}
-     * function or a new Vivaldi iteration.
-     *
-     * @return the number of milliseconds before executing a new checking.
+    
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.Stage#nextChronJobDelay()
      */
-    private long checkTimer() {
-
-        final long now = TimeSync.getLocalSystemTime();
-
-        //Elapsed time since last check
-
-
-        long elapsedTime = lastCheck > 0 ? (now - lastCheck) : 0;
-
-        lastCheck = now;
-
-        nextRecalculationInMS -= elapsedTime;
-        nextTimerRunInMS -= elapsedTime;
-
-        //Need to execute our timer
-
-
-        if (nextTimerRunInMS <= 0) {
-            executeTimer();
-            nextTimerRunInMS = TIMER_INTERVAL_IN_MS;
-
-
-        }
-
-        //Time to iterate
-        if (nextRecalculationInMS <= 0) {
-
-            //We must recalculate our position now
-            iterateVivaldi();
-
-            //Determine when the next recalculation will be executed
-            nextRecalculationInMS = MIN_RECALCULATION_IN_MS + (long) ((MAX_RECALCULATION_IN_MS - MIN_RECALCULATION_IN_MS) * Math.random());
-
-
-        }
-
-        long nextCheck = nextTimerRunInMS > nextRecalculationInMS ? nextRecalculationInMS : nextTimerRunInMS;
-
-
-        return nextCheck;
-
-
-
-
-
-
-
-
-
-
+    @Override
+    protected long nextChronJobDelay() {
+        
+        //Determine when the next recalculation will be executed
+        return MIN_RECALCULATION_IN_MS + (long) ((MAX_RECALCULATION_IN_MS - MIN_RECALCULATION_IN_MS) * Math.random());
     }
 
     public class KnownOSD {

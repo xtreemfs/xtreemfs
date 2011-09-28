@@ -40,6 +40,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping.Builder;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 
 /**
@@ -183,7 +184,7 @@ public class HeartbeatThread extends LifeCycleThread {
 
             } else {
                 // if it is set, we should use that for UUID mapping!
-                endpoints = new ArrayList(10);
+                endpoints = new ArrayList<Builder>(10);
 
                 // remove the leading '/' if necessary
                 String host = "".equals(config.getHostName()) ? config.getAddress().getHostName() : config.getHostName();
@@ -328,7 +329,7 @@ public class HeartbeatThread extends LifeCycleThread {
             long currentVersion = 0;
             Service oldService = oldSet.getServicesCount() == 0? null: oldSet.getServices(0);
 
-            Map<String,String> staticAttrs = new HashMap();
+            Map<String,String> staticAttrs = new HashMap<String, String>();
             if (oldService != null) {
                 currentVersion = oldService.getVersion();
                 final ServiceDataMap data = oldService.getData();

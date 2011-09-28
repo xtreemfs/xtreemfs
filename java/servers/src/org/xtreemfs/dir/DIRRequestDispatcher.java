@@ -82,8 +82,9 @@ import com.sun.net.httpserver.HttpServer;
 public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> implements RPCServerRequestListener,
     LifeCycleListener {
     
-    private static final int                      NUM_RQ_TYPES            = 12;
-    private static final int                      STAGE_ID                = 1;
+    private final static int                      NUM_RQ_TYPES            = 12;
+    private final static int                      STAGE_ID                = 1;
+    private final static int                      NUM_SUB_SEQ_STAGES      = 1;
     
     /**
      * index for address mappings, stores uuid -> AddressMappingSet
@@ -126,7 +127,7 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
     
     public DIRRequestDispatcher(final DIRConfig config, final BabuDBConfig dbsConfig) throws IOException,
         BabuDBException {
-        super("DIR RqDisp", STAGE_ID, NUM_RQ_TYPES);
+        super("DIR RqDisp", STAGE_ID, NUM_RQ_TYPES, NUM_SUB_SEQ_STAGES);
         
         this.config = config;
         
@@ -440,19 +441,20 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
      * @see org.xtreemfs.common.stage.Stage#_processMethod(org.xtreemfs.common.stage.StageRequest)
      */
     @Override
-    public void _processMethod(StageRequest<DIRRequest> method) {
+    protected void _processMethod(StageRequest<DIRRequest> method) {
+        
+        RequestMonitoring monitoring = method.getRequest().getMonitoring();
+        RPCRequestCallback callback = (RPCRequestCallback) method.getCallback();
         
         // everything ok, find the right operation
         DIROperation op = registry.get(method.getStageMethod());
         if (op == null) {
-            ((RPCRequestCallback) method.getCallback()).failed(ErrorType.INVALID_PROC_ID, POSIXErrno.POSIX_ERROR_EIO,
-                "unknown procedure id requested");
+            monitoring.voidMeasurments();
+            callback.failed(ErrorType.INVALID_PROC_ID, POSIXErrno.POSIX_ERROR_EIO, "unknown procedure id requested");
             return;
         }
         
         DIRRequest request = method.getRequest();
-        RPCRequestCallback callback = (RPCRequestCallback) method.getCallback();
-        RequestMonitoring monitoring = method.getRequest().getMonitoring();
         
         synchronized (database) {
             try {
@@ -460,15 +462,19 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
                 op.parseRPCMessage(request);
                 
                 try {
+                    
                     op.startRequest(request, callback);
                 } catch (IllegalArgumentException ex) {
+                    
                     monitoring.voidMeasurments();
                     callback.failed(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, ex.toString());
                 } catch (java.util.ConcurrentModificationException ex) {
+                    
                     monitoring.voidMeasurments();
                     callback.failed(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EAGAIN, ex.toString());
                 }
             } catch (Throwable ex) {
+                
                 monitoring.voidMeasurments();
                 callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
             }

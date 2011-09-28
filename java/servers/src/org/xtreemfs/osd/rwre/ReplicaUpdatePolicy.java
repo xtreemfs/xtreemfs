@@ -9,14 +9,10 @@
 package org.xtreemfs.osd.rwre;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.Queue;
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.Flease;
-import org.xtreemfs.foundation.flease.proposer.FleaseException;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.rwre.RWReplicationStage.Operation;
@@ -96,7 +92,7 @@ public abstract class ReplicaUpdatePolicy {
             ClientOperationCallback callback);
 
     public static interface ClientOperationCallback {
-        public void finsihed();
+        public void finished();
         public void failed(ErrorResponse error);
     }
 

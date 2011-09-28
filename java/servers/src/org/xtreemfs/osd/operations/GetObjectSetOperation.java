@@ -12,6 +12,8 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -22,7 +24,6 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.ObjectSet;
-import org.xtreemfs.osd.stages.StorageStage.GetObjectListCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
@@ -49,40 +50,39 @@ public class GetObjectSetOperation extends OSDOperation {
     }
 
     @Override
-    public void startRequest(final OSDRequest rq) {
-        final xtreemfs_internal_get_object_setRequest args = (xtreemfs_internal_get_object_setRequest) rq
-                .getRequestArgs();
-
-//        System.out.println("rq: " + args);
-
-        master.getStorageStage().getObjectSet(args.getFileId(), rq.getLocationList().getLocalReplica().getStripingPolicy(), rq,
-                new GetObjectListCallback() {
-                    @Override
-                    public void getObjectSetComplete(ObjectSet result, ErrorResponse error) {
-                        postReadObjectList(rq, args, result, error);
-                    }
-                });
+    public ErrorResponse startRequest(final OSDRequest rq, final RPCRequestCallback callback) {
+        
+        master.getStorageStage().getObjectSet(rq.getLocationList().getLocalReplica().getStripingPolicy(), rq,
+                new AbstractRPCRequestCallback(callback) {
+                    
+            @Override
+            public boolean success(Object result) {
+                
+                return postReadObjectList((ObjectSet) result, callback);
+            }
+        });
+        
+        return null;
     }
 
-    public void postReadObjectList(final OSDRequest rq, xtreemfs_internal_get_object_setRequest args,
-            ObjectSet result, ErrorResponse error) {
-        if (error != null) {
-            rq.sendError(error);
-        } else {
-            // serialize objectSet
-            byte[] serialized;
-            try {
-                serialized = result.getSerializedBitSet();
+    public boolean postReadObjectList(ObjectSet result, RPCRequestCallback callback) {
 
-                ObjectList objList = ObjectList.newBuilder().setSet(ByteString.copyFrom(serialized)).setStripeWidth(result.getStripeWidth()).setFirst(result.getFirstObjectNo()).build();
-                rq.sendSuccess(objList,null);
-            } catch (IOException e) {
-                rq.sendInternalServerError(e);
-            }
+        // serialize objectSet
+        byte[] serialized;
+        try {
+            
+            serialized = result.getSerializedBitSet();
+
+            ObjectList objList = ObjectList.newBuilder().setSet(ByteString.copyFrom(serialized)).setStripeWidth(
+                    result.getStripeWidth()).setFirst(result.getFirstObjectNo()).build();
+            return callback.success(objList);
+        } catch (IOException e) {
+            
+            callback.failed(e);
+            return false;
         }
     }
-
-
+    
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
         try {

@@ -143,6 +143,12 @@ public abstract class OverloadProtectedComponent<R> implements AutonomousCompone
         }
     }
     
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.AutonomousComponent#exit(java.lang.Object)
+     */
+    @Override
+    public void exit(R request) { }
+    
     /**
      * <p>Method to shut down this component and end the overload-protection algorithm.</p>
      */

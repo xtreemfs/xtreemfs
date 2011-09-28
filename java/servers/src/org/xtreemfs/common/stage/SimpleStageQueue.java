@@ -66,13 +66,13 @@ public class SimpleStageQueue<R extends Request> implements StageQueue<R> {
     }
 
     /* (non-Javadoc)
-     * @see org.xtreemfs.common.stage.StageQueue#take()
+     * @see org.xtreemfs.common.stage.StageQueue#take(long)
      */
     @Override
-    public synchronized StageRequest<R> take() throws InterruptedException {
+    public synchronized StageRequest<R> take(long timeout) throws InterruptedException {
         
         if (queue.size() == 0) {
-            wait();
+            wait(timeout);
         }
         return queue.poll();
     }

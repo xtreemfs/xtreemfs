@@ -113,7 +113,7 @@ public class RequestMonitoring {
         variableProcessingTime += System.nanoTime() - currentCustomMeasurement;
         currentCustomMeasurement = -1L;
     }
-    
+   
     /**
      * <p>Method to void measurement results triggered by a request cancellation.</p>
      */

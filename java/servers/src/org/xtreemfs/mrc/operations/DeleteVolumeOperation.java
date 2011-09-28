@@ -72,13 +72,14 @@ public class DeleteVolumeOperation extends MRCOperation {
                 RPCAuthentication.userService, volume.getId(), new Callback() {
                     
                     @Override
-                    public void success(Object result) {
+                    public boolean success(Object result) {
                         
                         processStep2(rqArgs, volume.getId(), rq, callback);
+                        return true;
                     }
                     
                     @Override
-                    public void failed(Exception e) {
+                    public void failed(Throwable e) {
                         
                         callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, e);
                     }

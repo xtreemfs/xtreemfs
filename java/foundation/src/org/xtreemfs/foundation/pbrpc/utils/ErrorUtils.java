@@ -36,10 +36,36 @@ public class ErrorUtils {
                 setErrorMessage(cause.toString()).setDebugInfo(OutputUtils.stackTraceToString(cause)).build();
     }
 
-    public static String formatError(ErrorResponse error) {
-        if (error == null)
-            return "no error";
-        return error.getErrorType()+"/"+error.getPosixErrno()+": "+error.getErrorMessage() +(error.hasDebugInfo() ? "; "+error.getDebugInfo() : "");
+    public static ErrorResponseException formatError(ErrorResponse error) {
+        
+        if (error == null) return null;
+        return new ErrorResponseException(error);
     }
-
+    
+    public final static class ErrorResponseException extends Exception {
+        
+        private static final long serialVersionUID = -343465274151601985L;
+        
+        private final ErrorResponse error;
+        
+        public ErrorResponseException(ErrorResponse error) {
+            
+            assert (error != null);
+            
+            this.error = error;
+        }
+        
+        public ErrorResponse getRPCError() {
+            return error;
+        }
+        
+        /**
+         * @return the message
+         */
+        @Override
+        public String getMessage() {
+            return error.getErrorType() + "/" + error.getPosixErrno() + ": " + error.getErrorMessage() +
+                   (error.hasDebugInfo() ? "; " + error.getDebugInfo() : "");
+        }
+    }
 }

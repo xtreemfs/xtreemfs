@@ -55,15 +55,17 @@ public class BabuDBStorageManagerTest extends TestCase {
     private Callback listener     = new Callback() {
 
                                                             @Override
-                                                            public void success(Object result) {
+                                                            public boolean success(Object result) {
                                                                 synchronized (lock) {
                                                                     cont = true;
                                                                     lock.notify();
                                                                 }
+                                                                
+                                                                return true;
                                                             }
 
                                                             @Override
-                                                            public void failed(Exception error) {
+                                                            public void failed(Throwable error) {
                                                                 exc = (Exception) error;
                                                                 synchronized (lock) {
                                                                     lock.notify();

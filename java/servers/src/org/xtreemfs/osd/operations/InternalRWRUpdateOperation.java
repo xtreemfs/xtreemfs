@@ -9,6 +9,8 @@
 package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -20,9 +22,7 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
-import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
 import org.xtreemfs.osd.storage.CowPolicy;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
@@ -43,66 +43,44 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
     }
 
     @Override
-    public void startRequest(final OSDRequest rq) {
+    public ErrorResponse startRequest(OSDRequest rq, RPCRequestCallback callback) {
+        
         final xtreemfs_rwr_updateRequest args = (xtreemfs_rwr_updateRequest)rq.getRequestArgs();
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"RWR update for file %s-%d",args.getFileId(),args.getObjectNumber());
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "RWR update for file %s-%d", args.getFileId(),
+                    args.getObjectNumber());
         }
 
-       prepareLocalWrite(rq, args);
+       prepareLocalWrite(rq, args, callback);
+       
+       return null;
     }
     
-    public void localWrite(final OSDRequest rq, final xtreemfs_rwr_updateRequest args) {
+    private void localWrite(OSDRequest rq, xtreemfs_rwr_updateRequest args, RPCRequestCallback callback) {
+        
          master.replicatedDataReceived(rq.getRPCRequest().getData().capacity());
-         master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(),
+         master.getStorageStage().writeObject(args.getObjectNumber(),
                 rq.getLocationList().getLocalReplica().getStripingPolicy(), args.getOffset(),
                 rq.getRPCRequest().getData().createViewBuffer(), CowPolicy.PolicyNoCow, rq.getLocationList(),
-                false, args.getObjectVersion(), rq, new WriteObjectCallback() {
-
-            @Override
-            public void writeComplete(OSDWriteResponse result, ErrorResponse error) {
-                sendResult(rq,error);
-            }
-        });
+                false, args.getObjectVersion(), rq, callback);
     }
 
-    public void prepareLocalWrite(final OSDRequest rq, final xtreemfs_rwr_updateRequest args) {
+    private void prepareLocalWrite(final OSDRequest rq, final xtreemfs_rwr_updateRequest args, 
+            final RPCRequestCallback callback) {
+        
         master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(),
-                args.getObjectNumber(), args.getObjectVersion(), RWReplicationStage.Operation.INTERNAL_UPDATE, new RWReplicationStage.RWReplicationCallback() {
-
+                args.getObjectNumber(), args.getObjectVersion(), RWReplicationStage.Operation.INTERNAL_UPDATE, 
+                new AbstractRPCRequestCallback(callback) {
+                    
             @Override
-            public void success(long newObjectVersion) {
-                localWrite(rq, args);
-            }
-
-            @Override
-            public void redirect(String redirectTo) {
-                rq.getRPCRequest().sendRedirect(redirectTo);
-            }
-
-            @Override
-            public void failed(ErrorResponse err) {
-                rq.sendError(err);
+            public boolean success(Object result) {
+                
+                localWrite(rq, args, callback);
+                return true;
             }
         }, rq);
     }
-
-    public void sendResult(final OSDRequest rq, ErrorResponse error) {
-
-        if (error != null) {
-            rq.sendError(error);
-        } else {
-            //only locally
-            sendResponse(rq);
-        }
-    }
-
-    
-    public void sendResponse(OSDRequest rq) {
-        rq.sendSuccess(null,null);
-    }
-
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {

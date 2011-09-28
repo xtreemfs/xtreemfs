@@ -90,7 +90,7 @@ public class OsdImpl extends Osd {
     @Override
     public Integer getPreprocStageQueueLength() throws SnmpStatusException {
         if (statusMonitor.getMasterOSD() != null) {
-            return statusMonitor.getMasterOSD().getPreprocStage().getQueueLength();
+            return statusMonitor.getMasterOSD().getPreprocStage().getNumberOfRequests();
         } 
         return -1;
     }
@@ -107,7 +107,7 @@ public class OsdImpl extends Osd {
     @Override
     public Integer getDeletionStageQueueLength() throws SnmpStatusException {
         if (statusMonitor.getMasterOSD() != null) {
-            return statusMonitor.getMasterOSD().getDeletionStage().getQueueLength();
+            return statusMonitor.getMasterOSD().getDeletionStage().getNumberOfRequests();
         }
         return -1;
     }

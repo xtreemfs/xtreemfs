@@ -13,6 +13,8 @@ import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.Replica;
@@ -23,120 +25,147 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.stages.DeletionStage.DeleteObjectsCallback;
-import org.xtreemfs.osd.stages.PreprocStage.DeleteOnCloseCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
+import com.google.protobuf.Message;
+
 public final class DeleteOperation extends OSDOperation {
 
+    private final String sharedSecret;
 
-    final String sharedSecret;
-
-    final ServiceUUID localUUID;
+    private final ServiceUUID localUUID;
 
     public DeleteOperation(OSDRequestDispatcher master) {
         super(master);
+        
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }
 
     @Override
     public int getProcedureId() {
+        
         return OSDServiceConstants.PROC_ID_UNLINK;
     }
 
     @Override
-    public void startRequest(final OSDRequest rq) {
+    public ErrorResponse startRequest(final OSDRequest rq, final RPCRequestCallback callback) {
+        
         final unlink_osd_Request args = (unlink_osd_Request) rq.getRequestArgs();
-        master.getPreprocStage().checkDeleteOnClose(args.getFileId(), new DeleteOnCloseCallback() {
-
-            @Override
-            public void deleteOnCloseResult(boolean isDeleteOnClose, ErrorResponse error) {
-                step2(rq, isDeleteOnClose, args, error);
-            }
-        });
-    }
-
-    public void step2(final OSDRequest rq, boolean isDeleteOnClose, final unlink_osd_Request args, ErrorResponse error) {
-        if (error != null) {
-            rq.sendError(error);
-            return;
-        }
-
-        if (!isDeleteOnClose) {
-            // file is not open and can be deleted immediately
+        
+        // file is not open and can be deleted immediately
+        if (!master.getPreprocStage().doCheckDeleteOnClose(args.getFileId())) {
 
             // cancel replication of file
-            if (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY))
+            if (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
                 master.getReplicationStage().cancelReplicationForFile(args.getFileId());
+            }
             
-            master.getDeletionStage().deleteObjects(args.getFileId(), null, rq.getCowPolicy().cowEnabled(), rq, new DeleteObjectsCallback() {
-
+            master.getDeletionStage().deleteObjects(args.getFileId(), null, rq.getCowPolicy().cowEnabled(), rq, 
+                    new AbstractRPCRequestCallback(callback) {
+                
+                // executed by DeletionStage
                 @Override
-                public void deleteComplete(ErrorResponse error) {
-                    disseminateDeletes(rq, args);
+                public boolean success(Object result) {
+                    
+                    ErrorResponse err = disseminateDeletes(rq, args, callback);
+                    if (err != null) {
+                        callback.failed(err);
+                        return false;
+                    } else {
+                        callback.success();
+                        return true;
+                    }
                 }
             });
         } else {
+            
             //file marked for delete on close, send ok to client
-            disseminateDeletes(rq, args);
+            ErrorResponse err = disseminateDeletes(rq, args, callback);
+            if (err != null) {
+                return err;
+            } else {
+                callback.success();
+            }
         }
+        
+        return null;
     }
 
-    public void disseminateDeletes(final OSDRequest rq, final unlink_osd_Request args) {
-        final Replica localReplica = rq.getLocationList().getLocalReplica();
+    @SuppressWarnings("unchecked")
+    public ErrorResponse disseminateDeletes(OSDRequest rq, unlink_osd_Request args, final RPCRequestCallback callback) {
+        
+        Replica localReplica = rq.getLocationList().getLocalReplica();
         if (localReplica.isStriped() && localReplica.getHeadOsd().equals(localUUID)) {
-            //striped replica, dissmeninate unlink requests
+            
+            //striped replica, disseminate unlink requests
             try {
-                final List<ServiceUUID> osds = rq.getLocationList().getLocalReplica().getOSDs();
-                final RPCResponse[] gmaxRPCs = new RPCResponse[osds.size() - 1];
+                
+                List<ServiceUUID> osds = rq.getLocationList().getLocalReplica().getOSDs();
+                final RPCResponse<Message>[] gmaxRPCs = new RPCResponse[osds.size() - 1];
                 int cnt = 0;
                 for (ServiceUUID osd : osds) {
                     if (!osd.equals(localUUID)) {
-                        gmaxRPCs[cnt++] = master.getOSDClient().unlink(osd.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                                args.getFileCredentials(), args.getFileId());
+                        gmaxRPCs[cnt++] = master.getOSDClient().unlink(osd.getAddress(), RPCAuthentication.authNone, 
+                                RPCAuthentication.userService, args.getFileCredentials(), args.getFileId());
                     }
                 }
-                this.waitForResponses(gmaxRPCs, new ResponsesListener() {
+                waitForResponses(gmaxRPCs, new ResponsesListener() {
 
+                    // executed by OSDClient
                     @Override
                     public void responsesAvailable() {
-                        analyzeUnlinkReponses(rq, gmaxRPCs);
+                        
+                        ErrorResponse err = analyzeUnlinkReponses(gmaxRPCs);
+                        if (err != null) {
+                            callback.failed(err);
+                        } else {
+                            callback.success();
+                        }
                     }
                 });
+                
+                return null;
             } catch (IOException ex) {
-                rq.sendInternalServerError(ex);
-                return;
+                
+                return ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, 
+                        "internal server error:" + ex.getMessage(), OutputUtils.stackTraceToString(ex));
             }
         } else {
+            
             //non striped replica, fini
-            sendResponse(rq);
+            return null;
         }
     }
 
-    public void analyzeUnlinkReponses(final OSDRequest rq,RPCResponse[] gmaxRPCs) {
+    public ErrorResponse analyzeUnlinkReponses(RPCResponse<Message>[] gmaxRPCs) {
+        
         //analyze results
         try {
+            
             for (int i = 0; i < gmaxRPCs.length; i++) {
                 gmaxRPCs[i].get();
             }
-            sendResponse(rq);
+            return null;
         } catch (Exception ex) {
-            rq.sendInternalServerError(ex);
+            
+            return ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, 
+                    "internal server error:" + ex.getMessage(), OutputUtils.stackTraceToString(ex));
         } finally {
-            for (RPCResponse r : gmaxRPCs)
-                r.freeBuffers();
+            
+            for (RPCResponse<Message> r : gmaxRPCs) {
+                if (r != null) r.freeBuffers();
+            }
         }
-    }
-    public void sendResponse(OSDRequest rq) {
-        rq.sendSuccess(null,null);
     }
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
+        
         try {
             unlink_osd_Request rpcrq = (unlink_osd_Request)rq.getRequestArgs();
             rq.setFileId(rpcrq.getFileId());
@@ -153,11 +182,13 @@ public final class DeleteOperation extends OSDOperation {
 
     @Override
     public boolean requiresCapability() {
+        
         return true;
     }
 
     @Override
     public void startInternalEvent(Object[] args) {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

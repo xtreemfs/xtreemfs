@@ -431,7 +431,7 @@ public class DIRClient implements TimeServerClient {
 
         private boolean finished = false;
         private M result = null;
-        private Exception error = null;
+        private Throwable error = null;
         
         private synchronized M get() throws InterruptedException, PBRPCException, IOException {
             
@@ -459,17 +459,19 @@ public class DIRClient implements TimeServerClient {
          */
         @SuppressWarnings("unchecked")
         @Override
-        public synchronized void success(Object result) {
+        public synchronized boolean success(Object result) {
             this.result = (M) result;
             finished = true;
             notify();
+            
+            return true;
         }
 
         /* (non-Javadoc)
          * @see org.xtreemfs.common.stage.Callback#failed(java.lang.Exception)
          */
         @Override
-        public synchronized void failed(Exception error) {
+        public synchronized void failed(Throwable error) {
             this.error = error;
             finished = true;
             notify();
@@ -507,7 +509,7 @@ public class DIRClient implements TimeServerClient {
          * <p>Instantiates a new DIR request Caller {@link Stage} with unlimited queue.</p>
          */
         private Caller(InetSocketAddress[] servers, int maxRetries, int retryWaitMs) {
-            super("DIRClientCaller", new SimpleStageQueue<CallGenerator>());
+            super("DIRClientCaller", new SimpleStageQueue<CallGenerator>(1000));
             
             if (servers.length == 0) {
                 throw new IllegalArgumentException("Must provide at least one directory service address.");

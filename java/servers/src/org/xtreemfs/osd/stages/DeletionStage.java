@@ -10,101 +10,99 @@ package org.xtreemfs.osd.stages;
 
 import java.io.IOException;
 import java.util.Map.Entry;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
+import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.olp.OverloadProtectedStage;
+import org.xtreemfs.common.olp.PerformanceInformationReceiver;
+import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.common.stage.Request;
+import org.xtreemfs.common.stage.SimpleStageQueue;
+import org.xtreemfs.common.stage.Stage;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.OSDRequest;
-import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.storage.FileMetadata;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.StorageLayout;
 
-public class DeletionStage extends Stage {
-    
-    public static final int      STAGEOP_DELETE_OBJECTS = 0;
+public class DeletionStage extends OverloadProtectedStage<AugmentedRequest> {
+        
+    private final static int     NUM_RQ_TYPES               = 1;
+    private final static int     STAGE_ID                   = 0;
+    private final static long    DELTA_MAX_DELETION         = 60 * 1000;
     
     private MetadataCache        cache;
     
     private StorageLayout        layout;
     
-    private OSDRequestDispatcher master;
-    
     private DeleteThread         deletor;
     
-    private long                 numFilesDeleted;
+    private final AtomicLong     numFilesDeleted = new AtomicLong(0);
     
-    public DeletionStage(OSDRequestDispatcher master, MetadataCache cache, StorageLayout layout) {
+    private final PerformanceInformationReceiver predecessor;
+    
+    public DeletionStage(MetadataCache cache, StorageLayout layout, PerformanceInformationReceiver predecessor) {
         
-        super("OSD DelSt");
+        super("OSD DelSt", STAGE_ID, NUM_RQ_TYPES, new PerformanceInformationReceiver[] { predecessor });
         
-        this.master = master;
         this.cache = cache;
         this.layout = layout;
+        this.predecessor = predecessor;
         
-        deletor = new DeleteThread(layout);
+        this.deletor = new DeleteThread(layout);
     }
     
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.Stage#start()
+     */
+    @Override
     public void start() {
+        
         super.start();
         deletor.start();
         deletor.setPriority(MIN_PRIORITY);
     }
     
-    public void shutdown() {
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.olp.OverloadProtectedStage#shutdown()
+     */
+    @Override
+    public void shutdown() throws Exception {
+        
         super.shutdown();
         deletor.shutdown();
     }
     
-    public void deleteObjects(String fileId, FileMetadata fi, boolean isCow, OSDRequest request,
-        DeleteObjectsCallback listener) {
-        this.enqueueOperation(STAGEOP_DELETE_OBJECTS, new Object[] { fileId, isCow, fi }, request,
-            listener);
+    public void deleteObjects(String fileId, FileMetadata fi, boolean isCow, Callback callback) {
+        
+        // TODO fix request metadata
+        enter(new Object[] { fileId, isCow, fi }, new StageInternalRequest(0, 0, DELTA_MAX_DELETION, false, null), 
+                callback);
     }
     
-    /**
-     * @return the numFilesDeleted
+    public void deleteObjects(String fileId, FileMetadata fi, boolean isCow, OSDRequest request, Callback callback) {
+        
+        enter(new Object[] { fileId, isCow, fi }, new StageInternalRequest(request, predecessor), 
+                callback);
+    }
+
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.olp.OverloadProtectedStage#_processMethod(org.xtreemfs.common.stage.StageRequest)
      */
-    public long getNumFilesDeleted() {
-        return numFilesDeleted;
-    }
-    
-    public static interface DeleteObjectsCallback {
-        
-        public void deleteComplete(ErrorResponse error);
-    }
-    
     @Override
-    protected void processMethod(StageRequest method) {
+    protected void _processMethod(StageRequest<AugmentedRequest> m) {
         
-        try {
-            switch (method.getStageMethod()) {
-            case STAGEOP_DELETE_OBJECTS:
-                numFilesDeleted++;
-                processDeleteObjects(method);
-                break;
-            default:
-                method.sendInternalServerError(new RuntimeException("unknown stage op request"));
-            }
-            
-        } catch (Throwable exc) {
-            Logging.logError(Logging.LEVEL_ERROR, this, exc);
-            method.sendInternalServerError(exc);
-            return;
-        }
-    }
-    
-    private void processDeleteObjects(StageRequest rq) {
+        numFilesDeleted.incrementAndGet();
         
-        final DeleteObjectsCallback cback = (DeleteObjectsCallback) rq.getCallback();
-        final String fileId = (String) rq.getArgs()[0];
-        final boolean cow = (Boolean) rq.getArgs()[1];
-        FileMetadata fi = (FileMetadata) rq.getArgs()[2];
+        final Callback callback = m.getCallback();
+        final String fileId = (String) m.getArgs()[0];
+        final boolean cow = (Boolean) m.getArgs()[1];
+        FileMetadata fi = (FileMetadata) m.getArgs()[2];
         
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "deleting objects of file %s",
-                fileId);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "deleting objects of file %s", fileId);
         
         if (fi == null)
             fi = cache.getFileInfo(fileId);
@@ -113,96 +111,116 @@ public class DeletionStage extends Stage {
         cache.removeFileInfo(fileId);
         
         // remove all local objects
-        if (layout.fileExists(fileId))
+        if (layout.fileExists(fileId)) {
             deletor.enqueueFileForDeletion(fileId, cow, fi);
-        cback.deleteComplete(null);
+        }
+        
+        if (!callback.success(null)) {
+            m.getRequest().getMonitoring().voidMeasurments();
+        }
     }
     
-    private final static class DeleteThread extends Thread {
+    /**
+     * <p>Background thread for deleting files from storage.</p>
+     * 
+     * @author fx.langner
+     * @version 1.00, 09/26/2011
+     */
+    private final static class DeleteThread extends Stage<Request> {
         
-        private transient boolean                   quit;
+        private final static int    MAX_QUEUE_LENGTH = 1000;
         
-        private final StorageLayout                 layout;
+        private final StorageLayout layout;
         
-        private final LinkedBlockingQueue<Object[]> files;
-        
-        public DeleteThread(StorageLayout layout) {
-            quit = false;
-            this.layout = layout;
-            files = new LinkedBlockingQueue<Object[]>();
-        }
-        
-        public void shutdown() {
-            this.quit = true;
-            this.interrupt();
-        }
-        
-        public void enqueueFileForDeletion(String fileID, boolean cow, FileMetadata fi) {
-            assert (this.isAlive());
-            assert (fileID != null);
-            files.add(new Object[] { fileID, cow, fi });
-        }
-        
-        public void run() {
-            try {
-                do {
-                    if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.lifecycle, this,
-                            "DeleteThread started");
-                    
-                    final Object[] file = files.take();
-                    final String fileId = (String) file[0];
-                    final boolean cow = (Boolean) file[1];
-                    final FileMetadata fi = (FileMetadata) file[2];
-                    
-                    try {
-                        if (Logging.isDebug())
-                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                                "deleting objects for %s", fileId);
-                        
-                        // if copy-on-write is enabled ...
-                        if (cow) {
-                            
-                            // if no previous versions exist, delete the file
-                            // including all its metadata
-                            if (fi.getVersionTable().getVersionCount() == 0)
-                                layout.deleteFile(fileId, true);
-                            
-                            // if other versions exist, only delete those
-                            // objects that make up the latest version of the
-                            // file and are not part of former file versions
-                            else {
-                                
-                                for (Entry<Long, Long> entry : fi.getLatestObjectVersions()) {
-                                    long objNo = entry.getKey();
-                                    long objVer = entry.getValue();
-                                    if (!fi.getVersionTable().isContained(objNo, objVer))
-                                        layout.deleteObject(fileId, fi, objNo, objVer);
-                                }
-                                
-                                layout.updateCurrentVersionSize(fileId, 0);
-                            }
-                            
-                        }
-
-                        // otherwise ...
-                        else
-                            layout.deleteFile(fileId, true);
-                        
-                        yield();
-                        
-                    } catch (IOException ex) {
-                        Logging.logError(Logging.LEVEL_ERROR, this, ex);
-                    }
-                } while (!quit);
-            } catch (InterruptedException ex) {
-                // idontcare
-            }
+        private DeleteThread(StorageLayout layout) {
+            super("OSD DelThr", new SimpleStageQueue<Request>(MAX_QUEUE_LENGTH));
             
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.lifecycle, this, "DeleteThread finished");
+            this.layout = layout;
         }
         
+        private void enqueueFileForDeletion(String fileID, boolean cow, FileMetadata fileMetadata) {
+
+            enter(new DeleteRequest(fileID, cow, fileMetadata));
+        }
+
+        /* (non-Javadoc)
+         * @see org.xtreemfs.common.stage.Stage#processMethod(org.xtreemfs.common.stage.StageRequest)
+         */
+        @Override
+        public void processMethod(StageRequest<Request> method) {
+            
+            final String fileId = ((DeleteRequest) method.getRequest()).fileId;
+            final FileMetadata fi = ((DeleteRequest) method.getRequest()).fileMetadata;
+            
+            try {
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                        "deleting objects for %s", fileId);
+                
+                // if copy-on-write is enabled ...
+                if (((DeleteRequest) method.getRequest()).cow) {
+                    
+                    // if no previous versions exist, delete the file
+                    // including all its metadata
+                    if (fi.getVersionTable().getVersionCount() == 0) {
+                        layout.deleteFile(fileId, true);
+                    
+                    // if other versions exist, only delete those
+                    // objects that make up the latest version of the
+                    // file and are not part of former file versions
+                    } else {
+                        
+                        for (Entry<Long, Long> entry : fi.getLatestObjectVersions()) {
+                            long objNo = entry.getKey();
+                            long objVer = entry.getValue();
+                            if (!fi.getVersionTable().isContained(objNo, objVer))
+                                layout.deleteObject(fileId, fi, objNo, objVer);
+                        }
+                        
+                        layout.updateCurrentVersionSize(fileId, 0);
+                    }
+
+                // otherwise ...
+                } else {
+                    layout.deleteFile(fileId, true);
+                }
+                
+            } catch (IOException ex) {
+                Logging.logError(Logging.LEVEL_ERROR, this, ex);
+            }
+        }
+        
+        
+        /**
+         * <p>Request details for removing file objects from storage.</p>
+         * 
+         * @author fx.langner
+         * @version 1.00, 09/26/2011
+         */
+        private final static class DeleteRequest implements Request {
+            
+            private final String fileId;
+            private final boolean cow;
+            private final FileMetadata fileMetadata;
+            
+            private DeleteRequest(String fileId, boolean cow, FileMetadata fileMetadata) {
+                
+                this.fileId = fileId;
+                this.cow = cow;
+                this.fileMetadata = fileMetadata;
+            }
+        }
     }
     
+/*
+ * Monitoring
+ */
+    
+    /**
+     * @return the numFilesDeleted
+     */
+    public long getNumFilesDeleted() {
+        
+        return numFilesDeleted.get();
+    }
 }

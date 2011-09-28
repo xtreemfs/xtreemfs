@@ -9,208 +9,194 @@
 package org.xtreemfs.osd.stages;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
+import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.olp.PerformanceInformationReceiver;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
+import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.FileMetadata;
 import org.xtreemfs.osd.storage.MetadataCache;
-import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.osd.storage.StorageThread;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 
-public class StorageStage extends Stage {
+import static org.xtreemfs.osd.storage.StorageThread.*;
+
+/**
+ * <p>Facade to {@link StorageThread}s that will do all the work.</p>
+ * 
+ */
+public class StorageStage {
     
-    private StorageThread[] storageThreads;
-    private final StorageLayout layout;
+    private StorageThread[]                      storageThreads;
+    private final StorageLayout                  layout;
+    private final PerformanceInformationReceiver defaultPredecessor;
     
-    /** Creates a new instance of MultithreadedStorageStage */
-    public StorageStage(OSDRequestDispatcher master, MetadataCache cache, StorageLayout layout,
-        int numOfThreads) throws IOException {
-        
-        super("OSD Storage Stage");
+    public StorageStage(OSDRequestDispatcher master, MetadataCache cache, StorageLayout layout, int numOfThreads) 
+            throws IOException {
 
         this.layout = layout;
-
+        defaultPredecessor = master.getPreprocStage();
+        
         int numberOfThreads = 5;
         if (numOfThreads > 0)
             numberOfThreads = numOfThreads;
         
         storageThreads = new StorageThread[numberOfThreads];
-        int maxQueueLength = DEFAULT_MAX_QUEUE_LENGTH / numberOfThreads;
         for (int i = 0; i < numberOfThreads; i++)
-            storageThreads[i] = new StorageThread(i, master, cache, layout, maxQueueLength);
+            storageThreads[i] = new StorageThread(i, master, cache, layout);
     }
 
     public StorageLayout getStorageLayout() {
         return layout;
     }
-
     
-    public void readObject(String fileId, long objNo, StripingPolicyImpl sp, int offset, int length,
-        long versionTimestamp, OSDRequest request, ReadObjectCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_READ_OBJECT, new Object[] { fileId, objNo, sp,
-            offset, length, versionTimestamp }, request, listener);
-    }
-    
-    public static interface ReadObjectCallback {
+    public void readObject(long objNo, StripingPolicyImpl sp, int offset, int length, long versionTimestamp, 
+            OSDRequest rq, AbstractRPCRequestCallback callback) {
         
-        public void readComplete(ObjectInformation result, ErrorResponse error);
+        // TODO find predecessors
+        StageInternalRequest request = new StageInternalRequest(rq, null);
+        request.getMetadata().updateSize(length);
+        enqueueOperation(STAGEOP_READ_OBJECT, new Object[] { rq.getFileId(), objNo, sp, offset, length, versionTimestamp 
+                }, request, callback);
     }
     
-    public void getFilesize(String fileId, StripingPolicyImpl sp, long versionTimestamp, OSDRequest request,
-        GetFileSizeCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_FILE_SIZE, new Object[] { fileId, sp, versionTimestamp },
-            request, listener);
-    }
-    
-    public static interface GetFileSizeCallback {
+    public void getFilesize(StripingPolicyImpl sp, long versionTimestamp, OSDRequest rq,
+        AbstractRPCRequestCallback callback) {
         
-        public void getFileSizeComplete(long fileSize, ErrorResponse error);
+        enqueueOperation(STAGEOP_GET_FILE_SIZE, new Object[] { rq.getFileId(), sp, versionTimestamp }, 
+                new StageInternalRequest(rq, defaultPredecessor), callback);
     }
     
-    public void writeObject(String fileId, long objNo, StripingPolicyImpl sp, int offset,
+    public void writeObject(long objNo, StripingPolicyImpl sp, int offset,
         ReusableBuffer data, CowPolicy cow, XLocations xloc, boolean sync, Long newVersion,
-        OSDRequest request, WriteObjectCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_WRITE_OBJECT, new Object[] { fileId, objNo, sp,
-            offset, data, cow, xloc, false, sync, newVersion }, request, listener);
+        OSDRequest rq, AbstractRPCRequestCallback callback) {
+        
+        // TODO find predecessors
+        StageInternalRequest request = new StageInternalRequest(rq, null);
+        request.getMetadata().updateSize(data.remaining());
+        enqueueOperation(STAGEOP_WRITE_OBJECT, new Object[] { rq.getFileId(), objNo, sp, offset, data, cow, xloc, false, 
+                sync, newVersion }, request, callback);
     }
     
-    public void insertPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, int size,
-        OSDRequest request, WriteObjectCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_INSERT_PADDING_OBJECT, new Object[] { fileId,
-            objNo, sp, size }, request, listener);
+    public void insertPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, int size, Callback callback) {
+        
+        // TODO find predecessors
+        StageInternalRequest request = null; //new StageInternalRequest(size, null);
+        enqueueOperation(STAGEOP_INSERT_PADDING_OBJECT, new Object[] { fileId, objNo, sp, size }, request, callback);
     }
     
     /*
      * currently only used for replication
      */
-    public void writeObjectWithoutGMax(String fileId, long objNo, StripingPolicyImpl sp, int offset,
-        ReusableBuffer data, CowPolicy cow, XLocations xloc, boolean sync, Long newVersion,
-        OSDRequest request, WriteObjectCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_WRITE_OBJECT, new Object[] { fileId, objNo, sp,
-            offset, data, cow, xloc, true, sync, newVersion }, request, listener);
-    }
-    
-    public static interface WriteObjectCallback {
+    public void writeObjectWithoutGMax(String fileId, long objNo, StripingPolicyImpl sp, int offset, 
+            ReusableBuffer data, CowPolicy cow, XLocations xloc, boolean sync, Long newVersion, Callback callback) {
         
-        public void writeComplete(OSDWriteResponse result, ErrorResponse error);
+        // TODO find predecessors
+        StageInternalRequest request = null; //new StageInternalRequest(data.remaining, null);
+        enqueueOperation(STAGEOP_WRITE_OBJECT, new Object[] { fileId, objNo, sp, offset, data, cow, xloc, true, sync, 
+                newVersion }, request, callback);
     }
     
-    public void truncate(String fileId, long newFileSize, StripingPolicyImpl sp, Replica currentReplica,
-        long truncateEpoch, CowPolicy cow, Long newObjVer, Boolean createTruncateLogEntry, OSDRequest request, TruncateCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_TRUNCATE, new Object[] { fileId, newFileSize, sp,
-            currentReplica, truncateEpoch, cow, newObjVer, createTruncateLogEntry }, request, listener);
-    }
-    
-    public static interface TruncateCallback {
-        
-        public void truncateComplete(OSDWriteResponse result, ErrorResponse error);
+    public void truncate(long newFileSize, StripingPolicyImpl sp, Replica currentReplica, long truncateEpoch, 
+            CowPolicy cow, Long newObjVer, Boolean createTruncateLogEntry, OSDRequest rq, 
+            AbstractRPCRequestCallback callback) {
+       
+        // TODO find predecessors
+        StageInternalRequest request = new StageInternalRequest(rq, null);
+        enqueueOperation(STAGEOP_TRUNCATE, new Object[] { rq.getFileId(), newFileSize, sp, currentReplica, 
+                truncateEpoch, cow, newObjVer, createTruncateLogEntry }, request, callback);
     }
 
-    public void deleteObjects(String fileId, StripingPolicyImpl sp,
-        long truncateEpoch, Map<Long,Long> objectVersionsToBeDeleted, DeleteObjectsCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_DELETE_OBJECTS, new Object[] { fileId, sp,
-            truncateEpoch, objectVersionsToBeDeleted }, null, listener);
-    }
-
-    public static interface DeleteObjectsCallback {
-
-        public void deleteObjectsComplete(ErrorResponse error);
-    }
-    
-    public void flushCaches(String fileId, CachesFlushedCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_FLUSH_CACHES, new Object[] { fileId }, null,
-            listener);
-    }
-    
-    public static interface CachesFlushedCallback {
+    public void deleteObjects(String fileId, StripingPolicyImpl sp, long truncateEpoch, 
+            Map<Long,Long> objectVersionsToBeDeleted, Callback callback) {
         
-        public void cachesFlushed(ErrorResponse error);
+        // TODO find predecessors
+        StageInternalRequest request = null; //new StageInternalRequest(data.remaining, null);
+        enqueueOperation(STAGEOP_DELETE_OBJECTS, new Object[] { fileId, sp, truncateEpoch, 
+                objectVersionsToBeDeleted }, request, callback);
+    }
+    
+    public void flushCaches(String fileId, Callback callback) {
+        
+        // TODO find predecessors
+        StageInternalRequest request = null; //new StageInternalRequest(data.remaining, null);
+        enqueueOperation(STAGEOP_FLUSH_CACHES, new Object[] { fileId }, request, callback);
     }
     
     public void receivedGMAX_ASYNC(String fileId, long epoch, long lastObject) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_GMAX_RECEIVED, new Object[] { fileId, epoch,
-            lastObject }, null, null);
-    }
-    
-    public void internalGetGmax(String fileId, StripingPolicyImpl sp, long snapTimestamp, OSDRequest request,
-        InternalGetGmaxCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_GMAX, new Object[] { fileId, sp,
-            snapTimestamp }, request, listener);
-    }
-    
-    public static interface InternalGetGmaxCallback {
         
-        public void gmaxComplete(InternalGmax result, ErrorResponse error);
-    }
-
-    public void internalGetMaxObjectNo(String fileId, StripingPolicyImpl sp, InternalGetMaxObjectNoCallback callback) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_MAX_OBJNO, new Object[]{fileId,sp}, null, callback);
-    }
-
-    public static interface InternalGetMaxObjectNoCallback {
-
-        public void maxObjectNoCompleted(long maxObjNo, long fileSize, long truncateEpoch, ErrorResponse error);
-    }
-
-    public void internalGetReplicaState(String fileId, StripingPolicyImpl sp, long remoteMaxObjVersion,
-            InternalGetReplicaStateCallback callback) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_REPLICA_STATE, new Object[]{fileId,sp,remoteMaxObjVersion}, null, callback);
-    }
-
-    public static interface InternalGetReplicaStateCallback {
-
-        public void getReplicaStateComplete(ReplicaStatus localState, ErrorResponse error);
-
-    }
-
-    public void getObjectSet(String fileId, StripingPolicyImpl sp, OSDRequest request,
-            GetObjectListCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_OBJECT_SET, new Object[] { fileId,sp },
-                request, listener);
+        // TODO find predecessors
+        StageInternalRequest request = null; //new StageInternalRequest(data.remaining, null);
+        enqueueOperation(STAGEOP_GMAX_RECEIVED, new Object[] { fileId, epoch, lastObject }, request, null);
     }
     
-    public void createFileVersion(String fileId, FileMetadata fi, OSDRequest request, CreateFileVersionCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_CREATE_FILE_VERSION, new Object[] { fileId, fi },
-            request, listener);
-    }
-    
-    public static interface GetObjectListCallback {
+    public void internalGetGmax(StripingPolicyImpl sp, long snapTimestamp, OSDRequest rq, 
+            RPCRequestCallback callback) {
         
-        public void getObjectSetComplete(ObjectSet result, ErrorResponse error);
+        // TODO find predecessors
+        StageInternalRequest request = new StageInternalRequest(rq, null);
+        enqueueOperation(STAGEOP_GET_GMAX, new Object[] { rq.getFileId(), sp, snapTimestamp }, request, callback);
     }
-    
-    public static interface CreateFileVersionCallback {
+
+    public void internalGetMaxObjectNo(String fileId, StripingPolicyImpl sp, Callback callback) {
         
-        public void createFileVersionComplete(long fileSize, ErrorResponse error);
+        // TODO find predecessors
+        StageInternalRequest request = null; //new StageInternalRequest(..., null);
+        enqueueOperation(STAGEOP_GET_MAX_OBJNO, new Object[] { fileId, sp }, request, callback);
     }
-    
-    public void getFileIDList(OSDRequest request, GetFileIDListCallback listener) {
-        this.enqueueOperation("foobar", StorageThread.STAGEOP_GET_FILEID_LIST, new Object[] {}, request, listener);
-    }
-    
-    public static interface GetFileIDListCallback {
+
+    public void internalGetReplicaState(OSDRequest rq, StripingPolicyImpl sp, long remoteMaxObjVersion, 
+            Callback callback) {
         
-        public void createGetFileIDListComplete(ArrayList<String> fileIDList, ErrorResponse Error);
+        // TODO find predecessors
+        StageInternalRequest request = new StageInternalRequest(rq, null);
+        enqueueOperation(STAGEOP_GET_REPLICA_STATE, new Object[] { rq.getFileId(), sp, remoteMaxObjVersion }, request, 
+                callback);
     }
     
-    public void enqueueOperation(String fileId, int stageOp, Object[] args, OSDRequest request,
-        Object callback) {
+    public void internalGetReplicaState(String fileId, StripingPolicyImpl sp, long remoteMaxObjVersion, 
+            Callback callback) {
         
-        // rq.setEnqueueNanos(System.nanoTime());
+        // TODO find predecessors
+        StageInternalRequest request = null; //new StageInternalRequest(..., null);
+        enqueueOperation(STAGEOP_GET_REPLICA_STATE, new Object[] { fileId, sp, remoteMaxObjVersion }, request, 
+                callback);
+    }
+
+    public void getObjectSet(StripingPolicyImpl sp, OSDRequest rq, AbstractRPCRequestCallback callback) {
+        
+        // TODO find predecessors
+        StageInternalRequest request = new StageInternalRequest(rq, null);
+        enqueueOperation(STAGEOP_GET_OBJECT_SET, new Object[] { rq.getFileId(), sp }, request, callback);
+    }
+    
+    public void createFileVersion(String fileId, FileMetadata fi, Callback callback) {
+
+        // TODO find predecessors
+        StageInternalRequest request = null; //new StageInternalRequest(..., null);
+        enqueueOperation(STAGEOP_CREATE_FILE_VERSION, new Object[] { fileId, fi }, request, callback);
+    }
+    
+    public void getFileIDList(OSDRequest rq, AbstractRPCRequestCallback callback) {
+        
+        // TODO find predecessors
+        StageInternalRequest request = new StageInternalRequest(rq, null);
+        enqueueOperation(StorageThread.STAGEOP_GET_FILEID_LIST, new Object[] {}, request, callback);
+    }
+    
+    private void enqueueOperation(int stageOp, Object[] args, AugmentedRequest request, Callback callback) {
+        
+        String fileId = (String) args[0];
         
         // choose the thread the new request has to be
         // assigned to, for its execution
@@ -220,18 +206,26 @@ public class StorageStage extends Stage {
         // in order to start/schedule its execution
         // concurrently with other threads assigned to other
         // storageTasks
-        storageThreads[taskId].enqueueOperation(stageOp, args, request, callback);
+        storageThreads[taskId].enter(stageOp, args, request, callback);
     }
     
-    public void run() {
+    public void start() {
         // start all storage threads
-        for (StorageThread th : storageThreads)
+        for (StorageThread th : storageThreads) {
             th.start();
+        }
     }
     
-    public void shutdown() {
-        for (StorageThread th : storageThreads)
+    public void setLifeCycleListener(LifeCycleListener listener) {
+        for (StorageThread th : storageThreads) {
+            th.setLifeCycleListener(listener);
+        }        
+    }
+    
+    public void shutdown() throws Exception {
+        for (StorageThread th : storageThreads) {
             th.shutdown();
+        }
     }
     
     public void waitForStartup() throws Exception {
@@ -261,20 +255,13 @@ public class StorageStage extends Stage {
         
         return index;
     }
-    
-    @Override
-    protected void processMethod(StageRequest method) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-    
-    @Override
+
     public int getQueueLength() {
         
         int len = 0;
-        for(StorageThread th: storageThreads)
-            len += th.getQueueLength();
-        
+        for(StorageThread th: storageThreads) {
+            len += th.getNumberOfRequests();
+        }
         return len;
     }
-    
 }

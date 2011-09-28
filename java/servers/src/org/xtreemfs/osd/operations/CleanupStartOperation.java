@@ -8,11 +8,13 @@
 
 package org.xtreemfs.osd.operations;
 
-
+import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest;
@@ -27,20 +29,25 @@ public final class CleanupStartOperation extends OSDOperation {
 
     @Override
     public int getProcedureId() {
+        
         return OSDServiceConstants.PROC_ID_XTREEMFS_CLEANUP_START;
     }
 
     @Override
-    public void startRequest(final OSDRequest rq) {
+    public ErrorResponse startRequest(OSDRequest rq, RPCRequestCallback callback) {
 
         Auth authData = rq.getRPCRequest().getHeader().getRequestHeader().getAuthData();
         if (!authData.hasAuthPasswd() || authData.getAuthPasswd().equals(master.getConfig().getAdminPassword())) {
-            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, "this operation requires an admin password");
-            return;
+            
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, 
+                "this operation requires an admin password");
         }
         xtreemfs_cleanup_startRequest args = (xtreemfs_cleanup_startRequest)rq.getRequestArgs();
-        master.getCleanupThread().cleanupStart(args.getRemoveZombies(),args.getRemoveUnavailVolume(),args.getLostAndFound(),rq.getRPCRequest().getHeader().getRequestHeader().getUserCreds());
-        rq.sendSuccess(null,null);
+        master.getCleanupThread().cleanupStart(args.getRemoveZombies(),args.getRemoveUnavailVolume(),
+                args.getLostAndFound(), RPCAuthentication.userService);
+        callback.success();
+        
+        return null;
     }
 
     @Override
@@ -59,7 +66,4 @@ public final class CleanupStartOperation extends OSDOperation {
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
-
 }

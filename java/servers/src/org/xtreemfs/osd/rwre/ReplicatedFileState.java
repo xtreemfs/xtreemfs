@@ -9,13 +9,13 @@
 package org.xtreemfs.osd.rwre;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.Replica;
@@ -26,7 +26,6 @@ import org.xtreemfs.foundation.flease.FleaseStage;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
@@ -160,7 +159,7 @@ public class ReplicatedFileState {
 
     private List<ObjectVersionMapping> objectsToFetch;
     
-    private List<StageRequest>      pendingRequests;
+    private List<StageRequest<AugmentedRequest>> pendingRequests;
 
     private Flease                  lease;
 
@@ -184,7 +183,7 @@ public class ReplicatedFileState {
 
     public ReplicatedFileState(String fileId, XLocations locations, ServiceUUID localUUID, FleaseStage fstage, OSDServiceClient client) throws UnknownUUIDException, IOException {
         queuedData = new AtomicInteger();
-        pendingRequests = new LinkedList();
+        pendingRequests = new LinkedList<StageRequest<AugmentedRequest>>();
         this.fileId = fileId;
         this.state = ReplicaState.INITIALIZING;
         this.primaryReset = false;
@@ -193,7 +192,7 @@ public class ReplicatedFileState {
         this.forceReset = false;
         this.masterEpoch = FleaseMessage.IGNORE_MASTER_EPOCH;
         
-        remoteOSDs = new ArrayList(locations.getNumReplicas()-1);
+        remoteOSDs = new ArrayList<ServiceUUID>(locations.getNumReplicas()-1);
         for (Replica r : locations.getReplicas()) {
             final ServiceUUID headOSD = r.getHeadOsd();
             if (headOSD.equals(localUUID))
@@ -221,11 +220,11 @@ public class ReplicatedFileState {
         return this.policy;
     }
 
-    public void addPendingRequest(StageRequest request) {
+    public void addPendingRequest(StageRequest<AugmentedRequest> request) {
         pendingRequests.add(request);
     }
 
-    public List<StageRequest> getPendingRequests() {
+    public List<StageRequest<AugmentedRequest>> getPendingRequests() {
         return pendingRequests;
     }
 

@@ -18,6 +18,8 @@ import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ServiceAvailability;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.Replica;
@@ -39,6 +41,7 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.osd.InternalObjectData;
+import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.operations.EventInsertPaddingObject;
 import org.xtreemfs.osd.operations.EventWriteObject;
@@ -50,8 +53,6 @@ import org.xtreemfs.osd.replication.transferStrategies.SequentialStrategy;
 import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy;
 import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.NextRequest;
 import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.TransferStrategyException;
-import org.xtreemfs.osd.stages.ReplicationStage.FetchObjectCallback;
-import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
@@ -69,14 +70,16 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
  * 01.04.2009
  */
 class ReplicatingFile {
+    
     /*
      * inner class
      */
     private class ReplicatingObject {
+        
         public final long          objectNo;
         
         // create a list only if object is really requested
-        private List<StageRequest> waitingRequests = null;
+        private List<StageRequest<OSDRequest>> waitingRequests = null;
         
         /**
          * used to save data with an invalid checksum, because it could be the
@@ -90,9 +93,9 @@ class ReplicatingFile {
             this.objectNo = objectNo;
         }
         
-        public List<StageRequest> getWaitingRequests() {
+        public List<StageRequest<OSDRequest>> getWaitingRequests() {
             if (waitingRequests == null)
-                this.waitingRequests = new LinkedList<StageRequest>();
+                waitingRequests = new LinkedList<StageRequest<OSDRequest>>();
             return waitingRequests;
         }
         
@@ -262,11 +265,12 @@ class ReplicatingFile {
          * NOTE: data-buffer will not be modified
          */
         private void sendResponses(ReusableBuffer data, ObjectStatus status) {
-            List<StageRequest> reqs = getWaitingRequests();
+            
+            List<StageRequest<OSDRequest>> reqs = getWaitingRequests();
             // IMPORTANT: stripe size must be the same in all striping policies
             StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
             // responses
-            for (StageRequest rq : reqs) {
+            for (StageRequest<OSDRequest> rq : reqs) {
                 ObjectInformation objectInfo;
                 // create returning ObjectInformation
                 if (status == ObjectStatus.EXISTS) {
@@ -277,20 +281,25 @@ class ReplicatingFile {
                 }
                 objectInfo.setGlobalLastObjectNo(lastObject);
                 
-                final FetchObjectCallback callback = (FetchObjectCallback) rq.getCallback();
-                callback.fetchComplete(objectInfo, null);
+                if (!rq.getCallback().success(objectInfo)) {
+                    rq.getRequest().getMonitoring().voidMeasurments();
+                }
             }
         }
         
         /**
          * sends an error to all belonging clients
          */
-        public void sendError(ErrorResponse error) {
-            List<StageRequest> reqs = getWaitingRequests();
+        private void sendError(ErrorResponse error) {
+            
+            List<StageRequest<OSDRequest>> reqs = getWaitingRequests();
+            
             // responses
-            for (StageRequest rq : reqs) {
-                final FetchObjectCallback callback = (FetchObjectCallback) rq.getCallback();
-                callback.fetchComplete(null, error);
+            for (StageRequest<OSDRequest> rq : reqs) {
+                
+                AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) rq.getCallback();
+                rq.getRequest().getMonitoring().voidMeasurments();
+                callback.failed(error);
             }
         }
     }
@@ -700,8 +709,10 @@ class ReplicatingFile {
         response.registerListener(new RPCResponseAvailableListener<InternalReadLocalResponse>() {
             @Override
             public void responseAvailable(RPCResponse<InternalReadLocalResponse> r) {
+                
                 InternalReadLocalResponse internalReadLocalResponse = null;
                 try {
+                    
                     internalReadLocalResponse = r.get();
                     ObjectData metadata = internalReadLocalResponse.getData();
                     InternalObjectData data = new InternalObjectData(metadata,r.getData());
@@ -711,9 +722,10 @@ class ReplicatingFile {
                     master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, data,
                         objectList, null);
                 } catch (IOException e) {
+                    
                     osdAvailability.setServiceWasNotAvailable(osd);
-                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, e.toString()));
-                    // e.printStackTrace();
+                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null, 
+                            ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, e.toString()));
                 } catch (InterruptedException e) {
                     // ignore
                 } finally {
@@ -727,7 +739,7 @@ class ReplicatingFile {
      * sends an error to all belonging clients (for all objects of the file)
      */
     public void reportError(ErrorResponse error) {
-        Logging.logMessage(Logging.LEVEL_ERROR, this, ErrorUtils.formatError(error));
+        Logging.logMessage(Logging.LEVEL_ERROR, this, ErrorUtils.formatError(error).getMessage());
         for (ReplicatingObject object : waitingRequests.values())
             object.sendError(error);
         for (ReplicatingObject object : objectsInProgress.values())

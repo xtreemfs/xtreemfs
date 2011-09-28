@@ -9,6 +9,8 @@
 package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -20,97 +22,80 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
-import org.xtreemfs.osd.stages.StorageStage.TruncateCallback;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class InternalRWRTruncateOperation extends OSDOperation {
 
-    final String sharedSecret;
-    final ServiceUUID localUUID;
+    private final String sharedSecret;
+    private final ServiceUUID localUUID;
 
     public InternalRWRTruncateOperation(OSDRequestDispatcher master) {
         super(master);
+        
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }
 
     @Override
     public int getProcedureId() {
+        
         return OSDServiceConstants.PROC_ID_XTREEMFS_RWR_TRUNCATE;
     }
 
     @Override
-    public void startRequest(final OSDRequest rq) {
+    public ErrorResponse startRequest(OSDRequest rq, RPCRequestCallback callback) {
+        
         final xtreemfs_rwr_truncateRequest args = (xtreemfs_rwr_truncateRequest)rq.getRequestArgs();
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"RWR truncate for file %s objVer %d",args.getFileId(),
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "RWR truncate for file %s objVer %d", args.getFileId(),
                     args.getObjectVersion());
         }
 
-       prepareLocalTruncate(rq,args);
+        prepareLocalTruncate(rq, args, callback);
+        
+        return null;
     }
     
-    public void localTruncate(final OSDRequest rq, final xtreemfs_rwr_truncateRequest args) {
+    private ErrorResponse localTruncate(final OSDRequest rq, final xtreemfs_rwr_truncateRequest args, 
+            RPCRequestCallback callback) {
+        
          if (args.getNewFileSize() < 0) {
-            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "new_file_size for truncate must be >= 0");
-            return;
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, 
+                    "new_file_size for truncate must be >= 0");
         }
 
-        master.getStorageStage().truncate(args.getFileId(), args.getNewFileSize(),
-            rq.getLocationList().getLocalReplica().getStripingPolicy(),
-            rq.getLocationList().getLocalReplica(), rq.getCapability().getEpochNo(), rq.getCowPolicy(),
-            args.getObjectVersion(), true, rq,
-            new TruncateCallback() {
-
-            @Override
-            public void truncateComplete(OSDWriteResponse result, ErrorResponse error) {
-                sendResult(rq, error);
-            }
-        });
+        master.getStorageStage().truncate(args.getNewFileSize(), 
+                rq.getLocationList().getLocalReplica().getStripingPolicy(), rq.getLocationList().getLocalReplica(), 
+                rq.getCapability().getEpochNo(), rq.getCowPolicy(), args.getObjectVersion(), true, rq, callback);
+        
+        return null;
     }
 
-    public void prepareLocalTruncate(final OSDRequest rq, final xtreemfs_rwr_truncateRequest args) {
-        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), 0, args.getObjectVersion(),
-                RWReplicationStage.Operation.INTERNAL_TRUNCATE, new RWReplicationStage.RWReplicationCallback() {
-
+    private void prepareLocalTruncate(final OSDRequest rq, final xtreemfs_rwr_truncateRequest args, 
+            final RPCRequestCallback callback) {
+        
+        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), 0, 
+                args.getObjectVersion(), RWReplicationStage.Operation.INTERNAL_TRUNCATE, 
+                new AbstractRPCRequestCallback(callback) {
+                    
             @Override
-            public void success(long newObjectVersion) {
-                localTruncate(rq, args);
-            }
-
-            @Override
-            public void redirect(String redirectTo) {
-                rq.getRPCRequest().sendRedirect(redirectTo);
-            }
-
-            @Override
-            public void failed(ErrorResponse err) {
-                rq.sendError(err);
+            public boolean success(Object result) {
+                ErrorResponse error = localTruncate(rq, args, callback);
+                
+                if (error != null) {
+                    callback.failed(error);
+                    return false;
+                }
+                return true;
             }
         }, rq);
     }
 
-
-    public void sendResult(final OSDRequest rq, ErrorResponse error) {
-
-        if (error != null) {
-            rq.sendError(error);
-        } else {
-            //only locally
-            sendResponse(rq);
-        }
-    }
-
-    
-    public void sendResponse(OSDRequest rq) {
-        rq.sendSuccess(null,null);
-    }
-
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
+        
         try {
             xtreemfs_rwr_truncateRequest rpcrq = (xtreemfs_rwr_truncateRequest)rq.getRequestArgs();
             rq.setFileId(rpcrq.getFileId());
@@ -127,14 +112,13 @@ public final class InternalRWRTruncateOperation extends OSDOperation {
 
     @Override
     public boolean requiresCapability() {
+        
         return true;
     }
 
     @Override
     public void startInternalEvent(Object[] args) {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
-
 }

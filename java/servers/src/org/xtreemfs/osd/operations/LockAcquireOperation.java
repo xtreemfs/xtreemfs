@@ -10,6 +10,7 @@ package org.xtreemfs.osd.operations;
 
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -22,10 +23,11 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.stages.PreprocStage.LockOperationCompleteCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
+
+import com.google.protobuf.Message;
 
 /**
  *
@@ -39,49 +41,46 @@ public class LockAcquireOperation extends OSDOperation {
 
     public LockAcquireOperation(OSDRequestDispatcher master) {
         super(master);
+        
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }
 
     @Override
     public int getProcedureId() {
+        
         return OSDServiceConstants.PROC_ID_XTREEMFS_LOCK_ACQUIRE;
     }
 
     @Override
-    public void startRequest(final OSDRequest rq) {
-        final lockRequest args = (lockRequest) rq
-                .getRequestArgs();
+    public ErrorResponse startRequest(OSDRequest rq, RPCRequestCallback callback) {
+        
+        lockRequest args = (lockRequest) rq.getRequestArgs();
+        Lock lock = args.getLockRequest();
+        
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG,Category.all,this,"lock_acquire for file %s by %010d%s (%d-%d)",args.getFileCredentials().getXcap().getFileId(),
+            Logging.logMessage(Logging.LEVEL_DEBUG,Category.all,this,"lock_acquire for file %s by %010d%s (%d-%d)",
+                    args.getFileCredentials().getXcap().getFileId(),
                     args.getLockRequest().getClientPid(),args.getLockRequest().getClientUuid(),
                     args.getLockRequest().getOffset(),args.getLockRequest().getLength());
         }
 
-//        System.out.println("rq: " + args);
-
-        master.getPreprocStage().acquireLock(args.getLockRequest().getClientUuid(), args.getLockRequest().getClientPid(), args.getFileCredentials().getXcap().getFileId(),
-                args.getLockRequest().getOffset(), args.getLockRequest().getLength(), args.getLockRequest().getExclusive(), rq, new LockOperationCompleteCallback() {
-
-            @Override
-            public void parseComplete(Lock result, ErrorResponse error) {
-                postAcquireLock(rq,args,result,error);
-            }
-        });
-    }
-
-    public void postAcquireLock(final OSDRequest rq, lockRequest args,
-            Lock lock, ErrorResponse error) {
-        if (error != null) {
-            rq.sendError(error);
+        Message result = master.getPreprocStage().doAcquireLock(lock.getClientUuid(), lock.getClientPid(), 
+                args.getFileCredentials().getXcap().getFileId(), lock.getOffset(), lock.getLength(), 
+                lock.getExclusive());
+        
+        if (result instanceof ErrorResponse) {
+            return (ErrorResponse) result;
         } else {
-            rq.sendSuccess(lock,null);
+            callback.success(result);
         }
+        
+        return null;
     }
-
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
+        
         try {
             lockRequest rpcrq = (lockRequest)rq.getRequestArgs();
             rq.setFileId(rpcrq.getFileCredentials().getXcap().getFileId());
@@ -99,11 +98,13 @@ public class LockAcquireOperation extends OSDOperation {
 
     @Override
     public boolean requiresCapability() {
+        
         return true;
     }
 
     @Override
     public void startInternalEvent(Object[] args) {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

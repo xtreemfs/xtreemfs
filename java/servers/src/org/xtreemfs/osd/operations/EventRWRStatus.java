@@ -8,12 +8,13 @@
 
 package org.xtreemfs.osd.operations;
 
+import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
-import org.xtreemfs.osd.stages.StorageStage.InternalGetReplicaStateCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 
 /**
@@ -29,38 +30,49 @@ public class EventRWRStatus extends OSDOperation {
 
     @Override
     public int getProcedureId() {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public void startRequest(OSDRequest rq) {
+    public ErrorResponse startRequest(OSDRequest rq, RPCRequestCallback callback) {
+        
         throw new UnsupportedOperationException("Not supported yet.");
-
     }
-
 
     @Override
     public boolean requiresCapability() {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void startInternalEvent(Object[] args) {
+        
         final String fileId = (String) args[0];
         final StripingPolicyImpl sp = (StripingPolicyImpl) args[1];
 
-        master.getStorageStage().internalGetReplicaState(fileId, sp, 0, new InternalGetReplicaStateCallback() {
-
+        master.getStorageStage().internalGetReplicaState(fileId, sp, 0, new Callback() {
+            
             @Override
-            public void getReplicaStateComplete(ReplicaStatus localState, ErrorResponse error) {
-                master.getRWReplicationStage().eventReplicaStateAvailable(fileId, localState, error);
+            public boolean success(Object result) {
+                
+                master.getRWReplicationStage().eventReplicaStateAvailable(fileId, (ReplicaStatus) result, null);
+                return true;
+            }
+            
+            @Override
+            public void failed(Throwable error) {
+                
+                master.getRWReplicationStage().eventReplicaStateAvailable(fileId, null, 
+                        ((ErrorResponseException) error).getRPCError());
             }
         });
     }
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
-    
 }

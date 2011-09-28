@@ -21,8 +21,8 @@ public class RequestTimeHelper {
     private final ArrayList<Long>   mpNanos;
 
     public RequestTimeHelper() {
-        mpNanos = new ArrayList(30);
-        mps = new ArrayList(30);
+        mpNanos = new ArrayList<Long>(30);
+        mps = new ArrayList<String>(30);
         mps.add("Start");
         mpNanos.add(System.nanoTime());
     }

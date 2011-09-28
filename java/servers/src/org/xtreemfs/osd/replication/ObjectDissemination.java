@@ -13,10 +13,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.LRUCache;
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.monitoring.Monitoring;
@@ -26,13 +27,10 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
-import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.TransferStrategyException;
-import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.osd.storage.CowPolicy;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 
 /**
  * Handles the fetching of replicas. <br>
@@ -139,25 +137,23 @@ public class ObjectDissemination {
      * saves the request and fetches the object
      */
     public void fetchObject(String fileID, long objectNo, XLocations xLoc, Capability capability,
-            CowPolicy cow, final StageRequest rq) {
-        ReplicatingFile file = this.filesInProgress.get(fileID);
+            CowPolicy cow, StageRequest<AugmentedRequest> rq) {
+        
+        ReplicatingFile file = filesInProgress.get(fileID);
         if (file == null) { // file not in progress
+            
             /*
              * Optimization: Use a cache of last completed files, so no new instance must be created every
              * time. But use file from cache only if the xLoc has not changed. Otherwise it could be not
              * guaranteed, that the informations in the ReplicatingFile instance are correct (up-to-date).
              */
-            file = this.lastCompletedFilesCache.get(fileID);
+            file = lastCompletedFilesCache.get(fileID);
             if (file == null || (file != null && file.hasXLocChanged(xLoc))) { // create new one
                 file = new ReplicatingFile(fileID, xLoc, capability, cow, master);
             }
-//            // FIXME: test stuff
-//            if (Monitoring.isEnabled() && file.isFullReplica)
-//                monitoring.putLong(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID, System
-//                        .currentTimeMillis());
 
             // add file to filesInProgress
-            this.filesInProgress.put(fileID, file);
+            filesInProgress.put(fileID, file);
 
             // update requestsPerFile for all files (load-balancing)
             ReplicatingFile.setMaxObjectsInProgressPerFile(MAX_OBJECTS_IN_PROGRESS_OVERALL / filesInProgress.size());

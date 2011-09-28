@@ -8,19 +8,11 @@
 
 package org.xtreemfs.osd;
 
-import com.google.protobuf.Message;
-import java.io.IOException;
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.stage.AugmentedServiceRequest;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
-import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.storage.CowPolicy;
 
@@ -29,89 +21,30 @@ import org.xtreemfs.osd.storage.CowPolicy;
  * 
  * @author bjko
  */
-public final class OSDRequest {
+@SuppressWarnings("rawtypes")
+public final class OSDRequest extends AugmentedServiceRequest {
 
-    private final RPCServerRequest rpcRequest;
-    private Message requestArgs;
     /**
      * Request operation which contains state machine.
      */
-    private OSDOperation operation;
-    private Object attachment;
-    private long requestId;
-    private static long rqIdCounter = 1;
+    private OSDOperation  operation;
+    private Object        attachment;
+    private long          requestId;
+    private static long   rqIdCounter           = 1;
     private RPCResponse[] pendingRequests;
-    private String fileId;
-    private Capability capability;
-    private XLocations locationList;
-    private CowPolicy cowPolicy;
+    private String        fileId;
+    private Capability    capability;
+    private XLocations    locationList;
+    private CowPolicy     cowPolicy;
     /**
      * true, if this is the first call to a file
      * (i.e. no entry in OFT)
      */
     private boolean fileOpen;
 
-    public OSDRequest(RPCServerRequest request) {
-        this.rpcRequest = request;
+    public OSDRequest(RPCServerRequest request, int type, long deltaMaxTime, boolean highPriority) {
+        super(request, type, deltaMaxTime, highPriority);
         this.requestId = rqIdCounter++;
-    }
-
-    public RPCServerRequest getRPCRequest() {
-        return this.getRpcRequest();
-    }
-
-    public void sendSuccess(Message response, ReusableBuffer data) {
-        try {
-            rpcRequest.sendResponse(response, data);
-        } catch (IOException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-        }
-    }
-
-    public void sendInternalServerError(Throwable cause) {
-        if (getRpcRequest() != null) {
-            rpcRequest.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "internal server error:" + cause, OutputUtils.stackTraceToString(cause));
-        } else {
-            Logging.logMessage(Logging.LEVEL_ERROR, this, "internal server error on internal request: %s",
-                    cause.toString());
-            Logging.logError(Logging.LEVEL_ERROR, this, cause);
-        }
-    }
-
-    public void sendError(ErrorType type, POSIXErrno errno, String message) {
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending errno exception %s/%s/%s", type, errno, message);
-        }
-        rpcRequest.sendError(type, errno, message);
-    }
-
-    public void sendError(ErrorType type, POSIXErrno errno, String message, String debugInfo) {
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending errno exception %s/%s/%s", type, errno, message);
-        }
-        rpcRequest.sendError(type, errno, message, debugInfo);
-    }
-
-
-    /**
-     * @return the rpcRequest
-     */
-    public RPCServerRequest getRpcRequest() {
-        return rpcRequest;
-    }
-
-    /**
-     * @return the requestArgs
-     */
-    public Message getRequestArgs() {
-        return requestArgs;
-    }
-
-    /**
-     * @param requestArgs the requestArgs to set
-     */
-    public void setRequestArgs(Message requestArgs) {
-        this.requestArgs = requestArgs;
     }
 
     /**
@@ -232,8 +165,12 @@ public final class OSDRequest {
     public void setFileOpen(boolean fileOpen) {
         this.fileOpen = fileOpen;
     }
-
-    public void sendError(ErrorResponse error) {
-        this.getRPCRequest().sendError(error);
+    
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return getRequestId() + " of file " + getFileId();
     }
 }

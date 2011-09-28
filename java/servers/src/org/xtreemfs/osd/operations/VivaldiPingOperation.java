@@ -8,15 +8,16 @@
 
 package org.xtreemfs.osd.operations;
 
-
 import java.net.InetSocketAddress;
+
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.stages.VivaldiStage;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage;
@@ -34,54 +35,55 @@ public class VivaldiPingOperation extends OSDOperation {
 
     public VivaldiPingOperation(OSDRequestDispatcher master) {
         super(master);
+        
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }
 
     @Override
     public int getProcedureId() {
+        
         return OSDServiceConstants.PROC_ID_XTREEMFS_PING;
     }
 
     @Override
-    public void startRequest(final OSDRequest rq) {
-        final xtreemfs_pingMesssage args = (xtreemfs_pingMesssage) rq
-                .getRequestArgs();
+    public ErrorResponse startRequest(final OSDRequest rq, final RPCRequestCallback callback) {
+        
+        final xtreemfs_pingMesssage args = (xtreemfs_pingMesssage) rq.getRequestArgs();
+        
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG,Category.all,this,"vivaldi ping with coordinates %s",VivaldiNode.coordinatesToString(args.getCoordinates()));
+            Logging.logMessage(Logging.LEVEL_DEBUG,Category.all,this,"vivaldi ping with coordinates %s",
+                    VivaldiNode.coordinatesToString(args.getCoordinates()));
         }
 
         // Check for udp connections which don't have a channel.
         if (rq.getRPCRequest().getConnection().getChannel() == null) {
+            
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG,Category.all,this,"Async Ping");
             }
-            master.getVivaldiStage().getVivaldiCoordinatesAsync(args, (InetSocketAddress)rq.getRPCRequest().getSenderAddress(), rq);
+            master.getVivaldiStage().getVivaldiCoordinatesAsync(args, 
+                    (InetSocketAddress) rq.getRPCRequest().getSenderAddress(), rq);
+            callback.success();
         } else {
+            
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG,Category.all,this,"Sync Ping");
+                Logging.logMessage(Logging.LEVEL_DEBUG,Category.all, this, "Sync Ping");
             }
-            master.getVivaldiStage().getVivaldiCoordinatesSync(args, rq, new VivaldiStage.VivaldiPingCallback() {
-
+            master.getVivaldiStage().getVivaldiCoordinatesSync(args, rq, new AbstractRPCRequestCallback(callback) {
+                
                 @Override
-                public void coordinatesCallback(VivaldiCoordinates myCoordinates, ErrorResponse error) {
-                    xtreemfs_pingMesssage msg = xtreemfs_pingMesssage.newBuilder().setCoordinates(myCoordinates).setRequestResponse(false).build();
-                    rq.sendSuccess(msg, null);
+                public boolean success(Object result) {
+                    callback.success(xtreemfs_pingMesssage.newBuilder().setCoordinates((VivaldiCoordinates) result)
+                            .setRequestResponse(false).build());
+                    
+                    return true;
                 }
             });
         }
 
+        return null;
     }
-
-    /*public void postGetCoordinates(final OSDRequest rq, VivaldiCoordinates args,
-            VivaldiCoordinates coordinates, ErrorResponse error) {
-        if (error != null) {
-            rq.sendError(error);
-        } else {
-            rq.sendSuccess(coordinates,null);
-        }
-    }*/
-
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
@@ -92,11 +94,13 @@ public class VivaldiPingOperation extends OSDOperation {
 
     @Override
     public boolean requiresCapability() {
+        
         return false;
     }
 
     @Override
     public void startInternalEvent(Object[] args) {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

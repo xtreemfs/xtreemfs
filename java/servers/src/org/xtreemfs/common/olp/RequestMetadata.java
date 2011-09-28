@@ -21,28 +21,28 @@ public class RequestMetadata {
     /**
      * <p>Identifier for requests of this type.</p>
      */
-    private final int                           type;
+    private final int  type;
     
     /**
      * <p>Bandwidth occupied by this request.</p>
      */
-    private final long                          size;
+    private long       size;
     
     /**
      * <p>Maximal response time delta for this request.</p>
      */
-    private final long                          deltaMaxTime;
+    private final long deltaMaxTime;
     
     /**
      * <p>The Unix time stamp this request was initially received.</p>
      */
-    private final long                          startTime;
+    private final long startTime;
     
     /**
      * <p>Flag to determine whether this request has high priority or not.</p>
      */
-    private final boolean                       highPriority;
-    
+    private boolean    highPriority;
+        
     /**
      * <p>Constructor for requests that do not require a certain amount of bandwidth for being
      * processed and do not have high priority.</p>
@@ -65,7 +65,7 @@ public class RequestMetadata {
      */
     public RequestMetadata(int type, long deltaMaxTime, boolean highPriority) {
         
-        this(type, 0L, deltaMaxTime, highPriority, null);
+        this(type, 0L, deltaMaxTime, highPriority);
     }
     
     /**
@@ -76,10 +76,8 @@ public class RequestMetadata {
      * @param size - amount of bandwidth occupied during processing of this request.
      * @param deltaMaxTime - the time to live for this request.
      * @param highPriority - if true request will be treated as with high priority, false otherwise.
-     * @param piggybackPerformanceReceiver - receiver of performance information send piggyback.
      */
-    public RequestMetadata(int type, long size, long deltaMaxTime, boolean highPriority, 
-            PerformanceInformationReceiver piggybackPerformanceReceiver) {
+    public RequestMetadata(int type, long size, long deltaMaxTime, boolean highPriority) {
                 
         assert (deltaMaxTime > 0);
         assert (type > -1);
@@ -89,6 +87,29 @@ public class RequestMetadata {
         this.deltaMaxTime = deltaMaxTime;
         this.startTime = System.currentTimeMillis();
         this.highPriority = highPriority;
+    }
+    
+    /**
+     * <p>Method to update the processing size for the next step in request processing.</p>
+     * 
+     * @param newSize
+     */
+    public void updateSize(long newSize) {
+        size = newSize;
+    }
+    
+    /**
+     * <p>Increases priority for the next processing step, if possible.</p>
+     */
+    public void increasePriority() {
+        highPriority = true;
+    }
+    
+    /**
+     * <p>Decreases priority for the next processing step, if possible.</p>
+     */
+    public void decreasePriority() {
+        highPriority = false;
     }
     
 /*

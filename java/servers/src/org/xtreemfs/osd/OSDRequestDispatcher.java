@@ -27,6 +27,8 @@ import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.common.monitoring.StatusMonitor;
+import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -35,7 +37,6 @@ import org.xtreemfs.dir.discovery.DiscoveryUtils;
 import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.SSLOptions;
-import org.xtreemfs.foundation.TimeServerClient;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.SSLOptions.TrustManager;
@@ -44,19 +45,15 @@ import org.xtreemfs.foundation.checksums.provider.JavaChecksumProvider;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.Schemes;
-import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.pbrpc.server.RPCUDPSocketServer;
-import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.operations.CheckObjectOperation;
@@ -113,7 +110,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR.globalTimeSGetResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 
@@ -128,7 +124,7 @@ import org.xtreemfs.osd.operations.EventRWRStatus;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener {
     
-    protected final Map<Integer, OSDOperation>          operations;
+    private final Map<Integer, OSDOperation>            operations;
     
     protected final Map<Class<?>, OSDOperation>         internalEvents;
     
@@ -187,6 +183,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
      * reachability of services
      */
     private final ServiceAvailability                   serviceAvailability;
+    
+    private final Map<Integer, Integer>                 requestTypeMap = new HashMap<Integer, Integer>();
     
     public OSDRequestDispatcher(final OSDConfig config) throws Exception {
         
@@ -312,7 +310,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         stStage = new StorageStage(this, metadataCache, storageLayout, 1);
         stStage.setLifeCycleListener(this);
         
-        delStage = new DeletionStage(this, metadataCache, storageLayout);
+        delStage = new DeletionStage(metadataCache, storageLayout, preprocStage);
         delStage.setLifeCycleListener(this);
         
         replStage = new ReplicationStage(this);
@@ -426,15 +424,21 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                         sb.append("<H1>List of Open Replicated Files</H1>");
                         sb.append("<TABLE border=\"1\">");
                         sb.append("<TR><TD><B>File ID</B></TD><TD><B>Status</B></TD></TR>");
-                        rwrStage.getStatus(new RWReplicationStage.StatusCallback() {
-                            
+                        rwrStage.getStatus(new Callback() {
+
+                            @SuppressWarnings("unchecked")
                             @Override
-                            public void statusComplete(Map<String, Map<String, String>> status) {
+                            public boolean success(Object status) {
                                 synchronized (result) {
-                                    result.set(status);
+                                    result.set((Map<String, Map<String, String>>) status);
                                     result.notifyAll();
                                 }
+                                
+                                return true;
                             }
+
+                            @Override
+                            public void failed(Throwable error) { /* ignored */ }
                         });
                         synchronized (result) {
                             if (result.get() == null)
@@ -667,10 +671,6 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         }
     }
     
-    public OSDOperation getOperation(int procId) {
-        return operations.get(procId);
-    }
-    
     public OSDOperation getInternalEvent(Class<?> clazz) {
         return internalEvents.get(clazz);
     }
@@ -742,66 +742,71 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     @Override
     public void receiveRecord(RPCServerRequest rq) {
         
-        // final ONCRPCRequestHeader hdr = rq.getRequestHeader();
         RPCHeader hdr = rq.getHeader();
         
         if (hdr.getMessageType() != MessageType.RPC_REQUEST) {
             rq.sendError(ErrorType.GARBAGE_ARGS, POSIXErrno.POSIX_ERROR_EIO,
-                "expected RPC request message type but got " + hdr.getMessageType());
+                "expected RPC request message type but got " + hdr.getMessageType());            
             return;
         }
         
         final RPCHeader.RequestHeader rqHdr = hdr.getRequestHeader();
         
         if (rqHdr.getInterfaceId() != OSDServiceConstants.INTERFACE_ID) {
-            rq.sendError(ErrorType.INVALID_INTERFACE_ID, POSIXErrno.POSIX_ERROR_EIO,
-                "invalid interface id. Maybe wrong service address/port configured?");
+            
+            rq.sendError(ErrorType.INVALID_INTERFACE_ID, POSIXErrno.POSIX_ERROR_EIO, 
+                    "invalid interface id. Maybe wrong service address/port configured?");
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                    "invalid version requested (requested=%d avail=%d)", rqHdr.getInterfaceId(),
+                    OSDServiceConstants.INTERFACE_ID);
+            }
             return;
         }
         
-        try {
-            OSDRequest request = new OSDRequest(rq);
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "received new request: %s", rq
-                        .toString());
-            preprocStage.prepareRequest(request, new PreprocStage.ParseCompleteCallback() {
-                
-                @Override
-                public void parseComplete(OSDRequest result, ErrorResponse error) {
-                    if (error == null) {
-                        result.getOperation().startRequest(result);
-                    } else {
-                        result.getRPCRequest().sendError(error);
-                    }
-                }
-            });
-        } catch (Exception ex) {
-            rq.sendError(ErrorUtils.getInternalServerError(ex));
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
+        // everything ok, find the right operation
+        OSDOperation op = operations.get(rqHdr.getProcId());
+        if (op == null) {
+            rq.sendError(ErrorType.INVALID_PROC_ID, POSIXErrno.POSIX_ERROR_EINVAL, 
+                    "requested operation is not available on this OSD (proc # " + rqHdr.getProcId() + ")");
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                    "requested operation is not available on this OSD (proc #%d)", rqHdr.getProcId());
+            }
+            return;
         }
-    }
-    
-    public int getNumClientConnections() {
-        return rpcServer.getNumConnections();
-    }
-    
-    public long getPendingRequests() {
-        return rpcServer.getPendingRequests();
+        
+        int clientTimeout = 10 * 1000;   // TODO retrieve client timeout from header (if available)
+        boolean hasHighPriority = false; // TODO retrieve client priority from header (if available)
+        OSDRequest request = new OSDRequest(rq, requestTypeMap.get(rqHdr.getProcId()), clientTimeout, hasHighPriority);
+        request.setOperation(op);
+        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "received new request: %s", rq.toString());
+        }
+        
+        preprocStage.processRequest(request, new RPCRequestCallback(rq));
     }
     
     private void initializeOperations() {
+        
         // register all ops
-        OSDOperation op = new ReadOperation(this);
+        int type = 0;
+        OSDOperation op = new DeleteOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
+        
+        op = new ReadOperation(this);
+        operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new WriteOperation(this);
         operations.put(op.getProcedureId(), op);
-        
-        op = new DeleteOperation(this);
-        operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new TruncateOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         /*
          * op = new KeepFileOpenOperation(this);
@@ -810,75 +815,98 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
         op = new InternalGetGmaxOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new InternalTruncateOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new CheckObjectOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new InternalGetFileSizeOperation(this);
         operations.put(op.getProcedureId(), op);
         
         op = new ShutdownOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new LocalReadOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new CleanupStartOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new CleanupIsRunningOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new CleanupStopOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new CleanupGetStatusOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new CleanupGetResultsOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new CleanupVersionsStartOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new GetObjectSetOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new LockAcquireOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new LockCheckOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new LockReleaseOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new VivaldiPingOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new FleaseMessageOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new InternalRWRUpdateOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new InternalRWRTruncateOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new InternalRWRStatusOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new InternalRWRFetchOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new GetFileIDListOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new RWRNotifyOperation(this);
         operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
         
         // --internal events here--
         
@@ -897,6 +925,18 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         op = new EventRWRStatus(this);
         internalEvents.put(EventRWRStatus.class, op);
 
+    }
+    
+/*
+ * Monitoring
+ */
+    
+    public int getNumClientConnections() {
+        return rpcServer.getNumConnections();
+    }
+    
+    public long getPendingRequests() {
+        return rpcServer.getPendingRequests();
     }
     
     public StorageStage getStorageStage() {
@@ -1056,8 +1096,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         for (OSDStatusListener listener : statusListener) {
             listener.OSDConfigChanged(this.config);
         }
-    }
-    
+    }  
     
     /**
      * Getter for a timestamp when the heartbeatthread sent his last heartbeat
@@ -1066,5 +1105,4 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public long getLastHeartbeat() {
         return heartbeatThread.getLastHeartbeat();
     }
-    
 }
