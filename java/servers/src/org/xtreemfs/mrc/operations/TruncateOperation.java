@@ -80,13 +80,16 @@ public class TruncateOperation extends MRCOperation {
         file.setIssuedEpoch(newEpoch);
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         
-        Capability truncCap = new Capability(writeCap.getFileId(), writeCap.getAccessMode()
-            | FileAccessManager.O_TRUNC, master.getConfig().getCapabilityTimeout(), TimeSync.getGlobalTime()
-            / 1000 + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq.getRPCRequest()
-                .getSenderAddress()).getAddress().getHostAddress(), newEpoch, false, !sMan.getVolumeInfo()
-                .isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED : sMan.getVolumeInfo()
-                .isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT,
-            sMan.getVolumeInfo().getCreationTime(), master.getConfig().getCapabilitySecret());
+        // create a truncate capability from the previous write capability
+        Capability truncCap = new Capability(writeCap.getFileId(),
+                writeCap.getAccessMode() | FileAccessManager.O_TRUNC, master.getConfig().getCapabilityTimeout(),
+                TimeSync.getGlobalTime() / 1000 + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq
+                        .getRPCRequest().getSenderAddress()).getAddress().getHostAddress(), newEpoch,
+                writeCap.isReplicateOnClose(),
+                !sMan.getVolumeInfo().isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED : sMan
+                        .getVolumeInfo().isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
+                        : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, sMan.getVolumeInfo().getCreationTime(), master
+                        .getConfig().getCapabilitySecret());
         
         // set the response
         rq.setResponse(truncCap.getXCap());

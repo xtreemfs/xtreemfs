@@ -187,8 +187,6 @@ public class BabuDBVolumeManager implements VolumeManager {
                 }
         }
         
-        System.out.println("done");
-        
     }
     
     @Override
