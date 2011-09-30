@@ -1,0 +1,315 @@
+	XTREEMFS-MIB DEFINITIONS ::= BEGIN
+	IMPORTS 
+	OBJECT-TYPE, MODULE-IDENTITY, NOTIFICATION-TYPE, Integer32, Counter64  FROM SNMPv2-SMI
+	private FROM RFC1155-SMI;
+
+
+	xtreemfs MODULE-IDENTITY
+	LAST-UPDATED "201107251000Z"
+	ORGANIZATION "XtreemFS project"
+	CONTACT-INFO
+		"
+      Name: Michael Berlin
+      Address: Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+               Takustrasse 7
+               D-14195 Berlin
+      Email: 	berlin@zib.de
+      "
+	DESCRIPTION
+		"The MIB module for information regarding to the monitoring
+      of the XtreemFS Filesystem. See: http://xtreemfs.com for more
+      information."
+	REVISION
+		"201107251000Z"
+		DESCRIPTION
+		"This revision of this MIB module is intend to be a first
+		draft."
+	::= { enterprises  38350 }
+
+	-- groups under xtreemfs
+
+	general 	OBJECT IDENTIFIER ::= { xtreemfs 1 }
+	dir 		OBJECT IDENTIFIER ::= { xtreemfs 2 }
+	mrc 		OBJECT IDENTIFIER ::= { xtreemfs 3 }
+	osd 		OBJECT IDENTIFIER ::= { xtreemfs 4 }
+
+	
+
+	-- own declartions
+
+	-- This datatype is used to model textual information
+	DisplayString ::=
+		OCTET STRING
+
+	-- This datatype is used to force the code generating tool 
+	-- to create long values instead of integer within java
+	Long ::=
+            	--INTEGER (0..922337203685477580)
+		Counter64
+
+   -- a truth value
+      Boolean ::=   INTEGER { true(1), false(2) }
+
+	-- GROUP general: It represents informations that
+	-- all services (DIR, MRC, OSD) have in common.
+	jvmUsedMemory OBJECT-TYPE
+		SYNTAX Long
+		MAX-ACCESS read-only
+		STATUS current
+		DESCRIPTION
+            "The amount of memory that is used by the JVM this service is
+            running into."
+   ::= { general 1 }
+
+	jvmMaxMemory OBJECT-TYPE
+		SYNTAX Long
+		MAX-ACCESS read-only
+		STATUS current
+		DESCRIPTION
+			"The maximum amount of memory the JVM can use."
+	::= { general 2 }
+
+   jvmFreeMemory OBJECT-TYPE
+      SYNTAX Long
+      MAX-ACCESS read-only
+      STATUS current
+      DESCRIPTION
+         "The amount of free memory the JVM can still use."
+   ::= { general 3 }
+	rpcInterface OBJECT-TYPE
+      SYNTAX Integer32
+      MAX-ACCESS read-only
+      STATUS current
+      DESCRIPTION
+         "The interface number associated with Google Protocolbuffers RPC
+         Infrastrukture."
+   ::= { general 4 }
+
+   databaseVersion OBJECT-TYPE
+      SYNTAX DisplayString
+      MAX-ACCESS read-only
+      STATUS current
+      DESCRIPTION
+         "The version of the BabuDB Database which the service is using."
+   ::= { general 5 }
+
+   tcpPort OBJECT-TYPE
+      SYNTAX Integer32
+      MAX-ACCESS read-only
+      STATUS current
+      DESCRIPTION 
+         "The TCP port on which the service is listening for incomming client
+         connections."
+   ::= { general 6 } 
+   
+   debugLevel OBJECT-TYPE
+      SYNTAX INTEGER (0..9)
+      MAX-ACCESS read-only
+      STATUS current
+      DESCRIPTION 
+         "The current Debug Level the service has."
+   ::= { general 7 }
+
+   numClientConnections OBJECT-TYPE
+      SYNTAX Integer32
+      MAX-ACCESS read-only
+      STATUS current
+      DESCRIPTION
+         "Number of active client connections. This is a indication for the
+         load on the service."
+   ::= { general 8 }
+
+   numPendingRequests OBJECT-TYPE
+      SYNTAX Long
+      MAX-ACCESS read-only
+      STATUS current
+      DESCRIPTION
+         "The number of currently pending requests."
+   ::= { general 9 }
+
+   currentTime OBJECT-TYPE
+      SYNTAX Long
+      MAX-ACCESS read-only
+      STATUS current
+      DESCRIPTION
+         "The global time in this XtreemFS installation."
+   ::= { general 10 }
+
+   isRunning OBJECT-TYPE 
+      SYNTAX DisplayString
+      MAX-ACCESS read-only
+      STATUS current
+      DESCRIPTION
+         "Returns whether or not the service is running."
+   ::= { general 11 }
+
+   serviceType OBJECT-TYPE
+      SYNTAX DisplayString
+      MAX-ACCESS read-only
+      STATUS current
+      DESCRIPTION
+         "Returns which kind of service this is 
+         (DIR, MRC, OSD)."
+   ::= { general 12 }
+   
+   serviceUUID OBJECT-TYPE
+      SYNTAX DisplayString
+      MAX-ACCESS read-only
+      STATUS current
+      DESCRIPTION
+         "Returns the UUID of the service."
+   ::= { general 13 } 
+
+	-- GROUP dir: It represents informations that
+	-- related to the DIR.
+	addressMappingCount OBJECT-TYPE
+		SYNTAX INTEGER
+		MAX-ACCESS read-only
+		STATUS current
+		DESCRIPTION
+			"The  number of address mappings currently registered at the
+			DIR"
+	::= { dir 1 }
+
+   serviceCount OBJECT-TYPE
+      SYNTAX INTEGER
+      MAX-ACCESS read-only
+      STATUS current
+      DESCRIPTION
+         "The number of services currently registered at the DIR"
+   ::= { dir 2 }
+
+   volumeCount OBJECT-TYPE
+      SYNTAX      INTEGER
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+         "The number of volumes currently registered
+         at this MRC."
+   ::= { mrc 1 }
+   
+
+   -------------------
+   --BEGIN OSD Group
+   ------------------
+   numObjsRX OBJECT-TYPE
+      SYNTAX      Long
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+         "The number of objects this 
+         OSD has received."
+   ::= { osd 1 }
+
+   numReplObjsRX OBJECT-TYPE
+      SYNTAX      Long
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+         "The number of replicated objects
+         this OSD has received."
+   ::= { osd 2 }
+   
+   numObjsTX OBJECT-TYPE
+      SYNTAX      Long
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION 
+         "The number of objects
+         this OSD has transmitted."
+   ::= { osd 3 }
+
+
+   numReplBytesRX OBJECT-TYPE
+      SYNTAX      Long
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+         "The number of bytes belonging
+         to file replication this OSD has received."
+   ::= { osd 4 }
+
+   numBytesRX OBJECT-TYPE
+      SYNTAX      Long
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION 
+         "The number of bytes this
+         OSD has received."
+   ::= { osd 5 } 
+
+   numBytesTX OBJECT-TYPE
+      SYNTAX      Long
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+         "The number of bytes this
+         OSD has transmitted."
+   ::= { osd 6 }
+
+   preprocStageQueueLength OBJECT-TYPE
+   	SYNTAX      INTEGER
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION 
+         "The current length of the 
+         preprocessing stage of this OSD."
+   ::= { osd 7 }
+
+   storageStageQueueLength OBJECT-TYPE
+      SYNTAX      INTEGER
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION 
+         "The current length of the 
+         storage stage of this OSD."
+   ::= { osd 8 }
+
+   deletionStageQueueLength OBJECT-TYPE
+      SYNTAX      INTEGER
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION 
+         "The current length of the 
+         deletion stage of this OSD."
+   ::= { osd 9 }
+
+   numOpenFiles OBJECT-TYPE
+   	SYNTAX      INTEGER
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION 
+         "The number of files this OSD 
+         currently has opened."
+   ::= { osd 10 }
+
+   numDeletedFiles OBJECT-TYPE
+      SYNTAX      Long
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION 
+         "The number of deleted
+         files on this OSD."
+   ::= { osd 11 }
+
+   freeSpace OBJECT-TYPE
+      SYNTAX      Long
+      MAX-ACCESS  read-only
+      STATUS      current
+      DESCRIPTION
+         "The free disc space
+         on the partition this OSD
+         stores the object files."
+   ::= { osd 12 }
+
+	-- traps (don't work yet)
+--	generalNotifis OBJECT IDENTIFIER ::= { general 10 }
+--
+--	jvmOutOfMemoryNotif NOTIFICATION-TYPE 
+--		STATUS current
+--		DESCRIPTION 
+--			"Just a test notification"
+--		OBJECTS { sysLocation }
+--		::= { generalNotifis 1 }
+--
+	END

@@ -1,0 +1,375 @@
+--
+-- @(#)file      mib_core.txt
+-- @(#)author    Sun Microsystems, Inc.
+-- @(#)version   1.8
+-- @(#)date      07/04/04
+--
+-- The file contains stubs for common definitions scattered around many
+-- different RFCs. It is a convenience that will allow mibgen to compile
+-- a MIB without requiring that you pass all standard SNMP modules on the
+-- command line.
+--
+-- See the listed RFCs themselves for the original definitions.
+--
+
+          CORE-MIB DEFINITIONS ::= BEGIN
+
+
+          IMPORTS ;
+
+--------------------------------------
+-- Commonly used OBJECT IDENTIFIERS --
+--------------------------------------
+
+
+-----------------------
+-- As defined in SMI --
+-----------------------
+
+          -- the path to the root
+
+          internet       OBJECT IDENTIFIER ::= { iso(1) org(3) dod(6) 1 }
+
+          directory      OBJECT IDENTIFIER ::= { internet 1 }
+
+          mgmt           OBJECT IDENTIFIER ::= { internet 2 }
+
+          experimental   OBJECT IDENTIFIER ::= { internet 3 }
+
+          private        OBJECT IDENTIFIER ::= { internet 4 }
+          enterprises    OBJECT IDENTIFIER ::= { private 1 }
+
+          security       OBJECT IDENTIFIER ::= { internet 5 }
+
+          snmpV2         OBJECT IDENTIFIER ::= { internet 6 }
+
+          -- transport domains
+          snmpDomains    OBJECT IDENTIFIER ::= { snmpV2 1 }
+
+          -- transport proxies
+          snmpProxys     OBJECT IDENTIFIER ::= { snmpV2 2 }
+
+          -- module identities
+          snmpModules    OBJECT IDENTIFIER ::= { snmpV2 3 }
+
+
+------------------------------
+-- MIB-II OBJECT IDENTIFIER --
+------------------------------
+
+
+          mib-2      OBJECT IDENTIFIER ::= { mgmt 1 }
+
+
+-----------------
+-- entreprises --
+-----------------
+
+        sun             OBJECT IDENTIFIER ::= { enterprises 42 }
+        messaging       OBJECT IDENTIFIER ::= { sun products(2) 8 }
+
+        agents          OBJECT IDENTIFIER ::= { messaging 1 }
+        private-mibs    OBJECT IDENTIFIER ::= { messaging 2 }
+
+        snmpx400d       OBJECT IDENTIFIER ::= { agents 1 }
+        snmpxapiad      OBJECT IDENTIFIER ::= { agents 2 }
+        snmpx500d       OBJECT IDENTIFIER ::= { agents 3 }
+        snmpimd         OBJECT IDENTIFIER ::= { agents 4 }
+        snmpslapd       OBJECT IDENTIFIER ::= { agents 5 }
+
+
+--------------------------------------------------------------
+-- Stubs for commonly used TEXTUAL CONVENTIONS and SYNTAXES --
+--------------------------------------------------------------
+
+------------------------------------------------------------------------
+-- Stub for EntryStatus syntax from RFC 1271                          --
+-- See http://www.ietf.org/rfc/rfc1271.txt for the actual definition. --
+------------------------------------------------------------------------
+
+              EntryStatus ::= INTEGER
+                         { valid(1),
+                           createRequest(2),
+                           underCreation(3),
+                           invalid(4)
+                         }
+------------------------------------------------------------------------
+-- Stubs for standard SNMP Syntaxes as defined in RFC 1065/1442       --
+-- See http://www.ietf.org/rfc/rfc1065.txt for the actual definition. --
+-- See http://www.ietf.org/rfc/rfc1442.txt for the actual definition. --
+------------------------------------------------------------------------
+
+        Gauge32 ::= Gauge
+
+        Counter32 ::= Counter
+
+        Integer32 ::= INTEGER
+
+     -- application-wide types
+
+      NetworkAddress ::=
+          CHOICE {
+              internet
+                  IpAddress
+          }
+
+      IpAddress ::=
+          [APPLICATION 0]
+              IMPLICIT OCTET STRING (SIZE (4))
+
+      Counter ::=
+          [APPLICATION 1]
+              IMPLICIT INTEGER (0..4294967295)
+
+      Counter64 ::=
+          [APPLICATION 1]
+              IMPLICIT INTEGER (0..18446744073709551615)
+
+      Gauge ::=
+          [APPLICATION 2]
+              IMPLICIT INTEGER (0..4294967295)
+
+      Unsigned32 ::=
+          [APPLICATION 2]
+              IMPLICIT INTEGER (0..4294967295)
+
+      TimeTicks ::=
+          [APPLICATION 3]
+              IMPLICIT INTEGER (0..4294967295)
+
+      Opaque ::=
+          [APPLICATION 4]
+              IMPLICIT OCTET STRING
+
+
+
+-----------------------------------------------------------------------
+-- Stubs for standard SNMPv2 Textual Conventions defined in RFC 1903 --
+-- See http://www.ietf.org/rfc/rfc1903.txt for the actual definition. --
+------------------------------------------------------------------------
+
+DisplayString ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT "255a"
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       OCTET STRING (SIZE (0..255))
+
+
+PhysAddress ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT "1x:"
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       OCTET STRING
+
+
+MacAddress ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT "1x:"
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       OCTET STRING (SIZE (6))
+
+
+TruthValue ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       INTEGER { true(1), false(2) }
+
+TestAndIncr ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       INTEGER (0..2147483647)
+
+
+AutonomousType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       OBJECT IDENTIFIER
+
+
+InstancePointer ::= TEXTUAL-CONVENTION
+    STATUS       obsolete
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       OBJECT IDENTIFIER
+
+
+VariablePointer ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       OBJECT IDENTIFIER
+
+
+RowPointer ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       OBJECT IDENTIFIER
+
+
+RowStatus ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       INTEGER {
+                     active(1),
+                     notInService(2),
+                     notReady(3),
+                     createAndGo(4),
+                     createAndWait(5),
+                     destroy(6)
+                 }
+
+
+TimeStamp ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       TimeTicks
+
+
+TimeInterval ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       INTEGER (0..2147483647)
+
+
+DateAndTime ::= TEXTUAL-CONVENTION
+    DISPLAY-HINT "2d-1d-1d,1d:1d:1d.1d,1a1d:1d"
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       OCTET STRING (SIZE (8 | 11))
+
+
+StorageType ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       INTEGER {
+                     other(1),       -- eh?
+                     volatile(2),    -- e.g., in RAM
+                     nonVolatile(3), -- e.g., in NVRAM
+                     permanent(4),   -- e.g., partially in ROM
+                     readOnly(5)     -- e.g., completely in ROM
+                 }
+
+
+TDomain ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       OBJECT IDENTIFIER
+
+
+TAddress ::= TEXTUAL-CONVENTION
+    STATUS       current
+    DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc1903.txt for
+             the actual definition.
+            "
+    SYNTAX       OCTET STRING (SIZE (1..255))
+
+
+------------------------------------------------------------------------
+-- Stubs for standard SNMPv3 Textual Conventions defined in RFC 2571  --
+-- See http://www.ietf.org/rfc/rfc2571.txt for the actual definition. --
+------------------------------------------------------------------------
+
+
+   SnmpEngineID ::= TEXTUAL-CONVENTION
+       STATUS       current
+       DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc2571.txt for
+             the actual definition.
+            "
+       SYNTAX       OCTET STRING (SIZE(5..32))
+
+   SnmpSecurityModel ::= TEXTUAL-CONVENTION
+       STATUS       current
+       DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc2571.txt for
+             the actual definition.
+            "
+       SYNTAX       INTEGER(0 .. 2147483647)
+
+   SnmpMessageProcessingModel ::= TEXTUAL-CONVENTION
+       STATUS       current
+       DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc2571.txt for
+             the actual definition.
+            "
+       SYNTAX       INTEGER(0 .. 2147483647)
+
+   SnmpSecurityLevel ::= TEXTUAL-CONVENTION
+       STATUS       current
+       DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc2571.txt for
+             the actual definition.
+            "
+       SYNTAX       INTEGER { noAuthNoPriv(1),
+                              authNoPriv(2),
+                              authPriv(3)
+                            }
+
+   SnmpAdminString ::= TEXTUAL-CONVENTION
+       DISPLAY-HINT "255a"
+       STATUS       current
+       DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc2571.txt for
+             the actual definition.
+            "
+       SYNTAX       DisplayString (SIZE (0..255))
+
+------------------------------------------------------------------------
+-- Stubs for standard SNMPv3 Textual Conventions defined in RFC 2574  --
+-- See http://www.ietf.org/rfc/rfc2574.txt for the actual definition. --
+------------------------------------------------------------------------
+
+KeyChange ::=     TEXTUAL-CONVENTION
+   STATUS         current
+   DESCRIPTION
+            "This is a stub. See http://www.ietf.org/rfc/rfc2574.txt for
+             the actual definition.
+            "
+    SYNTAX       OCTET STRING
+
+END
+

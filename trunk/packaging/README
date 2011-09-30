@@ -1,0 +1,11 @@
+HOW TO PACKAGE AND DEPLOY A NEW VERSION OF XTREEMFS
+===================================================
+
+1. create a new release branch/tag for the new version in the SVN
+2. check out the release branch/tag
+3. cd <checkout>/packaging
+4. ./build_release-pacakges <release-version> ..
+5. ./deploy_release-packages dist test
+
+If the test distribution works w/o any problems:
+6. ./deploy_release-packages dist release

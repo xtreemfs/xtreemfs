@@ -1,0 +1,9 @@
+LIMITATIONS and KNOWN ISSUES for release 1.3.0:
+* Replicas must only be added/removed for files that are not
+  open at any OSD.
+* Interrupting the client during read operations does not work.
+* Asynchronous writes are not supported.
+* Vivaldi is not integrated yet, will be re-integrated in the
+  next release.
+* init.d files on Fedora require "Defaults requiretty"
+  in /etc/sudoers to be removed.

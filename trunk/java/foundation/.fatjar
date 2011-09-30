@@ -1,0 +1,14 @@
+#Fat Jar Configuration File
+#Wed Mar 31 17:59:41 CEST 2010
+onejar.license.required=true
+manifest.classpath=
+manifest.removesigners=false
+onejar.checkbox=false
+jarname=Foundation.jar
+manifest.mergeall=false
+manifest.mainclass=
+manifest.file=<createnew>
+jarname.isextern=false
+onejar.expand=
+excludes=<po|foundation>~org/~xtreemfs/~test/;<jar|yidl.jar>;<jar|junit-4.3.1.jar>
+includes=

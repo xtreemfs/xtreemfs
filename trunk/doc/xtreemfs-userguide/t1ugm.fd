@@ -1,0 +1,38 @@
+%Filename: t1ugm.fd
+%Created by: tex inst-ugm
+%Created using fontinst v1.927
+
+%THIS FILE SHOULD BE PUT IN A TEX INPUTS DIRECTORY
+
+\ProvidesFile{t1ugm.fd}
+   [2005/01/13 Fontinst v1.927 font definitions for T1/ugm.]
+
+\DeclareFontFamily{T1}{ugm}{}
+
+\DeclareFontShape{T1}{ugm}{m}{sc}{
+   <-> ugmrc8t
+}{}
+
+\DeclareFontShape{T1}{ugm}{m}{n}{
+   <-> ugmr8t
+}{}
+
+\DeclareFontShape{T1}{ugm}{m}{it}{
+   <-> ugmri8t
+}{}
+
+\DeclareFontShape{T1}{ugm}{b}{n}{
+   <-> ugmm8t
+}{}
+
+\DeclareFontShape{T1}{ugm}{b}{it}{
+   <-> ugmmi8t
+}{}
+
+\DeclareFontShape{T1}{ugm}{m}{sl}{<->ssub * ugm/m/it}{}
+\DeclareFontShape{T1}{ugm}{bx}{n}{<->ssub * ugm/b/n}{}
+\DeclareFontShape{T1}{ugm}{bx}{it}{<->ssub * ugm/b/it}{}
+\DeclareFontShape{T1}{ugm}{b}{sl}{<->ssub * ugm/b/it}{}
+\DeclareFontShape{T1}{ugm}{bx}{sl}{<->ssub * ugm/b/sl}{}
+
+\endinput

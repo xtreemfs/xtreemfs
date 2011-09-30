@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="69">
+  <logicalFolder name="root" displayName="root" projectFiles="true">
+    <df name="generated" root="../generated">
+      <df name="include" kind="SOURCE_LOGICAL_FOLDER">
+        <in>Common.pb.cc</in>
+        <in>Common.pb.h</in>
+        <in>PBRPC.pb.cc</in>
+        <in>PBRPC.pb.h</in>
+      </df>
+      <df name="pbrpc" kind="SOURCE_LOGICAL_FOLDER">
+        <in>Ping.pb.cc</in>
+        <in>Ping.pb.h</in>
+        <in>PingServiceClient.h</in>
+        <in>RPC.pb.cc</in>
+        <in>RPC.pb.h</in>
+      </df>
+      <df name="xtreemfs" kind="SOURCE_LOGICAL_FOLDER">
+        <in>DIR.pb.cc</in>
+        <in>DIR.pb.h</in>
+        <in>DIRServiceClient.h</in>
+        <in>GlobalTypes.pb.cc</in>
+        <in>GlobalTypes.pb.h</in>
+        <in>MRC.pb.cc</in>
+        <in>MRC.pb.h</in>
+        <in>MRCServiceClient.h</in>
+        <in>OSD.pb.cc</in>
+        <in>OSD.pb.h</in>
+        <in>OSDServiceClient.h</in>
+      </df>
+    </df>
+    <df name="include" root="../include">
+      <df name="rpc" kind="SOURCE_LOGICAL_FOLDER">
+        <in>abstract_socket_channel.h</in>
+        <in>callback_interface.h</in>
+        <in>client.h</in>
+        <in>client_connection.h</in>
+        <in>client_request.h</in>
+        <in>client_request_callback_interface.h</in>
+        <in>grid_ssl_socket_channel.h</in>
+        <in>record_marker.h</in>
+        <in>ssl_options.h</in>
+        <in>ssl_socket_channel.h</in>
+        <in>sync_callback.h</in>
+        <in>tcp_socket_channel.h</in>
+      </df>
+      <df name="util">
+        <in>logging.h</in>
+        <in>pbrpc_url.h</in>
+        <in>user_mapping.h</in>
+      </df>
+    </df>
+    <df name="src" root="../src">
+      <df name="fuse_test">
+        <in>fuse_client.cpp</in>
+        <in>mkvol_xtreemfs.cpp</in>
+      </df>
+      <df name="rpc" kind="SOURCE_LOGICAL_FOLDER">
+        <in>client.cpp</in>
+        <in>client_connection.cpp</in>
+        <in>client_request.cpp</in>
+        <in>record_marker.cpp</in>
+      </df>
+      <df name="util">
+        <in>logging.cpp</in>
+        <in>pbrpc_url.cpp</in>
+        <in>user_mapping.cpp</in>
+      </df>
+      <in>main.cpp</in>
+    </df>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+      <itemPath>../CMakeLists.txt</itemPath>
+      <itemPath>../Makefile</itemPath>
+      <itemPath>cpp_prj-Makefile.mk</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <sourceRootList>
+    <Elem>../src</Elem>
+    <Elem>../generated</Elem>
+    <Elem>../include</Elem>
+  </sourceRootList>
+  <projectmakefile>cpp_prj-Makefile.mk</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>GNU|GNU</compilerSet>
+        <platform>2</platform>
+      </toolsSet>
+      <makefileType>
+        <makeTool>
+          <buildCommandWorkingDir>..</buildCommandWorkingDir>
+          <buildCommand>${MAKE} -f Makefile</buildCommand>
+          <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
+          <executablePath>../fusetest</executablePath>
+          <ccTool>
+            <incDir>
+              <pElem>../generated</pElem>
+              <pElem>../include</pElem>
+            </incDir>
+          </ccTool>
+        </makeTool>
+      </makefileType>
+      <item path="../src/main.cpp" ex="false" tool="1">
+        <ccTool>
+          <incDir>
+            <pElem>../generated</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <item path="../src/rpc/client_request.cpp" ex="false" tool="1">
+        <ccTool>
+          <incDir>
+            <pElem>../generated</pElem>
+          </incDir>
+        </ccTool>
+      </item>
+      <folder path="generated">
+        <ccTool>
+          <incDir>
+            <pElem>../generated</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+      <folder path="src">
+        <ccTool>
+          <incDir>
+            <pElem>../include/rpc</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+    </conf>
+  </confs>
+</configurationDescriptor>

@@ -1,0 +1,108 @@
+modules {
+  module {
+    name = "xtfs-osd-plugin"
+    language = "python"
+    # The following params are examples only
+    #  They are not actually used by the temp module
+    param Host {
+      value = localhost
+    }
+    param Port {
+      value = 9003
+    }
+    param CommunityString {
+      value = public
+    }
+  }
+}
+
+collection_group {
+  collect_every = 60
+  time_threshold = 10
+  metric {
+    name = "osd_jvm_used_mem"
+    title = "used memory of the jvm"
+    value_threshold = 1
+  }
+  metric {
+    name = "osd_jvm_free_mem"
+    title = "free memory of the jvm"
+    value_threshold = 1
+  } 
+  metric {
+    name = "osd_client_connections"
+    title = "number of Clients"
+    value_threshold = 1
+  }
+  metric {
+    name = "objects_received"
+    title = "objects received"
+    value_threshold = 1
+  }
+  metric {
+    name = "repl_objects_received"
+    title = "replicated objects received"
+    value_threshold = 1
+  }
+  metric {
+    name = "objects_transmitted"
+    title = "objects transmitted"
+    value_threshold = 1
+  }
+  metric {
+    name = "repl_bytes_received"
+    title = "replicated bytes received"
+    value_threshold = 1
+  }
+  metric {
+    name = "bytes_received"
+    title = "bytes received"
+    value_threshold = 1
+  }
+  metric {
+    name = "bytes_transmitted"
+    title = "bytes transmitted"
+    value_threshold = 1
+  }
+  metric {
+    name = "preproc_queue_length"
+    title = "preprocessing stage queue length"
+    value_threshold = 1
+  }
+  metric {
+    name = "storage_queue_length"
+    title = "storage stage queue length"
+    value_threshold = 1
+  }
+  metric {
+    name = "deletion_queue_length"
+    title = "deletion stage queue length"
+    value_threshold = 1
+  }
+  metric {
+    name = "open_files"
+    title = "open files"
+    value_threshold = 1
+  }
+  metric {
+    name = "deleted_files"
+    title = "deleted files"
+    value_threshold = 1
+  }
+  metric {
+    name = "free_space"
+    title = "free space"
+    value_threshold = 100
+  }
+  metric {
+    name = "osd_status"
+    title = "Status OSD" 
+  } 
+  metric {
+    name = "osd_uuid"
+    title = "OSD UUID"
+  }
+}
+
+ 
+  

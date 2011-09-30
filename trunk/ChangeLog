@@ -1,0 +1,115 @@
+13-AUG-2009 version 1.0 release
+	* read-only replication working
+
+24-AUG-2009
+	* fcntl lock support (on OSD)
+	* switched to MRC supplied inode/dev numbers by default
+          Some applications (e.g. Dovecot) use the inode number to
+          identify fds pointing to the same file. This does not work
+          with "local" inode numbers assigned by fuse.
+	* updated the BabuDB release
+          fixed a problem with manual checkpoint creation
+	* hostname used by MRC can be set with hostname property in config file
+	  Necessary if the FQDN is not set/returned correctly on that host.
+	* OSDs run on Windows
+	
+03-SEP-2009
+	* DIR service uses new on-disk format which is independent of the
+          protocol version.
+	* MRC database format changed (USE DUMP/RESTORE WHEN UPDATING FROM 1.0)
+	  compeletely redesigned the policies. There is now only one type of
+	  policies for OSD selection and replica creation/selection
+	
+15-SEP-2009
+    * added on-close replication support
+    	Replicas can now be automatically created when a file is closed
+    	after having been written the first time. This causes the file
+    	to become read-only. The behavior of on-close replication can
+    	be controlled via the xtfs_repl tool.
+	* fixed SSL problems on Windows
+    * added support for user authentication based on gridmap files
+	* improved client performance by eliminating unnecessary system calls
+	* data cache now uses stripe size instead of system page size
+	* fixed bugs #38, #41, #42, #43, #45, #49
+	
+16-SEP-2009 version 1.1 release
+	* fixed bugs #51, #52, #53
+	* added notification mechanism to DIR that sends notification mails to
+	  an admin if an OSD or MRC has failed
+
+26-OCT-2009
+	* Linux binaries for mounting, creating, removing and listing volumes have
+		been renamed, in order to be more consistent with Linux conventions
+
+04-NOV-2009
+	* If an admin password is set, server status pages are now password-protected.
+
+05-NOV-2009
+	* added GRID SSL mode
+	  When enabled (requires SSL to be enable too), XtreemFS will fall back to
+          plain TCP after a successful SSL handshake. Enabled in services with
+          "ssl.grid_ssl=true" in the config file. Client requires certificates
+          and oncrpcg:// scheme when mounting.
+
+25-NOV-2009
+	* MRC and OSD wait up to 30s (or as long as defined in startup.wait_for_dir)
+          for the DIR during start-up.
+	* added xctl: a script to start and stop the XtreemFS services
+	* mount.xtreemfs checks for successfull mount before going into background
+	* fixed the return value for xattr calls which caused problems with the
+		Mac OS X Finder
+
+27-NOV-2009
+	* client caches file size updates by default (flushed on close, fsync)
+	* OSD and MRC status pages can be used to get full stack traces (/strace)
+
+03-DEC-2009
+	* capability timeout is now a config option for the MRC
+		(capability_timeout), default is 600s.
+	* MRC dump/restore are now asynchronous. Backups of the MRC can be done
+		without interrupting regular operations.
+	* closest replicas of a file can now be selected based on Vivaldi
+		coordinates (see User Guide)
+	* fixed bugs #36, #54, #57, #58, #59, #60, #64, #66, #77, #78, #80, #81,
+		#82, #83 #96, #97
+
+07-DEC-2009
+	* java client for XtreemFS (interface is still unstable!) in package org.xtreemfs.common.clients
+	* experimental hadoop FileSystem driver for XtreemFS (in trunk/contrib/hadoop)
+
+08-DEC-2009
+	* added web-based admin console (in trunk/contrib/console)
+
+09-DEC-2009
+    * added per-file block size (st_blksize) to struct Stat;
+        used by cp to determine I/O buffer sizes on Linux
+        
+11-DEC-2009
+    * version 1.2. release
+
+16-DEC-2009
+    *fixed issue #109
+
+08-JAN-2010
+    * status of servers can now be set by admins (online, offline, etc.)
+    * scrubber now removes dead replicas and creates new ones, marks full replicas as complete if needed
+
+13-JAN-2010
+    * fixed issues #55 and #75
+    * added UUID-based OSD selection policy to default policies
+
+22-JAN-2010
+    * added client support for Fedora 12
+	
+9-FEB-2010
+    * when deciding which OSD to contact to recalculate their position, nodes now choose
+      more frequently the OSDs that are closer.
+      
+21-SEP-2010
+    * added 'xtfs_acl' tool for getting and setting POSIX ACLs
+    * added 'chmod' and 'chown' operations to Java MRC client
+    * updated BabuDB version in MRC/DIR storage backend to 0.4.3
+    
+06-JUN-2011
+    * updated BabuDB version in MRC/DIR storage backend to 0.5.2
+    * added support for DIR and MRC replication w/ automatic fail-over

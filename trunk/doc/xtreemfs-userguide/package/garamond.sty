@@ -1,0 +1,17 @@
+%%
+%% This is file `garamond.sty`
+%% 
+%% This file is under the public domain.
+%% Original author: Gael Varoquaux
+%%       gael dot varoquaux at normalesup dot org 
+\pdfmapfile{=ugm.map}
+\let\rmdefault@garamond\rmdefault%
+
+\newcommand{\garamond}{%
+\renewcommand{\rmdefault}{ugm}\normalfont%
+}
+
+\newcommand{\ungaramond}{%
+\renewcommand{\rmdefault}{\rmdefault@garamond}\normalfont%
+}
+

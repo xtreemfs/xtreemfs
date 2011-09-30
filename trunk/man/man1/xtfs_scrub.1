@@ -1,0 +1,61 @@
+.TH xtfs_scrub 1 "July 2011" "The XtreemFS Distributed File System" "XtreemFS Admin Tools"
+.SH NAME
+xtfs_scrub \- checks for each file in a volume if the MRC file size is outdated and if the checksum of all objects is correct. The scrubber can also replace defective replicas in repair mode. 
+.SH SYNOPSIS
+\fBxtfs_scrub [ \fIoptions\fB ] \fI<volume_name>\fB
+.br
+
+.SH DESCRIPTION
+.I xtfs_scrub
+performs a consistency check of each file in a given volume. If run without -repair or -delete it will only perform checks and report problems. Th scrubber checks for file if the file size on the OSDs is stored on the MRC and fixes inconsistencies if run in the -repair mode. In addition, the scrubber checks the checksum for each object of a file if the checksums are enabled on the OSD.
+
+For replicated files the scrubber will check each replica for objects with inccorect checksum. In addition, it marks full replicas that successfully copied all objects as "complete" replicas. In the -repair mode, the scrubber will also replace replicas that contain ramoved OSDs. An OSD must be marked as dead/removed with the xtfs_chstatus tool, otherwise the scrubber will consider the OSD as temporarily unavailable and won't replace the replica.
+
+.SH EXAMPLE USAGE
+.B "xtfs_scrub -dir pbrpc://localhost:32638 myVolume
+.PP
+Scrubs all files in the volume named 'myVolume' registered at the Directory Service 'pbrpc://localhost:32638'.
+
+.SH OPTIONS
+.TP
+.TP
+\fB-c \fI<creds_file>
+Path to a PKCS#12 credentials file (private key + certificate) to use for SSL authentication. Must be present when MRC URL starts with pbrpcs:// or pbrpcg://.
+.TP
+\fB-cpass \fI<creds_passphrase>
+An optional passphrase to access the credentials file.
+.TP
+\fB\-delete
+Deletes files where the objects are lost because they were stored on a failed/removed OSD.
+.TP
+\fB-dir \fI<uri>
+Specifies the directory service to use (e.g. 'pbrpc://localhost:32638'). If no URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'. In case of a secured URI ('pbrpcs://...' or 'pbrpcg://...'), it is necessary to also specify SSL settings.
+.TP
+\fB-h/--help
+Shows usage info.
+.TP
+\fB\-repair
+Repairs inconsistent file sizes and replace replicas on failed/removed OSD.
+.TP
+\fB\-silent
+Hides the progress bar.
+.TP
+\fB-t \fI<trusted_CAs>
+Path to a PKCS#12 file containing a set of certificates from trusted certification authorities. These certificates will be used to authenticate the MRC. Must be present when MRC URL starts with pbrpcs:// or pbrpcg://.
+.TP
+\fB\-thrs \fI<#threads> 
+Sets the number of threads to use for scrubbing (default=10).
+.TP
+\fB-tpass \fI<trusted_passphrase>
+An optional passphrase to access the truststore file.
+
+.SH "SEE ALSO"
+.BR xtfs_chstatus (1),
+.BR xtfs_cleanup (1),
+.BR xtfs_mrcdbtool (1),
+.BR xtfs_remove_osd (1),
+.BR xtfs_snap (1)
+.BR
+
+.SH AVAILABILITY
+The xtfs_scrub command is part of the XtreemFS-tools package and is available from \fIhttp://www.xtreemfs.org\fP.
