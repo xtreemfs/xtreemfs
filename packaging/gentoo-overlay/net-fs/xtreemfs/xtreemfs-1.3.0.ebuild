@@ -16,8 +16,8 @@ IUSE=""
 DEPEND=">=virtual/jdk-1.6.0
 	sys-fs/fuse
 	sys-fs/e2fsprogs
+	dev-java/ant-core
 	sys-apps/attr
-	dev-libs/protobuf
 	>=dev-libs/boost-1.39.0"
 RDEPEND="${DEPEND}"
 
@@ -48,7 +48,19 @@ src_install() {
 		newconfd "${FILESDIR}"/xtreemfs-${service}.confd xtreemfs-${service}
 	done
 
-	java-pkg_dojar java/servers/dist/XtreemFS.jar java/lib/protobuf-java-2.3.0.jar java/lib/Flease.jar java/lib/BabuDB.jar java/foundation/dist/Foundation.jar
+	java-pkg_jarinto /usr/share/${PN}/java/servers/dist
+	java-pkg_dojar java/servers/dist/XtreemFS.jar
+	
+	java-pkg_jarinto /usr/share/${PN}/java/lib
+	java-pkg_dojar java/lib/protobuf-java-2.3.0.jar java/lib/Flease.jar java/lib/BabuDB.jar
+
+	java-pkg_jarinto /usr/share/${PN}/java/foundation/dist
+	java-pkg_dojar java/foundation/dist/Foundation.jar
+
+	# Set the XTREEMFS environment variable
+	echo -n "XTREEMFS=/usr/share/${PN}" > "${T}/90xtreemfs"
+	doenvd "${T}/90xtreemfs"
+
 }
 
 pkg_preinst() {
