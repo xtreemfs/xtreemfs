@@ -1,9 +1,0 @@
-To compile the native library for DirectIOReader, make sure that $JAVA_HOME
-points to a JDK 1.6. Invoke the following command:
-
-%> gcc -o libreaddirect.so -shared -Wl,-soname,libreaddirect.so \
- > -I$JAVA_HOME/include -I$JAVA_HOME/include/linux org_xtreemfs_sandbox_DirectIOReader.c
-
-The output will be a shared library named "libreaddirect.so". Make sure that the property
-"java.library.path" points to the directory where this library is located when starting
-the Java VM, e.g. by adding the option "-Djava.library.path=<directory containing lib>".

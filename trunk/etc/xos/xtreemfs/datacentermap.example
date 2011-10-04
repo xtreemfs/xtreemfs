@@ -1,7 +1,0 @@
-datacenters=A,B,C
-distance.A-B=10
-distance.A-C=100
-distance.B-C=50
-A.addresses=192.168.1.1,192.168.2.0/24
-B.addresses=192.168.1.2,192.168.3.0/24
-C.addresses=192.168.1.3,192.168.4.0/24,192.168.10.10
