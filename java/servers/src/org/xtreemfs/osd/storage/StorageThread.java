@@ -19,7 +19,6 @@ import java.util.Map.Entry;
 import org.xtreemfs.common.olp.AugmentedRequest;
 import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.olp.OverloadProtectedStage;
-import org.xtreemfs.common.olp.PerformanceInformationReceiver;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
@@ -94,8 +93,7 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
     private final boolean        checksumsEnabled;
     
     public StorageThread(int id, OSDRequestDispatcher master, MetadataCache cache, StorageLayout layout) {
-        super("OSD StThr " + id, STAGE_ID + id, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, NUM_SUB_SEQ_STAGES,
-                new PerformanceInformationReceiver [] { master.getPreprocStage(), master.getRWReplicationStage() });
+        super("OSD StThr " + id, STAGE_ID + id, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, NUM_SUB_SEQ_STAGES);
         
         this.cache = cache;
         this.layout = layout;

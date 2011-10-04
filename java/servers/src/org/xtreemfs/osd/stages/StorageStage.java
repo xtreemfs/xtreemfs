@@ -59,6 +59,13 @@ public class StorageStage {
             storageThreads[i] = new StorageThread(i, master, cache, layout);
         }
     }
+    
+    public void registerPerformanceInformationReceiver(PerformanceInformationReceiver[] receiver) {
+        
+        for (StorageThread st : storageThreads) {
+            st.registerPerformanceInformationReceiver(receiver);
+        }
+    }
 
     public StorageLayout getStorageLayout() {
         return layout;

@@ -27,6 +27,7 @@ import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.common.monitoring.StatusMonitor;
+import org.xtreemfs.common.olp.PerformanceInformationReceiver;
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.stage.StageRequest;
@@ -313,7 +314,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         stStage = new StorageStage(this, metadataCache, storageLayout, numStorageThreads);
         stStage.setLifeCycleListener(this);
         
-        delStage = new DeletionStage(metadataCache, storageLayout, preprocStage);
+        delStage = new DeletionStage(metadataCache, storageLayout);
         delStage.setLifeCycleListener(this);
         
         replStage = new ReplicationStage(this);
@@ -321,6 +322,15 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         rwrStage = new RWReplicationStage(this, serverSSLopts);
         rwrStage.setLifeCycleListener(this);
+        
+        PerformanceInformationReceiver[] result = new PerformanceInformationReceiver[numStorageThreads + 1];
+        System.arraycopy(stStage.getThreads(), 0, result, 0, numStorageThreads);
+        result[numStorageThreads] = preprocStage;
+        
+        rwrStage.registerPerformanceInformationReceiver(result);
+        stStage.registerPerformanceInformationReceiver(new PerformanceInformationReceiver []{ preprocStage, rwrStage });
+        delStage.registerPerformanceInformationReceiver(new PerformanceInformationReceiver[]{ preprocStage });
+        replStage.registerPerformanceInformationReceiver(stStage.getThreads());
         
         // ----------------------------------------
         // initialize TimeSync and Heartbeat thread

@@ -142,9 +142,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
     private final AtomicInteger externalRequestsInQueue;
     
     public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts) throws IOException {
-        super("RWReplSt", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, 
-                addPerformanceInformationReceiverHelper(master.getStorageStage().getThreads(), 
-                                                        master.getPreprocStage()));
+        super("RWReplSt", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES);
 
         this.master = master;
         client = new RPCNIOSocketClient(sslOpts, 15000, 60000*5);
@@ -189,16 +187,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
             }
         }, masterEpochThread);
     }
-
-    private final static PerformanceInformationReceiver[] addPerformanceInformationReceiverHelper(
-            PerformanceInformationReceiver[] dest, PerformanceInformationReceiver addend) {
         
-        PerformanceInformationReceiver[] result = new PerformanceInformationReceiver[dest.length + 1];
-        System.arraycopy(dest, 0, result, 0, dest.length);
-        result[dest.length] = addend;
-        return result;
-    }
-    
     @Override
     public void start() {
         

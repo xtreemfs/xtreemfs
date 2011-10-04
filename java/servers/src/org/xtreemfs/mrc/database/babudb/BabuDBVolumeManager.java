@@ -40,6 +40,7 @@ import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
@@ -86,7 +87,7 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     private final AtomicBoolean                    waitLock;
     
-    private final BabuDBComponent                  component;
+    private final BabuDBComponent<MRCRequest>      component;
     
     public BabuDBVolumeManager(MRCRequestDispatcher master, BabuDBConfig dbconfig) {
         initialized = new AtomicBoolean(false);
@@ -95,7 +96,7 @@ public class BabuDBVolumeManager implements VolumeManager {
         listeners = new LinkedList<VolumeChangeListener>();
         config = dbconfig;
         waitLock = new AtomicBoolean(false);
-        component = new BabuDBComponent(STAGE_ID, NUM_RQ_TYPES, master.getProcessingStage());
+        component = new BabuDBComponent<MRCRequest>(STAGE_ID, NUM_RQ_TYPES, master.getProcessingStage());
     }
     
     /*

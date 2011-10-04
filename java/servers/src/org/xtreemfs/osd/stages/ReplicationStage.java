@@ -57,7 +57,7 @@ public class ReplicationStage extends OverloadProtectedStage<AugmentedRequest> {
     private final ObjectDissemination              disseminationLayer;
         
     public ReplicationStage(OSDRequestDispatcher master) {
-        super("OSD ReplSt", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, master.getStorageStage().getThreads());
+        super("OSD ReplSt", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES);
 
         this.disseminationLayer = new ObjectDissemination(master);
     }

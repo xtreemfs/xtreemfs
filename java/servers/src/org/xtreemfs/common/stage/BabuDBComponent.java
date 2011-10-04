@@ -46,8 +46,9 @@ public class BabuDBComponent<R extends AugmentedRequest> extends OverloadProtect
      * @param master
      */
     public BabuDBComponent(int stageId, int numRqTypes, PerformanceInformationReceiver master) {
-        super(stageId, numRqTypes, 0, 0, new boolean[numRqTypes], new PerformanceInformationReceiver[] { master });
+        super(stageId, numRqTypes, 0, 0, new boolean[numRqTypes]);
         
+        registerPerformanceInformationReceiver(new PerformanceInformationReceiver[] { master });
         this.piggybackReceiver = new PerformanceInformationReceiver[] { master };
     }
 

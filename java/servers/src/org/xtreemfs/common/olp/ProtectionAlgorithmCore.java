@@ -63,13 +63,11 @@ final class ProtectionAlgorithmCore {
      * @param numInternalTypes - amount of different internal types of requests.
      * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
      * @param unrefusableTypes - array that decides which types of requests are treated unrefusable and which not.
-     * @param performanceInformationReceiver - receiver of performance information concerning this component.
      */
     ProtectionAlgorithmCore(int stageId, int numTypes, int numInternalTypes, int numSubsequentStages, 
-            boolean[] unrefusableTypes, PerformanceInformationReceiver[] performanceInformationReceiver) {
+            boolean[] unrefusableTypes) {
         
         assert (unrefusableTypes.length == numTypes);
-        assert (performanceInformationReceiver != null);
         
         this.unrefusableTypes = unrefusableTypes;
         this.id = stageId;
@@ -78,6 +76,17 @@ final class ProtectionAlgorithmCore {
         this.monitor = new SimpleMonitor(false, numTypes, controller);
         this.internalRequestMonitor = new SimpleMonitor(true, numInternalTypes, controller);
         this.sender = new PerformanceInformationSender(this);
+    }
+    
+    /**
+     * <p>Method to add receiver of {@link PerformanceInformation} collected by the OLP algorithm.</p>
+     * 
+     * @param performanceInformationReceiver - receiver of performance information concerning this component.
+     */
+    void addPerformanceInformationReceiver(PerformanceInformationReceiver[] performanceInformationReceiver) {
+        
+        assert (performanceInformationReceiver != null);
+        
         for (PerformanceInformationReceiver receiver : performanceInformationReceiver) {
             sender.addReceiver(receiver);
         }

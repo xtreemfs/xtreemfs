@@ -726,11 +726,11 @@ public class DIRClient implements TimeServerClient {
          */
         private void failover(IOException exception) throws InterruptedException {
             
-            int old = currentServer.get();
+            final int old = currentServer.get();
             Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, 
                     "Request to server %s failed due to exception: %s", servers[old], exception);
             Thread.sleep(retryWaitMs);
-            int newServer = (old >= servers.length) ? 0 : old + 1;
+            int newServer = ((old+1) == servers.length) ? 0 : old + 1;
             currentServer.compareAndSet(old, newServer);
             
             Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "Switching to server %s", servers[newServer]);

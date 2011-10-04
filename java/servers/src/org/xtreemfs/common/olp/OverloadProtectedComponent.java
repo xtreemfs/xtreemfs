@@ -49,7 +49,7 @@ public abstract class OverloadProtectedComponent<R extends AugmentedRequest>
      */
     protected OverloadProtectedComponent(int stageId, int numTypes, int numInternalTypes) {
         
-        this (stageId, numTypes, numInternalTypes, 0, new boolean[numTypes], new PerformanceInformationReceiver[]{ });
+        this (stageId, numTypes, numInternalTypes, 0, new boolean[numTypes]);
     }
     
     /**
@@ -63,8 +63,7 @@ public abstract class OverloadProtectedComponent<R extends AugmentedRequest>
      */
     protected OverloadProtectedComponent(int stageId, int numTypes, int numInternalTypes, int numSubsequentStages) {
         
-        this (stageId, numTypes, numInternalTypes, numSubsequentStages, new boolean[numTypes], 
-                new PerformanceInformationReceiver[]{});
+        this (stageId, numTypes, numInternalTypes, numSubsequentStages, new boolean[numTypes]);
     }
     
     /**
@@ -75,13 +74,23 @@ public abstract class OverloadProtectedComponent<R extends AugmentedRequest>
      * @param numInternalTypes - amount of different internal types of requests.
      * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
      * @param unrefusableTypes - array that decides which types of requests are treated unrefusable and which not.
-     * @param performanceInformationReceiver - receiver of performance information concerning this component.
      */
     protected OverloadProtectedComponent(int stageId, int numTypes, int numInternalTypes, int numSubsequentStages, 
-            boolean[] unrefusableTypes, PerformanceInformationReceiver[] performanceInformationReceiver) {
+            boolean[] unrefusableTypes) {
                 
         this.olp = new ProtectionAlgorithmCore(stageId, numTypes, numInternalTypes, numSubsequentStages, 
-                unrefusableTypes, performanceInformationReceiver);
+                unrefusableTypes);
+    }
+    
+    /**
+     * <p>Method to initially register receiver of {@link PerformanceInformation} collected by the OLP algorithm.</p>
+     * 
+     * @param performanceInformationReceiver - receiver of performance information concerning this component.
+     */
+    public void registerPerformanceInformationReceiver(
+            PerformanceInformationReceiver[] performanceInformationReceiver) {
+        
+        this.olp.addPerformanceInformationReceiver(performanceInformationReceiver);
     }
     
     /**

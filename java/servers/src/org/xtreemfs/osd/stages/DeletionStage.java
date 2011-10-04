@@ -16,7 +16,6 @@ import org.xtreemfs.common.olp.AugmentedRequest;
 import org.xtreemfs.common.olp.AugmentedInternalRequest;
 import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.olp.OverloadProtectedStage;
-import org.xtreemfs.common.olp.PerformanceInformationReceiver;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.SimpleStageQueue;
@@ -47,9 +46,8 @@ public class DeletionStage extends OverloadProtectedStage<AugmentedRequest> {
     
     private final AtomicLong     numFilesDeleted = new AtomicLong(0);
     
-    public DeletionStage(MetadataCache cache, StorageLayout layout, PerformanceInformationReceiver predecessor) {
-        super("OSD DelSt", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, new PerformanceInformationReceiver[] { 
-                predecessor });
+    public DeletionStage(MetadataCache cache, StorageLayout layout) {
+        super("OSD DelSt", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES);
         
         this.cache = cache;
         this.layout = layout;
