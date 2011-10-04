@@ -17,7 +17,7 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 
 import com.google.protobuf.Message;
 
@@ -64,7 +64,7 @@ public abstract class DIROperation {
      */
     public void parseRPCMessage(DIRRequest rq) throws IOException {
         
-        final Message rqPrototype = MRCServiceConstants.getRequestMessage(rq.getRPCRequest().getHeader()
+        final Message rqPrototype = DIRServiceConstants.getRequestMessage(rq.getRPCRequest().getHeader()
                 .getRequestHeader().getProcId());
         if (rqPrototype == null) {
             
