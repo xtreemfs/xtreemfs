@@ -247,7 +247,7 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
     
     double getVariableProcessingTime(long size) {
         
-        assert(currentGeneralMeasurement == -1) : "Currently there is a measurement in progress.";
+        assert(currentCustomMeasurement == -1) : "Currently there is a measurement in progress.";
       
         double result = 0.0;
         if (size > 0L) {
