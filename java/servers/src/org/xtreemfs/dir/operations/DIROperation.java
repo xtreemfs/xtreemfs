@@ -13,11 +13,11 @@ import java.io.IOException;
 import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceConstants;
 
 import com.google.protobuf.Message;
 
@@ -60,28 +60,44 @@ public abstract class DIROperation {
      * request message data is garbage.
      * 
      * @param rq
-     * @throws java.lang.Exception
+     * @throws IOException
      */
     public void parseRPCMessage(DIRRequest rq) throws IOException {
         
-        RPCServerRequest rpcRequest = rq.getRPCRequest();
-        Message message = rq.getRequestArgs();
-        final ReusableBuffer payload = rpcRequest.getMessage();
-        if (message != null) {
-            if (payload != null) {
-                message = message.newBuilderForType().mergeFrom(new ReusableBufferInputStream(payload)).build();
+        final Message rqPrototype = MRCServiceConstants.getRequestMessage(rq.getRPCRequest().getHeader()
+                .getRequestHeader().getProcId());
+        if (rqPrototype == null) {
+            
+            rq.setRequestArgs(null);
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                    "received request with empty message");
+        } else {
+            
+            if (rq.getRPCRequest().getMessage() != null) {
+                rq.setRequestArgs(rqPrototype.newBuilderForType().mergeFrom(
+                    new ReusableBufferInputStream(rq.getRPCRequest().getMessage())).build());
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: %s", message.toString());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                        "received request of type %s", rq.getRequestArgs().getClass().getName());
                 }
             } else {
-                message = message.getDefaultInstanceForType();
-            }
-        } else {
-            message = null;
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: empty message (emptyRequest)");
+                rq.setRequestArgs(rqPrototype.getDefaultInstanceForType());
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                        "received request of type %s (empty message)", rq.getRequestArgs().getClass()
+                                .getName());
+                }
             }
         }
-        rq.setRequestArgs(message);
+        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: %s", rqPrototype);
+        }
+        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                "successfully parsed request arguments:");
+        }
     }
 }

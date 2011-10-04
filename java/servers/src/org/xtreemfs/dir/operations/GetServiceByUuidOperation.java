@@ -48,7 +48,7 @@ public class GetServiceByUuidOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq, RPCRequestCallback callback) {
 
-        serviceGetByUUIDRequest request = (serviceGetByUUIDRequest) rq.getRequestMessage();
+        serviceGetByUUIDRequest request = (serviceGetByUUIDRequest) rq.getRequestArgs();
 
         component.lookup(database, new AbstractRPCRequestCallback(callback) {
             

@@ -51,7 +51,7 @@ public class GetServiceByNameOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq, RPCRequestCallback callback) {
         
-        final serviceGetByNameRequest req = (serviceGetByNameRequest) rq.getRequestMessage();
+        final serviceGetByNameRequest req = (serviceGetByNameRequest) rq.getRequestArgs();
         
         component.prefixLookup(database, new AbstractRPCRequestCallback(callback) {
             

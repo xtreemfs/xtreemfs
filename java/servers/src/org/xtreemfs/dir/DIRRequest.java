@@ -8,8 +8,6 @@
 
 package org.xtreemfs.dir;
 
-import com.google.protobuf.Message;
-
 import org.xtreemfs.common.stage.AugmentedServiceRequest;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.mrc.RequestDetails;
@@ -19,20 +17,13 @@ import org.xtreemfs.mrc.RequestDetails;
  * @author bjko
  */
 public class DIRRequest extends AugmentedServiceRequest {
-        
-    private Message        requestMessage;
-    
+            
     private RequestDetails details;
     
     public DIRRequest(RPCServerRequest rpcRequest, int type, long deltaMaxTime, boolean highPriority) {
         
         super(rpcRequest, type, deltaMaxTime, highPriority);
         details = new RequestDetails();
-    }
-        
-    public Message getRequestMessage() {
-        
-        return requestMessage;
     }
     
     public RequestDetails getDetails() {

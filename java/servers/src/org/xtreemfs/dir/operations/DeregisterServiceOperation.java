@@ -47,7 +47,7 @@ public class DeregisterServiceOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq, RPCRequestCallback callback) {
         
-        final serviceDeregisterRequest req = (serviceDeregisterRequest) rq.getRequestMessage();
+        final serviceDeregisterRequest req = (serviceDeregisterRequest) rq.getRequestArgs();
         
         DatabaseInsertGroup ig = database.createInsertGroup();
         ig.addDelete(DIRRequestDispatcher.INDEX_ID_SERVREG, req.getUuid().getBytes());

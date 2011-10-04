@@ -52,7 +52,7 @@ public class GetAddressMappingOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq, RPCRequestCallback callback) {
         
-        final addressMappingGetRequest req = (addressMappingGetRequest) rq.getRequestMessage();
+        final addressMappingGetRequest req = (addressMappingGetRequest) rq.getRequestArgs();
 
         if (req.getUuid().length() > 0) {
             

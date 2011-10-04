@@ -48,7 +48,7 @@ public class DeleteAddressMappingOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq, RPCRequestCallback callback) {
         
-        addressMappingGetRequest request = (addressMappingGetRequest) rq.getRequestMessage();
+        addressMappingGetRequest request = (addressMappingGetRequest) rq.getRequestArgs();
         
         DatabaseInsertGroup ig = database.createInsertGroup();
         ig.addDelete(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());

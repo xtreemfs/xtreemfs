@@ -50,7 +50,7 @@ public class SetConfigurationOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq, final RPCRequestCallback callback) throws ErrorResponseException {
 
-        final Configuration conf = (Configuration) rq.getRequestMessage();
+        final Configuration conf = (Configuration) rq.getRequestArgs();
 
         String uuid = null;
 

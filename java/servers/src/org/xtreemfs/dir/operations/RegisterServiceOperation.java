@@ -55,7 +55,7 @@ public class RegisterServiceOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq, RPCRequestCallback callback) {
         
-        final serviceRegisterRequest request = (serviceRegisterRequest) rq.getRequestMessage();
+        final serviceRegisterRequest request = (serviceRegisterRequest) rq.getRequestArgs();
         
         final Service.Builder reg = request.getService().toBuilder();
                 

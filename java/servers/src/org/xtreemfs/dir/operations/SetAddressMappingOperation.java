@@ -58,7 +58,7 @@ public class SetAddressMappingOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq, final RPCRequestCallback callback) throws ErrorResponseException {
 
-        final AddressMappingSet mappings = (AddressMappingSet) rq.getRequestMessage();
+        final AddressMappingSet mappings = (AddressMappingSet) rq.getRequestArgs();
         String uuid = null;
         if (mappings.getMappingsCount() == 0) {
             throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, 

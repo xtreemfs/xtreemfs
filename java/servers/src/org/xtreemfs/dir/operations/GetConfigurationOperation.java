@@ -32,6 +32,7 @@ public class GetConfigurationOperation extends DIROperation {
     
     public GetConfigurationOperation(DIRRequestDispatcher master) {
         super(master);
+        
         component = master.getBabuDBComponent();
         database = master.getDirDatabase();
     }
@@ -45,7 +46,9 @@ public class GetConfigurationOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq, RPCRequestCallback callback) {
         
-        final configurationGetRequest request = (configurationGetRequest) rq.getRequestMessage();
+        final configurationGetRequest request = (configurationGetRequest) rq.getRequestArgs();
+        
+        
         
         component.lookup(database, new AbstractRPCRequestCallback(callback) {
             

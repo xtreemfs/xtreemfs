@@ -51,7 +51,7 @@ public class ServiceOfflineOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq, final RPCRequestCallback callback) {
 
-        final serviceGetByUUIDRequest request = (serviceGetByUUIDRequest) rq.getRequestMessage();
+        final serviceGetByUUIDRequest request = (serviceGetByUUIDRequest) rq.getRequestArgs();
         final AtomicReference<byte[]> newData = new AtomicReference<byte[]>();
         
         component.lookup(database, new AbstractRPCRequestCallback(callback) {
