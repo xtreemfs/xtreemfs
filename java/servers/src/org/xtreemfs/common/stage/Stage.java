@@ -189,13 +189,15 @@ public abstract class Stage<R> extends LifeCycleThread implements AutonomousComp
                 StageRequest<R> request = queue.take(nextCronJob);
                 
                 // calculate the delay for the next cron-job
-                long timePassed = TimeSync.getLocalSystemTime() - lastCronJob;
-                nextCronJob = nextCronJob - timePassed;
-                if (period > 0 && nextCronJob <= 0) {
+                if (period > 0) {
+                    final long timePassed = TimeSync.getLocalSystemTime() - lastCronJob;
+                    nextCronJob = (nextCronJob > timePassed) ? nextCronJob - timePassed : 0L;
+                    if (nextCronJob == 0L) {
                     
-                    chronJob();
-                    lastCronJob = TimeSync.getLocalSystemTime();
-                    nextCronJob = nextChronJobDelay();
+                        chronJob();
+                        lastCronJob = TimeSync.getLocalSystemTime();
+                        nextCronJob = nextChronJobDelay();
+                    }
                 }
                 
                 if (request != null) {
