@@ -133,8 +133,10 @@ public class RegisterServiceOperation extends DIROperation {
                             POSIXErrno.POSIX_ERROR_EAGAIN, "The requested version number (" + reg.getVersion() + 
                             ") did not match the expected version (" + currentVersion + ")!"));
                 }
-                                
-                reg.setVersion(++currentVersion);
+                
+                final long newVersion = currentVersion + 1L;
+                
+                reg.setVersion(newVersion);
                 reg.setLastUpdatedS(System.currentTimeMillis() / 1000l);
 
                 
@@ -145,14 +147,13 @@ public class RegisterServiceOperation extends DIROperation {
                 component.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, newRec.getUuid().getBytes(), newData, 
                         (OLPStageRequest<DIRRequest>) stageRequest, new AbstractRPCRequestCallback(this) {
 
-                            @Override
-                            public <T extends StageRequest<?>> boolean success(Object result, T stageRequest)
-                                    throws ErrorResponseException {
+                    @Override
+                    public <T extends StageRequest<?>> boolean success(Object result, T stageRequest)
+                            throws ErrorResponseException {
 
-                                return success(serviceRegisterResponse.newBuilder().setNewVersion(
-                                        reg.getVersion()).build());
-                            }
-                        });
+                        return success(serviceRegisterResponse.newBuilder().setNewVersion(newVersion).build());
+                    }
+                });
                 
                 return false;
             }
