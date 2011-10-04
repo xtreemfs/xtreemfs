@@ -141,8 +141,8 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
 
     private final AtomicInteger externalRequestsInQueue;
     
-    public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts) throws IOException {
-        super("RWReplSt", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES);
+    public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts, int numStorageThreads) throws IOException {
+        super("RWReplSt", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, numStorageThreads);
 
         this.master = master;
         client = new RPCNIOSocketClient(sslOpts, 15000, 60000*5);

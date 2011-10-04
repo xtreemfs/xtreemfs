@@ -320,7 +320,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         replStage = new ReplicationStage(this);
         replStage.setLifeCycleListener(this);
         
-        rwrStage = new RWReplicationStage(this, serverSSLopts);
+        rwrStage = new RWReplicationStage(this, serverSSLopts, numStorageThreads);
         rwrStage.setLifeCycleListener(this);
         
         PerformanceInformationReceiver[] result = new PerformanceInformationReceiver[numStorageThreads + 1];
