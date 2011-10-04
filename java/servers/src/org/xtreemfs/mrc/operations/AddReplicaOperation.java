@@ -139,15 +139,7 @@ public class AddReplicaOperation extends MRCOperation {
         
         XLoc[] repls = new XLoc[xLocList.getReplicaCount() + 1];
         for (int i = 0; i < xLocList.getReplicaCount(); i++) {
-            
             XLoc repl = xLocList.getReplica(i);
-            
-            // in case of read-only replication, mark the first replica in the
-            // list as 'complete'
-            if (i == 0 && ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(xLocList.getReplUpdatePolicy()))
-                repl.setReplicationFlags(ReplicationFlags.setFullReplica(ReplicationFlags
-                        .setReplicaIsComplete(repl.getReplicationFlags())));
-            
             repls[i] = repl;
         }
         
