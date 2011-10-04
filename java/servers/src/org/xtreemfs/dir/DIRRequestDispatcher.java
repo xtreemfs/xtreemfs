@@ -145,6 +145,8 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
             }
         });
         
+        babuDBComponent = new BabuDBComponent<DIRRequest>(0, 11, this);
+        
         registerOperations();
         
         // start the server
@@ -246,8 +248,6 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, ": %s",
             ex.getMessage());
         }
-        
-        this.babuDBComponent = new BabuDBComponent<DIRRequest>(0, 11, this);
     }
     
     public ServiceRecords getServices() throws Exception {
