@@ -12,18 +12,19 @@ import java.io.IOException;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.olp.AugmentedInternalRequest;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.olp.OverloadProtectedStage;
-import org.xtreemfs.common.olp.PerformanceInformationReceiver;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.BufferPool;
-import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -42,29 +43,23 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
 public class ReplicationStage extends OverloadProtectedStage<AugmentedRequest> {
     
     private final static int  NUM_RQ_TYPES                              = 2;
-    private final static int  STAGE_ID                                  = 1;
-    private final static long DELTA_MAX_TIME                            = 60 * 1000;
+    private final static int  NUM_INTERNAL_RQ_TYPES                     = 3;
+    private final static int  STAGE_ID                                  = 0;
     
     /**
      * fetching an object from another replica
      */
-    public static final int STAGEOP_FETCH_OBJECT                        = 1;
+    public static final int   STAGEOP_FETCH_OBJECT                      = -1;
+    public static final int   STAGEOP_INTERNAL_OBJECT_FETCHED           = 0;
+    public static final int   STAGEOP_CANCEL_REPLICATION_FOR_FILE       = 1;
+    public static final int   STAGEOP_START_NEW_REPLICATION_FOR_FILE    = 2;
 
-    public static final int STAGEOP_INTERNAL_OBJECT_FETCHED             = 2;
-
-    public static final int STAGEOP_CANCEL_REPLICATION_FOR_FILE         = 3;
-
-    public static final int STAGEOP_START_NEW_REPLICATION_FOR_FILE      = 4;
-
-    private ObjectDissemination disseminationLayer;
-    
-    private final PerformanceInformationReceiver predecessor;
-    
+    private final ObjectDissemination              disseminationLayer;
+        
     public ReplicationStage(OSDRequestDispatcher master) {
-        super("OSD ReplSt", STAGE_ID, NUM_RQ_TYPES, new PerformanceInformationReceiver[] { master.getPreprocStage() });
+        super("OSD ReplSt", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, master.getStorageStage().getThreads());
 
         this.disseminationLayer = new ObjectDissemination(master);
-        this.predecessor = master.getPreprocStage();
     }
 
     /* (non-Javadoc)
@@ -83,8 +78,8 @@ public class ReplicationStage extends OverloadProtectedStage<AugmentedRequest> {
     public void fetchObject(String fileId, long objectNo, XLocations xLoc, Capability cap, CowPolicy cow,
             OSDRequest request, AbstractRPCRequestCallback callback) {
         
-        enter(STAGEOP_FETCH_OBJECT, new Object[] { fileId, objectNo, xLoc, cap, cow }, new StageInternalRequest(request,
-                predecessor), callback);
+        enter(STAGEOP_FETCH_OBJECT, new Object[] { fileId, objectNo, xLoc, cap, cow }, request, callback, 
+                getInitialPredecessors());
     }
 
     /**
@@ -98,9 +93,8 @@ public class ReplicationStage extends OverloadProtectedStage<AugmentedRequest> {
     public void internalObjectFetched(String fileId, long objectNo, ServiceUUID usedOSD, InternalObjectData data,
             ObjectList objectList, ErrorResponse error) {
         
-        // TODO fix request metadata
         enter(STAGEOP_INTERNAL_OBJECT_FETCHED, new Object[] { fileId, objectNo, usedOSD, data, objectList, error }, 
-                new StageInternalRequest(1, 0, DELTA_MAX_TIME, false, null), null);
+                new AugmentedInternalRequest(STAGEOP_INTERNAL_OBJECT_FETCHED), null);
     }
 
     /**
@@ -109,9 +103,8 @@ public class ReplicationStage extends OverloadProtectedStage<AugmentedRequest> {
      */
     public void cancelReplicationForFile(String fileId) {
         
-        // TODO fix request metadata
         enter(STAGEOP_CANCEL_REPLICATION_FOR_FILE, new Object[] { fileId }, 
-                new StageInternalRequest(1, 0, DELTA_MAX_TIME, false, null), null);
+                new AugmentedInternalRequest(STAGEOP_CANCEL_REPLICATION_FOR_FILE), null);
     }
 
     /**
@@ -120,77 +113,80 @@ public class ReplicationStage extends OverloadProtectedStage<AugmentedRequest> {
      */
     public void triggerReplicationForFile(String fileId) {
         
-        // TODO fix request metadata
         enter(STAGEOP_START_NEW_REPLICATION_FOR_FILE, new Object[] { fileId }, 
-                new StageInternalRequest(1, 0, DELTA_MAX_TIME, false, null), null);
+                new AugmentedInternalRequest(STAGEOP_START_NEW_REPLICATION_FOR_FILE), null);
     }
 
+
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.olp.OverloadProtectedStage#_processMethod(org.xtreemfs.common.olp.OLPStageRequest)
+     */
     @Override
-    protected void _processMethod(StageRequest<AugmentedRequest> rq) {
+    protected boolean _processMethod(OLPStageRequest<AugmentedRequest> stageRequest) {
         
-        final Callback callback = rq.getCallback();
+        final Callback callback = stageRequest.getCallback();
+        final int requestedMethod = stageRequest.getStageMethod();
         
         try {
-            switch (rq.getStageMethod()) {
+            switch (requestedMethod) {
             case STAGEOP_FETCH_OBJECT: {
-                processFetchObject(rq);
+                processFetchObject(stageRequest);
                 break;
             }
             case STAGEOP_INTERNAL_OBJECT_FETCHED: {
-                processInternalObjectFetched(rq);
+                processInternalObjectFetched(stageRequest);
                 break;
             }
             case STAGEOP_CANCEL_REPLICATION_FOR_FILE: {
-                processInternalCancelFile(rq);
+                processInternalCancelFile(stageRequest);
                 break;
             }
             case STAGEOP_START_NEW_REPLICATION_FOR_FILE: {
-                processInternalStartFile(rq);
+                processInternalStartFile(stageRequest);
                 break;
             }
             default:
-                rq.getRequest().getMonitoring().voidMeasurments();
-                callback.failed(new RuntimeException("unknown stage op request"));
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "unknown stageop called: %d", requestedMethod);
+                break;
             }
-        } catch (Throwable exc) {
+        } catch (ErrorResponseException exc) {
             
             Logging.logError(Logging.LEVEL_ERROR, this, exc);
-            rq.getRequest().getMonitoring().voidMeasurments();
+            stageRequest.voidMeasurments();
             callback.failed(exc);
-            return;
         }
+        
+        return true;
     }
 
-    private void processFetchObject(StageRequest<AugmentedRequest> rq) throws IOException, JSONException {
+    private void processFetchObject(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) rq.getCallback();
-        String fileId = (String) rq.getArgs()[0];
-        long objectNo = (Long) rq.getArgs()[1];
-        XLocations xLoc = (XLocations) rq.getArgs()[2];
-        Capability cap = (Capability) rq.getArgs()[3];
-        CowPolicy cow = (CowPolicy) rq.getArgs()[4];
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) stageRequest.getCallback();
+        final String fileId = (String) stageRequest.getArgs()[0];
+        final long objectNo = (Long) stageRequest.getArgs()[1];
+        final XLocations xLoc = (XLocations) stageRequest.getArgs()[2];
+        final Capability cap = (Capability) stageRequest.getArgs()[3];
+        final CowPolicy cow = (CowPolicy) stageRequest.getArgs()[4];
 
         // if replica exist and stripe size of all replicas is the same
         if (xLoc.getNumReplicas() > 1 && !xLoc.getLocalReplica().isComplete()) {
-            disseminationLayer.fetchObject(fileId, objectNo, xLoc, cap, cow, rq);
+            disseminationLayer.fetchObject(fileId, objectNo, xLoc, cap, cow, stageRequest);
         } else {
             
             // object does not exist locally and no replica exists => hole
-            if (!callback.success(new ObjectInformation(ObjectInformation.ObjectStatus.PADDING_OBJECT, null,
-                    xLoc.getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo)))){
-                rq.getRequest().getMonitoring().voidMeasurments();
-            }
+            callback.success(new ObjectInformation(ObjectInformation.ObjectStatus.PADDING_OBJECT, null,
+                    xLoc.getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo)),stageRequest);
         }
     }
 
-    private void processInternalObjectFetched(StageRequest<AugmentedRequest> rq) {
+    private void processInternalObjectFetched(StageRequest<AugmentedRequest> stageRequest) {
         
-        String fileId = (String) rq.getArgs()[0];
-        long objectNo = (Long) rq.getArgs()[1];
-        final ServiceUUID usedOSD = (ServiceUUID) rq.getArgs()[2];
-        InternalObjectData data = (InternalObjectData) rq.getArgs()[3];
-        ObjectList objectList = (ObjectList) rq.getArgs()[4];
-        final ErrorResponse error = (ErrorResponse) rq.getArgs()[5];
+        final String fileId = (String) stageRequest.getArgs()[0];
+        final long objectNo = (Long) stageRequest.getArgs()[1];
+        final ServiceUUID usedOSD = (ServiceUUID) stageRequest.getArgs()[2];
+        final InternalObjectData data = (InternalObjectData) stageRequest.getArgs()[3];
+        final ObjectList objectList = (ObjectList) stageRequest.getArgs()[4];
+        final ErrorResponse error = (ErrorResponse) stageRequest.getArgs()[5];
 
         if (error != null) {
             
@@ -232,18 +228,15 @@ public class ReplicationStage extends OverloadProtectedStage<AugmentedRequest> {
         }
     }
 
-    private void processInternalCancelFile(StageRequest<AugmentedRequest> rq) {
+    private void processInternalCancelFile(StageRequest<AugmentedRequest> stageRequest) {
         
-        String fileId = (String) rq.getArgs()[0];
+        final String fileId = (String) stageRequest.getArgs()[0];
         disseminationLayer.cancelFile(fileId);
     }
-
-    /**
-     * @param rq
-     */
-    private void processInternalStartFile(StageRequest<AugmentedRequest> rq) {
+    
+    private void processInternalStartFile(StageRequest<AugmentedRequest> stageRequest) {
         
-        String fileId = (String) rq.getArgs()[0];
+        final String fileId = (String) stageRequest.getArgs()[0];
         disseminationLayer.startNewReplication(fileId);
     }
 }

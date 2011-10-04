@@ -10,12 +10,13 @@ package org.xtreemfs.mrc.operations;
 
 import java.io.File;
 
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -37,8 +38,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntry;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.readdirRequest;
-
-import com.google.protobuf.Message;
 
 /**
  * 
@@ -99,15 +98,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
         
         final DirectoryEntries.Builder dirContent = DirectoryEntries.newBuilder();
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
-            
-            @Override
-            public Message execute(Object result, BabuDBRequest request) throws Exception {
-                
-                // set the response
-                return dirContent.build();
-            }
-        });
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate();
         
         // if required, update POSIX timestamps
         int time = (int) (TimeSync.getGlobalTime() / 1000);
@@ -180,7 +171,16 @@ public class ReadDirAndStatOperation extends MRCOperation {
             
         }
         
-        update.execute(callback, rq.getMetadata());
+        update.execute(new AbstractRPCRequestCallback(callback) {
+            
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+
+                // set the response
+                return success(dirContent.build());
+            }
+        }, rq);
     }
     
     private Stat getStat(StorageManager sMan, FileAccessManager faMan, MRCRequest rq, VolumeInfo volume,

@@ -10,14 +10,13 @@ package org.xtreemfs.dir.operations;
 
 import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.database.DatabaseInsertGroup;
-import org.xtreemfs.babudb.api.exception.BabuDBException;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.BabuDBComponent;
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceDeregisterRequest;
 
@@ -29,12 +28,12 @@ import com.google.protobuf.Message;
  */
 public class DeregisterServiceOperation extends DIROperation {
     
-    private final BabuDBComponent component;
-    private final Database database;
+    private final BabuDBComponent<DIRRequest> component;
+    private final Database                    database;
     
     public DeregisterServiceOperation(DIRRequestDispatcher master) {
-        
         super(master);
+        
         component = master.getBabuDBComponent();
         database = master.getDirDatabase();
     }
@@ -46,20 +45,21 @@ public class DeregisterServiceOperation extends DIROperation {
     }
     
     @Override
-    public void startRequest(DIRRequest rq, RPCRequestCallback callback) throws BabuDBException {
+    public void startRequest(DIRRequest rq, RPCRequestCallback callback) {
         
-        final serviceDeregisterRequest request = (serviceDeregisterRequest) rq.getRequestMessage();
+        final serviceDeregisterRequest req = (serviceDeregisterRequest) rq.getRequestMessage();
         
         DatabaseInsertGroup ig = database.createInsertGroup();
-        ig.addDelete(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
-        component.insert(database, callback, ig, rq.getMetadata(), new BabuDBPostprocessing<Object>() {
+        ig.addDelete(DIRRequestDispatcher.INDEX_ID_SERVREG, req.getUuid().getBytes());
+        component.insert(database, new AbstractRPCRequestCallback(callback) {
             
             @Override
-            public Message execute(Object result, BabuDBRequest rq) throws Exception {
+            public <S extends StageRequest<?>> boolean success(Object result, S request)
+                    throws ErrorResponseException {
                 
-                master.notifyServiceDeregistred(request.getUuid());
-                return emptyResponse.getDefaultInstance();
+                master.notifyServiceDeregistred(req.getUuid());
+                return success((Message) null);
             }
-        });
+        }, ig, rq);
     }
 }

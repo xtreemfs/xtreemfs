@@ -9,14 +9,14 @@
 package org.xtreemfs.mrc.operations;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -38,8 +38,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.renameRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.renameResponse;
-
-import com.google.protobuf.Message;
 
 /**
  * 
@@ -104,17 +102,9 @@ public class MoveOperation extends MRCOperation {
         FileType sourceType = source.isDirectory() ? FileType.dir : FileType.file;
         
         final int time = (int) (TimeSync.getGlobalTime() / 1000);
-        final AtomicReference<FileCredentials.Builder> creds = new AtomicReference<FileCredentials.Builder>();
+        FileCredentials.Builder creds = FileCredentials.newBuilder();
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
-            
-            @Override
-            public Message execute(Object result, BabuDBRequest request) throws Exception {
-                
-                // set the response
-                return buildResponse(time, creds.get());
-            }
-        });
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate();
         
         PathResolver tRes = null;
         //        
@@ -173,7 +163,7 @@ public class MoveOperation extends MRCOperation {
         // if both the old and the new directory point to the same
         // entity, do nothing
         if (sp.equals(tp)) {
-            callback.success(buildResponse(0, creds.get()));
+            callback.success(buildResponse(0, creds));
             return;
         }
         
@@ -245,7 +235,6 @@ public class MoveOperation extends MRCOperation {
             }
             
             break;
-            
         }
             
             // source is a file
@@ -261,6 +250,7 @@ public class MoveOperation extends MRCOperation {
                 relink(sMan, sRes.getParentDirId(), sRes.getFileName(), source, tRes.getParentDirId(), tRes
                         .getFileName(), update);
                 
+                creds = FileCredentials.newBuilder();
                 break;
             }
                 
@@ -295,8 +285,8 @@ public class MoveOperation extends MRCOperation {
                             : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), master
                                 .getConfig().getCapabilitySecret());
                     
-                    creds.set(FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(
-                        Converter.xLocListToXLocSet(target.getXLocList())));
+                    creds = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(Converter.xLocListToXLocSet(
+                            target.getXLocList()));
                 }
                 
                 // delete the target
@@ -309,7 +299,6 @@ public class MoveOperation extends MRCOperation {
                 
                 break;
             }
-                
             }
             
         }
@@ -321,7 +310,17 @@ public class MoveOperation extends MRCOperation {
         MRCHelper.updateFileTimes(tRes.getParentsParentId(), tRes.getParentDir(), false, true, true, sMan,
             time, update);
         
-        update.execute(callback, rq.getMetadata());
+        final FileCredentials.Builder credentials = creds;
+        update.execute(new AbstractRPCRequestCallback(callback) {
+            
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+
+                // set the response
+                return success(buildResponse(time, credentials));
+            }
+        }, rq);
         
     }
     

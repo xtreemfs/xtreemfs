@@ -20,6 +20,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -72,7 +73,13 @@ public class LockAcquireOperation extends OSDOperation {
         if (result instanceof ErrorResponse) {
             return (ErrorResponse) result;
         } else {
-            callback.success(result);
+            try {
+                
+                callback.success(result);
+            } catch (ErrorResponseException e) {
+                
+                return e.getRPCError();
+            }
         }
         
         return null;

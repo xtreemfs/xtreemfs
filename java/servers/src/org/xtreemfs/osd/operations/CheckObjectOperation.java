@@ -13,6 +13,7 @@ import java.util.List;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -23,6 +24,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -35,23 +37,25 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class CheckObjectOperation extends OSDOperation {
 
-    final String sharedSecret;
-
-    final ServiceUUID localUUID;
+    private final String sharedSecret;
+    private final ServiceUUID localUUID;
 
     public CheckObjectOperation(OSDRequestDispatcher master) {
         super(master);
+        
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }
 
     @Override
     public int getProcedureId() {
+        
         return OSDServiceConstants.PROC_ID_XTREEMFS_CHECK_OBJECT;
     }
 
     @Override
-    public ErrorResponse startRequest(final OSDRequest rq, final RPCRequestCallback callback) {
+    public ErrorResponse startRequest(OSDRequest rq, final RPCRequestCallback callback) {
+        
         final xtreemfs_check_objectRequest args = (xtreemfs_check_objectRequest) rq.getRequestArgs();
 
         if (args.getObjectNumber() < 0) {
@@ -66,8 +70,10 @@ public final class CheckObjectOperation extends OSDOperation {
                     .getSnapTimestamp() : 0, rq, new AbstractRPCRequestCallback(callback) {
                         
                         @Override
-                        public boolean success(Object result) {
+                        public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                                throws ErrorResponseException {
                             
+                            final OSDRequest rq = (OSDRequest) stageRequest.getRequest();
                             if (rq.getLocationList().getLocalReplica().getOSDs().size() == 1) {
                                 
                                 //non-striped case
@@ -84,7 +90,7 @@ public final class CheckObjectOperation extends OSDOperation {
     }
 
     private boolean nonStripedCheckObject(xtreemfs_check_objectRequest args, ObjectInformation result, 
-            RPCRequestCallback callback) {
+            RPCRequestCallback callback) throws ErrorResponseException {
 
         boolean isLastObjectOrEOF = result.getLastLocalObjectNo() <= args.getObjectNumber();
         return readFinish(result, isLastObjectOrEOF, callback);
@@ -92,7 +98,7 @@ public final class CheckObjectOperation extends OSDOperation {
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private boolean stripedCheckObject(final OSDRequest rq, final xtreemfs_check_objectRequest args, 
-            final ObjectInformation result, final RPCRequestCallback callback) {
+            final ObjectInformation result, final RPCRequestCallback callback) throws ErrorResponseException {
         
         //ObjectData data;
         long objNo = args.getObjectNumber();
@@ -119,13 +125,19 @@ public final class CheckObjectOperation extends OSDOperation {
                     // executed by the OSDClient
                     @Override
                     public void responsesAvailable() {
-                        stripedCheckObjectAnalyzeGmax(args, result, gmaxRPCs, callback);
+                        
+                        try {
+                            
+                            stripedCheckObjectAnalyzeGmax(args, result, gmaxRPCs, callback);
+                        } catch (ErrorResponseException e) {
+                            
+                            callback.failed(e.getRPCError());
+                        }
                     }
                 });
             } catch (IOException ex) {
                 
-                callback.failed(ex);
-                return false;
+                throw new ErrorResponseException(ex);
             }
         } else {
             
@@ -137,7 +149,7 @@ public final class CheckObjectOperation extends OSDOperation {
 
     @SuppressWarnings("rawtypes")
     private void stripedCheckObjectAnalyzeGmax(xtreemfs_check_objectRequest args, ObjectInformation result, 
-            RPCResponse[] gmaxRPCs, RPCRequestCallback callback) {
+            RPCResponse[] gmaxRPCs, RPCRequestCallback callback) throws ErrorResponseException {
         
         long maxObjNo = -1;
         long maxTruncate = -1;
@@ -157,9 +169,12 @@ public final class CheckObjectOperation extends OSDOperation {
             
             //and update gmax locally
             master.getStorageStage().receivedGMAX_ASYNC(args.getFileId(), maxTruncate, maxObjNo);
-        } catch (Exception ex) {
+        } catch (ErrorResponseException e) {
             
-            callback.failed(ex);
+            throw e;
+        } catch (Exception e) {
+            
+            throw new ErrorResponseException(e);
         } finally {
             
             for (RPCResponse r : gmaxRPCs) {
@@ -168,7 +183,8 @@ public final class CheckObjectOperation extends OSDOperation {
         }
     }
 
-    private boolean readFinish(ObjectInformation result, boolean isLastObjectOrEOF, RPCRequestCallback callback) {
+    private boolean readFinish(ObjectInformation result, boolean isLastObjectOrEOF, RPCRequestCallback callback) 
+            throws ErrorResponseException {
 
         InternalObjectData data;
         data = result.getObjectData(isLastObjectOrEOF, 0, result.getStripeSize());

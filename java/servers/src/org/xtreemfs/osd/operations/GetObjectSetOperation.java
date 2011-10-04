@@ -14,6 +14,7 @@ import java.io.IOException;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -21,6 +22,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.ObjectSet;
@@ -54,9 +56,10 @@ public class GetObjectSetOperation extends OSDOperation {
         
         master.getStorageStage().getObjectSet(rq.getLocationList().getLocalReplica().getStripingPolicy(), rq,
                 new AbstractRPCRequestCallback(callback) {
-                    
+
             @Override
-            public boolean success(Object result) {
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
                 
                 return postReadObjectList((ObjectSet) result, callback);
             }
@@ -65,7 +68,7 @@ public class GetObjectSetOperation extends OSDOperation {
         return null;
     }
 
-    public boolean postReadObjectList(ObjectSet result, RPCRequestCallback callback) {
+    public boolean postReadObjectList(ObjectSet result, RPCRequestCallback callback) throws ErrorResponseException {
 
         // serialize objectSet
         byte[] serialized;
@@ -78,8 +81,7 @@ public class GetObjectSetOperation extends OSDOperation {
             return callback.success(objList);
         } catch (IOException e) {
             
-            callback.failed(e);
-            return false;
+            throw new ErrorResponseException(e);
         }
     }
     

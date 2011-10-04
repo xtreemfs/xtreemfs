@@ -9,11 +9,12 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.ReplicaUpdatePolicies;
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
+import org.xtreemfs.common.stage.StageRequest;
 
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -28,8 +29,6 @@ import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse;
-
-import com.google.protobuf.Message;
 
 public class SetReplicaUpdatePolicyOperation extends MRCOperation {
 
@@ -101,14 +100,7 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
         // Set the Xattr value
         final xtreemfs_set_replica_update_policyResponse.Builder rp = 
             xtreemfs_set_replica_update_policyResponse.newBuilder();
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
-            
-            @Override
-            public Message execute(Object result, BabuDBRequest request) throws Exception {
-                
-                return rp.build();
-            }
-        });
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate();
 
         XLoc[] xLocs = new XLoc[file.getXLocList().getReplicaCount()];
         for (int i = 0; i < file.getXLocList().getReplicaCount(); i++) {
@@ -122,6 +114,14 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
 
         rp.setOldUpdatePolicy(oldPolicy);
         
-        update.execute(callback, rq.getMetadata());
+        update.execute(new AbstractRPCRequestCallback(callback) {
+            
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+
+                return success(rp.build());
+            }
+        }, rq);
     }
 }

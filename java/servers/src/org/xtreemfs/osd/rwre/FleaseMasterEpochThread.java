@@ -17,6 +17,7 @@ import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.flease.MasterEpochHandlerInterface;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.storage.StorageLayout;
 
@@ -39,43 +40,66 @@ public class FleaseMasterEpochThread extends Stage<OSDRequest> implements Master
         this.layout = layout;
     }
 
+
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.Stage#generateStageRequest(int, java.lang.Object[], java.lang.Object, org.xtreemfs.common.stage.Callback)
+     */
+    @SuppressWarnings("unchecked")
     @Override
-    public void processMethod(StageRequest<OSDRequest> method) {
+    protected <S extends StageRequest<OSDRequest>> S generateStageRequest(int stageMethodId, Object[] args,
+            OSDRequest request, Callback callback) {
+
+        return (S) new StageRequest<OSDRequest>(stageMethodId, args, request, callback) { };
+    }
+
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.Stage#processMethod(org.xtreemfs.common.stage.StageRequest)
+     */
+    @Override
+    protected <S extends StageRequest<OSDRequest>> boolean processMethod(S stageRequest) {
         
-        final Callback callback = method.getCallback();
-        final FleaseMessage message = (FleaseMessage) method.getArgs()[0];
+        final Callback callback = stageRequest.getCallback();
+        final FleaseMessage message = (FleaseMessage) stageRequest.getArgs()[0];
         final String fileId = message.getCellId().toString().replace("file/", "");
         
-        switch (method.getStageMethod()) {
-            case STAGEOP_GET_MEPOCH: {
-                try {
-                    message.setMasterEpochNumber(layout.getMasterEpoch(fileId));
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "fetched master epoch for %s: %d", fileId, message.getMasterEpochNumber());
+        try {
+            switch (stageRequest.getStageMethod()) {
+                case STAGEOP_GET_MEPOCH: {
+                    try {
+                        message.setMasterEpochNumber(layout.getMasterEpoch(fileId));
+                        if (Logging.isDebug()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, this, "fetched master epoch for %s: %d", fileId, 
+                                    message.getMasterEpochNumber());
+                        }
+                    } catch (IOException ex) {
+                        Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                        message.setMasterEpochNumber(-1l);
                     }
-                } catch (IOException ex) {
-                    Logging.logError(Logging.LEVEL_ERROR, this, ex);
-                    message.setMasterEpochNumber(-1l);
+                    callback.success(null, stageRequest);
+                    break;
                 }
-                callback.success(null);
-                break;
-            }
-            case STAGEOP_SET_MEPOCH: {
-                try {
-                    layout.setMasterEpoch(fileId, (int)message.getMasterEpochNumber());
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "set master epoch for %s: %d", fileId, message.getMasterEpochNumber());
+                case STAGEOP_SET_MEPOCH: {
+                    try {
+                        layout.setMasterEpoch(fileId, (int)message.getMasterEpochNumber());
+                        if (Logging.isDebug()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, this, "set master epoch for %s: %d", fileId, 
+                                    message.getMasterEpochNumber());
+                        }
+                        callback.success(null, stageRequest);
+                    } catch (IOException ex) {
+                        Logging.logError(Logging.LEVEL_ERROR, this, ex);
                     }
-                    callback.success(null);
-                } catch (IOException ex) {
-                    Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                    break;
                 }
-                break;
+                default: {
+                    throw new IllegalStateException("no such operation: " + stageRequest.getStageMethod());
+                }
             }
-            default: {
-                throw new IllegalStateException("no such operation: " + method.getStageMethod());
-            }
+        } catch (ErrorResponseException e) {
+            callback.failed(e);
         }
+        
+        return true;
     }
 
     @Override
@@ -83,7 +107,8 @@ public class FleaseMasterEpochThread extends Stage<OSDRequest> implements Master
         enter(STAGEOP_GET_MEPOCH, new Object[]{fm}, null, new Callback() {
             
             @Override
-            public boolean success(Object result) {
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
                 
                 cntntn.processingFinished();
                 return true;
@@ -99,7 +124,8 @@ public class FleaseMasterEpochThread extends Stage<OSDRequest> implements Master
         enter(STAGEOP_SET_MEPOCH, new Object[]{fm}, null, new Callback() {
             
             @Override
-            public boolean success(Object result) {
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
                 
                 cntntn.processingFinished();
                 return true;

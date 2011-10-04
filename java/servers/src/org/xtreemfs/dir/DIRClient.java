@@ -6,7 +6,6 @@
  *
  */
 
-
 package org.xtreemfs.dir;
 
 import java.io.IOException;
@@ -15,7 +14,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.stage.Callback;
-import org.xtreemfs.common.stage.Request;
 import org.xtreemfs.common.stage.SimpleStageQueue;
 import org.xtreemfs.common.stage.Stage;
 import org.xtreemfs.common.stage.StageRequest;
@@ -29,6 +27,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration;
@@ -399,7 +398,7 @@ public class DIRClient implements TimeServerClient {
     /**
      * Interface for syncCall which generates the calls. Will be called for each retry.
      */
-    public abstract class CallGenerator<T extends Message> implements Request {
+    public abstract class CallGenerator<T extends Message> {
         
         /**
          * True, if the client was redirected before.
@@ -455,11 +454,12 @@ public class DIRClient implements TimeServerClient {
         }
 
         /* (non-Javadoc)
-         * @see org.xtreemfs.common.stage.Callback#success(java.lang.Object)
+         * @see org.xtreemfs.common.stage.Callback#success(java.lang.Object, org.xtreemfs.common.stage.StageRequest)
          */
-        @SuppressWarnings("unchecked")
         @Override
-        public synchronized boolean success(Object result) {
+        public synchronized <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                throws ErrorResponseException {
+
             this.result = (M) result;
             finished = true;
             notify();
@@ -472,6 +472,7 @@ public class DIRClient implements TimeServerClient {
          */
         @Override
         public synchronized void failed(Throwable error) {
+        
             this.error = error;
             finished = true;
             notify();
@@ -520,11 +521,12 @@ public class DIRClient implements TimeServerClient {
             this.retryWaitMs = retryWaitMs;
         }
         
-        private void call(final CallGenerator generator, final Callback callback) {
+        private void call(CallGenerator generator, Callback callback) {
+            
+            final StageRequest<CallGenerator> stageRequest = generateStageRequest(0, null, generator, callback);
             
             generator.numTries++;
             if (generator.numTries <= maxRetries) {
-                
                 
                 RPCResponse<Message> response = null;
                 try {
@@ -539,12 +541,12 @@ public class DIRClient implements TimeServerClient {
                             try {
                                 
                                 // finish request
-                                callback.success(r.get());
+                                stageRequest.getCallback().success(r.get(), stageRequest);
                             } catch (Exception e) {
                                 
                                 // retry
-                                generator.lastException = e;
-                                enter(generator, callback);
+                                stageRequest.getRequest().lastException = e;
+                                enter(stageRequest);
                             } finally {
                                 
                                 if (r != null) {
@@ -553,11 +555,11 @@ public class DIRClient implements TimeServerClient {
                             }
                         }
                     });
-                } catch (Exception e) {
+                } catch (IOException e) {
                     
                     // retry
                     generator.lastException = e;
-                    enter(generator, callback);
+                    enter(stageRequest);
                 }
             } else {
                 
@@ -570,11 +572,12 @@ public class DIRClient implements TimeServerClient {
         /* (non-Javadoc)
          * @see org.xtreemfs.common.stage.Stage#processMethod(org.xtreemfs.common.stage.StageRequest)
          */
+        @SuppressWarnings("rawtypes")
         @Override
-        public void processMethod(StageRequest<CallGenerator> method) {
+        protected <S extends StageRequest<CallGenerator>> boolean processMethod(final S stageRequest) {
             
-            final CallGenerator generator = method.getRequest();
-            final Callback callback = method.getCallback();
+            final CallGenerator generator = stageRequest.getRequest();
+            final Callback callback = stageRequest.getCallback();
             
             // evaluate the last caught exception
             if (generator.lastException != null && generator.numTries < maxRetries) {
@@ -583,7 +586,7 @@ public class DIRClient implements TimeServerClient {
                 } catch (Exception e) {
                     
                     callback.failed(e);
-                    return;
+                    return true;
                 }
             }
             
@@ -605,12 +608,12 @@ public class DIRClient implements TimeServerClient {
                             try {
                                 
                                 // finish request
-                                callback.success(r.get());
+                                callback.success(r.get(), stageRequest);
                             } catch (Exception e) {
                                 
                                 // retry
                                 generator.lastException = e;
-                                enter(generator, callback);
+                                enter(stageRequest);
                             } finally {
                                 
                                 if (r != null) {
@@ -619,11 +622,11 @@ public class DIRClient implements TimeServerClient {
                             }
                         }
                     });
-                } catch (Exception e) {
+                } catch (IOException e) {
                     
                     // retry
                     generator.lastException = e;
-                    enter(generator, callback);
+                    enter(stageRequest);
                 }
             } else {
                 
@@ -631,6 +634,8 @@ public class DIRClient implements TimeServerClient {
                 callback.failed(new IOException("Request finally failed after "+ (generator.numTries - 1) + 
                         " tries.", generator.lastException));
             }
+            
+            return true;
         }
         
         /**
@@ -640,7 +645,7 @@ public class DIRClient implements TimeServerClient {
          * @param generator
          * @throws Exception
          */
-        private void handleException(Exception e, CallGenerator generator) throws Exception {
+        private void handleException(Exception e, CallGenerator<?> generator) throws Exception {
             
             if (e instanceof PBRPCException) {
                 
@@ -660,11 +665,10 @@ public class DIRClient implements TimeServerClient {
                 }
             } else if (e instanceof IOException) {
                 
-                IOException ex = (IOException) e;
-                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "Request failed due to exception: %s", ex);
-                generator.lastException = ex;
-                failover(ex);
+                generator.lastException = e;
+                failover((IOException) e);
             } else {
+                
                 throw e;
             }
         }
@@ -723,13 +727,23 @@ public class DIRClient implements TimeServerClient {
         private void failover(IOException exception) throws InterruptedException {
             
             int old = currentServer.get();
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "Request to server %s failed due to exception: %s", 
-                    servers[old], exception);
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, 
+                    "Request to server %s failed due to exception: %s", servers[old], exception);
             Thread.sleep(retryWaitMs);
             int newServer = (old >= servers.length) ? 0 : old + 1;
             currentServer.compareAndSet(old, newServer);
             
             Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "Switching to server %s", servers[newServer]);
+        }
+
+        /* (non-Javadoc)
+         * @see org.xtreemfs.common.stage.Stage#generateStageRequest(int, java.lang.Object[], java.lang.Object, org.xtreemfs.common.stage.Callback)
+         */
+        @Override
+        protected <S extends StageRequest<CallGenerator>> S generateStageRequest(int stageMethodId,
+                Object[] args, CallGenerator request, Callback callback) {
+
+            return (S) new StageRequest<CallGenerator>(stageMethodId, args, request, callback) { };
         }
     }
 }

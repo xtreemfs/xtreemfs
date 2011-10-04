@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.olp.AugmentedRequest;
-import org.xtreemfs.common.stage.StageRequest;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.Replica;
@@ -159,7 +159,7 @@ public class ReplicatedFileState {
 
     private List<ObjectVersionMapping> objectsToFetch;
     
-    private List<StageRequest<AugmentedRequest>> pendingRequests;
+    private List<OLPStageRequest<AugmentedRequest>> pendingRequests;
 
     private Flease                  lease;
 
@@ -183,7 +183,7 @@ public class ReplicatedFileState {
 
     public ReplicatedFileState(String fileId, XLocations locations, ServiceUUID localUUID, FleaseStage fstage, OSDServiceClient client) throws UnknownUUIDException, IOException {
         queuedData = new AtomicInteger();
-        pendingRequests = new LinkedList<StageRequest<AugmentedRequest>>();
+        pendingRequests = new LinkedList<OLPStageRequest<AugmentedRequest>>();
         this.fileId = fileId;
         this.state = ReplicaState.INITIALIZING;
         this.primaryReset = false;
@@ -220,11 +220,11 @@ public class ReplicatedFileState {
         return this.policy;
     }
 
-    public void addPendingRequest(StageRequest<AugmentedRequest> request) {
+    public void addPendingRequest(OLPStageRequest<AugmentedRequest> request) {
         pendingRequests.add(request);
     }
 
-    public List<StageRequest<AugmentedRequest>> getPendingRequests() {
+    public List<OLPStageRequest<AugmentedRequest>> getPendingRequests() {
         return pendingRequests;
     }
 

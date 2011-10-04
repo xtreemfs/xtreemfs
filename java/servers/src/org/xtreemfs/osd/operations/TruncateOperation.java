@@ -14,6 +14,7 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -23,6 +24,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
@@ -81,7 +83,8 @@ public final class TruncateOperation extends OSDOperation {
                 null, false, rq, new AbstractRPCRequestCallback(callback) {
                     
                     @Override
-                    public boolean success(Object result) {
+                    public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                            throws ErrorResponseException {
                         
                         return step2(rq, args, (OSDWriteResponse) result, callback);
                     }
@@ -98,10 +101,11 @@ public final class TruncateOperation extends OSDOperation {
         
         master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), 0, 0, 
                 RWReplicationStage.Operation.TRUNCATE, new AbstractRPCRequestCallback(callback) {
-                    
+              
             @Override
-            public boolean success(final Object newObjectVersion) {
-                
+            public <S extends StageRequest<?>> boolean success(final Object newObjectVersion, S stageRequest)
+                    throws ErrorResponseException {
+
                 // final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy(); 
                 // XXX dead code
 
@@ -110,12 +114,14 @@ public final class TruncateOperation extends OSDOperation {
                      rq.getLocationList().getLocalReplica(), rq.getCapability().getEpochNo(), rq.getCowPolicy(),
                      (Long) newObjectVersion, true, rq, new AbstractRPCRequestCallback(callback) {
                          
-                     @Override
-                     public boolean success(Object result) {
-                         
-                         replicateTruncate(rq, (Long) newObjectVersion, args, (OSDWriteResponse) result, callback);
-                         return true;
-                     }
+
+                    @Override
+                    public <T extends StageRequest<?>> boolean success(Object result, T stageRequest)
+                            throws ErrorResponseException {
+ 
+                        replicateTruncate(rq, (Long) newObjectVersion, args, (OSDWriteResponse) result, callback);
+                        return true;
+                    }
                 });
                 return true;
             }
@@ -130,14 +136,16 @@ public final class TruncateOperation extends OSDOperation {
             new AbstractRPCRequestCallback(callback) {
             
             @Override
-            public boolean success(Object newObjectVersion) {
+            public <S extends StageRequest<?>> boolean success(Object result2, S stageRequest)
+                    throws ErrorResponseException {
                 
                 return step2(rq, args, result, callback);
             }
         }, rq);
     }
 
-    private boolean step2(OSDRequest rq, truncateRequest args, OSDWriteResponse result, RPCRequestCallback callback) {
+    private boolean step2(OSDRequest rq, truncateRequest args, OSDWriteResponse result, RPCRequestCallback callback) 
+            throws ErrorResponseException {
 
         //check for striping
         if (rq.getLocationList().getLocalReplica().isStriped()) {
@@ -153,7 +161,7 @@ public final class TruncateOperation extends OSDOperation {
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private boolean disseminateTruncates(OSDRequest rq, truncateRequest args, final OSDWriteResponse result, 
-            final RPCRequestCallback callback) {
+            final RPCRequestCallback callback) throws ErrorResponseException {
         
         try {
             final List<ServiceUUID> osds = rq.getLocationList().getLocalReplica().getOSDs();
@@ -177,8 +185,7 @@ public final class TruncateOperation extends OSDOperation {
             return true;
         } catch (Throwable ex) {
             
-            callback.failed(ex);
-            return false;
+            throw new ErrorResponseException(ex);
         }
     }
 

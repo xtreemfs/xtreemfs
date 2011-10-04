@@ -44,12 +44,14 @@ class SimpleMonitor extends Monitor {
     /**
      * <p>Constructor initializing necessary fields for collecting measurement samples.</p>
      * 
+     * @param isForInternalRequests - true if the performance averages are measured for internal requests, false 
+     *                                otherwise.
      * @param numTypes - amount of different request types expected.
      * @param listener - to send the summarized performance information to.
      * @see Monitor
      */
-    SimpleMonitor(int numTypes, PerformanceMeasurementListener listener) {
-        super(listener);
+    SimpleMonitor(boolean isForInternalRequests, int numTypes, PerformanceMeasurementListener listener) {
+        super(listener, isForInternalRequests);
         
         fixedTimeMeasurements = new double[numTypes][SAMPLE_AMOUNT];
         variableTimeMeasurements = new double[numTypes][SAMPLE_AMOUNT];
@@ -75,8 +77,10 @@ class SimpleMonitor extends Monitor {
         // summarize samples if necessary
         if(measurmentIndex[type] == SAMPLE_AMOUNT) {
             
-            listener.updateFixedProcessingTimeAverage(type, summarizeMeasurements(fixedTimeMeasurements[type]));
-            listener.updateVariableProcessingTimeAverage(type, summarizeMeasurements(variableTimeMeasurements[type]));
+            listener.updateFixedProcessingTimeAverage(type, summarizeMeasurements(fixedTimeMeasurements[type]), 
+                    isForInternalRequests);
+            listener.updateVariableProcessingTimeAverage(type, summarizeMeasurements(variableTimeMeasurements[type]), 
+                    isForInternalRequests);
             
             measurmentIndex[type] = 0;
         }

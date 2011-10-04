@@ -8,24 +8,27 @@
 
 package org.xtreemfs.dir.operations;
 
-import java.util.ConcurrentModificationException;
+import java.io.IOException;
 
 import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.common.HeartbeatThread;
+import org.xtreemfs.common.olp.OLPStageRequest;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.BabuDBComponent;
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterResponse;
-
-import com.google.protobuf.Message;
 
 /**
  * 
@@ -33,39 +36,50 @@ import com.google.protobuf.Message;
  */
 public class RegisterServiceOperation extends DIROperation {
     
-    private final BabuDBComponent component;
-    private final Database database;
+    private final BabuDBComponent<DIRRequest> component;
+    private final Database                    database;
     
     public RegisterServiceOperation(DIRRequestDispatcher master) {
         super(master);
+        
         component = master.getBabuDBComponent();
         database = master.getDirDatabase();
     }
     
     @Override
     public int getProcedureId() {
+        
         return DIRServiceConstants.PROC_ID_XTREEMFS_SERVICE_REGISTER;
     }
     
     @Override
-    public void startRequest(DIRRequest rq, RPCRequestCallback callback) throws Exception {
+    public void startRequest(DIRRequest rq, RPCRequestCallback callback) {
         
         final serviceRegisterRequest request = (serviceRegisterRequest) rq.getRequestMessage();
         
         final Service.Builder reg = request.getService().toBuilder();
                 
-        component.lookup(database, callback, DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), 
-                rq.getMetadata(), new BabuDBPostprocessing<byte[]>() {
-                    
+        component.lookup(database, new AbstractRPCRequestCallback(callback) {
+
+            @SuppressWarnings("unchecked")
             @Override
-            public Message execute(byte[] result, BabuDBRequest rq) throws Exception {
-                
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+
                 long currentVersion = 0;
                 if (result != null) {
-                    ReusableBuffer buf = ReusableBuffer.wrap(result);
-                    ServiceRecord dbData = new ServiceRecord(buf);
-                    currentVersion = dbData.getVersion();
+                    
+                    try {
+                        
+                        ReusableBuffer buf = ReusableBuffer.wrap((byte[]) result);
+                        ServiceRecord dbData = new ServiceRecord(buf);
+                        currentVersion = dbData.getVersion();
+                    } catch (IOException e) {
+                        
+                        throw new ErrorResponseException(e);
+                    }
                 } else {
+                    
                     // The registered service wasn't registered before. 
                     // Collect data from the request and inform all listeners about this registration
                     String uuid, name, type, pageUrl, geoCoordinates;
@@ -114,34 +128,34 @@ public class RegisterServiceOperation extends DIROperation {
                 }
                 
                 if (reg.getVersion() != currentVersion) {
-                    throw new ConcurrentModificationException("The requested version number ("
-                        + reg.getVersion() + ") did not match the " + "expected version ("
-                        + currentVersion + ")!");
+                    
+                    throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, 
+                            POSIXErrno.POSIX_ERROR_EAGAIN, "The requested version number (" + reg.getVersion() + 
+                            ") did not match the expected version (" + currentVersion + ")!"));
                 }
                                 
                 reg.setVersion(++currentVersion);
                 reg.setLastUpdatedS(System.currentTimeMillis() / 1000l);
 
-                return null;
-            }
-            
-            @Override
-            public void requeue(BabuDBRequest request) {
-                                
+                
                 ServiceRecord newRec = new ServiceRecord(reg.build());
                 byte[] newData = new byte[newRec.getSize()];
                 newRec.serialize(ReusableBuffer.wrap(newData));
                 
-                component.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, newRec.getUuid().getBytes(), 
-                        newData, request, new BabuDBPostprocessing<Object>() {
-                            
-                    @Override
-                    public Message execute(Object result, BabuDBRequest request) throws Exception {
-                        
-                        return serviceRegisterResponse.newBuilder().setNewVersion(reg.getVersion()).build();
-                    }
-                });
+                component.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, newRec.getUuid().getBytes(), newData, 
+                        (OLPStageRequest<DIRRequest>) stageRequest, new AbstractRPCRequestCallback(this) {
+
+                            @Override
+                            public <T extends StageRequest<?>> boolean success(Object result, T stageRequest)
+                                    throws ErrorResponseException {
+
+                                return success(serviceRegisterResponse.newBuilder().setNewVersion(
+                                        reg.getVersion()).build());
+                            }
+                        });
+                
+                return false;
             }
-        });
+        }, DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), rq);
     }
 }

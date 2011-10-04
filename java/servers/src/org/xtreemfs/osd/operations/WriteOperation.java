@@ -10,8 +10,10 @@ package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -20,6 +22,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -32,8 +35,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class WriteOperation extends OSDOperation {
 
-    private final String sharedSecret;
-    private final ServiceUUID localUUID;
+    private final String        sharedSecret;
+    private final ServiceUUID   localUUID;
 
     public WriteOperation(OSDRequestDispatcher master) {
         super(master);
@@ -64,7 +67,7 @@ public final class WriteOperation extends OSDOperation {
             return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "offset must be >= 0");
         }
 
-        StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
+        final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
         if (args.getOffset() >= sp.getStripeSizeForObject(args.getObjectNumber())) {
             
@@ -79,7 +82,7 @@ public final class WriteOperation extends OSDOperation {
                     "Cannot write on read-only files.");
         } else {
 
-            boolean syncWrite = 
+            final boolean syncWrite = 
                 (rq.getCapability().getAccessMode() & SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_SYNC.getNumber()) > 0;
 
             master.objectReceived();
@@ -108,8 +111,9 @@ public final class WriteOperation extends OSDOperation {
                 new AbstractRPCRequestCallback(callback) {
                     
             @Override
-            public boolean success(final Object newObjectVersion) {
-                
+            public <S extends StageRequest<?>> boolean success(final Object newObjectVersion, S stageRequest)
+                    throws ErrorResponseException {
+
                 assert(((Long) newObjectVersion) > 0L);
 
                 master.getStorageStage().writeObject(args.getObjectNumber(),
@@ -117,12 +121,14 @@ public final class WriteOperation extends OSDOperation {
                         args.getOffset(), rq.getRPCRequest().getData().createViewBuffer(), rq.getCowPolicy(),
                         rq.getLocationList(), syncWrite, (Long) newObjectVersion, rq, 
                         new AbstractRPCRequestCallback(callback) {
-                            
+                   
+                    @SuppressWarnings("unchecked")
                     @Override
-                    public boolean success(Object result) {
-
-                        sendUpdates(rq, args,(OSDWriteResponse) result, (Long) newObjectVersion, callback);
-                        return true;
+                    public <T extends StageRequest<?>> boolean success(Object result, T stageRequest)
+                            throws ErrorResponseException {
+                        
+                        return sendUpdates((OLPStageRequest<OSDRequest>) stageRequest, args,(OSDWriteResponse) result, 
+                                (Long) newObjectVersion, callback);
                     }
                 });
                 
@@ -131,28 +137,34 @@ public final class WriteOperation extends OSDOperation {
         }, rq);
     }
 
-    public void sendUpdates(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result, 
-            final long newObjVersion, final RPCRequestCallback callback) {
+    public boolean sendUpdates(OLPStageRequest<OSDRequest> stageRequest, final writeRequest args, 
+            final OSDWriteResponse result, final long newObjVersion, final RPCRequestCallback callback) {
         
+        final OSDRequest rq = stageRequest.getRequest();
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
         if (rq.getRPCRequest().getData().remaining() == sp.getStripeSizeForObject(args.getObjectNumber())) {
 
             sendUpdates2(rq, args, result, newObjVersion, new InternalObjectData(args.getObjectData(), 
                     rq.getRPCRequest().getData().createViewBuffer()), callback);
+            
+            return true;
         } else {
 
-            master.getStorageStage().readObject(args.getObjectNumber(), sp, 0, -1, 0l, rq, 
+            master.getStorageStage().readObject(args.getObjectNumber(), sp, 0, -1, 0l, stageRequest, 
                     new AbstractRPCRequestCallback(callback) {
                 
                 @Override
-                public boolean success(Object result2) {
-
+                public <S extends StageRequest<?>> boolean success(Object result2, S stageRequest)
+                        throws ErrorResponseException {
+                    
                     InternalObjectData od = ((ObjectInformation) result2).getObjectData(false, 0, 
                             sp.getStripeSizeForObject(args.getObjectNumber()));
                     sendUpdates2(rq, args, result, newObjVersion, od, callback);
                     return true;
                 }
             });
+            
+            return false;
         }
     }
     public void sendUpdates2(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result, 
@@ -160,11 +172,12 @@ public final class WriteOperation extends OSDOperation {
         
         master.getRWReplicationStage().replicatedWrite(args.getFileCredentials(),rq.getLocationList(),
                     args.getObjectNumber(), newObjVersion, data, new AbstractRPCRequestCallback(callback) {
-                        
+              
             @Override
-            public boolean success(Object newObjectVersion) {
-
-                return callback.success(result);
+            public <S extends StageRequest<?>> boolean success(Object newObjectVersion, S stageRequest)
+                    throws ErrorResponseException {
+                
+                return success(result);
             }
         }, rq);
     }

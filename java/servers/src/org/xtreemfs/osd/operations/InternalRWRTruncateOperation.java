@@ -11,6 +11,7 @@ package org.xtreemfs.osd.operations;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -19,11 +20,14 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
+
+import com.google.protobuf.Message;
 
 public final class InternalRWRTruncateOperation extends OSDOperation {
 
@@ -58,19 +62,17 @@ public final class InternalRWRTruncateOperation extends OSDOperation {
         return null;
     }
     
-    private ErrorResponse localTruncate(final OSDRequest rq, final xtreemfs_rwr_truncateRequest args, 
-            RPCRequestCallback callback) {
+    private void localTruncate(OSDRequest rq, xtreemfs_rwr_truncateRequest args, RPCRequestCallback callback) 
+            throws ErrorResponseException {
         
          if (args.getNewFileSize() < 0) {
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, 
-                    "new_file_size for truncate must be >= 0");
+            throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, 
+                    "new_file_size for truncate must be >= 0"));
         }
 
         master.getStorageStage().truncate(args.getNewFileSize(), 
                 rq.getLocationList().getLocalReplica().getStripingPolicy(), rq.getLocationList().getLocalReplica(), 
                 rq.getCapability().getEpochNo(), rq.getCowPolicy(), args.getObjectVersion(), true, rq, callback);
-        
-        return null;
     }
 
     private void prepareLocalTruncate(final OSDRequest rq, final xtreemfs_rwr_truncateRequest args, 
@@ -79,16 +81,13 @@ public final class InternalRWRTruncateOperation extends OSDOperation {
         master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), 0, 
                 args.getObjectVersion(), RWReplicationStage.Operation.INTERNAL_TRUNCATE, 
                 new AbstractRPCRequestCallback(callback) {
-                    
+
             @Override
-            public boolean success(Object result) {
-                ErrorResponse error = localTruncate(rq, args, callback);
-                
-                if (error != null) {
-                    callback.failed(error);
-                    return false;
-                }
-                return true;
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+
+                localTruncate(rq, args, callback);
+                return success((Message) null);
             }
         }, rq);
     }

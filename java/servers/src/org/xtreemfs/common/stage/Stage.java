@@ -17,24 +17,24 @@ import org.xtreemfs.foundation.TimeSync;
  * @author fx.langner
  * @version 1.00, 09/05/11
  * 
- * @param <R> - general interface for requests processed by this stage. Extends {@link AugmentedServiceRequest}.
+ * @param <R> - requests processed by this stage (from a global view).
  */
-public abstract class Stage<R extends Request> extends LifeCycleThread implements AutonomousComponent<StageRequest<R>> {
+public abstract class Stage<R> extends LifeCycleThread implements AutonomousComponent<StageRequest<R>> {
     
     /**
      * <p>Buffers requests before they are being processed.</p>
      */
-    private final StageQueue<R>  queue;
+    private final StageQueue<R> queue;
     
     /**
      * <p>Set to true if stage should shut down.</p>
      */
-    private volatile boolean     quit = false;
+    private volatile boolean    quit = false;
     
     /**
      * <p>Delay in ms between two cron-Jobs.</p>
      */
-    private final long           period;
+    private final long          period;
     
     /**
      * <p>Initializes a stage with given name and queue implementation.</p>
@@ -59,16 +59,6 @@ public abstract class Stage<R extends Request> extends LifeCycleThread implement
         super(name);
         this.queue = queue;
         this.period = period;
-    }
-
-    /**
-     * <p>Enqueues a request including all necessary information for its processing at this stage.</p>
-     * 
-     * @param request - the original request.
-     */
-    public void enter(R request) {
-        
-        enter(request, null);
     }
     
     /**
@@ -104,9 +94,20 @@ public abstract class Stage<R extends Request> extends LifeCycleThread implement
      */
     public void enter(int stageMethodId, Object[] args, R request, Callback callback) {
         
-        enter(new StageRequest<R>(stageMethodId, args, request, 
+        enter(generateStageRequest(stageMethodId, args, request, 
                 (callback != null) ? callback : Callback.NullCallback.INSTANCE));
     }
+    
+    /**
+     * <p>Hidden method to actually generate a {@link StageRequest} from the request parameters.
+     * 
+     * @param stageMethodId - the identifier for the method to use during processing.
+     * @param args - additional arguments for the request.
+     * @param request - the original request.
+     * @param callback - for postprocessing the request, may be not be null!
+     */
+    protected abstract <S extends StageRequest<R>> S generateStageRequest(int stageMethodId, Object[] args, R request, 
+            Callback callback);
     
     /* (non-Javadoc)
      * @see org.xtreemfs.common.stage.AutonomousComponent#enter(java.lang.Object)
@@ -127,15 +128,19 @@ public abstract class Stage<R extends Request> extends LifeCycleThread implement
      * <p>Handles the actual execution of a stage method. Must be implemented by
      * all stages.</p>
      * 
-     * @param method - the stage method to execute.
+     * @param stageRequest - the stage method to execute.
+     * 
+     * @return true, if the request was finished {@link Stage#exit(StageRequest)} should be called, false if it was
+     *         re-queued.
      */
-    protected abstract void processMethod(StageRequest<R> method);
+    protected abstract <S extends StageRequest<R>> boolean processMethod(S stageRequest);
     
     /**
      * <p>Optional method that is executed if a period was defined within the constructor and is overridden by a 
      * stage implementation.</p>
      */
     protected void chronJob() {
+        
         throw new UnsupportedOperationException();
     }
     
@@ -194,8 +199,7 @@ public abstract class Stage<R extends Request> extends LifeCycleThread implement
                 }
                 
                 if (request != null) {
-                    processMethod(request);
-                    exit(request);
+                    if (processMethod(request)) exit(request);
                 }
                 
             } catch (InterruptedException ex) {

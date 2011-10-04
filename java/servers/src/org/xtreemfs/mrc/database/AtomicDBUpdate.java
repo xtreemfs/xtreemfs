@@ -8,8 +8,8 @@
 
 package org.xtreemfs.mrc.database;
 
-import org.xtreemfs.common.olp.RequestMetadata;
 import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.mrc.MRCRequest;
 
 /**
  * Defines a collection of database updates that have to be executed atomically.
@@ -31,10 +31,10 @@ public interface AtomicDBUpdate {
      * Atomically executes all updates.
      * 
      * @param callback - for the request.
-     * @param metadata - request relevant meta-information.
+     * @param request - request relevant meta-information.
      * 
      * @throws DatabaseException
      */
-    public void execute(Callback callback, RequestMetadata metadata) throws DatabaseException;
+    public void execute(Callback callback, MRCRequest request) throws DatabaseException;
     
 }

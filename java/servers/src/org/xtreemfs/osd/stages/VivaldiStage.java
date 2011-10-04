@@ -29,6 +29,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
 import org.xtreemfs.foundation.pbrpc.server.UDPMessage;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
@@ -197,19 +198,31 @@ public class VivaldiStage extends Stage<OSDRequest> {
         enter(STAGEOP_SYNC_PING, new Object[]{coordinates}, request, listener);
     }
 
+
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.Stage#generateStageRequest(int, java.lang.Object[], java.lang.Object, org.xtreemfs.common.stage.Callback)
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    protected <S extends StageRequest<OSDRequest>> S generateStageRequest(int stageMethodId, Object[] args,
+            OSDRequest request, Callback callback) {
+
+        return (S) new StageRequest<OSDRequest>(stageMethodId, args, request, callback) { };
+    }
+
     /* (non-Javadoc)
      * @see org.xtreemfs.common.stage.Stage#processMethod(org.xtreemfs.common.stage.StageRequest)
      */
     @Override
-    public void processMethod(StageRequest<OSDRequest> method) {
+    protected <S extends StageRequest<OSDRequest>> boolean processMethod(S stageRequest) {
 
-        xtreemfs_pingMesssage msg = (xtreemfs_pingMesssage) method.getArgs()[0];
+        xtreemfs_pingMesssage msg = (xtreemfs_pingMesssage) stageRequest.getArgs()[0];
         VivaldiCoordinates coordinatesJ = null;
         boolean coordinatesModificated = false;
 
-        if (method.getStageMethod() == STAGEOP_ASYNC_PING) {
+        if (stageRequest.getStageMethod() == STAGEOP_ASYNC_PING) {
             try {
-                InetSocketAddress sender = (InetSocketAddress) method.getArgs()[1];
+                InetSocketAddress sender = (InetSocketAddress) stageRequest.getArgs()[1];
                 if (msg.getRequestResponse()) {
                     RPCHeader.RequestHeader rqHdr = RPCHeader.RequestHeader.newBuilder().setAuthData(RPCAuthentication.authNone).setUserCreds(RPCAuthentication.userService).setInterfaceId(OSDServiceConstants.INTERFACE_ID).setProcId(OSDServiceConstants.PROC_ID_XTREEMFS_PING).build();
                     RPCHeader hdr = RPCHeader.newBuilder().setCallId(0).setMessageType(MessageType.RPC_REQUEST).setRequestHeader(rqHdr).build();
@@ -223,8 +236,14 @@ public class VivaldiStage extends Stage<OSDRequest> {
                 Logging.logError(Logging.LEVEL_WARN, this, ex);
             }
         } else {
-            method.getCallback().success(vNode.getCoordinates());
+            try {
+                stageRequest.getCallback().success(vNode.getCoordinates(), stageRequest);
+            } catch (ErrorResponseException e) {
+                stageRequest.getCallback().failed(e);
+            }
         }
+        
+        return true;
     }
 
     protected void recalculateCoordinates(VivaldiCoordinates coordinatesJ, InetSocketAddress sender) {
@@ -532,8 +551,6 @@ public class VivaldiStage extends Stage<OSDRequest> {
 
         //Remove the requests that are not needed anymore
         maintainSentRequests();
-
-
     }
 
     public void receiveVivaldiMessage(UDPMessage msg) {

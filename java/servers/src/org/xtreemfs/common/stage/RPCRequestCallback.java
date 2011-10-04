@@ -8,6 +8,7 @@
 package org.xtreemfs.common.stage;
 
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 
 import com.google.protobuf.Message;
 
@@ -30,19 +31,22 @@ public class RPCRequestCallback extends AbstractRPCRequestCallback {
     /**
      * <p>Method to return an empty response.</p>
      * 
-     * @return true, if callback execution could process the request successfully. false, if an error occurred.
+     * @return true, if callback execution could process the request successfully. false, if it has not yet been 
+     *         finished and will remain at the current processing step.
+     *         
+     * @throws ErrorResponseException if the request preprocessing provided by this method was not successful.
      */
-    public boolean success() {
+    public boolean success() throws ErrorResponseException {
         
         return success(null);
     }
     
     /* (non-Javadoc)
-     * @see org.xtreemfs.common.stage.Callback#success(java.lang.Object)
+     * @see org.xtreemfs.common.stage.Callback#success(java.lang.Object, org.xtreemfs.common.stage.StageRequest)
      */
     @Override
-    public boolean success(Object result) {
-        
+    public <S extends StageRequest<?>> boolean success(Object result, S request) throws ErrorResponseException {
+
         return success((Message) result);
     }
 }

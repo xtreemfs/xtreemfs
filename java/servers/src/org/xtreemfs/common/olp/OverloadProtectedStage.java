@@ -7,6 +7,8 @@
  */
 package org.xtreemfs.common.olp;
 
+import org.xtreemfs.common.stage.AutonomousComponent;
+import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.Stage;
 import org.xtreemfs.common.stage.StageRequest;
 
@@ -25,19 +27,101 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
     /**
      * <p>Reference to the overload-protection algorithm core.</p>
      */
-    private final ProtectionAlgorithmCore olp;
+    private final ProtectionAlgorithmCore          olp;
+    
+    /**
+     * <p>Receiver of {@link PerformanceInformation} initially registered at the stage.</p>
+     */
+    private final PerformanceInformationReceiver[] initialPredecessors;
 
     /**
      * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 
-     * unrefusable and no subsequent stages following.</p>
+     * unrefusable and no subsequent stages following. Default constructor for a root in the processing tree.</p>
      * 
      * @param stageName - human-readable identifier for this stage.
      * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
      * @param numTypes - amount of different types of requests.
+     * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
+     * @param numInternalTypes - amount of different internal types of requests.
      */
-    public OverloadProtectedStage(String stageName, int stageId, int numTypes) {
+    public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numInternalTypes, 
+            int numSubsequentStages) {
         
-        this(stageName, stageId, numTypes, 0);
+        this(stageName, stageId, numTypes, numInternalTypes, numSubsequentStages, 0L);
+    }
+    
+
+    /**
+     * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 
+     * unrefusable and no subsequent stages following. Default constructor for a root in the processing tree.</p>
+     * 
+     * @param stageName - human-readable identifier for this stage.
+     * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
+     * @param numTypes - amount of different types of requests.
+     * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
+     * @param numInternalTypes - amount of different internal types of requests.
+     * @param period - delay in ms between two cron-Jobs.
+     */
+    public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numInternalTypes, 
+            int numSubsequentStages, long period) {
+        
+        this(stageName, stageId, numTypes, numInternalTypes, numSubsequentStages, new boolean[numTypes], 
+                new PerformanceInformationReceiver[]{ }, period);
+    }
+    
+    /**
+     * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 
+     * unrefusable and no subsequent stages following. Default constructor for inner nodes in the processing tree.</p>
+     * 
+     * @param stageName - human-readable identifier for this stage.
+     * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
+     * @param numTypes - amount of different types of requests.
+     * @param numInternalTypes - amount of different internal types of requests.
+     * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
+     * @param performanceInformationReceiver - receiver of performance information concerning this component.
+     * @param period - delay in ms between two cron-Jobs.
+     */
+    public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numInternalTypes, 
+            int numSubsequentStages, PerformanceInformationReceiver[] performanceInformationReceiver, long period) {
+        
+        this(stageName, stageId, numTypes, numInternalTypes, numSubsequentStages, new boolean[numTypes], 
+                performanceInformationReceiver, period);
+    }
+    
+    /**
+     * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 
+     * unrefusable and no subsequent stages following. Default constructor for inner nodes in the processing tree.</p>
+     * 
+     * @param stageName - human-readable identifier for this stage.
+     * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
+     * @param numTypes - amount of different types of requests.
+     * @param numInternalTypes - amount of different internal types of requests.
+     * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
+     * @param performanceInformationReceiver - receiver of performance information concerning this component.
+     */
+    public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numInternalTypes, 
+            int numSubsequentStages, PerformanceInformationReceiver[] performanceInformationReceiver) {
+        
+        this(stageName, stageId, numTypes, numInternalTypes, numSubsequentStages, new boolean[numTypes], 
+                performanceInformationReceiver, 0L);
+    }
+
+    /**
+     * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 
+     * unrefusable and no subsequent stages following. Default constructor for a leaf in the processing tree.</p>
+     * 
+     * @param stageName - human-readable identifier for this stage.
+     * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
+     * @param numTypes - amount of different types of requests.
+     * @param numInternalTypes - amount of different internal types of requests.
+     * @param performanceInformationReceiver - receiver of performance information concerning this component.
+     * @param period - delay in ms between two cron-Jobs.
+     */
+    public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numInternalTypes, 
+            PerformanceInformationReceiver[] performanceInformationReceiver, long period) {
+        
+        this(stageName, stageId, numTypes, numInternalTypes, 0, new boolean[numTypes], performanceInformationReceiver, 
+                period);
     }
     
     /**
@@ -47,57 +131,14 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
      * @param stageName - human-readable identifier for this stage.
      * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
      * @param numTypes - amount of different types of requests.
+     * @param numInternalTypes - amount of different internal types of requests.
      * @param performanceInformationReceiver - receiver of performance information concerning this component.
      */
-    public OverloadProtectedStage(String stageName, int stageId, int numTypes, 
+    public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numInternalTypes, 
             PerformanceInformationReceiver[] performanceInformationReceiver) {
         
-        this(stageName, stageId, numTypes, 0, new boolean[numTypes], performanceInformationReceiver);
-    }
-    
-    /**
-     * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 
-     * unrefusable and no subsequent stages following.</p>
-     * 
-     * @param stageName - human-readable identifier for this stage.
-     * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
-     * @param numTypes - amount of different types of requests.
-     * @param period - delay in ms between two cron-Jobs.
-     */
-    public OverloadProtectedStage(String stageName, int stageId, int numTypes, long period) {
-        
-        this(stageName, stageId, numTypes, 0, period);
-    }
-    
-    /**
-     * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 
-     * unrefusable.</p>
-     * 
-     * @param stageName - human-readable identifier for this stage.
-     * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
-     * @param numTypes - amount of different types of requests.
-     * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
-     */
-    public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numSubsequentStages) {
-        
-        this(stageName, stageId, numTypes, numSubsequentStages, new boolean[numTypes], 
-                new PerformanceInformationReceiver[] {});
-    }
-    
-    /**
-     * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 
-     * unrefusable.</p>
-     * 
-     * @param stageName - human-readable identifier for this stage.
-     * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
-     * @param numTypes - amount of different types of requests.
-     * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
-     * @param period - delay in ms between two cron-Jobs.
-     */
-    public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numSubsequentStages, long period) {
-        
-        this(stageName, stageId, numTypes, numSubsequentStages, new boolean[numTypes], 
-                new PerformanceInformationReceiver[] {}, period);
+        this(stageName, stageId, numTypes, numInternalTypes, 0, new boolean[numTypes], performanceInformationReceiver, 
+                0L);
     }
     
     /**
@@ -106,33 +147,18 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
      * @param stageName - human-readable identifier for this stage.
      * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
      * @param numTypes - amount of different types of requests.
-     * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
-     * @param unrefusableTypes - array that decides which types of requests are treated unrefusable and which not.
-     * @param performanceInformationReceiver - receiver of performance information concerning this component.
-     */
-    public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numSubsequentStages, 
-            boolean[] unrefusableTypes, PerformanceInformationReceiver[] performanceInformationReceiver) {
-        
-        this(stageName, new ProtectionAlgorithmCore(stageId, numTypes, numSubsequentStages, unrefusableTypes, 
-                performanceInformationReceiver));
-    }
-    
-    /**
-     * <p>Default constructor for initializing the OLP algorithm for a single stage.</p>
-     * 
-     * @param stageName - human-readable identifier for this stage.
-     * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
-     * @param numTypes - amount of different types of requests.
+     * @param numInternalTypes - amount of different internal types of requests.
      * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
      * @param unrefusableTypes - array that decides which types of requests are treated unrefusable and which not.
      * @param performanceInformationReceiver - receiver of performance information concerning this component.
      * @param period - delay in ms between two cron-Jobs.
      */
-    public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numSubsequentStages, 
-            boolean[] unrefusableTypes, PerformanceInformationReceiver[] performanceInformationReceiver, long period) {
+    public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numInternalTypes, 
+            int numSubsequentStages, boolean[] unrefusableTypes, 
+            PerformanceInformationReceiver[] performanceInformationReceiver, long period) {
         
-        this(stageName, new ProtectionAlgorithmCore(stageId, numTypes, numSubsequentStages, unrefusableTypes, 
-                performanceInformationReceiver), period);
+        this(stageName, new ProtectionAlgorithmCore(stageId, numTypes, numInternalTypes, numSubsequentStages, 
+                unrefusableTypes, performanceInformationReceiver), performanceInformationReceiver, period);
     }
     
     /**
@@ -141,11 +167,14 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
      * 
      * @param name - of the stage.
      * @param olp - the initialized algorithm.
+     * @param performanceInformationReceiver - receiver of performance information concerning this component.
      * @param period - delay in ms between two cron-Jobs.
      */
-    private OverloadProtectedStage(String name, ProtectionAlgorithmCore olp, long period) {
-        
+    private OverloadProtectedStage(String name, ProtectionAlgorithmCore olp, 
+            PerformanceInformationReceiver[] performanceInformationReceiver, long period) {
         super(name, new SimpleProtectedQueue<R>(olp), period);
+        
+        this.initialPredecessors = performanceInformationReceiver;
         this.olp = olp;
     }
     
@@ -155,10 +184,13 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
      * 
      * @param name - of the stage.
      * @param olp - the initialized algorithm.
+     * @param performanceInformationReceiver - receiver of performance information concerning this component.
      */
-    private OverloadProtectedStage(String name, ProtectionAlgorithmCore olp) {
-        
+    private OverloadProtectedStage(String name, ProtectionAlgorithmCore olp, 
+            PerformanceInformationReceiver[] performanceInformationReceiver) {
         super(name, new SimpleProtectedQueue<R>(olp));
+        
+        this.initialPredecessors = performanceInformationReceiver;
         this.olp = olp;
     }
     
@@ -175,25 +207,27 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
      * <p>Method to announce a temporary interruption of the processing of the request represented by its monitoring 
      * information. The request will remain at the component until its execution is resumed and finished.</p>
      * 
-     * @param monitoring - information representing a single request.
+     * @param stageRequest - {@link OLPStageRequest} containing monitoring information for the processing step provided 
+     *                       by this {@link AutonomousComponent}.
      * 
-     * @see OverloadProtectedComponent#resumeRequestProcessing(RequestMonitoring)
+     * @see OverloadProtectedComponent#resumeRequestProcessing(OLPStageRequest)
      */
-    public void suspendRequestProcessing(RequestMonitoring monitoring) {
+    public void suspendRequestProcessing(OLPStageRequest<R> stageRequest) {
         
-        monitoring.endGeneralMeasurement();
+        stageRequest.endGeneralMeasurement();
     }
     
     /**
      * <p>Method resume a temporarily interrupted request represented by its monitoring information.</p>
      * 
-     * @param monitoring - information representing a single request.
+     * @param stageRequest - {@link OLPStageRequest} containing monitoring information for the processing step provided 
+     *                       by this {@link AutonomousComponent}.
      * 
-     * @see OverloadProtectedComponent#suspendRequestProcessing(RequestMonitoring)
+     * @see OverloadProtectedComponent#suspendRequestProcessing(OLPStageRequest)
      */
-    public void resumeRequestProcessing(RequestMonitoring monitoring) {
+    public void resumeRequestProcessing(OLPStageRequest<R> stageRequest) {
         
-        monitoring.beginGeneralMeasurement();
+        stageRequest.beginGeneralMeasurement();
     }
     
     /* (non-Javadoc)
@@ -206,29 +240,83 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
         olp.addPerformanceInformation(performanceInformation);
     }
     
+    /**
+     * <p>Enqueues a request including all necessary information for its processing at this stage. Includes a receiver
+     * for OLP {@link PerformanceInformation}.</p>
+     * 
+     * @param stageMethodId - the identifier for the method to use during processing.
+     * @param args - additional arguments for the request.
+     * @param request - the original request.
+     * @param callback - for postprocessing the request, may be null.
+     * @param piggybackPerformanceInformationReceiver - receiver of OLP {@link PerformanceInformation}.
+     */
+    public final void enter(int stageMethodId, Object[] args, R request, Callback callback, 
+            PerformanceInformationReceiver[] piggybackPerformanceInformationReceiver) {
+        
+        enter(new OLPStageRequest<R>(stageMethodId, args, request, callback, piggybackPerformanceInformationReceiver));
+    }
+    
+    /**
+     * <p>Enqueues a request including all necessary information for its processing at this stage. Includes a receiver
+     * for OLP {@link PerformanceInformation}.</p>
+     * 
+     * @param stageMethodId - the identifier for the method to use during processing.
+     * @param args - additional arguments for the request.
+     * @param request - the original request.
+     * @param callback - for postprocessing the request, may be null.
+     * @param piggybackPerformanceInformationReceiver - receiver of OLP {@link PerformanceInformation}.
+     */
+    public final void enter(int stageMethodId, Object[] args, R request, Callback callback, 
+            PerformanceInformationReceiver piggybackPerformanceInformationReceiver) {
+        
+        enter(new OLPStageRequest<R>(stageMethodId, args, request, callback, new PerformanceInformationReceiver[] {
+                piggybackPerformanceInformationReceiver }));
+    }
+    
+    /**
+     * @return initially registered receiver of {@link PerformanceInformation} collected by the stage.
+     */
+    public final PerformanceInformationReceiver[] getInitialPredecessors() {
+        return initialPredecessors;
+    }
+    
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.Stage#generateStageRequest(int, java.lang.Object[], java.lang.Object, 
+     *          org.xtreemfs.common.stage.Callback)
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    protected final <S extends StageRequest<R>> S generateStageRequest(int stageMethodId, Object[] args, R request, 
+            Callback callback) {
+        
+        return (S) new OLPStageRequest<R>(stageMethodId, args, request, callback);
+    }
+    
     /* (non-Javadoc)
      * @see org.xtreemfs.common.stage.Stage#processMethod(org.xtreemfs.common.stage.StageRequest)
      */
-    @Override
-    public final void processMethod(StageRequest<R> method) {
+    @Override    
+    protected final <S extends StageRequest<R>> boolean processMethod(S stageRequest) {
         
-        resumeRequestProcessing(method.getRequest().getMonitoring());
-        _processMethod(method);
+        resumeRequestProcessing((OLPStageRequest<R>) stageRequest);
+        boolean exitCode = _processMethod((OLPStageRequest<R>) stageRequest);
+        suspendRequestProcessing((OLPStageRequest<R>) stageRequest);
+        
+        return exitCode;
     }
     
     /**
      * @see Stage#processMethod(StageRequest)
      */
-    protected abstract void _processMethod(StageRequest<R> method);
-    
+    protected abstract boolean _processMethod(OLPStageRequest<R> stageRequest);
+        
     /* (non-Javadoc)
      * @see org.xtreemfs.common.stage.Stage#exit(org.xtreemfs.common.stage.StageRequest)
      */
     @Override
-    public final void exit(StageRequest<R> request) {
+    public final void exit(StageRequest<R> stageRequest) {
         
-        suspendRequestProcessing(request.getRequest().getMonitoring());
-        olp.depart(request.getRequest().getMetadata(), request.getRequest().getMonitoring());
+        olp.depart((OLPStageRequest<R>) stageRequest);
     }
     
     /* (non-Javadoc)

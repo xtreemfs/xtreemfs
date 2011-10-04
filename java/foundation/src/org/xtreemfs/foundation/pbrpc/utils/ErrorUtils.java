@@ -48,6 +48,10 @@ public class ErrorUtils {
         
         private final ErrorResponse error;
         
+        public ErrorResponseException(Throwable cause) {
+            this.error = ErrorUtils.getInternalServerError(cause);
+        }
+        
         public ErrorResponseException(ErrorResponse error) {
             
             assert (error != null);

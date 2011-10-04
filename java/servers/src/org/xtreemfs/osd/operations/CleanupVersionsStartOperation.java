@@ -14,6 +14,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
@@ -26,6 +27,7 @@ public final class CleanupVersionsStartOperation extends OSDOperation {
 
     @Override
     public int getProcedureId() {
+        
         return OSDServiceConstants.PROC_ID_XTREEMFS_CLEANUP_VERSIONS_START;
     }
     
@@ -40,13 +42,21 @@ public final class CleanupVersionsStartOperation extends OSDOperation {
         }
         master.getCleanupVersionsThread().cleanupStart(
                 rq.getRPCRequest().getHeader().getRequestHeader().getUserCreds());
-        callback.success();
         
-        return null;
+        try {
+            
+            callback.success();
+            
+            return null;
+        } catch (ErrorResponseException e) {
+            
+            return e.getRPCError();
+        }
     }
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
+        
         rq.setFileId("");
 
         return null;
@@ -54,11 +64,13 @@ public final class CleanupVersionsStartOperation extends OSDOperation {
 
     @Override
     public boolean requiresCapability() {
+        
         return false;
     }
 
     @Override
     public void startInternalEvent(Object[] args) {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

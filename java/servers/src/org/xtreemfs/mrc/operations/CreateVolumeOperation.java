@@ -15,18 +15,19 @@ import java.util.Map;
 
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
@@ -45,7 +46,7 @@ public class CreateVolumeOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(final MRCRequest rq, final RPCRequestCallback callback) throws Exception {
+    public void startRequest(MRCRequest rq, final RPCRequestCallback callback) throws Exception {
         
         // perform master redirect if replicated and required
         String replMasterUUID = master.getReplMasterUUID();
@@ -89,18 +90,20 @@ public class CreateVolumeOperation extends MRCOperation {
         
         master.getDirClient().xtreemfs_service_get_by_type(null, rq.getDetails().auth,
                 RPCAuthentication.userService, ServiceType.SERVICE_TYPE_VOLUME, new Callback() {
-                    
-                    @Override
-                    public boolean success(Object sset) {
-                        
-                        processStep2(volData, volumeId, rq, (ServiceSet) sset, callback);
-                        return true;
-                    }
-                    
+                                        
                     @Override
                     public void failed(Throwable e) {
                         
                         callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, e);
+                    }
+
+                    @Override
+                    public <S extends StageRequest<?>> boolean success(Object sset, S stageRequest)
+                            throws ErrorResponseException {
+                        
+                        processStep2(volData, volumeId, (MRCRequest) stageRequest.getRequest(), (ServiceSet) sset, 
+                                callback);
+                        return true;
                     }
                 });
     }
@@ -147,21 +150,7 @@ public class CreateVolumeOperation extends MRCOperation {
                     .setVersion(0).setName(volData.getName()).setLastUpdatedS(0).setData(dmap).build();
             
             master.getDirClient().xtreemfs_service_register(null, rq.getDetails().auth,
-                    RPCAuthentication.userService, vol, new Callback() {
-                        
-                        @Override
-                        public boolean success(Object result) {
-                            
-                            processStep3(callback);
-                            return true;
-                        }
-                        
-                        @Override
-                        public void failed(Throwable e) {
-                            
-                            callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, e);
-                        }
-                    });
+                    RPCAuthentication.userService, vol, callback);
             
         } catch (UserException exc) {
             
@@ -175,16 +164,4 @@ public class CreateVolumeOperation extends MRCOperation {
             callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, exc);
         }
     }
-    
-    public void processStep3(RPCRequestCallback callback) {
-        try {
-            
-            // set the response
-            callback.success(emptyResponse.getDefaultInstance());
-        } catch (Throwable exc) {
-            
-            callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, exc);
-        }
-    }
-    
 }

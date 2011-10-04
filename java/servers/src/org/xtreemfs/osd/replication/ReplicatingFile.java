@@ -18,8 +18,8 @@ import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ServiceAvailability;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
-import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.Replica;
@@ -38,6 +38,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.osd.InternalObjectData;
@@ -79,7 +80,7 @@ class ReplicatingFile {
         public final long          objectNo;
         
         // create a list only if object is really requested
-        private List<StageRequest<OSDRequest>> waitingRequests = null;
+        private List<OLPStageRequest<OSDRequest>> waitingRequests = null;
         
         /**
          * used to save data with an invalid checksum, because it could be the
@@ -93,9 +94,9 @@ class ReplicatingFile {
             this.objectNo = objectNo;
         }
         
-        public List<StageRequest<OSDRequest>> getWaitingRequests() {
+        public List<OLPStageRequest<OSDRequest>> getWaitingRequests() {
             if (waitingRequests == null)
-                waitingRequests = new LinkedList<StageRequest<OSDRequest>>();
+                waitingRequests = new LinkedList<OLPStageRequest<OSDRequest>>();
             return waitingRequests;
         }
         
@@ -266,11 +267,12 @@ class ReplicatingFile {
          */
         private void sendResponses(ReusableBuffer data, ObjectStatus status) {
             
-            List<StageRequest<OSDRequest>> reqs = getWaitingRequests();
+            List<OLPStageRequest<OSDRequest>> reqs = getWaitingRequests();
             // IMPORTANT: stripe size must be the same in all striping policies
             StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
             // responses
-            for (StageRequest<OSDRequest> rq : reqs) {
+            for (OLPStageRequest<OSDRequest> rq : reqs) {
+                
                 ObjectInformation objectInfo;
                 // create returning ObjectInformation
                 if (status == ObjectStatus.EXISTS) {
@@ -281,8 +283,11 @@ class ReplicatingFile {
                 }
                 objectInfo.setGlobalLastObjectNo(lastObject);
                 
-                if (!rq.getCallback().success(objectInfo)) {
-                    rq.getRequest().getMonitoring().voidMeasurments();
+                try {
+                    rq.getCallback().success(objectInfo, rq);
+                } catch (ErrorResponseException e) {
+                    rq.voidMeasurments();
+                    rq.getCallback().failed(e);
                 }
             }
         }
@@ -292,13 +297,13 @@ class ReplicatingFile {
          */
         private void sendError(ErrorResponse error) {
             
-            List<StageRequest<OSDRequest>> reqs = getWaitingRequests();
+            List<OLPStageRequest<OSDRequest>> reqs = getWaitingRequests();
             
             // responses
-            for (StageRequest<OSDRequest> rq : reqs) {
+            for (OLPStageRequest<OSDRequest> rq : reqs) {
                 
                 AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) rq.getCallback();
-                rq.getRequest().getMonitoring().voidMeasurments();
+                rq.voidMeasurments();
                 callback.failed(error);
             }
         }
@@ -454,7 +459,8 @@ class ReplicatingFile {
      * 
      * @see java.util.ArrayList#add(java.lang.Object)
      */
-    public boolean addObjectForReplication(Long objectNo, StageRequest rq) {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public boolean addObjectForReplication(Long objectNo, OLPStageRequest rq) {
         assert (rq != null);
         
         ReplicatingObject info = objectsInProgress.get(objectNo);
@@ -701,10 +707,10 @@ class ReplicatingFile {
         OSDServiceClient client = master.getOSDClientForReplication();
         // IMPORTANT: stripe size must be the same in all striping policies
         FileCredentials fcred = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
-        RPCResponse<InternalReadLocalResponse> response = client.xtreemfs_internal_read_local(osd.getAddress(), RPCAuthentication.authNone,RPCAuthentication.userService,
-            fcred, fileID, objectNo, 0, 0, xLoc
-                    .getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo), attachObjectSet,
-            new ArrayList(0));
+        RPCResponse<InternalReadLocalResponse> response = client.xtreemfs_internal_read_local(osd.getAddress(), 
+                RPCAuthentication.authNone,RPCAuthentication.userService, fcred, fileID, objectNo, 0, 0, 
+                xLoc.getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo), attachObjectSet,
+                new ArrayList<ObjectList>(0));
         
         response.registerListener(new RPCResponseAvailableListener<InternalReadLocalResponse>() {
             @Override

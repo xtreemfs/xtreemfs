@@ -16,6 +16,7 @@ import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
 
 import com.google.protobuf.Message;
@@ -40,9 +41,9 @@ public abstract class DIROperation {
      * @param rq - the new request.
      * @param callback - the callback for the request.
      *            
-     * @throws Exception if request could not have been processed.
+     * @throws ErrorResponseException if request could not have been processed.
      */
-    public abstract void startRequest(DIRRequest rq, RPCRequestCallback callback) throws Exception;
+    public abstract void startRequest(DIRRequest rq, RPCRequestCallback callback) throws ErrorResponseException;
 
     /**
      * Method to check if operation needs user authentication.

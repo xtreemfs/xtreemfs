@@ -9,11 +9,12 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.ReplicaUpdatePolicies;
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -32,7 +33,6 @@ import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
 
@@ -160,19 +160,19 @@ public class AddReplicaOperation extends MRCOperation {
         xLocList = sMan.createXLocList(repls, xLocList.getReplUpdatePolicy(), xLocList.getVersion() + 1);
         file.setXLocList(xLocList);
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
-            
-            @Override
-            public Message execute(Object result, BabuDBRequest request) throws Exception {
-                
-                // set the response
-                return emptyResponse.getDefaultInstance();
-            }
-        });
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate();
         
         // update the X-Locations list
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         
-        update.execute(callback, rq.getMetadata());
+        update.execute(new AbstractRPCRequestCallback(callback) {
+            
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+                
+                return success((Message) null);
+            }
+        }, rq);
     }
 }

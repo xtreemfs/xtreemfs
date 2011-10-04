@@ -12,8 +12,10 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -22,6 +24,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -53,7 +56,7 @@ public final class LocalReadOperation extends OSDOperation {
     }
     
     @Override
-    public ErrorResponse startRequest(final OSDRequest rq, final RPCRequestCallback callback) {
+    public ErrorResponse startRequest(OSDRequest rq, final RPCRequestCallback callback) {
         
         final xtreemfs_internal_read_localRequest args = (xtreemfs_internal_read_localRequest) rq.getRequestArgs();
         
@@ -63,39 +66,44 @@ public final class LocalReadOperation extends OSDOperation {
                     "object number must be >= 0");
         }
         
-        StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
+        final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
         
         master.getStorageStage().readObject(args.getObjectNumber(), sp,
             (int) args.getOffset(), (int) args.getLength(),
             rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP ? rq.getCapability()
                     .getSnapTimestamp() : 0, rq, new AbstractRPCRequestCallback(callback) {
                         
-                        @Override
-                        public boolean success(Object result) {
-                            
-                            return postRead(rq, args, (ObjectInformation) result, callback);
-                        }
-                    });
+            @SuppressWarnings("unchecked")
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+                
+                return postRead((OLPStageRequest<OSDRequest>) stageRequest, args, (ObjectInformation) result, callback);
+            }
+        });
         
         return null;
     }
     
-    private boolean postRead(final OSDRequest rq, final xtreemfs_internal_read_localRequest args,
-        final ObjectInformation result, final RPCRequestCallback callback) {
+    private boolean postRead(OLPStageRequest<OSDRequest> stageRequest, final xtreemfs_internal_read_localRequest args,
+        final ObjectInformation result, final RPCRequestCallback callback) throws ErrorResponseException {
 
         // object list is requested
         if (args.getAttachObjectList()) { 
             
-            master.getStorageStage().getObjectSet(rq.getLocationList().getLocalReplica().getStripingPolicy(),  rq, 
+            master.getStorageStage().getObjectSet(
+                    stageRequest.getRequest().getLocationList().getLocalReplica().getStripingPolicy(), stageRequest, 
                     new AbstractRPCRequestCallback(callback) {
                         
-                        @Override
-                        public boolean success(Object result2) {
-                            return postReadObjectSet(args, result, (ObjectSet) result2, callback);
-                        }
+                @Override
+                public <S extends StageRequest<?>> boolean success(Object result2, S stageRequest)
+                        throws ErrorResponseException {
+                    
+                    return postReadObjectSet(args, result, (ObjectSet) result2, callback);
+                }
             });
             
-            return true;
+            return false;
         } else {
             
             return readFinish(args, result, null, callback);
@@ -103,7 +111,7 @@ public final class LocalReadOperation extends OSDOperation {
     }
     
     private boolean postReadObjectSet(xtreemfs_internal_read_localRequest args, ObjectInformation data, 
-            ObjectSet result, RPCRequestCallback callback) {
+            ObjectSet result, RPCRequestCallback callback) throws ErrorResponseException {
 
         // serialize objectSet
         byte[] serialized;
@@ -115,13 +123,12 @@ public final class LocalReadOperation extends OSDOperation {
             return readFinish(args, data, objList, callback);
         } catch (IOException e) {
             
-            callback.failed(e);
-            return false;
+            throw new ErrorResponseException(e);
         }
     }
     
     private boolean readFinish(xtreemfs_internal_read_localRequest args, ObjectInformation result, 
-            ObjectList objectList, RPCRequestCallback callback) {
+            ObjectList objectList, RPCRequestCallback callback) throws ErrorResponseException {
         
         InternalObjectData data = null;
         // send raw data

@@ -11,11 +11,12 @@ package org.xtreemfs.mrc.operations;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -39,8 +40,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.rmdirRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.timestampResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.unlinkRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.unlinkResponse;
-
-import com.google.protobuf.Message;
 
 /**
  * 
@@ -131,25 +130,7 @@ public class DeleteOperation extends MRCOperation {
             credentials = creds;
         }
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
-            
-            @Override
-            public Message execute(Object result, BabuDBRequest request) throws Exception {
-                
-                // set the response, depending on whether the request was for
-                // deleting a
-                // file or directory
-                if (rq.getRequestArgs() instanceof unlinkRequest) {
-                    
-                    unlinkResponse.Builder builder = unlinkResponse.newBuilder().setTimestampS(time);
-                    if (credentials != null) builder.setCreds(credentials);
-                    return builder.build();
-                } else {
-                    
-                    return timestampResponse.newBuilder().setTimestampS(time).build();
-                }
-            }
-        });
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate();
         
         // unlink the file; if there are still links to the file, reset the
         // X-headers to null, as the file content must not be deleted
@@ -162,7 +143,26 @@ public class DeleteOperation extends MRCOperation {
         if (file.getLinkCount() > 1)
             MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, time, update);
         
-        update.execute(callback, rq.getMetadata());
+        update.execute(new AbstractRPCRequestCallback(callback) {
+            
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+                
+                // set the response, depending on whether the request was for
+                // deleting a
+                // file or directory
+                if (rq.getRequestArgs() instanceof unlinkRequest) {
+                    
+                    unlinkResponse.Builder builder = unlinkResponse.newBuilder().setTimestampS(time);
+                    if (credentials != null) builder.setCreds(credentials);
+                    return success(builder.build());
+                } else {
+                    
+                    return success(timestampResponse.newBuilder().setTimestampS(time).build());
+                }
+            }
+        }, rq);
         
     }
 }

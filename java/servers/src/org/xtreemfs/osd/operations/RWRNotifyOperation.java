@@ -18,6 +18,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
@@ -53,7 +54,13 @@ public final class RWRNotifyOperation extends OSDOperation {
                         args.getXcap().getFileId());
             }
             master.getPreprocStage().doCheckDeleteOnClose(args.getXcap().getFileId());
-            callback.success();
+            try {
+                
+                callback.success();
+            } catch (ErrorResponseException e) {
+                
+                return e.getRPCError();
+            }
         } else {
             
             if (Logging.isDebug()) {
@@ -61,7 +68,13 @@ public final class RWRNotifyOperation extends OSDOperation {
                         args.getXcap().getFileId());
             }
             master.getRWReplicationStage().eventForceReset(args, rq.getLocationList());
-            callback.success();
+            try {
+                
+                callback.success();
+            } catch (ErrorResponseException e) {
+                
+                return e.getRPCError();
+            }
         }
         
         return null;

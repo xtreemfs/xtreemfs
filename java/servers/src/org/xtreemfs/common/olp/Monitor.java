@@ -24,13 +24,22 @@ abstract class Monitor {
     protected final PerformanceMeasurementListener listener;
     
     /**
+     * <p>Flag that determines whether the performance averages are monitored for internal requests, or not.</p>
+     */
+    protected final boolean                        isForInternalRequests;
+    
+    /**
      * <p>Abstract constructor ensuring the essential connection with the receiver of the measured and summarized 
      * performance information.</p>
      * 
      * @param listener - to send the summarized performance information to.
+     * @param isForInternalRequests - true if the performance averages are measured for internal requests, false 
+     *                                otherwise.
      */
-    Monitor(PerformanceMeasurementListener listener) {
+    Monitor(PerformanceMeasurementListener listener, boolean isForInternalRequests) {
+        
         this.listener = listener;
+        this.isForInternalRequests = isForInternalRequests;
     }
     
     /**
@@ -71,15 +80,17 @@ abstract class Monitor {
          * 
          * @param type - request type.
          * @param value - the summarized performance estimation in ms.
+         * @param internal - true if the performance average was measured for internal requests, false otherwise.
          */
-        void updateFixedProcessingTimeAverage(int type, double value);
+        void updateFixedProcessingTimeAverage(int type, double value, boolean internal);
         
         /**
          * <p>Updates the currently valid performance estimations made by the monitor for the variable time effort.</p>
          * 
          * @param type - request type.
          * @param value - the summarized performance estimation in ms/bytes.
+         * @param internal - true if the performance average was measured for internal requests, false otherwise.
          */
-        void updateVariableProcessingTimeAverage(int type, double value);
+        void updateVariableProcessingTimeAverage(int type, double value, boolean internal);
     }
 }

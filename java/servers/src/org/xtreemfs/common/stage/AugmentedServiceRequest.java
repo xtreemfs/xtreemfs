@@ -8,7 +8,6 @@
 package org.xtreemfs.common.stage;
 
 import org.xtreemfs.common.olp.AugmentedRequest;
-import org.xtreemfs.common.olp.PerformanceInformationReceiver;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 
 import com.google.protobuf.Message;
@@ -55,7 +54,7 @@ public abstract class AugmentedServiceRequest extends AugmentedRequest {
      */
     public AugmentedServiceRequest(RPCServerRequest rpcRequest, int type, long deltaMaxTime, boolean highPriority) {
         
-        this(rpcRequest, type, 0L, deltaMaxTime, highPriority, null);
+        this(rpcRequest, type, 0L, deltaMaxTime, highPriority);
     }
     
     /**
@@ -67,12 +66,11 @@ public abstract class AugmentedServiceRequest extends AugmentedRequest {
      * @param size - amount of bandwidth occupied during processing of this request.
      * @param deltaMaxTime - the time to live for this request.
      * @param highPriority - if true request will be treated as with high priority, false otherwise.
-     * @param piggybackPerformanceReceiver - receiver of performance information send piggyback.
      */
     public AugmentedServiceRequest(RPCServerRequest rpcRequest, int type, long size, long deltaMaxTime, 
-            boolean highPriority, PerformanceInformationReceiver piggybackPerformanceReceiver) {
+            boolean highPriority) {
         
-        super(type, size, deltaMaxTime, highPriority, piggybackPerformanceReceiver);
+        super(type, size, deltaMaxTime, highPriority);
         
         this.rpcRequest = rpcRequest;
     }

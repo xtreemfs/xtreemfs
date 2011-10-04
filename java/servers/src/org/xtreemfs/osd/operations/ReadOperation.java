@@ -15,6 +15,7 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -28,6 +29,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -78,7 +80,7 @@ public final class ReadOperation extends OSDOperation {
             return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "length must be >= 0");
         }
 
-        StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
+        final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
         if (args.getLength()+args.getOffset() > sp.getStripeSizeForObject(0)) {
             
@@ -90,14 +92,16 @@ public final class ReadOperation extends OSDOperation {
             || (rq.getLocationList().getNumReplicas() == 1)
             || (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY))){
 
-            long snapVerTS = rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP ? 
+           final long snapVerTS = rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP ? 
                     rq.getCapability().getSnapTimestamp(): 0;
 
             master.getStorageStage().readObject(args.getObjectNumber(), sp, args.getOffset(),args.getLength(), 
                     snapVerTS, rq, new AbstractRPCRequestCallback(callback) {
                         
                         @Override
-                        public boolean success(Object result) {
+                        public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                                throws ErrorResponseException {
+                            
                             return postRead(rq, args, (ObjectInformation) result, callback);
                         }
                     });
@@ -113,10 +117,11 @@ public final class ReadOperation extends OSDOperation {
         master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), 
                 args.getObjectNumber(), args.getObjectVersion(), RWReplicationStage.Operation.READ, 
                 new AbstractRPCRequestCallback(callback) {
-                    
-            @Override
-            public boolean success(Object newObjectVersion) {
                 
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object newObjectVersion, S stageRequest)
+                    throws ErrorResponseException {
+
                 final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
                 final long snapVerTS = rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP ? 
@@ -124,9 +129,10 @@ public final class ReadOperation extends OSDOperation {
 
                 master.getStorageStage().readObject(args.getObjectNumber(), sp,
                     args.getOffset(), args.getLength(), snapVerTS, rq, new AbstractRPCRequestCallback(callback) {
-                        
+                    
                     @Override
-                    public boolean success(Object result) {
+                    public <T extends StageRequest<?>> boolean success(Object result, T stageRequest)
+                            throws ErrorResponseException {
                         
                         return postRead(rq, args, (ObjectInformation) result, callback);
                     }
@@ -137,7 +143,8 @@ public final class ReadOperation extends OSDOperation {
         }, rq);
     }
 
-    private boolean postRead(OSDRequest rq, readRequest args, ObjectInformation result, RPCRequestCallback callback) {
+    private boolean postRead(OSDRequest rq, readRequest args, ObjectInformation result, RPCRequestCallback callback) 
+            throws ErrorResponseException {
 
         if (result.getStatus() == ObjectInformation.ObjectStatus.DOES_NOT_EXIST
                 && rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)
@@ -147,17 +154,21 @@ public final class ReadOperation extends OSDOperation {
             // read only replication!
             return readReplica(rq, args, callback);
         } else {
+            
             if (rq.getLocationList().getLocalReplica().isStriped()) {
+                
                 // striped read
                 return stripedRead(rq, args, result, callback);
             } else {
+                
                 // non-striped case
                 return nonStripedRead(args, result, callback);
             }
         }
     }
 
-    private boolean nonStripedRead(readRequest args, ObjectInformation result, RPCRequestCallback callback) {
+    private boolean nonStripedRead(readRequest args, ObjectInformation result, RPCRequestCallback callback) 
+            throws ErrorResponseException {
 
         boolean isLastObjectOrEOF = result.getLastLocalObjectNo() <= args.getObjectNumber();
         return readFinish(args, result, isLastObjectOrEOF, callback);
@@ -165,7 +176,7 @@ public final class ReadOperation extends OSDOperation {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private boolean stripedRead(OSDRequest rq, final readRequest args, final ObjectInformation result, 
-            final RPCRequestCallback callback) {
+            final RPCRequestCallback callback) throws ErrorResponseException {
         
         long objNo = args.getObjectNumber();
         long lastKnownObject = Math.max(result.getLastLocalObjectNo(), result.getGlobalLastObjectNo());
@@ -197,8 +208,7 @@ public final class ReadOperation extends OSDOperation {
                 return true;
             } catch (IOException ex) {
                 
-                callback.failed(ex);
-                return false;
+                throw new ErrorResponseException(ex);
             }
         } else {
             return readFinish(args, result, isLastObjectLocallyKnown, callback);
@@ -239,14 +249,12 @@ public final class ReadOperation extends OSDOperation {
                 if (r != null) r.freeBuffers();
             }
         }
-
     }
 
     private boolean readFinish(readRequest args, ObjectInformation result, boolean isLastObjectOrEOF, 
-            RPCRequestCallback callback) {
+            RPCRequestCallback callback) throws ErrorResponseException {
         
-        InternalObjectData data;
-        data = result.getObjectData(isLastObjectOrEOF, args.getOffset(), args.getLength());
+        final InternalObjectData data = result.getObjectData(isLastObjectOrEOF, args.getOffset(), args.getLength());
 
         //must deliver enough data!
         int datasize = 0;
@@ -266,26 +274,30 @@ public final class ReadOperation extends OSDOperation {
         return callback.success(data.getMetadata(), data.getData());
     }
     
-    private boolean readReplica(final OSDRequest rq, final readRequest args, final RPCRequestCallback callback) {
+    private boolean readReplica(final OSDRequest rq, final readRequest args, final RPCRequestCallback callback) 
+            throws ErrorResponseException {
         
-        XLocations xLoc = rq.getLocationList();
-        StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
+        final XLocations xLoc = rq.getLocationList();
+        final StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
         
         // check if it is a EOF
         if (args.getObjectNumber() > sp.getObjectNoForOffset(xLoc.getXLocSet().getReadOnlyFileSize() - 1)) {
+            
             ObjectInformation objectInfo = new ObjectInformation(ObjectStatus.DOES_NOT_EXIST, null, sp
                     .getStripeSizeForObject(args.getObjectNumber()));
             objectInfo.setGlobalLastObjectNo(xLoc.getXLocSet().getReadOnlyFileSize());
 
             return readFinish(args, objectInfo, true, callback);
         } else {
+            
             master.getReplicationStage().fetchObject(args.getFileId(), args.getObjectNumber(), xLoc,
                     rq.getCapability(), rq.getCowPolicy(), rq, new AbstractRPCRequestCallback(callback) {
                         
                         // executed by the replication stage
                         @Override
-                        public boolean success(Object result) {
-                            
+                        public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                                throws ErrorResponseException {
+                           
                             return postReadReplica(rq, args, (ObjectInformation) result, callback);
                         }
                     });
@@ -295,42 +307,37 @@ public final class ReadOperation extends OSDOperation {
     }
 
     private boolean postReadReplica(OSDRequest rq, readRequest args, ObjectInformation result, 
-            RPCRequestCallback callback) {
+            RPCRequestCallback callback) throws ErrorResponseException {
         
-        XLocations xLoc = rq.getLocationList();
-        StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
+        final XLocations xLoc = rq.getLocationList();
+        final StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
 
-        try {
-            // replication always delivers full objects => cut data
-            if (args.getOffset() > 0 || args.getLength() < result.getStripeSize()) {
-                if (result.getStatus() == ObjectStatus.EXISTS) {
-                    // cut range from object data
-                    final int availData = result.getData().remaining();
-                    if (availData - args.getOffset() <= 0) {
-                        // offset is beyond available data
-                        BufferPool.free(result.getData());
-                        result.setData(BufferPool.allocate(0));
+        // replication always delivers full objects => cut data
+        if (args.getOffset() > 0 || args.getLength() < result.getStripeSize()) {
+            if (result.getStatus() == ObjectStatus.EXISTS) {
+                // cut range from object data
+                final int availData = result.getData().remaining();
+                if (availData - args.getOffset() <= 0) {
+                    // offset is beyond available data
+                    BufferPool.free(result.getData());
+                    result.setData(BufferPool.allocate(0));
+                } else {
+                    if (availData - args.getOffset() >= args.getLength()) {
+                        result.getData().range(args.getOffset(), args.getLength());
                     } else {
-                        if (availData - args.getOffset() >= args.getLength()) {
-                            result.getData().range(args.getOffset(), args.getLength());
-                        } else {
-                            // less data than requested
-                            result.getData().range(args.getOffset(), availData - args.getOffset());
-                        }
+                        // less data than requested
+                        result.getData().range(args.getOffset(), availData - args.getOffset());
                     }
                 }
             }
-        } catch (Exception ex) {
-            
-            ex.printStackTrace();
-            callback.failed(ex);
-            return false;
         }
 
         if (args.getObjectNumber() == sp.getObjectNoForOffset(xLoc.getXLocSet().getReadOnlyFileSize() - 1)) {
+            
             // last object
             return readFinish(args, result, true, callback);
         } else {
+            
             return readFinish(args, result, false, callback);
         }
     }

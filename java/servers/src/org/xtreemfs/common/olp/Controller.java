@@ -7,6 +7,7 @@
  */
 package org.xtreemfs.common.olp;
 
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 import org.xtreemfs.common.olp.Monitor.PerformanceMeasurementListener;
@@ -21,68 +22,144 @@ import org.xtreemfs.common.olp.Monitor.PerformanceMeasurementListener;
  */
 class Controller implements PerformanceMeasurementListener {
     
-    private final int[]                           queueComposition;
-    private final long[]                          queueBandwidthComposition;
+    /**
+     * <p>Composition of external requests queued at the controlled stage (including high priority requests).</p>
+     */
+    private final AtomicIntegerArray              queueComposition;
+    /**
+     * <p>Processing volume according to the composition of external requests (including high priority requests).</p>
+     */
+    private final AtomicLongArray                 queueBandwidthComposition;
 
-    private final int[]                           priorityQueueComposition;
-    private final long[]                          priorityQueueBandwidthComposition;
+    /**
+     * <p>Composition of external high-priority requests queued at the controlled stage only.</p>
+     */
+    private final AtomicIntegerArray              priorityQueueComposition;
+    /**
+     * <p>Processing volume according to the composition of external high-priority requests.</p>
+     */
+    private final AtomicLongArray                 priorityQueueBandwidthComposition;
     
+    /**
+     * <p>Stage-specific processing time averages for external requests at the stage.</p>
+     */
     private final AtomicLongArray                 fixedProcessingTimeAverages;
+    /**
+     * <p>Stage-specific processing time averages for external requests at the stage depending on their data volume.
+     * </p>
+     */
     private final AtomicLongArray                 variableProcessingTimeAverages;
     
+    /**
+     * <p>Composition of internal requests queued at the controlled stage.</p>
+     */
+    private final AtomicIntegerArray              internalQueueComposition;
+    /**
+     * <p>Processing volume according to the composition of internal requests.</p>
+     */
+    private final AtomicLongArray                 internalQueueBandwidthComposition;
+    
+    /**
+     * <p>Stage-specific processing time averages for internal requests at the stage.</p>
+     */
+    private final AtomicLongArray                 internalFixedProcessingTimeAverages;
+    /**
+     * <p>Stage-specific processing time averages for internal requests at the stage depending on their data volume.</p>
+     */
+    private final AtomicLongArray                 internalVariableProcessingTimeAverages;
+    
+    /**
+     * <p>{@link PerformanceInformation} of external requests that will pass subsequent stages.</p>
+     */
     private final SuccessorPerformanceInformation successorPerformanceInformation;
     
     /**
      * 
      * @param numTypes
+     * @param numInternalTypes
      * @param numSubsequentStages
      */
-    Controller(int numTypes, int numSubsequentStages) {
+    Controller(int numTypes, int numInternalTypes, int numSubsequentStages) {
         
-        queueComposition = new int[numTypes];
-        queueBandwidthComposition = new long[numTypes];
-        priorityQueueComposition = new int[numTypes];
-        priorityQueueBandwidthComposition = new long[numTypes];
+        queueComposition = new AtomicIntegerArray(numTypes);
+        queueBandwidthComposition = new AtomicLongArray(numTypes);
+        priorityQueueComposition = new AtomicIntegerArray(numTypes);
+        priorityQueueBandwidthComposition = new AtomicLongArray(numTypes);
         
         fixedProcessingTimeAverages = new AtomicLongArray(numTypes);
         variableProcessingTimeAverages = new AtomicLongArray(numTypes);
         
+        internalQueueComposition = new AtomicIntegerArray(numInternalTypes);
+        internalQueueBandwidthComposition = new AtomicLongArray(numInternalTypes);
+        
+        internalFixedProcessingTimeAverages = new AtomicLongArray(numInternalTypes);
+        internalVariableProcessingTimeAverages = new AtomicLongArray(numInternalTypes);
+        
         successorPerformanceInformation = new SuccessorPerformanceInformation(numTypes, numSubsequentStages);
     }
       
-    double estimateProcessingTime(int type, long size, boolean hasPriority) {
+    /**
+     * <p>Calculates response time for a request regarding its type, size, priority and utilization of the service 
+     * obtained from the composition and average processing times of requests currently responded by the service.</p> 
+     * 
+     * @param type
+     * @param size
+     * @param hasPriority
+     * 
+     * @return the estimated response time for the given request.
+     */
+    double estimateResponseTime(int type, long size, boolean hasPriority) {
         
         double result = Double.longBitsToDouble(fixedProcessingTimeAverages.get(type));
         if (size > 0L) {
+            
             result += Double.longBitsToDouble(variableProcessingTimeAverages.get(type)) * size;
         }
         if (hasPriority) {
+            
             result += estimatePriorityWaitingTime();
         } else {
+            
             result += estimateWaitingTime();
         }
         return result;
     }
     
-    void enterRequest(int type, long size, boolean hasPriority) {
+    void enterRequest(int type, long size, boolean hasPriority, boolean isInternalRequest) {
         
-        queueComposition[type]++;
-        queueBandwidthComposition[type] += size;
-        
-        if (hasPriority) {
-            priorityQueueComposition[type]++;
-            priorityQueueBandwidthComposition[type] += size;
+        if (isInternalRequest) {
+            
+            internalQueueComposition.incrementAndGet(type);
+            internalQueueBandwidthComposition.addAndGet(type, size);            
+        } else {
+            
+            queueComposition.incrementAndGet(type);
+            queueBandwidthComposition.addAndGet(type, size);
+            
+            if (hasPriority) {
+                
+                priorityQueueComposition.incrementAndGet(type);
+                priorityQueueBandwidthComposition.addAndGet(type, size);
+            }
         }
     }
     
-    void quitRequest(int type, long size, boolean hasPriority) {
+    void quitRequest(int type, long size, boolean hasPriority, boolean isInternalRequest) {
         
-        queueComposition[type]--;
-        queueBandwidthComposition[type] -= size;
-        
-        if (hasPriority) {
-            priorityQueueComposition[type]--;
-            priorityQueueBandwidthComposition[type] -= size;
+        if (isInternalRequest) {
+            
+            internalQueueComposition.decrementAndGet(type);
+            internalQueueBandwidthComposition.getAndAdd(type, -size);
+        } else {
+            
+            queueComposition.decrementAndGet(type);
+            queueBandwidthComposition.addAndGet(type, -size);
+            
+            if (hasPriority) {
+                
+                priorityQueueComposition.decrementAndGet(type);
+                priorityQueueBandwidthComposition.addAndGet(type, -size);
+            }
         }
     }
     
@@ -91,13 +168,19 @@ class Controller implements PerformanceMeasurementListener {
         successorPerformanceInformation.updatePerformanceInformation(performanceInformation);
     }
     
+    /**
+     * 
+     * @param id - identifier of the stage that collected the composed {@link PerformanceInformation}.
+     * @return {@link PerformanceInformation} that can be shared with preceding stages.
+     */
     PerformanceInformation composePerformanceInformation(int id) {
         
-        int numTypes = fixedProcessingTimeAverages.length();
-        double[] fixedProcessingTime = new double[numTypes];
-        double[] variableProcessingTime = new double[numTypes];
+        final int numTypes = fixedProcessingTimeAverages.length();
+        final double[] fixedProcessingTime = new double[numTypes];
+        final double[] variableProcessingTime = new double[numTypes];
         
         for (int i = 0; i < numTypes; i++) {
+            
             fixedProcessingTime[i] = Double.longBitsToDouble(fixedProcessingTimeAverages.get(i));
             variableProcessingTime[i] = Double.longBitsToDouble(variableProcessingTimeAverages.get(i));
         }
@@ -114,24 +197,37 @@ class Controller implements PerformanceMeasurementListener {
  */
 
     /* (non-Javadoc)
-     * @see org.xtreemfs.common.olp.Monitor.PerformanceMeasurementListener#updateFixedProcessingTimeAverage(int, double)
+     * @see org.xtreemfs.common.olp.Monitor.PerformanceMeasurementListener#updateFixedProcessingTimeAverage(int, double, 
+     *          boolean)
      */
     @Override
-    public void updateFixedProcessingTimeAverage(int type, double value) {
+    public void updateFixedProcessingTimeAverage(int type, double value, boolean internalRequests) {
         
-        fixedProcessingTimeAverages.set(type, 
-                Double.doubleToLongBits(value + successorPerformanceInformation.getFixedProcessingTime(type)));
+        if (internalRequests) {
+            
+            internalFixedProcessingTimeAverages.set(type, Double.doubleToLongBits(value));
+        } else {
+            
+            fixedProcessingTimeAverages.set(type, 
+                    Double.doubleToLongBits(value + successorPerformanceInformation.getFixedProcessingTime(type)));
+        }
     }
     
     /* (non-Javadoc)
-     * @see org.xtreemfs.common.olp.Monitor.PerformanceMeasurementListener#
-     *          updateVariableProcessingTimeAverage(int, double)
+     * @see org.xtreemfs.common.olp.Monitor.PerformanceMeasurementListener#updateVariableProcessingTimeAverage(int, 
+     *          double, boolean)
      */
     @Override
-    public void updateVariableProcessingTimeAverage(int type, double value) {
+    public void updateVariableProcessingTimeAverage(int type, double value, boolean internalRequests) {
         
-        variableProcessingTimeAverages.set(type, 
-                Double.doubleToLongBits(value + successorPerformanceInformation.getVariableProcessingTime(type)));
+        if (internalRequests) {
+            
+            internalVariableProcessingTimeAverages.set(type, Double.doubleToLongBits(value));
+        } else {
+            
+            variableProcessingTimeAverages.set(type, 
+                    Double.doubleToLongBits(value + successorPerformanceInformation.getVariableProcessingTime(type)));
+        }
     }
     
 /*
@@ -139,71 +235,91 @@ class Controller implements PerformanceMeasurementListener {
  */
     
     /**
-     * 
-     * @return
+     * @return the estimated waiting time for the next request enqueued.
      */
     private double estimateWaitingTime() {
+        
         double result = successorPerformanceInformation.getWaitingTime();
         
-        int numTypes = fixedProcessingTimeAverages.length();
+        final int numTypes = fixedProcessingTimeAverages.length();
         for (int i = 0; i < numTypes; i++) {
-            result += Double.longBitsToDouble(fixedProcessingTimeAverages.get(numTypes)) * queueComposition[numTypes];
-            result += Double.longBitsToDouble(
-                    variableProcessingTimeAverages.get(numTypes)) * queueBandwidthComposition[numTypes];
+            
+            result += Double.longBitsToDouble(fixedProcessingTimeAverages.get(i)) * queueComposition.get(i);
+            result += Double.longBitsToDouble(variableProcessingTimeAverages.get(i)) * queueBandwidthComposition.get(i);
+        }
+        
+        final int numInternalTypes = internalFixedProcessingTimeAverages.length();
+        for (int i = 0; i < numInternalTypes; i++) {
+            
+            result += Double.longBitsToDouble(internalFixedProcessingTimeAverages.get(i)) * 
+                      internalQueueComposition.get(i);
+            result += Double.longBitsToDouble(internalVariableProcessingTimeAverages.get(i)) * 
+                      internalQueueBandwidthComposition.get(i);
         }
         
         return result;
     }
     
     /**
-     * 
-     * @return
+     * @return the estimated waiting time for a high-priority request approaching the stage.
      */
     private double estimatePriorityWaitingTime() {
+        
         double result = successorPerformanceInformation.getPriorityWaitingTime();
         
-        int numTypes = fixedProcessingTimeAverages.length();
+        final int numTypes = fixedProcessingTimeAverages.length();
         for (int i = 0; i < numTypes; i++) {
-            result += Double.longBitsToDouble(
-                    fixedProcessingTimeAverages.get(numTypes)) * priorityQueueComposition[numTypes];
-            result += Double.longBitsToDouble(
-                    variableProcessingTimeAverages.get(numTypes)) * priorityQueueBandwidthComposition[numTypes];
+            
+            result += Double.longBitsToDouble(fixedProcessingTimeAverages.get(i)) * priorityQueueComposition.get(i);
+            result += Double.longBitsToDouble(variableProcessingTimeAverages.get(i)) * 
+                      priorityQueueBandwidthComposition.get(i);
         }
         
         return result;
     }
     
     /**
-     * 
      * @param fixedProcessingTime
      * @param variableProcessingTime
-     * @return
+     * @return 
      */
     private double estimateWaitingTime(double[] fixedProcessingTime, double[] variableProcessingTime) {
+        
         double result = successorPerformanceInformation.getWaitingTime();
         
-        int numTypes = fixedProcessingTime.length;
+        final int numTypes = fixedProcessingTime.length;
         for (int i = 0; i < numTypes; i++) {
-            result += fixedProcessingTime[numTypes] * queueComposition[numTypes];
-            result += variableProcessingTime[numTypes] * queueBandwidthComposition[numTypes];
+            
+            result += fixedProcessingTime[i] * queueComposition.get(i);
+            result += variableProcessingTime[i] * queueBandwidthComposition.get(i);
+        }
+        
+        final int numInternalTypes = internalFixedProcessingTimeAverages.length();
+        for (int i = 0; i < numInternalTypes; i++) {
+            
+            result += Double.longBitsToDouble(internalFixedProcessingTimeAverages.get(i)) * 
+                      internalQueueComposition.get(i);
+            result += Double.longBitsToDouble(internalVariableProcessingTimeAverages.get(i)) * 
+                      internalQueueBandwidthComposition.get(i);
         }
         
         return result;
     }
     
     /**
-     * 
      * @param fixedProcessingTime
      * @param variableProcessingTime
      * @return
      */
     private double estimatePriorityWaitingTime(double[] fixedProcessingTime, double[] variableProcessingTime) {
+        
         double result = successorPerformanceInformation.getPriorityWaitingTime();
         
-        int numTypes = fixedProcessingTime.length;
+        final int numTypes = fixedProcessingTime.length;
         for (int i = 0; i < numTypes; i++) {
-            result += fixedProcessingTime[numTypes] * priorityQueueComposition[numTypes];
-            result += variableProcessingTime[numTypes] * priorityQueueBandwidthComposition[numTypes];
+            
+            result += fixedProcessingTime[i] * priorityQueueComposition.get(i);
+            result += variableProcessingTime[i] * priorityQueueBandwidthComposition.get(i);
         }
         
         return result;

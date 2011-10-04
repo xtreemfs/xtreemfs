@@ -11,6 +11,7 @@ package org.xtreemfs.dir.operations;
 import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.globalTimeSGetResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 
@@ -33,7 +34,7 @@ public class GetGlobalTimeOperation extends DIROperation {
     }
 
     @Override
-    public void startRequest(DIRRequest rq, RPCRequestCallback callback) {
+    public void startRequest(DIRRequest rq, RPCRequestCallback callback) throws ErrorResponseException {
 
         callback.success(globalTimeSGetResponse.newBuilder().setTimeInSeconds(System.currentTimeMillis()).build());
     }

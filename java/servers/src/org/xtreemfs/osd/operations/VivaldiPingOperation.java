@@ -12,10 +12,11 @@ import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
@@ -29,15 +30,14 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
  */
 public class VivaldiPingOperation extends OSDOperation {
 
-    final String sharedSecret;
-
-    final ServiceUUID localUUID;
+//    private final String sharedSecret; XXX dead code
+//    private final ServiceUUID localUUID;
 
     public VivaldiPingOperation(OSDRequestDispatcher master) {
         super(master);
         
-        sharedSecret = master.getConfig().getCapabilitySecret();
-        localUUID = master.getConfig().getUUID();
+//        sharedSecret = master.getConfig().getCapabilitySecret();
+//        localUUID = master.getConfig().getUUID();
     }
 
     @Override
@@ -47,7 +47,7 @@ public class VivaldiPingOperation extends OSDOperation {
     }
 
     @Override
-    public ErrorResponse startRequest(final OSDRequest rq, final RPCRequestCallback callback) {
+    public ErrorResponse startRequest(OSDRequest rq, RPCRequestCallback callback) {
         
         final xtreemfs_pingMesssage args = (xtreemfs_pingMesssage) rq.getRequestArgs();
         
@@ -64,7 +64,13 @@ public class VivaldiPingOperation extends OSDOperation {
             }
             master.getVivaldiStage().getVivaldiCoordinatesAsync(args, 
                     (InetSocketAddress) rq.getRPCRequest().getSenderAddress(), rq);
-            callback.success();
+            try {
+                
+                callback.success();
+            } catch (ErrorResponseException e) {
+                
+                return e.getRPCError();
+            }
         } else {
             
             if (Logging.isDebug()) {
@@ -73,11 +79,11 @@ public class VivaldiPingOperation extends OSDOperation {
             master.getVivaldiStage().getVivaldiCoordinatesSync(args, rq, new AbstractRPCRequestCallback(callback) {
                 
                 @Override
-                public boolean success(Object result) {
-                    callback.success(xtreemfs_pingMesssage.newBuilder().setCoordinates((VivaldiCoordinates) result)
-                            .setRequestResponse(false).build());
+                public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                        throws ErrorResponseException {
                     
-                    return true;
+                    return success(xtreemfs_pingMesssage.newBuilder().setCoordinates((VivaldiCoordinates) result)
+                            .setRequestResponse(false).build());
                 }
             });
         }

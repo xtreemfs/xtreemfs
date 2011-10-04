@@ -17,9 +17,9 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.olp.OverloadProtectedStage;
 import org.xtreemfs.common.olp.PerformanceInformationReceiver;
-import org.xtreemfs.common.olp.RequestMonitoring;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
@@ -38,8 +38,8 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.storage.VersionTable.Version;
@@ -54,37 +54,37 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
     
-    private final static int     NUM_RQ_TYPES                  = 1;
-    private final static int     STAGE_ID                      = 3;
+    private final static int     NUM_RQ_TYPES                           = 15;
+    private final static int     NUM_INTERNAL_RQ_TYPES                  = 8;
+    private final static int     STAGE_ID                               = 2;
+    private final static int     NUM_SUB_SEQ_STAGES                     = 1;
     
-    public static final int      STAGEOP_READ_OBJECT           = 1;
+/*
+ * external requests
+ */
     
-    public static final int      STAGEOP_WRITE_OBJECT          = 2;
+    public static final int      STAGEOP_GET_FILEID_LIST                = -8;
+    public static final int      STAGEOP_GET_OBJECT_SET                 = -7;
+    public static final int      STAGEOP_GET_REPLICA_STATE              = -6;
+    public static final int      STAGEOP_GET_GMAX                       = -5;
+    public static final int      STAGEOP_TRUNCATE                       = -4;
+    public static final int      STAGEOP_WRITE_OBJECT                   = -3;
+    public static final int      STAGEOP_GET_FILE_SIZE                  = -2;
+    public static final int      STAGEOP_READ_OBJECT                    = -1;
     
-    public static final int      STAGEOP_TRUNCATE              = 3;
+/*
+ * internal requests
+ */
     
-    public static final int      STAGEOP_FLUSH_CACHES          = 4;
-    
-    public static final int      STAGEOP_GMAX_RECEIVED         = 5;
-    
-    public static final int      STAGEOP_GET_GMAX              = 6;
-    
-    public static final int      STAGEOP_GET_FILE_SIZE         = 7;
-    
-    public static final int      STAGEOP_GET_OBJECT_SET        = 8;
-    
-    public static final int      STAGEOP_INSERT_PADDING_OBJECT = 9;
-    
-    public static final int      STAGEOP_GET_MAX_OBJNO         = 10;
-    
-    public static final int      STAGEOP_CREATE_FILE_VERSION   = 11;
-    
-    public static final int      STAGEOP_GET_REPLICA_STATE     = 12;
-    
-    public static final int      STAGEOP_GET_FILEID_LIST       = 13;
-    
-    public static final int      STAGEOP_DELETE_OBJECTS        = 14;
-    
+    public static final int      STAGEOP_INSERT_PADDING_OBJECT          = 0;
+    public static final int      STAGEOP_INTERNAL_WRITE_OBJECT          = 1;
+    public static final int      STAGEOP_DELETE_OBJECTS                 = 2;
+    public static final int      STAGEOP_FLUSH_CACHES                   = 3;
+    public static final int      STAGEOP_GMAX_RECEIVED                  = 4;
+    public static final int      STAGEOP_GET_MAX_OBJNO                  = 5;
+    public static final int      STAGEOP_INTERNAL_GET_REPLICA_STATE     = 6;
+    public static final int      STAGEOP_CREATE_FILE_VERSION            = 7;
+        
     private MetadataCache        cache;
     
     private StorageLayout        layout;
@@ -94,10 +94,8 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
     private final boolean        checksumsEnabled;
     
     public StorageThread(int id, OSDRequestDispatcher master, MetadataCache cache, StorageLayout layout) {
-        
-        // TODO find additional predecessors
-        super("OSD StThr " + id, STAGE_ID + id, NUM_RQ_TYPES, 
-                new PerformanceInformationReceiver [] { master.getPreprocStage() });
+        super("OSD StThr " + id, STAGE_ID + id, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, NUM_SUB_SEQ_STAGES,
+                new PerformanceInformationReceiver [] { master.getPreprocStage(), master.getRWReplicationStage() });
         
         this.cache = cache;
         this.layout = layout;
@@ -106,82 +104,57 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
     }
     
     /* (non-Javadoc)
-     * @see org.xtreemfs.common.olp.OverloadProtectedStage#_processMethod(org.xtreemfs.common.stage.StageRequest)
+     * @see org.xtreemfs.common.olp.OverloadProtectedStage#_processMethod(org.xtreemfs.common.olp.OLPStageRequest)
      */
     @Override
-    protected void _processMethod(StageRequest<AugmentedRequest> method) {
+    protected boolean _processMethod(OLPStageRequest<AugmentedRequest> stageRequest) {
                 
-        Callback callback = method.getCallback();
-        RequestMonitoring monitoring = method.getRequest().getMonitoring();
+        final Callback callback = stageRequest.getCallback();
+        final int requestedMethod = stageRequest.getStageMethod();
         
-        ErrorResponse error = null;
+        try {
         
-        switch (method.getStageMethod()) {
-        case STAGEOP_READ_OBJECT:
-            error = processRead(method);
-            break;
-        case STAGEOP_WRITE_OBJECT:
-            error = processWrite(method);
-            break;
-        case STAGEOP_TRUNCATE:
-            error = processTruncate(method);
-            break;
-        case STAGEOP_FLUSH_CACHES:
-            error = processFlushCaches(method);
-            break;
-        case STAGEOP_GMAX_RECEIVED:
-            error = processGmax(method);
-            break;
-        case STAGEOP_GET_GMAX:
-            error = processGetGmax(method);
-            break;
-        case STAGEOP_GET_FILE_SIZE:
-            error = processGetFileSize(method);
-            break;
-        case STAGEOP_GET_OBJECT_SET:
-            error = processGetObjectSet(method);
-            break;
-        case STAGEOP_INSERT_PADDING_OBJECT:
-            error = processInsertPaddingObject(method);
-            break;
-        case STAGEOP_GET_MAX_OBJNO:
-            error = processGetMaxObjNo(method);
-            break;
-        case STAGEOP_CREATE_FILE_VERSION:
-            error = processCreateFileVersion(method);
-            break;
-        case STAGEOP_GET_REPLICA_STATE:
-            error = processGetReplicaState(method);
-            break;
-        case STAGEOP_GET_FILEID_LIST:
-            error = processGetFileIDList(method);
-            break;
-        case STAGEOP_DELETE_OBJECTS:
-            error = processDeleteObjects(method);
-            break;
-        }
-        
-        if (error != null) {
-            monitoring.voidMeasurments();
-            if (callback instanceof AbstractRPCRequestCallback) {
-                ((AbstractRPCRequestCallback) callback).failed(error);
-            } else {
-                callback.failed(ErrorUtils.formatError(error));
+            switch (requestedMethod) {
+            case STAGEOP_READ_OBJECT:           return processRead(stageRequest);
+            case STAGEOP_WRITE_OBJECT:          return processWrite(stageRequest);
+            case STAGEOP_TRUNCATE:              return processTruncate(stageRequest);
+            case STAGEOP_FLUSH_CACHES:          return processFlushCaches(stageRequest);
+            case STAGEOP_GMAX_RECEIVED:         return processGmax(stageRequest);
+            case STAGEOP_GET_GMAX:              return processGetGmax(stageRequest);
+            case STAGEOP_GET_FILE_SIZE:         return processGetFileSize(stageRequest);
+            case STAGEOP_GET_OBJECT_SET:        return processGetObjectSet(stageRequest);
+            case STAGEOP_INSERT_PADDING_OBJECT: return processInsertPaddingObject(stageRequest);
+            case STAGEOP_GET_MAX_OBJNO:         return processGetMaxObjNo(stageRequest);
+            case STAGEOP_CREATE_FILE_VERSION:   return processCreateFileVersion(stageRequest);
+            case STAGEOP_GET_REPLICA_STATE:     return processGetReplicaState(stageRequest);
+            case STAGEOP_GET_FILEID_LIST:       return processGetFileIDList(stageRequest);
+            case STAGEOP_DELETE_OBJECTS:        return processDeleteObjects(stageRequest);
+            default:
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "unknown stageop called: %d", requestedMethod);
+                return true;
             }
+        } catch (ErrorResponseException error) {
+            
+            stageRequest.voidMeasurments();
+            callback.failed(error);
+            return true;
         }
     }
     
-    private ErrorResponse processGetMaxObjNo(StageRequest<AugmentedRequest> m) {
+    private boolean processGetMaxObjNo(StageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        Callback callback = m.getCallback();
+        final Callback callback = stageRequest.getCallback();
         try {
-            final String fileId = (String) m.getArgs()[0];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[1];
+            
+            final String fileId = (String) stageRequest.getArgs()[0];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) stageRequest.getArgs()[1];
+            
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             
             long currentMax = -1l;
             
             for (int i = 0; i < fi.getLastObjectNumber(); i++) {
+                
                 long objVer = fi.getLargestObjectVersion(i);
                 if (objVer > currentMax)
                     currentMax = objVer;
@@ -192,28 +165,27 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
                     fileId, currentMax);
             }
             
-            if (!callback.success(new Object[] { currentMax, fi.getFilesize(), fi.getTruncateEpoch() })) {
-                m.getRequest().getMonitoring().voidMeasurments();
-            }
+            return callback.success(new Object[] { currentMax, fi.getFilesize(), fi.getTruncateEpoch() }, stageRequest);
+        } catch (IOException ex) {
             
-            return null;
-        } catch (Exception ex) {
-            
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
+            throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, 
+                    ex.toString()));
         }
     }
     
-    private ErrorResponse processGmax(StageRequest<AugmentedRequest> rq) {
+    private boolean processGmax(StageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        final String fileId = (String) rq.getArgs()[0];
-        final long epoch = (Long) rq.getArgs()[1];
-        final long lastObject = (Long) rq.getArgs()[2];
+        final Callback callback = stageRequest.getCallback();
+        final String fileId = (String) stageRequest.getArgs()[0];
+        final long epoch = (Long) stageRequest.getArgs()[1];
+        final long lastObject = (Long) stageRequest.getArgs()[2];
         
-        FileMetadata fi = cache.getFileInfo(fileId);
+        final FileMetadata fi = cache.getFileInfo(fileId);
         
         if (fi == null) {
+            
             // file is not open, discard GMAX
-            return null;
+            return callback.success(null, stageRequest);
         }
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
@@ -240,14 +212,14 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
                             .getFilesize(), fi.getTruncateEpoch());
         }
         
-        return null;
+        return callback.success(null, stageRequest);
     }
     
-    private ErrorResponse processFlushCaches(StageRequest<AugmentedRequest> m) {
+    private boolean processFlushCaches(StageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        final Callback callback = m.getCallback();
+        final Callback callback = stageRequest.getCallback();
         
-        final String fileId = (String) m.getArgs()[0];
+        final String fileId = (String) stageRequest.getArgs()[0];
         FileMetadata md = cache.removeFileInfo(fileId);
         if (md != null) {
             layout.closeFile(null);
@@ -256,14 +228,10 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
                 "removed file info from cache for file %s", fileId);
         }
-        if (!callback.success(null)) {
-            m.getRequest().getMonitoring().voidMeasurments();
-        }
-        
-        return null;
+        return callback.success(null, stageRequest);
     }
     
-    private ErrorResponse processGetGmax(StageRequest<AugmentedRequest> m) {
+    private boolean processGetGmax(StageRequest<AugmentedRequest> m) throws ErrorResponseException {
         
         final RPCRequestCallback callback = (RPCRequestCallback) m.getCallback();
         
@@ -300,25 +268,22 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
                 fileSize = fi.getFilesize();
             }
             
-            if (!callback.success(InternalGmax.newBuilder().setEpoch(fi.getTruncateEpoch()).setFileSize(
-                fileSize).setLastObjectId(lastObj).build())) {
-                m.getRequest().getMonitoring().voidMeasurments();
-            }
-            
-            return null;
+            return callback.success(InternalGmax.newBuilder().setEpoch(fi.getTruncateEpoch()).setFileSize(
+                fileSize).setLastObjectId(lastObj).build());
         } catch (IOException ex) {
             
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
+            throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, 
+                    ex.toString()));
         }
     }
     
-    private ErrorResponse processGetReplicaState(StageRequest<AugmentedRequest> m) {
+    private boolean processGetReplicaState(StageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        final Callback callback = m.getCallback();
+        final Callback callback = stageRequest.getCallback();
         try {
-            final String fileId = (String) m.getArgs()[0];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[1];
-            final long remoteMaxObjVer = (Long) m.getArgs()[2];
+            final String fileId = (String) stageRequest.getArgs()[0];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) stageRequest.getArgs()[1];
+            final long remoteMaxObjVer = (Long) stageRequest.getArgs()[2];
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
@@ -329,7 +294,7 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
                     "GET replica state: %s, remote max: %d", fileId, remoteMaxObjVer);
             }
             
-            ReplicaStatus.Builder result = ReplicaStatus.newBuilder();
+            final ReplicaStatus.Builder result = ReplicaStatus.newBuilder();
             
             result.setFileSize(fi.getFilesize());
             result.setTruncateEpoch(fi.getTruncateEpoch());
@@ -347,31 +312,33 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
             result.setPrimaryEpoch(0);
             result.setTruncateLog(layout.getTruncateLog(fileId));
             
-            if (!callback.success(result.build())) {
-                m.getRequest().getMonitoring().voidMeasurments();
-            }
+            return callback.success(result.build(), stageRequest);
             
-            return null;
         } catch (IOException ex) {
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
+            
+            throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                    ex.toString()));
         }
     }
     
     /**
      * Reads an object from disk and checks the checksum
      * 
-     * @param m
+     * @param stageRequest
+     * @throws ErrorResponseException 
+     * 
+     * @return {@link Callback#success(Object, StageRequest)}
      */
-    private ErrorResponse processRead(StageRequest<AugmentedRequest> m) {
+    private boolean processRead(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) m.getCallback();
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) stageRequest.getCallback();
         try {
-            final String fileId = (String) m.getArgs()[0];
-            final long objNo = (Long) m.getArgs()[1];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[2];
-            final int offset = (Integer) m.getArgs()[3];
-            final int length = (Integer) m.getArgs()[4];
-            final long versionTimestamp = (Long) m.getArgs()[5];
+            final String fileId = (String) stageRequest.getArgs()[0];
+            final long objNo = (Long) stageRequest.getArgs()[1];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) stageRequest.getArgs()[2];
+            final int offset = (Integer) stageRequest.getArgs()[3];
+            final int length = (Integer) stageRequest.getArgs()[4];
+            final long versionTimestamp = (Long) stageRequest.getArgs()[5];
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
@@ -396,9 +363,10 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
             }
             
             // custom processing time measurement for on-disk operation that depends on the buffer size
-            m.getRequest().getMonitoring().beginMeasurement();
-            ObjectInformation obj = layout.readObject(fileId, fi, objNo, offset, length, objVer);
-            m.getRequest().getMonitoring().endMeasurement();
+            stageRequest.beginMeasurement();
+            final ObjectInformation obj = layout.readObject(fileId, fi, objNo, offset, length, objVer);
+            stageRequest.endMeasurement();
+            stageRequest.getRequest().updateSize(obj.getData().remaining());
             
             if (versionTimestamp != 0) {
                 int lastObj = fi.getVersionTable().getLatestVersionBefore(versionTimestamp).getObjCount() - 1;
@@ -409,29 +377,29 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
                 obj.setGlobalLastObjectNo(fi.getGlobalLastObjectNumber());
             }
             
-            if (!callback.success(obj)){
-                m.getRequest().getMonitoring().voidMeasurments();
-            }
-            
-            return null;
+            return callback.success(obj, stageRequest);
         } catch (IOException ex) {
             
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
+            throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, 
+                    ex.toString()));
         }
     }
     
     /**
      * Reads an object from disk and checks the checksum
      * 
-     * @param m
+     * @param stageRequest
+     * @throws ErrorResponseException 
+     * 
+     * @return {@link Callback#success(Object, StageRequest)}
      */
-    private ErrorResponse processGetFileSize(StageRequest<AugmentedRequest> m) {
+    private boolean processGetFileSize(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) m.getCallback();
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) stageRequest.getCallback();
         try {
-            final String fileId = (String) m.getArgs()[0];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[1];
-            final long snapTimestamp = (Long) m.getArgs()[2];
+            final String fileId = (String) stageRequest.getArgs()[0];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) stageRequest.getArgs()[1];
+            final long snapTimestamp = (Long) stageRequest.getArgs()[2];
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
@@ -439,65 +407,63 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
             
             // in case of a previous file version, determine
             // file size from the version table / data on disk
+            long fileSize;
             if (snapTimestamp > 0) {
-                Version v = fi.getVersionTable().getLatestVersionBefore(snapTimestamp);
-                if (!callback.success(v.getFileSize())) {
-                    m.getRequest().getMonitoring().voidMeasurments();
-                }
+                fileSize = fi.getVersionTable().getLatestVersionBefore(snapTimestamp).getFileSize();
             } else {
-                if (!callback.success(fi.getFilesize())) {
-                    m.getRequest().getMonitoring().voidMeasurments();
-                }
+                fileSize = fi.getFilesize();
             }
+            return callback.success(fileSize, stageRequest);
             
-            return null;
         } catch (IOException ex) {
             
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
+            throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, 
+                    ex.toString()));
         }
     }
     
-    private ErrorResponse processInsertPaddingObject(StageRequest<AugmentedRequest> m) {
+    private boolean processInsertPaddingObject(OLPStageRequest<AugmentedRequest> stageRequest) 
+            throws ErrorResponseException {
         
-        Callback callback = m.getCallback();
+        final Callback callback = stageRequest.getCallback();
         try {
-            String fileId = (String) m.getArgs()[0];
-            long objNo = (Long) m.getArgs()[1];
-            StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[2];
-            int size = (Integer) m.getArgs()[3];
-            FileMetadata fi = layout.getFileMetadata(sp, fileId);
-            long version = fi.getLatestObjectVersion(objNo) + 1;
+            final String fileId = (String) stageRequest.getArgs()[0];
+            final long objNo = (Long) stageRequest.getArgs()[1];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) stageRequest.getArgs()[2];
+            final int size = (Integer) stageRequest.getArgs()[3];
+            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
+            final long version = fi.getLatestObjectVersion(objNo) + 1;
             
             // custom processing time measurement for on-disk operation that depends on the buffer size
-            m.getRequest().getMonitoring().beginMeasurement();
+            stageRequest.beginMeasurement();
             layout.createPaddingObject(fileId, fi, objNo, version, size);
-            m.getRequest().getMonitoring().endMeasurement();
+            stageRequest.endMeasurement();
+            stageRequest.getRequest().updateSize(size);
             
-            if (!callback.success(OSDWriteResponse.newBuilder().build())) {
-                m.getRequest().getMonitoring().voidMeasurments();
-            }
+            return callback.success(OSDWriteResponse.newBuilder().build(), stageRequest);
             
-            return null;
         } catch (IOException ex) {
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
+            
+            throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, 
+                    ex.toString()));
         }
     }
     
-    private ErrorResponse processWrite(StageRequest<AugmentedRequest> m) {
+    private boolean processWrite(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        Callback callback = m.getCallback();
+        final Callback callback = stageRequest.getCallback();
         try {
-            final String fileId = (String) m.getArgs()[0];
-            final long objNo = (Long) m.getArgs()[1];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[2];
-            final int offset = (Integer) m.getArgs()[3];
-            final ReusableBuffer data = (ReusableBuffer) m.getArgs()[4];
-            final CowPolicy cow = (CowPolicy) m.getArgs()[5];
-            final XLocations xloc = (XLocations) m.getArgs()[6];
-            final boolean gMaxOff = (Boolean) m.getArgs()[7];
-            final boolean syncWrite = (Boolean) m.getArgs()[8];
+            final String fileId = (String) stageRequest.getArgs()[0];
+            final long objNo = (Long) stageRequest.getArgs()[1];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) stageRequest.getArgs()[2];
+            final int offset = (Integer) stageRequest.getArgs()[3];
+            final ReusableBuffer data = (ReusableBuffer) stageRequest.getArgs()[4];
+            final CowPolicy cow = (CowPolicy) stageRequest.getArgs()[5];
+            final XLocations xloc = (XLocations) stageRequest.getArgs()[6];
+            final boolean gMaxOff = (Boolean) stageRequest.getArgs()[7];
+            final boolean syncWrite = (Boolean) stageRequest.getArgs()[8];
             // use only if != null
-            final Long newVersionArg = (Long) m.getArgs()[9];
+            final Long newVersionArg = (Long) stageRequest.getArgs()[9];
             
             final int dataLength = data.remaining();
             final int stripeSize = sp.getStripeSizeForObject(objNo);
@@ -511,9 +477,9 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
             final int dataCapacity = data.capacity();
             if (offset + dataCapacity > stripeSize) {
                 BufferPool.free(data);
-                return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, 
-                        "offset+data.length must be <= stripe size (offset=" + offset + " data.length=" + dataCapacity + 
-                        " stripe size=" + stripeSize + ")");
+                throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, 
+                        POSIXErrno.POSIX_ERROR_EINVAL, "offset+data.length must be <= stripe size (offset=" + offset + 
+                        " data.length=" + dataCapacity + " stripe size=" + stripeSize + ")"));
             }
             
             // assign the number of objects to the COW policy if necessary (this
@@ -539,9 +505,10 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
             }
             
             // custom processing time measurement for on-disk operation that depends on the buffer size
-            m.getRequest().getMonitoring().beginMeasurement();
+            stageRequest.beginMeasurement();
             layout.writeObject(fileId, fi, data, objNo, offset, newVersion, syncWrite, isCow);
-            m.getRequest().getMonitoring().endMeasurement();
+            stageRequest.endMeasurement();
+            stageRequest.getRequest().updateSize(dataLength);
             
             // if a new version was created, update the "latest versions" file
             if (cow.cowEnabled() && (isCow || largestV == 0))
@@ -550,14 +517,14 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
             if (isCow)
                 cow.objectChanged((int) objNo);
             
-            OSDWriteResponse.Builder response = OSDWriteResponse.newBuilder();
+            final OSDWriteResponse.Builder response = OSDWriteResponse.newBuilder();
             
             // if the write refers to the last known object or to an object
             // beyond, i.e. the file size and globalMax are potentially
             // affected:
             if (objNo >= fi.getLastObjectNumber() && !gMaxOff) {
                 
-                long newObjSize = dataLength + offset;
+                final long newObjSize = dataLength + offset;
                 
                 // calculate new filesize...
                 long newFS = 0;
@@ -621,25 +588,24 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "new last object=%d gmax=%d", fi
                         .getLastObjectNumber(), fi.getGlobalLastObjectNumber());
 
-            if (!callback.success(response.build())) {
-                m.getRequest().getMonitoring().voidMeasurments();
-            }
+            return callback.success(response.build(), stageRequest);
             
-            return null;
         } catch (IOException ex) {
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
+            
+            throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, 
+                    ex.toString()));
         }
     }
 
     @SuppressWarnings("unchecked")
-    private ErrorResponse processDeleteObjects(StageRequest<AugmentedRequest> m) {
+    private boolean processDeleteObjects(StageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
 
-        Callback callback = m.getCallback();
+        final Callback callback = stageRequest.getCallback();
         try {
-            final String fileId = (String) m.getArgs()[0];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[1];
-            final long epochNumber = (Long) m.getArgs()[2];
-            final Map<Long,Long> objectsToBeDeleted = (Map<Long,Long>) m.getArgs()[3];
+            final String fileId = (String) stageRequest.getArgs()[0];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) stageRequest.getArgs()[1];
+            final long epochNumber = (Long) stageRequest.getArgs()[2];
+            final Map<Long,Long> objectsToBeDeleted = (Map<Long,Long>) stageRequest.getArgs()[3];
 
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
 
@@ -651,36 +617,33 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
 
             // Remove file info from cache to make sure it is reloaded with the next operation.
             cache.removeFileInfo(fileId);
-            if (!callback.success(null)) {
-                m.getRequest().getMonitoring().voidMeasurments();
-            }
+            return callback.success(null, stageRequest);
             
-            return null;
-        } catch (Exception ex) {
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
+        } catch (IOException ex) {
+            
+            throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, 
+                    ex.toString()));
         }
     }
     
-    private ErrorResponse processTruncate(StageRequest<AugmentedRequest> m) {
+    private boolean processTruncate(StageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) m.getCallback();
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) stageRequest.getCallback();
         try {
-            final String fileId = (String) m.getArgs()[0];
-            final long newFileSize = (Long) m.getArgs()[1];
-            final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[2];
-            final Replica currentReplica = (Replica) m.getArgs()[3];
-            final long epochNumber = (Long) m.getArgs()[4];
-            final CowPolicy cow = (CowPolicy) m.getArgs()[5];
-            final Long newObjVer = (Long) m.getArgs()[6];
-            final Boolean createTLogEntry = (Boolean) m.getArgs()[7];
+            final String fileId = (String) stageRequest.getArgs()[0];
+            final long newFileSize = (Long) stageRequest.getArgs()[1];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) stageRequest.getArgs()[2];
+            final Replica currentReplica = (Replica) stageRequest.getArgs()[3];
+            final long epochNumber = (Long) stageRequest.getArgs()[4];
+            final CowPolicy cow = (CowPolicy) stageRequest.getArgs()[5];
+            final Long newObjVer = (Long) stageRequest.getArgs()[6];
+            final Boolean createTLogEntry = (Boolean) stageRequest.getArgs()[7];
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             
             if (fi.getTruncateEpoch() >= epochNumber) {
                 
-                if (!callback.success(OSDWriteResponse.newBuilder().build())) {
-                    m.getRequest().getMonitoring().voidMeasurments();
-                }
+                return callback.success(OSDWriteResponse.newBuilder().build());
                 /*
                  * cback.truncateComplete(null, new
                  * OSDException(ErrorCodes.EPOCH_OUTDATED,
@@ -688,7 +651,6 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
                  * epochNumber + ", current one is " + fi.getTruncateEpoch(),
                  * ""));
                  */
-                return null;
             }
             
             // assign the number of objects to the COW policy if necessary (this
@@ -771,60 +733,53 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
 
             if (createTLogEntry) {
                 TruncateLog log = layout.getTruncateLog(fileId);
-                log = log.toBuilder().addRecords(TruncateRecord.newBuilder().setVersion(newObjVer).setLastObjectNumber(newLastObject)).build();
+                log = log.toBuilder().addRecords(TruncateRecord.newBuilder().setVersion(newObjVer)
+                        .setLastObjectNumber(newLastObject)).build();
                 layout.setTruncateLog(fileId, log);
             }
             
             // append the new file size and epoch number to the response
-            if (!callback.success(OSDWriteResponse.newBuilder().setSizeInBytes(newFileSize).setTruncateEpoch(
-                    (int) epochNumber).build())) {
-                m.getRequest().getMonitoring().voidMeasurments();
-            }
+            return callback.success(OSDWriteResponse.newBuilder().setSizeInBytes(newFileSize).setTruncateEpoch(
+                    (int) epochNumber).build());
+        } catch (IOException ex) {
             
-            return null;
-        } catch (Exception ex) {
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
+            throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, 
+                    ex.toString()));
         }
-        
     }
     
-    /**
-     * @param method
-     */
-    private ErrorResponse processGetObjectSet(StageRequest<AugmentedRequest> m) {
+    private boolean processGetObjectSet(StageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) m.getCallback();
-        final String fileId = (String) m.getArgs()[0];
-        final StripingPolicyImpl sp = (StripingPolicyImpl) m.getArgs()[1];
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) stageRequest.getCallback();
+        final String fileId = (String) stageRequest.getArgs()[0];
+        final StripingPolicyImpl sp = (StripingPolicyImpl) stageRequest.getArgs()[1];
         
         try {
-            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
-            if (!callback.success(layout.getObjectSet(fileId, fi))) {
-                m.getRequest().getMonitoring().voidMeasurments();
-            }
             
-            return null;
-        } catch (Exception ex) {
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
+            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
+            return callback.success(layout.getObjectSet(fileId, fi), stageRequest);
+        } catch (IOException ex) {
+            
+            throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, 
+                    ex.toString()));
         }
     }
     
-    /**
-     * @param m
-     */
-    private ErrorResponse processCreateFileVersion(StageRequest<AugmentedRequest> m) {
+    private boolean processCreateFileVersion(StageRequest<AugmentedRequest> stageRequest) 
+            throws ErrorResponseException {
         
-        final Callback callback = m.getCallback();
-        final String fileId = (String) m.getArgs()[0];
-        FileMetadata fi = (FileMetadata) m.getArgs()[1];
+        final Callback callback = stageRequest.getCallback();
+        final String fileId = (String) stageRequest.getArgs()[0];
+        
+        FileMetadata fi = (FileMetadata) stageRequest.getArgs()[1];
         
         try {
             
             if (fi == null)
                 fi = layout.getFileMetadataNoCaching(null, fileId);
             
-            Set<Entry<Long, Long>> objVersions = fi.getLatestObjectVersions();
-            long fileSize = fi.getFilesize();
+            final Set<Entry<Long, Long>> objVersions = fi.getLatestObjectVersions();
+            final long fileSize = fi.getFilesize();
             
             // convert the set of object versions into an array
             
@@ -852,39 +807,30 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
                         .stackTraceToString(e));
             }
             
-            if (!callback.success(fileSize)) {
-                m.getRequest().getMonitoring().voidMeasurments();
-            }
+            return callback.success(fileSize, stageRequest);
             
-            return null;
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
+            throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, 
+                    ex.toString()));
         }
     }
     
-    private ErrorResponse processGetFileIDList(StageRequest<AugmentedRequest> m) {
+    private boolean processGetFileIDList(StageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) m.getCallback();
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) stageRequest.getCallback();
         ArrayList<String> fileIDList = null;
-        try {
             
-            if (layout != null) {
-                fileIDList = layout.getFileIDList();
-            }
-            
-            if (!callback.success(fileIDList)) {
-                m.getRequest().getMonitoring().voidMeasurments();
-            }
-            return null;
-        } catch (Exception ex) {
-            
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
+        if (layout != null) {
+            fileIDList = layout.getFileIDList();
         }
+        
+        return callback.success(fileIDList, stageRequest);
     }
     
     private long truncateShrink(String fileId, long fileSize, long epoch, StripingPolicyImpl sp,
         FileMetadata fi, int relOsdId, CowPolicy cow, Long newObjVer) throws IOException {
+        
         // first find out which is the new "last object"
         final long newLastObject = sp.getObjectNoForOffset(fileSize - 1);
         final long oldLastObject = fi.getLastObjectNumber();
@@ -968,12 +914,12 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
                 }
             }
         }
-        
         return newLastObject;
     }
     
     private long truncateExtend(String fileId, long fileSize, long epoch, StripingPolicyImpl sp,
         FileMetadata fi, int relOsdId, CowPolicy cow, Long newObjVer) throws IOException {
+        
         // first find out which is the new "last object"
         final long newLastObject = sp.getObjectNoForOffset(fileSize - 1);
         final long oldLastObject = fi.getLastObjectNumber();
@@ -1026,9 +972,7 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
                     }
                 }
             }
-            
         }
-        
         return newLastObject;
     }
     

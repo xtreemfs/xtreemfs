@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.olp.AugmentedRequest;
-import org.xtreemfs.common.stage.StageRequest;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.LRUCache;
@@ -137,7 +137,7 @@ public class ObjectDissemination {
      * saves the request and fetches the object
      */
     public void fetchObject(String fileID, long objectNo, XLocations xLoc, Capability capability,
-            CowPolicy cow, StageRequest<AugmentedRequest> rq) {
+            CowPolicy cow, OLPStageRequest<AugmentedRequest> rq) {
         
         ReplicatingFile file = filesInProgress.get(fileID);
         if (file == null) { // file not in progress

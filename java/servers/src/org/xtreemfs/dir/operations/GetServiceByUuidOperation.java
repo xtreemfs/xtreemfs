@@ -8,20 +8,21 @@
 
 package org.xtreemfs.dir.operations;
 
+import java.io.IOException;
+
 import org.xtreemfs.babudb.api.database.Database;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.BabuDBComponent;
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByUUIDRequest;
-
-import com.google.protobuf.Message;
 
 /**
  * 
@@ -30,8 +31,8 @@ import com.google.protobuf.Message;
 public class GetServiceByUuidOperation extends DIROperation {
     
     
-    private final BabuDBComponent component;
-    private final Database database;
+    private final BabuDBComponent<DIRRequest> component;
+    private final Database                    database;
         
     public GetServiceByUuidOperation(DIRRequestDispatcher master) {
         super(master);
@@ -45,23 +46,27 @@ public class GetServiceByUuidOperation extends DIROperation {
     }
     
     @Override
-    public void startRequest(DIRRequest rq, RPCRequestCallback callback) throws Exception {
+    public void startRequest(DIRRequest rq, RPCRequestCallback callback) {
 
         serviceGetByUUIDRequest request = (serviceGetByUUIDRequest) rq.getRequestMessage();
 
-        component.lookup(database, callback, DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName().getBytes(), 
-                rq.getMetadata(), new BabuDBPostprocessing<byte[]>() {
+        component.lookup(database, new AbstractRPCRequestCallback(callback) {
             
             @Override
-            public Message execute(byte[] result, BabuDBRequest request) throws Exception {
-                
+            public <S extends StageRequest<?>> boolean success(Object result, S request)
+                    throws ErrorResponseException {
+
                 ServiceSet.Builder services = ServiceSet.newBuilder();
                 if (result != null) {
-                    ServiceRecord dbData = new ServiceRecord(ReusableBuffer.wrap(result));
-                    services.addServices(dbData.getService());
+                    try {
+                        ServiceRecord dbData = new ServiceRecord(ReusableBuffer.wrap((byte[]) result));
+                        services.addServices(dbData.getService());
+                    } catch (IOException ex) {
+                        throw new ErrorResponseException(ex);
+                    }
                 }
-                return services.build();
+                return success(services.build());
             }
-        });
+        }, DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName().getBytes(), rq);
     }
 }

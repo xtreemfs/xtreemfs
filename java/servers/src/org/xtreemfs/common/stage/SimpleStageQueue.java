@@ -16,9 +16,9 @@ import java.util.Queue;
  * @author fx.langner
  * @version 1.00, 09/13/2011
  * 
- * @param <R> - type for the original request.
+ * @param <R> - global request type.
  */
-public class SimpleStageQueue<R extends Request> implements StageQueue<R> {
+public class SimpleStageQueue<R> implements StageQueue<R> {
 
     private final Queue<StageRequest<R>> queue = new LinkedList<StageRequest<R>>();
     private final int                    maxLength;
@@ -47,7 +47,7 @@ public class SimpleStageQueue<R extends Request> implements StageQueue<R> {
      * @see org.xtreemfs.common.stage.StageQueue#enqueue(org.xtreemfs.common.stage.StageRequest)
      */
     @Override
-    public synchronized void enqueue(StageRequest<R> request) {
+    public synchronized <S extends StageRequest<R>> void enqueue(S request) {
         
         if (maxLength == 0 || queue.size() < maxLength) {
             queue.add(request);
@@ -59,22 +59,21 @@ public class SimpleStageQueue<R extends Request> implements StageQueue<R> {
              *                       time due to capacity restrictions
              */
             request.getCallback().failed(new IllegalStateException("The element cannot be added at this time due to " +
-            		"capacity restrictions."));
+                        "capacity restrictions."));
         }
-        
-        
     }
 
     /* (non-Javadoc)
      * @see org.xtreemfs.common.stage.StageQueue#take(long)
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public synchronized StageRequest<R> take(long timeout) throws InterruptedException {
-        
+    public synchronized <S extends StageRequest<R>> S take(long timeout) throws InterruptedException {
+
         if (queue.size() == 0) {
             wait(timeout);
         }
-        return queue.poll();
+        return (S) queue.poll();
     }
 
     /* (non-Javadoc)

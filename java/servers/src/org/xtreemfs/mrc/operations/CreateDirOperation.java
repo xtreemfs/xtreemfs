@@ -8,11 +8,12 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -27,8 +28,6 @@ import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.mkdirRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.timestampResponse;
-
-import com.google.protobuf.Message;
 
 /**
  * 
@@ -79,15 +78,7 @@ public class CreateDirOperation extends MRCOperation {
         final int time = (int) (TimeSync.getGlobalTime() / 1000);
         
         // prepare directory creation in database
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
-            
-            @Override
-            public Message execute(Object result, BabuDBRequest request) throws Exception {
-                
-                // set the response
-                return timestampResponse.newBuilder().setTimestampS(time).build();
-            }
-        });
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate();
         
         // get the next free file ID
         long fileId = sMan.getNextFileId();
@@ -103,7 +94,14 @@ public class CreateDirOperation extends MRCOperation {
         MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan,
             time, update);
         
-        update.execute(callback, rq.getMetadata());
+        update.execute(new AbstractRPCRequestCallback(callback) {
+            
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+
+                return success(timestampResponse.newBuilder().setTimestampS(time).build());
+            }
+        }, rq);
     }
-    
 }

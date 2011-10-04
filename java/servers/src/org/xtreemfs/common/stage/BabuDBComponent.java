@@ -12,16 +12,12 @@ import org.xtreemfs.babudb.api.database.DatabaseInsertGroup;
 import org.xtreemfs.babudb.api.database.DatabaseRequestListener;
 import org.xtreemfs.babudb.api.database.UserDefinedLookup;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
+import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.olp.OverloadProtectedComponent;
 import org.xtreemfs.common.olp.PerformanceInformationReceiver;
-import org.xtreemfs.common.olp.RequestMetadata;
-import org.xtreemfs.common.olp.RequestMonitoring;
-import org.xtreemfs.common.stage.BabuDBPostprocessing.NullPostprocessing;
-import org.xtreemfs.common.stage.Callback.NullCallback;
-
-import com.google.protobuf.Message;
-
-import static org.xtreemfs.common.stage.BabuDBComponent.Operation.*;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 
 /**
  * <p>Wrapper for BabuDB requests enabling overload-protection measurements for the component BabuDB.</p>
@@ -30,22 +26,19 @@ import static org.xtreemfs.common.stage.BabuDBComponent.Operation.*;
  * @version 1.00, 09/15/11
  */
 @SuppressWarnings("rawtypes")
-public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.BabuDBRequest> 
+public class BabuDBComponent<R extends AugmentedRequest> extends OverloadProtectedComponent<R> 
         implements DatabaseRequestListener {
-
-    enum Operation {
-        
-        LOOKUP,
-        PREFIX_LOOKUP,
-        REVERSE_PREFIX_LOOKUP,
-        RANGE_LOOKUP,
-        REVERSE_RANGE_LOOKUP,
-        USER_DEFINED_LOOKUP,
-        SINGLE_INSERT,
-        INSERT
-    }
+     
+    private final static int LOOKUP = 1;
+    private final static int PREFIX_LOOKUP = 2;
+    private final static int REVERSE_PREFIX_LOOKUP = 3;
+    private final static int RANGE_LOOKUP = 4;
+    private final static int REVERSE_RANGE_LOOKUP = 5;
+    private final static int USER_DEFINED_LOOKUP = 6;
+    private final static int SINGLE_INSERT = 7;
+    private final static int INSERT = 8;
     
-    private final PerformanceInformationReceiver  piggybackReceiver;
+    private final PerformanceInformationReceiver[]  piggybackReceiver;
     
     /**
      * @param stageId
@@ -53,21 +46,18 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
      * @param master
      */
     public BabuDBComponent(int stageId, int numRqTypes, PerformanceInformationReceiver master) {
-        super(stageId, numRqTypes, 0, new boolean[numRqTypes], new PerformanceInformationReceiver[] { master });
+        super(stageId, numRqTypes, 0, 0, new boolean[numRqTypes], new PerformanceInformationReceiver[] { master });
         
-        this.piggybackReceiver = master;
+        this.piggybackReceiver = new PerformanceInformationReceiver[] { master };
     }
 
     /**
      * @see org.xtreemfs.babudb.api.database.DatabaseRO#lookup(int, byte[], java.lang.Object)
      */
-    public void lookup(Database database, RPCRequestCallback callback, int indexId, byte[] key, 
-            RequestMetadata metadata, BabuDBPostprocessing postprocessing) {
+    public void lookup(Database database, AbstractRPCRequestCallback callback, int indexId, byte[] key, R request) {
         
         try {
-            RequestMonitoring monitoring = new RequestMonitoring(piggybackReceiver);
-            enter(new BabuDBRequest(database, callback, metadata, monitoring, postprocessing, LOOKUP, indexId, key), 
-                    metadata, monitoring);
+            enter(LOOKUP, new Object [] { database, indexId, key }, request, callback, piggybackReceiver);
         } catch (Exception e) {
             callback.failed(e);
         }
@@ -76,13 +66,11 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
     /**
      * @see org.xtreemfs.babudb.api.database.DatabaseRO#prefixLookup(int, byte[], java.lang.Object)
      */
-    public void prefixLookup(Database database, RPCRequestCallback callback, int indexId, byte[] key, 
-            RequestMetadata metadata, BabuDBPostprocessing postprocessing) {
+    public void prefixLookup(Database database, AbstractRPCRequestCallback callback, int indexId, byte[] key, 
+            R request) {
         
         try {
-            RequestMonitoring monitoring = new RequestMonitoring(piggybackReceiver);
-            enter(new BabuDBRequest(database, callback, metadata, monitoring, postprocessing, PREFIX_LOOKUP, indexId, 
-                    key), metadata, monitoring);
+            enter(PREFIX_LOOKUP, new Object [] { database, indexId, key }, request, callback, piggybackReceiver);
         } catch (Exception e) {
             callback.failed(e);
         }
@@ -92,12 +80,11 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
      * @see org.xtreemfs.babudb.api.database.DatabaseRO#reversePrefixLookup(int, byte[], java.lang.Object)
      */
     public void reversePrefixLookup(Database database, RPCRequestCallback callback, int indexId, byte[] key, 
-            RequestMetadata metadata, BabuDBPostprocessing postprocessing) {
+            R request) {
 
         try {
-            RequestMonitoring monitoring = new RequestMonitoring(piggybackReceiver);
-            enter(new BabuDBRequest(database, callback, metadata, monitoring, postprocessing, REVERSE_PREFIX_LOOKUP, 
-                    indexId, key), metadata, monitoring);
+            enter(REVERSE_PREFIX_LOOKUP, new Object [] { database, indexId, key }, request, callback, 
+                    piggybackReceiver);
         } catch (Exception e) {
             callback.failed(e);
         }
@@ -107,12 +94,10 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
      * @see org.xtreemfs.babudb.api.database.DatabaseRO#rangeLookup(int, byte[], byte[], java.lang.Object)
      */
     public void rangeLookup(Database database, RPCRequestCallback callback, int indexId, byte[] from, byte[] to, 
-            RequestMetadata metadata, BabuDBPostprocessing postprocessing) {
+            R request) {
         
         try {
-            RequestMonitoring monitoring = new RequestMonitoring(piggybackReceiver);
-            enter(new BabuDBRequest(database, callback, metadata, monitoring, postprocessing, RANGE_LOOKUP, indexId, 
-                    from, to), metadata, monitoring);
+            enter(RANGE_LOOKUP, new Object [] { database, indexId, from, to }, request, callback, piggybackReceiver);
         } catch (Exception e) {
             callback.failed(e);
         }
@@ -122,12 +107,11 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
      * @see org.xtreemfs.babudb.api.database.DatabaseRO#reverseRangeLookup(int, byte[], byte[], java.lang.Object)
      */
     public void reverseRangeLookup(Database database, RPCRequestCallback callback, int indexId, byte[] from, 
-            byte[] to, RequestMetadata metadata, BabuDBPostprocessing postprocessing) {
+            byte[] to, R request) {
                 
         try {
-            RequestMonitoring monitoring = new RequestMonitoring(piggybackReceiver);
-            enter(new BabuDBRequest(database, callback, metadata, monitoring, postprocessing, REVERSE_RANGE_LOOKUP, 
-                    indexId, from, to), metadata, monitoring);
+            enter(REVERSE_RANGE_LOOKUP, new Object [] { database, indexId, from, to }, request, callback, 
+                    piggybackReceiver);
         } catch (Exception e) {
             callback.failed(e);
         }
@@ -138,12 +122,10 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
      *          userDefinedLookup(org.xtreemfs.babudb.api.database.UserDefinedLookup, java.lang.Object)
      */
     public void userDefinedLookup(Database database, RPCRequestCallback callback, UserDefinedLookup udl, 
-            RequestMetadata metadata, BabuDBPostprocessing postprocessing) {
+            R request) {
         
         try {
-            RequestMonitoring monitoring = new RequestMonitoring(piggybackReceiver);
-            enter(new BabuDBRequest(database, callback, metadata, monitoring, postprocessing, USER_DEFINED_LOOKUP, udl), 
-                    metadata, monitoring);
+            enter(USER_DEFINED_LOOKUP, new Object [] { database, udl }, request, callback, piggybackReceiver);
         } catch (Exception e) {
             callback.failed(e);
         }
@@ -153,12 +135,10 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
      * @see org.xtreemfs.babudb.api.database.Database#singleInsert(int, byte[], byte[], java.lang.Object)
      */
     public void singleInsert(Database database, RPCRequestCallback callback, int indexId, byte[] key, byte[] value, 
-            RequestMetadata metadata, BabuDBPostprocessing postprocessing) {
+            R request) {
         
         try {
-            RequestMonitoring monitoring = new RequestMonitoring(piggybackReceiver);
-            enter(new BabuDBRequest(database, callback, metadata, monitoring, postprocessing, USER_DEFINED_LOOKUP, 
-                    indexId, key, value), metadata, monitoring);
+            enter(SINGLE_INSERT, new Object [] {database, indexId, key, value }, request, callback, piggybackReceiver);
         } catch (Exception e) {
             callback.failed(e);
         }
@@ -169,25 +149,28 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
      * 
      * @see org.xtreemfs.babudb.api.database.Database#singleInsert(int, byte[], byte[], java.lang.Object)
      */
-    public void singleInsert(int indexId, byte[] key, byte[] value, BabuDBRequest request, 
-            BabuDBPostprocessing postprocessing) {
+    public void singleInsert(int indexId, byte[] key, byte[] value, OLPStageRequest<R> stageRequest, 
+            AbstractRPCRequestCallback callback) {
         
-        request.postprocessing = postprocessing;
-        resumeRequestProcessing(request.monitoring);
-        enter(request);
+        // interrupt measurement to save the current value to request
+        suspendRequestProcessing(stageRequest);
+        resumeRequestProcessing(stageRequest);
+        
+        // update request
+        Object[] newArgs = { stageRequest.getArgs()[0], indexId, key, value };
+        stageRequest.update(SINGLE_INSERT, newArgs, callback);
+        
+        enter(stageRequest);
     }
 
     /**
      * @see org.xtreemfs.babudb.api.database.Database#
      *          insert(org.xtreemfs.babudb.api.database.DatabaseInsertGroup, java.lang.Object)
      */
-    public void insert(Database database, Callback callback, DatabaseInsertGroup irg, 
-            RequestMetadata metadata, BabuDBPostprocessing postprocessing) {
+    public void insert(Database database, Callback callback, DatabaseInsertGroup irg, R request) {
         
         try {
-            RequestMonitoring monitoring = new RequestMonitoring(piggybackReceiver);
-            enter(new BabuDBRequest(database, callback, metadata, monitoring, postprocessing, USER_DEFINED_LOOKUP, irg), 
-                    metadata, monitoring);
+            enter(INSERT, new Object [] { database, irg }, request, callback, piggybackReceiver);
         } catch (Exception e) {
             callback.failed(e);
         }
@@ -198,55 +181,59 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
      */
     @SuppressWarnings("unchecked")
     @Override
-    public void enter(BabuDBRequest request) {
+    public void enter(OLPStageRequest<R> stageRequest) {
                 
-        switch (request.operation) {
+        final Object[] arguments = stageRequest.getArgs();
+        final int requestedMethod = stageRequest.getStageMethod();
+        
+        switch (requestedMethod) {
         case LOOKUP:
-            request.database.lookup((Integer) request.arguments[0], (byte[]) request.arguments[1], request)
-                    .registerListener(this);
+            ((Database) arguments[0]).lookup((Integer) arguments[1], (byte[]) arguments[2], stageRequest)
+                                     .registerListener(this);
             break;
         case INSERT:
-            request.database.insert((DatabaseInsertGroup) request.arguments[0], request).registerListener(this);
+            ((Database) arguments[0]).insert((DatabaseInsertGroup) arguments[1], stageRequest).registerListener(this);
             break;
         case PREFIX_LOOKUP:
-            request.database.prefixLookup((Integer) request.arguments[0], (byte[]) request.arguments[1], request)
-                    .registerListener(this);
+            ((Database) arguments[0]).prefixLookup((Integer) arguments[1], (byte[]) arguments[2], stageRequest)
+                                     .registerListener(this);
             break;
         case RANGE_LOOKUP:
-            request.database.rangeLookup((Integer) request.arguments[0], (byte[]) request.arguments[1], 
-                    (byte[]) request.arguments[2], request).registerListener(this);
+            ((Database) arguments[0]).rangeLookup((Integer) arguments[1], (byte[]) arguments[2], (byte[]) arguments[3], 
+                    stageRequest).registerListener(this);
             break;
         case REVERSE_PREFIX_LOOKUP:
-            request.database.reversePrefixLookup((Integer) request.arguments[0], (byte[]) request.arguments[1], request)
+            ((Database) arguments[0]).reversePrefixLookup((Integer) arguments[1], (byte[]) arguments[2], stageRequest)
                     .registerListener(this);
             break;
         case REVERSE_RANGE_LOOKUP:
-            request.database.reverseRangeLookup((Integer) request.arguments[0], (byte[]) request.arguments[1], 
-                    (byte[]) request.arguments[2], request).registerListener(this);
+            ((Database) arguments[0]).reverseRangeLookup((Integer) arguments[1], (byte[]) arguments[2], 
+                    (byte[]) arguments[3], stageRequest).registerListener(this);
             break;
         case SINGLE_INSERT:
-            request.database.singleInsert((Integer) request.arguments[0], (byte[]) request.arguments[1], 
-                    (byte[]) request.arguments[2], request).registerListener(this);
+            ((Database) arguments[0]).singleInsert((Integer) arguments[1], (byte[]) arguments[2], 
+                    (byte[]) arguments[3], stageRequest).registerListener(this);
             break;
         case USER_DEFINED_LOOKUP:
-            request.database.userDefinedLookup((UserDefinedLookup) request.arguments[0], request)
+            ((Database) arguments[0]).userDefinedLookup((UserDefinedLookup) arguments[1], stageRequest)
                     .registerListener(this);
             break;
         default:
-            assert(false);
+            Logging.logMessage(Logging.LEVEL_ERROR, this, "unknown method called: %d", requestedMethod);
         }
     }
 
     /* (non-Javadoc)
      * @see org.xtreemfs.babudb.api.database.DatabaseRequestListener#failed(org.xtreemfs.babudb.api.exception.BabuDBException, java.lang.Object)
      */
+    @SuppressWarnings("unchecked")
     @Override
     public void failed(BabuDBException error, Object context) {
         
-        BabuDBRequest request = (BabuDBRequest) context;
-        request.callback.failed(error);
-        request.monitoring.voidMeasurments();
-        exit(request, request.metadata, request.monitoring);
+        OLPStageRequest<R> request = (OLPStageRequest<R>) context;
+        request.getCallback().failed(error);
+        request.voidMeasurments();
+        exit(request);
     }
 
     /* (non-Javadoc)
@@ -256,51 +243,20 @@ public class BabuDBComponent extends OverloadProtectedComponent<BabuDBComponent.
     @Override
     public void finished(Object result, Object context) {
         
-        BabuDBRequest request = (BabuDBRequest) context;
-        try {
+        final OLPStageRequest<R> request = (OLPStageRequest<R>) context;
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) request.getCallback();
+        
+        try {           
             
-            Message response = request.postprocessing.execute(result, request);
-            
-            // rerun
-            if (response == null) {
-                suspendRequestProcessing(request.monitoring);
-                request.postprocessing.requeue(request);
+            if (!callback.success(result, request)) {
                 return;
             }
+        } catch (ErrorResponseException e) {
             
-            if (!request.callback.success(response)) {
-                request.monitoring.voidMeasurments();
-            }
-        } catch (Exception e) {
-            
-            request.monitoring.voidMeasurments();
-            request.callback.failed(e);
+            request.voidMeasurments();
+            callback.failed(e.getRPCError());
         }
         
-        exit(request, request.metadata, request.monitoring);
-    }
-
-    public final class BabuDBRequest {
-        
-        final Database             database;
-        final Object[]             arguments;
-        final Operation            operation;
-        final RequestMonitoring    monitoring;
-        final RequestMetadata      metadata;
-        BabuDBPostprocessing       postprocessing;
-        final Callback             callback;
-        
-        public BabuDBRequest(Database database, Callback callback, RequestMetadata metadata, 
-                RequestMonitoring monitoring, BabuDBPostprocessing postprocessing, 
-                Operation operation, Object ... args) {
-            
-            this.database = database;
-            this.callback = (callback == null) ? NullCallback.INSTANCE : callback;
-            this.metadata = metadata;
-            this.monitoring = monitoring;
-            this.arguments = args;
-            this.operation = operation;
-            this.postprocessing = (postprocessing == null) ? NullPostprocessing.INSTANCE : postprocessing;
-        }
+        exit(request);
     }
 }

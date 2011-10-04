@@ -10,12 +10,14 @@ package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -38,7 +40,7 @@ public class DeleteVolumeOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(final MRCRequest rq, final RPCRequestCallback callback) throws Exception {
+    public void startRequest(MRCRequest rq, final RPCRequestCallback callback) throws Exception {
         
         // perform master redirect if replicated and required
         String replMasterUUID = master.getReplMasterUUID();
@@ -70,18 +72,19 @@ public class DeleteVolumeOperation extends MRCOperation {
         // deregister the volume from the Directory Service
         master.getDirClient().xtreemfs_service_deregister(null, rq.getDetails().auth,
                 RPCAuthentication.userService, volume.getId(), new Callback() {
-                    
-                    @Override
-                    public boolean success(Object result) {
-                        
-                        processStep2(rqArgs, volume.getId(), rq, callback);
-                        return true;
-                    }
-                    
+                                       
                     @Override
                     public void failed(Throwable e) {
                         
                         callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, e);
+                    }
+
+                    @Override
+                    public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                            throws ErrorResponseException {
+                        
+                        processStep2(rqArgs, volume.getId(), (MRCRequest) stageRequest.getRequest(), callback);
+                        return true;
                     }
                 });
     }

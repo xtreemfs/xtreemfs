@@ -29,6 +29,7 @@ import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.common.monitoring.StatusMonitor;
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -54,6 +55,7 @@ import org.xtreemfs.foundation.pbrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.pbrpc.server.RPCUDPSocketServer;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.operations.CheckObjectOperation;
@@ -192,6 +194,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             + VersionManagement.RELEASE_VERSION);
         
         this.config = config;
+        final int numStorageThreads = 1;
         assert (config.getUUID() != null);
         
         if (this.config.getDirectoryService().getHostName().equals(DiscoveryUtils.AUTODISCOVER_HOSTNAME)) {
@@ -304,10 +307,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         udpCom = new RPCUDPSocketServer(config.getPort(), this);
         udpCom.setLifeCycleListener(this);
         
-        preprocStage = new PreprocStage(this, metadataCache);
+        preprocStage = new PreprocStage(this, metadataCache, numStorageThreads);
         preprocStage.setLifeCycleListener(this);
         
-        stStage = new StorageStage(this, metadataCache, storageLayout, 1);
+        stStage = new StorageStage(this, metadataCache, storageLayout, numStorageThreads);
         stStage.setLifeCycleListener(this);
         
         delStage = new DeletionStage(metadataCache, storageLayout, preprocStage);
@@ -426,9 +429,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                         sb.append("<TR><TD><B>File ID</B></TD><TD><B>Status</B></TD></TR>");
                         rwrStage.getStatus(new Callback() {
 
+                            @Override
+                            public void failed(Throwable error) { /* ignored */ }
+
                             @SuppressWarnings("unchecked")
                             @Override
-                            public boolean success(Object status) {
+                            public <S extends StageRequest<?>> boolean success(Object status, S stageRequest)
+                                    throws ErrorResponseException {
+                                
                                 synchronized (result) {
                                     result.set((Map<String, Map<String, String>>) status);
                                     result.notifyAll();
@@ -436,9 +444,6 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                                 
                                 return true;
                             }
-
-                            @Override
-                            public void failed(Throwable error) { /* ignored */ }
                         });
                         synchronized (result) {
                             if (result.get() == null)
@@ -808,6 +813,26 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         operations.put(op.getProcedureId(), op);
         requestTypeMap.put(op.getProcedureId(), type++);
         
+        op = new InternalRWRUpdateOperation(this);
+        operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
+        
+        op = new InternalRWRTruncateOperation(this);
+        operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
+        
+        op = new InternalRWRStatusOperation(this);
+        operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
+        
+        op = new InternalRWRFetchOperation(this);
+        operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
+        
+        op = new GetFileIDListOperation(this);
+        operations.put(op.getProcedureId(), op);
+        requestTypeMap.put(op.getProcedureId(), type++);
+        
         /*
          * op = new KeepFileOpenOperation(this);
          * operations.put(op.getProcedureId(),op);
@@ -828,7 +853,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         op = new InternalGetFileSizeOperation(this);
         operations.put(op.getProcedureId(), op);
         
-        op = new ShutdownOperation(this);
+        op = new GetObjectSetOperation(this);
         operations.put(op.getProcedureId(), op);
         requestTypeMap.put(op.getProcedureId(), type++);
         
@@ -860,7 +885,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         operations.put(op.getProcedureId(), op);
         requestTypeMap.put(op.getProcedureId(), type++);
         
-        op = new GetObjectSetOperation(this);
+        op = new ShutdownOperation(this);
         operations.put(op.getProcedureId(), op);
         requestTypeMap.put(op.getProcedureId(), type++);
         
@@ -881,26 +906,6 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         requestTypeMap.put(op.getProcedureId(), type++);
         
         op = new FleaseMessageOperation(this);
-        operations.put(op.getProcedureId(), op);
-        requestTypeMap.put(op.getProcedureId(), type++);
-        
-        op = new InternalRWRUpdateOperation(this);
-        operations.put(op.getProcedureId(), op);
-        requestTypeMap.put(op.getProcedureId(), type++);
-        
-        op = new InternalRWRTruncateOperation(this);
-        operations.put(op.getProcedureId(), op);
-        requestTypeMap.put(op.getProcedureId(), type++);
-        
-        op = new InternalRWRStatusOperation(this);
-        operations.put(op.getProcedureId(), op);
-        requestTypeMap.put(op.getProcedureId(), type++);
-        
-        op = new InternalRWRFetchOperation(this);
-        operations.put(op.getProcedureId(), op);
-        requestTypeMap.put(op.getProcedureId(), type++);
-        
-        op = new GetFileIDListOperation(this);
         operations.put(op.getProcedureId(), op);
         requestTypeMap.put(op.getProcedureId(), type++);
         
@@ -957,6 +962,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public void sendUDPMessage(RPCHeader header, Message message, InetSocketAddress receiver)
         throws IOException {
+        
         udpCom.sendRequest(header, message, receiver);
     }
     

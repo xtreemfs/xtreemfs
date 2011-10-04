@@ -28,17 +28,17 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
     /**
      * <p>The queue to buffer the high priority requests before their processing.</p>
      */
-    private final Queue<StageRequest<R>>  high = new LinkedList<StageRequest<R>>();
+    private final Queue<OLPStageRequest<R>> high = new LinkedList<OLPStageRequest<R>>();
     
     /**
      * <p>The queue to buffer the low priority requests before their processing.</p>
      */
-    private final Queue<StageRequest<R>>  low = new LinkedList<StageRequest<R>>();
+    private final Queue<OLPStageRequest<R>> low = new LinkedList<OLPStageRequest<R>>();
     
     /**
      * <p>The interface to the Overload-Protection algorithm.</p>
      */
-    private final ProtectionAlgorithmCore olp;
+    private final ProtectionAlgorithmCore   olp;
     
     /**
      * <p>Initializes an empty queue with Overload-Protection enabled.</p>
@@ -46,6 +46,7 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
      * @param olp - the interface to the Overload-Protection algorithm.
      */
     SimpleProtectedQueue(ProtectionAlgorithmCore olp) {
+        
         this.olp = olp;
     }
     
@@ -53,34 +54,34 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
      * @see org.xtreemfs.common.stage.StageQueue#enqueue(org.xtreemfs.common.stage.StageRequest)
      */
     @Override
-    public synchronized void enqueue(StageRequest<R> stageRequest) {
-                
+    public synchronized <S extends StageRequest<R>> void enqueue(S stageRequest) {
+        
         try {
             
-            olp.obtainAdmission(stageRequest.getRequest().getMetadata());
+            olp.obtainAdmission(stageRequest.getRequest());
             
-            if (stageRequest.getRequest().getMetadata().hasHighPriority()) {
+            if (stageRequest.getRequest().hasHighPriority()) {
                 
-                high.add(stageRequest);
+                high.add((OLPStageRequest<R>) stageRequest);
                 
                 // check the outdistanced low priority requests 
-                Iterator<StageRequest<R>> iter = low.iterator();
+                Iterator<OLPStageRequest<R>> iter = low.iterator();
                 while (iter.hasNext()) {
-                    StageRequest<R> next = iter.next();
+                    OLPStageRequest<R> next = iter.next();
                     try {
                         
-                        olp.hasAdmission(stageRequest.getRequest().getMetadata());
+                        olp.hasAdmission(stageRequest.getRequest());
                     } catch (Exception error) {
                         
                         iter.remove();
-                        next.getRequest().getMonitoring().voidMeasurments();
+                        next.voidMeasurments();
                         next.getCallback().failed(error);
-                        olp.depart(next.getRequest().getMetadata(), next.getRequest().getMonitoring());
+                        olp.depart(next);
                     }
                 }
             } else {
                 
-                low.add(stageRequest);
+                low.add((OLPStageRequest<R>) stageRequest);
             }
             
             // wake up the stage if necessary
@@ -94,21 +95,23 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
             stageRequest.getCallback().failed(error);
         }
     }
-    
+
     /* (non-Javadoc)
-     * @see org.xtreemfs.common.stage.StageQueue#take(long)
+     * @see org.xtreemfs.common.olp.SimpleProtectedQueue#take(long)
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public synchronized StageRequest<R> take(long timeout) throws InterruptedException {
-        
+    public synchronized <S extends StageRequest<R>> S take(long timeout)
+            throws InterruptedException {
+
         if (high.size() == 0 && low.size() == 0) {
             wait(timeout);
         }
         
-        StageRequest<R> result = high.poll();
-        return (result == null) ? low.poll() : result;
+        OLPStageRequest<R> result = high.poll();
+        return (S) ((result == null) ? low.poll() : result);
     }
-
+    
     /* (non-Javadoc)
      * @see org.xtreemfs.common.stage.StageQueue#getLength()
      */

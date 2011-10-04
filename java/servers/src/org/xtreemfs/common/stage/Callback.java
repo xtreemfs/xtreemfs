@@ -7,6 +7,8 @@
  */
 package org.xtreemfs.common.stage;
 
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
+
 /**
  * <p>Callback for postprocessing a {@link AugmentedServiceRequest}.</p>
  * 
@@ -18,11 +20,15 @@ public interface Callback {
     /**
      * <p>Method to call if the request connected to this callback was successful.</p>
      * 
+     * @param stageRequest - the original request of this processing step. 
      * @param result - for the request.
      * 
-     * @return true, if callback execution could process the request successfully. false, if an error occurred.
+     * @return true, if callback execution could process the request successfully. false, if it has not yet been 
+     *         finished and will remain at the current processing step.
+     *         
+     * @throws ErrorResponseException if the request preprocessing provided by this method was not successful.
      */
-    public boolean success(Object result);
+    public <S extends StageRequest<?>> boolean success(Object result, S stageRequest) throws ErrorResponseException;
     
     /**
      * <p>Method that is called if execution of a request failed because of <code>error</code>.</p>
@@ -48,20 +54,21 @@ public interface Callback {
          * <p>Hidden default constructor of this class.</p>
          */
         private NullCallback() { }
-        
-        /* (non-Javadoc)
-         * @see org.xtreemfs.common.stage.Callback#success(java.lang.Object)
-         */
-        @Override
-        public boolean success(Object result) { 
-            /* ignored */
-            return true; 
-        }
 
         /* (non-Javadoc)
          * @see org.xtreemfs.common.stage.Callback#failed(java.lang.Exception)
          */
         @Override
         public void failed(Throwable error) { /* ignored */ }
+
+        /* (non-Javadoc)
+         * @see org.xtreemfs.common.stage.Callback#success(java.lang.Object, org.xtreemfs.common.stage.StageRequest)
+         */
+        @Override
+        public <S extends StageRequest<?>> boolean success(Object result, S stageRequest) 
+                throws ErrorResponseException {
+            
+            return true;
+        }
     }
 }

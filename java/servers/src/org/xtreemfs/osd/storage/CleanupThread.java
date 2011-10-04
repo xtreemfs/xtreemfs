@@ -17,12 +17,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.storage.StorageLayout.FileData;
 import org.xtreemfs.osd.storage.StorageLayout.FileList;
@@ -257,8 +259,9 @@ public class CleanupThread extends LifeCycleThread {
                                              openOFTChecks.incrementAndGet();
                                              master.getPreprocStage().checkDeleteOnClose(files.get(i), new Callback() {
                                                  
-                                                @Override
-                                                public boolean success(Object result) {
+                                                 @Override
+                                                 public <S extends StageRequest<?>> boolean success(Object result, 
+                                                         S stageRequest) throws ErrorResponseException {
                                                     
                                                     boolean isDeleteOnClose = (Boolean) result;
                                                     
@@ -271,11 +274,14 @@ public class CleanupThread extends LifeCycleThread {
                                                     // deal with the un-restoreable replica
                                                     } else if (!isDeleteOnClose) {
                                                         
-                                                        master.getDeletionStage().deleteObjects(fName, null, cowEnabled, 
+                                                        master.getDeletionStage().internalDeleteObjects(fName, null, cowEnabled, 
                                                                 new Callback() {
-                                                            
+
                                                             @Override
-                                                            public boolean success(Object result) {
+                                                            public <T extends StageRequest<?>> boolean success(
+                                                                    Object result, T stageRequest)
+                                                                    throws ErrorResponseException {
+                                                                
                                                                 /* ignored */
                                                                 return true;
                                                             }
@@ -372,10 +378,11 @@ public class CleanupThread extends LifeCycleThread {
                             
                             for (final String fileName : zombieFiles.keySet()) {
                                 openDeletes.incrementAndGet(); 
-                                master.getDeletionStage().deleteObjects(fileName, null, cowEnabled, new Callback() {
+                                master.getDeletionStage().internalDeleteObjects(fileName, null, cowEnabled, new Callback() {
 
                                     @Override
-                                    public boolean success(Object result) {
+                                    public <S extends StageRequest<?>> boolean success(Object result,
+                                            S stageRequest) throws ErrorResponseException {
                                         
                                         if (openDeletes.decrementAndGet() <= 0) {
                                             synchronized (openDeletes) {

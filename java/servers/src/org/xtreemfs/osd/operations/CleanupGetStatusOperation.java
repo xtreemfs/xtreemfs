@@ -14,6 +14,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse;
@@ -40,10 +41,16 @@ public final class CleanupGetStatusOperation extends OSDOperation {
             return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, 
                     "this operation requires an admin password");
         }
-        callback.success(xtreemfs_cleanup_statusResponse.newBuilder().setStatus(
-                master.getCleanupThread().getStatus()).build());
         
-        return null;
+        try {
+            
+            callback.success(xtreemfs_cleanup_statusResponse.newBuilder().setStatus(
+                    master.getCleanupThread().getStatus()).build());
+            
+            return null;
+        } catch (ErrorResponseException e) {
+            return e.getRPCError();
+        }
     }
 
     @Override

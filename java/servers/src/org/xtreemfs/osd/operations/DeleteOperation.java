@@ -15,6 +15,7 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.Replica;
@@ -25,6 +26,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -70,26 +72,22 @@ public final class DeleteOperation extends OSDOperation {
                 
                 // executed by DeletionStage
                 @Override
-                public boolean success(Object result) {
-                    
-                    ErrorResponse err = disseminateDeletes(rq, args, callback);
-                    if (err != null) {
-                        callback.failed(err);
-                        return false;
-                    } else {
-                        callback.success();
-                        return true;
-                    }
+                public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                        throws ErrorResponseException {
+
+                    disseminateDeletes(rq, args, callback);
+                    return true;
                 }
             });
         } else {
             
             //file marked for delete on close, send ok to client
-            ErrorResponse err = disseminateDeletes(rq, args, callback);
-            if (err != null) {
-                return err;
-            } else {
-                callback.success();
+            try {
+                
+                disseminateDeletes(rq, args, callback);
+            } catch (ErrorResponseException e) {
+                
+                return e.getRPCError();
             }
         }
         
@@ -97,7 +95,8 @@ public final class DeleteOperation extends OSDOperation {
     }
 
     @SuppressWarnings("unchecked")
-    public ErrorResponse disseminateDeletes(OSDRequest rq, unlink_osd_Request args, final RPCRequestCallback callback) {
+    public void disseminateDeletes(OSDRequest rq, unlink_osd_Request args, final RPCRequestCallback callback) 
+            throws ErrorResponseException {
         
         Replica localReplica = rq.getLocationList().getLocalReplica();
         if (localReplica.isStriped() && localReplica.getHeadOsd().equals(localUUID)) {
@@ -124,22 +123,21 @@ public final class DeleteOperation extends OSDOperation {
                         if (err != null) {
                             callback.failed(err);
                         } else {
-                            callback.success();
+                            try {
+                                callback.success();
+                            } catch (ErrorResponseException e) {
+                                callback.failed(e.getRPCError());
+                            }
                         }
                     }
                 });
-                
-                return null;
             } catch (IOException ex) {
                 
-                return ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, 
-                        "internal server error:" + ex.getMessage(), OutputUtils.stackTraceToString(ex));
+                throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, 
+                        POSIXErrno.POSIX_ERROR_NONE, "internal server error:" + ex.getMessage(), 
+                        OutputUtils.stackTraceToString(ex)));
             }
-        } else {
-            
-            //non striped replica, fini
-            return null;
-        }
+        } 
     }
 
     public ErrorResponse analyzeUnlinkReponses(RPCResponse<Message>[] gmaxRPCs) {

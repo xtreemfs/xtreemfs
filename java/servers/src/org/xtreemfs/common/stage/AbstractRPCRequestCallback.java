@@ -53,10 +53,15 @@ public abstract class AbstractRPCRequestCallback implements Callback {
      * <p>Sends a response to the sender of the request.</p>
      * 
      * @param response
+     * 
+     * @return true, if callback execution could process the request successfully. false, if it has not yet been 
+     *         finished and will remain at the current processing step.
+     *         
+     * @throws ErrorResponseException if the request preprocessing provided by this method was not successful.
      */
-    public boolean success(Message response) {
+    public boolean success(Message response) throws ErrorResponseException {
         
-        return success(response, null);
+        return success(response, (ReusableBuffer) null);
     }
 
     /**
@@ -65,9 +70,12 @@ public abstract class AbstractRPCRequestCallback implements Callback {
      * @param response
      * @param data
      * 
-     * @return true, if callback execution could process the request successfully. false, if an error occurred.
+     * @return true, if callback execution could process the request successfully. false, if it has not yet been 
+     *         finished and will remain at the current processing step.
+     *         
+     * @throws ErrorResponseException if the request preprocessing provided by this method was not successful.
      */
-    public boolean success(Message response, ReusableBuffer data) {
+    public boolean success(Message response, ReusableBuffer data) throws ErrorResponseException {
         
         try {
             
@@ -79,8 +87,7 @@ public abstract class AbstractRPCRequestCallback implements Callback {
             return true;
         } catch (IOException ex) {
             
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            return false;
+            throw new ErrorResponseException(ex);
         }
     }
     
@@ -91,7 +98,7 @@ public abstract class AbstractRPCRequestCallback implements Callback {
     public void failed(Throwable error) {
         
         if (error instanceof ErrorResponseException) {
-            failed((ErrorResponseException) error);
+            failed(((ErrorResponseException) error).getRPCError());
         } else {
             failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, error);
         }

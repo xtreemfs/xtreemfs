@@ -11,6 +11,7 @@ package org.xtreemfs.mrc.stages;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
 
+import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.SimpleStageQueue;
 import org.xtreemfs.common.stage.Stage;
 import org.xtreemfs.common.stage.StageRequest;
@@ -40,18 +41,29 @@ public class OnCloseReplicationThread extends Stage<MRCRequest> {
     private final MRCRequestDispatcher master;  
     
     public OnCloseReplicationThread(MRCRequestDispatcher master) {
-        
         super("OnCloseReplThr", new SimpleStageQueue<MRCRequest>(MAX_QUEUE_LENGTH));
+        
         this.master = master;
+    }
+    
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.Stage#generateStageRequest(int, java.lang.Object[], java.lang.Object, org.xtreemfs.common.stage.Callback)
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    protected <S extends StageRequest<MRCRequest>> S generateStageRequest(int stageMethodId, Object[] args,
+            MRCRequest request, Callback callback) {
+
+        return (S) new StageRequest<MRCRequest>(stageMethodId, args, request, callback) {};
     }
 
     /* (non-Javadoc)
      * @see org.xtreemfs.common.stage.Stage#processMethod(org.xtreemfs.common.stage.StageRequest)
      */
     @Override
-    public void processMethod(StageRequest<MRCRequest> method) {
+    protected <S extends StageRequest<MRCRequest>> boolean processMethod(S stageRequest) {
         
-        final MRCRequest req = method.getRequest();
+        final MRCRequest req = stageRequest.getRequest();
         final XCap xcap = ((xtreemfs_update_file_sizeRequest) req.getRequestArgs()).getXcap();
         final XLocSet xlocSet = (XLocSet) req.getDetails().context.get("xLocList");
         final FileCredentials creds = FileCredentials.newBuilder().setXcap(xcap).setXlocs(xlocSet).build();
@@ -97,5 +109,7 @@ public class OnCloseReplicationThread extends Stage<MRCRequest> {
             
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
+        
+        return true;
     }
 }

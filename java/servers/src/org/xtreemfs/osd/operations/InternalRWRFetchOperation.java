@@ -11,6 +11,7 @@ package org.xtreemfs.osd.operations;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -19,6 +20,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -59,20 +61,21 @@ public final class InternalRWRFetchOperation extends OSDOperation {
         return null;
     }
     
-    private void fetchObject(OSDRequest rq, xtreemfs_rwr_fetchRequest args, final RPCRequestCallback callback) {
+    private void fetchObject(OSDRequest rq, xtreemfs_rwr_fetchRequest args, RPCRequestCallback callback) {
         
         master.getStorageStage().readObject(args.getObjectNumber(), 
                 rq.getLocationList().getLocalReplica().getStripingPolicy(), 0, -1, 0, rq, 
                 new AbstractRPCRequestCallback(callback) {
                     
-                    @Override
-                    public boolean success(Object result) {
-                        
-                        InternalObjectData odata = new InternalObjectData(0, false, 0, 
-                                ((ObjectInformation) result).getData());
-                        return callback.success(odata.getMetadata(), odata.getData());
-                    }
-                });
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+
+                InternalObjectData odata = new InternalObjectData(0, false, 0, 
+                        ((ObjectInformation) result).getData());
+                return success(odata.getMetadata(), odata.getData());
+            }
+        });
     }
 
     @Override

@@ -113,7 +113,7 @@ public class DBAdminHelper {
                 // necessary to check if the directory exists already
                 
                 StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
-                AtomicDBUpdate update = sMan.createAtomicDBUpdate(null);
+                AtomicDBUpdate update = sMan.createAtomicDBUpdate();
                 FileMetadata dir = sMan.createDir(id, state.parentIds.get(0), name, atime, ctime, mtime,
                     owner, owningGroup, rights, w32Attrs, update);
                 update.execute(null, null);
@@ -175,7 +175,7 @@ public class DBAdminHelper {
             if (attrs.getIndex("readOnly") != -1)
                 readOnly = Boolean.getBoolean(attrs.getValue(attrs.getIndex("readOnly")));
             
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(null);
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate();
             file = sMan.createFile(id, state.parentIds.get(0), name, atime, ctime, mtime, owner, owningGroup,
                 rights, w32Attrs, size, readOnly, epoch, issuedEpoch, update);
             update.execute(null, null);
@@ -183,7 +183,7 @@ public class DBAdminHelper {
 
         // otherwise, create a link
         else {
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(null);
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate();
             sMan.link(file, state.parentIds.get(0), name, update);
             update.execute(null, null);
         }
@@ -214,7 +214,7 @@ public class DBAdminHelper {
                 state.currentXLocVersion));
             state.currentReplicaList.clear();
             
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(null);
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate();
             sMan.setMetadata(state.currentEntity, FileMetadata.RC_METADATA, update);
             update.execute(null, null);
         }
@@ -253,7 +253,7 @@ public class DBAdminHelper {
         if (!openTag) {
             
             StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(null);
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate();
             try {
                 faMan.updateACLEntries(sMan, state.currentEntity, state.parentIds.get(0), state.currentACL,
                     update);
@@ -296,7 +296,7 @@ public class DBAdminHelper {
             
             // if the value refers to a read-only flag, set it directly
             if (key.equals("ro")) {
-                AtomicDBUpdate update = sMan.createAtomicDBUpdate(null);
+                AtomicDBUpdate update = sMan.createAtomicDBUpdate();
                 state.currentEntity.setReadOnly(Boolean.getBoolean(value));
                 update.execute(null, null);
             }
@@ -309,7 +309,7 @@ public class DBAdminHelper {
                 if (owner.isEmpty() && key.equals("spol"))
                     key = "sp";
                 
-                AtomicDBUpdate update = sMan.createAtomicDBUpdate(null);
+                AtomicDBUpdate update = sMan.createAtomicDBUpdate();
                 sMan.setXAttr(state.currentEntity.getId(), owner, key, value, update);
                 update.execute(null, null);
             }

@@ -42,7 +42,7 @@ public final class InternalRWRStatusOperation extends OSDOperation {
     }
 
     @Override
-    public ErrorResponse startRequest(final OSDRequest rq, final RPCRequestCallback callback) {
+    public ErrorResponse startRequest(OSDRequest rq, RPCRequestCallback callback) {
         
         final xtreemfs_rwr_statusRequest args = (xtreemfs_rwr_statusRequest)rq.getRequestArgs();
 
@@ -55,7 +55,7 @@ public final class InternalRWRStatusOperation extends OSDOperation {
         return null;
     }
     
-    private void getState(final OSDRequest rq, final xtreemfs_rwr_statusRequest args, RPCRequestCallback callback) {
+    private void getState(OSDRequest rq, xtreemfs_rwr_statusRequest args, RPCRequestCallback callback) {
         
         master.getStorageStage().internalGetReplicaState(rq, rq.getLocationList().getLocalReplica().getStripingPolicy(), 
                 args.getMaxLocalObjVersion(), callback);

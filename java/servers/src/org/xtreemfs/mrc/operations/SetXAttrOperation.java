@@ -8,11 +8,12 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -24,7 +25,6 @@ import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.setxattrRequest;
 
@@ -65,15 +65,7 @@ public class SetXAttrOperation extends MRCOperation {
         // retrieve and prepare the metadata to return
         FileMetadata file = res.getFile();
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
-            
-            @Override
-            public Message execute(Object result, BabuDBRequest request) throws Exception {
-                
-                // set the response
-                return emptyResponse.getDefaultInstance();
-            }
-        });
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate();
         
         // if the attribute is a system attribute, set it
         
@@ -111,6 +103,14 @@ public class SetXAttrOperation extends MRCOperation {
         int time = (int) (TimeSync.getGlobalTime() / 1000);
         MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, time, update);
         
-        update.execute(callback, rq.getMetadata());
+        update.execute(new AbstractRPCRequestCallback(callback) {
+            
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+
+                return success((Message) null);
+            }
+        }, rq);
     }
 }

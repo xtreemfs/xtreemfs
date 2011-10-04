@@ -9,8 +9,8 @@ package org.xtreemfs.common.olp;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.xtreemfs.common.olp.ProtectionAlgorithmCore.AdmissionRefusedException;
 import org.xtreemfs.common.stage.AutonomousComponent;
+import org.xtreemfs.common.stage.Callback;
 
 /**
  * <p>Facade for threads that used to have a protection against overload. This class connects all essential methods to 
@@ -19,24 +19,25 @@ import org.xtreemfs.common.stage.AutonomousComponent;
  * @author flangner
  * @version 1.00, 08/31/11
  * @see ProtectionAlgorithmCore
- * @param <R> - request type.
+ * @param <R> - global request type.
  */
-public abstract class OverloadProtectedComponent<R> implements AutonomousComponent<R> {
+public abstract class OverloadProtectedComponent<R extends AugmentedRequest> 
+        implements AutonomousComponent<OLPStageRequest<R>> {
             
     /**
      * <p>Core of the overload-protection algorithm.</p>
      */
-    private final ProtectionAlgorithmCore       olp;
+    private final ProtectionAlgorithmCore olp;
     
     /**
      * <p>Counts requests that have approached this component and have not yet been finished.</p>
      */
-    private AtomicInteger                       requestCounter = new AtomicInteger(0);  
+    private AtomicInteger                 requestCounter = new AtomicInteger(0);  
     
     /**
      * <p>Determines when the last request was finished.</p>
      */
-    private long                                lastRequestFinishedTime = -1L;
+    private long                          lastRequestFinishedTime = -1L;
         
     /**
      * <p>Constructor for initializing the OLP algorithm for a component. Is is used, if no request-type is 
@@ -44,10 +45,11 @@ public abstract class OverloadProtectedComponent<R> implements AutonomousCompone
      * 
      * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
      * @param numTypes - amount of different types of requests.
+     * @param numInternalTypes - amount of different internal types of requests.
      */
-    protected OverloadProtectedComponent(int stageId, int numTypes) {
+    protected OverloadProtectedComponent(int stageId, int numTypes, int numInternalTypes) {
         
-        this (stageId, numTypes, 0, new boolean[numTypes], new PerformanceInformationReceiver[]{});
+        this (stageId, numTypes, numInternalTypes, 0, new boolean[numTypes], new PerformanceInformationReceiver[]{ });
     }
     
     /**
@@ -56,11 +58,13 @@ public abstract class OverloadProtectedComponent<R> implements AutonomousCompone
      * 
      * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
      * @param numTypes - amount of different types of requests.
+     * @param numInternalTypes - amount of different internal types of requests.
      * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
      */
-    protected OverloadProtectedComponent(int stageId, int numTypes, int numSubsequentStages) {
+    protected OverloadProtectedComponent(int stageId, int numTypes, int numInternalTypes, int numSubsequentStages) {
         
-        this (stageId, numTypes, numSubsequentStages, new boolean[numTypes], new PerformanceInformationReceiver[]{});
+        this (stageId, numTypes, numInternalTypes, numSubsequentStages, new boolean[numTypes], 
+                new PerformanceInformationReceiver[]{});
     }
     
     /**
@@ -68,86 +72,83 @@ public abstract class OverloadProtectedComponent<R> implements AutonomousCompone
      * 
      * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
      * @param numTypes - amount of different types of requests.
+     * @param numInternalTypes - amount of different internal types of requests.
      * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
      * @param unrefusableTypes - array that decides which types of requests are treated unrefusable and which not.
      * @param performanceInformationReceiver - receiver of performance information concerning this component.
      */
-    protected OverloadProtectedComponent(int stageId, int numTypes, int numSubsequentStages, boolean[] unrefusableTypes, 
-            PerformanceInformationReceiver[] performanceInformationReceiver) {
+    protected OverloadProtectedComponent(int stageId, int numTypes, int numInternalTypes, int numSubsequentStages, 
+            boolean[] unrefusableTypes, PerformanceInformationReceiver[] performanceInformationReceiver) {
                 
-        this.olp = new ProtectionAlgorithmCore(stageId, numTypes, numSubsequentStages, unrefusableTypes, 
-                performanceInformationReceiver);
+        this.olp = new ProtectionAlgorithmCore(stageId, numTypes, numInternalTypes, numSubsequentStages, 
+                unrefusableTypes, performanceInformationReceiver);
     }
     
     /**
      * <p>Method to announce a temporary interruption of the processing of the request represented by its monitoring 
      * information. The request will remain at the component until its execution is resumed and finished.</p>
      * 
-     * @param monitoring - information representing a single request.
+     * @param request - {@link OLPStageRequest} containing monitoring information for the processing step provided by 
+     *                  this {@link AutonomousComponent}.
      * 
      * @see OverloadProtectedComponent#resumeRequestProcessing(RequestMonitoring)
      */
-    public void suspendRequestProcessing(RequestMonitoring monitoring) {
+    public final void suspendRequestProcessing(OLPStageRequest<R> request) {
         
-        lastRequestFinishedTime = monitoring.endGeneralMeasurement(lastRequestFinishedTime);
+        lastRequestFinishedTime = request.endGeneralMeasurement(lastRequestFinishedTime);
     }
     
     /**
      * <p>Method resume a temporarily interrupted request represented by its monitoring information.</p>
      * 
-     * @param monitoring - information representing a single request.
+     * @param request - {@link OLPStageRequest} containing monitoring information for the processing step provided by 
+     *                  this {@link AutonomousComponent}.
      * 
      * @see OverloadProtectedComponent#suspendRequestProcessing(RequestMonitoring)
      */
-    public void resumeRequestProcessing(RequestMonitoring monitoring) {
+    public final void resumeRequestProcessing(OLPStageRequest<R> request) {
         
-        monitoring.beginGeneralMeasurement();
+        request.beginGeneralMeasurement();
     }
     
     /**
      * <p>Method to delegate a request to this protected component.</p>
      * 
-     * @param request - the original request.
-     * @param metadata - its configuring metadata.
-     * @param monitoring - its statistical information.
+     * @param stageMethodId
+     * @param args
+     * @param request
+     * @param callback
+     * @param performanceInformationReceiver
      * 
      * @throws AdmissionRefusedException if a request could not approach the component due violation of timeout 
      *                                   restrictions.
      */
-    public void enter(R request, RequestMetadata metadata, RequestMonitoring monitoring) 
-            throws AdmissionRefusedException {
+    public final void enter(int stageMethodId, Object[] args, R request, Callback callback, 
+            PerformanceInformationReceiver[] performanceInformationReceiver) throws AdmissionRefusedException {
         
-        if (metadata != null) {
-            olp.obtainAdmission(metadata);
-            enter(request);
-            resumeRequestProcessing(monitoring);
-            requestCounter.incrementAndGet();
-        }
+        final OLPStageRequest<R> rq = new OLPStageRequest<R>(stageMethodId, args, request, callback, 
+                performanceInformationReceiver);
+        
+        olp.obtainAdmission(request);
+        resumeRequestProcessing(rq);
+        requestCounter.incrementAndGet();
+        enter(rq);
     }
     
     /**
      * <p>Method to signalize that a request leaves this component. Measurements are monitored and piggyback information
      * are prepared.</p>
      * 
-     * @param request - the original request.
-     * @param metadata - its configuring metadata.
-     * @param monitoring - its statistical information.
-     */
-    public void exit(R request, RequestMetadata metadata, RequestMonitoring monitoring) {
-                
-        if (metadata != null) {
-            requestCounter.decrementAndGet();
-            suspendRequestProcessing(monitoring);
-            olp.depart(metadata, monitoring);
-            exit(request);
-        }
-    }
-    
-    /* (non-Javadoc)
-     * @see org.xtreemfs.common.stage.AutonomousComponent#exit(java.lang.Object)
+     * @param request - {@link OLPStageRequest} containing monitoring information for the processing step provided by 
+     *                  this {@link AutonomousComponent}.
      */
     @Override
-    public void exit(R request) { }
+    public final void exit(OLPStageRequest<R> request) {
+                
+        requestCounter.decrementAndGet();
+        suspendRequestProcessing(request);
+        olp.depart(request);
+    }
     
     /**
      * <p>Method to shut down this component and end the overload-protection algorithm.</p>
@@ -161,7 +162,7 @@ public abstract class OverloadProtectedComponent<R> implements AutonomousCompone
      * @see org.xtreemfs.common.stage.AutonomousComponent#getNumberOfRequests()
      */
     @Override
-    public int getNumberOfRequests() {
+    public final int getNumberOfRequests() {
         
         return requestCounter.get();
     }

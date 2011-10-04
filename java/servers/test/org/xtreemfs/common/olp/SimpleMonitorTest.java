@@ -57,16 +57,16 @@ public class SimpleMonitorTest {
      */
     @Before
     public void setUp() throws Exception {
-        monitor = new SimpleMonitor(3, new PerformanceMeasurementListener() {
+        monitor = new SimpleMonitor(false, 3, new PerformanceMeasurementListener() {
             
             @Override
-            public void updateVariableProcessingTimeAverage(int type, double value) {
+            public void updateVariableProcessingTimeAverage(int type, double value, boolean internal) {
                 variableRqId.set(type);
                 variableRqResult.set(Double.doubleToLongBits(value));
             }
             
             @Override
-            public void updateFixedProcessingTimeAverage(int type, double value) {
+            public void updateFixedProcessingTimeAverage(int type, double value, boolean internal) {
                 fixedRqId.set(type);
                 fixedRqResult.set(Double.doubleToLongBits(value));
             }

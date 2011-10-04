@@ -7,6 +7,8 @@
  */
 package org.xtreemfs.common.olp;
 
+import org.xtreemfs.common.stage.AutonomousComponent.AdmissionRefusedException;
+
 /**
  * <p>The algorithm core controlling the interactions between the different parts of the overload-protection algorithm.
  * </p>
@@ -43,6 +45,12 @@ final class ProtectionAlgorithmCore {
     private final Monitor                       monitor;
     
     /**
+     * <p>Component to measure request processing performance of internal requests of this stage. Internal request 
+     * performance information is not shared among connected stages.</p>
+     */
+    private final Monitor                       internalRequestMonitor;
+    
+    /**
      * <p>Component that will continuously send {@link PerformanceInformation} to preceding stages.</p>
      */
     private final PerformanceInformationSender  sender;
@@ -52,12 +60,13 @@ final class ProtectionAlgorithmCore {
      * 
      * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
      * @param numTypes - amount of different types of requests.
+     * @param numInternalTypes - amount of different internal types of requests.
      * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
      * @param unrefusableTypes - array that decides which types of requests are treated unrefusable and which not.
      * @param performanceInformationReceiver - receiver of performance information concerning this component.
      */
-    ProtectionAlgorithmCore(int stageId, int numTypes, int numSubsequentStages, boolean[] unrefusableTypes, 
-            PerformanceInformationReceiver[] performanceInformationReceiver) {
+    ProtectionAlgorithmCore(int stageId, int numTypes, int numInternalTypes, int numSubsequentStages, 
+            boolean[] unrefusableTypes, PerformanceInformationReceiver[] performanceInformationReceiver) {
         
         assert (unrefusableTypes.length == numTypes);
         assert (performanceInformationReceiver != null);
@@ -65,8 +74,9 @@ final class ProtectionAlgorithmCore {
         this.unrefusableTypes = unrefusableTypes;
         this.id = stageId;
         this.actuator = new Actuator();
-        this.controller = new Controller(numTypes, numSubsequentStages);
-        this.monitor = new SimpleMonitor(numTypes, controller);
+        this.controller = new Controller(numTypes, numInternalTypes, numSubsequentStages);
+        this.monitor = new SimpleMonitor(false, numTypes, controller);
+        this.internalRequestMonitor = new SimpleMonitor(true, numInternalTypes, controller);
         this.sender = new PerformanceInformationSender(this);
         for (PerformanceInformationReceiver receiver : performanceInformationReceiver) {
             sender.addReceiver(receiver);
@@ -84,15 +94,15 @@ final class ProtectionAlgorithmCore {
     /**
      * <p>Checks whether a request can be processed before its time is running out or not.</p>
      * 
-     * @param metadata - of the request to check.
+     * @param request - the request to check.
      * @throws AdmissionRefusedException if requests has already expired or will expire before processing has finished.
      */
-    void hasAdmission(RequestMetadata metadata) throws AdmissionRefusedException {
+    <R extends AugmentedRequest> void hasAdmission(R request) throws AdmissionRefusedException {
         
-        int type = metadata.getType();
+        int type = request.getType();
         if (!unrefusableTypes[type] && 
-            !actuator.hasAdmission(metadata.getRemainingProcessingTime(), 
-             controller.estimateProcessingTime(type, metadata.getSize(), metadata.hasHighPriority()))) {
+            !actuator.hasAdmission(request.getRemainingProcessingTime(), 
+             controller.estimateResponseTime(type, request.getSize(), request.hasHighPriority()))) {
                 
             throw new AdmissionRefusedException();
         }
@@ -102,33 +112,46 @@ final class ProtectionAlgorithmCore {
      * <p>Method to be executed to determine whether the request represented by its metadata may be processed or 
      * not.</p>
      * 
-     * @param metadata - of the request to be processed.
+     * @param request - the request to process.
      * @throws AdmissionRefusedException if requests has already expired or will expire before processing has finished.
      */
-    void obtainAdmission(RequestMetadata metadata) throws AdmissionRefusedException {
+    <R extends AugmentedRequest> void obtainAdmission(R request) throws AdmissionRefusedException {
                 
-        hasAdmission(metadata);
-        controller.enterRequest(metadata.getType(), metadata.getSize(), metadata.hasHighPriority());
+        hasAdmission(request);
+        controller.enterRequest(request.getType(), request.getSize(), request.hasHighPriority(), 
+                request.isInternalRequest());
     }
     
     /**
      * <p>If the processing of the given request has finished, its departure has to be notified to the algorithm by this
      * method.</p>
      * 
-     * @param metadata - the request that has been processed.
-     * @param monitoring - information about the processing time of the request.
+     * @param stageRequest - {@link OLPStageRequest} containing monitoring information for one processing step.
      */
-    void depart(RequestMetadata metadata, RequestMonitoring monitoring) {
+    <R extends AugmentedRequest> void depart(OLPStageRequest<R> stageRequest) {
         
-        controller.quitRequest(metadata.getType(), metadata.getSize(), metadata.hasHighPriority());
-        if (monitoring.isValid()) {
-            monitor.record(metadata.getType(), monitoring.getFixedProcessingTime(), 
-                           monitoring.getVariableProcessingTime(metadata.getSize()));
+        final AugmentedRequest request = stageRequest.getRequest();
+        controller.quitRequest(request.getType(), request.getSize(), request.hasHighPriority(), 
+                request.isInternalRequest());
+        
+        if (stageRequest.hasValidMonitoringInformation()) {
+            
+            final double varProcessingTime = stageRequest.getVariableProcessingTime(request.getSize());
+            final double fixProcessingTime = stageRequest.getFixedProcessingTime();
+            
+            if (request.isInternalRequest()) {
+
+                internalRequestMonitor.record(request.getType(), fixProcessingTime, varProcessingTime);                
+            } else {
+                
+                monitor.record(request.getType(), fixProcessingTime, varProcessingTime);
+            }
         }
-        PerformanceInformationReceiver receiver = monitoring.getPiggybackPerformanceInformationReceiver();
-        if (receiver != null) {
-            receiver.processPerformanceInformation(composePerformanceInformation());
-            sender.performanceInformationUpdatedPiggyback(receiver);
+        final PerformanceInformationReceiver[] receiver = stageRequest.getPiggybackPerformanceInformationReceiver();
+        for (PerformanceInformationReceiver r : receiver) {
+            
+            r.processPerformanceInformation(composePerformanceInformation());
+            sender.performanceInformationUpdatedPiggyback(r);
         }
     }
         
@@ -166,16 +189,5 @@ final class ProtectionAlgorithmCore {
     public final static class RequestExpiredException extends AdmissionRefusedException {
         
         private static final long serialVersionUID = 6042472641208133509L;       
-    }
-    
-    /**
-     * <p>Exception that is thrown if admission could not have been granted to a request entering the application.</p>
-     * 
-     * @author flangner
-     * @version 1.00, 08/31/11
-     */
-    public static class AdmissionRefusedException extends Exception {
-        
-        private static final long serialVersionUID = -1182382280938989776L;      
     }
 }

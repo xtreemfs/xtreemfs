@@ -9,11 +9,15 @@
 package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.LRUCache;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.storage.CowPolicy;
@@ -63,15 +67,18 @@ public class EventCloseFile extends OSDOperation {
         master.getStorageStage().flushCaches(fileId, new Callback() {
 
             @Override
-            public boolean success(Object result) {
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
                 
                 // if COW is enabled, create a new version
-                if (cow.cowEnabled())
-                    createNewVersion(fileId, fi, cachedCaps, isDeleteOnClose);
+                if (cow.cowEnabled()) {
+                    return createNewVersion(fileId, fi, cachedCaps, isDeleteOnClose, 
+                            (OLPStageRequest<AugmentedRequest>) stageRequest);
                 
                 // if the file is marked for deletion, delete it
-                else if (isDeleteOnClose)
-                    deleteObjects(fileId, fi, cow.cowEnabled());
+                } else if (isDeleteOnClose) {
+                    deleteObjects(fileId, fi, cow.cowEnabled()); 
+                }
                 
                 return true;
             }
@@ -82,6 +89,7 @@ public class EventCloseFile extends OSDOperation {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, error.getMessage());
             }
         });
+        
         master.getRWReplicationStage().fileClosed(fileId);      
     }
     
@@ -90,20 +98,25 @@ public class EventCloseFile extends OSDOperation {
         // cancel replication of file
         master.getReplicationStage().cancelReplicationForFile(fileId);
         
-        master.getDeletionStage().deleteObjects(fileId, fi, isCow, new Callback() {
+        master.getDeletionStage().internalDeleteObjects(fileId, fi, isCow, new Callback() {
 
             @Override
-            public boolean success(Object result) { return true; }
-
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+                
+                return true;
+            }
+            
             @Override
             public void failed(Throwable error) {
+                
                 Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: %s", error.getMessage());
             }
         });
     }
     
-    private void createNewVersion(final String fileId, final FileMetadata fi, LRUCache<String, Capability> cachedCaps, 
-            final boolean isDeleteOnClose) {
+    private boolean createNewVersion(final String fileId, final FileMetadata fi, LRUCache<String, Capability> cachedCaps, 
+            final boolean isDeleteOnClose, OLPStageRequest<AugmentedRequest> stageRequest) {
         
         // first, check if there are any write capabilities among the cached
         // capabilities
@@ -123,12 +136,14 @@ public class EventCloseFile extends OSDOperation {
         // if there are no write capabilities, there is no need to create a new
         // version
         if (!writeCap)
-            return;
+            return true;
         
-        master.getStorageStage().createFileVersion(fileId, fi, new Callback() {
-            
+        master.getStorageStage().createFileVersion(fileId, fi, stageRequest, new Callback() {
+
+
             @Override
-            public boolean success(Object fileSize) {
+            public <S extends StageRequest<?>> boolean success(Object fileSize, S stageRequest)
+                    throws ErrorResponseException {
                 
                 if (isDeleteOnClose) {
                     deleteObjects(fileId, fi, true);
@@ -142,6 +157,8 @@ public class EventCloseFile extends OSDOperation {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: %s", error.getMessage());
             }
         });
+        
+        return false;
     }
 
     @Override

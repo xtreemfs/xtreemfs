@@ -14,10 +14,9 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.common.auth.AuthenticationException;
 import org.xtreemfs.common.auth.UserCredentials;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.olp.OverloadProtectedStage;
-import org.xtreemfs.common.olp.RequestMonitoring;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
@@ -83,6 +82,7 @@ import static org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceConstants.*;
 public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
     
     private final static int                 NUM_RQ_TYPES              = 38;
+    private final static int                 NUM_INTERNAL_RQ_TYPES     = 0;
     private final static int                 STAGE_ID                  = 1;
     private final static int                 NUM_SUB_SEQ_STAGES        = 1;
     
@@ -97,7 +97,7 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
     public final Map<Integer, Integer>       requestTypeMap = new HashMap<Integer, Integer>(NUM_RQ_TYPES);
     
     public ProcessingStage(MRCRequestDispatcher master) {
-        super("ProcSt", STAGE_ID, NUM_RQ_TYPES, NUM_SUB_SEQ_STAGES);
+        super("ProcSt", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, NUM_SUB_SEQ_STAGES);
         this.master = master;
         
         operations = new HashMap<Integer, MRCOperation>();
@@ -198,23 +198,23 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
     }
 
     /* (non-Javadoc)
-     * @see org.xtreemfs.common.stage.Stage#_processMethod(org.xtreemfs.common.stage.StageRequest)
+     * @see org.xtreemfs.common.olp.OverloadProtectedStage#_processMethod(org.xtreemfs.common.olp.OLPStageRequest)
      */
     @Override
-    protected void _processMethod(StageRequest<MRCRequest> method) {
+    protected boolean _processMethod(OLPStageRequest<MRCRequest> stageRequest) {
         
-        final MRCRequest rq = method.getRequest();
+        final MRCRequest rq = stageRequest.getRequest();
         final RPCServerRequest rpcRequest = rq.getRPCRequest();
         final RPCHeader.RequestHeader rqHeader = rpcRequest.getHeader().getRequestHeader();
-        final MRCOperation op = operations.get(method.getStageMethod());
-        final RPCRequestCallback callback = (RPCRequestCallback) method.getCallback();
-        final RequestMonitoring monitoring = method.getRequest().getMonitoring();
+        final MRCOperation op = operations.get(stageRequest.getStageMethod());
+        final RPCRequestCallback callback = (RPCRequestCallback) stageRequest.getCallback();
         
         if (op == null) {
-            monitoring.voidMeasurments();
+            
+            stageRequest.voidMeasurments();
             callback.failed(ErrorType.INVALID_PROC_ID, POSIXErrno.POSIX_ERROR_NONE, "requested operation (" + 
                     rqHeader.getProcId() + ") is not available on this MRC");
-            return;
+            return true;
         }
         
         if (Logging.isDebug()) {
@@ -236,9 +236,9 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
                     "could not parse request arguments:");
                 Logging.logUserError(Logging.LEVEL_DEBUG, Category.stage, this, e);
             }
-            monitoring.voidMeasurments();
+            stageRequest.voidMeasurments();
             callback.failed(ErrorType.GARBAGE_ARGS, POSIXErrno.POSIX_ERROR_EINVAL, e);
-            return;
+            return true;
         }
         
         try {
@@ -266,10 +266,10 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
             }
         } catch (Exception exc) {
             
-            monitoring.voidMeasurments();
+            stageRequest.voidMeasurments();
             callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO, 
                     "could not initialize authentication module");
-            return;
+            return true;
         }
         
         try {
@@ -295,11 +295,11 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
             
         } catch (UserException exc) {
             
-            monitoring.voidMeasurments();
+            stageRequest.voidMeasurments();
             callback.failed(ErrorType.ERRNO, exc.getErrno(), exc);
         } catch (MRCException exc) {
             
-            monitoring.voidMeasurments();
+            stageRequest.voidMeasurments();
             Throwable cause = exc.getCause();
             if (cause instanceof DatabaseException 
                 && ((DatabaseException) cause).getType() == ExceptionType.NOT_ALLOWED) {
@@ -310,7 +310,7 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
             }
         } catch (DatabaseException exc) {
             
-            monitoring.voidMeasurments();
+            stageRequest.voidMeasurments();
             if (exc.getType() == ExceptionType.NOT_ALLOWED) {
                 callback.failed(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EPERM, exc);
             } else if (exc.getType() == ExceptionType.REDIRECT) {
@@ -327,9 +327,11 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
             }
         } catch (Throwable exc) {
             
-            monitoring.voidMeasurments();
+            stageRequest.voidMeasurments();
             callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "an error has occurred", 
                     OutputUtils.stackTraceToString(exc));
         }
+        
+        return true;
     }
 }

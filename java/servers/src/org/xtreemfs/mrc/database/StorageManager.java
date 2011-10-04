@@ -11,7 +11,6 @@ package org.xtreemfs.mrc.database;
 import java.io.BufferedWriter;
 import java.io.IOException;
 
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
@@ -50,7 +49,7 @@ public interface StorageManager {
     
     // entity generators
     
-    public AtomicDBUpdate createAtomicDBUpdate(BabuDBPostprocessing<Object> postprocessing);
+    public AtomicDBUpdate createAtomicDBUpdate();
     
     public ACLEntry createACLEntry(long fileId, String entity, short rights);
     

@@ -10,6 +10,7 @@ package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
@@ -55,7 +56,8 @@ public class EventRWRStatus extends OSDOperation {
         master.getStorageStage().internalGetReplicaState(fileId, sp, 0, new Callback() {
             
             @Override
-            public boolean success(Object result) {
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest) 
+                    throws ErrorResponseException {
                 
                 master.getRWReplicationStage().eventReplicaStateAvailable(fileId, (ReplicaStatus) result, null);
                 return true;

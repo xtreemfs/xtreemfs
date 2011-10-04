@@ -14,6 +14,7 @@ import java.util.List;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -24,6 +25,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax;
@@ -61,7 +63,8 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
                 new AbstractRPCRequestCallback(callback) {
             
             @Override
-            public boolean success(Object result) {
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
                 
                 return step2(rq, args, (Long) result, callback);
             }
@@ -71,12 +74,13 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
     }
 
     private boolean step2(OSDRequest rq, xtreemfs_internal_get_file_sizeRequest args, long localFS, 
-            RPCRequestCallback callback) {
+            RPCRequestCallback callback) throws ErrorResponseException {
 
         if (rq.getLocationList().getLocalReplica().isStriped()) {
             
             //striped read
-            return stripedGetFS(rq, args, localFS, callback);
+            stripedGetFS(rq, args, localFS, callback);
+            return true;
         } else {
             //non-striped case
             return sendResponse(localFS, callback);
@@ -84,8 +88,8 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    private boolean stripedGetFS(OSDRequest rq, xtreemfs_internal_get_file_sizeRequest args, final long localFS, 
-            final RPCRequestCallback callback) {
+    private void stripedGetFS(OSDRequest rq, xtreemfs_internal_get_file_sizeRequest args, final long localFS, 
+            final RPCRequestCallback callback) throws ErrorResponseException {
         
         try {
             
@@ -107,11 +111,9 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
                 }
             });
             
-            return true;
         } catch (IOException ex) {
             
-            callback.failed(ex);
-            return false;
+            throw new ErrorResponseException(ex);
         }
     }
 
@@ -130,17 +132,18 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
                 }
             }
             sendResponse(maxFS, callback);
-        } catch (Exception ex) {
+        } catch (Exception e) {
             
-            callback.failed(ex);
+            callback.failed(e);
         } finally {
+            
             for (RPCResponse r : gmaxRPCs) {
                 r.freeBuffers();
             }
         }
     }
 
-    private boolean sendResponse(long fileSize, RPCRequestCallback callback) {
+    private boolean sendResponse(long fileSize, RPCRequestCallback callback) throws ErrorResponseException {
         
         return callback.success(xtreemfs_internal_get_file_sizeResponse.newBuilder().setFileSize(fileSize).build());
     }

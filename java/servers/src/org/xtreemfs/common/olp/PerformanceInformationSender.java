@@ -74,6 +74,7 @@ class PerformanceInformationSender extends Timer {
         assert (receiver != null);
         
         if (!tasks.containsKey(receiver.getStageId())) {
+            
             TimerTask task = new SendPerformanceInformation(receiver);
             tasks.put(receiver.getStageId(), task);
             schedule(task, DELAY_BETWEEN_UPDATES, DELAY_BETWEEN_UPDATES);

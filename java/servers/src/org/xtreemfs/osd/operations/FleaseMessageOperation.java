@@ -45,7 +45,7 @@ public class FleaseMessageOperation extends OSDOperation {
             return null;
         } catch (Exception ex) {
             
-            Logging.logError(Logging.LEVEL_WARN, this,ex);
+            Logging.logError(Logging.LEVEL_WARN, this, ex);
             return ErrorUtils.getInternalServerError(ex);
         }
     }

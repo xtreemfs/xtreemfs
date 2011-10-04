@@ -19,7 +19,10 @@ import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.olp.AugmentedInternalRequest;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.olp.OverloadProtectedStage;
+import org.xtreemfs.common.olp.PerformanceInformationReceiver;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.StageRequest;
@@ -55,7 +58,6 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.operations.EventRWRStatus;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
-import org.xtreemfs.osd.stages.StageInternalRequest;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
@@ -72,24 +74,32 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest> 
         implements FleaseMessageSenderInterface {
 
-    private final static int NUM_RQ_TYPES                       = 1;
+    private final static int NUM_RQ_TYPES                       = 6;
+    private final static int NUM_INTERNAL_RQ_TYPES              = 10;
     private final static int STAGE_ID                           = 2;
+
+/*
+ * external requests
+ */
     
-    public static final int  STAGEOP_REPLICATED_WRITE           = 1;
-    public static final int  STAGEOP_CLOSE                      = 2;
-    public static final int  STAGEOP_PROCESS_FLEASE_MSG         = 3;
-    public static final int  STAGEOP_PREPAREOP                  = 5;
-    public static final int  STAGEOP_TRUNCATE                   = 6;
-    public static final int  STAGEOP_GETSTATUS                  = 7;
-
-    public static final int  STAGEOP_INTERNAL_AUTHSTATE         = 10;
-    public static final int  STAGEOP_INTERNAL_OBJFETCHED        = 11;
-
-    public static final int  STAGEOP_LEASE_STATE_CHANGED        = 13;
-    public static final int  STAGEOP_INTERNAL_STATEAVAIL        = 14;
-    public static final int  STAGEOP_INTERNAL_DELETE_COMPLETE   = 15;
-    public static final int  STAGEOP_FORCE_RESET                = 16;
-    public static final int  STAGEOP_INTERNAL_MAXOBJ_AVAIL      = 17;
+    public static final int  STAGEOP_TRUNCATE                   = -3;
+    public static final int  STAGEOP_REPLICATED_WRITE           = -2;
+    public static final int  STAGEOP_PREPAREOP                  = -1;
+    
+/*
+ * internal requests
+ */
+    
+    public static final int  STAGEOP_CLOSE                      = 0;
+    public static final int  STAGEOP_PROCESS_FLEASE_MSG         = 1;
+    public static final int  STAGEOP_GETSTATUS                  = 2;
+    public static final int  STAGEOP_INTERNAL_AUTHSTATE         = 3;
+    public static final int  STAGEOP_INTERNAL_OBJFETCHED        = 4;
+    public static final int  STAGEOP_INTERNAL_DELETE_COMPLETE   = 5;
+    public static final int  STAGEOP_LEASE_STATE_CHANGED        = 6;
+    public static final int  STAGEOP_INTERNAL_STATEAVAIL        = 7;
+    public static final int  STAGEOP_FORCE_RESET                = 8;
+    public static final int  STAGEOP_INTERNAL_MAXOBJ_AVAIL      = 9;
 
     public  static enum Operation {
         READ,
@@ -115,7 +125,6 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
 
     private final OSDServiceClient     fleaseOsdClient;
 
-
     private final ASCIIString          localID;
 
     private int                        numObjsInFlight;
@@ -131,17 +140,17 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
     private final FleaseMasterEpochThread masterEpochThread;
 
     private final AtomicInteger externalRequestsInQueue;
-
+    
     public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts) throws IOException {
-        
-        // TODO
-        super("RWReplSt", STAGE_ID, NUM_RQ_TYPES);
-        
+        super("RWReplSt", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, 
+                addPerformanceInformationReceiverHelper(master.getStorageStage().getThreads(), 
+                                                        master.getPreprocStage()));
+
         this.master = master;
         client = new RPCNIOSocketClient(sslOpts, 15000, 60000*5);
         fleaseClient = new RPCNIOSocketClient(sslOpts, 15000, 60000*5);
-        osdClient = new OSDServiceClient(client,null);
-        fleaseOsdClient = new OSDServiceClient(fleaseClient,null);
+        osdClient = new OSDServiceClient(client, null);
+        fleaseOsdClient = new OSDServiceClient(fleaseClient, null);
         files = new HashMap<String, ReplicatedFileState>();
         cellToFileId = new HashMap<ASCIIString,String>();
         numObjsInFlight = 0;
@@ -181,6 +190,15 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
         }, masterEpochThread);
     }
 
+    private final static PerformanceInformationReceiver[] addPerformanceInformationReceiverHelper(
+            PerformanceInformationReceiver[] dest, PerformanceInformationReceiver addend) {
+        
+        PerformanceInformationReceiver[] result = new PerformanceInformationReceiver[dest.length + 1];
+        System.arraycopy(dest, 0, result, 0, dest.length);
+        result[dest.length] = addend;
+        return result;
+    }
+    
     @Override
     public void start() {
         
@@ -219,40 +237,45 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
     }
 
     public void eventReplicaStateAvailable(String fileId, ReplicaStatus localState, ErrorResponse error) {
-         enter(STAGEOP_INTERNAL_STATEAVAIL, new Object[] { fileId, localState, error }, null, null);
+         enter(STAGEOP_INTERNAL_STATEAVAIL, new Object[] { fileId, localState, error }, 
+                 new AugmentedInternalRequest(STAGEOP_INTERNAL_STATEAVAIL), null);
     }
 
     public void eventForceReset(FileCredentials credentials, XLocations xloc) {
-         enter(STAGEOP_FORCE_RESET, new Object[]{credentials, xloc}, null, null);
+         enter(STAGEOP_FORCE_RESET, new Object[]{credentials, xloc}, 
+                 new AugmentedInternalRequest(STAGEOP_FORCE_RESET), null);
+    }
+    
+    private void eventDeleteObjectsComplete(String fileId, ErrorResponse error) {
+        
+        enter(STAGEOP_INTERNAL_DELETE_COMPLETE, new Object[]{ fileId, error }, 
+                new AugmentedInternalRequest(STAGEOP_INTERNAL_DELETE_COMPLETE), null);
     }
 
-    public void eventDeleteObjectsComplete(String fileId, ErrorResponse error) {
-         enter(STAGEOP_INTERNAL_DELETE_COMPLETE, new Object[]{ fileId, error }, null, null);
-    }
-
-    void eventObjectFetched(String fileId, ObjectVersionMapping object, InternalObjectData data, ErrorResponse error) {
+    private void eventObjectFetched(String fileId, ObjectVersionMapping object, InternalObjectData data, ErrorResponse error) {
          enter(STAGEOP_INTERNAL_OBJFETCHED, new Object[]{ fileId, object, data, error}, null, null);
     }
-
-
-    void eventSetAuthState(String fileId, AuthoritativeReplicaState authState, ReplicaStatus localState, 
+    
+    private void eventSetAuthState(String fileId, AuthoritativeReplicaState authState, ReplicaStatus localState, 
             ErrorResponse error) {
         enter(STAGEOP_INTERNAL_AUTHSTATE, new Object[]{ fileId, authState, localState, error}, null, null);
     }
 
-    void eventLeaseStateChanged(ASCIIString cellId, Flease lease, FleaseException error) {
+    private void eventLeaseStateChanged(ASCIIString cellId, Flease lease, FleaseException error) {
         enter(STAGEOP_LEASE_STATE_CHANGED, new Object[]{ cellId, lease, error}, null, null);
     }
 
-    void eventMaxObjAvail(String fileId, long maxObjVer, long fileSize, long truncateEpoch, ErrorResponse error) {
+    private void eventMaxObjAvail(String fileId, long maxObjVer, long fileSize, long truncateEpoch, ErrorResponse error) {
         enter(STAGEOP_INTERNAL_MAXOBJ_AVAIL, new Object[]{ fileId, maxObjVer, error}, null, null);
     }
 
-    private void processLeaseStateChanged(StageRequest<AugmentedRequest> method) {
+    private boolean processLeaseStateChanged(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
 
-        final ASCIIString cellId = (ASCIIString) method.getArgs()[0];
-        final Flease lease = (Flease) method.getArgs()[1];
-        final FleaseException error = (FleaseException) method.getArgs()[2];
+        final Callback callback = stageRequest.getCallback();
+        
+        final ASCIIString cellId = (ASCIIString) stageRequest.getArgs()[0];
+        final Flease lease = (Flease) stageRequest.getArgs()[1];
+        final FleaseException error = (FleaseException) stageRequest.getArgs()[2];
 
         if (error == null) {
             if (Logging.isDebug()) {
@@ -266,10 +289,12 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
 
         final String fileId = cellToFileId.get(cellId);
         if (fileId != null) {
+            
             ReplicatedFileState state = files.get(fileId);
             assert(state != null);
 
             if (error == null) {
+                
                 boolean localIsPrimary = (lease.getLeaseHolder() != null) && (lease.getLeaseHolder().equals(localID));
                 ReplicaState oldState = state.getState();
                 state.setLocalIsPrimary(localIsPrimary);
@@ -285,6 +310,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                     failed(state, ErrorUtils.getInternalServerError(new IOException(fileId +
                             ": lease timed out, renew failed")));
                 } else {
+                    
                     if ( (state.getState() == ReplicaState.BACKUP)
                         || (state.getState() == ReplicaState.PRIMARY)
                         || (state.getState() == ReplicaState.WAITING_FOR_LEASE) ) {
@@ -303,39 +329,46 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                     }
                 }
             } else {
+                
                 failed(state, ErrorUtils.getInternalServerError(error));
             }
         }
+        
+        return callback.success(null, stageRequest);
     }
 
-    private ErrorResponse processSetAuthoritativeState(StageRequest<AugmentedRequest> method) {
+    private boolean processSetAuthoritativeState(OLPStageRequest<AugmentedRequest> stageRequest) 
+            throws ErrorResponseException {
         
-        final String fileId = (String) method.getArgs()[0];
-        final AuthoritativeReplicaState authState = (AuthoritativeReplicaState) method.getArgs()[1];
-        final ReplicaStatus localState = (ReplicaStatus) method.getArgs()[2];
-        final ErrorResponse error = (ErrorResponse) method.getArgs()[3];
+        final Callback callback = stageRequest.getCallback();
+        
+        final String fileId = (String) stageRequest.getArgs()[0];
+        final AuthoritativeReplicaState authState = (AuthoritativeReplicaState) stageRequest.getArgs()[1];
+        final ReplicaStatus localState = (ReplicaStatus) stageRequest.getArgs()[2];
+        final ErrorResponse error = (ErrorResponse) stageRequest.getArgs()[3];
 
         final ReplicatedFileState state = files.get(fileId);
+        
         if (state == null) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this, "(R:%s) set AUTH for unknown file: %s",
                     localID, fileId);
             if (error != null) {
-                return error;
+                throw new ErrorResponseException(error);
             } else {
-                return ErrorUtils.getInternalServerError(new Exception("(R:" + localID + 
-                        ") set AUTH for unknown file: " + fileId));
+                throw new ErrorResponseException(ErrorUtils.getInternalServerError(new Exception("(R:" + localID + 
+                        ") set AUTH for unknown file: " + fileId)));
             }
         }
 
         if (error != null) {
             failed(state, error);
-            return error;
+            throw new ErrorResponseException(error);
         } else {
             // Calculate what we need to do locally based on the local state. XXX dead code
             //boolean resetRequired = localState.getTruncateEpoch() < authState.getTruncateEpoch();
 
             // Create a list of missing objects.
-            Map<Long, Long> objectsToBeDeleted = new HashMap<Long, Long>();
+            final Map<Long, Long> objectsToBeDeleted = new HashMap<Long, Long>();
 
             for (ObjectVersion localObject : localState.getObjectVersionsList()) {
                 // Never delete any object which is newer than auth state!
@@ -351,7 +384,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                 }
             }
 
-            Map<Long, ObjectVersionMapping> missingObjects = new HashMap<Long, ObjectVersionMapping>();
+            final Map<Long, ObjectVersionMapping> missingObjects = new HashMap<Long, ObjectVersionMapping>();
             for (ObjectVersionMapping authObject : authState.getObjectVersionsList()) {
                 missingObjects.put(authObject.getObjectNumber(), authObject);
             }
@@ -377,16 +410,19 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                 master.getStorageStage().deleteObjects(fileId, state.getsPolicy(), authState.getTruncateEpoch(), 
                         objectsToBeDeleted, new Callback() {
                             
-                            @Override
-                            public boolean success(Object result) {
-                                eventDeleteObjectsComplete(fileId, null);
-                                return true;
-                            }
+                    @Override
+                    public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                            throws ErrorResponseException {
+                        
+                        eventDeleteObjectsComplete(fileId, null);
+                        return true;
+                    }
                             
-                            @Override
-                            public void failed(Throwable error) {
-                                eventDeleteObjectsComplete(fileId, ((ErrorResponseException) error).getRPCError());
-                            }
+                    @Override
+                    public void failed(Throwable error) {
+                        
+                        eventDeleteObjectsComplete(fileId, ((ErrorResponseException) error).getRPCError());
+                    }
                 });
 
             } else {
@@ -398,13 +434,15 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
             }
         }
 
-        return null;
+        return callback.success(null, stageRequest);
     }
 
-    private void processDeleteObjectsComplete(StageRequest<AugmentedRequest> method) {
-        
-        final String fileId = (String) method.getArgs()[0];
-        final ErrorResponse error = (ErrorResponse) method.getArgs()[1];
+    private boolean processDeleteObjectsComplete(OLPStageRequest<AugmentedRequest> stageRequest) 
+            throws ErrorResponseException {
+
+        final Callback callback = stageRequest.getCallback();
+        final String fileId = (String) stageRequest.getArgs()[0];
+        final ErrorResponse error = (ErrorResponse) stageRequest.getArgs()[1];
 
         ReplicatedFileState state = files.get(fileId);
         if (state != null) {
@@ -419,6 +457,8 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                 fetchObjects();
             }
         }
+        
+        return callback.success(null, stageRequest);
     }
 
     private void fetchObjects() {
@@ -428,7 +468,6 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
             ReplicatedFileState file = filesInReset.poll();
             if (file == null)
                 break;
-
             
             if (!file.getObjectsToFetch().isEmpty()) {
                 ObjectVersionMapping o = file.getObjectsToFetch().remove(0);
@@ -484,12 +523,14 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
         
     }
     
-    private void processObjectFetched(StageRequest<AugmentedRequest> method) {
+    private boolean processObjectFetched(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
 
-        final String fileId = (String) method.getArgs()[0];
-        final ObjectVersionMapping record = (ObjectVersionMapping) method.getArgs()[1];
-        final InternalObjectData data = (InternalObjectData) method.getArgs()[2];
-        final ErrorResponse error = (ErrorResponse) method.getArgs()[3];
+        final Callback callback = stageRequest.getCallback();
+        
+        final String fileId = (String) stageRequest.getArgs()[0];
+        final ObjectVersionMapping record = (ObjectVersionMapping) stageRequest.getArgs()[1];
+        final InternalObjectData data = (InternalObjectData) stageRequest.getArgs()[2];
+        final ErrorResponse error = (ErrorResponse) stageRequest.getArgs()[3];
 
         ReplicatedFileState state = files.get(fileId);
         if (state != null) {
@@ -504,17 +545,20 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                 master.getStorageStage().writeObjectWithoutGMax(fileId, record.getObjectNumber(),
                         state.getsPolicy(), 0, data.getData(), CowPolicy.PolicyNoCow, null, false,
                         record.getObjectVersion(), new Callback() {
-                            
-                            @Override
-                            public boolean success(Object result) {
-                                /* ignored */
-                                return true;
-                            }
-                            
+                                                        
                             @Override
                             public void failed(Throwable error) {
+                                
                                 Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
                                         "cannot write object locally: %s", error.getMessage());
+                            }
+
+                            @Override
+                            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                                    throws ErrorResponseException {
+                                
+                                /* ignored */
+                                return true;
                             }
                         });
                 
@@ -536,6 +580,8 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                 }
             }
         }
+        
+        return callback.success(null, stageRequest);
     }
 
     private void doReset(final ReplicatedFileState file, long updateObjVer) {
@@ -562,11 +608,14 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
         
     }
 
-    private void processReplicaStateAvailExecReset(StageRequest<AugmentedRequest> method) {
+    private boolean processReplicaStateAvailExecReset(OLPStageRequest<AugmentedRequest> stageRequest) 
+            throws ErrorResponseException {
         
-        final String fileId = (String) method.getArgs()[0];
-        final ReplicaStatus localReplicaState = (ReplicaStatus) method.getArgs()[1];
-        final ErrorResponse error = (ErrorResponse) method.getArgs()[2];
+        final Callback callback = stageRequest.getCallback();
+        
+        final String fileId = (String) stageRequest.getArgs()[0];
+        final ReplicaStatus localReplicaState = (ReplicaStatus) stageRequest.getArgs()[1];
+        final ErrorResponse error = (ErrorResponse) stageRequest.getArgs()[2];
 
         final ReplicatedFileState state = files.get(fileId);
         if (state != null) {
@@ -594,35 +643,43 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                 });
             }
         }
+        
+        return callback.success(null, stageRequest);
     }
 
-    private ErrorResponse processForceReset(StageRequest<AugmentedRequest> method) {
+    private boolean processForceReset(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
+        
+        final Callback callback = stageRequest.getCallback();
         
         try {
-            final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
-            final XLocations loc = (XLocations) method.getArgs()[1];
+            final FileCredentials credentials = (FileCredentials) stageRequest.getArgs()[0];
+            final XLocations loc = (XLocations) stageRequest.getArgs()[1];
 
             ReplicatedFileState state = getState(credentials, loc, true);
             if (!state.isForceReset()) {
                 state.setForceReset(true);
             }
             
-            return null;
-        } catch (Exception ex) {
+            return callback.success(null, stageRequest);
+        } catch (IOException ex) {
             
-            return ErrorUtils.getInternalServerError(ex);
+            throw new ErrorResponseException(ErrorUtils.getInternalServerError(ex));
         }
     }
 
     private void doWaitingForLease(final ReplicatedFileState file) {
+        
         if (file.getPolicy().requiresLease()) {
+            
             if (file.isCellOpen()) {
+                
                 if (file.isLocalIsPrimary()) {
                     doPrimary(file);
                 } else {
                     doBackup(file);
                 }
             } else {
+                
                 file.setCellOpen(true);
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
@@ -644,6 +701,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
             }
 
         } else {
+            
             //become primary immediately
             doPrimary(file);
         }
@@ -677,11 +735,11 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                 file.setPrimaryReset(false);
                 file.setState(ReplicaState.PRIMARY);
                 while (!file.getPendingRequests().isEmpty()) {
-                    StageRequest<AugmentedRequest> m = file.getPendingRequests().remove(0);
-                    enqueuePrioritized(m);
+                    enqueuePrioritized(file.getPendingRequests().remove(0));
                 }
             }
         } catch (IOException ex) {
+            
             failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
         }
     }
@@ -698,8 +756,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
         file.setPrimaryReset(false);
         file.setState(ReplicaState.BACKUP);
         while (!file.getPendingRequests().isEmpty()) {
-            StageRequest<AugmentedRequest> m = file.getPendingRequests().remove(0);
-            enqueuePrioritized(m);
+            enqueuePrioritized(file.getPendingRequests().remove(0));
         }
     }
 
@@ -711,32 +768,38 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
         file.setState(ReplicaState.OPEN);
         file.setCellOpen(false);
         fstage.closeCell(file.getPolicy().getCellId(), false);
-        for (StageRequest<AugmentedRequest> rq : file.getPendingRequests()) {
+        for (OLPStageRequest<AugmentedRequest> rq : file.getPendingRequests()) {
             AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) rq.getCallback();
             callback.failed(ex);
         }
         file.getPendingRequests().clear();
     }
 
-    private void enqueuePrioritized(StageRequest<AugmentedRequest> rq) {
+    private void enqueuePrioritized(OLPStageRequest<AugmentedRequest> rq) {
                 
-        rq.getRequest().getMetadata().increasePriority();
-        
+        rq.getRequest().increasePriority();
         enter(rq);
+    }
+    
+    private void enqueueExternalOperation(int stageOp, Object[] arguments, OSDRequest rq, 
+            AbstractRPCRequestCallback callback, PerformanceInformationReceiver predecessor) {
+        
+        enqueueExternalOperation(stageOp, arguments, rq, callback, 
+                new PerformanceInformationReceiver[] { predecessor });
     }
 
     private void enqueueExternalOperation(int stageOp, Object[] arguments, OSDRequest rq, 
-            AbstractRPCRequestCallback callback) {
+            AbstractRPCRequestCallback callback, PerformanceInformationReceiver[] predecessor) {
         
         if (externalRequestsInQueue.get() >= MAX_EXTERNAL_REQUESTS_IN_Q) {
+            
             Logging.logMessage(Logging.LEVEL_WARN, this, 
                     "RW replication stage is overloaded, request %s dropped", rq.toString());
             callback.failed(new IllegalStateException("RW replication stage is overloaded, request dropped"));
         } else {
+            
             externalRequestsInQueue.incrementAndGet();
-            // TODO find predecessors
-            StageInternalRequest request = new StageInternalRequest(rq, null);
-            enter(stageOp, arguments, request, callback);
+            enter(stageOp, arguments, rq, callback, predecessor);
         }
     }
 
@@ -744,21 +807,21 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
             Operation op, AbstractRPCRequestCallback callback, OSDRequest request) {
 
         enqueueExternalOperation(STAGEOP_PREPAREOP, new Object[]{ credentials, xloc, objNo, objVersion, op}, request, 
-                callback);
+                callback, master.getPreprocStage());
     }
     
     public void replicatedWrite(FileCredentials credentials, XLocations xloc, long objNo, long objVersion, 
             InternalObjectData data, AbstractRPCRequestCallback callback, OSDRequest request) {
         
         enqueueExternalOperation(STAGEOP_REPLICATED_WRITE, new Object[] { credentials, xloc, objNo, objVersion, data }, 
-                request, callback);
+                request, callback, master.getStorageStage().getThreads());
     }
 
     public void replicateTruncate(FileCredentials credentials, XLocations xloc, long newFileSize, long newObjectVersion,
             AbstractRPCRequestCallback callback, OSDRequest request) {
         
         enqueueExternalOperation(STAGEOP_TRUNCATE, new Object[]{credentials,xloc,newFileSize,newObjectVersion}, request, 
-                callback);
+                callback, master.getStorageStage().getThreads());
     }
 
     public void fileClosed(String fileId) {
@@ -803,62 +866,69 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
         }
     }
 
-
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.olp.OverloadProtectedStage#_processMethod(org.xtreemfs.common.olp.OLPStageRequest)
+     */
     @Override
-    protected void _processMethod(StageRequest<AugmentedRequest> method) {
+    protected boolean _processMethod(OLPStageRequest<AugmentedRequest> stageRequest) {
         
-        final Callback callback = method.getCallback();
-        ErrorResponse error = null;
+        final Callback callback = stageRequest.getCallback();
+        final int requestedMethod = stageRequest.getStageMethod();
         
-        switch (method.getStageMethod()) {
-            case STAGEOP_REPLICATED_WRITE : {
-                externalRequestsInQueue.decrementAndGet();
-                processReplicatedWrite(method);
-                break;
+        try{
+            
+            switch (requestedMethod) {
+            
+                case STAGEOP_REPLICATED_WRITE : 
+                    externalRequestsInQueue.decrementAndGet();
+                    return processReplicatedWrite(stageRequest);
+                case STAGEOP_TRUNCATE :
+                    externalRequestsInQueue.decrementAndGet();
+                    return processReplicatedTruncate(stageRequest);
+                case STAGEOP_PREPAREOP : 
+                    externalRequestsInQueue.decrementAndGet();
+                    return processPrepareOp(stageRequest);
+                
+                case STAGEOP_CLOSE :                    return processFileClosed(stageRequest);
+                case STAGEOP_PROCESS_FLEASE_MSG :       return processFleaseMessage(stageRequest);
+                case STAGEOP_INTERNAL_AUTHSTATE :       return processSetAuthoritativeState(stageRequest);
+                case STAGEOP_LEASE_STATE_CHANGED :      return processLeaseStateChanged(stageRequest);
+                case STAGEOP_INTERNAL_OBJFETCHED :      return processObjectFetched(stageRequest);
+                case STAGEOP_INTERNAL_STATEAVAIL :      return processReplicaStateAvailExecReset(stageRequest);
+                case STAGEOP_INTERNAL_DELETE_COMPLETE : return processDeleteObjectsComplete(stageRequest);
+                case STAGEOP_INTERNAL_MAXOBJ_AVAIL :    return processMaxObjAvail(stageRequest);
+                case STAGEOP_FORCE_RESET :              return processForceReset(stageRequest);
+                case STAGEOP_GETSTATUS :                return processGetStatus(stageRequest);
+                default:
+                    Logging.logMessage(Logging.LEVEL_ERROR, this, "unknown stageop called: %d", requestedMethod);
+                    return true;
             }
-            case STAGEOP_TRUNCATE : {
-                externalRequestsInQueue.decrementAndGet();
-                processReplicatedTruncate(method);
-                break;
-            }
-            case STAGEOP_CLOSE : processFileClosed(method); break;
-            case STAGEOP_PROCESS_FLEASE_MSG : processFleaseMessage(method); break;
-            case STAGEOP_PREPAREOP : {
-                externalRequestsInQueue.decrementAndGet();
-                error = processPrepareOp(method);
-                break;
-            }
-            case STAGEOP_INTERNAL_AUTHSTATE : error = processSetAuthoritativeState(method); break;
-            case STAGEOP_LEASE_STATE_CHANGED : processLeaseStateChanged(method); break;
-            case STAGEOP_INTERNAL_OBJFETCHED : processObjectFetched(method); break;
-            case STAGEOP_INTERNAL_STATEAVAIL : processReplicaStateAvailExecReset(method); break;
-            case STAGEOP_INTERNAL_DELETE_COMPLETE : processDeleteObjectsComplete(method); break;
-            case STAGEOP_INTERNAL_MAXOBJ_AVAIL : error = processMaxObjAvail(method); break;
-            case STAGEOP_FORCE_RESET : error = processForceReset(method); break;
-            case STAGEOP_GETSTATUS : error = processGetStatus(method); break;
-            default : throw new IllegalArgumentException("no such stageop");
-        }
-        
-        if (error != null) {
-            method.getRequest().getMonitoring().voidMeasurments();
-            callback.failed(ErrorUtils.formatError(error));
+        } catch (ErrorResponseException error) {
+            
+            stageRequest.voidMeasurments();
+            callback.failed(error);
+            return true;
         }
     }
 
-    private void processFleaseMessage(StageRequest<AugmentedRequest> method) {
+    private boolean processFleaseMessage(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        final ReusableBuffer data = (ReusableBuffer) method.getArgs()[0];
-        final InetSocketAddress sender = (InetSocketAddress) method.getArgs()[1];
+        final Callback callback = stageRequest.getCallback();
+        final ReusableBuffer data = (ReusableBuffer) stageRequest.getArgs()[0];
+        final InetSocketAddress sender = (InetSocketAddress) stageRequest.getArgs()[1];
 
         FleaseMessage msg = new FleaseMessage(data);
         BufferPool.free(data);
         msg.setSender(sender);
         fstage.receiveMessage(msg);
+        
+        return callback.success(null, stageRequest);
     }
 
-    private void processFileClosed(StageRequest<AugmentedRequest> method) {
+    private boolean processFileClosed(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        final String fileId = (String) method.getArgs()[0];
+        final Callback callback = stageRequest.getCallback();
+        final String fileId = (String) stageRequest.getArgs()[0];
         ReplicatedFileState state = files.remove(fileId);
         if (state != null) {
             if (Logging.isDebug()) {
@@ -869,6 +939,8 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                 fstage.closeCell(state.getPolicy().getCellId(), false);
             cellToFileId.remove(state.getPolicy().getCellId());
         }
+        
+        return callback.success(null, stageRequest);
     }
 
     private ReplicatedFileState getState(FileCredentials credentials, XLocations loc, boolean forceReset) 
@@ -891,28 +963,33 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
             master.getStorageStage().internalGetMaxObjectNo(fileId, loc.getLocalReplica().getStripingPolicy(), 
                     new Callback() {
                         
-                        @Override
-                        public boolean success(Object result) {
-                            
-                            Object[] r = (Object[]) result;
-                            eventMaxObjAvail(fileId, (Long) r[0], (Long) r[1], (Long) r[2], null);
-                            return true;
-                        }
-                        
-                        @Override
-                        public void failed(Throwable error) {
-                            eventMaxObjAvail(fileId, 0L, 0L, 0L, ((ErrorResponseException) error).getRPCError());
-                        }
+
+                @Override
+                public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                        throws ErrorResponseException {
+                    
+                    Object[] r = (Object[]) result;
+                    eventMaxObjAvail(fileId, (Long) r[0], (Long) r[1], (Long) r[2], null);
+                    return true;
+                }
+                
+                @Override
+                public void failed(Throwable error) {
+                    
+                    eventMaxObjAvail(fileId, 0L, 0L, 0L, ((ErrorResponseException) error).getRPCError());
+                }
             });
         }
         return state;
     }
 
-    private ErrorResponse processMaxObjAvail(StageRequest<AugmentedRequest> method) {
+    private boolean processMaxObjAvail(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        final String fileId = (String) method.getArgs()[0];
-        final Long maxObjVersion = (Long) method.getArgs()[1];
-        final ErrorResponse error = (ErrorResponse) method.getArgs()[2];
+        final Callback callback = stageRequest.getCallback();
+        
+        final String fileId = (String) stageRequest.getArgs()[0];
+        final Long maxObjVersion = (Long) stageRequest.getArgs()[1];
+        final ErrorResponse error = (ErrorResponse) stageRequest.getArgs()[2];
 
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) max obj avail for file: " +
@@ -924,35 +1001,33 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
             Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this, "received maxObjAvail event for " +
             		"unknown file: %s", fileId);
             
-            if (error != null) return error;
-            else return ErrorUtils.getInternalServerError(new Exception("received maxObjAvail event for " + 
-                            "unknown file: " + fileId));
+            throw new ErrorResponseException((error != null) ? error : ErrorUtils.getInternalServerError(
+                    new Exception("received maxObjAvail event for unknown file: " + fileId)));
         }
 
         assert(state.getState() == ReplicaState.INITIALIZING);
         state.getPolicy().setLocalObjectVersion(maxObjVersion);
         doOpen(state);
         
-        return null;
+        return callback.success(null, stageRequest);
     }
 
-    private void processReplicatedWrite(StageRequest<AugmentedRequest> method) {
+    private boolean processReplicatedWrite(final OLPStageRequest<AugmentedRequest> stageRequest) 
+            throws ErrorResponseException {
         
-        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) method.getCallback();
-        final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) stageRequest.getCallback();
+        final FileCredentials credentials = (FileCredentials) stageRequest.getArgs()[0];
         // final XLocations loc = (XLocations) method.getArgs()[1]; XXX dead code
-        final Long objNo = (Long) method.getArgs()[2];
-        final Long objVersion = (Long) method.getArgs()[3];
-        final InternalObjectData objData  = (InternalObjectData) method.getArgs()[4];
-        
-
+        final Long objNo = (Long) stageRequest.getArgs()[2];
+        final Long objVersion = (Long) stageRequest.getArgs()[3];
+        final InternalObjectData objData  = (InternalObjectData) stageRequest.getArgs()[4];
         final String fileId = credentials.getXcap().getFileId();
 
-        ReplicatedFileState state = files.get(fileId);
+        final ReplicatedFileState state = files.get(fileId);
         if (state == null) {
             BufferPool.free(objData.getData());
-            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO, 
-                    "file is not open!"));
+            throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, 
+                    POSIXErrno.POSIX_ERROR_EIO, "file is not open!"));
         }
         state.setCredentials(credentials);
 
@@ -961,29 +1036,41 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
 
             @Override
             public void finished() {
-                callback.success(objVersion);
+                
+                try {
+                    
+                    callback.success(objVersion, stageRequest);
+                } catch (ErrorResponseException e) {
+                    
+                    callback.failed(e.getRPCError());
+                }
             }
 
             @Override
             public void failed(ErrorResponse error) {
+                
                 callback.failed(error);
             }
         });
+        
+        return true;
     }
 
-    private void processReplicatedTruncate(StageRequest<AugmentedRequest> method) {
+    private boolean processReplicatedTruncate(final OLPStageRequest<AugmentedRequest> stageRequest) 
+            throws ErrorResponseException {
         
-        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) method.getCallback();
-        final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) stageRequest.getCallback();
+        final FileCredentials credentials = (FileCredentials) stageRequest.getArgs()[0];
         //final XLocations loc = (XLocations) method.getArgs()[1]; XXX dead code
-        final Long newFileSize = (Long) method.getArgs()[2];
-        final Long newObjVersion = (Long) method.getArgs()[3];
+        final Long newFileSize = (Long) stageRequest.getArgs()[2];
+        final Long newObjVersion = (Long) stageRequest.getArgs()[3];
         
         final String fileId = credentials.getXcap().getFileId();
 
         final ReplicatedFileState state = files.get(fileId);
         if (state == null) {
-            Logging.logMessage(Logging.LEVEL_WARN, this, "file is not open!");
+            throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, 
+                    POSIXErrno.POSIX_ERROR_EIO, "file is not open!"));
         }
         state.setCredentials(credentials);
 
@@ -992,29 +1079,39 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
 
             @Override
             public void finished() {
-                callback.success(newObjVersion);
+                
+                try {
+                    
+                    callback.success(newObjVersion, stageRequest);
+                } catch (ErrorResponseException e) {
+                    
+                    callback.failed(e.getRPCError());
+                }
             }
 
             @Override
             public void failed(ErrorResponse error) {
+                
                 callback.failed(error);
             }
         });
+        
+        return true;
     }
 
-    private ErrorResponse processPrepareOp(StageRequest<AugmentedRequest> method) {
+    private boolean processPrepareOp(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        ErrorResponse result = null;
-        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) method.getCallback();
+        final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) stageRequest.getCallback();
+        
         try {
-            final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
-            final XLocations loc = (XLocations) method.getArgs()[1];
-            final Long objVersion = (Long) method.getArgs()[3];
-            final Operation op = (Operation) method.getArgs()[4];
+            final FileCredentials credentials = (FileCredentials) stageRequest.getArgs()[0];
+            final XLocations loc = (XLocations) stageRequest.getArgs()[1];
+            final Long objVersion = (Long) stageRequest.getArgs()[3];
+            final Operation op = (Operation) stageRequest.getArgs()[4];
 
             final String fileId = credentials.getXcap().getFileId();
 
-            ReplicatedFileState state = getState(credentials, loc, false);
+            final ReplicatedFileState state = getState(credentials, loc, false);
 
             if ((op == Operation.INTERNAL_UPDATE) || (op == Operation.INTERNAL_TRUNCATE)) {
                 switch (state.getState()) {
@@ -1024,7 +1121,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                     case OPEN: {
                         if (Logging.isDebug()) {
                             Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                                    "enqeue update for %s (state is %s)",fileId,state.getState());
+                                    "enqeue update for %s (state is %s)", fileId, state.getState());
                         }
                         if (state.getPendingRequests().size() > MAX_PENDING_PER_FILE) {
                             if (Logging.isDebug()) {
@@ -1032,50 +1129,56 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                                         "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
                                         state.getPendingRequests().size(), MAX_PENDING_PER_FILE, fileId);
                             }
-                            result = ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, 
-                                    POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file");
+                            throw new ErrorResponseException(ErrorUtils.getErrorResponse(
+                                    ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, 
+                                    "too many requests in queue for file"));
                         } else {
-                            state.getPendingRequests().add(method);
+                            state.getPendingRequests().add(stageRequest);
                         }
                         if (state.getState() == ReplicaState.OPEN) {
                             //immediately change to backup mode...no need to check the lease
                             doWaitingForLease(state);
                         }
-                        return result;
+                        return false;
                     }
                 }
-                boolean needsReset = state.getPolicy().onRemoteUpdate(objVersion, state.getState());
+                final boolean needsReset = state.getPolicy().onRemoteUpdate(objVersion, state.getState());
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                             "%s needs reset: %s", fileId, needsReset);
                 }
                 if (needsReset) {
-                    state.getPendingRequests().add(method);
+                    
+                    state.getPendingRequests().add(stageRequest);
                     doReset(state,objVersion);
+                    
+                    return false;
                 } else {
-                    if (!callback.success(0)) {
-                        method.getRequest().getMonitoring().voidMeasurments();
-                    }
+                    
+                    return callback.success(0, stageRequest);
                 }
             } else {
+                
                 state.setCredentials(credentials);
                 
                 switch (state.getState()) {
                     case WAITING_FOR_LEASE:
                     case INITIALIZING:
                     case RESET : {
+                        
                         if (state.getPendingRequests().size() > MAX_PENDING_PER_FILE) {
                             if (Logging.isDebug()) {
                                 Logging.logMessage(Logging.LEVEL_DEBUG, this,
                                         "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
                                         state.getPendingRequests().size(), MAX_PENDING_PER_FILE, fileId);
                             }
-                            result = ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, 
-                                    POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file");
+                            throw new ErrorResponseException(ErrorUtils.getErrorResponse(
+                                    ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, 
+                                    "too many requests in queue for file"));
                         } else {
-                            state.getPendingRequests().add(method);
+                            state.getPendingRequests().add(stageRequest);
                         }
-                        return result;
+                        return false;
                     }
                     case OPEN : {
                         
@@ -1085,26 +1188,26 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                                         "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
                                         state.getPendingRequests().size(), MAX_PENDING_PER_FILE, fileId);
                             }
-                            result = ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, 
-                                    POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file");
+                            throw new ErrorResponseException(ErrorUtils.getErrorResponse(
+                                    ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, 
+                                    "too many requests in queue for file"));
                         } else {
-                            state.getPendingRequests().add(method);
+                            state.getPendingRequests().add(stageRequest);
                         }
                         doWaitingForLease(state);
-                        return result;
+                        return false;
                     }
                 }
 
                 try {
                     
-                    long newVersion = state.getPolicy().onClientOperation(op, objVersion, state.getState(),
+                    final long newVersion = state.getPolicy().onClientOperation(op, objVersion, state.getState(),
                             state.getLease());
-                    if (!callback.success(newVersion)) {
-                        method.getRequest().getMonitoring().voidMeasurments();
-                    }
+                    
+                    return callback.success(newVersion, stageRequest);
                 } catch (RedirectToMasterException ex) {
                     
-                    method.getRequest().getMonitoring().voidMeasurments();
+                    stageRequest.voidMeasurments();
                     callback.redirect(ex.getMasterUUID());
                 } catch (RetryException ex) {
                     
@@ -1115,29 +1218,32 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                         
                         // Request is not in queue, we must notify
                         // callback.
-                        result = err;
+                        throw new ErrorResponseException(err);
                     }
                 }
             }
-        } catch (Exception ex) {
             
-            result = ErrorUtils.getInternalServerError(ex);
+            return true;
+        } catch (IOException ex) {
+            
+            throw new ErrorResponseException(ErrorUtils.getInternalServerError(ex));
         }
-
-        return result;
     }
 
-    private ErrorResponse processGetStatus(StageRequest<AugmentedRequest> method) {
+    private boolean processGetStatus(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
         
-        final Callback callback = method.getCallback();
+        final Callback callback = stageRequest.getCallback();
+        
         try {
-            Map<String, Map<String, String>> status = new HashMap<String, Map<String, String>>();
+            
+            final Map<String, Map<String, String>> status = new HashMap<String, Map<String, String>>();
 
             // Map<ASCIIString,FleaseMessage> fleaseState = XXX dead code
             fstage.getLocalState();
 
             for (String fileId : this.files.keySet()) {
-                Map<String, String> fStatus = new HashMap<String, String>();
+                
+                final Map<String, String> fStatus = new HashMap<String, String>();
                 final ReplicatedFileState fState = files.get(fileId);
                 final ASCIIString cellId = fState.getPolicy().getCellId();
                 fStatus.put("policy",fState.getPolicy().getClass().getSimpleName());
@@ -1151,22 +1257,19 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                         if (fState.isLocalIsPrimary()) {
                             primary = "primary";
                         } else {
-                            primary = "backup ( primary is "+fState.getLease().getLeaseHolder()+")";
+                            primary = "backup ( primary is " + fState.getLease().getLeaseHolder() + ")";
                         }
                     } else {
-                        primary = "outdated lease: "+fState.getLease().getLeaseHolder();
+                        primary = "outdated lease: " + fState.getLease().getLeaseHolder();
                     }
                 }
                 fStatus.put("role", primary);
                 status.put(fileId, fStatus);
             }
-            if (!callback.success(status)) {
-                method.getRequest().getMonitoring().voidMeasurments();
-            }
+            return callback.success(status, stageRequest);
+        } catch (InterruptedException ex) {
             
-            return null;
-        } catch (Exception ex) {
-            return ErrorUtils.getInternalServerError(ex);
+            throw new ErrorResponseException(ErrorUtils.getInternalServerError(ex));
         }
     }
 }

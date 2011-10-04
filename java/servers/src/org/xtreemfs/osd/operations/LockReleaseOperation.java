@@ -20,6 +20,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest;
@@ -63,7 +64,13 @@ public class LockReleaseOperation extends OSDOperation {
                 args.getLockRequest().getClientPid(), args.getFileCredentials().getXcap().getFileId());
         
         if (error == null) {
-            callback.success();
+            try {
+                
+                callback.success();
+            } catch (ErrorResponseException e) {
+                
+                return e.getRPCError();
+            }
         }
         
         return error;

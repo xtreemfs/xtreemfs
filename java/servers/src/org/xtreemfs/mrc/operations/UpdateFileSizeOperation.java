@@ -15,14 +15,15 @@ import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -39,7 +40,6 @@ import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeRequest;
 
@@ -86,14 +86,7 @@ public class UpdateFileSizeOperation extends MRCOperation {
             throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "file '" + cap.getFileId()
                 + "' does not exist");
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
-            
-            @Override
-            public Message execute(Object result, BabuDBRequest request) throws Exception {
-
-                return emptyResponse.getDefaultInstance();
-            }
-        });
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate();
         
         // update the file size if necessary
         if (rqArgs.getOsdWriteResponse().hasSizeInBytes()) {
@@ -258,8 +251,14 @@ public class UpdateFileSizeOperation extends MRCOperation {
             }
         }
         
-        update.execute(callback, rq.getMetadata());
-        
+        update.execute(new AbstractRPCRequestCallback(callback) {
+            
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+                
+                return success((Message) null);
+            }
+        }, rq);   
     }
-    
 }

@@ -29,8 +29,8 @@ import org.xtreemfs.babudb.index.DefaultByteRangeComparator;
 import org.xtreemfs.babudb.snapshots.DefaultSnapshotConfig;
 import org.xtreemfs.babudb.snapshots.SnapshotConfig;
 import org.xtreemfs.common.stage.BabuDBComponent;
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
 import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseResultSet;
@@ -59,58 +59,58 @@ import org.xtreemfs.mrc.utils.Path;
 
 public class BabuDBStorageManager implements StorageManager {
     
-    public static final int                  FILE_INDEX                 = 0;
+    public static final int                   FILE_INDEX                 = 0;
     
-    public static final int                  XATTRS_INDEX               = 1;
+    public static final int                   XATTRS_INDEX               = 1;
     
-    public static final int                  ACL_INDEX                  = 2;
+    public static final int                   ACL_INDEX                  = 2;
     
-    public static final int                  FILE_ID_INDEX              = 3;
+    public static final int                   FILE_ID_INDEX              = 3;
     
-    public static final int                  VOLUME_INDEX               = 4;
+    public static final int                   VOLUME_INDEX               = 4;
     
-    public static final byte[]               LAST_ID_KEY                = { 'i' };
+    public static final byte[]                LAST_ID_KEY                = { 'i' };
     
-    public static final byte[]               VOL_SIZE_KEY               = { 's' };
+    public static final byte[]                VOL_SIZE_KEY               = { 's' };
     
-    public static final byte[]               NUM_FILES_KEY              = { 'f' };
+    public static final byte[]                NUM_FILES_KEY              = { 'f' };
     
-    public static final byte[]               NUM_DIRS_KEY               = { 'd' };
+    public static final byte[]                NUM_DIRS_KEY               = { 'd' };
     
-    private static final String              DEFAULT_SP_ATTR_NAME       = "sp";
+    private static final String               DEFAULT_SP_ATTR_NAME       = "sp";
     
-    private static final String              DEFAULT_RP_ATTR_NAME       = "rp";
+    private static final String               DEFAULT_RP_ATTR_NAME       = "rp";
     
-    private static final String              LINK_TARGET_ATTR_NAME      = "lt";
+    private static final String               LINK_TARGET_ATTR_NAME      = "lt";
     
-    protected static final String            OSD_POL_ATTR_NAME          = "osdPol";
+    protected static final String             OSD_POL_ATTR_NAME          = "osdPol";
     
-    protected static final String            REPL_POL_ATTR_NAME         = "replPol";
+    protected static final String             REPL_POL_ATTR_NAME         = "replPol";
     
-    protected static final String            AC_POL_ATTR_NAME           = "acPol";
+    protected static final String             AC_POL_ATTR_NAME           = "acPol";
     
-    protected static final String            AUTO_REPL_FACTOR_ATTR_NAME = "replFactor";
+    protected static final String             AUTO_REPL_FACTOR_ATTR_NAME = "replFactor";
     
-    protected static final String            AUTO_REPL_FULL_ATTR_NAME   = "replFull";
+    protected static final String             AUTO_REPL_FULL_ATTR_NAME   = "replFull";
     
-    protected static final String            ALLOW_SNAPS_ATTR_NAME      = "allowSnaps";
+    protected static final String             ALLOW_SNAPS_ATTR_NAME      = "allowSnaps";
     
-    protected static final String            VOL_ID_ATTR_NAME           = "volId";
+    protected static final String             VOL_ID_ATTR_NAME           = "volId";
     
-    protected static final int[]             ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX,
-        ACL_INDEX, FILE_ID_INDEX, VOLUME_INDEX                         };
+    protected static final int[]              ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX,
+        ACL_INDEX, FILE_ID_INDEX, VOLUME_INDEX };
     
-    private final DatabaseManager            dbMan;
+    private final DatabaseManager             dbMan;
     
-    private final SnapshotManager            snapMan;
+    private final SnapshotManager             snapMan;
     
-    private final Database                   database;
+    private final Database                    database;
     
-    private final List<VolumeChangeListener> vcListeners;
+    private final List<VolumeChangeListener>  vcListeners;
     
-    private final BabuDBVolumeInfo           volume;
+    private final BabuDBVolumeInfo            volume;
     
-    private final BabuDBComponent            component;
+    private final BabuDBComponent<MRCRequest> component;
         
     /**
      * Instantiates a storage manager by loading an existing volume database.
@@ -123,8 +123,8 @@ public class BabuDBStorageManager implements StorageManager {
      *            the database
      * @param component 
      */
-    public BabuDBStorageManager(DatabaseManager dbMan, SnapshotManager sMan, Database db, BabuDBComponent component)
-        throws DatabaseException {
+    public BabuDBStorageManager(DatabaseManager dbMan, SnapshotManager sMan, Database db, 
+            BabuDBComponent<MRCRequest> component) throws DatabaseException {
         
         this.dbMan = dbMan;
         this.snapMan = sMan;
@@ -147,7 +147,7 @@ public class BabuDBStorageManager implements StorageManager {
     public BabuDBStorageManager(BabuDB dbs, String volumeId, String volumeName, short fileAccessPolicyId,
         short[] osdPolicy, short[] replPolicy, String ownerId, String owningGroupId, int perms,
         ACLEntry[] acl, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy rootDirDefSp,
-        boolean allowSnaps, Map<String, String> attrs, BabuDBComponent component) throws DatabaseException {
+        boolean allowSnaps, Map<String, String> attrs, BabuDBComponent<MRCRequest> component) throws DatabaseException {
         
         this.dbMan = dbs.getDatabaseManager();
         this.snapMan = dbs.getSnapshotManager();
@@ -213,9 +213,9 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public AtomicDBUpdate createAtomicDBUpdate(BabuDBPostprocessing<Object> postprocessing) {
+    public AtomicDBUpdate createAtomicDBUpdate() {
         
-        return new AtomicBabuDBUpdate(database, component, postprocessing);
+        return new AtomicBabuDBUpdate(database, component);
     }
     
     @Override

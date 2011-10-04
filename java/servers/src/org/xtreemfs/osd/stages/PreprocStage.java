@@ -15,12 +15,11 @@ import java.util.Map;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.olp.AugmentedInternalRequest;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.olp.OverloadProtectedStage;
-import org.xtreemfs.common.olp.PerformanceInformationReceiver;
-import org.xtreemfs.common.olp.RequestMonitoring;
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.LRUCache;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
@@ -29,6 +28,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.AdvisoryLock;
@@ -49,15 +49,14 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public class PreprocStage extends OverloadProtectedStage<AugmentedRequest> {
     
-    private final static int                                NUM_RQ_TYPES               = 29;
-    private final static int                                STAGE_ID                   = 2;
-    private final static int                                DELETE_ON_CLOSE            = 28;
-    private final static int                                PING_FILE                  = 29;
+    private final static int                                NUM_RQ_TYPES               = 28;
+    private final static int                                NUM_INTERNAL_RQ_TYPES      = 2;
+    private final static int                                STAGE_ID                   = 3;
     private final static int                                NUM_SUB_SEQ_STAGES         = 2;
     
-    public final static int                                 STAGEOP_PROCESS            = 1;
-    public final static int                                 STAGEOP_OFT_DELETE         = 2;
-    public final static int                                 STAGEOP_PING_FILE          = 3;
+    public final static int                                 STAGEOP_PROCESS            = -1;
+    public final static int                                 STAGEOP_OFT_DELETE         = 0;
+    public final static int                                 STAGEOP_PING_FILE          = 1;
     
     private final static long                               OFT_CLEAN_INTERVAL         = 1000 * 60;
     private final static long                               OFT_OPEN_EXTENSION         = 1000 * 30;
@@ -69,7 +68,7 @@ public class PreprocStage extends OverloadProtectedStage<AugmentedRequest> {
     private volatile long                                   numRequests;
     
     /**
-     * X-Location cache XXX unused
+     * X-Location cache XXX dead code
      */
     //private final LRUCache<String, XLocations>              xLocCache;
     
@@ -81,8 +80,9 @@ public class PreprocStage extends OverloadProtectedStage<AugmentedRequest> {
     
     private static final int                                MAX_CAP_CACHE              = 20;
         
-    public PreprocStage(OSDRequestDispatcher master, MetadataCache metadataCache) {
-        super("OSD PreProcSt", STAGE_ID, NUM_RQ_TYPES, NUM_SUB_SEQ_STAGES, OFT_CLEAN_INTERVAL);
+    public PreprocStage(OSDRequestDispatcher master, MetadataCache metadataCache, int numStorageThreads) {
+        super("OSD PreProcSt", STAGE_ID + numStorageThreads, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, 
+                NUM_SUB_SEQ_STAGES + numStorageThreads, OFT_CLEAN_INTERVAL);
         
         capCache = new HashMap<String, LRUCache<String, Capability>>();
         oft = new OpenFileTable();
@@ -97,12 +97,11 @@ public class PreprocStage extends OverloadProtectedStage<AugmentedRequest> {
         enter(STAGEOP_PROCESS, null, request, callback);
     }
     
-    private void doProcessRequest(StageRequest<OSDRequest> rq) {
+    private void doProcessRequest(OLPStageRequest<AugmentedRequest> stageRequest) {
         
-        OSDRequest request = rq.getRequest();
-        RPCRequestCallback callback = (RPCRequestCallback) rq.getCallback();
-        OSDOperation op = rq.getRequest().getOperation();
-        RequestMonitoring monitoring = request.getMonitoring();
+        final OSDRequest request = (OSDRequest) stageRequest.getRequest();
+        final RPCRequestCallback callback = (RPCRequestCallback) stageRequest.getCallback();
+        final OSDOperation op = request.getOperation();
         
         ErrorResponse err = null;
         
@@ -112,7 +111,7 @@ public class PreprocStage extends OverloadProtectedStage<AugmentedRequest> {
         err = parseRequest(request, op);
         if (err != null) {
             
-            monitoring.voidMeasurments();
+            stageRequest.voidMeasurments();
             callback.failed(err);
             return;
         }
@@ -130,14 +129,14 @@ public class PreprocStage extends OverloadProtectedStage<AugmentedRequest> {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
                         "authentication of request failed: %s", ErrorUtils.formatError(err));
                 }
-                monitoring.voidMeasurments();
+                stageRequest.voidMeasurments();
                 callback.failed(err);
                 return;
             }
         }
         
         // check COW
-        String fileId = request.getFileId();
+        final String fileId = request.getFileId();
         if (fileId != null) {
             
             if (Logging.isDebug())
@@ -177,32 +176,30 @@ public class PreprocStage extends OverloadProtectedStage<AugmentedRequest> {
         err = op.startRequest(request, callback);
         if (err != null) {
             
-            monitoring.voidMeasurments();
+            stageRequest.voidMeasurments();
             callback.failed(err);
         }
     }
     
     public void pingFile(String fileId) {
         
-        enter(STAGEOP_PING_FILE, new Object[] { fileId }, new InternalRequest(PING_FILE, 0, OFT_OPEN_EXTENSION, false, 
-                null), null);
+        enter(STAGEOP_PING_FILE, new Object[] { fileId }, new AugmentedInternalRequest(STAGEOP_PING_FILE), null);
     }
     
-    private void doPingFile(StageRequest<OSDRequest> m) {
+    private void doPingFile(OLPStageRequest<AugmentedRequest> m) throws ErrorResponseException {
         
         final String fileId = (String) m.getArgs()[0];
         
         // TODO: check if the file was opened for writing
-        long time = TimeSync.getLocalSystemTime();
+        final long time = TimeSync.getLocalSystemTime();
         oft.refresh(fileId, time + OFT_OPEN_EXTENSION, false);  
         
-        m.getCallback().success(time);
+        m.getCallback().success(time, m);
     }
     
     public void checkDeleteOnClose(String fileId, Callback callback) {
         
-        enter(STAGEOP_OFT_DELETE, new Object[] { fileId }, new InternalRequest(DELETE_ON_CLOSE, 0, OFT_CLEAN_INTERVAL, 
-                false, null), callback);
+        enter(STAGEOP_OFT_DELETE, new Object[] { fileId }, new AugmentedInternalRequest(STAGEOP_OFT_DELETE), callback);
     }
     
     /**
@@ -383,29 +380,36 @@ public class PreprocStage extends OverloadProtectedStage<AugmentedRequest> {
     }
     
     /* (non-Javadoc)
-     * @see org.xtreemfs.common.olp.OverloadProtectedStage#_processMethod(org.xtreemfs.common.stage.StageRequest)
+     * @see org.xtreemfs.common.olp.OverloadProtectedStage#_processMethod(org.xtreemfs.common.olp.OLPStageRequest)
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    protected final void _processMethod(StageRequest m) {
+    protected final boolean _processMethod(OLPStageRequest<AugmentedRequest> stageRequest) {
         
-        int requestedMethod = m.getStageMethod();
-        Callback callback = m.getCallback();
+        final int requestedMethod = stageRequest.getStageMethod();
+        final Callback callback = stageRequest.getCallback();
         
-        switch (requestedMethod) {
-        case STAGEOP_PROCESS:
-            doProcessRequest(m);
-            break;
-        case STAGEOP_OFT_DELETE:
-            callback.success(doCheckDeleteOnClose((String) m.getArgs()[0]));
-            break;
-        case STAGEOP_PING_FILE:
-            doPingFile(m);
-            break;
-        default:
-            Logging.logMessage(Logging.LEVEL_ERROR, this, "unknown stageop called: %d", requestedMethod);
-            break;
+        try {
+            
+            switch (requestedMethod) {
+            case STAGEOP_PROCESS:
+                doProcessRequest(stageRequest);
+                break;
+            case STAGEOP_OFT_DELETE:
+                callback.success(doCheckDeleteOnClose((String) stageRequest.getArgs()[0]), stageRequest);
+                break;
+            case STAGEOP_PING_FILE:
+                doPingFile(stageRequest);
+                break;
+            default:
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "unknown stageop called: %d", requestedMethod);
+                break;
+            }
+        } catch (ErrorResponseException e) {
+            
+            callback.failed(e);
         }
+        
+        return true;
     }
     
     private ErrorResponse parseRequest(OSDRequest rq, OSDOperation op) {
@@ -534,26 +538,5 @@ public class PreprocStage extends OverloadProtectedStage<AugmentedRequest> {
     public long getNumRequests() {
         
         return numRequests;
-    }
-    
-    /**
-     * <p>
-     * 
-     * @author fx.langner
-     * @version 1.00, 27.09.2011
-     */
-    private final static class InternalRequest extends AugmentedRequest {
-
-        /**
-         * @param type
-         * @param size
-         * @param deltaMaxTime
-         * @param highPriority
-         * @param piggybackPerformanceReceiver
-         */
-        private InternalRequest(int type, long size, long deltaMaxTime, boolean highPriority,
-                PerformanceInformationReceiver piggybackPerformanceReceiver) {
-            super(type, size, deltaMaxTime, highPriority, piggybackPerformanceReceiver);
-        }
     }
 }

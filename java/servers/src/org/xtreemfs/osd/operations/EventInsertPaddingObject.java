@@ -10,9 +10,11 @@ package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 
@@ -55,20 +57,22 @@ public class EventInsertPaddingObject extends OSDOperation {
         master.getStorageStage().insertPaddingObject(fileId, objectNo, xloc.getLocalReplica().getStripingPolicy(), size, 
                 new Callback() {
                 
-                @Override
-                public boolean success(Object result) {
-                    
-                    triggerReplication(fileId);
-                    return true;
-                }
+
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
                 
-                @Override
-                public void failed(Throwable error) {
-                    
-                    Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: %s", 
-                            error.getMessage());
-                }
-            });
+                triggerReplication(fileId);
+                return true;
+            }
+            
+            @Override
+            public void failed(Throwable error) {
+                
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: %s", 
+                        error.getMessage());
+            }
+        });
     }
     
     public void triggerReplication(String fileId) {

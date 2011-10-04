@@ -69,13 +69,15 @@ class AdvancedMonitor extends Monitor {
     /**
      * <p>Constructor initializing necessary fields for collecting measurement samples.</p>
      * 
+     * @param isForInternalRequests - true if the performance averages are measured for internal requests, 
+     *                            false otherwise.
      * @param numTypes - amount of different request types expected.
      * @param listener - to send the summarized performance information to.
      * @see Monitor
      */
     @SuppressWarnings("unchecked")
-    AdvancedMonitor(int numTypes, PerformanceMeasurementListener listener) {
-        super(listener);
+    AdvancedMonitor(boolean isForInternalRequests, int numTypes, PerformanceMeasurementListener listener) {
+        super(listener, isForInternalRequests);
         
         fixedTimeMeasurements = new List[numTypes];
         fixedTimeAverages = new double[numTypes];
@@ -108,7 +110,7 @@ class AdvancedMonitor extends Monitor {
             
             double result = summarizeMeasurements(fixedTimeMeasurements[type]);
             result = slowStart(result, type, fixedTimeAverages, fixedSamplesToMeasure);
-            listener.updateFixedProcessingTimeAverage(type, result);
+            listener.updateFixedProcessingTimeAverage(type, result, isForInternalRequests);
             fixedTimeAverages[type] = result;
             fixedTimeMeasurements[type].clear();
             
@@ -119,7 +121,7 @@ class AdvancedMonitor extends Monitor {
             
             double result = summarizeMeasurements(variableTimeMeasurements[type]);
             result = slowStart(result, type, variableTimeAverages, variableSamplesToMeasure);
-            listener.updateVariableProcessingTimeAverage(type, result);
+            listener.updateVariableProcessingTimeAverage(type, result, isForInternalRequests);
             variableTimeAverages[type] = result;
             variableTimeMeasurements[type].clear();
         }

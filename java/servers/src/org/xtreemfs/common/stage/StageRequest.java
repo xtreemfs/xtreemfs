@@ -8,34 +8,35 @@
 package org.xtreemfs.common.stage;
 
 /**
- * <p>Wrapper for client requests providing additional information for their processing at the stage.</p>
+ * <p>Interface for a stage-local representation of a global request of type R. Provides additional fields such as 
+ * {@link Callback}, method identifier or request arguments.</p>
  * 
  * @author fx.langner
  * @version 1.00, 09/05/11
  * 
- * <R> - general interface for requests attached to this stage request. Extends {@link AugmentedServiceRequest}.
+ * @param <R> - general interface for requests attached to this stage request.
  */    
-public final class StageRequest<R extends Request> {
+public abstract class StageRequest<R> {
     
     /**
      * <p>Identifier for the logic to use to process the request.</p>
      */
-    private final int      stageMethodId;
+    private int      stageMethodId;
     
     /**
      * <p>A callback for the postprocessing of the request.</p>
      */
-    private final Callback callback;
+    private Callback callback;
     
     /**
      * <p>Additional arguments for the request.</p>
      */
-    private final Object[] args;
+    private Object[] args;
     
     /**
      * <p>The original request.</p>
      */
-    private final R        request;
+    private final R  request;
     
     /**
      * <p>Constructor to initialize the wrapper with all necessary information.</p>
@@ -45,12 +46,12 @@ public final class StageRequest<R extends Request> {
      * @param request - the original request.
      * @param callback - for postprocessing the request.
      */
-    StageRequest(int stageMethodId, Object[] args, R request, Callback callback) {
+    protected StageRequest(int stageMethodId, Object[] args, R request, Callback callback) {
         
         this.request = request;
         this.args = args;
         this.stageMethodId = stageMethodId;
-        this.callback = callback;
+        this.callback = (callback == null) ? Callback.NullCallback.INSTANCE : callback;
     }
     
     /**
@@ -59,6 +60,20 @@ public final class StageRequest<R extends Request> {
     public int getStageMethod() {
         
         return stageMethodId;
+    }
+    
+    /**
+     * <p>Method to update the request on re-queue.</p>
+     * 
+     * @param newMethodId
+     * @param newArgs
+     * @param newCallback
+     */
+    public void update(int newMethodId, Object[] newArgs, Callback newCallback) {
+        
+        stageMethodId = newMethodId;
+        args = newArgs;
+        callback = newCallback;
     }
     
     /**

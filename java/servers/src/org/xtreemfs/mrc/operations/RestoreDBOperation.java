@@ -132,7 +132,7 @@ public class RestoreDBOperation extends MRCOperation {
                     
                     // set the largest file ID
                     StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
-                    AtomicDBUpdate update = sMan.createAtomicDBUpdate(null);
+                    AtomicDBUpdate update = sMan.createAtomicDBUpdate();
                     sMan.setLastFileId(state.largestFileId, update);
                     update.execute(null, null);
                     state.largestFileId = 0;

@@ -12,10 +12,9 @@ import java.util.ArrayList;
 
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
-import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.operations.OSDOperation;
@@ -47,7 +46,8 @@ public class GetFileIDListOperation extends OSDOperation {
             
             @SuppressWarnings("unchecked")
             @Override
-            public boolean success(Object result) {
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
                 
                 return postGetFileIDList((ArrayList<String>) result, callback);
             }
@@ -56,23 +56,15 @@ public class GetFileIDListOperation extends OSDOperation {
         return null;
     }
 
-    private boolean postGetFileIDList(ArrayList<String> fileIDList, RPCRequestCallback callback) {
+    private boolean postGetFileIDList(ArrayList<String> fileIDList, RPCRequestCallback callback) 
+            throws ErrorResponseException {
       
-        try {
-            
-            xtreemfs_internal_get_fileid_listResponse.Builder responseBuilder = xtreemfs_internal_get_fileid_listResponse.newBuilder();
-            for (String fileID : fileIDList) {
-                responseBuilder.addFileIds(fileID);
-            }
-            if (!callback.success(responseBuilder.build())) {
-                return false;
-            }
-            return true;
-        } catch (Exception e) {
-            
-            callback.failed(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, e.toString()));
-            return false;
+        final xtreemfs_internal_get_fileid_listResponse.Builder responseBuilder = 
+            xtreemfs_internal_get_fileid_listResponse.newBuilder();
+        for (String fileID : fileIDList) {
+            responseBuilder.addFileIds(fileID);
         }
+        return callback.success(responseBuilder.build());
     }
     
     @Override

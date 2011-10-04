@@ -10,8 +10,10 @@ package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.storage.FileMetadata;
@@ -50,8 +52,13 @@ public class EventCreateFileVersion extends OSDOperation {
         
         master.getStorageStage().createFileVersion(fileId, fi, new Callback() {
             
+
             @Override
-            public boolean success(Object result) { return true; }
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+                
+                return true;
+            }
             
             @Override
             public void failed(Throwable error) {

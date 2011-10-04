@@ -132,6 +132,10 @@ message RPCHeader {
     required UserCredentials user_creds = 3;
     // Authentication details.
     required Auth auth_data = 4;
+    // Request TTL on the service in milliseconds.
+    optional fixed64 ttl = 5 [default = 0];
+    // Flag to determine whether this request has high priority or not.
+    optional bool high_priority = 6 [default = false];
   }
 
   // Header data for error responses, i.e. message_type is RPC_ERROR_RESPONSE.

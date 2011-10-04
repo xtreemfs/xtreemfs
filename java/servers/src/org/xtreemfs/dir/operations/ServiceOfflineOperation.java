@@ -8,19 +8,21 @@
 
 package org.xtreemfs.dir.operations;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.xtreemfs.babudb.api.database.Database;
+import org.xtreemfs.common.olp.OLPStageRequest;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.BabuDBComponent;
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByUUIDRequest;
 
 import com.google.protobuf.Message;
@@ -31,11 +33,12 @@ import com.google.protobuf.Message;
  */
 public class ServiceOfflineOperation extends DIROperation {
 
-    private final BabuDBComponent component;
-    private final Database database;
+    private final BabuDBComponent<DIRRequest> component;
+    private final Database                    database;
     
     public ServiceOfflineOperation(DIRRequestDispatcher master) {
         super(master);
+        
         component = master.getBabuDBComponent();
         database = master.getDirDatabase();
     }
@@ -46,46 +49,44 @@ public class ServiceOfflineOperation extends DIROperation {
     }
     
     @Override
-    public void startRequest(DIRRequest rq, RPCRequestCallback callback) throws Exception {
+    public void startRequest(DIRRequest rq, final RPCRequestCallback callback) {
 
         final serviceGetByUUIDRequest request = (serviceGetByUUIDRequest) rq.getRequestMessage();
         final AtomicReference<byte[]> newData = new AtomicReference<byte[]>();
         
-        component.lookup(database, callback, DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName().getBytes(),
-                rq.getMetadata(), new BabuDBPostprocessing<byte[]>() {
-                    
+        component.lookup(database, new AbstractRPCRequestCallback(callback) {
+            
+            @SuppressWarnings("unchecked")
             @Override
-            public Message execute(byte[] result, BabuDBRequest rq) throws Exception {
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
                 
-                if (result != null) {
+                if (result == null) {
                     
-                    ReusableBuffer buf = ReusableBuffer.wrap(result);
-                    ServiceRecord dbData = new ServiceRecord(buf);
-                    
-                    dbData.setLast_updated_s(0);
-                    dbData.setVersion(dbData.getVersion()+1);
-
-                    newData.set(new byte[dbData.getSize()]);
-                    dbData.serialize(ReusableBuffer.wrap(newData.get()));
-                    
-                    return null;
+                    return success((Message) null);
                 } else {
-                    return emptyResponse.getDefaultInstance();
+                    
+                    try {
+                        
+                        ReusableBuffer buf = ReusableBuffer.wrap((byte[]) result);
+                        ServiceRecord dbData = new ServiceRecord(buf);
+                        
+                        dbData.setLast_updated_s(0);
+                        dbData.setVersion(dbData.getVersion()+1);
+    
+                        newData.set(new byte[dbData.getSize()]);
+                        dbData.serialize(ReusableBuffer.wrap(newData.get()));
+                        
+                        component.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName().getBytes(), 
+                                newData.get(), (OLPStageRequest<DIRRequest>) stageRequest, callback);
+                        
+                        return false;
+                    } catch(IOException e) {
+                        
+                        throw new ErrorResponseException(e);
+                    }
                 }
             }
-            
-            @Override
-            public void requeue(BabuDBRequest rq) {
-                
-                component.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName().getBytes(), 
-                        newData.get(), rq, new BabuDBPostprocessing<Object>() {
-                    
-                    @Override
-                    public Message execute(Object result, BabuDBRequest request) throws Exception {
-                        return emptyResponse.getDefaultInstance();
-                    }
-                });
-            }
-        });
+        }, DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName().getBytes(), rq);
     }
 }

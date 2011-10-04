@@ -8,32 +8,23 @@
 
 package org.xtreemfs.mrc.database.babudb;
 
-import org.xtreemfs.common.olp.RequestMetadata;
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
 import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 
 public class AtomicBabuDBSnapshotUpdate implements AtomicDBUpdate {
-    
-    private BabuDBPostprocessing<Object> postprocessing;
-    
-    public AtomicBabuDBSnapshotUpdate(BabuDBPostprocessing<Object> postprocessing) {
-        
-        this.postprocessing = postprocessing;
-    }
     
     @Override
     public void addUpdate(Object... update) {
     }
     
     @Override
-    public void execute(Callback callback, RequestMetadata metadata) {
+    public void execute(Callback callback, MRCRequest request) {
         
         try {
-            callback.success(postprocessing.execute(null, null));
+            callback.success(null, null);
         } catch (Exception e) {
             callback.failed(e);
         }
-    }
-    
+    }    
 }

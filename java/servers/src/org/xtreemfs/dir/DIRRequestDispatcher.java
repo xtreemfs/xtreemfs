@@ -29,11 +29,10 @@ import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.common.monitoring.StatusMonitor;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.olp.OverloadProtectedStage;
-import org.xtreemfs.common.olp.RequestMonitoring;
 import org.xtreemfs.common.stage.BabuDBComponent;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.dir.data.ServiceRecords;
 import org.xtreemfs.dir.discovery.DiscoveryMsgThread;
@@ -67,6 +66,8 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
 import org.xtreemfs.foundation.pbrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 
 import com.sun.net.httpserver.BasicAuthenticator;
@@ -83,6 +84,7 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
     LifeCycleListener {
     
     private final static int                      NUM_RQ_TYPES            = 12;
+    private final static int                      NUM_INTERNAL_RQ_TYPES   = 0;
     private final static int                      STAGE_ID                = 1;
     private final static int                      NUM_SUB_SEQ_STAGES      = 1;
     
@@ -123,11 +125,11 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
     
     private final Map<Integer, Integer>           requestTypeMap = new HashMap<Integer, Integer>(NUM_RQ_TYPES);
 
-    private final BabuDBComponent                 babuDBComponent;
+    private final BabuDBComponent<DIRRequest>     babuDBComponent;
     
     public DIRRequestDispatcher(final DIRConfig config, final BabuDBConfig dbsConfig) throws IOException,
         BabuDBException {
-        super("DIR RqDisp", STAGE_ID, NUM_RQ_TYPES, NUM_SUB_SEQ_STAGES);
+        super("DIR RqDisp", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, NUM_SUB_SEQ_STAGES);
         
         this.config = config;
         
@@ -245,7 +247,7 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
             ex.getMessage());
         }
         
-        this.babuDBComponent = new BabuDBComponent(0, 11, this);
+        this.babuDBComponent = new BabuDBComponent<DIRRequest>(0, 11, this);
     }
     
     public ServiceRecords getServices() throws Exception {
@@ -394,7 +396,7 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
         }
     }
     
-    public BabuDBComponent getBabuDBComponent() {
+    public BabuDBComponent<DIRRequest> getBabuDBComponent() {
         return babuDBComponent;
     }
     
@@ -436,48 +438,49 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
         enter(procId, null, new DIRRequest(rq, requestTypeMap.get(procId), clientTimeout, hasHighPriority), 
                 new RPCRequestCallback(rq)); 
     }
-    
+        
     /* (non-Javadoc)
      * @see org.xtreemfs.common.stage.Stage#_processMethod(org.xtreemfs.common.stage.StageRequest)
      */
     @Override
-    protected void _processMethod(StageRequest<DIRRequest> method) {
+    protected boolean _processMethod(final OLPStageRequest<DIRRequest> stageRequest) {
         
-        RequestMonitoring monitoring = method.getRequest().getMonitoring();
-        RPCRequestCallback callback = (RPCRequestCallback) method.getCallback();
+        final RPCRequestCallback callback = (RPCRequestCallback) stageRequest.getCallback();
         
         // everything ok, find the right operation
-        DIROperation op = registry.get(method.getStageMethod());
+        final DIROperation op = registry.get(stageRequest.getStageMethod());
         if (op == null) {
-            monitoring.voidMeasurments();
+            stageRequest.voidMeasurments();
             callback.failed(ErrorType.INVALID_PROC_ID, POSIXErrno.POSIX_ERROR_EIO, "unknown procedure id requested");
-            return;
+            return true;
         }
         
-        DIRRequest request = method.getRequest();
+        final DIRRequest request = stageRequest.getRequest();
         
         synchronized (database) {
+            
+            // parse request
             try {
                 
                 op.parseRPCMessage(request);
-                
-                try {
-                    
-                    op.startRequest(request, callback);
-                } catch (IllegalArgumentException ex) {
-                    
-                    monitoring.voidMeasurments();
-                    callback.failed(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, ex.toString());
-                } catch (java.util.ConcurrentModificationException ex) {
-                    
-                    monitoring.voidMeasurments();
-                    callback.failed(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EAGAIN, ex.toString());
-                }
             } catch (Throwable ex) {
                 
-                monitoring.voidMeasurments();
-                callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO, ex.toString());
+                stageRequest.voidMeasurments();
+                callback.failed(ErrorUtils.getInternalServerError(ex));
+                return true;
             }
+            
+            // execute request
+            try {
+                
+                op.startRequest(request, callback);
+            } catch (ErrorResponseException ex) {
+                
+                stageRequest.voidMeasurments();
+                callback.failed(ex.getRPCError());
+            }
+            
+            return true;
         }
     }
     

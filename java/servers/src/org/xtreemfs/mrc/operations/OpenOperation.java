@@ -11,18 +11,17 @@ package org.xtreemfs.mrc.operations;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -48,8 +47,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.openRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.openResponse;
-
-import com.google.protobuf.Message;
 
 /**
  * 
@@ -89,19 +86,11 @@ public class OpenOperation extends MRCOperation {
                 .getDetails().groupIds);
         
         // atime, ctime, mtime
-        final AtomicInteger time = new AtomicInteger((int) (TimeSync.getGlobalTime() / 1000));
-        final AtomicReference<XLocSet.Builder> xLocSet = new AtomicReference<XLocSet.Builder>();
-        final AtomicReference<Capability> cap = new AtomicReference<Capability>();
+        int time = (int) (TimeSync.getGlobalTime() / 1000);
+        XLocSet.Builder xLocSet;
+        Capability cap;
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
-            
-            @Override
-            public Message execute(Object result, BabuDBRequest request) throws Exception {
-                // set the response
-                return openResponse.newBuilder().setCreds(FileCredentials.newBuilder().setXcap(
-                        cap.get().getXCap()).setXlocs(xLocSet.get())).setTimestampS(time.get()).build();
-            }
-        });
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate();
         FileMetadata file = null;
         
         // analyze the flags
@@ -157,9 +146,9 @@ public class OpenOperation extends MRCOperation {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EIO, "FIFOs not supported");
                 
                 // create the metadata object
-                file = sMan.createFile(fileId, res.getParentDirId(), res.getFileName(), time.get(), time.get(), 
-                        time.get(), rq.getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.getMode(), rqArgs
-                        .getAttributes(), 0, false, 0, 0, update);
+                file = sMan.createFile(fileId, res.getParentDirId(), res.getFileName(), time, time, time, 
+                        rq.getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.getMode(), 
+                        rqArgs.getAttributes(), 0, false, 0, 0, update);
                 
                 // set the file ID as the last one
                 sMan.setLastFileId(fileId, update);
@@ -274,24 +263,24 @@ public class OpenOperation extends MRCOperation {
         
         // convert the XLocList to an XLocSet (necessary for later client
         // transfer)
-        xLocSet.set(Converter.xLocListToXLocSet(xLocList));
+        xLocSet = Converter.xLocListToXLocSet(xLocList);
         
         // re-order the replica list, based on the replica selection policy
         List<Replica> sortedReplList = master.getOSDStatusManager().getSortedReplicaList(volume.getId(),
             ((InetSocketAddress) rq.getRPCRequest().getSenderAddress()).getAddress(),
-            rqArgs.getCoordinates(), xLocSet.get().getReplicasList(), xLocList).getReplicasList();
-        xLocSet.get().clearReplicas();
-        xLocSet.get().addAllReplicas(sortedReplList);
+            rqArgs.getCoordinates(), xLocSet.getReplicasList(), xLocList).getReplicasList();
+        xLocSet.clearReplicas();
+        xLocSet.addAllReplicas(sortedReplList);
         
         // issue a new capability
-        cap.set(new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), master
+        cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), master
                 .getConfig().getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000
             + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq.getRPCRequest()
                 .getSenderAddress()).getAddress().getHostAddress(), trEpoch, replicateOnClose, !volume
                 .isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
             : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
                 : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), master.getConfig()
-                .getCapabilitySecret()));
+                .getCapabilitySecret());
         
         if (Logging.isDebug())
             Logging
@@ -304,26 +293,39 @@ public class OpenOperation extends MRCOperation {
         // create or truncate: ctime + mtime, atime only if create
         if (createNew || truncate)
             MRCHelper.updateFileTimes(res.getParentsParentId(), file, createNew ? !master.getConfig()
-                    .isNoAtime() : false, true, true, sMan, time.get(), update);
+                    .isNoAtime() : false, true, true, sMan, time, update);
         
         // write: ctime + mtime
         else if (write)
-            MRCHelper.updateFileTimes(res.getParentsParentId(), file, false, true, true, sMan, time.get(), update);
+            MRCHelper.updateFileTimes(res.getParentsParentId(), file, false, true, true, sMan, time, update);
         
         // otherwise: only atime, if necessary
         else if (!master.getConfig().isNoAtime())
-            MRCHelper.updateFileTimes(res.getParentsParentId(), file, true, false, false, sMan, time.get(), update);
+            MRCHelper.updateFileTimes(res.getParentsParentId(), file, true, false, false, sMan, time, update);
         
         else
-            time.set(0);
+            time = 0;
         
         // update POSIX timestamps of parent directory, in case of a newly
         // created file
         if (createNew)
-            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan,
-                time.get(), update);
+            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan, time, 
+                    update);
         
-        update.execute(callback, rq.getMetadata());
+        final XLocSet.Builder xlocS = xLocSet;
+        final Capability capability = cap;
+        final int t = time;
+        update.execute(new AbstractRPCRequestCallback(callback) {
+            
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+                
+                // set the response
+                return success(openResponse.newBuilder().setCreds(FileCredentials.newBuilder().setXcap(
+                        capability.getXCap()).setXlocs(xlocS)).setTimestampS(t).build());
+            }
+        }, rq);
         
         // enable only for test servers that should log each file
         // create/write/trunc

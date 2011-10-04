@@ -22,9 +22,11 @@ import org.xtreemfs.babudb.api.BabuDB;
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseResultSet;
@@ -55,21 +57,24 @@ public class BabuDBStorageManagerTest extends TestCase {
     private Callback listener     = new Callback() {
 
                                                             @Override
-                                                            public boolean success(Object result) {
+                                                            public void failed(Throwable error) {
+                                                                exc = (Exception) error;
+                                                                synchronized (lock) {
+                                                                    lock.notify();
+                                                                }
+                                                            }
+
+                                                            @Override
+                                                            public <S extends StageRequest<?>> boolean success(
+                                                                    Object result, S stageRequest)
+                                                                    throws ErrorResponseException {
+                                                                
                                                                 synchronized (lock) {
                                                                     cont = true;
                                                                     lock.notify();
                                                                 }
                                                                 
                                                                 return true;
-                                                            }
-
-                                                            @Override
-                                                            public void failed(Throwable error) {
-                                                                exc = (Exception) error;
-                                                                synchronized (lock) {
-                                                                    lock.notify();
-                                                                }
                                                             }
                                                         };
     
@@ -128,7 +133,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         final short perms = 511;
         final long w32Attrs = 43287473;
         
-        AtomicDBUpdate update = mngr.createAtomicDBUpdate(null);
+        AtomicDBUpdate update = mngr.createAtomicDBUpdate();
         FileMetadata nextDir = mngr.createFile(fileId1, rootDir.getId(), fileName, 1, 1, 1, userId, groupId,
             perms, w32Attrs, 12, true, 5, 6, update);
         mngr.setLastFileId(fileId1, update);
@@ -156,7 +161,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         final long fileId2 = mngr.getNextFileId();
         final String dirName = "someDir";
         
-        update = mngr.createAtomicDBUpdate(null);
+        update = mngr.createAtomicDBUpdate();
         FileMetadata dir = mngr.createDir(fileId2, rootDir.getId(), dirName, 1, 1, 1, userId, groupId, perms,
             w32Attrs, update);
         mngr.setLastFileId(fileId2, update);
@@ -186,7 +191,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertTrue(tmp.contains(fileName));
         
         // delete file
-        update = mngr.createAtomicDBUpdate(null);
+        update = mngr.createAtomicDBUpdate();
         mngr.delete(rootDir.getId(), fileName, update);
         update.execute(listener, null);
         waitForResponse();
@@ -203,7 +208,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         long fileId3 = mngr.getNextFileId();
         
         // create file again
-        update = mngr.createAtomicDBUpdate(null);
+        update = mngr.createAtomicDBUpdate();
         mngr.createFile(fileId3, rootDir.getId(), fileName, 0, 0, 0, userId, groupId, perms, w32Attrs, 11,
             true, 3, 4, update);
         mngr.setLastFileId(fileId3, update);
@@ -235,12 +240,12 @@ public class BabuDBStorageManagerTest extends TestCase {
         final short perms1 = 0;
         final short perms2 = Short.MAX_VALUE;
         
-        AtomicDBUpdate update = mngr.createAtomicDBUpdate(null);
+        AtomicDBUpdate update = mngr.createAtomicDBUpdate();
         mngr.createDir(3, dirId, name1, 0, 0, 0, uid1, gid1, perms1, 23, update);
         update.execute(listener, null);
         waitForResponse();
         
-        update = mngr.createAtomicDBUpdate(null);
+        update = mngr.createAtomicDBUpdate();
         mngr.createDir(4, dirId, name2, 0, 0, 0, uid2, gid2, perms2, 55, update);
         update.execute(listener, null);
         waitForResponse();
@@ -264,7 +269,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         assertEquals(perms2, map.get(name2).getPerms());
         
         // delete first file
-        update = mngr.createAtomicDBUpdate(null);
+        update = mngr.createAtomicDBUpdate();
         mngr.delete(dirId, name1, update);
         update.execute(listener, null);
         waitForResponse();
@@ -287,22 +292,22 @@ public class BabuDBStorageManagerTest extends TestCase {
         // create a small directory tree and test path resolution
         long nextId = 0;
         
-        AtomicDBUpdate update = mngr.createAtomicDBUpdate(null);
+        AtomicDBUpdate update = mngr.createAtomicDBUpdate();
         long comp1Id = nextId = mngr.createDir(1, 0, "comp1", 0, 0, 0, userId, groupId, perms, w32Attrs,
             update).getId();
         update.execute(listener, null);
         waitForResponse();
-        update = mngr.createAtomicDBUpdate(null);
+        update = mngr.createAtomicDBUpdate();
         nextId = mngr.createDir(2, nextId, "comp2", 0, 0, 0, userId, groupId, perms, w32Attrs, update)
                 .getId();
         update.execute(listener, null);
         waitForResponse();
-        update = mngr.createAtomicDBUpdate(null);
+        update = mngr.createAtomicDBUpdate();
         nextId = mngr.createDir(3, nextId, "comp3", 0, 0, 0, userId, groupId, perms, w32Attrs, update)
                 .getId();
         update.execute(listener, null);
         waitForResponse();
-        update = mngr.createAtomicDBUpdate(null);
+        update = mngr.createAtomicDBUpdate();
         nextId = mngr.createFile(4, nextId, "file.txt", 0, 0, 0, "usr", "grp", perms, w32Attrs, 4711, false,
             3, 4, update).getId();
         update.execute(listener, null);
@@ -340,7 +345,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         final long w32Attrs = Long.MIN_VALUE;
         exc = null;
         
-        AtomicDBUpdate update = mngr.createAtomicDBUpdate(null);
+        AtomicDBUpdate update = mngr.createAtomicDBUpdate();
         mngr.createDir(1, 0, "root", 0, 0, 0, userId, groupId, perms, w32Attrs, update).getId();
         update.execute(listener, null);
         waitForResponse();
@@ -348,7 +353,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         // create 10 nested directories
         for (int i = 0; i < 10; i++) {
             
-            update = mngr.createAtomicDBUpdate(null);
+            update = mngr.createAtomicDBUpdate();
             mngr.createDir(i + 2, 1, "entry" + i, 0, 0, 0, userId, groupId, perms, w32Attrs, update).getId();
             update.execute(listener, null);
             waitForResponse();

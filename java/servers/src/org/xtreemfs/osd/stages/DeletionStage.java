@@ -13,15 +13,18 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.olp.AugmentedInternalRequest;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.olp.OverloadProtectedStage;
 import org.xtreemfs.common.olp.PerformanceInformationReceiver;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.Callback;
-import org.xtreemfs.common.stage.Request;
 import org.xtreemfs.common.stage.SimpleStageQueue;
 import org.xtreemfs.common.stage.Stage;
 import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.storage.FileMetadata;
 import org.xtreemfs.osd.storage.MetadataCache;
@@ -30,8 +33,11 @@ import org.xtreemfs.osd.storage.StorageLayout;
 public class DeletionStage extends OverloadProtectedStage<AugmentedRequest> {
         
     private final static int     NUM_RQ_TYPES               = 1;
-    private final static int     STAGE_ID                   = 0;
-    private final static long    DELTA_MAX_DELETION         = 60 * 1000;
+    private final static int     NUM_INTERNAL_RQ_TYPES      = 1;
+    private final static int     STAGE_ID                   = 1;
+    
+    public final static int      STAGEOP_DELETE             = -1;
+    public final static int      STAGEOP_INT_DELETE         = 0;
     
     private MetadataCache        cache;
     
@@ -41,15 +47,12 @@ public class DeletionStage extends OverloadProtectedStage<AugmentedRequest> {
     
     private final AtomicLong     numFilesDeleted = new AtomicLong(0);
     
-    private final PerformanceInformationReceiver predecessor;
-    
     public DeletionStage(MetadataCache cache, StorageLayout layout, PerformanceInformationReceiver predecessor) {
-        
-        super("OSD DelSt", STAGE_ID, NUM_RQ_TYPES, new PerformanceInformationReceiver[] { predecessor });
+        super("OSD DelSt", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, new PerformanceInformationReceiver[] { 
+                predecessor });
         
         this.cache = cache;
         this.layout = layout;
-        this.predecessor = predecessor;
         
         this.deletor = new DeleteThread(layout);
     }
@@ -59,8 +62,8 @@ public class DeletionStage extends OverloadProtectedStage<AugmentedRequest> {
      */
     @Override
     public void start() {
-        
         super.start();
+    
         deletor.start();
         deletor.setPriority(MIN_PRIORITY);
     }
@@ -71,35 +74,34 @@ public class DeletionStage extends OverloadProtectedStage<AugmentedRequest> {
     @Override
     public void shutdown() throws Exception {
         
-        super.shutdown();
         deletor.shutdown();
+        super.shutdown();
     }
     
-    public void deleteObjects(String fileId, FileMetadata fi, boolean isCow, Callback callback) {
+    public void internalDeleteObjects(String fileId, FileMetadata fi, boolean isCow, Callback callback) {
         
-        // TODO fix request metadata
-        enter(new Object[] { fileId, isCow, fi }, new StageInternalRequest(0, 0, DELTA_MAX_DELETION, false, null), 
+        enter(STAGEOP_INT_DELETE, new Object[] { fileId, isCow, fi }, new AugmentedInternalRequest(STAGEOP_INT_DELETE), 
                 callback);
     }
     
-    public void deleteObjects(String fileId, FileMetadata fi, boolean isCow, OSDRequest request, Callback callback) {
+    public void deleteObjects(String fileId, FileMetadata fi, boolean isCow, OSDRequest request, 
+            AbstractRPCRequestCallback callback) {
         
-        enter(new Object[] { fileId, isCow, fi }, new StageInternalRequest(request, predecessor), 
-                callback);
+        enter(STAGEOP_DELETE, new Object[] { fileId, isCow, fi }, request, callback, getInitialPredecessors());
     }
 
     /* (non-Javadoc)
-     * @see org.xtreemfs.common.olp.OverloadProtectedStage#_processMethod(org.xtreemfs.common.stage.StageRequest)
+     * @see org.xtreemfs.common.olp.OverloadProtectedStage#_processMethod(org.xtreemfs.common.olp.OLPStageRequest)
      */
     @Override
-    protected void _processMethod(StageRequest<AugmentedRequest> m) {
+    protected boolean _processMethod(OLPStageRequest<AugmentedRequest> stageRequest) {
         
         numFilesDeleted.incrementAndGet();
         
-        final Callback callback = m.getCallback();
-        final String fileId = (String) m.getArgs()[0];
-        final boolean cow = (Boolean) m.getArgs()[1];
-        FileMetadata fi = (FileMetadata) m.getArgs()[2];
+        final Callback callback = stageRequest.getCallback();
+        final String fileId = (String) stageRequest.getArgs()[0];
+        final boolean cow = (Boolean) stageRequest.getArgs()[1];
+        FileMetadata fi = (FileMetadata) stageRequest.getArgs()[2];
         
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "deleting objects of file %s", fileId);
@@ -115,8 +117,35 @@ public class DeletionStage extends OverloadProtectedStage<AugmentedRequest> {
             deletor.enqueueFileForDeletion(fileId, cow, fi);
         }
         
-        if (!callback.success(null)) {
-            m.getRequest().getMonitoring().voidMeasurments();
+        try {
+        
+            return callback.success(null, stageRequest);
+        } catch (ErrorResponseException e) {
+            
+            stageRequest.voidMeasurments();
+            callback.failed(e);
+            return true;
+        }
+    }
+    
+
+    /**
+     * <p>Request details for removing file objects from storage.</p>
+     * 
+     * @author fx.langner
+     * @version 1.00, 09/26/2011
+     */
+    private final static class DeleteRequest {
+        
+        private final String fileId;
+        private final boolean cow;
+        private final FileMetadata fileMetadata;
+        
+        private DeleteRequest(String fileId, boolean cow, FileMetadata fileMetadata) {
+            
+            this.fileId = fileId;
+            this.cow = cow;
+            this.fileMetadata = fileMetadata;
         }
     }
     
@@ -126,31 +155,31 @@ public class DeletionStage extends OverloadProtectedStage<AugmentedRequest> {
      * @author fx.langner
      * @version 1.00, 09/26/2011
      */
-    private final static class DeleteThread extends Stage<Request> {
+    private final static class DeleteThread extends Stage<DeleteRequest> {
         
         private final static int    MAX_QUEUE_LENGTH = 1000;
         
         private final StorageLayout layout;
         
         private DeleteThread(StorageLayout layout) {
-            super("OSD DelThr", new SimpleStageQueue<Request>(MAX_QUEUE_LENGTH));
+            super("OSD DelThr", new SimpleStageQueue<DeleteRequest>(MAX_QUEUE_LENGTH));
             
             this.layout = layout;
         }
         
         private void enqueueFileForDeletion(String fileID, boolean cow, FileMetadata fileMetadata) {
 
-            enter(new DeleteRequest(fileID, cow, fileMetadata));
+            enter(new DeleteRequest(fileID, cow, fileMetadata), null);
         }
 
         /* (non-Javadoc)
          * @see org.xtreemfs.common.stage.Stage#processMethod(org.xtreemfs.common.stage.StageRequest)
          */
         @Override
-        public void processMethod(StageRequest<Request> method) {
+        protected <S extends StageRequest<DeleteRequest>> boolean processMethod(S stageRequest) {
             
-            final String fileId = ((DeleteRequest) method.getRequest()).fileId;
-            final FileMetadata fi = ((DeleteRequest) method.getRequest()).fileMetadata;
+            final String fileId = stageRequest.getRequest().fileId;
+            final FileMetadata fi = stageRequest.getRequest().fileMetadata;
             
             try {
                 if (Logging.isDebug())
@@ -158,7 +187,7 @@ public class DeletionStage extends OverloadProtectedStage<AugmentedRequest> {
                         "deleting objects for %s", fileId);
                 
                 // if copy-on-write is enabled ...
-                if (((DeleteRequest) method.getRequest()).cow) {
+                if (stageRequest.getRequest().cow) {
                     
                     // if no previous versions exist, delete the file
                     // including all its metadata
@@ -188,27 +217,20 @@ public class DeletionStage extends OverloadProtectedStage<AugmentedRequest> {
             } catch (IOException ex) {
                 Logging.logError(Logging.LEVEL_ERROR, this, ex);
             }
+            
+            return true;
         }
-        
-        
-        /**
-         * <p>Request details for removing file objects from storage.</p>
-         * 
-         * @author fx.langner
-         * @version 1.00, 09/26/2011
+
+        /* (non-Javadoc)
+         * @see org.xtreemfs.common.stage.Stage#generateStageRequest(int, java.lang.Object[], java.lang.Object, org.xtreemfs.common.stage.Callback)
          */
-        private final static class DeleteRequest implements Request {
+        @SuppressWarnings("unchecked")
+        @Override
+        protected <S extends StageRequest<DeleteRequest>> S generateStageRequest(
+                int stageMethodId, Object[] args, DeleteRequest request,
+                Callback callback) {
             
-            private final String fileId;
-            private final boolean cow;
-            private final FileMetadata fileMetadata;
-            
-            private DeleteRequest(String fileId, boolean cow, FileMetadata fileMetadata) {
-                
-                this.fileId = fileId;
-                this.cow = cow;
-                this.fileMetadata = fileMetadata;
-            }
+            return (S) new StageRequest<DeleteRequest>(stageMethodId, args, request, callback) {};
         }
     }
     

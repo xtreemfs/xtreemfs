@@ -11,10 +11,11 @@ package org.xtreemfs.mrc.operations;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -35,8 +36,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
-
-import com.google.protobuf.Message;
 
 /**
  * 
@@ -144,15 +143,7 @@ public class RemoveReplicaOperation extends MRCOperation {
         
         final FileCredentials.Builder fc = FileCredentials.newBuilder();
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
-            
-            @Override
-            public Message execute(Object result, BabuDBRequest request) throws Exception {
-                
-                // set the response
-                return fc.build();
-            }
-        });
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate();
         
         // update the X-Locations list
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
@@ -173,6 +164,15 @@ public class RemoveReplicaOperation extends MRCOperation {
         // wrap xcap and xloc list
         fc.setXcap(deleteCap.getXCap()).setXlocs(xLocSet);
         
-        update.execute(callback, rq.getMetadata());
+        update.execute(new AbstractRPCRequestCallback(callback) {
+            
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+
+                // set the response
+                return success(fc.build());
+            }
+        }, rq);
     }
 }

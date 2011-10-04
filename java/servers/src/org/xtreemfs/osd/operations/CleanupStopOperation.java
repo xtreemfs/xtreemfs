@@ -14,12 +14,12 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class CleanupStopOperation extends OSDOperation {
-
 
     public CleanupStopOperation(OSDRequestDispatcher master) {
         super(master);
@@ -41,13 +41,21 @@ public final class CleanupStopOperation extends OSDOperation {
                     "this operation requires an admin password");
         }
         master.getCleanupThread().cleanupStop();
-        callback.success();
         
-        return null;
+        try {
+            
+            callback.success();
+            
+            return null;
+        } catch (ErrorResponseException e) {
+            
+            return e.getRPCError();
+        }
     }
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
+        
         rq.setFileId("");
 
         return null;
@@ -55,11 +63,13 @@ public final class CleanupStopOperation extends OSDOperation {
 
     @Override
     public boolean requiresCapability() {
+        
         return false;
     }
 
     @Override
     public void startInternalEvent(Object[] args) {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

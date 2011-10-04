@@ -8,12 +8,13 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -25,8 +26,6 @@ import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_read_only_xattrRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_read_only_xattrResponse;
-
-import com.google.protobuf.Message;
 
 public class SetReadOnlyXattrOperation extends MRCOperation {
 
@@ -80,21 +79,22 @@ public class SetReadOnlyXattrOperation extends MRCOperation {
         } else {
             
             final xtreemfs_set_read_only_xattrResponse.Builder rp = xtreemfs_set_read_only_xattrResponse.newBuilder();
-            AtomicDBUpdate update = sMan.createAtomicDBUpdate(new BabuDBPostprocessing<Object>() {
-                
-                @Override
-                public Message execute(Object result, BabuDBRequest request) throws Exception {
-                    
-                    return rp.build();
-                }
-            });
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate();
 
             file.setReadOnly(rqArgs.getValue());
             
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             rp.setWasSet(true);
-            update.execute(callback, rq.getMetadata());            
+            update.execute(new AbstractRPCRequestCallback(callback) {
+                
+                @Override
+                public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                        throws ErrorResponseException {
+
+                    return success(rp.build());
+                }
+            }, rq);            
         }
      
     }

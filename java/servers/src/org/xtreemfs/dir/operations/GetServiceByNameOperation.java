@@ -8,23 +8,23 @@
 
 package org.xtreemfs.dir.operations;
 
+import java.io.IOException;
 import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.database.ResultSet;
+import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.BabuDBComponent;
-import org.xtreemfs.common.stage.BabuDBPostprocessing;
-import org.xtreemfs.common.stage.BabuDBComponent.BabuDBRequest;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByNameRequest;
-
-import com.google.protobuf.Message;
 
 /**
  * 
@@ -32,47 +32,57 @@ import com.google.protobuf.Message;
  */
 public class GetServiceByNameOperation extends DIROperation {
     
-    private final BabuDBComponent component;
-    private final Database database;
+    private final BabuDBComponent<DIRRequest> component;
+    private final Database                    database;
     
     public GetServiceByNameOperation(DIRRequestDispatcher master) {
         super(master);
+        
         component = master.getBabuDBComponent();
         database = master.getDirDatabase();
     }
     
     @Override
     public int getProcedureId() {
+        
         return DIRServiceConstants.PROC_ID_XTREEMFS_SERVICE_GET_BY_NAME;
     }
     
     @Override
-    public void startRequest(DIRRequest rq, RPCRequestCallback callback) throws Exception {
+    public void startRequest(DIRRequest rq, RPCRequestCallback callback) {
         
-        final serviceGetByNameRequest request = (serviceGetByNameRequest) rq.getRequestMessage();
+        final serviceGetByNameRequest req = (serviceGetByNameRequest) rq.getRequestMessage();
         
-        component.prefixLookup(database, callback, DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], rq.getMetadata(), 
-                new BabuDBPostprocessing<ResultSet<byte[], byte[]>>() {
+        component.prefixLookup(database, new AbstractRPCRequestCallback(callback) {
             
+            @SuppressWarnings("unchecked")
             @Override
-            public Message execute(ResultSet<byte[], byte[]> result, BabuDBRequest rq) 
-                    throws Exception {
+            public <S extends StageRequest<?>> boolean success(Object r, S request)
+                    throws ErrorResponseException {
+
+                final ResultSet<byte[], byte[]> result = (ResultSet<byte[], byte[]>) r;
                 
-                ServiceSet.Builder services = ServiceSet.newBuilder();
-                long now = System.currentTimeMillis() / 1000l;
+                final ServiceSet.Builder services = ServiceSet.newBuilder();
+                final long now = System.currentTimeMillis() / 1000l;
                 
-                while (result.hasNext()) {
-                    Entry<byte[], byte[]> e = result.next();
-                    ServiceRecord servEntry = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));
-                    if (servEntry.getName().equals(request.getName()))
-                        services.addServices(servEntry.getService());
+                try {
                     
-                    long secondsSinceLastUpdate = now - servEntry.getLast_updated_s();
-                    servEntry.getData().put("seconds_since_last_update",
-                        Long.toString(secondsSinceLastUpdate));
+                    while (result.hasNext()) {
+                        Entry<byte[], byte[]> e = result.next();
+                        ServiceRecord servEntry = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));
+                        if (servEntry.getName().equals(req.getName()))
+                            services.addServices(servEntry.getService());
+                        
+                        long secondsSinceLastUpdate = now - servEntry.getLast_updated_s();
+                        servEntry.getData().put("seconds_since_last_update",
+                            Long.toString(secondsSinceLastUpdate));
+                    }
+                    return success(services.build());
+                } catch (IOException ex) {
+                    
+                    throw new ErrorResponseException(ex);
                 }
-                return services.build();
             }
-        });
+        }, DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], rq);
     }
 }

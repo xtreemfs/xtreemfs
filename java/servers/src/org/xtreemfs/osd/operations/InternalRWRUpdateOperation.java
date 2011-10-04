@@ -11,6 +11,7 @@ package org.xtreemfs.osd.operations;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
+import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -19,6 +20,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
@@ -28,17 +30,19 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class InternalRWRUpdateOperation extends OSDOperation {
 
-    final String sharedSecret;
-    final ServiceUUID localUUID;
+    private final String        sharedSecret;
+    private final ServiceUUID   localUUID;
 
     public InternalRWRUpdateOperation(OSDRequestDispatcher master) {
         super(master);
+        
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }
 
     @Override
     public int getProcedureId() {
+        
         return OSDServiceConstants.PROC_ID_XTREEMFS_RWR_UPDATE;
     }
 
@@ -72,10 +76,11 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
         master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(),
                 args.getObjectNumber(), args.getObjectVersion(), RWReplicationStage.Operation.INTERNAL_UPDATE, 
                 new AbstractRPCRequestCallback(callback) {
-                    
+               
             @Override
-            public boolean success(Object result) {
-                
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+
                 localWrite(rq, args, callback);
                 return true;
             }
@@ -84,6 +89,7 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
+        
         try {
             xtreemfs_rwr_updateRequest rpcrq = (xtreemfs_rwr_updateRequest)rq.getRequestArgs();
             rq.setFileId(rpcrq.getFileId());
@@ -100,14 +106,13 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
 
     @Override
     public boolean requiresCapability() {
+        
         return true;
     }
 
     @Override
     public void startInternalEvent(Object[] args) {
+        
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
-
 }
