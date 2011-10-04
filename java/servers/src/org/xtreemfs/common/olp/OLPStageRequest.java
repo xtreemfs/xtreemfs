@@ -49,7 +49,7 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
      * <p>Flag to determine if currently measured monitoring information are valid or have been voided by a processing
      * cancellation.</p>
      */
-    private boolean                                voided = false;
+    private boolean                                voided                    = false;
     
     /**
      * <p>Optional field for registering a receiver for performance information that are send piggyback, after the 
@@ -205,10 +205,10 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
      */
     long endGeneralMeasurement(long measurementBegin) {
         
-        long time = System.nanoTime();
+        final long time = System.nanoTime();
         
         // check, if there is a measurement in progress
-        if (measurementBegin > -1) {
+        if (currentGeneralMeasurement > -1L) {
             
             if (currentGeneralMeasurement > measurementBegin) {
                 
@@ -230,10 +230,9 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
      */
     double getFixedProcessingTime() {
         
-        assert(currentGeneralMeasurement == -1) : "Currently there is a measurement in progress.";
+        assert(currentGeneralMeasurement == -1L) : "Currently there is a measurement in progress.";
         
-        double result = (double) (generalProcessingTime - variableProcessingTime) / 1000000.0;
-        return result;
+        return ((double) (generalProcessingTime - variableProcessingTime)) / 1000000.0;
     }
     
     /**
@@ -247,12 +246,12 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
     
     double getVariableProcessingTime(long size) {
         
-        assert(currentCustomMeasurement == -1) : "Currently there is a measurement in progress.";
+        assert(currentCustomMeasurement == -1L) : "Currently there is a measurement in progress.";
       
         double result = 0.0;
         if (size > 0L) {
             
-            result =((double) (variableProcessingTime / size)) / 1000000.0;
+            result = ((double) (variableProcessingTime / size)) / 1000000.0;
         } else {
             
             variableProcessingTime = 0L;

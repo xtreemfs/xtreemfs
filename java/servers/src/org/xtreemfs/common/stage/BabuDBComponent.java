@@ -158,8 +158,7 @@ public class BabuDBComponent<R extends AugmentedRequest> extends OverloadProtect
         resumeRequestProcessing(stageRequest);
         
         // update request
-        Object[] newArgs = { stageRequest.getArgs()[0], indexId, key, value };
-        stageRequest.update(SINGLE_INSERT, newArgs, callback);
+        stageRequest.update(SINGLE_INSERT, new Object[] { stageRequest.getArgs()[0], indexId, key, value }, callback);
         
         enter(stageRequest);
     }
