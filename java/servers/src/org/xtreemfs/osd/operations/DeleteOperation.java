@@ -75,8 +75,7 @@ public final class DeleteOperation extends OSDOperation {
                 public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
                         throws ErrorResponseException {
 
-                    disseminateDeletes(rq, args, callback);
-                    return true;
+                    return disseminateDeletes(rq, args, callback);
                 }
             });
         } else {
@@ -95,10 +94,10 @@ public final class DeleteOperation extends OSDOperation {
     }
 
     @SuppressWarnings("unchecked")
-    public void disseminateDeletes(OSDRequest rq, unlink_osd_Request args, final RPCRequestCallback callback) 
+    public boolean disseminateDeletes(OSDRequest rq, unlink_osd_Request args, final RPCRequestCallback callback) 
             throws ErrorResponseException {
         
-        Replica localReplica = rq.getLocationList().getLocalReplica();
+        final Replica localReplica = rq.getLocationList().getLocalReplica();
         if (localReplica.isStriped() && localReplica.getHeadOsd().equals(localUUID)) {
             
             //striped replica, disseminate unlink requests
@@ -131,13 +130,19 @@ public final class DeleteOperation extends OSDOperation {
                         }
                     }
                 });
+                
+                return true;
             } catch (IOException ex) {
                 
                 throw new ErrorResponseException(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, 
                         POSIXErrno.POSIX_ERROR_NONE, "internal server error:" + ex.getMessage(), 
                         OutputUtils.stackTraceToString(ex)));
             }
-        } 
+        } else {
+            
+            //non striped replica, fini
+            return callback.success();
+        }
     }
 
     public ErrorResponse analyzeUnlinkReponses(RPCResponse<Message>[] gmaxRPCs) {

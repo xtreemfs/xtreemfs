@@ -55,7 +55,7 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
     
     private final static int     NUM_RQ_TYPES                           = 15;
     private final static int     NUM_INTERNAL_RQ_TYPES                  = 8;
-    private final static int     STAGE_ID                               = 2;
+    private final static int     STAGE_ID                               = 3;
     private final static int     NUM_SUB_SEQ_STAGES                     = 2;
     
 /*
@@ -643,6 +643,7 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
                 
                 return callback.success(OSDWriteResponse.newBuilder().build());
                 /*
+                 * XXX dead code
                  * cback.truncateComplete(null, new
                  * OSDException(ErrorCodes.EPOCH_OUTDATED,
                  * "invalid truncate epoch for file " + fileId + ": " +

@@ -101,13 +101,10 @@ public class MoveOperation extends MRCOperation {
         // find out what the source path refers to (1 = directory, 2 = file)
         FileType sourceType = source.isDirectory() ? FileType.dir : FileType.file;
         
-        final int time = (int) (TimeSync.getGlobalTime() / 1000);
-        FileCredentials.Builder creds = FileCredentials.newBuilder();
-        
         AtomicDBUpdate update = sMan.createAtomicDBUpdate();
         
         PathResolver tRes = null;
-        //        
+        // XXX dead code
         // // check if the file is a fuse-hidden file; if so, move it to the
         // // .fuse-hidden diretory
         // if (tp.getLastComp(0).startsWith(".fuse_hidden")) {
@@ -160,6 +157,8 @@ public class MoveOperation extends MRCOperation {
         FileType targetType = tp.getCompCount() == 1 ? FileType.dir : target == null ? FileType.nexists
             : target.isDirectory() ? FileType.dir : FileType.file;
                 
+        FileCredentials.Builder creds = null;
+        
         // if both the old and the new directory point to the same
         // entity, do nothing
         if (sp.equals(tp)) {
@@ -177,6 +176,8 @@ public class MoveOperation extends MRCOperation {
         faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, tRes.getParentDir(), tRes
                 .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
             rq.getDetails().groupIds);
+        
+        final int time = (int) (TimeSync.getGlobalTime() / 1000);
         
         switch (sourceType) {
         
@@ -249,8 +250,6 @@ public class MoveOperation extends MRCOperation {
                 // the target path and remove the former link
                 relink(sMan, sRes.getParentDirId(), sRes.getFileName(), source, tRes.getParentDirId(), tRes
                         .getFileName(), update);
-                
-                creds = FileCredentials.newBuilder();
                 break;
             }
                 

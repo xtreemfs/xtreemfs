@@ -279,6 +279,7 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
     public final void exit(StageRequest<R> stageRequest) {
         
         olp.depart((OLPStageRequest<R>) stageRequest);
+        super.exit(stageRequest);
     }
     
     /* (non-Javadoc)

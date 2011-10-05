@@ -13,6 +13,7 @@ import java.util.Queue;
 
 import org.xtreemfs.common.stage.StageQueue;
 import org.xtreemfs.common.stage.StageRequest;
+import org.xtreemfs.common.stage.AutonomousComponent.AdmissionRefusedException;
 
 /**
  * <p>Basically this queue implementation follows a FIFO-ordering considering high priority requests
@@ -71,7 +72,7 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
                     try {
                         
                         olp.hasAdmission(stageRequest.getRequest());
-                    } catch (Exception error) {
+                    } catch (AdmissionRefusedException error) {
                         
                         iter.remove();
                         next.voidMeasurments();

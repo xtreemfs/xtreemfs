@@ -124,6 +124,7 @@ public abstract class AugmentedRequest {
      * @param newSize
      */
     public void updateSize(long newSize) {
+        
         size = newSize;
     }
     
@@ -131,6 +132,7 @@ public abstract class AugmentedRequest {
      * <p>Increases priority for the next processing step, if possible.</p>
      */
     public void increasePriority() {
+        
         highPriority = true;
     }
     
@@ -138,6 +140,7 @@ public abstract class AugmentedRequest {
      * <p>Decreases priority for the next processing step, if possible.</p>
      */
     public void decreasePriority() {
+        
         highPriority = false;
     }
     
@@ -178,8 +181,10 @@ public abstract class AugmentedRequest {
      */
     double getRemainingProcessingTime() throws RequestExpiredException {
         
-        if (isInternalRequest()) throw new UnsupportedOperationException("The request is internal and therefore " +
-        		"has unlimited processing time remaining.");
+        if (isInternalRequest()) {
+            throw new UnsupportedOperationException("The request is internal and therefore has unlimited processing " +
+            		"time remaining.");
+        }
         
         long remaining = (deltaMaxTime + startTime) - System.currentTimeMillis();
         if (remaining < 0) {
@@ -192,6 +197,7 @@ public abstract class AugmentedRequest {
      * @return true, if this request is an internal request, false if not.
      */
     boolean isInternalRequest() {
+        
         return deltaMaxTime == 0L && startTime == 0L;
     }
 }

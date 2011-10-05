@@ -10,6 +10,8 @@ package org.xtreemfs.common.stage;
 
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.TimeSync;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 
 /**
  * <p>Generalized stage to be used at all services.</p>
@@ -115,6 +117,11 @@ public abstract class Stage<R> extends LifeCycleThread implements AutonomousComp
     @Override
     public void enter(StageRequest<R> request) {
         
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, 
+                    "'%s' enters stage [%s].", request.toString(), getName());
+        }
+        
         queue.enqueue(request);
     }
     
@@ -122,7 +129,13 @@ public abstract class Stage<R> extends LifeCycleThread implements AutonomousComp
      * @see org.xtreemfs.common.stage.AutonomousComponent#exit(org.xtreemfs.common.stage.StageRequest)
      */
     @Override
-    public void exit(StageRequest<R> request) {}
+    public void exit(StageRequest<R> request) {
+        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, 
+                    "'%s' exits stage [%s].", request.toString(), getName());
+        }
+    }
     
     /**
      * <p>Handles the actual execution of a stage method. Must be implemented by

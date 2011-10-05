@@ -108,8 +108,8 @@ final class ProtectionAlgorithmCore {
      */
     <R extends AugmentedRequest> void hasAdmission(R request) throws AdmissionRefusedException {
         
-        int type = request.getType();
-        if (!unrefusableTypes[type] && 
+        final int type = request.getType();
+        if (!request.isInternalRequest() && !unrefusableTypes[type] && 
             !actuator.hasAdmission(request.getRemainingProcessingTime(), 
              controller.estimateResponseTime(type, request.getSize(), request.hasHighPriority()))) {
                 

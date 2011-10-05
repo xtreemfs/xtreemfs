@@ -757,17 +757,17 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
         file.setState(ReplicaState.OPEN);
         file.setCellOpen(false);
         fstage.closeCell(file.getPolicy().getCellId(), false);
-        for (OLPStageRequest<AugmentedRequest> rq : file.getPendingRequests()) {
-            AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) rq.getCallback();
-            callback.failed(ex);
+        for (OLPStageRequest<OSDRequest> rq : file.getPendingRequests()) {
+            ((AbstractRPCRequestCallback) rq.getCallback()).failed(ex);
         }
         file.getPendingRequests().clear();
     }
 
-    private void enqueuePrioritized(OLPStageRequest<AugmentedRequest> rq) {
+    @SuppressWarnings("unchecked")
+    private void enqueuePrioritized(OLPStageRequest<?> rq) {
                 
         rq.getRequest().increasePriority();
-        enter(rq);
+        enter((StageRequest<AugmentedRequest>) rq);
     }
     
     private void enqueueExternalOperation(int stageOp, Object[] arguments, OSDRequest rq, 
@@ -858,8 +858,9 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
     /* (non-Javadoc)
      * @see org.xtreemfs.common.olp.OverloadProtectedStage#_processMethod(org.xtreemfs.common.olp.OLPStageRequest)
      */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    protected boolean _processMethod(OLPStageRequest<AugmentedRequest> stageRequest) {
+    protected boolean _processMethod(OLPStageRequest stageRequest) {
         
         final Callback callback = stageRequest.getCallback();
         final int requestedMethod = stageRequest.getStageMethod();
@@ -1088,10 +1089,9 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
         return true;
     }
 
-    private boolean processPrepareOp(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
+    private boolean processPrepareOp(OLPStageRequest<OSDRequest> stageRequest) throws ErrorResponseException {
         
         final AbstractRPCRequestCallback callback = (AbstractRPCRequestCallback) stageRequest.getCallback();
-        
         try {
             final FileCredentials credentials = (FileCredentials) stageRequest.getArgs()[0];
             final XLocations loc = (XLocations) stageRequest.getArgs()[1];
@@ -1122,7 +1122,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                                     ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, 
                                     "too many requests in queue for file"));
                         } else {
-                            state.getPendingRequests().add(stageRequest);
+                            state.addPendingRequest(stageRequest);
                         }
                         if (state.getState() == ReplicaState.OPEN) {
                             //immediately change to backup mode...no need to check the lease
@@ -1138,7 +1138,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                 }
                 if (needsReset) {
                     
-                    state.getPendingRequests().add(stageRequest);
+                    state.addPendingRequest(stageRequest);
                     doReset(state,objVersion);
                     
                     return false;
@@ -1165,7 +1165,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                                     ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, 
                                     "too many requests in queue for file"));
                         } else {
-                            state.getPendingRequests().add(stageRequest);
+                            state.addPendingRequest(stageRequest);
                         }
                         return false;
                     }
@@ -1181,7 +1181,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                                     ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, 
                                     "too many requests in queue for file"));
                         } else {
-                            state.getPendingRequests().add(stageRequest);
+                            state.addPendingRequest(stageRequest);
                         }
                         doWaitingForLease(state);
                         return false;
@@ -1230,7 +1230,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
             // Map<ASCIIString,FleaseMessage> fleaseState = XXX dead code
             fstage.getLocalState();
 
-            for (String fileId : this.files.keySet()) {
+            for (String fileId : files.keySet()) {
                 
                 final Map<String, String> fStatus = new HashMap<String, String>();
                 final ReplicatedFileState fState = files.get(fileId);

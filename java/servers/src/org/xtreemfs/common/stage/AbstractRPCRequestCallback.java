@@ -18,6 +18,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResp
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.foundation.util.OutputUtils;
+import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 
 import com.google.protobuf.Message;
 
@@ -78,6 +79,8 @@ public abstract class AbstractRPCRequestCallback implements Callback {
     public boolean success(Message response, ReusableBuffer data) throws ErrorResponseException {
         
         try {
+            
+            response = (response == null) ? emptyResponse.getDefaultInstance() : response;
             
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "sending response: %s",

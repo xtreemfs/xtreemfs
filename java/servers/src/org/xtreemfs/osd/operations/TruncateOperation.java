@@ -90,6 +90,7 @@ public final class TruncateOperation extends OSDOperation {
                     }
                 });
         } else {
+            
             rwReplicatedTruncate(rq, args, callback);
         }
         

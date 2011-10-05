@@ -14,7 +14,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
-import org.xtreemfs.common.olp.AugmentedRequest;
 import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -26,6 +25,7 @@ import org.xtreemfs.foundation.flease.FleaseStage;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
@@ -147,43 +147,43 @@ public class ReplicatedFileState {
         PRIMARY
     };
 
-    private final AtomicInteger     queuedData;
+    private final AtomicInteger                 queuedData;
 
-    private List<ServiceUUID>       remoteOSDs;
+    private List<ServiceUUID>                   remoteOSDs;
 
-    private ReplicaUpdatePolicy     policy;
+    private ReplicaUpdatePolicy                 policy;
 
-    private final String            fileId;
+    private final String                        fileId;
 
-    private ReplicaState            state;
+    private ReplicaState                        state;
 
-    private List<ObjectVersionMapping> objectsToFetch;
+    private List<ObjectVersionMapping>          objectsToFetch;
     
-    private List<OLPStageRequest<AugmentedRequest>> pendingRequests;
+    private List<OLPStageRequest<OSDRequest>>   pendingRequests;
 
-    private Flease                  lease;
+    private Flease                              lease;
 
-    private boolean                 localIsPrimary;
+    private boolean                             localIsPrimary;
 
-    private FileCredentials         credentials;
+    private FileCredentials                     credentials;
 
-    private boolean                 cellOpen;
+    private boolean                             cellOpen;
 
-    private int                     numObjectsPending;
+    private int                                 numObjectsPending;
 
-    private boolean                 primaryReset;
+    private boolean                             primaryReset;
 
-    private boolean                 forceReset;
+    private boolean                             forceReset;
 
-    private XLocations              loc;
+    private XLocations                          loc;
 
-    private long                    masterEpoch;
+    private long                                masterEpoch;
 
 
 
     public ReplicatedFileState(String fileId, XLocations locations, ServiceUUID localUUID, FleaseStage fstage, OSDServiceClient client) throws UnknownUUIDException, IOException {
         queuedData = new AtomicInteger();
-        pendingRequests = new LinkedList<OLPStageRequest<AugmentedRequest>>();
+        pendingRequests = new LinkedList<OLPStageRequest<OSDRequest>>();
         this.fileId = fileId;
         this.state = ReplicaState.INITIALIZING;
         this.primaryReset = false;
@@ -220,11 +220,11 @@ public class ReplicatedFileState {
         return this.policy;
     }
 
-    public void addPendingRequest(OLPStageRequest<AugmentedRequest> request) {
+    public void addPendingRequest(OLPStageRequest<OSDRequest> request) {
         pendingRequests.add(request);
     }
 
-    public List<OLPStageRequest<AugmentedRequest>> getPendingRequests() {
+    public List<OLPStageRequest<OSDRequest>> getPendingRequests() {
         return pendingRequests;
     }
 
@@ -286,7 +286,4 @@ public class ReplicatedFileState {
     public void setLocalIsPrimary(boolean localIsPrimary) {
         this.localIsPrimary = localIsPrimary;
     }
-
-
-
 }
