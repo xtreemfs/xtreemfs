@@ -171,6 +171,6 @@ public final class OSDRequest extends AugmentedServiceRequest {
      */
     @Override
     public String toString() {
-        return getRequestId() + " of file " + getFileId();
+        return super.toString() + "{" + getRequestId() + " of file " + getFileId() + "}";
     }
 }

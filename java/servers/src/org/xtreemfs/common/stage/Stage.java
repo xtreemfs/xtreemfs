@@ -119,7 +119,7 @@ public abstract class Stage<R> extends LifeCycleThread implements AutonomousComp
         
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, 
-                    "'%s' enters stage [%s].", request.toString(), getName());
+                    "%s enters stage [%s].", request.toString(), getName());
         }
         
         queue.enqueue(request);
@@ -133,7 +133,7 @@ public abstract class Stage<R> extends LifeCycleThread implements AutonomousComp
         
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, 
-                    "'%s' exits stage [%s].", request.toString(), getName());
+                    "%s exits stage [%s].", request.toString(), getName());
         }
     }
     

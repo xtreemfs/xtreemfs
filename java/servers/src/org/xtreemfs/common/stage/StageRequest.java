@@ -108,7 +108,7 @@ public abstract class StageRequest<R> {
     @Override
     public String toString() {
         
-        return "StageRequest " + stageMethodId + " with arguments '" + Arrays.toString(args) + " based on Request: " + 
+        return "StageRequest " + stageMethodId + " with arguments '" + Arrays.toString(args) + "' based on external request: " + 
             ((request != null) ? request.toString() : "null");
     }
 }
