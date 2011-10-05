@@ -99,12 +99,12 @@ string formatBytes(uint64_t bytes) {
     return boost::lexical_cast<string>(bytes/1024) + " kB";
   } else if (bytes < (1 << 30)) {
     return boost::lexical_cast<string>(bytes/(1 << 20)) + " MB";
-  } else if (bytes < (1l << 40)) {
+  } else if (bytes < (1LL << 40)) {
     return boost::lexical_cast<string>(bytes/(1 << 30)) + " GB";
-  } else if (bytes < (1l << 50)) {
-    return boost::lexical_cast<string>(bytes/(1l << 40)) + " TB";
+  } else if (bytes < (1LL << 50)) {
+    return boost::lexical_cast<string>(bytes/(1LL << 40)) + " TB";
   } else {
-    return boost::lexical_cast<string>(bytes/(1l << 50)) + " EB";
+    return boost::lexical_cast<string>(bytes/(1LL << 50)) + " EB";
   }
 }
 
