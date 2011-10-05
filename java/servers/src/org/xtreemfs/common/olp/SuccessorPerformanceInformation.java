@@ -147,7 +147,8 @@ class SuccessorPerformanceInformation {
             }
         }        
         
-        assert (id < resultIndex);
+        assert (id < resultIndex) : "Stage '" + performanceInformation.id + "' was translated to '" + id + "' which " +
+        		"outranged '" + resultIndex + "' at SuccessorPerformanceInformation: \n\n" + toString();
         
         updateArray(id, performanceInformation.waitingTime, waitingTimes);
         updateArray(id, performanceInformation.priorityWaitingTime, priorityWaitingTimes);
@@ -190,14 +191,14 @@ class SuccessorPerformanceInformation {
         // the specific idle time of the stage identified by id is updated single-threaded
         // esp. there are no concurrency implications
         long oldL = array.getAndSet(id, newValueL);
-        double old = Double.doubleToLongBits(oldL);
+        double old = Double.longBitsToDouble(oldL);
         
         // try to update the resultIndex value. retry if a concurrent modification is observed
         for (;;) {
             
             // use the currently recognized maximal idle time as concurrent modification indicator
             long currentL = array.get(resultIndex);
-            double current = Double.doubleToLongBits(currentL);
+            double current = Double.longBitsToDouble(currentL);
             
             if (old == current) {
                 // newValue is the new maximum
@@ -229,5 +230,45 @@ class SuccessorPerformanceInformation {
                 break;
             }
         }
+    }
+    
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        
+        StringBuilder builder = new StringBuilder();
+        builder.append("Fixed processing time:\n");
+        for (AtomicLongArray slice : fixedProcessingTimeAverages) {
+            for (int i = 0; i < slice.length(); i++) {
+                builder.append(Double.longBitsToDouble(slice.get(i)) + "\t");
+            }
+            builder.append("\n");
+        }
+        builder.append("\n");
+        
+        builder.append("Variable processing time:\n");
+        for (AtomicLongArray slice : variableProcessingTimeAverages) {
+            for (int i = 0; i < slice.length(); i++) {
+                builder.append(Double.longBitsToDouble(slice.get(i)) + "\t");
+            }
+            builder.append("\n");
+        }
+        builder.append("\n");
+        
+        builder.append("Waiting times:\n");
+        for (int i = 0; i < waitingTimes.length(); i++) {
+            builder.append(Double.longBitsToDouble(waitingTimes.get(i)) + "\t");
+        }
+        builder.append("\n");
+        
+        builder.append("Priority waiting times:\n");
+        for (int i = 0; i < priorityWaitingTimes.length(); i++) {
+            builder.append(Double.longBitsToDouble(priorityWaitingTimes.get(i)) + "\t");
+        }
+        builder.append("\n");
+        
+        return builder.toString();
     }
 }
