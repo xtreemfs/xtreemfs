@@ -238,36 +238,45 @@ class SuccessorPerformanceInformation {
     @Override
     public String toString() {
         
-        StringBuilder builder = new StringBuilder();
+        final StringBuilder builder = new StringBuilder();
+        
         builder.append("Fixed processing time:\n");
-        for (AtomicLongArray slice : fixedProcessingTimeAverages) {
-            for (int i = 0; i < slice.length(); i++) {
-                builder.append(Double.longBitsToDouble(slice.get(i)) + "\t");
-            }
-            builder.append("\n");
+        for (int j = 0; j < resultIndex; j++) {
+                for (int i = 0; i < fixedProcessingTimeAverages.length; i++) {
+                    builder.append(Double.longBitsToDouble(fixedProcessingTimeAverages[i].get(j)) + "\t");
+                }
+                builder.append("\n");
         }
         builder.append("\n");
+        for (int i = 0; i < fixedProcessingTimeAverages.length; i++) {
+            builder.append(Double.longBitsToDouble(fixedProcessingTimeAverages[i].get(resultIndex)) + "\t");
+        }
+        builder.append("\n\n");
         
         builder.append("Variable processing time:\n");
-        for (AtomicLongArray slice : variableProcessingTimeAverages) {
-            for (int i = 0; i < slice.length(); i++) {
-                builder.append(Double.longBitsToDouble(slice.get(i)) + "\t");
+        for (int j = 0; j < resultIndex; j++) {
+            for (int i = 0; i < variableProcessingTimeAverages.length; i++) {
+                builder.append(Double.longBitsToDouble(variableProcessingTimeAverages[i].get(j)) + "\t");
             }
             builder.append("\n");
         }
         builder.append("\n");
+        for (int i = 0; i < variableProcessingTimeAverages.length; i++) {
+            builder.append(Double.longBitsToDouble(variableProcessingTimeAverages[i].get(resultIndex)) + "\t");
+        }
+        builder.append("\n\n");
         
         builder.append("Waiting times:\n");
         for (int i = 0; i < waitingTimes.length(); i++) {
-            builder.append(Double.longBitsToDouble(waitingTimes.get(i)) + "\t");
+            builder.append(Double.longBitsToDouble(waitingTimes.get(i)) + "\n");
         }
-        builder.append("\n");
+        builder.append("\n\n");
         
         builder.append("Priority waiting times:\n");
         for (int i = 0; i < priorityWaitingTimes.length(); i++) {
-            builder.append(Double.longBitsToDouble(priorityWaitingTimes.get(i)) + "\t");
+            builder.append(Double.longBitsToDouble(priorityWaitingTimes.get(i)) + "\n");
         }
-        builder.append("\n");
+        builder.append("\n\n");
         
         return builder.toString();
     }
