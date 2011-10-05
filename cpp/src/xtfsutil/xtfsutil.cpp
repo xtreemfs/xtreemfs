@@ -132,12 +132,10 @@ bool getattr(const string& xctl_file,
       case 1 : {
         cout << "file" << endl;
 
-        bool is_replicated = false;
         bool is_ronly =
             (stat["locations"]["update-policy"].asString() == "ronly");
         cout << "Replication policy   ";
         if (!stat["locations"]["update-policy"].asString().empty()) {
-          is_replicated = true;
           cout << stat["locations"]["update-policy"].asString() << endl;
         } else {
           cout << "none (not replicated)" << endl;

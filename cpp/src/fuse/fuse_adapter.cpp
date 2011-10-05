@@ -744,7 +744,7 @@ int FuseAdapter::releasedir(const char *path, struct fuse_file_info *fi) {
   assert(cached_direntries != NULL);
   delete cached_direntries->dir_entries;
   delete cached_direntries;
-  fi->fh = NULL;
+  fi->fh = 0;  // NULL.
 
   return 0;
 }
