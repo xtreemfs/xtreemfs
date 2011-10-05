@@ -47,7 +47,7 @@ public abstract class StageRequest<R> {
      * @param callback - for postprocessing the request.
      */
     protected StageRequest(int stageMethodId, Object[] args, R request, Callback callback) {
-                
+                      
         this.request = request;
         this.args = args;
         this.stageMethodId = stageMethodId;

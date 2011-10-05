@@ -75,7 +75,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
         implements FleaseMessageSenderInterface {
 
     private final static int NUM_RQ_TYPES                       = 6;
-    private final static int NUM_INTERNAL_RQ_TYPES              = 10;
+    private final static int NUM_INTERNAL_RQ_TYPES              = 9;
     private final static int STAGE_ID                           = 2;
 
 /*
@@ -91,15 +91,14 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
  */
     
     public static final int  STAGEOP_CLOSE                      = 0;
-    public static final int  STAGEOP_PROCESS_FLEASE_MSG         = 1;
-    public static final int  STAGEOP_GETSTATUS                  = 2;
-    public static final int  STAGEOP_INTERNAL_AUTHSTATE         = 3;
-    public static final int  STAGEOP_INTERNAL_OBJFETCHED        = 4;
-    public static final int  STAGEOP_INTERNAL_DELETE_COMPLETE   = 5;
-    public static final int  STAGEOP_LEASE_STATE_CHANGED        = 6;
-    public static final int  STAGEOP_INTERNAL_STATEAVAIL        = 7;
-    public static final int  STAGEOP_FORCE_RESET                = 8;
-    public static final int  STAGEOP_INTERNAL_MAXOBJ_AVAIL      = 9;
+    public static final int  STAGEOP_GETSTATUS                  = 1;
+    public static final int  STAGEOP_INTERNAL_AUTHSTATE         = 2;
+    public static final int  STAGEOP_INTERNAL_OBJFETCHED        = 3;
+    public static final int  STAGEOP_INTERNAL_DELETE_COMPLETE   = 4;
+    public static final int  STAGEOP_LEASE_STATE_CHANGED        = 5;
+    public static final int  STAGEOP_INTERNAL_STATEAVAIL        = 6;
+    public static final int  STAGEOP_FORCE_RESET                = 7;
+    public static final int  STAGEOP_INTERNAL_MAXOBJ_AVAIL      = 8;
 
     public  static enum Operation {
         READ,
@@ -836,11 +835,13 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
     public void receiveFleaseMessage(ReusableBuffer message, InetSocketAddress sender) {
 
         try {
-            FleaseMessage msg = new FleaseMessage(message);
+            
+            final FleaseMessage msg = new FleaseMessage(message);
             BufferPool.free(message);
             msg.setSender(sender);
             fstage.receiveMessage(msg);
         } catch (Exception ex) {
+            
             Logging.logError(Logging.LEVEL_ERROR, this,ex);
         }
     }
@@ -896,7 +897,6 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                     return processPrepareOp(stageRequest);
                 
                 case STAGEOP_CLOSE :                    return processFileClosed(stageRequest);
-                case STAGEOP_PROCESS_FLEASE_MSG :       return processFleaseMessage(stageRequest);
                 case STAGEOP_INTERNAL_AUTHSTATE :       return processSetAuthoritativeState(stageRequest);
                 case STAGEOP_LEASE_STATE_CHANGED :      return processLeaseStateChanged(stageRequest);
                 case STAGEOP_INTERNAL_OBJFETCHED :      return processObjectFetched(stageRequest);
@@ -915,20 +915,6 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
             callback.failed(error);
             return true;
         }
-    }
-
-    private boolean processFleaseMessage(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
-        
-        final Callback callback = stageRequest.getCallback();
-        final ReusableBuffer data = (ReusableBuffer) stageRequest.getArgs()[0];
-        final InetSocketAddress sender = (InetSocketAddress) stageRequest.getArgs()[1];
-
-        FleaseMessage msg = new FleaseMessage(data);
-        BufferPool.free(data);
-        msg.setSender(sender);
-        fstage.receiveMessage(msg);
-        
-        return callback.success(null, stageRequest);
     }
 
     private boolean processFileClosed(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
