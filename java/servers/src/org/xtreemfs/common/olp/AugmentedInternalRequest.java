@@ -34,4 +34,13 @@ public final class AugmentedInternalRequest extends AugmentedRequest {
         
         super(type);
     }
+    
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+
+        return "InternalRequest " + getType();
+    }
 }

@@ -210,6 +210,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
 
     @Override
     public void waitForStartup() throws Exception {
+        
         masterEpochThread.waitForStartup();
         client.waitForStartup();
         fleaseClient.waitForStartup();
@@ -218,6 +219,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
     }
 
     public void waitForShutdown() throws Exception {
+        
         client.waitForShutdown();
         fleaseClient.waitForShutdown();
         fstage.waitForShutdown();
@@ -226,11 +228,13 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
     }
 
     public void eventReplicaStateAvailable(String fileId, ReplicaStatus localState, ErrorResponse error) {
+        
          enter(STAGEOP_INTERNAL_STATEAVAIL, new Object[] { fileId, localState, error }, 
                  new AugmentedInternalRequest(STAGEOP_INTERNAL_STATEAVAIL), null);
     }
 
     public void eventForceReset(FileCredentials credentials, XLocations xloc) {
+        
          enter(STAGEOP_FORCE_RESET, new Object[]{credentials, xloc}, 
                  new AugmentedInternalRequest(STAGEOP_FORCE_RESET), null);
     }
@@ -241,21 +245,30 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                 new AugmentedInternalRequest(STAGEOP_INTERNAL_DELETE_COMPLETE), null);
     }
 
-    private void eventObjectFetched(String fileId, ObjectVersionMapping object, InternalObjectData data, ErrorResponse error) {
-         enter(STAGEOP_INTERNAL_OBJFETCHED, new Object[]{ fileId, object, data, error}, null, null);
+    private void eventObjectFetched(String fileId, ObjectVersionMapping object, InternalObjectData data, 
+            ErrorResponse error) {
+        
+         enter(STAGEOP_INTERNAL_OBJFETCHED, new Object[]{ fileId, object, data, error}, 
+                 new AugmentedInternalRequest(STAGEOP_INTERNAL_OBJFETCHED), null);
     }
     
     private void eventSetAuthState(String fileId, AuthoritativeReplicaState authState, ReplicaStatus localState, 
             ErrorResponse error) {
-        enter(STAGEOP_INTERNAL_AUTHSTATE, new Object[]{ fileId, authState, localState, error}, null, null);
+        
+        enter(STAGEOP_INTERNAL_AUTHSTATE, new Object[]{ fileId, authState, localState, error}, 
+                new AugmentedInternalRequest(STAGEOP_INTERNAL_AUTHSTATE), null);
     }
 
     private void eventLeaseStateChanged(ASCIIString cellId, Flease lease, FleaseException error) {
-        enter(STAGEOP_LEASE_STATE_CHANGED, new Object[]{ cellId, lease, error}, null, null);
+        
+        enter(STAGEOP_LEASE_STATE_CHANGED, new Object[]{ cellId, lease, error}, 
+                new AugmentedInternalRequest(STAGEOP_LEASE_STATE_CHANGED), null);
     }
 
     private void eventMaxObjAvail(String fileId, long maxObjVer, long fileSize, long truncateEpoch, ErrorResponse error) {
-        enter(STAGEOP_INTERNAL_MAXOBJ_AVAIL, new Object[]{ fileId, maxObjVer, error}, null, null);
+        
+        enter(STAGEOP_INTERNAL_MAXOBJ_AVAIL, new Object[]{ fileId, maxObjVer, error}, 
+                new AugmentedInternalRequest(STAGEOP_INTERNAL_MAXOBJ_AVAIL), null);
     }
 
     private boolean processLeaseStateChanged(OLPStageRequest<AugmentedRequest> stageRequest) throws ErrorResponseException {
@@ -749,6 +762,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
         }
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private void failed(ReplicatedFileState file, ErrorResponse ex) {
         
         Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this, "(R:%s) replica for file %s failed: %s",
@@ -757,8 +771,10 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
         file.setState(ReplicaState.OPEN);
         file.setCellOpen(false);
         fstage.closeCell(file.getPolicy().getCellId(), false);
-        for (OLPStageRequest<OSDRequest> rq : file.getPendingRequests()) {
+        for (final OLPStageRequest rq : file.getPendingRequests()) {
+            rq.voidMeasurments();
             ((AbstractRPCRequestCallback) rq.getCallback()).failed(ex);
+            exit(rq);
         }
         file.getPendingRequests().clear();
     }

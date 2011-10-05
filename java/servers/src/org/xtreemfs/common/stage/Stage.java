@@ -237,4 +237,13 @@ public abstract class Stage<R> extends LifeCycleThread implements AutonomousComp
         
         return period;
     }
+    
+    /* (non-Javadoc)
+     * @see java.lang.Thread#toString()
+     */
+    @Override
+    public String toString() {
+        
+        return "Stage[" + getName() + "] with queue: " + queue.toString();
+    }
 }

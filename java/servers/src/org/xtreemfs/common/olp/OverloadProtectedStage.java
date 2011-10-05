@@ -239,6 +239,7 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
      * @return initially registered receiver of {@link PerformanceInformation} collected by the stage.
      */
     public final PerformanceInformationReceiver[] getInitialPredecessors() {
+        
         return initialPredecessors;
     }
     

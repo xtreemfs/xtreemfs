@@ -86,8 +86,7 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
             }
             
             // wake up the stage if necessary
-            if ((high.size() == 0 && low.size() == 1) ||
-                (high.size() == 1 && low.size() == 0)) {
+            if ((high.size() == 0 && low.size() == 1) || (high.size() == 1 && low.size() == 0)) {
                 
                 notify();
             }
@@ -120,5 +119,28 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
     public synchronized int getLength() {
         
         return high.size() + low.size();
+    }
+    
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public synchronized String toString() {
+        
+        final StringBuilder builder = new StringBuilder();
+        
+        builder.append("High priority requests:\n");
+        for (OLPStageRequest<R> rq : high) {
+            builder.append(rq.toString() + "\n");
+        }
+        builder.append("\n");
+        
+        builder.append("Low priority requests:\n");
+        for (OLPStageRequest<R> rq : low) {
+            builder.append(rq.toString() + "\n");
+        }
+        builder.append("\n");
+        
+        return builder.toString();
     }
 }
