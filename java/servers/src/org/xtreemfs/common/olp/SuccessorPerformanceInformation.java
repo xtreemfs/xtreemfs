@@ -7,6 +7,9 @@
  */
 package org.xtreemfs.common.olp;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 /**
@@ -23,30 +26,36 @@ class SuccessorPerformanceInformation {
      * <p>Structure to maintain the fixed processing time averages of straight following successors of this stage and 
      * their maximum (worst-case assessment).</p>
      */
-    private final AtomicLongArray[] fixedProcessingTimeAverages;
+    private final AtomicLongArray[]               fixedProcessingTimeAverages;
     
     /**
      * <p>Structure to maintain the variable processing time averages of straight following successors of this stage and 
      * their maximum (worst-case assessment).</p>
      */
-    private final AtomicLongArray[] variableProcessingTimeAverages;
+    private final AtomicLongArray[]               variableProcessingTimeAverages;
     
     /**
      * <p>Structure to maintain the waiting times of straight following successors of this stage and their maximum 
      * (worst-case assessment).</p>
      */
-    private final AtomicLongArray   waitingTimes;
+    private final AtomicLongArray                 waitingTimes;
     
     /**
      * <p>Structure to maintain the waiting times for priority requests of straight following successors of this stage 
      * and their maximum (worst-case assessment).</p>
      */
-    private final AtomicLongArray   priorityWaitingTimes;
+    private final AtomicLongArray                 priorityWaitingTimes;
     
     /**
      * <p>Pointer for the index of maximal values of all collected performance information of the successors.</p>
      */
-    private final int               resultIndex;
+    private final int                             resultIndex;
+    
+    /**
+     * <p>Mapping of unique stageID to local successor {@link PerformanceInformation} management.</p>
+     */
+    private final ConcurrentMap<Integer, Integer> stageIDMapping;
+    private final AtomicInteger                   currentStageID;
     
     /**
      * <p>Initializes fields for collecting performance information of straight subsequent stages.</p>
@@ -56,6 +65,8 @@ class SuccessorPerformanceInformation {
      */
     SuccessorPerformanceInformation(int numTypes, int numSubsequentStages) {
         
+        currentStageID = new AtomicInteger(0);
+        stageIDMapping = new ConcurrentHashMap<Integer, Integer>(numSubsequentStages);
         fixedProcessingTimeAverages = new AtomicLongArray[numTypes];
         variableProcessingTimeAverages = new AtomicLongArray[numTypes];
         waitingTimes = new AtomicLongArray(numSubsequentStages+1);
@@ -63,6 +74,7 @@ class SuccessorPerformanceInformation {
         resultIndex = numSubsequentStages;
         
         for (int i = 0; i < numTypes; i++) {
+            
             fixedProcessingTimeAverages[i] = new AtomicLongArray(numSubsequentStages+1);
             variableProcessingTimeAverages[i] = new AtomicLongArray(numSubsequentStages+1);   
         }
@@ -123,18 +135,17 @@ class SuccessorPerformanceInformation {
      */
     void updatePerformanceInformation(PerformanceInformation performanceInformation) {
         
-        updateArray(performanceInformation.id, 
-                    performanceInformation.waitingTime, 
-                    waitingTimes);
-        updateArray(performanceInformation.id, 
-                    performanceInformation.priorityWaitingTime, 
-                    priorityWaitingTimes);
-        updateProcessingTime(performanceInformation.id, 
-                             performanceInformation.fixedProcessingTimeAverages, 
-                             fixedProcessingTimeAverages);
-        updateProcessingTime(performanceInformation.id, 
-                             performanceInformation.variableProcessingTimeAverages, 
-                             variableProcessingTimeAverages);
+        Integer id = stageIDMapping.get(performanceInformation.id);
+        if (id == null) {
+            id = currentStageID.getAndIncrement();
+            Integer suc = stageIDMapping.put(performanceInformation.id, id);
+            assert (suc == null);
+        }
+        
+        updateArray(id, performanceInformation.waitingTime, waitingTimes);
+        updateArray(id, performanceInformation.priorityWaitingTime, priorityWaitingTimes);
+        updateProcessingTime(id, performanceInformation.fixedProcessingTimeAverages, fixedProcessingTimeAverages);
+        updateProcessingTime(id, performanceInformation.variableProcessingTimeAverages, variableProcessingTimeAverages);
     }
     
 /*
@@ -149,6 +160,7 @@ class SuccessorPerformanceInformation {
      * @param processingTimeAverages - structures that maintains the old processing times and their maximum.
      */
     private void updateProcessingTime(int id, double[] processingTimes, AtomicLongArray[] processingTimeAverages) {
+        
         int numTypes = processingTimes.length;
         for (int i = 0; i < numTypes; i++) {
             updateArray(id, processingTimes[i], processingTimeAverages[i]);

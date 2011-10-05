@@ -97,18 +97,18 @@ public class DIRClient implements TimeServerClient {
     public AddressMappingSet xtreemfs_address_mappings_get(InetSocketAddress server, Auth authHeader, 
             UserCredentials userCreds, String uuid) throws IOException, InterruptedException {
         
-        Future<AddressMappingSet> f = new Future<AddressMappingSet>();
+        Future f = new Future();
         xtreemfs_address_mappings_get(server, authHeader, userCreds, uuid, f);
-        return f.get();
+        return (AddressMappingSet) f.get();
     }
     
     public void xtreemfs_address_mappings_get(InetSocketAddress server, final Auth authHeader, 
             final UserCredentials userCreds, final String uuid, Callback listener) 
             throws IOException, InterruptedException {
         
-        callExecutor.call(new CallGenerator<AddressMappingSet>() {
+        callExecutor.call(new CallGenerator() {
             @Override
-            public RPCResponse<AddressMappingSet> executeCall(DIRServiceClient client, InetSocketAddress server) 
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) 
                 throws IOException {
                 
                 return client.xtreemfs_address_mappings_get(server, authHeader, userCreds, uuid);
@@ -120,7 +120,7 @@ public class DIRClient implements TimeServerClient {
             final UserCredentials userCreds, final String uuid) 
             throws IOException, InterruptedException {
         
-        Future<?> f = new Future<Message>();
+        Future f = new Future();
         xtreemfs_address_mappings_remove(server, authHeader, userCreds, uuid, f);
         f.get();
     }
@@ -141,9 +141,9 @@ public class DIRClient implements TimeServerClient {
             final UserCredentials userCreds, final List<AddressMapping> mappings, Callback listener) 
             throws IOException, InterruptedException {
         
-        callExecutor.call(new CallGenerator<addressMappingSetResponse>() {
+        callExecutor.call(new CallGenerator() {
             @Override
-            public RPCResponse<addressMappingSetResponse> executeCall(DIRServiceClient client, InetSocketAddress server) 
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) 
                     throws IOException {
                 
                 return client.xtreemfs_address_mappings_set(server, authHeader, userCreds, mappings);
@@ -154,18 +154,18 @@ public class DIRClient implements TimeServerClient {
     public addressMappingSetResponse xtreemfs_address_mappings_set(InetSocketAddress server, Auth authHeader, 
             UserCredentials userCreds, AddressMappingSet input) throws IOException, InterruptedException {
         
-        Future<addressMappingSetResponse> f = new Future<addressMappingSetResponse>();
+        Future f = new Future();
         xtreemfs_address_mappings_set(server, authHeader, userCreds, input, f);
-        return f.get();
+        return (addressMappingSetResponse) f.get();
     }
     
     public void xtreemfs_address_mappings_set(InetSocketAddress server, final Auth authHeader, 
             final UserCredentials userCreds, final AddressMappingSet input, 
             Callback listener) throws IOException, InterruptedException {
         
-        callExecutor.call(new CallGenerator<addressMappingSetResponse>() {
+        callExecutor.call(new CallGenerator() {
             @Override
-            public RPCResponse<addressMappingSetResponse> executeCall(DIRServiceClient client, InetSocketAddress server) 
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) 
                     throws IOException {
                 
                 return client.xtreemfs_address_mappings_set(server, authHeader, userCreds, input);
@@ -176,7 +176,7 @@ public class DIRClient implements TimeServerClient {
     public void xtreemfs_service_deregister(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, 
             String uuid) throws IOException, InterruptedException {
         
-        Future<?> f = new Future<Message>();
+        Future f = new Future();
         xtreemfs_service_deregister(server, authHeader, userCreds, uuid, f);
         f.get();
     }
@@ -187,7 +187,7 @@ public class DIRClient implements TimeServerClient {
         
         callExecutor.call(new CallGenerator() {
             @Override
-            public RPCResponse<?> executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_service_deregister(server, authHeader, userCreds, uuid);
             }
         }, listener);
@@ -196,7 +196,7 @@ public class DIRClient implements TimeServerClient {
     public void xtreemfs_service_offline(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, 
             String name) throws IOException, InterruptedException {
         
-        Future<?> f = new Future<Message>();
+        Future f = new Future();
         xtreemfs_service_offline(server, authHeader, userCreds, name, f);
         f.get();
     }
@@ -216,18 +216,18 @@ public class DIRClient implements TimeServerClient {
     public ServiceSet xtreemfs_service_get_by_name(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, 
             String name) throws IOException, InterruptedException {
         
-        Future<ServiceSet> f = new Future<ServiceSet>();
+        Future f = new Future();
         xtreemfs_service_get_by_name(server, authHeader, userCreds, name, f);
-        return f.get();
+        return (ServiceSet) f.get();
     }
     
     public void xtreemfs_service_get_by_name(InetSocketAddress server, final Auth authHeader, 
             final UserCredentials userCreds, final String name, Callback listener) 
             throws IOException, InterruptedException {
         
-        callExecutor.call(new CallGenerator<ServiceSet>() {
+        callExecutor.call(new CallGenerator() {
             @Override
-            public RPCResponse<ServiceSet> executeCall(DIRServiceClient client, InetSocketAddress server) 
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) 
                     throws IOException {
                 
                 return client.xtreemfs_service_get_by_name(server, authHeader, userCreds, name);
@@ -238,18 +238,18 @@ public class DIRClient implements TimeServerClient {
     public ServiceSet xtreemfs_service_get_by_uuid(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, 
             String uuid) throws IOException, InterruptedException {
         
-        Future<ServiceSet> f = new Future<ServiceSet>();
+        Future f = new Future();
         xtreemfs_service_get_by_uuid(server, authHeader, userCreds, uuid, f);
-        return f.get();
+        return (ServiceSet) f.get();
     }
     
     public void xtreemfs_service_get_by_uuid(InetSocketAddress server, final Auth authHeader, 
             final UserCredentials userCreds, final String uuid, Callback listener) 
             throws IOException, InterruptedException {
         
-        callExecutor.call(new CallGenerator<ServiceSet>() {
+        callExecutor.call(new CallGenerator() {
             @Override
-            public RPCResponse<ServiceSet> executeCall(DIRServiceClient client, InetSocketAddress server) 
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) 
                     throws IOException {
                 return client.xtreemfs_service_get_by_uuid(server, authHeader, userCreds, uuid);
             }
@@ -260,18 +260,18 @@ public class DIRClient implements TimeServerClient {
             UserCredentials userCreds, ServiceType type) 
             throws IOException, InterruptedException {
         
-        Future<ServiceSet> f = new Future<ServiceSet>();
+        Future f = new Future();
         xtreemfs_service_get_by_type(server, authHeader, userCreds, type, f);
-        return f.get();
+        return (ServiceSet) f.get();
     }
     
     public void xtreemfs_service_get_by_type(InetSocketAddress server, final Auth authHeader, 
             final UserCredentials userCreds, final ServiceType type, Callback listener) 
             throws IOException, InterruptedException {
         
-        callExecutor.call(new CallGenerator<ServiceSet>() {
+        callExecutor.call(new CallGenerator() {
             @Override
-            public RPCResponse<ServiceSet> executeCall(DIRServiceClient client, InetSocketAddress server) 
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) 
                     throws IOException {
                 return client.xtreemfs_service_get_by_type(server, authHeader, userCreds, type);
             }
@@ -281,18 +281,18 @@ public class DIRClient implements TimeServerClient {
     public serviceRegisterResponse xtreemfs_service_register(InetSocketAddress server, Auth authHeader, 
             UserCredentials userCreds, Service service) throws IOException, InterruptedException {
         
-        Future<serviceRegisterResponse> f = new Future<serviceRegisterResponse>();
+        Future f = new Future();
         xtreemfs_service_register(server, authHeader, userCreds, service, f);
-        return f.get();
+        return (serviceRegisterResponse) f.get();
     }
     
     public void xtreemfs_service_register(InetSocketAddress server, final Auth authHeader, 
             final UserCredentials userCreds, final Service service, Callback listener) throws IOException, 
             InterruptedException {
         
-        callExecutor.call(new CallGenerator<serviceRegisterResponse>() {
+        callExecutor.call(new CallGenerator() {
             @Override
-            public RPCResponse<serviceRegisterResponse> executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_service_register(server, authHeader, userCreds, service);
             }
         }, listener);
@@ -301,18 +301,18 @@ public class DIRClient implements TimeServerClient {
     public Configuration xtreemfs_configuration_get(InetSocketAddress server, Auth authHeader, 
             UserCredentials userCreds, String uuid) throws IOException, InterruptedException {
         
-        Future<Configuration> f = new Future<Configuration>();
+        Future f = new Future();
         xtreemfs_configuration_get(server, authHeader, userCreds, uuid, f);
-        return f.get();
+        return (Configuration) f.get();
     }
     
     public void xtreemfs_configuration_get(InetSocketAddress server, final Auth authHeader, 
             final UserCredentials userCreds, final String uuid, Callback listener) 
             throws IOException, InterruptedException {
         
-        callExecutor.call(new CallGenerator<Configuration>() {
+        callExecutor.call(new CallGenerator() {
             @Override
-            public RPCResponse<Configuration> executeCall(DIRServiceClient client, InetSocketAddress server) 
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) 
                     throws IOException {
                 return client.xtreemfs_configuration_get(server, authHeader, userCreds, uuid);
             }
@@ -322,18 +322,18 @@ public class DIRClient implements TimeServerClient {
     public configurationSetResponse xtreemfs_configuration_set(InetSocketAddress server, Auth authHeader, 
             UserCredentials userCreds, Configuration config) throws IOException, InterruptedException {
         
-        Future<configurationSetResponse> f = new Future<configurationSetResponse>();
+        Future f = new Future();
         xtreemfs_configuration_set(server, authHeader, userCreds, config, f);
-        return f.get();
+        return (configurationSetResponse) f.get();
     }
     
     public void xtreemfs_configuration_set(InetSocketAddress server, final Auth authHeader, 
             final UserCredentials userCreds, final Configuration config, Callback listener) throws IOException, 
             InterruptedException {
         
-        callExecutor.call(new CallGenerator<configurationSetResponse>() {
+        callExecutor.call(new CallGenerator() {
             @Override
-            public RPCResponse<configurationSetResponse> executeCall(DIRServiceClient client, InetSocketAddress server) 
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) 
                     throws IOException {
                 
                 return client.xtreemfs_configuration_set(server, authHeader, userCreds, config);
@@ -353,18 +353,18 @@ public class DIRClient implements TimeServerClient {
     
     public long xtreemfs_global_time_get() throws InterruptedException, PBRPCException, IOException {
         
-        Future<globalTimeSGetResponse> f = new Future<globalTimeSGetResponse>();
+        Future f = new Future();
         xtreemfs_global_time_get(f);
-        return f.get().getTimeInSeconds();
+        return ((globalTimeSGetResponse) f.get()).getTimeInSeconds();
     }
 
     public void xtreemfs_global_time_get(Callback listener) 
             throws InterruptedException, PBRPCException, IOException {
         
-        callExecutor.call(new CallGenerator<globalTimeSGetResponse>() {
+        callExecutor.call(new CallGenerator() {
 
             @Override
-            public RPCResponse<globalTimeSGetResponse> executeCall(DIRServiceClient client, InetSocketAddress server) 
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) 
                     throws IOException {
                 return client.xtreemfs_global_time_s_get(server, auth, user);
             }
@@ -391,6 +391,7 @@ public class DIRClient implements TimeServerClient {
      */
     @Override
     protected void finalize() throws Throwable {
+        
         stop();
         super.finalize();
     }
@@ -398,7 +399,7 @@ public class DIRClient implements TimeServerClient {
     /**
      * Interface for syncCall which generates the calls. Will be called for each retry.
      */
-    public abstract class CallGenerator<T extends Message> {
+    public abstract class CallGenerator {
         
         /**
          * True, if the client was redirected before.
@@ -415,7 +416,7 @@ public class DIRClient implements TimeServerClient {
          */
         private Exception lastException = null;
         
-        abstract RPCResponse<T> executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException;
+        abstract RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException;
         
     }
     
@@ -424,15 +425,14 @@ public class DIRClient implements TimeServerClient {
      * 
      * @author fx.langner
      * @version 1.00, 09/21/11
-     * @param <M>
      */
-    private final static class Future<M extends Message> implements Callback {
+    private final static class Future implements Callback {
 
         private boolean finished = false;
-        private M result = null;
+        private Message result = null;
         private Throwable error = null;
         
-        private synchronized M get() throws InterruptedException, PBRPCException, IOException {
+        private synchronized Message get() throws InterruptedException, PBRPCException, IOException {
             
             if (!finished) wait();
             
@@ -460,7 +460,7 @@ public class DIRClient implements TimeServerClient {
         public synchronized <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
                 throws ErrorResponseException {
 
-            this.result = (M) result;
+            this.result = (Message) result;
             finished = true;
             notify();
             
@@ -528,7 +528,7 @@ public class DIRClient implements TimeServerClient {
             generator.numTries++;
             if (generator.numTries <= maxRetries) {
                 
-                RPCResponse<Message> response = null;
+                RPCResponse response = null;
                 try {
                     
                     // try to execute the call
@@ -572,7 +572,6 @@ public class DIRClient implements TimeServerClient {
         /* (non-Javadoc)
          * @see org.xtreemfs.common.stage.Stage#processMethod(org.xtreemfs.common.stage.StageRequest)
          */
-        @SuppressWarnings("rawtypes")
         @Override
         protected <S extends StageRequest<CallGenerator>> boolean processMethod(final S stageRequest) {
             
@@ -582,6 +581,7 @@ public class DIRClient implements TimeServerClient {
             // evaluate the last caught exception
             if (generator.lastException != null && generator.numTries < maxRetries) {
                 try {
+                    
                     handleException(generator.lastException, generator);
                 } catch (Exception e) {
                     
@@ -595,7 +595,7 @@ public class DIRClient implements TimeServerClient {
             if (generator.numTries <= maxRetries) {
                 
                 
-                RPCResponse<Message> response = null;
+                RPCResponse response = null;
                 try {
                     
                     // try to execute the call
@@ -603,7 +603,7 @@ public class DIRClient implements TimeServerClient {
                     response.registerListener(new RPCResponseAvailableListener<Message>() {
                         
                         @Override
-                        public void responseAvailable(RPCResponse<Message> r) {
+                        public void responseAvailable(RPCResponse r) {
                             
                             try {
                                 
@@ -645,7 +645,7 @@ public class DIRClient implements TimeServerClient {
          * @param generator
          * @throws Exception
          */
-        private void handleException(Exception e, CallGenerator<?> generator) throws Exception {
+        private void handleException(Exception e, CallGenerator generator) throws Exception {
             
             if (e instanceof PBRPCException) {
                 
