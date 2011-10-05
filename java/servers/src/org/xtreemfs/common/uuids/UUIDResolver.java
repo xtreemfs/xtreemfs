@@ -73,7 +73,7 @@ public final class UUIDResolver extends Thread {
         }
         
         List<AddressMapping.Builder> ntwrks = NetUtils.getReachableEndpoints(0, "http");
-        myNetworks = new ArrayList(ntwrks.size());
+        myNetworks = new ArrayList<String>(ntwrks.size());
         for (AddressMapping.Builder network : ntwrks) {
             myNetworks.add(network.getMatchNetwork());
         }
@@ -197,7 +197,7 @@ public final class UUIDResolver extends Thread {
     
     @Override
     public void run() {
-        List<UUIDCacheEntry> updates = new LinkedList();
+        List<UUIDCacheEntry> updates = new LinkedList<UUIDCacheEntry>();
         do {
             Iterator<UUIDCacheEntry> iter = cache.values().iterator();
             while (iter.hasNext()) {
@@ -298,23 +298,25 @@ public final class UUIDResolver extends Thread {
     
     public static String getCache() {
         StringBuilder sb = new StringBuilder();
-        for (UUIDCacheEntry e : theInstance.cache.values()) {
-            sb.append(e.getUuid());
-            sb.append(" -> ");
-            for (Mapping mapping : e.getMappings()) {
-                sb.append(mapping.protocol);
-                sb.append("://");
-                sb.append(mapping.resolvedAddr);
-                sb.append(" ");
+        if (theInstance != null && theInstance.cache != null) {
+            for (UUIDCacheEntry e : theInstance.cache.values()) {
+                sb.append(e.getUuid());
+                sb.append(" -> ");
+                for (Mapping mapping : e.getMappings()) {
+                    sb.append(mapping.protocol);
+                    sb.append("://");
+                    sb.append(mapping.resolvedAddr);
+                    sb.append(" ");
+                }
+                if (e.isSticky()) {
+                    sb.append(" - STICKY");
+                } else {
+                    sb.append(" - valid for ");
+                    sb.append((e.getValidUntil() - TimeSync.getLocalSystemTime()) / 1000l);
+                    sb.append("s");
+                }
+                sb.append("\n");
             }
-            if (e.isSticky()) {
-                sb.append(" - STICKY");
-            } else {
-                sb.append(" - valid for ");
-                sb.append((e.getValidUntil() - TimeSync.getLocalSystemTime()) / 1000l);
-                sb.append("s");
-            }
-            sb.append("\n");
         }
         return sb.toString();
     }

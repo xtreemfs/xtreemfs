@@ -107,6 +107,6 @@ public abstract class AugmentedServiceRequest extends AugmentedRequest {
      */
     @Override
     public String toString() {
-        return "ID" + requestId + ": " + String.valueOf(rpcRequest);
+        return "#" + requestId + "{ " + String.valueOf(rpcRequest) + " }";
     }
 }

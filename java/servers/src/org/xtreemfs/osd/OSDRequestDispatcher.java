@@ -591,9 +591,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         try {
             
-        	for (OSDStatusListener listener : statusListener) {
-				listener.shuttingDown();
-			}
+            for (OSDStatusListener listener : statusListener) {
+    		listener.shuttingDown();
+            }
         	
             heartbeatThread.shutdown();
             heartbeatThread.waitForShutdown();
