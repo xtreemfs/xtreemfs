@@ -49,7 +49,7 @@ public abstract class StageRequest<R> {
      * @param callback - for postprocessing the request.
      */
     protected StageRequest(int stageMethodId, Object[] args, R request, Callback callback) {
-        
+                
         this.request = request;
         this.args = args;
         this.stageMethodId = stageMethodId;
@@ -108,7 +108,7 @@ public abstract class StageRequest<R> {
     @Override
     public String toString() {
         
-        return "StageRequest " + stageMethodId + " with arguments '" + ((args != null) ? 
-                Arrays.toString(args) : "null") + " based on Request: " + request.toString();
+        return "StageRequest " + stageMethodId + " with arguments '" + Arrays.toString(args) + " based on Request: " + 
+            ((request != null) ? request.toString() : "null");
     }
 }
