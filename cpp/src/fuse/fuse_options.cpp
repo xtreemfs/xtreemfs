@@ -11,6 +11,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/program_options/cmdline.hpp>
+#include <boost/tokenizer.hpp>
 #include <iostream>
 #include <sstream>
 
@@ -138,7 +139,36 @@ void FuseOptions::ParseCommandLine(int argc, char** argv) {
     return;
   }
 
-  // Enable extended attributes if -o acl or -o user_xattr is given.
+  // Split list of comma separated -o options and add them as extra options.
+  list<string> split_options;
+  for (int i = 0; i < fuse_options.size(); i++) {
+    typedef boost::tokenizer< boost::char_separator<char> > tokenizer;
+    boost::char_separator<char> seperator(",");
+    tokenizer tokens(fuse_options[i], seperator);
+
+    // Check if there are at least two tokens and they have to be split up
+    tokenizer::iterator first_tokens = tokens.begin();
+    if (++first_tokens != tokens.end()) {
+      // Split tokens and add them to a temporary list.
+      for (tokenizer::iterator token = tokens.begin();
+           token != tokens.end();
+           ++token) {
+        split_options.push_back(string(*token));
+      }
+
+      // Remove split tokens from fuse_options as they will be readded later.
+      fuse_options.erase(fuse_options.begin() + i);
+      i--;
+    }
+  }
+  // Readd split options.
+  for (list<string>::const_iterator iter = split_options.begin();
+       iter != split_options.end();
+       ++iter) {
+    fuse_options.push_back(*iter);
+  }
+
+  // Evaluate certain Fuse options.
   for (int i = 0; i < fuse_options.size(); i++) {
     if (fuse_options[i] == "acl") {
       throw InvalidCommandLineParametersException(
