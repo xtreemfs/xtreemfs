@@ -141,9 +141,9 @@ public abstract class AbstractRPCRequestCallback implements Callback {
         
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending errno exception %s/%s/%s", errType, 
-                    posixErr, message);
+                    posixErr, (message == null) ? "null" : message);
         }
-        request.sendError(errType, posixErr, message);  
+        request.sendError(errType, posixErr, (message == null) ? "null" : message);  
     }
     
     /**
@@ -171,10 +171,10 @@ public abstract class AbstractRPCRequestCallback implements Callback {
         
         if (sTrace != null) {
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending errno exception %s/%s/%s/%s", errType, 
-                        posixErr, message, sTrace);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending errno exception %s/%s/%s/%s", 
+                        errType, posixErr, (message == null) ? "null" : message, sTrace);
             }
-            request.sendError(errType, posixErr, message, sTrace);
+            request.sendError(errType, posixErr, (message == null) ? "null" : message, sTrace);
         } else {
             failed(errType, posixErr, message);
         }
