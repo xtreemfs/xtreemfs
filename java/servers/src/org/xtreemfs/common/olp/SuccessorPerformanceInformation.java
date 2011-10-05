@@ -7,6 +7,7 @@
  */
 package org.xtreemfs.common.olp;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongArray;
@@ -169,7 +170,11 @@ class SuccessorPerformanceInformation {
      */
     private void updateProcessingTime(int id, double[] processingTimes, AtomicLongArray[] processingTimeAverages) {
         
-        int numTypes = processingTimes.length;
+        assert (processingTimes.length <= processingTimeAverages.length) : "Given processingTimes: '" + 
+        Arrays.toString(processingTimes) + "' could not have been applied because they've exceeded the managed " +
+        		"information range: " + toString();
+        
+        final int numTypes = processingTimes.length;
         for (int i = 0; i < numTypes; i++) {
             updateArray(id, processingTimes[i], processingTimeAverages[i]);
         }
