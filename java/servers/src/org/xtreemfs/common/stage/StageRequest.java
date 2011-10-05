@@ -7,8 +7,6 @@
  */
 package org.xtreemfs.common.stage;
 
-import java.util.Arrays;
-
 /**
  * <p>Interface for a stage-local representation of a global request of type R. Provides additional fields such as 
  * {@link Callback}, method identifier or request arguments.</p>
@@ -108,7 +106,9 @@ public abstract class StageRequest<R> {
     @Override
     public String toString() {
         
-        return "StageRequest " + stageMethodId + " with arguments '" + Arrays.toString(args) + "' based on external request: " + 
+        // XXX " with arguments '" + Arrays.toString(args) + has to exclude reusable buffer (because they might already
+        // be freed 
+        return "StageRequest " + stageMethodId + "' based on external request: " + 
             ((request != null) ? request.toString() : "null");
     }
 }
