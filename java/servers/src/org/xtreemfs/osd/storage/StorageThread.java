@@ -56,7 +56,7 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
     private final static int     NUM_RQ_TYPES                           = 15;
     private final static int     NUM_INTERNAL_RQ_TYPES                  = 8;
     private final static int     STAGE_ID                               = 2;
-    private final static int     NUM_SUB_SEQ_STAGES                     = 1;
+    private final static int     NUM_SUB_SEQ_STAGES                     = 2;
     
 /*
  * external requests
