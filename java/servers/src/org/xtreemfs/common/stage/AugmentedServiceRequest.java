@@ -20,10 +20,14 @@ import com.google.protobuf.Message;
  */
 public abstract class AugmentedServiceRequest extends AugmentedRequest {
     
+    private static long            rqIdCounter = 1L;
+    
     /**
      * <p>Original request received by the server.</p>
      */
     private final RPCServerRequest rpcRequest;
+    
+    private long                   requestId;
     
     /**
      * <p>Message that belongs to the request.</p>
@@ -72,6 +76,7 @@ public abstract class AugmentedServiceRequest extends AugmentedRequest {
         
         super(type, size, deltaMaxTime, highPriority);
         
+        this.requestId = rqIdCounter++;
         this.rpcRequest = rpcRequest;
     }
     
@@ -90,11 +95,18 @@ public abstract class AugmentedServiceRequest extends AugmentedRequest {
         this.message = requestArgs;
     }
     
+    /**
+     * @return the requestId
+     */
+    public long getRequestId() {
+        return requestId;
+    }
+    
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
     @Override
     public String toString() {
-        return String.valueOf(rpcRequest);
+        return "ID" + requestId + ": " + String.valueOf(rpcRequest);
     }
 }

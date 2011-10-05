@@ -29,8 +29,6 @@ public final class OSDRequest extends AugmentedServiceRequest {
      */
     private OSDOperation  operation;
     private Object        attachment;
-    private long          requestId;
-    private static long   rqIdCounter           = 1;
     private RPCResponse[] pendingRequests;
     private String        fileId;
     private Capability    capability;
@@ -44,7 +42,6 @@ public final class OSDRequest extends AugmentedServiceRequest {
 
     public OSDRequest(RPCServerRequest request, int type, long deltaMaxTime, boolean highPriority) {
         super(request, type, deltaMaxTime, highPriority);
-        this.requestId = rqIdCounter++;
     }
 
     /**
@@ -73,13 +70,6 @@ public final class OSDRequest extends AugmentedServiceRequest {
      */
     public void setAttachment(Object attachment) {
         this.attachment = attachment;
-    }
-
-    /**
-     * @return the requestId
-     */
-    public long getRequestId() {
-        return requestId;
     }
 
     /**
@@ -171,6 +161,6 @@ public final class OSDRequest extends AugmentedServiceRequest {
      */
     @Override
     public String toString() {
-        return super.toString() + "{" + getRequestId() + " of file " + getFileId() + "}";
+        return super.toString() + "{file " + getFileId() + "}";
     }
 }
