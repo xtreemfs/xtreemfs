@@ -46,7 +46,7 @@ public class CreateVolumeOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq, final RPCRequestCallback callback) throws Exception {
+    public void startRequest(final MRCRequest rq, final RPCRequestCallback callback) throws Exception {
         
         // perform master redirect if replicated and required
         String replMasterUUID = master.getReplMasterUUID();
@@ -101,8 +101,7 @@ public class CreateVolumeOperation extends MRCOperation {
                     public <S extends StageRequest<?>> boolean success(Object sset, S stageRequest)
                             throws ErrorResponseException {
                         
-                        processStep2(volData, volumeId, (MRCRequest) stageRequest.getRequest(), (ServiceSet) sset, 
-                                callback);
+                        processStep2(volData, volumeId, rq, (ServiceSet) sset, callback);
                         return true;
                     }
                 });

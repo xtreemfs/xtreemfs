@@ -136,21 +136,7 @@ public class DIRClient implements TimeServerClient {
             }
         }, listener);
     }
-
-    public void xtreemfs_address_mappings_set(InetSocketAddress server, final Auth authHeader, 
-            final UserCredentials userCreds, final List<AddressMapping> mappings, Callback listener) 
-            throws IOException, InterruptedException {
-        
-        callExecutor.call(new CallGenerator() {
-            @Override
-            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) 
-                    throws IOException {
-                
-                return client.xtreemfs_address_mappings_set(server, authHeader, userCreds, mappings);
-            }
-        }, listener);
-    }
-
+    
     public addressMappingSetResponse xtreemfs_address_mappings_set(InetSocketAddress server, Auth authHeader, 
             UserCredentials userCreds, AddressMappingSet input) throws IOException, InterruptedException {
         
@@ -169,6 +155,28 @@ public class DIRClient implements TimeServerClient {
                     throws IOException {
                 
                 return client.xtreemfs_address_mappings_set(server, authHeader, userCreds, input);
+            }
+        }, listener);
+    }
+    
+    public addressMappingSetResponse xtreemfs_address_mappings_set(InetSocketAddress server, Auth authHeader, 
+            UserCredentials userCreds, List<AddressMapping> input) throws IOException, InterruptedException {
+        
+        Future f = new Future();
+        xtreemfs_address_mappings_set(server, authHeader, userCreds, input, f);
+        return (addressMappingSetResponse) f.get();
+    }
+    
+    public void xtreemfs_address_mappings_set(InetSocketAddress server, final Auth authHeader, 
+            final UserCredentials userCreds, final List<AddressMapping> mappings, Callback listener) 
+            throws IOException, InterruptedException {
+        
+        callExecutor.call(new CallGenerator() {
+            @Override
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) 
+                    throws IOException {
+                
+                return client.xtreemfs_address_mappings_set(server, authHeader, userCreds, mappings);
             }
         }, listener);
     }
@@ -495,16 +503,16 @@ public class DIRClient implements TimeServerClient {
         /**
          * number of server currently used.
          */
-        private final AtomicInteger currentServer;
+        private final AtomicInteger       currentServer;
         /**
          * Maximum number of retries.
          */
-        private final int maxRetries;
+        private final int                 maxRetries;
 
         /**
          * Time to wait between retries (in milliseconds).
          */
-        private final int retryWaitMs;
+        private final int                 retryWaitMs;
         
         /**
          * <p>Instantiates a new DIR request Caller {@link Stage} with unlimited queue.</p>

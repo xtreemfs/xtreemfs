@@ -40,7 +40,7 @@ public class DeleteVolumeOperation extends MRCOperation {
     }
     
     @Override
-    public void startRequest(MRCRequest rq, final RPCRequestCallback callback) throws Exception {
+    public void startRequest(final MRCRequest rq, final RPCRequestCallback callback) throws Exception {
         
         // perform master redirect if replicated and required
         String replMasterUUID = master.getReplMasterUUID();
@@ -83,7 +83,7 @@ public class DeleteVolumeOperation extends MRCOperation {
                     public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
                             throws ErrorResponseException {
                         
-                        processStep2(rqArgs, volume.getId(), (MRCRequest) stageRequest.getRequest(), callback);
+                        processStep2(rqArgs, volume.getId(), rq, callback);
                         return true;
                     }
                 });
