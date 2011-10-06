@@ -814,18 +814,20 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                 callback, master.getPreprocStage());
     }
     
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void replicatedWrite(FileCredentials credentials, XLocations xloc, long objNo, long objVersion, 
-            InternalObjectData data, AbstractRPCRequestCallback callback, OSDRequest request) {
+            InternalObjectData data, AbstractRPCRequestCallback callback, OLPStageRequest request) {
         
-        enqueueExternalOperation(STAGEOP_REPLICATED_WRITE, new Object[] { credentials, xloc, objNo, objVersion, data }, 
-                request, callback, master.getStorageStage().getThreads());
+        request.update(STAGEOP_REPLICATED_WRITE, new Object[] { credentials, xloc, objNo, objVersion, data }, callback);
+        enter(request);
     }
-
+    
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void replicateTruncate(FileCredentials credentials, XLocations xloc, long newFileSize, long newObjectVersion,
-            AbstractRPCRequestCallback callback, OSDRequest request) {
+            AbstractRPCRequestCallback callback, OLPStageRequest request) {
         
-        enqueueExternalOperation(STAGEOP_TRUNCATE, new Object[]{credentials,xloc,newFileSize,newObjectVersion}, request, 
-                callback, master.getStorageStage().getThreads());
+        request.update(STAGEOP_TRUNCATE, new Object[]{credentials,xloc,newFileSize,newObjectVersion}, callback);
+        enter(request);
     }
 
     public void fileClosed(String fileId) {

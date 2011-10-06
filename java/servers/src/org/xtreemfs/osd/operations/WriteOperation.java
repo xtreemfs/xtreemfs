@@ -10,6 +10,7 @@ package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.olp.AugmentedRequest;
 import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
@@ -111,7 +112,7 @@ public final class WriteOperation extends OSDOperation {
                 new AbstractRPCRequestCallback(callback) {
                     
             @Override
-            public <S extends StageRequest<?>> boolean success(final Object newObjectVersion, S stageRequest)
+            public <S extends StageRequest<?>> boolean success(final Object newObjectVersion, final S rwrStageRequest)
                     throws ErrorResponseException {
 
                 assert(((Long) newObjectVersion) > 0L);
@@ -128,23 +129,38 @@ public final class WriteOperation extends OSDOperation {
                             throws ErrorResponseException {
                         
                         return sendUpdates((OLPStageRequest<OSDRequest>) stageRequest, args,(OSDWriteResponse) result, 
-                                (Long) newObjectVersion, callback);
+                                (Long) newObjectVersion, callback, (OLPStageRequest<OSDRequest>) rwrStageRequest);
+                    }
+                    
+                    /* (non-Javadoc)
+                     * @see org.xtreemfs.common.stage.AbstractRPCRequestCallback#failed(java.lang.Throwable)
+                     */
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public void failed(Throwable error) {
+                        
+                        // clean-up the pending RWR request
+                        ((OLPStageRequest<AugmentedRequest>) rwrStageRequest).voidMeasurments();
+                        master.getRWReplicationStage().exit((StageRequest<AugmentedRequest>) rwrStageRequest);
+                        super.failed(error);
                     }
                 });
                 
-                return true;
+                return false;
             }
         }, rq);
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public boolean sendUpdates(OLPStageRequest<OSDRequest> stageRequest, final writeRequest args, 
-            final OSDWriteResponse result, final long newObjVersion, final RPCRequestCallback callback) {
+            final OSDWriteResponse result, final long newObjVersion, final RPCRequestCallback callback, 
+            final OLPStageRequest rwrStageRequest) {
         
         final OSDRequest rq = stageRequest.getRequest();
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
         if (rq.getRPCRequest().getData().remaining() == sp.getStripeSizeForObject(args.getObjectNumber())) {
 
-            sendUpdates2(rq, args, result, newObjVersion, new InternalObjectData(args.getObjectData(), 
+            sendUpdates2(rwrStageRequest, args, result, newObjVersion, new InternalObjectData(args.getObjectData(), 
                     rq.getRPCRequest().getData().createViewBuffer()), callback);
             
             return true;
@@ -159,18 +175,30 @@ public final class WriteOperation extends OSDOperation {
                     
                     InternalObjectData od = ((ObjectInformation) result2).getObjectData(false, 0, 
                             sp.getStripeSizeForObject(args.getObjectNumber()));
-                    sendUpdates2(rq, args, result, newObjVersion, od, callback);
+                    sendUpdates2(rwrStageRequest, args, result, newObjVersion, od, callback);
                     return true;
+                }
+                
+                /* (non-Javadoc)
+                 * @see org.xtreemfs.common.stage.AbstractRPCRequestCallback#failed(java.lang.Throwable)
+                 */
+                @Override
+                public void failed(Throwable error) {
+                    
+                    // clean-up the pending RWR request
+                    rwrStageRequest.voidMeasurments();
+                    master.getRWReplicationStage().exit(rwrStageRequest);
+                    super.failed(error);
                 }
             });
             
             return false;
         }
     }
-    public void sendUpdates2(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result, 
+    public void sendUpdates2(final OLPStageRequest<OSDRequest> rq, final writeRequest args, final OSDWriteResponse result, 
             final long newObjVersion, final InternalObjectData data, final RPCRequestCallback callback) {
         
-        master.getRWReplicationStage().replicatedWrite(args.getFileCredentials(),rq.getLocationList(),
+        master.getRWReplicationStage().replicatedWrite(args.getFileCredentials(), rq.getRequest().getLocationList(),
                     args.getObjectNumber(), newObjVersion, data, new AbstractRPCRequestCallback(callback) {
               
             @Override

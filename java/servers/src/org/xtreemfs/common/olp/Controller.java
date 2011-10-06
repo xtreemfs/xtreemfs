@@ -324,4 +324,105 @@ class Controller implements PerformanceMeasurementListener {
         
         return result;
     }
+    
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        
+        final StringBuilder builder = new StringBuilder();
+        
+        final int numTypes = fixedProcessingTimeAverages.length();
+        final int numInternalTypes = internalFixedProcessingTimeAverages.length();
+        
+        builder.append("Fixed processing time averages (external/internal:\n");
+        for (int i = 0; i < numTypes; i++) {
+            builder.append(i + "\t");
+        }
+        for (int i = 0; i < numInternalTypes; i++) {
+            builder.append(i + "\t");
+        }
+        builder.append("\n");
+        for (int i = 0; i < numTypes; i++) {
+            builder.append(Double.longBitsToDouble(fixedProcessingTimeAverages.get(i)) + "\t");
+        }
+        for (int i = 0; i < numInternalTypes; i++) {
+            builder.append(Double.longBitsToDouble(internalFixedProcessingTimeAverages.get(i)) + "\t");
+        }
+        builder.append("\n\n");
+        
+        builder.append("Variable processing time averages (external/internal:\n");
+        for (int i = 0; i < numTypes; i++) {
+            builder.append(i + "\t");
+        }
+        for (int i = 0; i < numInternalTypes; i++) {
+            builder.append(i + "\t");
+        }
+        builder.append("\n");
+        for (int i = 0; i < numTypes; i++) {
+            builder.append(Double.longBitsToDouble(variableProcessingTimeAverages.get(i)) + "\t");
+        }
+        for (int i = 0; i < numInternalTypes; i++) {
+            builder.append(Double.longBitsToDouble(internalVariableProcessingTimeAverages.get(i)) + "\t");
+        }
+        builder.append("\n\n");
+        
+        builder.append("Queue composition (external/internal:\n");
+        for (int i = 0; i < numTypes; i++) {
+            builder.append(i + "\t");
+        }
+        for (int i = 0; i < numInternalTypes; i++) {
+            builder.append(i + "\t");
+        }
+        builder.append("\n");
+        for (int i = 0; i < numTypes; i++) {
+            builder.append(queueComposition.get(i) + "\t");
+        }
+        for (int i = 0; i < numInternalTypes; i++) {
+            builder.append(internalQueueComposition.get(i) + "\t");
+        }
+        builder.append("\n\n");
+        
+        builder.append("Queue bandwidth composition (external/internal:\n");
+        for (int i = 0; i < numTypes; i++) {
+            builder.append(i + "\t");
+        }
+        for (int i = 0; i < numInternalTypes; i++) {
+            builder.append(i + "\t");
+        }
+        builder.append("\n");
+        for (int i = 0; i < numTypes; i++) {
+            builder.append(queueBandwidthComposition.get(i) + "\t");
+        }
+        for (int i = 0; i < numInternalTypes; i++) {
+            builder.append(internalQueueBandwidthComposition.get(i) + "\t");
+        }
+        builder.append("\n\n");
+        
+        builder.append("Priority queue composition (external/internal:\n");
+        for (int i = 0; i < numTypes; i++) {
+            builder.append(i + "\t");
+        }
+        builder.append("\n");
+        for (int i = 0; i < numTypes; i++) {
+            builder.append(priorityQueueComposition.get(i) + "\t");
+        }
+        builder.append("\n\n");
+        
+        builder.append("Queue bandwidth composition (external/internal:\n");
+        for (int i = 0; i < numTypes; i++) {
+            builder.append(i + "\t");
+        }
+        builder.append("\n");
+        for (int i = 0; i < numTypes; i++) {
+            builder.append(priorityQueueBandwidthComposition.get(i) + "\t");
+        }
+        builder.append("\n\n");
+        
+        builder.append("Successor Performance Information: \n");
+        builder.append(successorPerformanceInformation.toString());
+        
+        return builder.toString();
+    }
 }

@@ -12,6 +12,8 @@ import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.olp.AugmentedRequest;
+import org.xtreemfs.common.olp.OLPStageRequest;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
 import org.xtreemfs.common.stage.StageRequest;
@@ -104,7 +106,7 @@ public final class TruncateOperation extends OSDOperation {
                 RWReplicationStage.Operation.TRUNCATE, new AbstractRPCRequestCallback(callback) {
               
             @Override
-            public <S extends StageRequest<?>> boolean success(final Object newObjectVersion, S stageRequest)
+            public <S extends StageRequest<?>> boolean success(final Object newObjectVersion, final S rwrStageRequest)
                     throws ErrorResponseException {
 
                 // final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy(); 
@@ -116,33 +118,48 @@ public final class TruncateOperation extends OSDOperation {
                      (Long) newObjectVersion, true, rq, new AbstractRPCRequestCallback(callback) {
                          
 
+                    @SuppressWarnings("unchecked")
                     @Override
                     public <T extends StageRequest<?>> boolean success(Object result, T stageRequest)
                             throws ErrorResponseException {
  
-                        replicateTruncate(rq, (Long) newObjectVersion, args, (OSDWriteResponse) result, callback);
+                        replicateTruncate((OLPStageRequest<OSDRequest>) rwrStageRequest, (Long) newObjectVersion, args, 
+                                (OSDWriteResponse) result, callback);
                         return true;
                     }
+                    
+                    /* (non-Javadoc)
+                     * @see org.xtreemfs.common.stage.AbstractRPCRequestCallback#failed(java.lang.Throwable)
+                     */
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public void failed(Throwable error) {
+                        
+                        // clean-up the pending RWR request
+                        ((OLPStageRequest<AugmentedRequest>) rwrStageRequest).voidMeasurments();
+                        master.getRWReplicationStage().exit((StageRequest<AugmentedRequest>) rwrStageRequest);
+                        super.failed(error);
+                    }
                 });
-                return true;
+                return false;
             }
         }, rq);
     }
 
-    private void replicateTruncate(final OSDRequest rq, final long newObjVersion, final truncateRequest args,
-            final OSDWriteResponse result, final RPCRequestCallback callback) {
+    private void replicateTruncate(final OLPStageRequest<OSDRequest> rwrStageRequest, final long newObjVersion, 
+            final truncateRequest args, final OSDWriteResponse result, final RPCRequestCallback callback) {
 
         master.getRWReplicationStage().replicateTruncate(args.getFileCredentials(),
-            rq.getLocationList(),args.getNewFileSize(), newObjVersion,
-            new AbstractRPCRequestCallback(callback) {
+                rwrStageRequest.getRequest().getLocationList(),args.getNewFileSize(), newObjVersion,
+                new AbstractRPCRequestCallback(callback) {
             
             @Override
             public <S extends StageRequest<?>> boolean success(Object result2, S stageRequest)
                     throws ErrorResponseException {
                 
-                return step2(rq, args, result, callback);
+                return step2(rwrStageRequest.getRequest(), args, result, callback);
             }
-        }, rq);
+        }, rwrStageRequest);
     }
 
     private boolean step2(OSDRequest rq, truncateRequest args, OSDWriteResponse result, RPCRequestCallback callback) 

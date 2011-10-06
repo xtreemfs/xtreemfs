@@ -322,14 +322,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         rwrStage = new RWReplicationStage(this, serverSSLopts, numStorageThreads);
         rwrStage.setLifeCycleListener(this);
-        
-        PerformanceInformationReceiver[] result = new PerformanceInformationReceiver[numStorageThreads + 1];
-        System.arraycopy(stStage.getThreads(), 0, result, 0, numStorageThreads);
-        result[numStorageThreads] = preprocStage;
-        
-        rwrStage.registerPerformanceInformationReceiver(result);
-        stStage.registerPerformanceInformationReceiver(new PerformanceInformationReceiver []{ preprocStage, rwrStage });
+                
+        rwrStage.registerPerformanceInformationReceiver(new PerformanceInformationReceiver []{ preprocStage });
         delStage.registerPerformanceInformationReceiver(new PerformanceInformationReceiver[]{ preprocStage });
+        stStage.registerPerformanceInformationReceiver(new PerformanceInformationReceiver []{ preprocStage, rwrStage });
         replStage.registerPerformanceInformationReceiver(stStage.getThreads());
         
         // ----------------------------------------

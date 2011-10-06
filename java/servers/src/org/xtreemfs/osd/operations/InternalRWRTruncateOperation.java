@@ -72,7 +72,16 @@ public final class InternalRWRTruncateOperation extends OSDOperation {
 
         master.getStorageStage().truncate(args.getNewFileSize(), 
                 rq.getLocationList().getLocalReplica().getStripingPolicy(), rq.getLocationList().getLocalReplica(), 
-                rq.getCapability().getEpochNo(), rq.getCowPolicy(), args.getObjectVersion(), true, rq, callback);
+                rq.getCapability().getEpochNo(), rq.getCowPolicy(), args.getObjectVersion(), true, rq, 
+                new AbstractRPCRequestCallback(callback) {
+                    
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+                
+                return success((Message) null);
+            }
+        });
     }
 
     private void prepareLocalTruncate(final OSDRequest rq, final xtreemfs_rwr_truncateRequest args, 

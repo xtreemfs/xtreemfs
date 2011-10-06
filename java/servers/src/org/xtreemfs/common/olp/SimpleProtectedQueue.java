@@ -14,6 +14,7 @@ import java.util.Queue;
 import org.xtreemfs.common.stage.StageQueue;
 import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.stage.AutonomousComponent.AdmissionRefusedException;
+import org.xtreemfs.foundation.logging.Logging;
 
 /**
  * <p>Basically this queue implementation follows a FIFO-ordering considering high priority requests
@@ -93,6 +94,11 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
         } catch (Exception error) {
             
             stageRequest.getCallback().failed(error);
+            
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Request was denied @stage OLP state: %s with queue %s", 
+                        olp.toString(), toString());
+            }
         }
     }
 

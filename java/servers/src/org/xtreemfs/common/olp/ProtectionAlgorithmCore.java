@@ -188,6 +188,24 @@ final class ProtectionAlgorithmCore {
         return controller.composePerformanceInformation(id);
     }
     
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        
+        final StringBuilder builder = new StringBuilder();
+        
+        builder.append("Monitor state:\n");
+        builder.append(monitor.toString() + "\n");
+        builder.append(internalRequestMonitor.toString() + "\n\n");
+        
+        builder.append("Controller state:\n");
+        builder.append(controller.toString() + "\n\n");
+        
+        return builder.toString();
+    }
+    
 /*
  * Exceptions
  */

@@ -293,14 +293,14 @@ public final class ReadOperation extends OSDOperation {
             master.getReplicationStage().fetchObject(args.getFileId(), args.getObjectNumber(), xLoc,
                     rq.getCapability(), rq.getCowPolicy(), rq, new AbstractRPCRequestCallback(callback) {
                         
-                        // executed by the replication stage
-                        @Override
-                        public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
-                                throws ErrorResponseException {
-                           
-                            return postReadReplica(rq, args, (ObjectInformation) result, callback);
-                        }
-                    });
+                // executed by the replication stage
+                @Override
+                public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                        throws ErrorResponseException {
+                   
+                    return postReadReplica(rq, args, (ObjectInformation) result, callback);
+                }
+            });
             
             return true;
         }

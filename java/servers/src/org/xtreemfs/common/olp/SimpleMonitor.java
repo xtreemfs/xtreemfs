@@ -106,4 +106,51 @@ class SimpleMonitor extends Monitor {
     double summarizeMeasurements(List<Double> measurements) {
         throw new UnsupportedOperationException();
     }
+    
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        
+        final StringBuilder builder = new StringBuilder();
+        
+        final int numTypes = fixedTimeMeasurements.length;
+        
+        builder.append("Fixed processing time measurements:\n");
+        for (int i = 0; i < numTypes; i++) {
+            builder.append(i + "\t");
+        }
+        builder.append("\n");
+        for (int j = 0; j < SAMPLE_AMOUNT; j++) {
+            for (int i = 0; i < numTypes; i++) {
+                if (j < measurmentIndex[i]) {
+                    builder.append(fixedTimeMeasurements[i][j] + "\t");
+                } else {
+                    builder.append("\t");
+                }
+            }
+            builder.append("\n");
+        }
+        builder.append("\n");
+        
+        builder.append("Variable processing time measurements:\n");
+        for (int i = 0; i < numTypes; i++) {
+            builder.append(i + "\t");
+        }
+        builder.append("\n");
+        for (int j = 0; j < SAMPLE_AMOUNT; j++) {
+            for (int i = 0; i < numTypes; i++) {
+                if (j < measurmentIndex[i]) {
+                    builder.append(variableTimeMeasurements[i][j] + "\t");
+                } else {
+                    builder.append("\t");
+                }
+            }
+            builder.append("\n");
+        }
+        builder.append("\n");
+        
+        return builder.toString();
+    }
 }
