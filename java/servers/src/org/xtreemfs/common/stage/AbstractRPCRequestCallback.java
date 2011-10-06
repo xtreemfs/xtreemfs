@@ -84,8 +84,8 @@ public abstract class AbstractRPCRequestCallback implements Callback {
             response = (response == null) ? emptyResponse.getDefaultInstance() : response;
             
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "sending response: %s",
-                        response.getClass().getSimpleName());
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "sending response: %s for request: %s",
+                        response.getClass().getSimpleName(), request.toString());
             }
             request.sendResponse(response, data);
             return true;
