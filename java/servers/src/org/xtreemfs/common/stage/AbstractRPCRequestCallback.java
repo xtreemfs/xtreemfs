@@ -16,6 +16,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils.ErrorResponseException;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
@@ -113,6 +114,11 @@ public abstract class AbstractRPCRequestCallback implements Callback {
      * @param error
      */
     public void failed(ErrorResponse error) {
+        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending error response %s", 
+                    ErrorUtils.formatError(error).getMessage());
+        }
         
         request.sendError(error);
     }

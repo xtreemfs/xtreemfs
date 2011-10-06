@@ -506,7 +506,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                 @Override
                 public void responseAvailable(RPCResponse<ObjectData> r) {
                     try {
-                        InternalObjectData data = new InternalObjectData(r.get(), r.getData());
+                        final InternalObjectData data = new InternalObjectData(r.get(), r.getData());
                         eventObjectFetched(fileId, record, data, null);
                     } catch (Exception ex) {
                         eventObjectFetched(fileId, record, null, 
