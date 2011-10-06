@@ -1061,7 +1061,12 @@ public class HashStorageLayout extends StorageLayout {
                 int PREVIEW_LENGTH = 15;
                 String currentDir = l.status.pop();
                 File dir = new File(storageDir + currentDir);
-                assert (dir.listFiles() != null) : storageDir + currentDir + " is not a valid directory!";
+                if (dir.listFiles() == null) {
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this, storageDir + currentDir
+                            + " is not a valid directory!");
+                    continue;
+                }
+                
                 FileReader fReader;
                 
                 File newestFirst = null;
