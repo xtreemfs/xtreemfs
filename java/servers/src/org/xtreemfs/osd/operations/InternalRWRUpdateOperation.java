@@ -28,6 +28,8 @@ import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
+import com.google.protobuf.Message;
+
 public final class InternalRWRUpdateOperation extends OSDOperation {
 
     private final String        sharedSecret;
@@ -67,7 +69,15 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
          master.getStorageStage().writeObject(args.getObjectNumber(),
                 rq.getLocationList().getLocalReplica().getStripingPolicy(), args.getOffset(),
                 rq.getRPCRequest().getData().createViewBuffer(), CowPolicy.PolicyNoCow, rq.getLocationList(),
-                false, args.getObjectVersion(), rq, callback);
+                false, args.getObjectVersion(), rq, new AbstractRPCRequestCallback(callback) {
+                    
+                    @Override
+                    public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                            throws ErrorResponseException {
+                        
+                        return success((Message) null);
+                    }
+                });
     }
 
     private void prepareLocalWrite(final OSDRequest rq, final xtreemfs_rwr_updateRequest args, 
