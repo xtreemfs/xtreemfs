@@ -228,17 +228,18 @@ public final class RPC {
     POSIX_ERROR_NONE(0, 9999),
     POSIX_ERROR_EPERM(1, 1),
     POSIX_ERROR_ENOENT(2, 2),
-    POSIX_ERROR_EIO(3, 5),
-    POSIX_ERROR_EAGAIN(4, 11),
-    POSIX_ERROR_EACCES(5, 13),
-    POSIX_ERROR_EEXIST(6, 17),
-    POSIX_ERROR_EXDEV(7, 18),
-    POSIX_ERROR_ENODEV(8, 19),
-    POSIX_ERROR_ENOTDIR(9, 20),
-    POSIX_ERROR_EISDIR(10, 21),
-    POSIX_ERROR_EINVAL(11, 22),
-    POSIX_ERROR_ENOTEMPTY(12, 39),
-    POSIX_ERROR_ENODATA(13, 61),
+    POSIX_ERROR_EINTR(3, 4),
+    POSIX_ERROR_EIO(4, 5),
+    POSIX_ERROR_EAGAIN(5, 11),
+    POSIX_ERROR_EACCES(6, 13),
+    POSIX_ERROR_EEXIST(7, 17),
+    POSIX_ERROR_EXDEV(8, 18),
+    POSIX_ERROR_ENODEV(9, 19),
+    POSIX_ERROR_ENOTDIR(10, 20),
+    POSIX_ERROR_EISDIR(11, 21),
+    POSIX_ERROR_EINVAL(12, 22),
+    POSIX_ERROR_ENOTEMPTY(13, 39),
+    POSIX_ERROR_ENODATA(14, 61),
     ;
     
     
@@ -249,6 +250,7 @@ public final class RPC {
         case 9999: return POSIX_ERROR_NONE;
         case 1: return POSIX_ERROR_EPERM;
         case 2: return POSIX_ERROR_ENOENT;
+        case 4: return POSIX_ERROR_EINTR;
         case 5: return POSIX_ERROR_EIO;
         case 11: return POSIX_ERROR_EAGAIN;
         case 13: return POSIX_ERROR_EACCES;
@@ -290,7 +292,7 @@ public final class RPC {
     }
     
     private static final POSIXErrno[] VALUES = {
-      POSIX_ERROR_NONE, POSIX_ERROR_EPERM, POSIX_ERROR_ENOENT, POSIX_ERROR_EIO, POSIX_ERROR_EAGAIN, POSIX_ERROR_EACCES, POSIX_ERROR_EEXIST, POSIX_ERROR_EXDEV, POSIX_ERROR_ENODEV, POSIX_ERROR_ENOTDIR, POSIX_ERROR_EISDIR, POSIX_ERROR_EINVAL, POSIX_ERROR_ENOTEMPTY, POSIX_ERROR_ENODATA, 
+      POSIX_ERROR_NONE, POSIX_ERROR_EPERM, POSIX_ERROR_ENOENT, POSIX_ERROR_EINTR, POSIX_ERROR_EIO, POSIX_ERROR_EAGAIN, POSIX_ERROR_EACCES, POSIX_ERROR_EEXIST, POSIX_ERROR_EXDEV, POSIX_ERROR_ENODEV, POSIX_ERROR_ENOTDIR, POSIX_ERROR_EISDIR, POSIX_ERROR_EINVAL, POSIX_ERROR_ENOTEMPTY, POSIX_ERROR_ENODATA, 
     };
     public static POSIXErrno valueOf(
         com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
@@ -1454,6 +1456,20 @@ public final class RPC {
       public boolean hasAuthData() { return hasAuthData; }
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth getAuthData() { return authData_; }
       
+      // optional fixed64 ttl = 5 [default = 0];
+      public static final int TTL_FIELD_NUMBER = 5;
+      private boolean hasTtl;
+      private long ttl_ = 0L;
+      public boolean hasTtl() { return hasTtl; }
+      public long getTtl() { return ttl_; }
+      
+      // optional bool high_priority = 6 [default = false];
+      public static final int HIGH_PRIORITY_FIELD_NUMBER = 6;
+      private boolean hasHighPriority;
+      private boolean highPriority_ = false;
+      public boolean hasHighPriority() { return hasHighPriority; }
+      public boolean getHighPriority() { return highPriority_; }
+      
       private void initFields() {
         userCreds_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials.getDefaultInstance();
         authData_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.getDefaultInstance();
@@ -1483,6 +1499,12 @@ public final class RPC {
         if (hasAuthData()) {
           output.writeMessage(4, getAuthData());
         }
+        if (hasTtl()) {
+          output.writeFixed64(5, getTtl());
+        }
+        if (hasHighPriority()) {
+          output.writeBool(6, getHighPriority());
+        }
         getUnknownFields().writeTo(output);
       }
       
@@ -1507,6 +1529,14 @@ public final class RPC {
         if (hasAuthData()) {
           size += com.google.protobuf.CodedOutputStream
             .computeMessageSize(4, getAuthData());
+        }
+        if (hasTtl()) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeFixed64Size(5, getTtl());
+        }
+        if (hasHighPriority()) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBoolSize(6, getHighPriority());
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSerializedSize = size;
@@ -1678,6 +1708,12 @@ public final class RPC {
           if (other.hasAuthData()) {
             mergeAuthData(other.getAuthData());
           }
+          if (other.hasTtl()) {
+            setTtl(other.getTtl());
+          }
+          if (other.hasHighPriority()) {
+            setHighPriority(other.getHighPriority());
+          }
           this.mergeUnknownFields(other.getUnknownFields());
           return this;
         }
@@ -1727,6 +1763,14 @@ public final class RPC {
                 }
                 input.readMessage(subBuilder, extensionRegistry);
                 setAuthData(subBuilder.buildPartial());
+                break;
+              }
+              case 41: {
+                setTtl(input.readFixed64());
+                break;
+              }
+              case 48: {
+                setHighPriority(input.readBool());
                 break;
               }
             }
@@ -1841,6 +1885,42 @@ public final class RPC {
         public Builder clearAuthData() {
           result.hasAuthData = false;
           result.authData_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth.getDefaultInstance();
+          return this;
+        }
+        
+        // optional fixed64 ttl = 5 [default = 0];
+        public boolean hasTtl() {
+          return result.hasTtl();
+        }
+        public long getTtl() {
+          return result.getTtl();
+        }
+        public Builder setTtl(long value) {
+          result.hasTtl = true;
+          result.ttl_ = value;
+          return this;
+        }
+        public Builder clearTtl() {
+          result.hasTtl = false;
+          result.ttl_ = 0L;
+          return this;
+        }
+        
+        // optional bool high_priority = 6 [default = false];
+        public boolean hasHighPriority() {
+          return result.hasHighPriority();
+        }
+        public boolean getHighPriority() {
+          return result.getHighPriority();
+        }
+        public Builder setHighPriority(boolean value) {
+          result.hasHighPriority = true;
+          result.highPriority_ = value;
+          return this;
+        }
+        public Builder clearHighPriority() {
+          result.hasHighPriority = false;
+          result.highPriority_ = false;
           return this;
         }
         
@@ -2813,38 +2893,40 @@ public final class RPC {
       "\"y\n\004Auth\022+\n\tauth_type\030\001 \002(\0162\030.xtreemfs.p" +
       "brpc.AuthType\0221\n\013auth_passwd\030\003 \001(\0132\034.xtr" +
       "eemfs.pbrpc.AuthPassword\022\021\n\tauth_data\030\002 " +
-      "\001(\014\"\270\004\n\tRPCHeader\022\017\n\007call_id\030\001 \002(\007\0221\n\014me" +
+      "\001(\014\"\346\004\n\tRPCHeader\022\017\n\007call_id\030\001 \002(\007\0221\n\014me" +
       "ssage_type\030\002 \002(\0162\033.xtreemfs.pbrpc.Messag" +
       "eType\022?\n\016request_header\030\003 \001(\0132\'.xtreemfs" +
       ".pbrpc.RPCHeader.RequestHeader\022?\n\016error_",
       "response\030\004 \001(\0132\'.xtreemfs.pbrpc.RPCHeade" +
-      "r.ErrorResponse\032\224\001\n\rRequestHeader\022\024\n\014int" +
+      "r.ErrorResponse\032\302\001\n\rRequestHeader\022\024\n\014int" +
       "erface_id\030\001 \002(\007\022\017\n\007proc_id\030\002 \002(\007\0223\n\nuser" +
       "_creds\030\003 \002(\0132\037.xtreemfs.pbrpc.UserCreden" +
       "tials\022\'\n\tauth_data\030\004 \002(\0132\024.xtreemfs.pbrp" +
-      "c.Auth\032\315\001\n\rErrorResponse\022-\n\nerror_type\030\001" +
-      " \002(\0162\031.xtreemfs.pbrpc.ErrorType\022A\n\013posix" +
-      "_errno\030\002 \001(\0162\032.xtreemfs.pbrpc.POSIXErrno" +
-      ":\020POSIX_ERROR_NONE\022\025\n\rerror_message\030\003 \001(" +
-      "\t\022\022\n\ndebug_info\030\004 \001(\t\022\037\n\027redirect_to_ser",
-      "ver_uuid\030\005 \001(\t*P\n\013MessageType\022\017\n\013RPC_REQ" +
-      "UEST\020\000\022\030\n\024RPC_RESPONSE_SUCCESS\020\001\022\026\n\022RPC_" +
-      "RESPONSE_ERROR\020\002*,\n\010AuthType\022\r\n\tAUTH_NON" +
-      "E\020\000\022\021\n\rAUTH_PASSWORD\020\001*\237\001\n\tErrorType\022\030\n\024" +
-      "INVALID_INTERFACE_ID\020\001\022\023\n\017INVALID_PROC_I" +
-      "D\020\002\022\020\n\014GARBAGE_ARGS\020\003\022\017\n\013AUTH_FAILED\020\004\022\031" +
-      "\n\025INTERNAL_SERVER_ERROR\020\005\022\t\n\005ERRNO\020\006\022\014\n\010" +
-      "REDIRECT\020\007\022\014\n\010IO_ERROR\020d*\333\002\n\nPOSIXErrno\022" +
-      "\025\n\020POSIX_ERROR_NONE\020\217N\022\025\n\021POSIX_ERROR_EP" +
-      "ERM\020\001\022\026\n\022POSIX_ERROR_ENOENT\020\002\022\023\n\017POSIX_E",
-      "RROR_EIO\020\005\022\026\n\022POSIX_ERROR_EAGAIN\020\013\022\026\n\022PO" +
-      "SIX_ERROR_EACCES\020\r\022\026\n\022POSIX_ERROR_EEXIST" +
-      "\020\021\022\025\n\021POSIX_ERROR_EXDEV\020\022\022\026\n\022POSIX_ERROR" +
-      "_ENODEV\020\023\022\027\n\023POSIX_ERROR_ENOTDIR\020\024\022\026\n\022PO" +
-      "SIX_ERROR_EISDIR\020\025\022\026\n\022POSIX_ERROR_EINVAL" +
-      "\020\026\022\031\n\025POSIX_ERROR_ENOTEMPTY\020\'\022\027\n\023POSIX_E" +
-      "RROR_ENODATA\020=B3\n1org.xtreemfs.foundatio" +
-      "n.pbrpc.generatedinterfaces"
+      "c.Auth\022\016\n\003ttl\030\005 \001(\006:\0010\022\034\n\rhigh_priority\030" +
+      "\006 \001(\010:\005false\032\315\001\n\rErrorResponse\022-\n\nerror_" +
+      "type\030\001 \002(\0162\031.xtreemfs.pbrpc.ErrorType\022A\n" +
+      "\013posix_errno\030\002 \001(\0162\032.xtreemfs.pbrpc.POSI" +
+      "XErrno:\020POSIX_ERROR_NONE\022\025\n\rerror_messag",
+      "e\030\003 \001(\t\022\022\n\ndebug_info\030\004 \001(\t\022\037\n\027redirect_" +
+      "to_server_uuid\030\005 \001(\t*P\n\013MessageType\022\017\n\013R" +
+      "PC_REQUEST\020\000\022\030\n\024RPC_RESPONSE_SUCCESS\020\001\022\026" +
+      "\n\022RPC_RESPONSE_ERROR\020\002*,\n\010AuthType\022\r\n\tAU" +
+      "TH_NONE\020\000\022\021\n\rAUTH_PASSWORD\020\001*\237\001\n\tErrorTy" +
+      "pe\022\030\n\024INVALID_INTERFACE_ID\020\001\022\023\n\017INVALID_" +
+      "PROC_ID\020\002\022\020\n\014GARBAGE_ARGS\020\003\022\017\n\013AUTH_FAIL" +
+      "ED\020\004\022\031\n\025INTERNAL_SERVER_ERROR\020\005\022\t\n\005ERRNO" +
+      "\020\006\022\014\n\010REDIRECT\020\007\022\014\n\010IO_ERROR\020d*\362\002\n\nPOSIX" +
+      "Errno\022\025\n\020POSIX_ERROR_NONE\020\217N\022\025\n\021POSIX_ER",
+      "ROR_EPERM\020\001\022\026\n\022POSIX_ERROR_ENOENT\020\002\022\025\n\021P" +
+      "OSIX_ERROR_EINTR\020\004\022\023\n\017POSIX_ERROR_EIO\020\005\022" +
+      "\026\n\022POSIX_ERROR_EAGAIN\020\013\022\026\n\022POSIX_ERROR_E" +
+      "ACCES\020\r\022\026\n\022POSIX_ERROR_EEXIST\020\021\022\025\n\021POSIX" +
+      "_ERROR_EXDEV\020\022\022\026\n\022POSIX_ERROR_ENODEV\020\023\022\027" +
+      "\n\023POSIX_ERROR_ENOTDIR\020\024\022\026\n\022POSIX_ERROR_E" +
+      "ISDIR\020\025\022\026\n\022POSIX_ERROR_EINVAL\020\026\022\031\n\025POSIX" +
+      "_ERROR_ENOTEMPTY\020\'\022\027\n\023POSIX_ERROR_ENODAT" +
+      "A\020=B3\n1org.xtreemfs.foundation.pbrpc.gen" +
+      "eratedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -2888,7 +2970,7 @@ public final class RPC {
           internal_static_xtreemfs_pbrpc_RPCHeader_RequestHeader_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_RPCHeader_RequestHeader_descriptor,
-              new java.lang.String[] { "InterfaceId", "ProcId", "UserCreds", "AuthData", },
+              new java.lang.String[] { "InterfaceId", "ProcId", "UserCreds", "AuthData", "Ttl", "HighPriority", },
               org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.class,
               org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.RequestHeader.Builder.class);
           internal_static_xtreemfs_pbrpc_RPCHeader_ErrorResponse_descriptor =

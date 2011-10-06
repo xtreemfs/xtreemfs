@@ -532,6 +532,20 @@ class RPCHeader_RequestHeader : public ::google::protobuf::Message {
   inline const ::xtreemfs::pbrpc::Auth& auth_data() const;
   inline ::xtreemfs::pbrpc::Auth* mutable_auth_data();
   
+  // optional fixed64 ttl = 5 [default = 0];
+  inline bool has_ttl() const;
+  inline void clear_ttl();
+  static const int kTtlFieldNumber = 5;
+  inline ::google::protobuf::uint64 ttl() const;
+  inline void set_ttl(::google::protobuf::uint64 value);
+  
+  // optional bool high_priority = 6 [default = false];
+  inline bool has_high_priority() const;
+  inline void clear_high_priority();
+  static const int kHighPriorityFieldNumber = 6;
+  inline bool high_priority() const;
+  inline void set_high_priority(bool value);
+  
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.RPCHeader.RequestHeader)
  private:
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
@@ -541,11 +555,13 @@ class RPCHeader_RequestHeader : public ::google::protobuf::Message {
   ::google::protobuf::uint32 proc_id_;
   ::xtreemfs::pbrpc::UserCredentials* user_creds_;
   ::xtreemfs::pbrpc::Auth* auth_data_;
+  ::google::protobuf::uint64 ttl_;
+  bool high_priority_;
   friend void  protobuf_AddDesc_pbrpc_2fRPC_2eproto();
   friend void protobuf_AssignDesc_pbrpc_2fRPC_2eproto();
   friend void protobuf_ShutdownFile_pbrpc_2fRPC_2eproto();
   
-  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(6 + 31) / 32];
   
   // WHY DOES & HAVE LOWER PRECEDENCE THAN != !?
   inline bool _has_bit(int index) const {
@@ -1097,6 +1113,38 @@ inline ::xtreemfs::pbrpc::Auth* RPCHeader_RequestHeader::mutable_auth_data() {
   _set_bit(3);
   if (auth_data_ == NULL) auth_data_ = new ::xtreemfs::pbrpc::Auth;
   return auth_data_;
+}
+
+// optional fixed64 ttl = 5 [default = 0];
+inline bool RPCHeader_RequestHeader::has_ttl() const {
+  return _has_bit(4);
+}
+inline void RPCHeader_RequestHeader::clear_ttl() {
+  ttl_ = GOOGLE_ULONGLONG(0);
+  _clear_bit(4);
+}
+inline ::google::protobuf::uint64 RPCHeader_RequestHeader::ttl() const {
+  return ttl_;
+}
+inline void RPCHeader_RequestHeader::set_ttl(::google::protobuf::uint64 value) {
+  _set_bit(4);
+  ttl_ = value;
+}
+
+// optional bool high_priority = 6 [default = false];
+inline bool RPCHeader_RequestHeader::has_high_priority() const {
+  return _has_bit(5);
+}
+inline void RPCHeader_RequestHeader::clear_high_priority() {
+  high_priority_ = false;
+  _clear_bit(5);
+}
+inline bool RPCHeader_RequestHeader::high_priority() const {
+  return high_priority_;
+}
+inline void RPCHeader_RequestHeader::set_high_priority(bool value) {
+  _set_bit(5);
+  high_priority_ = value;
 }
 
 // -------------------------------------------------------------------

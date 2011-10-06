@@ -114,11 +114,13 @@ void protobuf_AssignDesc_pbrpc_2fRPC_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(RPCHeader));
   RPCHeader_RequestHeader_descriptor_ = RPCHeader_descriptor_->nested_type(0);
-  static const int RPCHeader_RequestHeader_offsets_[4] = {
+  static const int RPCHeader_RequestHeader_offsets_[6] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(RPCHeader_RequestHeader, interface_id_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(RPCHeader_RequestHeader, proc_id_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(RPCHeader_RequestHeader, user_creds_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(RPCHeader_RequestHeader, auth_data_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(RPCHeader_RequestHeader, ttl_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(RPCHeader_RequestHeader, high_priority_),
   };
   RPCHeader_RequestHeader_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -210,39 +212,40 @@ void protobuf_AddDesc_pbrpc_2fRPC_2eproto() {
     "\"y\n\004Auth\022+\n\tauth_type\030\001 \002(\0162\030.xtreemfs.p"
     "brpc.AuthType\0221\n\013auth_passwd\030\003 \001(\0132\034.xtr"
     "eemfs.pbrpc.AuthPassword\022\021\n\tauth_data\030\002 "
-    "\001(\014\"\270\004\n\tRPCHeader\022\017\n\007call_id\030\001 \002(\007\0221\n\014me"
+    "\001(\014\"\346\004\n\tRPCHeader\022\017\n\007call_id\030\001 \002(\007\0221\n\014me"
     "ssage_type\030\002 \002(\0162\033.xtreemfs.pbrpc.Messag"
     "eType\022?\n\016request_header\030\003 \001(\0132\'.xtreemfs"
     ".pbrpc.RPCHeader.RequestHeader\022?\n\016error_"
     "response\030\004 \001(\0132\'.xtreemfs.pbrpc.RPCHeade"
-    "r.ErrorResponse\032\224\001\n\rRequestHeader\022\024\n\014int"
+    "r.ErrorResponse\032\302\001\n\rRequestHeader\022\024\n\014int"
     "erface_id\030\001 \002(\007\022\017\n\007proc_id\030\002 \002(\007\0223\n\nuser"
     "_creds\030\003 \002(\0132\037.xtreemfs.pbrpc.UserCreden"
     "tials\022\'\n\tauth_data\030\004 \002(\0132\024.xtreemfs.pbrp"
-    "c.Auth\032\315\001\n\rErrorResponse\022-\n\nerror_type\030\001"
-    " \002(\0162\031.xtreemfs.pbrpc.ErrorType\022A\n\013posix"
-    "_errno\030\002 \001(\0162\032.xtreemfs.pbrpc.POSIXErrno"
-    ":\020POSIX_ERROR_NONE\022\025\n\rerror_message\030\003 \001("
-    "\t\022\022\n\ndebug_info\030\004 \001(\t\022\037\n\027redirect_to_ser"
-    "ver_uuid\030\005 \001(\t*P\n\013MessageType\022\017\n\013RPC_REQ"
-    "UEST\020\000\022\030\n\024RPC_RESPONSE_SUCCESS\020\001\022\026\n\022RPC_"
-    "RESPONSE_ERROR\020\002*,\n\010AuthType\022\r\n\tAUTH_NON"
-    "E\020\000\022\021\n\rAUTH_PASSWORD\020\001*\237\001\n\tErrorType\022\030\n\024"
-    "INVALID_INTERFACE_ID\020\001\022\023\n\017INVALID_PROC_I"
-    "D\020\002\022\020\n\014GARBAGE_ARGS\020\003\022\017\n\013AUTH_FAILED\020\004\022\031"
-    "\n\025INTERNAL_SERVER_ERROR\020\005\022\t\n\005ERRNO\020\006\022\014\n\010"
-    "REDIRECT\020\007\022\014\n\010IO_ERROR\020d*\362\002\n\nPOSIXErrno\022"
-    "\025\n\020POSIX_ERROR_NONE\020\217N\022\025\n\021POSIX_ERROR_EP"
-    "ERM\020\001\022\026\n\022POSIX_ERROR_ENOENT\020\002\022\025\n\021POSIX_E"
-    "RROR_EINTR\020\004\022\023\n\017POSIX_ERROR_EIO\020\005\022\026\n\022POS"
-    "IX_ERROR_EAGAIN\020\013\022\026\n\022POSIX_ERROR_EACCES\020"
-    "\r\022\026\n\022POSIX_ERROR_EEXIST\020\021\022\025\n\021POSIX_ERROR"
-    "_EXDEV\020\022\022\026\n\022POSIX_ERROR_ENODEV\020\023\022\027\n\023POSI"
-    "X_ERROR_ENOTDIR\020\024\022\026\n\022POSIX_ERROR_EISDIR\020"
-    "\025\022\026\n\022POSIX_ERROR_EINVAL\020\026\022\031\n\025POSIX_ERROR"
-    "_ENOTEMPTY\020\'\022\027\n\023POSIX_ERROR_ENODATA\020=B3\n"
-    "1org.xtreemfs.foundation.pbrpc.generated"
-    "interfaces", 1530);
+    "c.Auth\022\016\n\003ttl\030\005 \001(\006:\0010\022\034\n\rhigh_priority\030"
+    "\006 \001(\010:\005false\032\315\001\n\rErrorResponse\022-\n\nerror_"
+    "type\030\001 \002(\0162\031.xtreemfs.pbrpc.ErrorType\022A\n"
+    "\013posix_errno\030\002 \001(\0162\032.xtreemfs.pbrpc.POSI"
+    "XErrno:\020POSIX_ERROR_NONE\022\025\n\rerror_messag"
+    "e\030\003 \001(\t\022\022\n\ndebug_info\030\004 \001(\t\022\037\n\027redirect_"
+    "to_server_uuid\030\005 \001(\t*P\n\013MessageType\022\017\n\013R"
+    "PC_REQUEST\020\000\022\030\n\024RPC_RESPONSE_SUCCESS\020\001\022\026"
+    "\n\022RPC_RESPONSE_ERROR\020\002*,\n\010AuthType\022\r\n\tAU"
+    "TH_NONE\020\000\022\021\n\rAUTH_PASSWORD\020\001*\237\001\n\tErrorTy"
+    "pe\022\030\n\024INVALID_INTERFACE_ID\020\001\022\023\n\017INVALID_"
+    "PROC_ID\020\002\022\020\n\014GARBAGE_ARGS\020\003\022\017\n\013AUTH_FAIL"
+    "ED\020\004\022\031\n\025INTERNAL_SERVER_ERROR\020\005\022\t\n\005ERRNO"
+    "\020\006\022\014\n\010REDIRECT\020\007\022\014\n\010IO_ERROR\020d*\362\002\n\nPOSIX"
+    "Errno\022\025\n\020POSIX_ERROR_NONE\020\217N\022\025\n\021POSIX_ER"
+    "ROR_EPERM\020\001\022\026\n\022POSIX_ERROR_ENOENT\020\002\022\025\n\021P"
+    "OSIX_ERROR_EINTR\020\004\022\023\n\017POSIX_ERROR_EIO\020\005\022"
+    "\026\n\022POSIX_ERROR_EAGAIN\020\013\022\026\n\022POSIX_ERROR_E"
+    "ACCES\020\r\022\026\n\022POSIX_ERROR_EEXIST\020\021\022\025\n\021POSIX"
+    "_ERROR_EXDEV\020\022\022\026\n\022POSIX_ERROR_ENODEV\020\023\022\027"
+    "\n\023POSIX_ERROR_ENOTDIR\020\024\022\026\n\022POSIX_ERROR_E"
+    "ISDIR\020\025\022\026\n\022POSIX_ERROR_EINVAL\020\026\022\031\n\025POSIX"
+    "_ERROR_ENOTEMPTY\020\'\022\027\n\023POSIX_ERROR_ENODAT"
+    "A\020=B3\n1org.xtreemfs.foundation.pbrpc.gen"
+    "eratedinterfaces", 1576);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "pbrpc/RPC.proto", &protobuf_RegisterTypes);
   UserCredentials::default_instance_ = new UserCredentials();
@@ -1161,6 +1164,8 @@ const int RPCHeader_RequestHeader::kInterfaceIdFieldNumber;
 const int RPCHeader_RequestHeader::kProcIdFieldNumber;
 const int RPCHeader_RequestHeader::kUserCredsFieldNumber;
 const int RPCHeader_RequestHeader::kAuthDataFieldNumber;
+const int RPCHeader_RequestHeader::kTtlFieldNumber;
+const int RPCHeader_RequestHeader::kHighPriorityFieldNumber;
 #endif  // !_MSC_VER
 
 RPCHeader_RequestHeader::RPCHeader_RequestHeader()
@@ -1185,6 +1190,8 @@ void RPCHeader_RequestHeader::SharedCtor() {
   proc_id_ = 0u;
   user_creds_ = NULL;
   auth_data_ = NULL;
+  ttl_ = GOOGLE_ULONGLONG(0);
+  high_priority_ = false;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -1229,6 +1236,8 @@ void RPCHeader_RequestHeader::Clear() {
     if (_has_bit(3)) {
       if (auth_data_ != NULL) auth_data_->::xtreemfs::pbrpc::Auth::Clear();
     }
+    ttl_ = GOOGLE_ULONGLONG(0);
+    high_priority_ = false;
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
@@ -1295,6 +1304,38 @@ bool RPCHeader_RequestHeader::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
+        if (input->ExpectTag(41)) goto parse_ttl;
+        break;
+      }
+      
+      // optional fixed64 ttl = 5 [default = 0];
+      case 5: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_ttl:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
+                 input, &ttl_)));
+          _set_bit(4);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(48)) goto parse_high_priority;
+        break;
+      }
+      
+      // optional bool high_priority = 6 [default = false];
+      case 6: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+         parse_high_priority:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+                 input, &high_priority_)));
+          _set_bit(5);
+        } else {
+          goto handle_uninterpreted;
+        }
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -1339,6 +1380,16 @@ void RPCHeader_RequestHeader::SerializeWithCachedSizes(
       4, this->auth_data(), output);
   }
   
+  // optional fixed64 ttl = 5 [default = 0];
+  if (_has_bit(4)) {
+    ::google::protobuf::internal::WireFormatLite::WriteFixed64(5, this->ttl(), output);
+  }
+  
+  // optional bool high_priority = 6 [default = false];
+  if (_has_bit(5)) {
+    ::google::protobuf::internal::WireFormatLite::WriteBool(6, this->high_priority(), output);
+  }
+  
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -1369,6 +1420,16 @@ void RPCHeader_RequestHeader::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         4, this->auth_data(), target);
+  }
+  
+  // optional fixed64 ttl = 5 [default = 0];
+  if (_has_bit(4)) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(5, this->ttl(), target);
+  }
+  
+  // optional bool high_priority = 6 [default = false];
+  if (_has_bit(5)) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(6, this->high_priority(), target);
   }
   
   if (!unknown_fields().empty()) {
@@ -1404,6 +1465,16 @@ int RPCHeader_RequestHeader::ByteSize() const {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           this->auth_data());
+    }
+    
+    // optional fixed64 ttl = 5 [default = 0];
+    if (has_ttl()) {
+      total_size += 1 + 8;
+    }
+    
+    // optional bool high_priority = 6 [default = false];
+    if (has_high_priority()) {
+      total_size += 1 + 1;
     }
     
   }
@@ -1445,6 +1516,12 @@ void RPCHeader_RequestHeader::MergeFrom(const RPCHeader_RequestHeader& from) {
     if (from._has_bit(3)) {
       mutable_auth_data()->::xtreemfs::pbrpc::Auth::MergeFrom(from.auth_data());
     }
+    if (from._has_bit(4)) {
+      set_ttl(from.ttl());
+    }
+    if (from._has_bit(5)) {
+      set_high_priority(from.high_priority());
+    }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
 }
@@ -1479,6 +1556,8 @@ void RPCHeader_RequestHeader::Swap(RPCHeader_RequestHeader* other) {
     std::swap(proc_id_, other->proc_id_);
     std::swap(user_creds_, other->user_creds_);
     std::swap(auth_data_, other->auth_data_);
+    std::swap(ttl_, other->ttl_);
+    std::swap(high_priority_, other->high_priority_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);

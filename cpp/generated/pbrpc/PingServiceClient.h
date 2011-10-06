@@ -1,4 +1,4 @@
-//automatically generated from Ping.proto at Mon Aug 01 16:12:45 CEST 2011
+//automatically generated from Ping.proto at Thu Oct 06 10:21:30 CEST 2011
 //(c) 2011. See LICENSE file for details.
 
 #ifndef PINGSERVICECLIENT_H

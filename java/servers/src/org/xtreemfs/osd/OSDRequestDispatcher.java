@@ -791,9 +791,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             return;
         }
         
-        int clientTimeout = 10 * 1000;   // TODO retrieve client timeout from header (if available)
-        boolean hasHighPriority = false; // TODO retrieve client priority from header (if available)
-        OSDRequest request = new OSDRequest(rq, requestTypeMap.get(rqHdr.getProcId()), clientTimeout, hasHighPriority);
+        final int procId = rqHdr.getProcId();
+        final long clientTimeout = (rqHdr.getTtl() == 0L) ? 10L * 1000L : rqHdr.getTtl();
+        final boolean hasHighPriority = rqHdr.getHighPriority();
+        final OSDRequest request = new OSDRequest(rq, requestTypeMap.get(procId), clientTimeout, hasHighPriority);
         request.setOperation(op);
         
         if (Logging.isDebug()) {

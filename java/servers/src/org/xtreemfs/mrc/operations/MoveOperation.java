@@ -198,7 +198,6 @@ public class MoveOperation extends MRCOperation {
                 // the target path and remove the former link
                 relink(sMan, sRes.getParentDirId(), sRes.getFileName(), source, tRes.getParentDirId(), tRes
                         .getFileName(), update);
-                
                 break;
             }
                 
@@ -299,7 +298,6 @@ public class MoveOperation extends MRCOperation {
                 break;
             }
             }
-            
         }
         }
         

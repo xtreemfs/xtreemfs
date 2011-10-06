@@ -690,9 +690,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "enqueueing request: %s", rq.toString());
         }
         
-        int procId = rqHdr.getProcId();
-        int clientTimeout = 10 * 1000;   // TODO retrieve client timeout from header (if available)
-        boolean hasHighPriority = false; // TODO retrieve client priority from header (if available)
+        final int procId = rqHdr.getProcId();
+        final long clientTimeout = (rqHdr.getTtl() == 0L) ? 10L * 1000L : rqHdr.getTtl();
+        final boolean hasHighPriority = rqHdr.getHighPriority();
         procStage.enter(procId, null, 
                 new MRCRequest(rq, procStage.requestTypeMap.get(procId), clientTimeout, hasHighPriority), 
                 new RPCRequestCallback(rq));
