@@ -188,7 +188,7 @@ public abstract class AugmentedRequest {
         
         long remaining = (deltaMaxTime + startTime) - System.currentTimeMillis();
         if (remaining < 0) {
-            throw new RequestExpiredException();
+            throw new RequestExpiredException(this);
         }
         return remaining;
     }

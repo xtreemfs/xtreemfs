@@ -109,11 +109,15 @@ final class ProtectionAlgorithmCore {
     <R extends AugmentedRequest> void hasAdmission(R request) throws AdmissionRefusedException {
         
         final int type = request.getType();
-        if (!request.isInternalRequest() && !unrefusableTypes[type] && 
-            !actuator.hasAdmission(request.getRemainingProcessingTime(), 
-             controller.estimateResponseTime(type, request.getSize(), request.hasHighPriority()))) {
+        if (!request.isInternalRequest() && !unrefusableTypes[type]) {
+            
+            final double remainingProcessingTime = request.getRemainingProcessingTime();
+            final double estimatedProcessingTime = controller.estimateResponseTime(type, request.getSize(), 
+                                                                                   request.hasHighPriority());
+            if(!actuator.hasAdmission(remainingProcessingTime, estimatedProcessingTime)) {
                 
-            throw new AdmissionRefusedException();
+                throw new AdmissionRefusedException(request, remainingProcessingTime, estimatedProcessingTime);
+            }
         }
     }
     
@@ -197,6 +201,10 @@ final class ProtectionAlgorithmCore {
      */
     public final static class RequestExpiredException extends AdmissionRefusedException {
         
-        private static final long serialVersionUID = 6042472641208133509L;       
+        private static final long serialVersionUID = 6042472641208133509L;    
+        
+        public RequestExpiredException(Object request) {
+            super("Request [" + String.valueOf(request) + "] has already been expired.");
+        }
     }
 }

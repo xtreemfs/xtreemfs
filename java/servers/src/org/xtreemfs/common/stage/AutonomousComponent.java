@@ -54,6 +54,16 @@ public interface AutonomousComponent<R> {
      */
     public static class AdmissionRefusedException extends Exception {
         
-        private static final long serialVersionUID = -1182382280938989776L;      
+        private static final long serialVersionUID = -1182382280938989776L;   
+        
+        protected AdmissionRefusedException(String msg) {
+            super (msg);
+        }
+        
+        public AdmissionRefusedException(Object request, double remaining, double expectedExcTime) {
+            super(String.format("Request [%s] was denied, because its remaining limited processing time %.4f cannot " +
+            		"hold the expected processing time of %.4f.", String.valueOf(request), remaining, 
+            		expectedExcTime));
+        }
     }
 }
