@@ -125,7 +125,7 @@ class SimpleMonitor extends Monitor {
         for (int j = 0; j < SAMPLE_AMOUNT; j++) {
             for (int i = 0; i < numTypes; i++) {
                 if (j < measurmentIndex[i]) {
-                    builder.append(fixedTimeMeasurements[i][j] + "\t");
+                    builder.append(String.format("%.2f", fixedTimeMeasurements[i][j]) + "\t");
                 } else {
                     builder.append("\t");
                 }
@@ -142,7 +142,7 @@ class SimpleMonitor extends Monitor {
         for (int j = 0; j < SAMPLE_AMOUNT; j++) {
             for (int i = 0; i < numTypes; i++) {
                 if (j < measurmentIndex[i]) {
-                    builder.append(variableTimeMeasurements[i][j] + "\t");
+                    builder.append(String.format("%.2f", variableTimeMeasurements[i][j]) + "\t");
                 } else {
                     builder.append("\t");
                 }

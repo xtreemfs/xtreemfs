@@ -214,8 +214,25 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
      */
     public final void enter(int stageMethodId, Object[] args, R request, Callback callback, 
             PerformanceInformationReceiver[] piggybackPerformanceInformationReceiver) {
+        enter(0L, stageMethodId, args, request, callback, piggybackPerformanceInformationReceiver);
+    }
+    
+    /**
+     * <p>Enqueues a request including all necessary information for its processing at this stage. Includes a receiver
+     * for OLP {@link PerformanceInformation}.</p>
+     * 
+     * @param size
+     * @param stageMethodId - the identifier for the method to use during processing.
+     * @param args - additional arguments for the request.
+     * @param request - the original request.
+     * @param callback - for postprocessing the request, may be null.
+     * @param piggybackPerformanceInformationReceiver - receiver of OLP {@link PerformanceInformation}.
+     */
+    public final void enter(long size, int stageMethodId, Object[] args, R request, Callback callback, 
+            PerformanceInformationReceiver[] piggybackPerformanceInformationReceiver) {
         
-        enter(new OLPStageRequest<R>(stageMethodId, args, request, callback, piggybackPerformanceInformationReceiver));
+        enter(new OLPStageRequest<R>(size, stageMethodId, args, request, callback, 
+                piggybackPerformanceInformationReceiver));
     }
     
     /**
@@ -231,8 +248,65 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
     public final void enter(int stageMethodId, Object[] args, R request, Callback callback, 
             PerformanceInformationReceiver piggybackPerformanceInformationReceiver) {
         
-        enter(new OLPStageRequest<R>(stageMethodId, args, request, callback, new PerformanceInformationReceiver[] {
-                piggybackPerformanceInformationReceiver }));
+        enter(0L, stageMethodId, args, request, callback, new PerformanceInformationReceiver[] {
+                piggybackPerformanceInformationReceiver });
+    }
+    
+    /**
+     * <p>Enqueues a request including all necessary information for its processing at this stage. Includes a receiver
+     * for OLP {@link PerformanceInformation}.</p>
+     * 
+     * @param size
+     * @param stageMethodId - the identifier for the method to use during processing.
+     * @param args - additional arguments for the request.
+     * @param request - the original request.
+     * @param callback - for postprocessing the request, may be null.
+     * @param piggybackPerformanceInformationReceiver - receiver of OLP {@link PerformanceInformation}.
+     */
+    public final void enter(long size, int stageMethodId, Object[] args, R request, Callback callback, 
+            PerformanceInformationReceiver piggybackPerformanceInformationReceiver) {
+        
+        enter(new OLPStageRequest<R>(size, stageMethodId, args, request, callback, 
+                new PerformanceInformationReceiver[] { piggybackPerformanceInformationReceiver }));
+    }
+    
+    /**
+     * <p>Method to reschedule given stageRequest that has been processed by this stage before.</p>
+     * 
+     * @param stageRequest
+     * @param newMethodId
+     * @param newArgs
+     * @param newCallback
+     * @param highPriority
+     */
+    public final void recycle(OLPStageRequest<R> stageRequest, int newMethodId, Object[] newArgs, 
+            Callback newCallback, boolean highPriority) {
+        
+        olp.depart(stageRequest, true);
+        stageRequest.update(newMethodId, newArgs, newCallback);
+        if (highPriority) {
+            stageRequest.getRequest().increasePriority();
+        } else {
+            stageRequest.getRequest().decreasePriority();
+        }
+        enter(stageRequest);
+    }
+    
+    /**
+     * <p>Method to reschedule given stageRequest that has been processed by this stage before.</p>
+     * 
+     * @param stageRequest
+     * @param highPriority
+     */
+    public final void recycle(OLPStageRequest<R> stageRequest, boolean highPriority) {
+        
+        olp.depart(stageRequest, true);
+        if (highPriority) {
+            stageRequest.getRequest().increasePriority();
+        } else {
+            stageRequest.getRequest().decreasePriority();
+        }
+        enter(stageRequest);
     }
     
     /**

@@ -21,6 +21,11 @@ import org.xtreemfs.common.stage.StageRequest;
 public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequest<R> {
 
     /**
+     * <p>Bandwidth occupied by this request.</p>
+     */
+    private final long                             size;
+    
+    /**
      * <p>Measured processing time that is fix for requests of this <code>type</code>.
      * Especially processing time that is variable to request in-/output is not measured by this field.</br>
      * Value is reset by its getter.</p>
@@ -52,11 +57,16 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
     private boolean                                voided                    = false;
     
     /**
+     * <p>Flag that determines if this stage request is being recycled, or not.
+     */
+    private boolean                                recycled                  = false;
+    
+    /**
      * <p>Optional field for registering a receiver for performance information that are send piggyback, after the 
      * request finishes the processing step.</p>
      */
     private final PerformanceInformationReceiver[] piggybackPerformanceReceiver;
-    
+
     /**
      * <p>Constructor without registering a predecessor for the processing step monitored by this.</p>
      * 
@@ -67,15 +77,28 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
      * @see StageRequest
      */
     OLPStageRequest(int stageMethodId, Object[] args, R request, Callback callback) {
-        super(stageMethodId, args, request, callback);
-        
-        this.piggybackPerformanceReceiver = new PerformanceInformationReceiver[0];
+        this(0L, stageMethodId, args, request, callback, new PerformanceInformationReceiver[0]);
+    }
+    
+    /**
+     * <p>Constructor without registering a predecessor for the processing step monitored by this.</p>
+     * 
+     * @param size
+     * @param stageMethodId
+     * @param args
+     * @param request
+     * @param callback
+     * @see StageRequest
+     */
+    OLPStageRequest(long size, int stageMethodId, Object[] args, R request, Callback callback) {
+        this(size, stageMethodId, args, request, callback, new PerformanceInformationReceiver[0]);
     }
     
     /**
      * <p>Constructor with piggybackPerformanceInformationReceiver as predecessor for the processing step monitored by 
      * this.</p>
      * 
+     * @param size
      * @param stageMethodId
      * @param args
      * @param request
@@ -83,12 +106,13 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
      *
      * @param piggybackPerformanceInformationReceiver - the processing predecessor of the request monitored by this.
      */
-    OLPStageRequest(int stageMethodId, Object[] args, R request, Callback callback, 
+    OLPStageRequest(long size, int stageMethodId, Object[] args, R request, Callback callback, 
             PerformanceInformationReceiver[] piggybackPerformanceInformationReceiver) {
         super(stageMethodId, args, request, callback);
         
         assert (piggybackPerformanceInformationReceiver != null);
         
+        this.size = size;
         this.piggybackPerformanceReceiver = piggybackPerformanceInformationReceiver;
     }
     
@@ -106,6 +130,7 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
      */
     public void beginMeasurement() {
         
+        assert(size > 0L) : "The request requires no Bandwidth, that's why no custom measurements are allowed.";
         assert(currentCustomMeasurement == -1) : "Currently there is a measurement in progress.";
         
         currentCustomMeasurement = System.nanoTime();
@@ -239,12 +264,10 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
      * <p>Gathers the collected measurements of variable processing time. Result will be normalized. 
      * Measurement history will be reset.</p>
      * 
-     * @param size - processing time proportional size of the request.
-     * 
      * @return the variable processing time in ms/byte, that has been measured since the last call of this method.
      */
     
-    double getVariableProcessingTime(long size) {
+    double getVariableProcessingTime() {
         
         assert(currentCustomMeasurement == -1L) : "Currently there is a measurement in progress.";
       
@@ -266,6 +289,34 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
     boolean hasValidMonitoringInformation() {
         
         return !voided;
+    }
+    
+    /**
+     * <p>Sets the recycled flag.</p>
+     */
+    void markRecycle() {
+        
+        this.recycled = true;
+    }
+    
+    /**
+     * <p>Will reset the recycled flag.</p>
+     * 
+     * @return true if stage request is currently recycled.
+     */
+    boolean isRecycled() {
+        
+        final boolean r = recycled;
+        this.recycled = false;
+        return r;
+    }
+    
+    /**
+     * @return size of this request defined by the bandwidth needed to process it.
+     */
+    long getSize() {
+        
+        return size;
     }
 
     /**

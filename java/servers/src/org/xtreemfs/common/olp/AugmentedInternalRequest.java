@@ -16,22 +16,11 @@ package org.xtreemfs.common.olp;
  * @version 1.00, 09/27/11
  */
 public final class AugmentedInternalRequest extends AugmentedRequest {
-
-    /**
-     * @param type
-     * @param size
-     */
-    public AugmentedInternalRequest(int type, long size) {
-        
-        super(type);
-        updateSize(size);
-    }
-    
+   
     /**
      * @param type
      */
     public AugmentedInternalRequest(int type) {
-        
         super(type);
     }
     

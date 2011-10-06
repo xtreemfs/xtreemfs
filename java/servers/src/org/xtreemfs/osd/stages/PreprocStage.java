@@ -395,8 +395,7 @@ public class PreprocStage extends OverloadProtectedStage<AugmentedRequest> {
                 doProcessRequest(stageRequest);
                 break;
             case STAGEOP_OFT_DELETE:
-                callback.success(doCheckDeleteOnClose((String) stageRequest.getArgs()[0]), stageRequest);
-                break;
+                return callback.success(doCheckDeleteOnClose((String) stageRequest.getArgs()[0]), stageRequest);
             case STAGEOP_PING_FILE:
                 doPingFile(stageRequest);
                 break;

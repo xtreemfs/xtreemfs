@@ -345,10 +345,10 @@ class Controller implements PerformanceMeasurementListener {
         }
         builder.append("\n");
         for (int i = 0; i < numTypes; i++) {
-            builder.append(Double.longBitsToDouble(fixedProcessingTimeAverages.get(i)) + "\t");
+            builder.append(String.format("%.2f", Double.longBitsToDouble(fixedProcessingTimeAverages.get(i))) + "\t");
         }
         for (int i = 0; i < numInternalTypes; i++) {
-            builder.append(Double.longBitsToDouble(internalFixedProcessingTimeAverages.get(i)) + "\t");
+            builder.append(String.format("%.2f", Double.longBitsToDouble(internalFixedProcessingTimeAverages.get(i))) + "\t");
         }
         builder.append("\n\n");
         
@@ -361,10 +361,10 @@ class Controller implements PerformanceMeasurementListener {
         }
         builder.append("\n");
         for (int i = 0; i < numTypes; i++) {
-            builder.append(Double.longBitsToDouble(variableProcessingTimeAverages.get(i)) + "\t");
+            builder.append(String.format("%.2f", Double.longBitsToDouble(variableProcessingTimeAverages.get(i))) + "\t");
         }
         for (int i = 0; i < numInternalTypes; i++) {
-            builder.append(Double.longBitsToDouble(internalVariableProcessingTimeAverages.get(i)) + "\t");
+            builder.append(String.format("%.2f", Double.longBitsToDouble(internalVariableProcessingTimeAverages.get(i))) + "\t");
         }
         builder.append("\n\n");
         

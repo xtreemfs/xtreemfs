@@ -134,11 +134,29 @@ public abstract class OverloadProtectedComponent<R extends AugmentedRequest>
      */
     public final void enter(int stageMethodId, Object[] args, R request, Callback callback, 
             PerformanceInformationReceiver[] performanceInformationReceiver) throws AdmissionRefusedException {
+        enter(0L, stageMethodId, args, request, callback, performanceInformationReceiver);
+    }
+    
+    /**
+     * <p>Method to delegate a request to this protected component.</p>
+     * 
+     * @param size
+     * @param stageMethodId
+     * @param args
+     * @param request
+     * @param callback
+     * @param performanceInformationReceiver
+     * 
+     * @throws AdmissionRefusedException if a request could not approach the component due violation of timeout 
+     *                                   restrictions.
+     */
+    public final void enter(long size, int stageMethodId, Object[] args, R request, Callback callback, 
+            PerformanceInformationReceiver[] performanceInformationReceiver) throws AdmissionRefusedException {
         
-        final OLPStageRequest<R> rq = new OLPStageRequest<R>(stageMethodId, args, request, callback, 
+        final OLPStageRequest<R> rq = new OLPStageRequest<R>(size, stageMethodId, args, request, callback, 
                 performanceInformationReceiver);
         
-        olp.obtainAdmission(request);
+        olp.obtainAdmission(request, size);
         resumeRequestProcessing(rq);
         requestCounter.incrementAndGet();
         enter(rq);

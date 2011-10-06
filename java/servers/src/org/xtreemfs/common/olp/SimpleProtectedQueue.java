@@ -58,21 +58,25 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
     @Override
     public synchronized <S extends StageRequest<R>> void enqueue(S stageRequest) {
         
+        final OLPStageRequest<R> rq = (OLPStageRequest<R>) stageRequest;
+        
         try {
             
-            olp.obtainAdmission(stageRequest.getRequest());
-            
-            if (stageRequest.getRequest().hasHighPriority()) {
+            if (!rq.isRecycled()) {
+                olp.obtainAdmission(rq.getRequest(), rq.getSize());
+            }
+            if (rq.getRequest().hasHighPriority()) {
                 
-                high.add((OLPStageRequest<R>) stageRequest);
+                high.add(rq);
                 
                 // check the outdistanced low priority requests 
                 Iterator<OLPStageRequest<R>> iter = low.iterator();
                 while (iter.hasNext()) {
+                    
                     OLPStageRequest<R> next = iter.next();
                     try {
                         
-                        olp.hasAdmission(stageRequest.getRequest());
+                        olp.hasAdmission(rq.getRequest(), rq.getSize());
                     } catch (AdmissionRefusedException error) {
                         
                         iter.remove();
@@ -83,7 +87,7 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
                 }
             } else {
                 
-                low.add((OLPStageRequest<R>) stageRequest);
+                low.add(rq);
             }
             
             // wake up the stage if necessary
@@ -93,7 +97,7 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
             }
         } catch (Exception error) {
             
-            stageRequest.getCallback().failed(error);
+            rq.getCallback().failed(error);
             
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "Request was denied @stage OLP state: %s with queue %s", 

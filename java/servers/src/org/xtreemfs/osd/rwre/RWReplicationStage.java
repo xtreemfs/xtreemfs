@@ -778,11 +778,17 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
         file.getPendingRequests().clear();
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private void enqueuePrioritized(OLPStageRequest rq) {
+                
+        recycle(rq, true);
+    }
+    
     @SuppressWarnings("unchecked")
-    private void enqueuePrioritized(OLPStageRequest<?> rq) {
+    private void reschedule(OLPStageRequest<?> rq, int newMethodId, Object[] newArgs, Callback newCallback) {
                 
         rq.getRequest().increasePriority();
-        enter((StageRequest<AugmentedRequest>) rq);
+        recycle((OLPStageRequest<AugmentedRequest>) rq, newMethodId, newArgs, newCallback, false);
     }
     
     private void enqueueExternalOperation(int stageOp, Object[] arguments, OSDRequest rq, 
@@ -814,20 +820,19 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
                 callback, master.getPreprocStage());
     }
     
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "rawtypes" })
     public void replicatedWrite(FileCredentials credentials, XLocations xloc, long objNo, long objVersion, 
             InternalObjectData data, AbstractRPCRequestCallback callback, OLPStageRequest request) {
         
-        request.update(STAGEOP_REPLICATED_WRITE, new Object[] { credentials, xloc, objNo, objVersion, data }, callback);
-        enter(request);
+        reschedule(request, STAGEOP_REPLICATED_WRITE, new Object[] { credentials, xloc, objNo, objVersion, data }, 
+                callback);
     }
     
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "rawtypes" })
     public void replicateTruncate(FileCredentials credentials, XLocations xloc, long newFileSize, long newObjectVersion,
             AbstractRPCRequestCallback callback, OLPStageRequest request) {
         
-        request.update(STAGEOP_TRUNCATE, new Object[]{credentials,xloc,newFileSize,newObjectVersion}, callback);
-        enter(request);
+        reschedule(request, STAGEOP_TRUNCATE, new Object[]{credentials,xloc,newFileSize,newObjectVersion}, callback);
     }
 
     public void fileClosed(String fileId) {

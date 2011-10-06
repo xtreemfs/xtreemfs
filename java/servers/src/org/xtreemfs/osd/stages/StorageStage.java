@@ -18,7 +18,6 @@ import org.xtreemfs.common.olp.PerformanceInformationReceiver;
 import org.xtreemfs.common.stage.AbstractRPCRequestCallback;
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.RPCRequestCallback;
-import org.xtreemfs.common.stage.StageRequest;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
@@ -74,17 +73,16 @@ public class StorageStage {
     public void readObject(long objNo, StripingPolicyImpl sp, int offset, int length, long versionTimestamp, 
             OSDRequest rq, AbstractRPCRequestCallback callback) {
         
-        enqueueOperation(STAGEOP_READ_OBJECT, new Object[] { rq.getFileId(), objNo, sp, offset, length, versionTimestamp 
-                }, rq, callback, new PerformanceInformationReceiver[] { dispatcher.getPreprocStage(), 
+        enqueueOperation(length, STAGEOP_READ_OBJECT, new Object[] { rq.getFileId(), objNo, sp, offset, length, 
+                versionTimestamp }, rq, callback, new PerformanceInformationReceiver[] { dispatcher.getPreprocStage(), 
                 dispatcher.getRWReplicationStage() });
     }
     
     public void readObject(long objNo, StripingPolicyImpl sp, int offset, int length, long versionTimestamp, 
             OLPStageRequest<OSDRequest> stageRequest, AbstractRPCRequestCallback callback) {
         
-        stageRequest.update(STAGEOP_READ_OBJECT, new Object[] { stageRequest.getRequest().getFileId(), objNo, sp, 
-                offset, length, versionTimestamp }, callback);
-        requeueOperation(stageRequest);
+        requeueOperation(stageRequest, STAGEOP_READ_OBJECT, new Object[] { stageRequest.getRequest().getFileId(), objNo, 
+                sp, offset, length, versionTimestamp }, callback);
     }
     
     public void getFilesize(StripingPolicyImpl sp, long versionTimestamp, OSDRequest rq,
@@ -98,14 +96,14 @@ public class StorageStage {
         ReusableBuffer data, CowPolicy cow, XLocations xloc, boolean sync, Long newVersion,
         OSDRequest rq, AbstractRPCRequestCallback callback) {
         
-        enqueueOperation(STAGEOP_WRITE_OBJECT, new Object[] { rq.getFileId(), objNo, sp, offset, data, cow, xloc, false, 
-                sync, newVersion }, rq, callback, new PerformanceInformationReceiver[] { dispatcher.getPreprocStage(), 
-                dispatcher.getRWReplicationStage()});
+        enqueueOperation(data.remaining(), STAGEOP_WRITE_OBJECT, new Object[] { rq.getFileId(), objNo, sp, offset, data, 
+            cow, xloc, false, sync, newVersion }, rq, callback, new PerformanceInformationReceiver[] { 
+            dispatcher.getPreprocStage(), dispatcher.getRWReplicationStage()});
     }
     
     public void insertPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, int size, Callback callback) {
         
-        enqueueOperation(STAGEOP_INSERT_PADDING_OBJECT, new Object[] { fileId, objNo, sp, size }, 
+        enqueueOperation(size, STAGEOP_INSERT_PADDING_OBJECT, new Object[] { fileId, objNo, sp, size }, 
                 new AugmentedInternalRequest(STAGEOP_INSERT_PADDING_OBJECT), callback);
     }
     
@@ -184,9 +182,8 @@ public class StorageStage {
     public void getObjectSet(StripingPolicyImpl sp, OLPStageRequest<OSDRequest> stageRequest, 
             AbstractRPCRequestCallback callback) {
         
-        stageRequest.update(STAGEOP_GET_OBJECT_SET, new Object[] { stageRequest.getRequest().getFileId(), sp }, 
-                callback);
-        requeueOperation(stageRequest);
+        requeueOperation(stageRequest, STAGEOP_GET_OBJECT_SET, new Object[] { stageRequest.getRequest().getFileId(), 
+                sp }, callback);
     }
     
     public void createFileVersion(String fileId, FileMetadata fi, Callback callback) {
@@ -198,8 +195,7 @@ public class StorageStage {
     public void createFileVersion(String fileId, FileMetadata fi, OLPStageRequest<AugmentedRequest> stageRequest, 
             Callback callback) {
 
-        stageRequest.update(STAGEOP_CREATE_FILE_VERSION, new Object[] { fileId, fi }, callback);
-        requeueOperation(stageRequest);
+        requeueOperation(stageRequest, STAGEOP_CREATE_FILE_VERSION, new Object[] { fileId, fi }, callback);
     }
     
     public void getFileIDList(OSDRequest rq, AbstractRPCRequestCallback callback) {
@@ -209,6 +205,12 @@ public class StorageStage {
     }
     
     private void enqueueOperation(int stageOp, Object[] args, OSDRequest request, AbstractRPCRequestCallback callback, 
+            PerformanceInformationReceiver[] predecessor) {
+        
+        enqueueOperation(0L, stageOp, args, request, callback, predecessor);
+    }
+    
+    private void enqueueOperation(long size, int stageOp, Object[] args, OSDRequest request, AbstractRPCRequestCallback callback, 
             PerformanceInformationReceiver[] predecessor) {
         
         final String fileId = (String) args[0];
@@ -221,7 +223,7 @@ public class StorageStage {
         // in order to start/schedule its execution
         // concurrently with other threads assigned to other
         // storageTasks
-        storageThreads[taskId].enter(stageOp, args, request, callback, predecessor);
+        storageThreads[taskId].enter(size, stageOp, args, request, callback, predecessor);
     }
     
     private void enqueueOperation(int stageOp, Object[] args, OSDRequest request, AbstractRPCRequestCallback callback, 
@@ -241,6 +243,10 @@ public class StorageStage {
     }
     
     private void enqueueOperation(int stageOp, Object[] args, AugmentedInternalRequest request, Callback callback) {
+        enqueueOperation(0L, stageOp, args, request, callback);
+    }
+    
+    private void enqueueOperation(long size, int stageOp, Object[] args, AugmentedInternalRequest request, Callback callback) {
         
         final String fileId = (String) args[0];
         
@@ -252,13 +258,14 @@ public class StorageStage {
         // in order to start/schedule its execution
         // concurrently with other threads assigned to other
         // storageTasks
-        storageThreads[taskId].enter(stageOp, args, request, callback);
+        storageThreads[taskId].enter(size, stageOp, args, request, callback, new PerformanceInformationReceiver[0]);
     }
     
-    @SuppressWarnings("unchecked")
-    private void requeueOperation(OLPStageRequest<?> stageRequest) {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void requeueOperation(OLPStageRequest stageRequest, int newMethodId, Object[] newArgs, 
+            Callback newCallback) {
         
-        final String fileId = (String) stageRequest.getArgs()[0];
+        final String fileId = (String) newArgs[0];
         
         // choose the thread the new request has to be
         // assigned to, for its execution
@@ -268,7 +275,7 @@ public class StorageStage {
         // in order to start/schedule its execution
         // concurrently with other threads assigned to other
         // storageTasks
-        storageThreads[taskId].enter((StageRequest<AugmentedRequest>) stageRequest);
+        storageThreads[taskId].recycle(stageRequest, newMethodId, newArgs, newCallback, false);
     }
     
     public void start() {

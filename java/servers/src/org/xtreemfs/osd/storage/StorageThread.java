@@ -364,7 +364,6 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
             stageRequest.beginMeasurement();
             final ObjectInformation obj = layout.readObject(fileId, fi, objNo, offset, length, objVer);
             stageRequest.endMeasurement();
-            stageRequest.getRequest().updateSize(obj.getData().remaining());
             
             if (versionTimestamp != 0) {
                 int lastObj = fi.getVersionTable().getLatestVersionBefore(versionTimestamp).getObjCount() - 1;
@@ -436,7 +435,6 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
             stageRequest.beginMeasurement();
             layout.createPaddingObject(fileId, fi, objNo, version, size);
             stageRequest.endMeasurement();
-            stageRequest.getRequest().updateSize(size);
             
             return callback.success(OSDWriteResponse.newBuilder().build(), stageRequest);
             
@@ -506,7 +504,6 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
             stageRequest.beginMeasurement();
             layout.writeObject(fileId, fi, data, objNo, offset, newVersion, syncWrite, isCow);
             stageRequest.endMeasurement();
-            stageRequest.getRequest().updateSize(dataLength);
             
             // if a new version was created, update the "latest versions" file
             if (cow.cowEnabled() && (isCow || largestV == 0))

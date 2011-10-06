@@ -103,16 +103,17 @@ final class ProtectionAlgorithmCore {
     /**
      * <p>Checks whether a request can be processed before its time is running out or not.</p>
      * 
+     * @param size
      * @param request - the request to check.
      * @throws AdmissionRefusedException if requests has already expired or will expire before processing has finished.
      */
-    <R extends AugmentedRequest> void hasAdmission(R request) throws AdmissionRefusedException {
+    <R extends AugmentedRequest> void hasAdmission(R request, long size) throws AdmissionRefusedException {
         
         final int type = request.getType();
         if (!request.isInternalRequest() && !unrefusableTypes[type]) {
             
             final double remainingProcessingTime = request.getRemainingProcessingTime();
-            final double estimatedProcessingTime = controller.estimateResponseTime(type, request.getSize(), 
+            final double estimatedProcessingTime = controller.estimateResponseTime(type, size, 
                                                                                    request.hasHighPriority());
             if(!actuator.hasAdmission(remainingProcessingTime, estimatedProcessingTime)) {
                 
@@ -125,15 +126,16 @@ final class ProtectionAlgorithmCore {
      * <p>Method to be executed to determine whether the request represented by its metadata may be processed or 
      * not.</p>
      * 
+     * @param size
      * @param request - the request to process.
      * @throws AdmissionRefusedException if requests has already expired or will expire before processing has finished.
      */
-    <R extends AugmentedRequest> void obtainAdmission(R request) throws AdmissionRefusedException {
-                
-        hasAdmission(request);
-        controller.enterRequest(request.getType(), request.getSize(), request.hasHighPriority(), 
-                request.isInternalRequest());
+    <R extends AugmentedRequest> void obtainAdmission(R request, long size) throws AdmissionRefusedException {
+        hasAdmission(request, size);
+        controller.enterRequest(request.getType(), size, request.hasHighPriority(), request.isInternalRequest());
     }
+    
+    
     
     /**
      * <p>If the processing of the given request has finished, its departure has to be notified to the algorithm by this
@@ -142,14 +144,57 @@ final class ProtectionAlgorithmCore {
      * @param stageRequest - {@link OLPStageRequest} containing monitoring information for one processing step.
      */
     <R extends AugmentedRequest> void depart(OLPStageRequest<R> stageRequest) {
+        depart(stageRequest, false);
+    }
+    
+    /**
+     * <p>If the processing of the given request has finished, its departure has to be notified to the algorithm by this
+     * method.</p>
+     * 
+     * @param stageRequest - {@link OLPStageRequest} containing monitoring information for one processing step.
+     * @param recycle - if true no monitoring data shall be collected and performance information receiver are not
+     *                  provided any information. false otherwise.
+     */
+    <R extends AugmentedRequest> void depart(OLPStageRequest<R> stageRequest, boolean recycle) {
+       
+        final AugmentedRequest request = stageRequest.getRequest();
+        controller.quitRequest(request.getType(), stageRequest.getSize(), request.hasHighPriority(), 
+                               request.isInternalRequest());
+        if (!recycle) {
+            monitor(stageRequest);
+            sendPiggybackPerformanceInformation(stageRequest.getPiggybackPerformanceInformationReceiver());
+        }
+    }
+    
+    /**
+     * <p>Method that composes and sends {@link PerformanceInformation} to preceding components.</p>
+     * 
+     * @param predecessors - receiver of piggyback {@link PerformanceInformation}.
+     */
+    void sendPiggybackPerformanceInformation(PerformanceInformationReceiver[] predecessors) {
+        
+        final PerformanceInformation pI = composePerformanceInformation();
+        
+        for (PerformanceInformationReceiver predecessor : predecessors) {
+            
+            predecessor.processPerformanceInformation(pI);
+            sender.performanceInformationUpdatedPiggyback(predecessor);
+        }
+    }
+    
+    /**
+     * <p>Method to collect monitoring information of the given stageRequest if available.</p>
+     * 
+     * @param <R>
+     * @param stageRequest - to collect monitoring information from.
+     */
+    <R extends AugmentedRequest> void monitor(OLPStageRequest<R> stageRequest) {
         
         final AugmentedRequest request = stageRequest.getRequest();
-        controller.quitRequest(request.getType(), request.getSize(), request.hasHighPriority(), 
-                request.isInternalRequest());
         
         if (stageRequest.hasValidMonitoringInformation()) {
             
-            final double varProcessingTime = stageRequest.getVariableProcessingTime(request.getSize());
+            final double varProcessingTime = stageRequest.getVariableProcessingTime();
             final double fixProcessingTime = stageRequest.getFixedProcessingTime();
             
             if (request.isInternalRequest()) {
@@ -159,12 +204,6 @@ final class ProtectionAlgorithmCore {
                 
                 monitor.record(request.getType(), fixProcessingTime, varProcessingTime);
             }
-        }
-        final PerformanceInformationReceiver[] receiver = stageRequest.getPiggybackPerformanceInformationReceiver();
-        for (PerformanceInformationReceiver r : receiver) {
-            
-            r.processPerformanceInformation(composePerformanceInformation());
-            sender.performanceInformationUpdatedPiggyback(r);
         }
     }
         

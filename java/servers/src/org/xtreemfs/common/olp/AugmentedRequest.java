@@ -25,11 +25,6 @@ public abstract class AugmentedRequest {
     private final int  type;
     
     /**
-     * <p>Bandwidth occupied by this request.</p>
-     */
-    private long       size;
-    
-    /**
      * <p>Maximal response time delta for this request.</p>
      */
     private final long deltaMaxTime;
@@ -84,7 +79,6 @@ public abstract class AugmentedRequest {
         assert (type > -1);
         
         this.type = type;
-        this.size = size;
         this.deltaMaxTime = deltaMaxTime;
         this.highPriority = highPriority;
         this.startTime = System.currentTimeMillis();
@@ -103,31 +97,7 @@ public abstract class AugmentedRequest {
         this.highPriority = false;
         this.startTime = 0L;
     }
-    
-    /**
-     * <p>Constructs a new augmented request implementation using the metadata from another given augmented request.</p>
-     * 
-     * @param request
-     */
-    public AugmentedRequest(AugmentedRequest request) {
         
-        this.type = request.type;
-        this.deltaMaxTime = request.deltaMaxTime;
-        this.highPriority = request.highPriority;
-        this.size = request.size;
-        this.startTime = request.startTime;
-    }
-    
-    /**
-     * <p>Method to update the processing size for the next step in request processing.</p>
-     * 
-     * @param newSize
-     */
-    public void updateSize(long newSize) {
-        
-        size = newSize;
-    }
-    
     /**
      * <p>Increases priority for the next processing step, if possible.</p>
      */
@@ -154,14 +124,6 @@ public abstract class AugmentedRequest {
     int getType() {
         
         return type;
-    }
-    
-    /**
-     * @return size of this request defined by the bandwidth needed to process it.
-     */
-    long getSize() {
-        
-        return size;
     }
     
     /**
