@@ -357,6 +357,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 con.connectFailed();
                 for (RPCClientRequest rq : con.getSendQueue()) {
                     rq.getResponse().requestFailed("sending RPC failed: server '"+con.getEndpoint()+"' not reachable ("+ex+")");
+                    rq.freeBuffers();
                 }
                 con.getSendQueue().clear();
                 
@@ -706,6 +707,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                         }
                         for (RPCClientRequest rq : cancelRq) {
                             rq.getResponse().requestFailed("sending RPC failed: request timed out");
+                            rq.freeBuffers();
                         }
                         
                     }
