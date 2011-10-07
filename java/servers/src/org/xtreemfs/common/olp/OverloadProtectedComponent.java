@@ -173,7 +173,8 @@ public abstract class OverloadProtectedComponent<R extends AugmentedRequest>
     @Override
     public final void exit(OLPStageRequest<R> request) {
                 
-        requestCounter.decrementAndGet();
+        final int check = requestCounter.getAndDecrement();
+        assert (check > 0);
         suspendRequestProcessing(request);
         olp.depart(request);
     }
