@@ -1209,7 +1209,12 @@ void VolumeImplementation::AddReplica(
   FileHandle* file_handle = OpenFile(user_credentials,
                                      path,
                                      SYSTEM_V_FCNTL_H_O_RDONLY);
-  file_handle->PingReplica(user_credentials, new_replica.osd_uuids(0));
+  try {
+    file_handle->PingReplica(user_credentials, new_replica.osd_uuids(0));
+  } catch (const exception& e) {
+    file_handle->Close();  // Cleanup temporary file handle.
+    throw;  // Rethrow exception.
+  }
   file_handle->Close();
 }
 

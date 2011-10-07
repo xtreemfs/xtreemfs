@@ -665,6 +665,13 @@ void FileHandleImplementation::PingReplica(
     const std::string& osd_uuid) {
   // Get xlocset. and check if osd_uuid is included.
   readRequest read_request;
+  {
+    boost::mutex::scoped_lock lock(mutex_);
+    // TODO(mberlin): XCap might expire while retrying a request. Provide a
+    //                mechanism to renew the xcap in the request.
+    read_request.mutable_file_credentials()->mutable_xcap()->CopyFrom(xcap_);
+    read_request.set_file_id(xcap_.file_id());
+  }
   file_info_->GetXLocSet(
       read_request.mutable_file_credentials()->mutable_xlocs());
   const XLocSet& xlocs = read_request.file_credentials().xlocs();
@@ -863,7 +870,7 @@ void FileHandleImplementation::RenewXCapAsync() {
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG)
             << "Renew XCap for file_id: " <<  GetFileIdHelper(&lock)
-            << "Expiration in: " << (xcap_.expire_time_s() - time(NULL))
+            << " Expiration in: " << (xcap_.expire_time_s() - time(NULL))
             << endl;
     }
 

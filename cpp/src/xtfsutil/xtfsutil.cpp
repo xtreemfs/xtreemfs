@@ -435,7 +435,11 @@ bool AddReplica(const string& xctl_file,
   request["osd"] = osd_uuid;
   request["replication-flags"] = 0;
   if (vm.count("full") > 0) {
-    request["replication-flags"] = xtreemfs::pbrpc::REPL_FLAG_FULL_REPLICA;
+    request["replication-flags"] = xtreemfs::pbrpc::REPL_FLAG_FULL_REPLICA
+        | xtreemfs::pbrpc::REPL_FLAG_STRATEGY_RAREST_FIRST;
+  } else {
+    request["replication-flags"] =
+        xtreemfs::pbrpc::REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING;
   }
 
   Json::Value response;
