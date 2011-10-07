@@ -835,7 +835,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
     }
 
     public void fileClosed(String fileId) {
-        enter(STAGEOP_CLOSE, new Object[]{fileId}, null, null);
+        enter(STAGEOP_CLOSE, new Object[]{fileId}, new AugmentedInternalRequest(STAGEOP_CLOSE), null);
     }
 
     public void receiveFleaseMessage(ReusableBuffer message, InetSocketAddress sender) {
@@ -853,7 +853,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
     }
 
     public void getStatus(Callback callback) {
-        enter(STAGEOP_GETSTATUS, new Object[]{}, null, callback);
+        enter(STAGEOP_GETSTATUS, new Object[]{}, new AugmentedInternalRequest(STAGEOP_GETSTATUS), callback);
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
