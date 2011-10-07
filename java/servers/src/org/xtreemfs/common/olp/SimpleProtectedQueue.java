@@ -98,13 +98,13 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
                 
                 notify();
             }
-        } catch (Exception error) {
+        } catch (AdmissionRefusedException error) {
             
             rq.getCallback().failed(error);
             
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Request was denied @stage OLP state: %s with queue %s", 
-                        olp.toString(), toString());
+            if (Logging.isInfo()) {
+                Logging.logMessage(Logging.LEVEL_INFO, this, "%s @stage OLP state: %s with queue %s", 
+                        error.getMessage(), olp.toString(), toString());
             }
         }
     }

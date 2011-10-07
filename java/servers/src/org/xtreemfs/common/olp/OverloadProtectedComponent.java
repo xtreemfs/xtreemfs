@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.stage.AutonomousComponent;
 import org.xtreemfs.common.stage.Callback;
+import org.xtreemfs.foundation.logging.Logging;
 
 /**
  * <p>Facade for threads that used to have a protection against overload. This class connects all essential methods to 
@@ -156,11 +157,20 @@ public abstract class OverloadProtectedComponent<R extends AugmentedRequest>
         final OLPStageRequest<R> rq = new OLPStageRequest<R>(size, stageMethodId, args, request, callback, 
                 performanceInformationReceiver);
         
-        olp.hasAdmission(request, size);
-        olp.obtainAdmission(request.getType(), size, request.hasHighPriority(), request.isInternalRequest());
-        resumeRequestProcessing(rq);
-        requestCounter.incrementAndGet();
-        enter(rq);
+        try {
+            olp.hasAdmission(request, size);
+            olp.obtainAdmission(request.getType(), size, request.hasHighPriority(), request.isInternalRequest());
+            resumeRequestProcessing(rq);
+            requestCounter.incrementAndGet();
+            enter(rq);
+        } catch (AdmissionRefusedException error) {
+            if (Logging.isInfo()) {
+                Logging.logMessage(Logging.LEVEL_INFO, this, "%s @stage OLP state: %s", error.getMessage(), 
+                        olp.toString());
+            }
+            
+            throw error;
+        }
     }
     
     /**
