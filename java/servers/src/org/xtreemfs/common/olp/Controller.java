@@ -149,23 +149,23 @@ class Controller implements PerformanceMeasurementListener {
         long check;
         if (isInternalRequest) {
             
-            check = internalQueueComposition.getAndDecrement(type);
-            assert(check > 0);
-            check = internalQueueBandwidthComposition.getAndAdd(type, -size);
-            assert(check > 0);
+            check = internalQueueComposition.decrementAndGet(type);
+            assert(check >= 0);
+            check = internalQueueBandwidthComposition.addAndGet(type, -size);
+            assert(check >= 0);
         } else {
             
-            check = queueComposition.getAndDecrement(type);
-            assert(check > 0);
-            check = queueBandwidthComposition.getAndAdd(type, -size);
-            assert(check > 0);
+            check = queueComposition.decrementAndGet(type);
+            assert(check >= 0);
+            check = queueBandwidthComposition.addAndGet(type, -size);
+            assert(check >= 0);
             
             if (hasPriority) {
                 
-                check = priorityQueueComposition.getAndDecrement(type);
-                assert(check > 0);
-                check = priorityQueueBandwidthComposition.getAndAdd(type, -size);
-                assert(check > 0);
+                check = priorityQueueComposition.decrementAndGet(type);
+                assert(check >= 0);
+                check = priorityQueueBandwidthComposition.addAndGet(type, -size);
+                assert(check >= 0);
             }
         }
     }
