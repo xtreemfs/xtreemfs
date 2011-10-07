@@ -59,13 +59,16 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
     public synchronized <S extends StageRequest<R>> void enqueue(S stageRequest) {
         
         final OLPStageRequest<R> rq = (OLPStageRequest<R>) stageRequest;
+        final R request = rq.getRequest();
+        final boolean hasPriority = request.hasHighPriority() || rq.hasHighPriority();
         
         try {
             
             if (!rq.isRecycled()) {
-                olp.obtainAdmission(rq.getRequest(), rq.getSize());
+                olp.hasAdmission(request, rq.getSize());
             }
-            if (rq.getRequest().hasHighPriority()) {
+            olp.obtainAdmission(request.getType(), rq.getSize(), hasPriority, request.isInternalRequest());
+            if (hasPriority) {
                 
                 high.add(rq);
                 
@@ -76,7 +79,7 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
                     OLPStageRequest<R> next = iter.next();
                     try {
                         
-                        olp.hasAdmission(rq.getRequest(), rq.getSize());
+                        olp.hasAdmission(next.getRequest(), next.getSize());
                     } catch (AdmissionRefusedException error) {
                         
                         iter.remove();

@@ -19,7 +19,13 @@ import org.xtreemfs.common.stage.StageRequest;
  * @version 1.00, 09/29/11
  */
 public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequest<R> {
-
+    
+    /**
+     * <p>Field to temporary give a request high priority. Will only apply as long as the request does not leave its 
+     * stage.</p>
+     */
+    private boolean                                highPriority = false;
+    
     /**
      * <p>Bandwidth occupied by this request.</p>
      */
@@ -57,11 +63,6 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
     private boolean                                voided                    = false;
     
     /**
-     * <p>Flag that determines if this stage request is being recycled, or not.
-     */
-    private boolean                                recycled                  = false;
-    
-    /**
      * <p>Optional field for registering a receiver for performance information that are send piggyback, after the 
      * request finishes the processing step.</p>
      */
@@ -79,7 +80,7 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
     OLPStageRequest(int stageMethodId, Object[] args, R request, Callback callback) {
         this(0L, stageMethodId, args, request, callback, new PerformanceInformationReceiver[0]);
     }
-    
+
     /**
      * <p>Constructor without registering a predecessor for the processing step monitored by this.</p>
      * 
@@ -292,33 +293,49 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
     }
     
     /**
-     * <p>Sets the recycled flag.</p>
-     */
-    void markRecycle() {
-        
-        this.recycled = true;
-    }
-    
-    /**
-     * <p>Will reset the recycled flag.</p>
-     * 
-     * @return true if stage request is currently recycled.
-     */
-    boolean isRecycled() {
-        
-        final boolean r = recycled;
-        this.recycled = false;
-        return r;
-    }
-    
-    /**
      * @return size of this request defined by the bandwidth needed to process it.
      */
     long getSize() {
         
         return size;
     }
-
+    
+    /* (non-Javadoc)
+     * @see org.xtreemfs.common.stage.StageRequest#update(int, java.lang.Object[], org.xtreemfs.common.stage.Callback)
+     */
+    public void update(boolean highPriority, int newMethodId, Object[] newArgs, Callback newCallback) {
+        super.update(newMethodId, newArgs, newCallback);
+        
+        if (highPriority) 
+            increasePriority();
+        else
+            decreasePriority();
+    }
+    
+    /**
+     * <p>Increases priority for the next processing step, if possible.</p>
+     */
+    public void increasePriority() {
+        
+        highPriority = true;
+    }
+    
+    /**
+     * <p>Decreases priority for the next processing step, if possible.</p>
+     */
+    public void decreasePriority() {
+        
+        highPriority = false;
+    }
+    
+    /**
+     * @return true, if this request has temporary high priority. false otherwise.
+     */
+    boolean hasHighPriority() {
+        
+        return highPriority;
+    }
+    
     /**
      * @return the receiver for performance information that are provided piggyback.
      */

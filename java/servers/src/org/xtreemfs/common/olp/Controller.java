@@ -146,19 +146,26 @@ class Controller implements PerformanceMeasurementListener {
     
     void quitRequest(int type, long size, boolean hasPriority, boolean isInternalRequest) {
         
+        long check;
         if (isInternalRequest) {
             
-            internalQueueComposition.decrementAndGet(type);
-            internalQueueBandwidthComposition.getAndAdd(type, -size);
+            check = internalQueueComposition.decrementAndGet(type);
+            assert(check > 0);
+            check = internalQueueBandwidthComposition.getAndAdd(type, -size);
+            assert(check > 0);
         } else {
             
-            queueComposition.decrementAndGet(type);
-            queueBandwidthComposition.addAndGet(type, -size);
+            check = queueComposition.decrementAndGet(type);
+            assert(check > 0);
+            check = queueBandwidthComposition.addAndGet(type, -size);
+            assert(check > 0);
             
             if (hasPriority) {
                 
-                priorityQueueComposition.decrementAndGet(type);
-                priorityQueueBandwidthComposition.addAndGet(type, -size);
+                check = priorityQueueComposition.decrementAndGet(type);
+                assert(check > 0);
+                check = priorityQueueBandwidthComposition.addAndGet(type, -size);
+                assert(check > 0);
             }
         }
     }
@@ -336,7 +343,7 @@ class Controller implements PerformanceMeasurementListener {
         final int numTypes = fixedProcessingTimeAverages.length();
         final int numInternalTypes = internalFixedProcessingTimeAverages.length();
         
-        builder.append("Fixed processing time averages (external/internal:\n");
+        builder.append("Fixed processing time averages (external/internal):\n");
         for (int i = 0; i < numTypes; i++) {
             builder.append(i + "\t");
         }
@@ -352,7 +359,7 @@ class Controller implements PerformanceMeasurementListener {
         }
         builder.append("\n\n");
         
-        builder.append("Variable processing time averages (external/internal:\n");
+        builder.append("Variable processing time averages (external/internal):\n");
         for (int i = 0; i < numTypes; i++) {
             builder.append(i + "\t");
         }
@@ -368,7 +375,7 @@ class Controller implements PerformanceMeasurementListener {
         }
         builder.append("\n\n");
         
-        builder.append("Queue composition (external/internal:\n");
+        builder.append("Queue composition (external/internal):\n");
         for (int i = 0; i < numTypes; i++) {
             builder.append(i + "\t");
         }
@@ -384,7 +391,7 @@ class Controller implements PerformanceMeasurementListener {
         }
         builder.append("\n\n");
         
-        builder.append("Queue bandwidth composition (external/internal:\n");
+        builder.append("Queue bandwidth composition (external/internal):\n");
         for (int i = 0; i < numTypes; i++) {
             builder.append(i + "\t");
         }
@@ -400,7 +407,7 @@ class Controller implements PerformanceMeasurementListener {
         }
         builder.append("\n\n");
         
-        builder.append("Priority queue composition (external/internal:\n");
+        builder.append("Priority queue composition (external/internal):\n");
         for (int i = 0; i < numTypes; i++) {
             builder.append(i + "\t");
         }
@@ -410,7 +417,7 @@ class Controller implements PerformanceMeasurementListener {
         }
         builder.append("\n\n");
         
-        builder.append("Queue bandwidth composition (external/internal:\n");
+        builder.append("Queue bandwidth composition (external/internal):\n");
         for (int i = 0; i < numTypes; i++) {
             builder.append(i + "\t");
         }

@@ -39,6 +39,11 @@ public abstract class StageRequest<R> {
     private final R  request;
     
     /**
+     * <p>Flag that determines if this stage request is being recycled, or not.
+     */
+    private boolean  recycled = false;
+    
+    /**
      * <p>Constructor to initialize the wrapper with all necessary information.</p>
      * 
      * @param stageMethodId - the identifier for the method to use during processing.
@@ -74,6 +79,19 @@ public abstract class StageRequest<R> {
         stageMethodId = newMethodId;
         args = newArgs;
         callback = newCallback;
+        recycled = true;
+    }
+    
+    /**
+     * <p>Will reset the recycled flag. Recycled requests may not be denied.</p>
+     * 
+     * @return true if stage request is currently recycled.
+     */
+    public boolean isRecycled() {
+        
+        final boolean result = recycled;
+        recycled = false;
+        return result;
     }
     
     /**

@@ -787,7 +787,6 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
     @SuppressWarnings("unchecked")
     private void reschedule(OLPStageRequest<?> rq, int newMethodId, Object[] newArgs, Callback newCallback) {
                 
-        rq.getRequest().increasePriority();
         recycle((OLPStageRequest<AugmentedRequest>) rq, newMethodId, newArgs, newCallback, false);
     }
     

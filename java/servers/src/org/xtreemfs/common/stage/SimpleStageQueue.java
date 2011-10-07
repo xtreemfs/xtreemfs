@@ -49,11 +49,13 @@ public class SimpleStageQueue<R> implements StageQueue<R> {
     @Override
     public synchronized <S extends StageRequest<R>> void enqueue(S request) {
         
-        if (maxLength == 0 || queue.size() < maxLength) {
+        if (request.isRecycled() || maxLength == 0 || queue.size() < maxLength) {
+            
             queue.add(request);
             
             if (queue.size() == 1) notify();
         } else {
+            
             /*
              * IllegalStateException if the element cannot be added at this
              *                       time due to capacity restrictions

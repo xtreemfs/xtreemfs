@@ -22,22 +22,22 @@ public abstract class AugmentedRequest {
     /**
      * <p>Identifier for requests of this type.</p>
      */
-    private final int  type;
+    private final int           type;
     
     /**
      * <p>Maximal response time delta for this request.</p>
      */
-    private final long deltaMaxTime;
+    private final long          deltaMaxTime;
     
     /**
      * <p>The Unix time stamp this request was initially received.</p>
      */
-    private final long startTime;
+    private final long          startTime;
     
     /**
      * <p>Flag to determine whether this request has high priority or not.</p>
      */
-    private boolean    highPriority;
+    private final boolean       highPriority;
     
     /**
      * <p>Constructor for requests that do not require a certain amount of bandwidth for being
@@ -96,22 +96,6 @@ public abstract class AugmentedRequest {
         this.deltaMaxTime = 0;
         this.highPriority = false;
         this.startTime = 0L;
-    }
-        
-    /**
-     * <p>Increases priority for the next processing step, if possible.</p>
-     */
-    public void increasePriority() {
-        
-        highPriority = true;
-    }
-    
-    /**
-     * <p>Decreases priority for the next processing step, if possible.</p>
-     */
-    public void decreasePriority() {
-        
-        highPriority = false;
     }
     
 /*

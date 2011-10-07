@@ -283,12 +283,7 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
             Callback newCallback, boolean highPriority) {
         
         olp.depart(stageRequest, true);
-        stageRequest.update(newMethodId, newArgs, newCallback);
-        if (highPriority) {
-            stageRequest.getRequest().increasePriority();
-        } else {
-            stageRequest.getRequest().decreasePriority();
-        }
+        stageRequest.update(highPriority, newMethodId, newArgs, newCallback);
         enter(stageRequest);
     }
     
@@ -302,9 +297,9 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
         
         olp.depart(stageRequest, true);
         if (highPriority) {
-            stageRequest.getRequest().increasePriority();
+            stageRequest.increasePriority();
         } else {
-            stageRequest.getRequest().decreasePriority();
+            stageRequest.decreasePriority();
         }
         enter(stageRequest);
     }

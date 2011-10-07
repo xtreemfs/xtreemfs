@@ -126,13 +126,16 @@ final class ProtectionAlgorithmCore {
      * <p>Method to be executed to determine whether the request represented by its metadata may be processed or 
      * not.</p>
      * 
+     * @param type
      * @param size
-     * @param request - the request to process.
+     * @param hasPriority
+     * @param isInternal
      * @throws AdmissionRefusedException if requests has already expired or will expire before processing has finished.
      */
-    <R extends AugmentedRequest> void obtainAdmission(R request, long size) throws AdmissionRefusedException {
-        hasAdmission(request, size);
-        controller.enterRequest(request.getType(), size, request.hasHighPriority(), request.isInternalRequest());
+    <R extends AugmentedRequest> void obtainAdmission(int type, long size, boolean hasPriority, boolean isInternal) 
+            throws AdmissionRefusedException {
+        
+        controller.enterRequest(type, size, hasPriority, isInternal);
     }
     
     
@@ -158,8 +161,8 @@ final class ProtectionAlgorithmCore {
     <R extends AugmentedRequest> void depart(OLPStageRequest<R> stageRequest, boolean recycle) {
        
         final AugmentedRequest request = stageRequest.getRequest();
-        controller.quitRequest(request.getType(), stageRequest.getSize(), request.hasHighPriority(), 
-                               request.isInternalRequest());
+        controller.quitRequest(request.getType(), stageRequest.getSize(), 
+                request.hasHighPriority() || stageRequest.hasHighPriority(), request.isInternalRequest());
         if (!recycle) {
             monitor(stageRequest);
             sendPiggybackPerformanceInformation(stageRequest.getPiggybackPerformanceInformationReceiver());

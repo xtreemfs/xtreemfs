@@ -156,7 +156,8 @@ public abstract class OverloadProtectedComponent<R extends AugmentedRequest>
         final OLPStageRequest<R> rq = new OLPStageRequest<R>(size, stageMethodId, args, request, callback, 
                 performanceInformationReceiver);
         
-        olp.obtainAdmission(request, size);
+        olp.hasAdmission(request, size);
+        olp.obtainAdmission(request.getType(), size, request.hasHighPriority(), request.isInternalRequest());
         resumeRequestProcessing(rq);
         requestCounter.incrementAndGet();
         enter(rq);
