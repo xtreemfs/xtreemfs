@@ -131,7 +131,6 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
      */
     public void beginMeasurement() {
         
-        assert(size > 0L) : "The request requires no Bandwidth, that's why no custom measurements are allowed.";
         assert(currentCustomMeasurement == -1) : "Currently there is a measurement in progress.";
         
         currentCustomMeasurement = System.nanoTime();

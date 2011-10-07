@@ -72,7 +72,7 @@ public class StorageStage {
     
     public void readObject(long objNo, StripingPolicyImpl sp, int offset, int length, long versionTimestamp, 
             OSDRequest rq, AbstractRPCRequestCallback callback) {
-        
+                
         enqueueOperation(length, STAGEOP_READ_OBJECT, new Object[] { rq.getFileId(), objNo, sp, offset, length, 
                 versionTimestamp }, rq, callback, new PerformanceInformationReceiver[] { dispatcher.getPreprocStage(), 
                 dispatcher.getRWReplicationStage() });
