@@ -895,6 +895,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             if (state == null) {
                 BufferPool.free(objData.getData());
                 callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO, "file is not open!"));
+                return;
             }
             state.setCredentials(credentials);
 
@@ -930,6 +931,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             ReplicatedFileState state = files.get(fileId);
             if (state == null) {
                 callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO, "file is not open!"));
+                return;
             }
             state.setCredentials(credentials);
 
@@ -980,6 +982,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                                         state.getPendingRequests().size(), MAX_PENDING_PER_FILE, fileId);
                             }
                             callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                            return;
                         } else {
                             state.getPendingRequests().add(method);
                         }
@@ -1027,6 +1030,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                                         state.getPendingRequests().size(), MAX_PENDING_PER_FILE, fileId);
                             }
                             callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                            return;
                         } else {
                             state.getPendingRequests().add(method);
                         }

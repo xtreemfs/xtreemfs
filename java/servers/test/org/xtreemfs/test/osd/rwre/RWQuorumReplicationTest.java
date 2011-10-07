@@ -197,9 +197,100 @@ public class RWQuorumReplicationTest extends TestCase {
                     fc, fileId, 128*1024*2);
         r3.get();
         r3.freeBuffers();
-
     }
 
+    @Test
+    public void testTwoReplicas() throws Exception {
+        Capability cap = new Capability(fileId, 0, 60, System.currentTimeMillis()+10000, "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
+        List<Replica> rlist = new LinkedList();
+        for (OSDConfig osd : this.configs) {
+            Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(1, 128)).setReplicationFlags(0).addOsdUuids(osd.getUUID().toString()).build();
+            rlist.add(r);
+        }
 
+        XLocSet locSet = XLocSet.newBuilder().setReadOnlyFileSize(0).setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ).setVersion(1).addAllReplicas(rlist).build();
+        // set the first replica as current replica
+        FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(locSet).build();
+
+        final OSDServiceClient client = testEnv.getOSDClient();
+
+        final InetSocketAddress osd1 = new InetSocketAddress("localhost",configs[0].getPort());
+
+        final InetSocketAddress osd2 = new InetSocketAddress("localhost",configs[1].getPort());
+
+
+        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
+        ReusableBuffer rb = BufferPool.allocate(1024);
+        rb.put("YaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYagga".getBytes());
+        rb.limit(rb.capacity());
+        rb.position(0);
+
+        RPCResponse<OSDWriteResponse> r = client.write(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
+                    fc, fileId, 0, 0, 0, 0, objdata, rb);
+        try {
+            r.get();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw ex;
+        }
+        System.out.println("got response");
+        r.freeBuffers();
+
+
+        ReusableBuffer data = BufferPool.allocate(1024*8);
+        r = client.write(osd2, RPCAuthentication.authNone, RPCAuthentication.userService,
+                    fc, fileId, 0, 0, 0, 0, objdata, data);
+        try {
+            r.get();
+            fail("expected redirect");
+        } catch (PBRPCException ex) {
+            if (ex.getErrorType() != ErrorType.REDIRECT)
+                fail("expected redirect");
+            System.out.println("got response: "+ex);
+        }
+        r.freeBuffers();
+
+        rb = BufferPool.allocate(1024);
+        rb.put("MoeepMoeepMoeepMoeepMoeepMoeepMoeepMoeepMoeepMoeepMoeepMoeepMoeepMoeepMoeepMoeepMoeepMoeep".getBytes());
+        rb.limit(rb.capacity());
+        rb.position(0);
+
+        r = client.write(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
+                    fc, fileId, 0, 0, 1024, 0, objdata, rb);
+        r.get();
+        System.out.println("got response");
+        r.freeBuffers();
+
+        //read from slave
+        System.out.println("//// START READ ////");
+        RPCResponse<ObjectData> r2 = client.read(osd2, RPCAuthentication.authNone, RPCAuthentication.userService,
+                    fc, fileId, 0, -1, 0, 2048);
+        try {
+            r2.get();
+            fail("expected redirect");
+        } catch (PBRPCException ex) {
+            if (ex.getErrorType() != ErrorType.REDIRECT)
+                fail("expected redirect");
+            System.out.println("got response: "+ex);
+        }
+        r2.freeBuffers();
+
+
+        r2 = client.read(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
+                    fc, fileId, 0, -1, 0, 2048);
+        ObjectData od = r2.get();
+        rb = r2.getData();
+        assertEquals(rb.get(0),(byte)'Y');
+        assertEquals(rb.get(1),(byte)'a');
+        r2.freeBuffers();
+
+        XCap newCap = fc.getXcap().toBuilder().setTruncateEpoch(1).build();
+        fc = fc.toBuilder().setXcap(newCap).build();
+
+        RPCResponse r3 = client.truncate(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
+                    fc, fileId, 128*1024*2);
+        r3.get();
+        r3.freeBuffers();
+    }
 
 }
