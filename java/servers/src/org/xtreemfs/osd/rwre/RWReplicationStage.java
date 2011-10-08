@@ -303,7 +303,7 @@ public class RWReplicationStage extends OverloadProtectedStage<AugmentedRequest>
 
                 // Error handling for timeouts on the primary.
                 if (oldState == ReplicaState.PRIMARY
-                    &&lease.getLeaseHolder() == null
+                    && lease.getLeaseHolder() == null
                     && lease.getLeaseTimeout_ms() == 0) {
                     Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
                             "(R:%s) was primary, lease error in cell %s, restarting replication: %s",localID, cellId,

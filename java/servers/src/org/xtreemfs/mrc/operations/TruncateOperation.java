@@ -74,7 +74,8 @@ public class TruncateOperation extends MRCOperation {
             throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "file '" + writeCap.getFileId()
                 + "' does not exist");
         
-
+        // get the current epoch, use (and increase) the truncate number if
+        // the open mode is truncate
         
         AtomicDBUpdate update = sMan.createAtomicDBUpdate();
         
@@ -82,8 +83,6 @@ public class TruncateOperation extends MRCOperation {
         file.setIssuedEpoch(newEpoch);
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         
-        // get the current epoch, use (and increase) the truncate number if
-        // the open mode is truncate
         final Capability truncCap = new Capability(writeCap.getFileId(), writeCap.getAccessMode()
             | FileAccessManager.O_TRUNC, master.getConfig().getCapabilityTimeout(), TimeSync.getGlobalTime()
             / 1000 + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq.getRPCRequest()
@@ -102,5 +101,4 @@ public class TruncateOperation extends MRCOperation {
             }
         }, rq);
     }
-    
 }

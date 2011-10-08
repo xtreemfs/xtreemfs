@@ -53,7 +53,7 @@ public final class WriteOperation extends OSDOperation {
     }
 
     @Override
-    public ErrorResponse startRequest(final OSDRequest rq, RPCRequestCallback callback) {
+    public ErrorResponse startRequest(OSDRequest rq, RPCRequestCallback callback) {
         
         final writeRequest args = (writeRequest) rq.getRequestArgs();
 
@@ -107,8 +107,8 @@ public final class WriteOperation extends OSDOperation {
             final RPCRequestCallback callback) {
         
         //prepareWrite first
-        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(),args.getObjectNumber(),
-                args.getObjectVersion(), RWReplicationStage.Operation.WRITE,
+        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(),
+                args.getObjectNumber(), args.getObjectVersion(), RWReplicationStage.Operation.WRITE,
                 new AbstractRPCRequestCallback(callback) {
                     
             @Override
@@ -195,8 +195,8 @@ public final class WriteOperation extends OSDOperation {
             return false;
         }
     }
-    public void sendUpdates2(final OLPStageRequest<OSDRequest> rq, final writeRequest args, final OSDWriteResponse result, 
-            final long newObjVersion, final InternalObjectData data, final RPCRequestCallback callback) {
+    public void sendUpdates2(OLPStageRequest<OSDRequest> rq, writeRequest args, final OSDWriteResponse result, 
+            long newObjVersion, InternalObjectData data, RPCRequestCallback callback) {
         
         master.getRWReplicationStage().replicatedWrite(args.getFileCredentials(), rq.getRequest().getLocationList(),
                     args.getObjectNumber(), newObjVersion, data, new AbstractRPCRequestCallback(callback) {

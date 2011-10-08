@@ -194,7 +194,9 @@ public final class ReadOperation extends OSDOperation {
                 int cnt = 0;
                 for (ServiceUUID osd : osds) {
                     if (!osd.equals(localUUID)) {
-                        gmaxRPCs[cnt++] = master.getOSDClient().xtreemfs_internal_get_gmax(osd.getAddress(), RPCAuthentication.authNone,RPCAuthentication.userService,args.getFileCredentials(),args.getFileId());
+                        gmaxRPCs[cnt++] = master.getOSDClient().xtreemfs_internal_get_gmax(osd.getAddress(), 
+                                RPCAuthentication.authNone, RPCAuthentication.userService,
+                                args.getFileCredentials(), args.getFileId());
                     }
                 }
                 waitForResponses(gmaxRPCs, new ResponsesListener() {
