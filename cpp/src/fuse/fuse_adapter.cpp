@@ -197,7 +197,7 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
         options_->use_fuse_permission_checks = false;
         // Tell the user.
         Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
-            "not passing -odefault_permissions to Fuse) because the access "
+            "not passing -o default_permissions to Fuse) because the access "
             "policy is not set to ACCESS_CONTROL_POLICY_POSIX" << endl;
       }
 
@@ -259,10 +259,26 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   // In this case Fuse POSIX checks cannot get applied.
   if (options_->grid_auth_mode_globus || options_->grid_auth_mode_unicore) {
     options_->use_fuse_permission_checks = false;
-    // Tell the user.
+
     Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
-        "not passing -odefault_permissions to Fuse) because a Grid usermapping "
-        "is used." << endl;
+        " not passing -o default_permissions to Fuse) because a Grid"
+        " usermapping is used." << endl;
+  }
+  if (options_->use_fuse_permission_checks && options_->SSLEnabled()) {
+    options_->use_fuse_permission_checks = false;
+
+    Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
+        " not passing -o default_permissions to Fuse) as SSL is used. In rare"
+        " cases it may be safe to pass -o default_permissions manually (that is"
+        " if the NullAuthenticationProvider is used in the MRC or service"
+        " certificates (contrary to user certificates) are used in the client"
+        " to connect to the MRC)."
+        << endl;
+  }
+  if (options_->fuse_permission_checks_explicitly_disabled) {
+    Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
+        " not passing -o default_permissions to Fuse) as requested by the user."
+        << endl;
   }
 
   // Add Fuse default options.
@@ -668,18 +684,26 @@ int FuseAdapter::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   int i;
   for (i = offset; i < dir_entries_offset + dir_entries->entries_size(); i++) {
     boost::uint64_t dir_entries_index = i -  dir_entries_offset;
-    assert(dir_entries->entries(dir_entries_index).has_stbuf());
-    // Only set here st_ino and st_mode for the struct dirent.
-    fuse_statbuf.st_ino
-        = dir_entries->entries(dir_entries_index).stbuf().ino();
-    fuse_statbuf.st_mode
-        = dir_entries->entries(dir_entries_index).stbuf().mode();
+    if (dir_entries->entries(dir_entries_index).has_stbuf()) {
+      // Only set here st_ino and st_mode for the struct dirent.
+      fuse_statbuf.st_ino
+          = dir_entries->entries(dir_entries_index).stbuf().ino();
+      fuse_statbuf.st_mode
+          = dir_entries->entries(dir_entries_index).stbuf().mode();
 
-    if (filler(buf,
-               dir_entries->entries(dir_entries_index).name().c_str(),
-               &fuse_statbuf,
-               i + 1)) {
-      break;
+      if (filler(buf,
+                 dir_entries->entries(dir_entries_index).name().c_str(),
+                 &fuse_statbuf,
+                 i + 1)) {
+        break;
+      }
+    } else {
+      if (filler(buf,
+                 dir_entries->entries(dir_entries_index).name().c_str(),
+                 NULL,
+                 i + 1)) {
+        break;
+      }
     }
   }
 
@@ -720,7 +744,7 @@ int FuseAdapter::releasedir(const char *path, struct fuse_file_info *fi) {
   assert(cached_direntries != NULL);
   delete cached_direntries->dir_entries;
   delete cached_direntries;
-  fi->fh = NULL;
+  fi->fh = 0;  // NULL.
 
   return 0;
 }
@@ -899,7 +923,7 @@ int FuseAdapter::mkdir(const char *path, mode_t mode) {
   GenerateUserCredentials(fuse_get_context(), &user_credentials);
 
   try {
-    volume_->CreateDirectory(user_credentials, string(path), mode);
+    volume_->MakeDirectory(user_credentials, string(path), mode);
   } catch(const PosixErrorException& e) {
     return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
@@ -1188,7 +1212,7 @@ int FuseAdapter::rmdir(const char *path) {
   GenerateUserCredentials(fuse_get_context(), &user_credentials);
 
   try {
-    volume_->RemoveDirectory(user_credentials, string(path));
+    volume_->DeleteDirectory(user_credentials, string(path));
   } catch(const PosixErrorException& e) {
     return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {

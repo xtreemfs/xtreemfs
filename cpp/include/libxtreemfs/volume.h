@@ -245,10 +245,10 @@ class Volume {
    * @throws PosixErrorException
    * @throws UnknownAddressSchemeException
    */
-  virtual void CreateDirectory(
+  virtual void MakeDirectory(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path,
-      mode_t mode) = 0;
+      unsigned int mode) = 0;
 
   /** Removes the directory at "path" which has to be empty.
    *
@@ -260,7 +260,7 @@ class Volume {
    * @throws PosixErrorException
    * @throws UnknownAddressSchemeException
    */
-  virtual void RemoveDirectory(
+  virtual void DeleteDirectory(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path) = 0;
 
@@ -271,6 +271,10 @@ class Volume {
    *
    * DirectoryEntries will contain the names of the entries and, if not disabled
    * by "names_only", a Stat object for every entry.
+   *
+   * @remark Even if names_only is set to false, an entry does _not_ need to
+   *         contain a stat buffer. Always check with entries(i).has_stbuf()
+   *         if the i'th entry does have a stat buffer before accessing it.
    *
    * @param user_credentials    Name and Groups of the user.
    * @param path    Path to the directory.

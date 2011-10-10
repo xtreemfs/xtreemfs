@@ -6,7 +6,12 @@
  */
 #include "util/logging.h"
 
+#ifdef WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
 #include <ctime>
+#endif
 
 #include <boost/thread.hpp>
 #include <fstream>
@@ -35,20 +40,34 @@ Logging::~Logging() {
 }
 
 std::ostream& Logging::getLog(LogLevel level, const char* file, int line) {
+#ifdef WIN32
+  SYSTEMTIME st, lt;
+  GetSystemTime(&st);
+  GetLocalTime(&lt);
+#else
   timeval current_time;
   gettimeofday(&current_time, 0);
   struct tm* tm = localtime(&current_time.tv_sec);
+#endif
 
   log_stream_
       << "[ " << levelToChar(level)
       << " | " << file << ":" << line << " | "
 
       << setiosflags(ios::dec)
+#ifdef WIN32
+      << setw(2) << lt.wMonth << "/" << setw(2) << lt.wDay << " "
+      << setfill('0') << setw(2) << lt.wHour << ":"
+      << setfill('0') << setw(2) << lt.wMinute << ":"
+      << setfill('0') << setw(2) << lt.wSecond << "."
+      << setfill('0') << setw(3) << lt.wMilliseconds << " | "
+#else
       << setw(2) << (tm->tm_mon + 1) << "/" << setw(2) << tm->tm_mday << " "
       << setfill('0') << setw(2) << tm->tm_hour << ":"
       << setfill('0') << setw(2) << tm->tm_min << ":"
       << setfill('0') << setw(2) << tm->tm_sec << "."
       << setfill('0') << setw(3) << (current_time.tv_usec / 1000) << " | "
+#endif
 
       << boost::this_thread::get_id() << " ] "
       // Reset modifiers.

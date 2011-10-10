@@ -760,10 +760,10 @@ void VolumeImplementation::Rename(
   response->DeleteBuffers();
 }
 
-void VolumeImplementation::CreateDirectory(
+void VolumeImplementation::MakeDirectory(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
-    mode_t mode) {
+    unsigned int mode) {
   mkdirRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
@@ -795,7 +795,7 @@ void VolumeImplementation::CreateDirectory(
   response->DeleteBuffers();
 }
 
-void VolumeImplementation::RemoveDirectory(
+void VolumeImplementation::DeleteDirectory(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path) {
   rmdirRequest rq;
@@ -924,12 +924,14 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
        i < min(volume_options_.metadata_cache_size,
                static_cast<boost::uint64_t>(result->entries_size()));
        i++) {
-    if (result->entries(i).stbuf().nlink() > 1) {  // Do not cache hard links.
-      metadata_cache_.Invalidate(path);
-    } else {
-      metadata_cache_.UpdateStat(
-          ConcatenatePath(path, result->entries(i).name()),
-          result->entries(i).stbuf());
+    if (result->entries(i).has_stbuf()) {
+      if (result->entries(i).stbuf().nlink() > 1) {  // Do not cache hard links.
+        metadata_cache_.Invalidate(path);
+      } else {
+        metadata_cache_.UpdateStat(
+            ConcatenatePath(path, result->entries(i).name()),
+            result->entries(i).stbuf());
+      }
     }
   }
 
@@ -1207,7 +1209,12 @@ void VolumeImplementation::AddReplica(
   FileHandle* file_handle = OpenFile(user_credentials,
                                      path,
                                      SYSTEM_V_FCNTL_H_O_RDONLY);
-  file_handle->PingReplica(user_credentials, new_replica.osd_uuids(0));
+  try {
+    file_handle->PingReplica(user_credentials, new_replica.osd_uuids(0));
+  } catch (const exception& e) {
+    file_handle->Close();  // Cleanup temporary file handle.
+    throw;  // Rethrow exception.
+  }
   file_handle->Close();
 }
 

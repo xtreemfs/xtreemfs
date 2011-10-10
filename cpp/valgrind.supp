@@ -172,3 +172,21 @@
    fun:_ZN5boost19thread_specific_ptrIiED1Ev
    fun:exit
 }
+{
+   OpenSSL static memory?
+   Memcheck:Leak
+   fun:malloc
+   fun:CRYPTO_malloc
+   ...
+   obj:/lib/libcrypto.so.0.9.8
+   ...
+}
+{
+   OpenSSL static memory?
+   Memcheck:Leak
+   fun:realloc
+   fun:CRYPTO_realloc
+   ...
+   obj:/lib/libcrypto.so.0.9.8
+   ...
+}

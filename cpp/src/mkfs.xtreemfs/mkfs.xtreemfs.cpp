@@ -49,103 +49,137 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  // Set user_credentials.
-  boost::scoped_ptr<UserMapping> user_mapping(UserMapping::CreateUserMapping(
-      options.user_mapping_type,
-      UserMapping::kUnix,
-      options));
-  if (options.owner_username.empty()) {
-    options.owner_username = user_mapping->UIDToUsername(geteuid());
-    if (CheckIfUnsignedInteger(options.owner_username)) {
-      if (Logging::log->loggingActive(LEVEL_WARN)) {
-        Logging::log->getLog(LEVEL_WARN)
-            << "Failed to map the UID "
-            << geteuid() << " to a username."
-            " Now the value \"" << options.owner_username << "\" will be set"
-            " as owner of the volume."
-            " Keep in mind that mount.xtreemfs does"
-            " always try to map UIDs to names. If this is not consistent over"
-            " all your systems (the UID does not always get mapped to the same"
-            " name), you may run into permission problems." << endl;
-      }
-    }
+  bool success = true;
+  boost::scoped_ptr<UserMapping> user_mapping;
+  boost::scoped_ptr<Client> client;
+  try {
+    // Start logging manually (altough it would be automatically started by
+    // ClientImplementation()) as its required by UserMapping.
+    initialize_logger(options.log_level_string,
+                      options.log_file_path,
+                      LEVEL_WARN);
+
+    // Set user_credentials.
+    user_mapping.reset(UserMapping::CreateUserMapping(
+        options.user_mapping_type,
+        UserMapping::kUnix,
+        options));
+    user_mapping->Start();
+
+    UserCredentials user_credentials;
     if (options.owner_username.empty()) {
-      cout << "Error: No name found for the current user (using the configured "
-          "UserMapping: " << options.user_mapping_type << ")\n";
-      return 1;
-    }
-  }
-  if (options.owner_groupname.empty()) {
-    options.owner_groupname = user_mapping->GIDToGroupname(getegid());
-    if (CheckIfUnsignedInteger(options.owner_groupname)) {
-      if (Logging::log->loggingActive(LEVEL_WARN)) {
-        Logging::log->getLog(LEVEL_WARN)
-            << "Failed to map the GID "
-            << getegid() << " to a groupname."
-            " Now the value \"" << options.owner_groupname << "\" will be set"
-            " as owning group of the volume."
-            " Keep in mind that mount.xtreemfs does"
-            " always try to map GIDs to names. If this is not consistent over"
-            " all your systems (the GID does not always get mapped to the same"
-            " group name), you may run into permission problems." << endl;
+      user_credentials.set_username(user_mapping->UIDToUsername(geteuid()));
+      if (CheckIfUnsignedInteger(user_credentials.username())) {
+        if (Logging::log->loggingActive(LEVEL_WARN)) {
+          Logging::log->getLog(LEVEL_WARN)
+              << "Failed to map the UID "
+              << geteuid() << " to a username."
+              " Now the value \"" << options.owner_username << "\" will be set"
+              " as owner of the volume."
+              " Keep in mind that mount.xtreemfs does"
+              " always try to map UIDs to names. If this is not consistent over"
+              " all your systems (the UID does not always get mapped to the"
+              " same name), you may run into permission problems." << endl;
+        }
       }
+      if (user_credentials.username().empty()) {
+        cout << "Error: No name found for the current user (using the"
+            " configured UserMapping: " << options.user_mapping_type << ")\n";
+        return 1;
+      }
+    } else {
+      user_credentials.set_username(options.owner_username);
     }
     if (options.owner_groupname.empty()) {
-      cout << "Error: No name found for the primary group of the current user "
-          "(using "
-          "the configured UserMapping: " << options.user_mapping_type << ")\n";
-      return 1;
+      user_credentials.add_groups(user_mapping->GIDToGroupname(getegid()));
+      if (CheckIfUnsignedInteger(user_credentials.groups(0))) {
+        if (Logging::log->loggingActive(LEVEL_WARN)) {
+          Logging::log->getLog(LEVEL_WARN)
+              << "Failed to map the GID " << getegid() << " to a groupname."
+              " Now the value \"" << options.owner_groupname << "\" will be set"
+              " as owning group of the volume."
+              " Keep in mind that mount.xtreemfs does"
+              " always try to map GIDs to names. If this is not consistent over"
+              " all your systems (the GID does not always get mapped to the"
+              " same group name), you may run into permission problems."
+              << endl;
+        }
+      }
+      if (user_credentials.groups(0).empty()) {
+        cout << "Error: No name found for the primary group of the current user"
+                " (using the configured UserMapping: "
+             << options.user_mapping_type
+             << ")\n";
+        return 1;
+      }
+    } else {
+      user_credentials.add_groups(options.owner_groupname);
     }
-  }
-  UserCredentials user_credentials;
-  user_credentials.set_username(options.owner_username);
-  user_credentials.add_groups(options.owner_groupname);
-  Auth auth;
-  if (options.admin_password.empty()) {
-    auth.set_auth_type(AUTH_NONE);
-  } else {
-    auth.set_auth_type(AUTH_PASSWORD);
-    auth.mutable_auth_passwd()->set_password(options.admin_password);
-  }
 
-  // Repeat the used options.
-  cout << "Trying to create the volume: " << options.xtreemfs_url << "\n"
-       << "\n"
-       << "Using options:\n"
-       << "  Owner:\t\t\t" << options.owner_username << "\n"
-       << "  Owning group:\t\t\t" << options.owner_groupname << "\n"
-       << "  Mode:\t\t\t\t" << options.volume_mode_octal << "\n"
-       << "  Access Control Policy:\t" << options.access_policy_type_string
-           << "\n"
-       << "\n"
-       << "  Default striping policy:\t\t"
-           << options.default_striping_policy_type_string << "\n"
-       << "  Default stripe size (object size):\t"
-           << options.default_stripe_size << "\n"
-       << "  Default stripe width (# OSDs):\t"
-           << options.default_stripe_width << "\n"
-       << "\n";
-  if (options.volume_attributes.size() > 0) {
-    cout << "  Volume attributes (Name = Value)" << endl;
-    for (list<KeyValuePair*>::iterator it = options.volume_attributes.begin();
-         it != options.volume_attributes.end();
-         ++it) {
-      cout << "    " << (*it)->key() << " = " << (*it)->value() << endl;
+    Auth auth;
+    if (options.admin_password.empty()) {
+      auth.set_auth_type(AUTH_NONE);
+    } else {
+      auth.set_auth_type(AUTH_PASSWORD);
+      auth.mutable_auth_passwd()->set_password(options.admin_password);
     }
-    cout << endl;
-  }
 
-  // Create a new client and start it.
-  boost::scoped_ptr<Client> client(Client::CreateClient(
-      "DIR-host-not-required-for-mkfs",  // Using a bogus value as DIR address.
-      user_credentials,
-      options.GenerateSSLOptions(),
-      options));
-  client->Start();
+    // Repeat the used options.
+    cout << "Trying to create the volume: " << options.xtreemfs_url << "\n"
+         << "\n"
+         << "Using options:\n";
+    if (!options.owner_username.empty()) {
+      cout << "  Owner:\t\t\t" << options.owner_username << "\n";
+    } else {
+      if (!options.SSLEnabled()) {
+        // We cannot tell if it's a user certificate - in that case the MRC
+        // ignores the UserCredentials and extracts the owner from the cert.
+        // To be on the safe side, we output the definite owner only in non-SSL
+        // cases.
+        cout << "  Owner:\t\t\t" << user_credentials.username() << "\n";
+      }
+    }
+    if (!options.owner_groupname.empty()) {
+      cout << "  Owning group:\t\t\t" << options.owner_groupname << "\n";
+    } else {
+      if (!options.SSLEnabled()) {
+        // We cannot tell if it's a user certificate - in that case the MRC
+        // ignores the UserCredentials and extracts the owner from the cert.
+        // To be on the safe side, we output the definite owner only in non-SSL
+        // cases.
+        cout << "  Owning group:\t\t\t" << user_credentials.groups(0) << "\n";
+      }
+    }
+    cout << "  Mode:\t\t\t\t" << options.volume_mode_octal << "\n"
+         << "  Access Control Policy:\t" << options.access_policy_type_string
+             << "\n"
+         << "\n"
+         << "  Default striping policy:\t\t"
+             << options.default_striping_policy_type_string << "\n"
+         << "  Default stripe size (object size):\t"
+             << options.default_stripe_size << "\n"
+         << "  Default stripe width (# OSDs):\t"
+             << options.default_stripe_width << "\n"
+         << "\n";
+    if (options.volume_attributes.size() > 0) {
+      cout << "  Volume attributes (Name = Value)" << endl;
+      for (list<KeyValuePair*>::iterator it = options.volume_attributes.begin();
+           it != options.volume_attributes.end();
+           ++it) {
+        cout << "    " << (*it)->key() << " = " << (*it)->value() << endl;
+      }
+      cout << endl;
+    }
 
-  // Create the volume.
-  bool success = true;
-  try {
+    // Create a new client and start it.
+    client.reset(Client::CreateClient(
+        "DIR-host-not-required-for-mkfs",  // Using a bogus value as DIR address
+        user_credentials,
+        options.GenerateSSLOptions(),
+        options));
+    client->Start();
+
+    // Create the volume on the MRC.
     client->CreateVolume(options.service_address,
                          auth,
                          user_credentials,
@@ -165,7 +199,10 @@ int main(int argc, char* argv[]) {
   }
 
   // Cleanup.
-  client->Shutdown();
+  if (client) {
+    client->Shutdown();
+  }
+  user_mapping->Stop();
 
   if (success) {
     cout << "Successfully created volume \"" << options.volume_name << "\" at "

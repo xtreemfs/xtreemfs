@@ -356,10 +356,10 @@ void XtfsUtilServer::OpSetReplicationPolicy(
 
   if (policy_name != "ronly"
       && policy_name != "WqRq"
-      && policy_name != "WaRa"
+      && policy_name != "WaR1"
       && policy_name != "") {
     (*output)["error"] = Json::Value("Policy must be one of the following: "
-                                     "<empty string>, ronly, WaRa, WqRq");
+                                     "<empty string>, ronly, WaR1, WqRq");
     return;
   }
 

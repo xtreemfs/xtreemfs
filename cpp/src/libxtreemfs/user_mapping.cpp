@@ -14,6 +14,7 @@
 
 namespace xtreemfs {
 
+#ifndef WIN32
 UserMapping* UserMapping::CreateUserMapping(UserMappingType type) {
   Options options;
   return CreateUserMapping(type, type, options);
@@ -44,5 +45,6 @@ UserMapping::UserMappingType UserMapping::GetUserMappingSystemType() {
   // TODO(mberlin):: Add switches for other plattforms.
   return kUnix;
 }
+#endif // !WIN32
 
 }  // namespace xtreemfs

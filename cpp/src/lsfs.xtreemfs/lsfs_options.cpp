@@ -93,7 +93,7 @@ std::string LsfsOptions::ShowCommandLineHelp() {
          << lsfs_descriptions_
          // Descriptions of the general options.
          << endl
-         << Options::ShowCommandLineHelpVolumeDeletionAndListing();
+         << Options::ShowCommandLineHelpVolumeListing();
   return stream.str();
 }
 

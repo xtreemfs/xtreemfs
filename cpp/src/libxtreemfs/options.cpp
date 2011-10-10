@@ -104,19 +104,23 @@ Options::Options()
 
   // Grid Support options.
   grid_ssl = false;
+#ifndef WIN32
   grid_auth_mode_globus = false;
   grid_auth_mode_unicore = false;
   grid_gridmap_location = "";
   grid_gridmap_location_default_globus = "/etc/grid-security/grid-mapfile";
   grid_gridmap_location_default_unicore = "/etc/grid-security/d-grid_uudb";
   grid_gridmap_reload_interval_m = 60;  // 60 Minutes = 1 Hour.
+#endif  // !WIN32
 
   // Advanced XtreemFS options.
   periodic_file_size_updates_interval_s = 60;  // Default: 1 Minute.
   periodic_xcap_renewal_interval_s = 60;  // Default: 1 Minute.
 
+#ifndef WIN32
   // User mapping.
   user_mapping_type = UserMapping::kUnix;
+#endif  // !WIN32
 
   all_descriptions_initialized_ = false;
 }
@@ -236,6 +240,9 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&grid_ssl)->zero_tokens(),
         "Explicitily use the XtreemFS Grid-SSL mode. Same as specifying "
         "pbrpcg:// in the volume URL.")
+#ifdef WIN32
+        ;
+#else
     ("globus-gridmap",
         po::value(&grid_auth_mode_globus)->zero_tokens(),
         "Authorize using globus gridmap file.")
@@ -252,6 +259,7 @@ void Options::GenerateProgramOptionsDescriptions() {
             ->default_value(grid_gridmap_reload_interval_m),
         "Interval (in minutes) after which the gridmap file will be checked for"
         " changes and reloaded if necessary.");
+#endif  // WIN32
 
   xtreemfs_advanced_options_.add_options()
     ("periodic-filesize-update-interval",
@@ -346,6 +354,7 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
     empty_arguments_list = true;
   }
 
+#ifndef WIN32
   if (grid_auth_mode_globus && grid_auth_mode_unicore) {
     throw InvalidCommandLineParametersException("You can only use a Globus "
         "OR a Unicore gridmap file at the same time.");
@@ -362,6 +371,7 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
       grid_gridmap_location = grid_gridmap_location_default_unicore;
     }
   }
+#endif  // !WIN32
 
   // Return unparsed options.
   return po::collect_unrecognized(parsed.options, po::include_positional);
@@ -393,7 +403,7 @@ std::string Options::ShowCommandLineHelp() {
   return stream.str();
 }
 
-std::string Options::ShowCommandLineHelpVolumeCreation() {
+std::string Options::ShowCommandLineHelpVolumeCreationAndDeletion() {
   GenerateProgramOptionsDescriptions();
   ostringstream stream;
   stream << general_ << endl
@@ -402,7 +412,7 @@ std::string Options::ShowCommandLineHelpVolumeCreation() {
   return stream.str();
 }
 
-std::string Options::ShowCommandLineHelpVolumeDeletionAndListing() {
+std::string Options::ShowCommandLineHelpVolumeListing() {
   GenerateProgramOptionsDescriptions();
   ostringstream stream;
   stream << general_ << endl
@@ -414,9 +424,13 @@ std::string Options::ShowVersion(const std::string& component) {
   return component + " " + version_string;
 }
 
+bool Options::SSLEnabled() const {
+  return !ssl_pem_cert_path.empty() || !ssl_pkcs12_path.empty();
+}
+
 xtreemfs::rpc::SSLOptions* Options::GenerateSSLOptions() const {
   xtreemfs::rpc::SSLOptions* opts = NULL;
-  if (!ssl_pem_cert_path.empty() || !ssl_pkcs12_path.empty()) {
+  if (SSLEnabled()) {
     opts = new xtreemfs::rpc::SSLOptions(
         ssl_pem_path, ssl_pem_cert_path, ssl_pem_key_pass,  // PEM.
         ssl_pkcs12_path, ssl_pkcs12_pass,  // PKCS12.

@@ -7,8 +7,6 @@
 
 #include "libxtreemfs/file_info.h"
 
-#include <unistd.h>
-
 #include "libxtreemfs/file_handle_implementation.h"
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"

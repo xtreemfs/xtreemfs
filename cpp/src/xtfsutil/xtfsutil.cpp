@@ -99,12 +99,12 @@ string formatBytes(uint64_t bytes) {
     return boost::lexical_cast<string>(bytes/1024) + " kB";
   } else if (bytes < (1 << 30)) {
     return boost::lexical_cast<string>(bytes/(1 << 20)) + " MB";
-  } else if (bytes < (1l << 40)) {
+  } else if (bytes < (1LL << 40)) {
     return boost::lexical_cast<string>(bytes/(1 << 30)) + " GB";
-  } else if (bytes < (1l << 50)) {
-    return boost::lexical_cast<string>(bytes/(1l << 40)) + " TB";
+  } else if (bytes < (1LL << 50)) {
+    return boost::lexical_cast<string>(bytes/(1LL << 40)) + " TB";
   } else {
-    return boost::lexical_cast<string>(bytes/(1l << 50)) + " EB";
+    return boost::lexical_cast<string>(bytes/(1LL << 50)) + " EB";
   }
 }
 
@@ -132,12 +132,10 @@ bool getattr(const string& xctl_file,
       case 1 : {
         cout << "file" << endl;
 
-        bool is_replicated = false;
         bool is_ronly =
             (stat["locations"]["update-policy"].asString() == "ronly");
         cout << "Replication policy   ";
         if (!stat["locations"]["update-policy"].asString().empty()) {
-          is_replicated = true;
           cout << stat["locations"]["update-policy"].asString() << endl;
         } else {
           cout << "none (not replicated)" << endl;
@@ -320,12 +318,12 @@ bool SetDefaultRP(const string& xctl_file,
   Json::Value request(Json::objectValue);
   request["operation"] = "setDefaultRP";
   request["path"] = path;
-  if (policy == "RONLY") {
+  if (policy == "RONLY" || policy == "READONLY") {
     request["update-policy"] = "ronly";
-  } else if (policy == "WQRQ") {
+  } else if (policy == "WQRQ" || policy == "QUORUM") {
     request["update-policy"] = "WqRq";
-  } else if (policy == "WARA") {
-    request["update-policy"] = "WaRa";
+  } else if (policy == "WAR1" || policy == "ALL") {
+    request["update-policy"] = "WaR1";
   } else if (policy == "NONE") {
     request["update-policy"] = "";
   } else {
@@ -381,12 +379,12 @@ bool SetReplicationPolicy(const string& xctl_file,
   Json::Value request(Json::objectValue);
   request["operation"] = "setReplicationPolicy";
   request["path"] = path;
-  if (policy == "RONLY") {
+  if (policy == "RONLY" || policy == "READONLY") {
     request["policy"] = "ronly";
-  } else if (policy == "WQRQ") {
+  } else if (policy == "WQRQ" || policy == "QUORUM") {
     request["policy"] = "WqRq";
-  } else if (policy == "WARA") {
-    request["policy"] = "WaRa";
+  } else if (policy == "WAR1" || policy == "ALL") {
+    request["policy"] = "WaR1";
   } else if (policy == "NONE") {
     request["policy"] = "";
   } else {
@@ -437,7 +435,11 @@ bool AddReplica(const string& xctl_file,
   request["osd"] = osd_uuid;
   request["replication-flags"] = 0;
   if (vm.count("full") > 0) {
-    request["replication-flags"] = xtreemfs::pbrpc::REPL_FLAG_FULL_REPLICA;
+    request["replication-flags"] = xtreemfs::pbrpc::REPL_FLAG_FULL_REPLICA
+        | xtreemfs::pbrpc::REPL_FLAG_STRATEGY_RAREST_FIRST;
+  } else {
+    request["replication-flags"] =
+        xtreemfs::pbrpc::REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING;
   }
 
   Json::Value response;
@@ -708,7 +710,8 @@ int main(int argc, char **argv) {
        "deletes the replica on the OSD with the given UUID")
       ("list-osds,l", "list suitable OSDs for a file")
       ("replication-policy", value<string>(),
-       "RONLY, WQRQ, WARA or NONE to disable replication")
+       "RONLY, WqRq, WaR1 or NONE to disable replication. The aliases"
+       " 'readonly', 'quorum' and 'all' are also allowed.")
       ("replication-factor", value<int>(),
        "number of replicas to create for a file")
       ("full", "full replica (readonly replication only)")

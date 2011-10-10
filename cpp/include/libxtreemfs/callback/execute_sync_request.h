@@ -12,7 +12,12 @@
 #include <csignal>
 #endif
 
+#ifdef WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
 #include <ctime>
+#endif
 
 #include <algorithm>
 #include <boost/cstdint.hpp>
@@ -104,8 +109,17 @@ template<class ReturnMessageType, class F>
     }
 
     // Execute request.
+#ifdef WIN32
+    FILETIME request_sent, current_time;
+    ULARGE_INTEGER ularge_request_sent, ularge_current_time;
+
+    GetSystemTimeAsFileTime(&request_sent);
+    ularge_request_sent.LowPart = request_sent.dwLowDateTime;
+    ularge_request_sent.HighPart = request_sent.dwHighDateTime;
+#else
     timeval request_sent, current_time;
     gettimeofday(&request_sent, 0);
+#endif  // WIN32
     // TODO(mberlin): Check if it is necessary to copy the latest XCap from
     //                a known file before executing the request.
     response = sync_function(service_address);
@@ -186,11 +200,22 @@ template<class ReturnMessageType, class F>
             interrupted = true;
             break;
           }
+#ifdef WIN32
+          GetSystemTimeAsFileTime(&current_time);
+
+          ularge_current_time.LowPart = current_time.dwLowDateTime;
+          ularge_current_time.HighPart = current_time.dwHighDateTime;
+          // FILETIME has a resolution of 100 nanoseconds.
+          delay_time_left =
+              static_cast<boost::int64_t>(options.retry_delay_s) * 10000000
+              - (ularge_current_time.QuadPart - ularge_request_sent.QuadPart);
+#else
           gettimeofday(&current_time, 0);
           delay_time_left =
               static_cast<boost::int64_t>(options.retry_delay_s) * 1000000
               - ((current_time.tv_sec * 1000000 + current_time.tv_usec) -
                  (request_sent.tv_sec * 1000000 + request_sent.tv_usec));
+#endif
           if (delay_time_left > 0) {
             boost::this_thread::sleep(
                 boost::posix_time::millisec(100));

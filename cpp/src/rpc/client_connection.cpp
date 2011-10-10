@@ -134,9 +134,9 @@ void ClientConnection::Connect() {
   connection_state_ = CONNECTING;
   asio::ip::tcp::resolver::query query(server_name_, server_port_);
   resolver_.async_resolve(query,
-                          bind(&ClientConnection::PostResolve, this,
-                               asio::placeholders::error,
-                               asio::placeholders::iterator));
+                          boost::bind(&ClientConnection::PostResolve, this,
+                                      asio::placeholders::error,
+                                      asio::placeholders::iterator));
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG) << "connect timeout is "
         << connect_timeout_s_ << " seconds\n";
@@ -170,14 +170,14 @@ void ClientConnection::PostResolve(
     endpoint_ = new tcp::endpoint(*endpoint_iterator);
 
     timer_.expires_from_now(posix_time::seconds(connect_timeout_s_));
-    timer_.async_wait(bind(&ClientConnection::OnConnectTimeout,
-                           this,
-                           asio::placeholders::error));
+    timer_.async_wait(boost::bind(&ClientConnection::OnConnectTimeout,
+                                  this,
+                                  asio::placeholders::error));
     socket_->async_connect(*endpoint_,
-                           bind(&ClientConnection::PostConnect,
-                                this,
-                                asio::placeholders::error,
-                                endpoint_iterator));
+                           boost::bind(&ClientConnection::PostConnect,
+                                       this,
+                                       asio::placeholders::error,
+                                       endpoint_iterator));
   } else {
     SendError(POSIX_ERROR_EINVAL, string("cannot resolve hostname: '")
         + this->server_name_ + ":" + server_port_ + string("'"));
@@ -260,8 +260,11 @@ void ClientConnection::SendRequest() {
         reinterpret_cast<const void*> (rq->rq_data()), rrm->data_len()));
     }
 
-    socket_->async_write(bufs, bind(&ClientConnection::PostWrite, this,
-        asio::placeholders::error, asio::placeholders::bytes_transferred));
+    socket_->async_write(bufs, boost::bind(
+        &ClientConnection::PostWrite,
+        this,
+        asio::placeholders::error,
+        asio::placeholders::bytes_transferred));
   } else {
     connection_state_ = IDLE;
   }
@@ -271,9 +274,9 @@ void ClientConnection::ReceiveRequest() {
   if (endpoint_) {
     socket_->async_read(asio::buffer(receive_marker_buffer_,
                                      RecordMarker::get_size()),
-                        bind(&ClientConnection::PostReadRecordMarker,
-                             this,
-                             asio::placeholders::error));
+                        boost::bind(&ClientConnection::PostReadRecordMarker,
+                                    this,
+                                    asio::placeholders::error));
   }
 }
 
@@ -325,6 +328,10 @@ void ClientConnection::PostWrite(const boost::system::error_code& err,
 void ClientConnection::PostReadRecordMarker(
     const boost::system::error_code& err) {
   if (err) {
+    if (err == boost::asio::error::operation_aborted) {
+      // Connection was closed. Ignore error.
+      return;
+    }
     Reset();
     SendError(POSIX_ERROR_EIO,
               "could not read record marker in response from '" + server_name_
@@ -352,9 +359,9 @@ void ClientConnection::PostReadRecordMarker(
       receive_data_ = NULL;
     }
     socket_->async_read(bufs,
-                        bind(&ClientConnection::PostReadMessage,
-                             this,
-                             asio::placeholders::error));
+                        boost::bind(&ClientConnection::PostReadMessage,
+                                    this,
+                                    asio::placeholders::error));
   }
 }
 

@@ -14,7 +14,11 @@
 #include <openssl/rand.h>
 #include <openssl/x509.h>
 #include <openssl/evp.h>
+#ifdef WIN32
+#include <tchar.h>
+#else
 #include <unistd.h>
+#endif  // WIN32
 
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/interprocess/detail/atomic.hpp>
@@ -88,6 +92,7 @@ Client::Client(int32_t connect_timeout_s,
       if (!p12_file) {
         Logging::log->getLog(LEVEL_ERROR) << "Error opening pkcs12 file:"
             << options->pkcs12_file_name() << ". (file not found)" << endl;
+        //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
       PKCS12 *p12 = d2i_PKCS12_fp(p12_file, NULL);
@@ -97,6 +102,7 @@ Client::Client(int32_t connect_timeout_s,
         Logging::log->getLog(LEVEL_ERROR) << "Error reading pkcs12 file:"
             << options->pkcs12_file_name() << ". (no access rights?)" << endl;
         ERR_print_errors_fp(stderr);
+        //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
 
@@ -113,20 +119,54 @@ Client::Client(int32_t connect_timeout_s,
         Logging::log->getLog(LEVEL_ERROR) << "Error parsing pkcs12 file:"
             << options->pkcs12_file_name() << endl;
         ERR_print_errors_fp(stderr);
+        //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
       PKCS12_free(p12);
 
       // create two tmp files containing the PEM certificates.
       // these which be deleted when exiting the program
+#ifdef WIN32
+      //  Gets the temp path env string (no guarantee it's a valid path).
+      TCHAR temp_path[MAX_PATH];
+      TCHAR filename_temp_pem[MAX_PATH];  
+      TCHAR filename_temp_cert[MAX_PATH];  
+
+      DWORD dwRetVal = 0;
+      dwRetVal = GetTempPath(MAX_PATH,          // length of the buffer
+                             temp_path); // buffer for path 
+      if (dwRetVal > MAX_PATH || (dwRetVal == 0)) {
+        _tcsncpy_s(temp_path, TEXT("."), 1);
+      }
+
+      //  Generates a temporary file name. 
+      if (!GetTempFileName(temp_path, // directory for tmp files     
+                                TEXT("DEMO"),     // temp file name prefix 
+                                0,                // create unique name 
+                                filename_temp_pem)) {  // buffer for name 
+        std::cerr << "Couldn't create temp file name.\n";
+        exit(1);
+      }
+      if (!GetTempFileName(temp_path, // directory for tmp files     
+                                TEXT("DEMO"),     // temp file name prefix 
+                                0,                // create unique name 
+                                filename_temp_cert)) {  // buffer for name 
+        std::cerr << "Couldn't create temp file name.\n";
+        exit(1);
+      }
+      FILE* pemFile = _tfopen(filename_temp_pem, TEXT("wb+"));
+      FILE* certFile = _tfopen(filename_temp_cert, TEXT("wb+"));
+#else
       int tmpPem = mkstemp(tmplate1);
       int tmpCert = mkstemp(tmplate2);
       if (tmpPem == -1 || tmpCert == -1) {
         std::cerr << "Couldn't create temp file name.\n";
+        //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
       FILE* pemFile = fdopen(tmpPem, "wb+");
       FILE* certFile = fdopen(tmpCert, "wb+");
+#endif
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG) << "tmp file name:"
@@ -139,10 +179,13 @@ Client::Client(int32_t connect_timeout_s,
       if (!PEM_write_PrivateKey(pemFile, pkey, NULL, NULL, 0, 0, password)) {
         Logging::log->getLog(LEVEL_ERROR)
             << "Error writing pem file:" << tmplate1 << endl;
+        free(password);
         unlink(tmplate1);
         unlink(tmplate2);
+        //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
+      free(password);
 
       // write ca certificate
       if (!PEM_write_X509(certFile, cert)) {
@@ -150,14 +193,17 @@ Client::Client(int32_t connect_timeout_s,
             << tmplate2 << endl;
         unlink(tmplate1);
         unlink(tmplate2);
+        //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
       }
 
       fclose(pemFile);
       fclose(certFile);
 
-      pemFileName = tmplate1;
-      certFileName = tmplate2;
+      pemFileName = new char[sizeof(tmplate1)];
+      strncpy(pemFileName, tmplate1, sizeof(tmplate1));
+      certFileName = new char[sizeof(tmplate2)];
+      strncpy(certFileName, tmplate2, sizeof(tmplate2));
 
       ssl_context_->set_password_callback(
           boost::bind(&Client::get_pkcs12_password_callback, this));
@@ -179,6 +225,7 @@ Client::Client(int32_t connect_timeout_s,
       } catch(invalid_argument& ia) {
          cerr << "Invalid argument: " << ia.what() << endl;
          cerr << "Please check your private key and certificate file."<< endl;
+         //TODO(mberlin): Use a better approach than exit - throw?
          exit(1);
       }
     }
@@ -223,7 +270,7 @@ void Client::sendRequest(const string& address,
   bool wasEmpty = requests_.empty();
   requests_.push(rq);
   if (wasEmpty) {
-    service_.post(bind(&Client::sendInternalRequest, this));
+    service_.post(boost::bind(&Client::sendInternalRequest, this));
   }
 }
 
@@ -345,6 +392,7 @@ void Client::handleTimeout(const boost::system::error_code& error) {
 
         to_be_removed2.push_back(addr);
         con->Close();
+        delete con;
       }
     }
 
@@ -356,17 +404,17 @@ void Client::handleTimeout(const boost::system::error_code& error) {
     cerr << "exception: " << e.what() << endl;
   }
   rq_timeout_timer_.expires_from_now(posix_time::seconds(rq_timeout_s_));
-  rq_timeout_timer_.async_wait(bind(&Client::handleTimeout,
-                                    this,
-                                    asio::placeholders::error));
+  rq_timeout_timer_.async_wait(boost::bind(&Client::handleTimeout,
+                                           this,
+                                           asio::placeholders::error));
 }
 
 void Client::run() {
   asio::io_service::work work(service_);
   rq_timeout_timer_.expires_from_now(posix_time::seconds(rq_timeout_s_));
-  rq_timeout_timer_.async_wait(bind(&Client::handleTimeout,
-                                    this,
-                                    asio::placeholders::error));
+  rq_timeout_timer_.async_wait(boost::bind(&Client::handleTimeout,
+                                           this,
+                                           asio::placeholders::error));
 
   if (Logging::log->loggingActive(LEVEL_INFO)) {
     Logging::log->getLog(LEVEL_INFO) << "starting rpc client" << endl;
@@ -403,7 +451,6 @@ void Client::shutdown() {
 }
 
 Client::~Client() {
-  delete ssl_options;
   // remove temporary cert and pem files
   if (pemFileName != NULL) {
     unlink(pemFileName);
@@ -411,6 +458,16 @@ Client::~Client() {
   if (certFileName != NULL) {
     unlink(certFileName);
   }
+
+  delete[] pemFileName;
+  delete[] certFileName;
+
+  if (ssl_options) {
+    ERR_remove_state(0);
+    ERR_free_strings();
+  }
+  delete ssl_options;
+  delete ssl_context_;
 }
 
 }  // namespace rpc

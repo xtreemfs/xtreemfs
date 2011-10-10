@@ -250,7 +250,7 @@ std::string MkfsOptions::ShowCommandLineHelp() {
          << mkfs_descriptions_
          // Descriptions of the general options.
          << endl
-         << Options::ShowCommandLineHelpVolumeCreation();
+         << Options::ShowCommandLineHelpVolumeCreationAndDeletion();
   return stream.str();
 }
 
