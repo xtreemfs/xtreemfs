@@ -198,7 +198,7 @@ public class RPCSourceGenerator {
                             } else {
                                 codeBuilder.append("    public RPCResponse<"+returnType+"> " + method.getName() + "(");
                             }
-                            codeBuilder.append("InetSocketAddress server, Auth authHeader, UserCredentials userCreds, "+inputType+" input");
+                            codeBuilder.append("InetSocketAddress server, Auth authHeader, UserCredentials userCreds, "+inputType+" input, long TTL, boolean serverHighPriority");
                             if (data_in)
                                 codeBuilder.append(", ReusableBuffer data");
                             codeBuilder.append(") throws IOException {\n");
@@ -209,7 +209,7 @@ public class RPCSourceGenerator {
                             } else {
                                 codeBuilder.append("         RPCResponse response = new RPCResponse(null);\n");
                             }
-                            codeBuilder.append("         client.sendRequest(server, authHeader, userCreds, "+interfaceId+", "+procId+", input, "+dataValue+", response, false);\n");
+                            codeBuilder.append("         client.sendRequest(server, authHeader, userCreds, "+interfaceId+", "+procId+", input, "+dataValue+", response, false, ttl, serverHighPriority);\n");
                             codeBuilder.append("         return response;\n");
                             codeBuilder.append("    }\n\n");
 
@@ -220,7 +220,7 @@ public class RPCSourceGenerator {
                             } else {
                                 codeBuilder.append("    public RPCResponse<"+returnType+"> " + method.getName() + "(");
                             }
-                            codeBuilder.append("InetSocketAddress server, Auth authHeader, UserCredentials userCreds");
+                            codeBuilder.append("InetSocketAddress server, Auth authHeader, UserCredentials userCreds, long TTL, boolean serverHighPriority");
                             if (unrolled[0].length() > 0) {
                                 codeBuilder.append(", ");
                                 codeBuilder.append(unrolled[0]);
@@ -231,7 +231,7 @@ public class RPCSourceGenerator {
                             codeBuilder.append("         "+unrolled[1]+"\n");
                             codeBuilder.append("         return ");
                             codeBuilder.append(method.getName());
-                            codeBuilder.append("(server, authHeader, userCreds,");
+                            codeBuilder.append("(server, authHeader, userCreds, ");
                             if (isEmptyRequest) {
                                 codeBuilder.append("null");
                             } else {
@@ -239,7 +239,7 @@ public class RPCSourceGenerator {
                             }
                             if (data_in)
                                 codeBuilder.append(", data");
-                            codeBuilder.append(");\n");
+                            codeBuilder.append(", TTL, serverHighPriority);\n");
                             codeBuilder.append("    }\n\n");
                         }
 

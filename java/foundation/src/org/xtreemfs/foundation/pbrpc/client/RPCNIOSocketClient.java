@@ -122,18 +122,21 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     }
     
     
-    public void sendRequest(InetSocketAddress server, Auth auth, UserCredentials uCred, int interface_id, int proc_id, Message message, ReusableBuffer data,
-            RPCResponse response, boolean highPriority) {
+    public void sendRequest(InetSocketAddress server, Auth auth, UserCredentials uCred, int interface_id, int proc_id, 
+            Message message, ReusableBuffer data, RPCResponse response, boolean highSendPriority, long TTL, 
+            boolean highServerPriority) {
+        
         try {
-            RPCClientRequest rq = new RPCClientRequest(auth, uCred, transactionId.incrementAndGet(), interface_id, proc_id, message, data, response);
-            internalSendRequest(server, rq, highPriority);
+            RPCClientRequest rq = new RPCClientRequest(auth, uCred, transactionId.incrementAndGet(), interface_id, 
+                    proc_id, message, data, response, highServerPriority, TTL);
+            internalSendRequest(server, rq, highSendPriority);
         } catch (Throwable e) { // CancelledKeyException, RuntimeException (caused by missing TimeSyncThread)
             //e.printStackTrace();
             response.requestFailed(e.toString());
         } 
     }
     
-    private void internalSendRequest(InetSocketAddress server, RPCClientRequest request, boolean highPriority) {
+    private void internalSendRequest(InetSocketAddress server, RPCClientRequest request, boolean highSendPriority) {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "sending request %s no %d", request
                     .toString(), transactionId.get());
@@ -151,7 +154,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             boolean isEmpty = con.getSendQueue().isEmpty();
             request.queued();
             con.useConnection();
-            if (highPriority)
+            if (highSendPriority)
                 con.getSendQueue().add(0, request);
             else
                 con.getSendQueue().add(request);

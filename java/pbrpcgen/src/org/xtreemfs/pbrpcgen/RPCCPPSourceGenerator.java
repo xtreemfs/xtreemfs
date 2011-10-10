@@ -209,7 +209,7 @@ public class RPCCPPSourceGenerator {
                                 codeBuilder.append("\n"+indent+ONE_INDENT+ONE_INDENT+", const "+inputType+"* request");
                             if (data_in)
                                 codeBuilder.append(", const char* data, boost::uint32_t data_length");
-                            codeBuilder.append(") {\n");
+                            codeBuilder.append(", bool high_priority, boost::uint64_t ttl) {\n");
 
 
                             if (!data_in)
@@ -222,7 +222,7 @@ public class RPCCPPSourceGenerator {
                             codeBuilder.append(indent+ONE_INDENT+ONE_INDENT+"client_->sendRequest(address, "+interfaceId+", "+procId+",\n");
 
                             codeBuilder.append(indent+ONE_INDENT+ONE_INDENT+ONE_INDENT+" creds, auth, request, data, data_length, "+returnTypeBuilder+",\n");
-                            codeBuilder.append(indent+ONE_INDENT+ONE_INDENT+ONE_INDENT+" NULL, sync_cb);\n");
+                            codeBuilder.append(indent+ONE_INDENT+ONE_INDENT+ONE_INDENT+" NULL, sync_cb, high_priority, ttl);\n");
                             codeBuilder.append(indent+ONE_INDENT+ONE_INDENT+"return sync_cb;\n");
                             codeBuilder.append(indent+ONE_INDENT+"}\n\n");
 

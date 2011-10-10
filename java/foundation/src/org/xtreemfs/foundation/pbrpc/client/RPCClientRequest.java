@@ -35,15 +35,19 @@ public class RPCClientRequest<ReturnType extends Message> {
     final int              msgLen;
     final int              dataLen;
 
-    private final RPCResponse response;
+    private final RPCResponse<ReturnType> response;
 
     private long              timeQueued;
 
 
-    RPCClientRequest(Auth authHeader, UserCredentials uCreds, int callId, int interfaceId, int procId, Message message, ReusableBuffer data, RPCResponse<ReturnType> response) throws IOException {
+    RPCClientRequest(Auth authHeader, UserCredentials uCreds, int callId, int interfaceId, int procId, Message message, 
+            ReusableBuffer data, RPCResponse<ReturnType> response, boolean hasHighPriority, long TTL) 
+            throws IOException {
 
-        RPC.RPCHeader.RequestHeader rqHdr = RPC.RPCHeader.RequestHeader.newBuilder().setAuthData(authHeader).setUserCreds(uCreds).
-                setInterfaceId(interfaceId).setProcId(procId).build();
+        RPC.RPCHeader.RequestHeader rqHdr = RPC.RPCHeader.RequestHeader.newBuilder().setAuthData(authHeader)
+                .setUserCreds(uCreds).setInterfaceId(interfaceId).setProcId(procId).setHighPriority(hasHighPriority)
+                .setTtl(TTL).build();
+        
         requestHeader = RPC.RPCHeader.newBuilder().setCallId(callId).setMessageType(RPC.MessageType.RPC_REQUEST).setRequestHeader(rqHdr).build();
         this.response = response;
 
