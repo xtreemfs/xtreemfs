@@ -198,10 +198,10 @@ public class RPCSourceGenerator {
                             } else {
                                 codeBuilder.append("    public RPCResponse<"+returnType+"> " + method.getName() + "(");
                             }
-                            codeBuilder.append("InetSocketAddress server, Auth authHeader, UserCredentials userCreds, "+inputType+" input, long TTL, boolean serverHighPriority");
+                            codeBuilder.append("InetSocketAddress server, Auth authHeader, UserCredentials userCreds, "+inputType+" input");
                             if (data_in)
                                 codeBuilder.append(", ReusableBuffer data");
-                            codeBuilder.append(") throws IOException {\n");
+                            codeBuilder.append(", long TTL, boolean serverHighPriority) throws IOException {\n");
                             codeBuilder.append("         if (server == null) server = defaultServer;\n");
                             codeBuilder.append("         if (server == null) throw new IllegalArgumentException(\"defaultServer must be set in constructor if you want to pass null as server in calls\");\n");
                             if (!isEmptyResponse) {
@@ -220,14 +220,14 @@ public class RPCSourceGenerator {
                             } else {
                                 codeBuilder.append("    public RPCResponse<"+returnType+"> " + method.getName() + "(");
                             }
-                            codeBuilder.append("InetSocketAddress server, Auth authHeader, UserCredentials userCreds, long TTL, boolean serverHighPriority");
+                            codeBuilder.append("InetSocketAddress server, Auth authHeader, UserCredentials userCreds");
                             if (unrolled[0].length() > 0) {
                                 codeBuilder.append(", ");
                                 codeBuilder.append(unrolled[0]);
                             }
                             if (data_in)
                                 codeBuilder.append(", ReusableBuffer data");
-                            codeBuilder.append(") throws IOException {\n");
+                            codeBuilder.append(", long TTL, boolean serverHighPriority) throws IOException {\n");
                             codeBuilder.append("         "+unrolled[1]+"\n");
                             codeBuilder.append("         return ");
                             codeBuilder.append(method.getName());
