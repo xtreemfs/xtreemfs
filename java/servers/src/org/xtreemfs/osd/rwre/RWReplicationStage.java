@@ -83,6 +83,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     public static final int STAGEOP_INTERNAL_DELETE_COMPLETE = 15;
     public static final int STAGEOP_FORCE_RESET = 16;
     public static final int STAGEOP_INTERNAL_MAXOBJ_AVAIL = 17;
+    public static final int STAGEOP_INTERNAL_BACKUP_AUTHSTATE = 18;
 
     public  static enum Operation {
         READ,
@@ -108,7 +109,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     private final RPCNIOSocketClient   fleaseClient;
 
     private final OSDServiceClient     fleaseOsdClient;
-
 
     private final ASCIIString          localID;
 
@@ -224,7 +224,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
          this.enqueueOperation(STAGEOP_INTERNAL_OBJFETCHED, new Object[]{fileId,object,data,error}, null, null);
     }
 
-
     void eventSetAuthState(String fileId, AuthoritativeReplicaState authState, ReplicaStatus localState, ErrorResponse error) {
         this.enqueueOperation(STAGEOP_INTERNAL_AUTHSTATE, new Object[]{fileId,authState, localState, error}, null, null);
     }
@@ -235,6 +234,61 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     void eventMaxObjAvail(String fileId, long maxObjVer, long fileSize, long truncateEpoch, ErrorResponse error) {
         this.enqueueOperation(STAGEOP_INTERNAL_MAXOBJ_AVAIL, new Object[]{fileId,maxObjVer,error}, null, null);
+    }
+    
+    public void eventBackupReplicaReset(String fileId, AuthoritativeReplicaState authState, ReplicaStatus localState,
+            FileCredentials credentials, XLocations xloc) {
+        this.enqueueOperation(STAGEOP_INTERNAL_BACKUP_AUTHSTATE, new Object[]{fileId,authState, localState, credentials, xloc}, null, null);
+    }
+
+    private void executeSetAuthState(final ReplicaStatus localState, final AuthoritativeReplicaState authState, ReplicatedFileState state, final String fileId) {
+        // Calculate what we need to do locally based on the local state.
+        boolean resetRequired = localState.getTruncateEpoch() < authState.getTruncateEpoch();
+        // Create a list of missing objects.
+        Map<Long, Long> objectsToBeDeleted = new HashMap();
+        for (ObjectVersion localObject : localState.getObjectVersionsList()) {
+            // Never delete any object which is newer than auth state!
+            if (localObject.getObjectVersion() <= authState.getMaxObjVersion()) {
+                objectsToBeDeleted.put(localObject.getObjectNumber(), localObject.getObjectVersion());
+            }
+        }
+        // Delete everything that is older or not part of the authoritative state.
+        for (ObjectVersionMapping authObject : authState.getObjectVersionsList()) {
+            Long version = objectsToBeDeleted.get(authObject.getObjectNumber());
+            if ((version != null) && (version == authObject.getObjectVersion())) {
+                objectsToBeDeleted.remove(authObject.getObjectNumber());
+            }
+        }
+        Map<Long, ObjectVersionMapping> missingObjects = new HashMap();
+        for (ObjectVersionMapping authObject : authState.getObjectVersionsList()) {
+            missingObjects.put(authObject.getObjectNumber(), authObject);
+        }
+        for (ObjectVersion localObject : localState.getObjectVersionsList()) {
+            ObjectVersionMapping object = missingObjects.get(localObject.getObjectNumber());
+            if ((object != null) && (localObject.getObjectVersion() >= object.getObjectVersion())) {
+                missingObjects.remove(localObject.getObjectNumber());
+            }
+        }
+        if (!missingObjects.isEmpty() || !objectsToBeDeleted.isEmpty() || (localState.getTruncateEpoch() < authState.getTruncateEpoch())) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) replica RESET required updates for: %s", localID, state.getFileId());
+            }
+            state.setObjectsToFetch(new LinkedList(missingObjects.values()));
+            filesInReset.add(state);
+            // Start by deleting the old objects.
+            master.getStorageStage().deleteObjects(fileId, state.getsPolicy(), authState.getTruncateEpoch(), objectsToBeDeleted, new DeleteObjectsCallback() {
+
+                @Override
+                public void deleteObjectsComplete(ErrorResponse error) {
+                    eventDeleteObjectsComplete(fileId, error);
+                }
+            });
+        } else {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) replica RESET finished (replica is up-to-date): %s", localID, state.getFileId());
+            }
+            doOpen(state);
+        }
     }
 
     private void processLeaseStateChanged(StageRequest method) {
@@ -297,6 +351,41 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
     }
 
+    private void processBackupAuthoritativeState(StageRequest method) {
+        try {
+            final String fileId = (String) method.getArgs()[0];
+            final AuthoritativeReplicaState authState = (AuthoritativeReplicaState) method.getArgs()[1];
+            final ReplicaStatus localState = (ReplicaStatus) method.getArgs()[2];
+            final FileCredentials credentials = (FileCredentials) method.getArgs()[3];
+            final XLocations loc = (XLocations) method.getArgs()[4];
+
+            ReplicatedFileState state = getState(credentials, loc, true);
+            
+            switch (state.getState()) {
+                case INITIALIZING:
+                case OPEN:
+                case WAITING_FOR_LEASE: {
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) enqueued backup reset for file %s",localID, fileId);
+                    state.addPendingRequest(method);
+                    break;
+                }
+                case BACKUP: {
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) backup reset triggered by AUTHSTATE request for file %s",localID, fileId);
+                    state.setState(ReplicaState.RESET);
+                    executeSetAuthState(localState, authState, state, fileId);
+                    break;
+                }
+                case RESET:
+                default: {
+                    // Ignore.
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) auth state ignored, already in reset for file %s",localID, fileId);
+                }
+            }
+        } catch (Exception ex) {
+            Logging.logError(Logging.LEVEL_ERROR, this,ex);
+        }
+    }
+
     private void processSetAuthoritativeState(StageRequest method) {
         try {
             final String fileId = (String) method.getArgs()[0];
@@ -313,62 +402,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             if (error != null) {
                 failed(state, error);
             } else {
-                // Calculate what we need to do locally based on the local state.
-                boolean resetRequired = localState.getTruncateEpoch() < authState.getTruncateEpoch();
-
-                // Create a list of missing objects.
-                Map<Long,Long> objectsToBeDeleted = new HashMap();
-
-                for (ObjectVersion localObject : localState.getObjectVersionsList()) {
-                    // Never delete any object which is newer than auth state!
-                    if (localObject.getObjectVersion() <= authState.getMaxObjVersion()) {
-                        objectsToBeDeleted.put(localObject.getObjectNumber(), localObject.getObjectVersion());
-                    }
-                }
-                // Delete everything that is older or not part of the authoritative state.
-                for (ObjectVersionMapping authObject : authState.getObjectVersionsList()) {
-                    Long version = objectsToBeDeleted.get(authObject.getObjectNumber());
-                    if ((version != null) && (version == authObject.getObjectVersion())) {
-                        objectsToBeDeleted.remove(authObject.getObjectNumber());
-                    }
-                }
-
-                Map<Long,ObjectVersionMapping> missingObjects = new HashMap();
-                for (ObjectVersionMapping authObject : authState.getObjectVersionsList()) {
-                    missingObjects.put(authObject.getObjectNumber(), authObject);
-                }
-                for (ObjectVersion localObject : localState.getObjectVersionsList()) {
-                    ObjectVersionMapping object = missingObjects.get(localObject.getObjectNumber());
-                    if ((object != null) && (localObject.getObjectVersion() >= object.getObjectVersion())) {
-                        missingObjects.remove(localObject.getObjectNumber());
-                    }
-                }
-
-                if (!missingObjects.isEmpty()
-                    || !objectsToBeDeleted.isEmpty()
-                    || (localState.getTruncateEpoch() < authState.getTruncateEpoch())) {
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) replica RESET required updates for: %s", localID, state.getFileId());
-                    }
-
-                    state.setObjectsToFetch(new LinkedList(missingObjects.values()));
-                    filesInReset.add(state);
-
-                    // Start by deleting the old objects.
-                    master.getStorageStage().deleteObjects(fileId, state.getsPolicy(), authState.getTruncateEpoch(), objectsToBeDeleted, new DeleteObjectsCallback() {
-
-                        @Override
-                        public void deleteObjectsComplete(ErrorResponse error) {
-                            eventDeleteObjectsComplete(fileId, error);
-                        }
-                    });
-
-                } else {
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) replica RESET finished (replica is up-to-date): %s",localID, state.getFileId());
-                    }
-                    doOpen(state);
-                }
+                executeSetAuthState(localState, authState, state, fileId);
             }
 
         } catch (Exception ex) {
@@ -472,6 +506,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     fetchObjects();
                     failed(state, error);
                 } else {
+                    final int bytes = data.getData().remaining();
                     master.getStorageStage().writeObjectWithoutGMax(fileId, record.getObjectNumber(),
                             state.getsPolicy(), 0, data.getData(), CowPolicy.PolicyNoCow, null, false,
                             record.getObjectVersion(), null, new WriteObjectCallback() {
@@ -484,6 +519,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         }
                     });
                     master.getPreprocStage().pingFile(fileId);
+                    master.objectReplicated();
+                    master.replicatedDataReceived(bytes);
 
                     numObjsInFlight--;
                     final int numPendingFile = state.getNumObjectsPending()-1;
@@ -788,6 +825,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             case STAGEOP_INTERNAL_STATEAVAIL : processReplicaStateAvailExecReset(method); break;
             case STAGEOP_INTERNAL_DELETE_COMPLETE : processDeleteObjectsComplete(method); break;
             case STAGEOP_INTERNAL_MAXOBJ_AVAIL : processMaxObjAvail(method); break;
+            case STAGEOP_INTERNAL_BACKUP_AUTHSTATE: processBackupAuthoritativeState(method); break;
             case STAGEOP_FORCE_RESET : processForceReset(method); break;
             case STAGEOP_GETSTATUS : processGetStatus(method); break;
             default : throw new IllegalArgumentException("no such stageop");

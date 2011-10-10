@@ -80,7 +80,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
     }
 
     @Override
-    public void executeReset(FileCredentials credentials, final ReplicaStatus localReplicaState, final ExecuteResetCallback callback) {
+    public void executeReset(final FileCredentials credentials, final ReplicaStatus localReplicaState, final ExecuteResetCallback callback) {
         final String fileId = credentials.getXcap().getFileId();
         final int numAcksRequired = getNumRequiredAcks(Operation.INTERNAL_UPDATE);
         final int numRequests = remoteOSDUUIDs.size();
@@ -159,7 +159,26 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) received enough status responses for %s",localUUID, fileId);
                     }
                     AuthoritativeReplicaState auth = CalculateAuthoritativeState(states, fileId);
+                    final RPCResponseAvailableListener listener2 = new RPCResponseAvailableListener() {
+
+                        @Override
+                        public void responseAvailable(RPCResponse r) {
+                            r.freeBuffers();
+                        }
+                    };
                     // TODO(bjko): Send auth state to all backups.
+                    for (int i = 0; i < remoteOSDUUIDs.size(); i++) {
+                        try {
+                            RPCResponse r2 = client.xtreemfs_rwr_auth_state(remoteOSDUUIDs.get(i).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
+                                    credentials, credentials.getXcap().getFileId(), auth);
+                            r2.registerListener(listener2);
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"sent auth state to backup %s for file %s",remoteOSDUUIDs.get(i), fileId);
+                            }
+                        } catch (Exception ex) {
+                            Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) cannot send auth state to backup: %s",localUUID, ex.toString());
+                        }
+                    }
 
                     callback.finished(auth);
                 }

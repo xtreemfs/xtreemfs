@@ -125,6 +125,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.osd.operations.EventRWRStatus;
+import org.xtreemfs.osd.operations.InternalRWRAuthStateOperation;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener {
     
@@ -876,6 +877,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         operations.put(op.getProcedureId(), op);
         
         op = new RWRNotifyOperation(this);
+        operations.put(op.getProcedureId(), op);
+
+        op = new InternalRWRAuthStateOperation(this);
         operations.put(op.getProcedureId(), op);
         
         // --internal events here--
