@@ -209,7 +209,7 @@ public class RPCSourceGenerator {
                             } else {
                                 codeBuilder.append("         RPCResponse response = new RPCResponse(null);\n");
                             }
-                            codeBuilder.append("         client.sendRequest(server, authHeader, userCreds, "+interfaceId+", "+procId+", input, "+dataValue+", response, false, ttl, serverHighPriority);\n");
+                            codeBuilder.append("         client.sendRequest(server, authHeader, userCreds, "+interfaceId+", "+procId+", input, "+dataValue+", response, false, TTL, serverHighPriority);\n");
                             codeBuilder.append("         return response;\n");
                             codeBuilder.append("    }\n\n");
 
