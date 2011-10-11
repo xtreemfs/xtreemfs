@@ -211,7 +211,8 @@ public class CleanupThread extends LifeCycleThread {
                                  volume.dead();
                                  // retrieve fileData
                                  for (String zombie : perVolume.get(volume)){
-                                     zombieFiles.put(zombie,l.files.get(zombie));
+                                     if (l.files.containsKey(zombie))
+                                         zombieFiles.put(zombie,l.files.get(zombie));
                                  }
                              } else {
                                  
