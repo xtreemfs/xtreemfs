@@ -27,7 +27,7 @@ public abstract class AugmentedServiceRequest extends AugmentedRequest {
      */
     private final RPCServerRequest rpcRequest;
     
-    private long                   requestId;
+    private final long             requestId;
     
     /**
      * <p>Message that belongs to the request.</p>

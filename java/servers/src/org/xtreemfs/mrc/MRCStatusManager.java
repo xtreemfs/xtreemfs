@@ -115,7 +115,7 @@ public class MRCStatusManager extends LifeCycleThread {
                 knownMRCs = master
                         .getDirClient()
                         .xtreemfs_service_get_by_type(null, RPCAuthentication.authNone, RPCAuthentication.userService,
-                                ServiceType.SERVICE_TYPE_MRC).toBuilder();
+                                ServiceType.SERVICE_TYPE_MRC, master.getDirClient().getTimeout(), false).toBuilder();
                 
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "... received MRC list from DIR");
                 

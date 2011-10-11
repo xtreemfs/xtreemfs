@@ -84,6 +84,8 @@ void ClientImplementation::Start() {
       options_.connect_timeout_s,
       options_.request_timeout_s,
       options_.linger_timeout_s,
+      options_.server_request_lifetime_ms,
+      options_.server_request_high_priority,
       dir_service_ssl_options_));
 
   network_client_thread_.reset(

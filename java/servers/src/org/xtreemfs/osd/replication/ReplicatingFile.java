@@ -774,8 +774,9 @@ class ReplicatingFile {
                         volume = new MRCHelper.GlobalFileIdResolver(fileID).getVolumeId();
                         
                         // get MRC appropriate for this file
-                        ServiceSet sSet = master.getDIRClient().xtreemfs_service_get_by_uuid(null, RPCAuthentication.authNone, RPCAuthentication.userService,
-                            volume);
+                        ServiceSet sSet = master.getDIRClient().xtreemfs_service_get_by_uuid(null, 
+                                RPCAuthentication.authNone, RPCAuthentication.userService, volume, 
+                                master.getDIRClient().getTimeout(), false);
                         
                         if (sSet.getServicesCount() != 0) {
                             for (KeyValuePair kvp : sSet.getServices(0).getData().getDataList()) {

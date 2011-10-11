@@ -73,20 +73,20 @@ public class DeleteVolumeOperation extends MRCOperation {
         master.getDirClient().xtreemfs_service_deregister(null, rq.getDetails().auth,
                 RPCAuthentication.userService, volume.getId(), new Callback() {
                                        
-                    @Override
-                    public void failed(Throwable e) {
-                        
-                        callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, e);
-                    }
+            @Override
+            public void failed(Throwable e) {
+                
+                callback.failed(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, e);
+            }
 
-                    @Override
-                    public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
-                            throws ErrorResponseException {
-                        
-                        processStep2(rqArgs, volume.getId(), rq, callback);
-                        return true;
-                    }
-                });
+            @Override
+            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                    throws ErrorResponseException {
+                
+                processStep2(rqArgs, volume.getId(), rq, callback);
+                return true;
+            }
+        }, rq.getRemainingProcessingTime(), rq.hasHighPriority());
     }
     
     private void processStep2(xtreemfs_rmvolRequest rqArgs, String volumeId, MRCRequest rq, 

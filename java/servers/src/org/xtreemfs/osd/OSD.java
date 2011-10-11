@@ -11,7 +11,6 @@ package org.xtreemfs.osd;
 import java.io.FileInputStream;
 import java.util.HashMap;
 
-import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
@@ -19,7 +18,6 @@ import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -139,6 +137,7 @@ public class OSD {
     
     private static OSDConfig getConfigurationFromDIR(OSDConfig config) throws Exception {
         final int WAIT_BETWEEN_RETRIES = 1000;
+        final int TIMEOUT = 1000;
         int retries = config.getWaitForDIR() * 1000 / WAIT_BETWEEN_RETRIES;
         if (retries <= 0) {
             retries = 1;
@@ -151,10 +150,10 @@ public class OSD {
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
                 .isGRIDSSLmode(), new PolicyContainer(config).getTrustManager()) : null;
         
-        RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, 1000, 60 * 1000);
+        RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, TIMEOUT, 60 * 1000);
         DIRServiceClient dirRPCClient = new DIRServiceClient(clientStage, config.getDirectoryService());
         DIRClient dirClient = new DIRClient(dirRPCClient, config.getDirectoryServices(),
-                retries, WAIT_BETWEEN_RETRIES);
+                retries, WAIT_BETWEEN_RETRIES, TIMEOUT);
         
         clientStage.start();
         clientStage.waitForStartup();
@@ -166,7 +165,7 @@ public class OSD {
             "xtreemfs-services").build();
 
         Configuration conf = dirClient.xtreemfs_configuration_get(null, authNone, uc, config.getUUID()
-                    .toString());
+                    .toString(), TIMEOUT, false);
         
         dirClient.stop();
         clientStage.shutdown();

@@ -33,6 +33,8 @@ namespace rpc {
 using std::string;
 using boost::int32_t;
 using boost::uint32_t;
+using boost::int64_t;
+using boost::uint64_t;
 
 // Boost introduced unordered_map in version 1.36 but we need to support
 // older versions for Debian 5.
@@ -48,6 +50,8 @@ class Client {
   Client(int32_t connect_timeout_s,
          int32_t request_timeout_s,
          int32_t max_con_linger,
+         int64_t lifetime_ms,
+         bool high_priority,
          const SSLOptions* options);
 
   virtual ~Client();
@@ -90,10 +94,17 @@ class Client {
   boost::int32_t connect_timeout_s_;
   boost::int32_t max_con_linger_;
 
+  boost::int64_t lifetime_ms_;
+  bool high_priority_;
+
   const SSLOptions* ssl_options;
 
   char* pemFileName;
   char* certFileName;
+
+  //XXX(flangner): Counter for timeouts recognized by this client.
+  //Used to evaluate server-sided overload-protection.
+  long timeouts_;
 };
 }  // namespace rpc
 }  // namespace xtreemfs

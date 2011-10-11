@@ -127,7 +127,7 @@ public class HeartbeatThread extends LifeCycleThread {
         RPCResponse<emptyResponse> r = null;
         try {
             if (client.clientIsAlive()) {
-                client.xtreemfs_service_deregister(null, authNone,uc,uuid.toString());
+                client.xtreemfs_service_deregister(null, authNone,uc,uuid.toString(), 0L, false);
             }
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_WARN, this, "could not deregister service at DIR");
@@ -233,7 +233,7 @@ public class HeartbeatThread extends LifeCycleThread {
             // fetch the latest address mapping version from the Directory
             // Serivce
             long version = 0;
-            AddressMappingSet ams = client.xtreemfs_address_mappings_get(null, authNone, uc, uuid.toString());
+            AddressMappingSet ams = client.xtreemfs_address_mappings_get(null, authNone, uc, uuid.toString(), 0L, false);
 
             // retrieve the version number from the address mapping
             if (ams.getMappingsCount() > 0) {
@@ -250,7 +250,7 @@ public class HeartbeatThread extends LifeCycleThread {
                 amsb.addMappings(mapping);
             }
             // register/update the current address mapping
-            client.xtreemfs_address_mappings_set(null, authNone, uc, amsb.build());
+            client.xtreemfs_address_mappings_set(null, authNone, uc, amsb.build(), 0L, false);
             
         } catch (InterruptedException ex) {
         } catch (Exception ex) {
@@ -259,7 +259,7 @@ public class HeartbeatThread extends LifeCycleThread {
             throw new IOException("cannot initialize service at XtreemFS DIR: " + ex, ex);
         }
         try {
-            this.setServiceConfiguration();
+            setServiceConfiguration();
         } catch (Exception e) {
                 // TODO: handle exception
         }
@@ -325,7 +325,8 @@ public class HeartbeatThread extends LifeCycleThread {
     private void registerServices() throws IOException, PBRPCException, InterruptedException {
         for (Service reg : serviceDataGen.getServiceData().getServicesList()) {
             // retrieve old DIR entry
-            ServiceSet oldSet = client.xtreemfs_service_get_by_uuid(null, authNone, uc, reg.getUuid());
+            ServiceSet oldSet = client.xtreemfs_service_get_by_uuid(null, authNone, uc, reg.getUuid(), UPDATE_INTERVAL, 
+                    false);
             long currentVersion = 0;
             Service oldService = oldSet.getServicesCount() == 0? null: oldSet.getServices(0);
 
@@ -405,7 +406,7 @@ public class HeartbeatThread extends LifeCycleThread {
                 data.addAllData(reg.getData().getDataList());
 
             builder.setData(data);
-            client.xtreemfs_service_register(null, authNone, uc, builder.build());
+            client.xtreemfs_service_register(null, authNone, uc, builder.build(), 0L, false);
 
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
@@ -420,7 +421,7 @@ public class HeartbeatThread extends LifeCycleThread {
    
     private void setServiceConfiguration() throws IOException, PBRPCException, InterruptedException {
         try {
-            Configuration conf = client.xtreemfs_configuration_get(null, authNone, uc, uuid.toString());
+            Configuration conf = client.xtreemfs_configuration_get(null, authNone, uc, uuid.toString(), 0L, false);
             long currentVersion = 0;
             
             currentVersion = conf.getVersion();
@@ -434,7 +435,7 @@ public class HeartbeatThread extends LifeCycleThread {
                         );
             }
                               
-            client.xtreemfs_configuration_set(null, authNone, uc, confBuilder.build());
+            client.xtreemfs_configuration_set(null, authNone, uc, confBuilder.build(), 0L, false);
             
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,

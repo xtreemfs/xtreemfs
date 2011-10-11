@@ -46,6 +46,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
  */
 public class TestEnvironment {
     
+    public static final int RQ_TIMEOUT = 10 * 1000;
+    
     public InetSocketAddress getMRCAddress() throws UnknownUUIDException {
         return mrc.getConfig().getUUID().getAddress();
     }
@@ -147,7 +149,7 @@ public class TestEnvironment {
             FSUtils.delTree(testDir);
             testDir.mkdirs();
 
-            rpcClient = SetupUtils.createRPCClient(10000);
+            rpcClient = SetupUtils.createRPCClient(RQ_TIMEOUT);
             getRpcClient().start();
             getRpcClient().waitForStartup();
 
@@ -167,7 +169,7 @@ public class TestEnvironment {
             }
 
             if (enabledServs.contains(Services.UUID_RESOLVER)) {
-                dir = new DIRClient(dirClient, new InetSocketAddress[]{getDIRAddress()}, 10, 1000 * 5);
+                dir = new DIRClient(dirClient, new InetSocketAddress[]{getDIRAddress()}, 10, 1000 * 5, RQ_TIMEOUT);
                 UUIDResolver.start(dir, 1000, 10 * 10 * 1000);
                 SetupUtils.localResolver();
             }

@@ -45,6 +45,8 @@ using namespace google::protobuf;
 Client::Client(int32_t connect_timeout_s,
                int32_t request_timeout_s,
                int32_t max_con_linger,
+               int64_t lifetime_ms,
+               bool high_priority,
                const SSLOptions* options)
     : service_(),
       resolver_(service_),
@@ -55,9 +57,18 @@ Client::Client(int32_t connect_timeout_s,
       rq_timeout_s_(request_timeout_s),
       connect_timeout_s_(connect_timeout_s),
       max_con_linger_(max_con_linger),
+
+      lifetime_ms_(lifetime_ms),
+      high_priority_(high_priority),
+
       ssl_options(options),
       pemFileName(NULL),
-      certFileName(NULL) {
+      certFileName(NULL),
+
+      //XXX(flangner): Counter for timeouts recognized by this client.
+      //Used to evaluate server-sided overload-protection.
+      timeouts_(0) {
+
   // Check if ssl options were passed.
   if (options != NULL) {
     Logging::log->getLog(LEVEL_INFO) << "SSL support activated" << endl;
@@ -264,7 +275,9 @@ void Client::sendRequest(const string& address,
                                         data_length,
                                         response_message,
                                         context,
-                                        callback);
+                                        callback,
+                                        lifetime_ms_,
+                                        high_priority_);
 
   mutex::scoped_lock lock(this->requests_lock_);
   bool wasEmpty = requests_.empty();
@@ -355,6 +368,11 @@ void Client::handleTimeout(const boost::system::error_code& error) {
     for (; iter != request_table_.end(); ++iter) {
       ClientRequest *rq = iter->second;
       if (rq->time_sent() < deadline) {
+
+    	//XXX(flangner): Counter for timeouts recognized by this client.
+    	//Used to evaluate server-sided overload-protection.
+	    timeouts_++;
+
         if (Logging::log->loggingActive(LEVEL_DEBUG)) {
           Logging::log->getLog(LEVEL_DEBUG) << "request timed out: "
               << rq->call_id() << endl;
@@ -448,6 +466,10 @@ void Client::shutdown() {
   if (Logging::log->loggingActive(LEVEL_INFO)) {
     Logging::log->getLog(LEVEL_INFO) << "rpc client stopped" << endl;
   }
+
+  //XXX(flangner): Counter for timeouts recognized by this client.
+  //Used to evaluate server-sided overload-protection.
+  printf("NUMBER OF RECOGNIZED REQUEST TIMEOUTS: %ld", timeouts_);
 }
 
 Client::~Client() {

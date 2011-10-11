@@ -74,6 +74,8 @@ void VolumeImplementation::Start() {
       volume_options_.connect_timeout_s,  // Connect timeout.
       volume_options_.request_timeout_s,  // Request timeout.
       volume_options_.linger_timeout_s,  // Linger timeout.
+      volume_options_.server_request_lifetime_ms, // Request lifetime at the server.
+      volume_options_.server_request_high_priority, // Request priority at the server.
       volume_ssl_options_));
 
   // Create thread which runs the network client.

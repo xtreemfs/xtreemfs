@@ -564,7 +564,7 @@ public class VivaldiStage extends Stage<OSDRequest> {
      */
     private void updateKnownOSDs() {
         try {
-            ServiceSet receivedOSDs = dirClient.xtreemfs_service_get_by_type(null, RPCAuthentication.authNone, RPCAuthentication.userService, ServiceType.SERVICE_TYPE_OSD);
+            ServiceSet receivedOSDs = dirClient.xtreemfs_service_get_by_type(null, RPCAuthentication.authNone, RPCAuthentication.userService, ServiceType.SERVICE_TYPE_OSD, MAX_REQUEST_TIMEOUT_IN_MS, false);
 
             //We need our own UUID, to discard its corresponding entry
             String ownUUID = master.getConfig().getUUID().toString();

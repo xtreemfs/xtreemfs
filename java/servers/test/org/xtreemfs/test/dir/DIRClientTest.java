@@ -138,7 +138,7 @@ public class DIRClientTest extends TestCase {
 
     @Test
     public void testStandardCase() throws Exception {
-        DIRClient client = new DIRClient(testEnv.getDirClient(), servers, 10, 2);
+        DIRClient client = new DIRClient(testEnv.getDirClient(), servers, 10, 2, TestEnvironment.RQ_TIMEOUT);
         long result = client.xtreemfs_global_time_get();
         assertEquals(1, result);
     }
@@ -147,7 +147,7 @@ public class DIRClientTest extends TestCase {
     public void testRedirect() throws Exception {
         dir1.sendRedirectTo = "localhost:"+PORT_DIR2;
 
-        DIRClient client = new DIRClient(testEnv.getDirClient(), servers, 10, 2);
+        DIRClient client = new DIRClient(testEnv.getDirClient(), servers, 10, 2, TestEnvironment.RQ_TIMEOUT);
         long result = client.xtreemfs_global_time_get();
         assertEquals(2, result);
     }
@@ -158,7 +158,7 @@ public class DIRClientTest extends TestCase {
         dir2.sendRedirectTo = "localhost:"+PORT_DIR1;
 
         try {
-            DIRClient client = new DIRClient(testEnv.getDirClient(), servers, 10, 2);
+            DIRClient client = new DIRClient(testEnv.getDirClient(), servers, 10, 2, TestEnvironment.RQ_TIMEOUT);
             long result = client.xtreemfs_global_time_get();
             fail("Expected exception.");
         } catch (IOException ex) {
@@ -170,7 +170,7 @@ public class DIRClientTest extends TestCase {
     public void testFailover() throws Exception {
         dir1.donotAnswer = true;
 
-        DIRClient client = new DIRClient(testEnv.getDirClient(), servers, 10, 2);
+        DIRClient client = new DIRClient(testEnv.getDirClient(), servers, 10, 2, TestEnvironment.RQ_TIMEOUT);
         long result = client.xtreemfs_global_time_get();
         assertEquals(2, result);
     }
@@ -181,7 +181,7 @@ public class DIRClientTest extends TestCase {
         dir1.resetAfterCall = true;
         dir2.donotAnswer = true;
 
-        DIRClient client = new DIRClient(testEnv.getDirClient(), servers, 10, 2);
+        DIRClient client = new DIRClient(testEnv.getDirClient(), servers, 10, 2, TestEnvironment.RQ_TIMEOUT);
         long result = client.xtreemfs_global_time_get();
         assertEquals(1, result);
     }
@@ -192,7 +192,7 @@ public class DIRClientTest extends TestCase {
         dir2.donotAnswer = true;
 
         try {
-            DIRClient client = new DIRClient(testEnv.getDirClient(), servers, 5, 2);
+            DIRClient client = new DIRClient(testEnv.getDirClient(), servers, 5, 2, TestEnvironment.RQ_TIMEOUT);
             long result = client.xtreemfs_global_time_get();
             fail("Expected exception.");
         } catch (IOException ex) {
@@ -206,7 +206,7 @@ public class DIRClientTest extends TestCase {
         dir2.sendException = true;
 
         try {
-            DIRClient client = new DIRClient(testEnv.getDirClient(), servers, 10, 2);
+            DIRClient client = new DIRClient(testEnv.getDirClient(), servers, 10, 2, TestEnvironment.RQ_TIMEOUT);
             long result = client.xtreemfs_global_time_get();
             fail("Expected exception.");
         } catch (PBRPCException ex) {

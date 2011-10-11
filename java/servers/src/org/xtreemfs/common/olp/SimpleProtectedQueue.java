@@ -67,7 +67,7 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
             if (!rq.isRecycled()) {
                 olp.hasAdmission(request, rq.getSize());
             }
-            olp.obtainAdmission(request.getType(), rq.getSize(), hasPriority, request.isInternalRequest());
+            olp.obtainAdmission(request.getType(), rq.getSize(), hasPriority, request.isNativeInternalRequest());
             if (hasPriority) {
                 
                 high.add(rq);

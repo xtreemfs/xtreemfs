@@ -19,7 +19,6 @@ import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.database.DatabaseException;
@@ -138,7 +137,8 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         // initially fetch the list of OSDs from the Directory Service
         try {
             knownOSDs = master.getDirClient().xtreemfs_service_get_by_type(null, RPCAuthentication.authNone,
-                RPCAuthentication.userService, ServiceType.SERVICE_TYPE_OSD).toBuilder();
+                RPCAuthentication.userService, ServiceType.SERVICE_TYPE_OSD, master.getDirClient().getTimeout(), false)
+                .toBuilder();
         } catch (Exception exc) {
             this.notifyCrashed(exc);
         }
@@ -168,7 +168,8 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
                 // request list of registered OSDs from Directory
                 // Service
                 knownOSDs = master.getDirClient().xtreemfs_service_get_by_type(null, RPCAuthentication.authNone,
-                            RPCAuthentication.userService, ServiceType.SERVICE_TYPE_OSD).toBuilder();
+                            RPCAuthentication.userService, ServiceType.SERVICE_TYPE_OSD, checkIntervalMillis, false)
+                            .toBuilder();
                 
                 Logging
                         .logMessage(Logging.LEVEL_DEBUG, Category.misc, this,

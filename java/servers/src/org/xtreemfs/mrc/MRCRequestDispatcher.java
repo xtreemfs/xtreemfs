@@ -174,7 +174,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         DIRServiceClient dirRpcClient = new DIRServiceClient(clientStage, config.getDirectoryService());
         dirClient = new DIRClient(dirRpcClient, config.getDirectoryServices(), config.getFailoverMaxRetries(),
-                config.getFailoverWait());
+                config.getFailoverWait(), RPC_TIMEOUT);
         osdClient = new OSDServiceClient(clientStage, null);
         
         authProvider = policyContainer.getAuthenticationProvider();

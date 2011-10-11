@@ -739,4 +739,8 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         else
             return new long[]{con.bytesRX,con.bytesTX};
     }
+    
+    public int getRequestTimeout() {
+        return requestTimeout;
+    }
 }

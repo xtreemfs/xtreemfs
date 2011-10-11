@@ -206,11 +206,12 @@ public class xtfs_remove_osd {
         TimeSync.initializeLocal(0, 50);
 
         // connect to DIR
-        dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
+        final int TIMEOUT = 10 * 1000;
+        dirClient = new RPCNIOSocketClient(sslOptions, TIMEOUT, 5 * 60 * 1000);
         dirClient.start();
         dirClient.waitForStartup();
         DIRServiceClient tmp = new DIRServiceClient(dirClient, dirAddress);
-        dir = new DIRClient(tmp, new InetSocketAddress[]{dirAddress}, 100, 15 * 1000);
+        dir = new DIRClient(tmp, new InetSocketAddress[]{dirAddress}, 100, 15 * 1000, TIMEOUT);
 
         resolverClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
         resolverClient.start();
@@ -231,7 +232,8 @@ public class xtfs_remove_osd {
         // create MRC client
         ServiceSet sSet = null;
         try {
-            sSet = dir.xtreemfs_service_get_by_type(null, authHeader, credentials, ServiceType.SERVICE_TYPE_MRC);
+            sSet = dir.xtreemfs_service_get_by_type(null, authHeader, credentials, ServiceType.SERVICE_TYPE_MRC, 
+                    TIMEOUT, false);
         } catch (IOException ioe) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.proc, new Object(),
                     OutputUtils.stackTraceToString(ioe));

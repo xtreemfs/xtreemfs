@@ -116,12 +116,13 @@ public class xtfs_chstatus {
             
             final String newStatus = (arguments.size() == 2) ? arguments.get(1) : null;
             
-            RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(sslOptions, 15 * 100, 5 * 60 * 1000);
+            final int TIMEOUT = 15 * 1000;
+            RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(sslOptions, TIMEOUT, 5 * 60 * 1000);
             rpcClient.start();
             rpcClient.waitForStartup();
             DIRServiceClient dc = new DIRServiceClient(rpcClient, dirAddr);
             RPCResponse<ServiceSet> r = dc.xtreemfs_service_get_by_uuid(dirAddr, RPCAuthentication.authNone,
-                RPCAuthentication.userService, uuid);
+                RPCAuthentication.userService, uuid, TIMEOUT, false);
             ServiceSet set = r.get();
             r.freeBuffers();
             
@@ -165,7 +166,7 @@ public class xtfs_chstatus {
                 ServiceDataMap dataMap = ServiceDataMap.newBuilder().addAllData(data).build();
                 s = s.toBuilder().setData(dataMap).build();
                 RPCResponse r2 = dc.xtreemfs_service_register(dirAddr, RPCAuthentication.authNone,
-                    RPCAuthentication.userService, s);
+                    RPCAuthentication.userService, s, TIMEOUT, false);
                 r2.get();
                 r2.freeBuffers();
                 System.out.println("status changed to: " + newStatus);

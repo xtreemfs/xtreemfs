@@ -75,7 +75,7 @@ public abstract class AugmentedRequest {
      */
     public AugmentedRequest(int type, long size, long deltaMaxTime, boolean highPriority) {
         
-        assert (deltaMaxTime > 0);
+        assert (deltaMaxTime > -1);
         assert (type > -1);
         
         this.type = type;
@@ -113,7 +113,7 @@ public abstract class AugmentedRequest {
     /**
      * @return true if this request has high priority, false otherwise.
      */
-    boolean hasHighPriority() {
+    public boolean hasHighPriority() {
         
         return highPriority;
     }
@@ -125,15 +125,18 @@ public abstract class AugmentedRequest {
      * @return the remaining processing time for this request in ms.
      * @throws RequestExpiredException if the processing time for this request has already been exhausted.
      */
-    double getRemainingProcessingTime() throws RequestExpiredException {
+    public final long getRemainingProcessingTime() throws RequestExpiredException {
         
-        if (isInternalRequest()) {
-            throw new UnsupportedOperationException("The request is internal and therefore has unlimited processing " +
-            		"time remaining.");
+        if (isNativeInternalRequest()) {
+            throw new UnsupportedOperationException("The request is internal and therefore has unlimited remaining " +
+            		"processing time.");
+        } else if (isUnrefusable()) {
+            throw new UnsupportedOperationException("The request is unrefusable and therefore has unlimited " +
+            		"remaining processing time.");
         }
         
         long remaining = (deltaMaxTime + startTime) - System.currentTimeMillis();
-        if (remaining < 0) {
+        if (remaining <= 0) {
             throw new RequestExpiredException(this);
         }
         return remaining;
@@ -142,8 +145,16 @@ public abstract class AugmentedRequest {
     /**
      * @return true, if this request is an internal request, false if not.
      */
-    boolean isInternalRequest() {
+    boolean isNativeInternalRequest() {
         
-        return deltaMaxTime == 0L && startTime == 0L;
+        return startTime == 0L;
+    }
+ 
+    /**
+     * @return true, if this request is unrefusable. false otherwise.
+     */
+    boolean isUnrefusable() {
+        
+        return deltaMaxTime == 0L;
     }
 }

@@ -192,7 +192,53 @@ public class RPCSourceGenerator {
 
                             final boolean data_in = method.getOptions().hasExtension(PBRPC.dataIn) ? method.getOptions().getExtension(PBRPC.dataIn) : false;
                             final String dataValue = data_in ? "data" : "null";
+                            final String[] unrolled = unrollInputMessage(proto, method.getInputType(), typeDefs);
+                            
+                            if (isEmptyResponse) {
+                                codeBuilder.append("    public RPCResponse " + method.getName() + "(");
+                            } else {
+                                codeBuilder.append("    public RPCResponse<"+returnType+"> " + method.getName() + "(");
+                            }
+                            codeBuilder.append("InetSocketAddress server, Auth authHeader, UserCredentials userCreds, "+inputType+" input");
+                            if (data_in)
+                                codeBuilder.append(", ReusableBuffer data");
+                            codeBuilder.append(") throws IOException {\n");
+                            codeBuilder.append("         return ");
+                            codeBuilder.append(method.getName());
+                            codeBuilder.append("(server, authHeader, userCreds, input");
+                            if (data_in)
+                                codeBuilder.append(", data");
+                            codeBuilder.append(", client.getRequestTimeout(), false);\n");
+                            codeBuilder.append("    }\n\n");
 
+                            if (isEmptyResponse) {
+                                codeBuilder.append("    public RPCResponse " + method.getName() + "(");
+                            } else {
+                                codeBuilder.append("    public RPCResponse<"+returnType+"> " + method.getName() + "(");
+                            }
+                            codeBuilder.append("InetSocketAddress server, Auth authHeader, UserCredentials userCreds");
+                            if (unrolled[0].length() > 0) {
+                                codeBuilder.append(", ");
+                                codeBuilder.append(unrolled[0]);
+                            }
+                            if (data_in)
+                                codeBuilder.append(", ReusableBuffer data");
+                            codeBuilder.append(") throws IOException {\n");
+                            codeBuilder.append("         "+unrolled[1]+"\n");
+                            codeBuilder.append("         return ");
+                            codeBuilder.append(method.getName());
+                            codeBuilder.append("(server, authHeader, userCreds,");
+                            if (isEmptyRequest) {
+                                codeBuilder.append("null");
+                            } else {
+                                codeBuilder.append("msg");
+                            }
+                            if (data_in)
+                                codeBuilder.append(", data");
+                            codeBuilder.append(", client.getRequestTimeout(), false);\n");
+                            codeBuilder.append("    }\n\n");
+                            
+                            
                             if (isEmptyResponse) {
                                 codeBuilder.append("    public RPCResponse " + method.getName() + "(");
                             } else {
@@ -209,11 +255,9 @@ public class RPCSourceGenerator {
                             } else {
                                 codeBuilder.append("         RPCResponse response = new RPCResponse(null);\n");
                             }
-                            codeBuilder.append("         client.sendRequest(server, authHeader, userCreds, "+interfaceId+", "+procId+", input, "+dataValue+", response, false, TTL, serverHighPriority);\n");
+                            codeBuilder.append("         client.sendRequest(server, authHeader, userCreds, "+interfaceId+", "+procId+", input, "+dataValue+", response, false, (client.getRequestTimeout() < TTL) ? client.getRequestTimeout() : TTL, serverHighPriority);\n");
                             codeBuilder.append("         return response;\n");
                             codeBuilder.append("    }\n\n");
-
-                            String[] unrolled = unrollInputMessage(proto, method.getInputType(), typeDefs);
 
                             if (isEmptyResponse) {
                                 codeBuilder.append("    public RPCResponse " + method.getName() + "(");
@@ -239,7 +283,7 @@ public class RPCSourceGenerator {
                             }
                             if (data_in)
                                 codeBuilder.append(", data");
-                            codeBuilder.append(", TTL, serverHighPriority);\n");
+                            codeBuilder.append(", (client.getRequestTimeout() < TTL) ? client.getRequestTimeout() : TTL, serverHighPriority);\n");
                             codeBuilder.append("    }\n\n");
                         }
 

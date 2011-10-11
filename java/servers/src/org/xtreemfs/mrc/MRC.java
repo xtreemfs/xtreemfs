@@ -13,14 +13,12 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import org.xtreemfs.babudb.config.BabuDBConfig;
-import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -150,10 +148,11 @@ public class MRC {
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
                 .isGRIDSSLmode(), new MRCPolicyContainer(config).getTrustManager()) : null;
         
-        RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, 1000, 60 * 1000);
+        int rqTimeout = 1000;
+        RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, rqTimeout, 60 * 1000);
         DIRServiceClient dirRPCClient = new DIRServiceClient(clientStage, config.getDirectoryService());
         DIRClient dirClient = new DIRClient(dirRPCClient, config.getDirectoryServices(),
-                retries, WAIT_BETWEEN_RETRIES);
+                retries, WAIT_BETWEEN_RETRIES, rqTimeout);
         
         clientStage.start();
         clientStage.waitForStartup();
@@ -163,7 +162,7 @@ public class MRC {
             "xtreemfs-services").build();
         
         Configuration conf = dirClient.xtreemfs_configuration_get(null, authNone, uc, config.getUUID()
-                    .toString());
+                    .toString(), rqTimeout, false);
         
         dirClient.stop();
         clientStage.shutdown();

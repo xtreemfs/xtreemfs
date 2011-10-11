@@ -192,11 +192,12 @@ public class xtfs_cleanup_osd {
             osdClient.waitForStartup();
             osd = new OSDServiceClient(osdClient, null);
             
-            dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
+            final int TIMEOUT = 10 * 1000;
+            dirClient = new RPCNIOSocketClient(sslOptions, TIMEOUT, 5 * 60 * 1000);
             dirClient.start();
             dirClient.waitForStartup();
             DIRServiceClient dirRpcClient = new DIRServiceClient(dirClient, dirAddr);
-            dir = new DIRClient(dirRpcClient, new InetSocketAddress[]{dirAddr}, 100, 15*1000);
+            dir = new DIRClient(dirRpcClient, new InetSocketAddress[]{dirAddr}, 100, 15*1000, TIMEOUT);
             
             try {
                 TimeSync.getInstance();

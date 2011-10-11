@@ -45,16 +45,18 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
  * @author bjko
  */
 public class Client {
-    
+        
     private final RPCNIOSocketClient  mdClient, osdClient;
     
     private final InetSocketAddress[] dirAddress;
     
-    private DIRClient          dirClient;
+    private DIRClient                 dirClient;
     
     private final UUIDResolver        uuidRes;
     
     private Map<String, Volume>       volumeMap;
+    
+    private final long                rqTimeout;
     
     public Client(InetSocketAddress[] dirAddresses, int requestTimeout, int connectionTimeout, SSLOptions ssl)
         throws IOException {
@@ -62,10 +64,11 @@ public class Client {
         mdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout);
         osdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout);
         DIRServiceClient dirRpcClient = new DIRServiceClient(mdClient, dirAddress[0]);
-        dirClient = new DIRClient(dirRpcClient, dirAddress, 100, 1000 * 15);
+        dirClient = new DIRClient(dirRpcClient, dirAddress, 100, 1000 * 15, requestTimeout);
         TimeSync.initializeLocal(0, 50);
         uuidRes = UUIDResolver.startNonSingelton(dirClient, 3600, 1000);
         volumeMap = new HashMap<String, Volume>();
+        rqTimeout = requestTimeout;
     }
     
     public Volume getVolume(String volumeName, UserCredentials credentials) throws IOException {
@@ -76,7 +79,7 @@ public class Client {
                 lookupVolumeName = volumeName.substring(0, snapNameIndex);
             
             final ServiceSet s = dirClient.xtreemfs_service_get_by_name(null, RPCAuthentication.authNone,
-                RPCAuthentication.userService, lookupVolumeName);
+                RPCAuthentication.userService, lookupVolumeName, rqTimeout, false);
             if (s.getServicesCount() == 0) {
                 throw new IOException("volume '" + lookupVolumeName + "' does not exist");
             }
@@ -112,7 +115,7 @@ public class Client {
         RPCResponse r2 = null;
         try {
             ServiceSet mrcs = dirClient.xtreemfs_service_get_by_type(null, RPCAuthentication.authNone, credentials,
-                ServiceType.SERVICE_TYPE_MRC);
+                ServiceType.SERVICE_TYPE_MRC, rqTimeout, false);
             
             if (mrcs.getServicesCount() == 0) {
                 throw new IOException("no MRC available for volume creation");
@@ -167,7 +170,7 @@ public class Client {
         assert (credentials != null);
         try {
             final ServiceSet s = dirClient.xtreemfs_service_get_by_name(null, RPCAuthentication.authNone, credentials,
-                volumeName);
+                volumeName, rqTimeout, false);
             if (s.getServicesCount() == 0) {
                 throw new IOException("volume '" + volumeName + "' does not exist");
             }
@@ -190,7 +193,7 @@ public class Client {
     public String[] listVolumeNames(UserCredentials credentials) throws IOException {
         assert (credentials != null);
         try {
-            final ServiceSet s = dirClient.xtreemfs_service_get_by_type(null, RPCAuthentication.authNone, credentials, ServiceType.SERVICE_TYPE_VOLUME);
+            final ServiceSet s = dirClient.xtreemfs_service_get_by_type(null, RPCAuthentication.authNone, credentials, ServiceType.SERVICE_TYPE_VOLUME, rqTimeout, false);
             String[] volNames = new String[s.getServicesCount()];
             for (int i = 0; i < volNames.length; i++)
                 volNames[i] = s.getServices(i).getName();
@@ -229,7 +232,7 @@ public class Client {
     public ServiceSet getRegistry() throws IOException {
         try {
             return dirClient.xtreemfs_service_get_by_type(null, RPCAuthentication.authNone,
-                RPCAuthentication.userService, ServiceType.SERVICE_TYPE_MIXED);
+                RPCAuthentication.userService, ServiceType.SERVICE_TYPE_MIXED, rqTimeout, false);
         } catch (InterruptedException ex) {
             throw new IOException("operation was interrupted", ex);
         } 

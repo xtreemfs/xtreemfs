@@ -276,12 +276,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
                 .isGRIDSSLmode(), tm2) : null;
         
-        rpcClient = new RPCNIOSocketClient(clientSSLopts, 5000, 5 * 60 * 1000, config
+        final int TIMEOUT = 5 * 1000;
+        rpcClient = new RPCNIOSocketClient(clientSSLopts, TIMEOUT, 5 * 60 * 1000, config
                 .getSocketSendBufferSize(), config.getSocketReceiveBufferSize());
         rpcClient.setLifeCycleListener(this);
         
         // replication uses its own RPCClient with a much higher timeout
-        rpcClientForReplication = new RPCNIOSocketClient(clientSSLopts, 30000, 5 * 60 * 1000);
+        final int REPL_TIMEOUT = 30 * 1000;
+        rpcClientForReplication = new RPCNIOSocketClient(clientSSLopts, REPL_TIMEOUT, 5 * 60 * 1000);
         rpcClientForReplication.setLifeCycleListener(this);
         
         // initialize ServiceAvailability
@@ -333,7 +335,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         // ----------------------------------------
         
         DIRServiceClient dirRpcClient = new DIRServiceClient(rpcClient, config.getDirectoryService());
-        dirClient = new DIRClient(dirRpcClient, config.getDirectoryServices(), config.getFailoverMaxRetries(), config.getFailoverWait());
+        dirClient = new DIRClient(dirRpcClient, config.getDirectoryServices(), config.getFailoverMaxRetries(),
+                    config.getFailoverWait(), TIMEOUT);
         mrcClient = new MRCServiceClient(rpcClient, null);
         osdClient = new OSDServiceClient(rpcClient, null);
         osdClientForReplication = new OSDServiceClient(rpcClientForReplication, null);

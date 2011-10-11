@@ -137,6 +137,11 @@ class Options {
   /** The RPC Client closes connections after "linger_timeout_s" time of
    *  inactivity. */
   boost::int32_t linger_timeout_s;
+  /** The maximal timespan a request is allowed to reside at the server. */
+  boost::int64_t server_request_lifetime_ms;
+  /** Flag that determines whether request-processing will be priorized on the
+   * servers or not. */
+  bool server_request_high_priority;
 
   // SSL options.
   std::string ssl_pem_cert_path;

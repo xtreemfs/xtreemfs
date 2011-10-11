@@ -95,6 +95,9 @@ Options::Options()
   linger_timeout_s = 600;  // 10 Minutes.
   interrupt_signal = 0;  // Disable interruption support by default.
 
+  server_request_lifetime_ms = request_timeout_s * 1000;
+  server_request_high_priority = false;
+
   // SSL options.
   ssl_pem_cert_path = "";
   ssl_pem_path = "";
@@ -216,7 +219,13 @@ void Options::GenerateProgramOptionsDescriptions() {
         "Timeout after which a request will be retried (in seconds).")
     ("linger-timeout",
         po::value(&linger_timeout_s)->default_value(linger_timeout_s),
-        "Time after which idle connections will be closed (in seconds).");
+        "Time after which idle connections will be closed (in seconds).")
+    ("server-request-lifetime",
+        po::value(&server_request_lifetime_ms)->default_value(server_request_lifetime_ms),
+        "Maximal timespan in ms a request may reside at the server.")
+    ("server-request-priority",
+        po::value(&server_request_high_priority)->default_value(server_request_high_priority),
+        "True if client requests have high priority, false otherwise.");
 
   ssl_options_.add_options()
     ("pem-certificate-file-path",

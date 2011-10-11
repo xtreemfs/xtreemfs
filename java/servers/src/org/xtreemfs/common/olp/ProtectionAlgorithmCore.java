@@ -110,7 +110,7 @@ final class ProtectionAlgorithmCore {
     <R extends AugmentedRequest> void hasAdmission(R request, long size) throws AdmissionRefusedException {
         
         final int type = request.getType();
-        if (!request.isInternalRequest() && !unrefusableTypes[type]) {
+        if (!request.isNativeInternalRequest() && !request.isUnrefusable() && !unrefusableTypes[type]) {
             
             final double remainingProcessingTime = request.getRemainingProcessingTime();
             final double estimatedProcessingTime = controller.estimateResponseTime(type, size, 
@@ -162,7 +162,7 @@ final class ProtectionAlgorithmCore {
        
         final AugmentedRequest request = stageRequest.getRequest();
         controller.quitRequest(request.getType(), stageRequest.getSize(), 
-                request.hasHighPriority() || stageRequest.hasHighPriority(), request.isInternalRequest());
+                request.hasHighPriority() || stageRequest.hasHighPriority(), request.isNativeInternalRequest());
         if (!recycle) {
             monitor(stageRequest);
             sendPiggybackPerformanceInformation(stageRequest.getPiggybackPerformanceInformationReceiver());
@@ -200,7 +200,7 @@ final class ProtectionAlgorithmCore {
             final double varProcessingTime = stageRequest.getVariableProcessingTime();
             final double fixProcessingTime = stageRequest.getFixedProcessingTime();
             
-            if (request.isInternalRequest()) {
+            if (request.isNativeInternalRequest()) {
 
                 internalRequestMonitor.record(request.getType(), fixProcessingTime, varProcessingTime);                
             } else {

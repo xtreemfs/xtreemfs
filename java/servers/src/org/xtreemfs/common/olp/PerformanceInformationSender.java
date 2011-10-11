@@ -29,7 +29,7 @@ class PerformanceInformationSender extends Timer {
     /**
      * <p>Map of tasks that will provide performance informations to preceding stages.</p>
      */
-    private final Map<Integer, TimerTask> tasks = new HashMap<Integer, TimerTask>();
+    private final Map<Integer, SendPerformanceInformation> tasks = new HashMap<Integer, SendPerformanceInformation>();
     
     /**
      * <p>Reference to the overload protection algorithm for computing required performance information.</p>
@@ -52,13 +52,8 @@ class PerformanceInformationSender extends Timer {
         
         assert (receiver != null);
         
-        if (!addReceiver(receiver)) {
-            
-            // task is rescheduled if information were exchanged piggyback
-            TimerTask task = tasks.remove(receiver.getStageId());
-            task.cancel();
-            addReceiver(receiver);
-        }
+        resetDelay(receiver.getStageId());
+        receiver.processPerformanceInformation(olp.composePerformanceInformation());
     }
     
     /**
@@ -66,22 +61,33 @@ class PerformanceInformationSender extends Timer {
      * send after a delay equal period, if scheduling was successful.</p>
      * 
      * @param receiver - that requires performance information provided by this sender.
-     * 
-     * @return true if receiver was successfully added, false if there already exists a task for this receiver.
      */
-    boolean addReceiver(PerformanceInformationReceiver receiver) {
+    void addReceiver(PerformanceInformationReceiver receiver) {
         
         assert (receiver != null);
         
         if (!tasks.containsKey(receiver.getStageId())) {
             
-            TimerTask task = new SendPerformanceInformation(receiver);
+            SendPerformanceInformation task = new SendPerformanceInformation(receiver);
             tasks.put(receiver.getStageId(), task);
             schedule(task, DELAY_BETWEEN_UPDATES, DELAY_BETWEEN_UPDATES);
-            return true;
         }
+    }
+    
+    /**
+     * <p>Resets the task of the PerformanceInformationReceiver given by its stage-id.</p>
+     * 
+     * @param performanceReceiver
+     */
+    private void resetDelay(int performanceReceiver) {
         
-        return false;
+        SendPerformanceInformation task = tasks.get(performanceReceiver);
+        if (task != null) {
+            task.cancel();
+            SendPerformanceInformation newTask = new SendPerformanceInformation(task);
+            schedule(newTask, DELAY_BETWEEN_UPDATES, DELAY_BETWEEN_UPDATES);
+            tasks.put(performanceReceiver, newTask);
+        }
     }
     
     /**
@@ -108,6 +114,16 @@ class PerformanceInformationSender extends Timer {
             assert (receiver != null);
             
             this.receiver = receiver;
+        }
+        
+        /**
+         * <p>Constructor to recycle given task and prepare it for rescheduling.</p>
+         * 
+         * @param task - to reschedule.
+         */
+        private SendPerformanceInformation(SendPerformanceInformation task) {
+            
+            this.receiver = task.receiver;
         }
         
         /* (non-Javadoc)

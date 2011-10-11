@@ -32,7 +32,9 @@ ClientRequest::ClientRequest(const string& address,
                              int data_length,
                              Message* response_message,
                              void *context,
-                             ClientRequestCallbackInterface *callback)
+                             ClientRequestCallbackInterface *callback,
+                             uint64_t lifetime_ms,
+                             bool high_priority)
     : call_id_(call_id),
       context_(context),
       callback_(callback),
@@ -43,7 +45,8 @@ ClientRequest::ClientRequest(const string& address,
       resp_header_(NULL),
       resp_message_(response_message),
       resp_data_(NULL),
-      resp_data_len_(0) {
+      resp_data_len_(0){
+
   RPCHeader header = RPCHeader();
   header.set_message_type(xtreemfs::pbrpc::RPC_REQUEST);
   header.set_call_id(call_id);
@@ -52,6 +55,8 @@ ClientRequest::ClientRequest(const string& address,
   header.mutable_request_header()->mutable_user_creds()->
       MergeFrom(userCreds);
   header.mutable_request_header()->mutable_auth_data()->MergeFrom(auth);
+  header.mutable_request_header()->set_ttl(lifetime_ms);
+  header.mutable_request_header()->set_high_priority(high_priority);
 
   assert(callback_ != NULL);
 

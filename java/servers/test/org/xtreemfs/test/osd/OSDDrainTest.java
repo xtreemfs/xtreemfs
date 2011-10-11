@@ -113,7 +113,8 @@ public class OSDDrainTest extends TestCase {
         mrcClient = testEnv.getMrcClient();
 
 
-        dir = new DIRClient(testEnv.getDirClient(), new InetSocketAddress[]{testEnv.getDIRAddress()}, 10, 1000 * 5);
+        dir = new DIRClient(testEnv.getDirClient(), new InetSocketAddress[]{testEnv.getDIRAddress()}, 10, 1000 * 5, 
+                TestEnvironment.RQ_TIMEOUT);
         resolver = UUIDResolver.startNonSingelton(dir, 1000, 10 * 10 * 1000);
 
         osdDrain = new OSDDrain(dir, testEnv.getOSDClient(), testEnv.getMrcClient(),

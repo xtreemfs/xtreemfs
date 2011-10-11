@@ -159,7 +159,7 @@ public abstract class OverloadProtectedComponent<R extends AugmentedRequest>
         
         try {
             olp.hasAdmission(request, size);
-            olp.obtainAdmission(request.getType(), size, request.hasHighPriority(), request.isInternalRequest());
+            olp.obtainAdmission(request.getType(), size, request.hasHighPriority(), request.isNativeInternalRequest());
             resumeRequestProcessing(rq);
             requestCounter.incrementAndGet();
             enter(rq);

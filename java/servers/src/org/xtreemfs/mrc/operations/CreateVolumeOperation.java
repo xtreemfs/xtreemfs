@@ -104,7 +104,7 @@ public class CreateVolumeOperation extends MRCOperation {
                         processStep2(volData, volumeId, rq, (ServiceSet) sset, callback);
                         return true;
                     }
-                });
+                }, rq.getRemainingProcessingTime(), rq.hasHighPriority());
     }
     
     private void processStep2(Volume volData, String volumeId, MRCRequest rq, ServiceSet response,
@@ -149,7 +149,8 @@ public class CreateVolumeOperation extends MRCOperation {
                     .setVersion(0).setName(volData.getName()).setLastUpdatedS(0).setData(dmap).build();
             
             master.getDirClient().xtreemfs_service_register(null, rq.getDetails().auth,
-                    RPCAuthentication.userService, vol, callback);
+                    RPCAuthentication.userService, vol, callback, rq.getRemainingProcessingTime(), 
+                    rq.hasHighPriority());
             
         } catch (UserException exc) {
             

@@ -149,7 +149,8 @@ public final class UUIDResolver extends Thread {
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "loading uuid mapping for %s", uuid);
         try {
-            AddressMappingSet ams = dir.xtreemfs_address_mappings_get(null, GlobalConstants.AUTH_NONE, uc, uuid);
+            AddressMappingSet ams = dir.xtreemfs_address_mappings_get(null, GlobalConstants.AUTH_NONE, uc, uuid, 
+                    cacheCleanInterval, false);
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "sent request to DIR");
             if (Logging.isDebug())

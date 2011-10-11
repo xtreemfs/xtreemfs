@@ -32,7 +32,7 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
     /**
      * <p>Receiver of {@link PerformanceInformation} initially registered at the stage.</p>
      */
-    private PerformanceInformationReceiver[] initialPredecessors;
+    private PerformanceInformationReceiver[]       initialPredecessors;
     
     /**
      * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 

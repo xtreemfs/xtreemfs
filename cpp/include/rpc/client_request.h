@@ -45,7 +45,9 @@ class ClientRequest {
                 int data_length,
                 google::protobuf::Message* response_message,
                 void *context,
-                ClientRequestCallbackInterface* callback);
+                ClientRequestCallbackInterface* callback,
+                uint64_t lifetime,
+                bool high_priority);
 
   virtual ~ClientRequest();
 
