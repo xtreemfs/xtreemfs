@@ -23,6 +23,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.DeletionStage;
 import org.xtreemfs.osd.stages.PreprocStage.DeleteOnCloseCallback;
@@ -284,7 +285,7 @@ public class CleanupThread extends LifeCycleThread {
                                  }
                              }
                         } catch (Exception ex) {
-                            results.add(String.format(ERROR_FORMAT, volume.id,ex.getMessage()));
+                            results.add(String.format(ERROR_FORMAT, volume.id, OutputUtils.stackTraceToString(ex)));
                         }
                         
                         if (zombieFiles.size()!=0) zombieFilesPerVolume.put(volume, zombieFiles);
