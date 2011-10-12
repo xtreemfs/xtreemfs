@@ -266,5 +266,7 @@ int main(int argc, char **argv) {
   fuse_adapter->Stop();
   delete fuse_adapter;
 
+
+
   return 0;
 }

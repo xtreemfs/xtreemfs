@@ -183,12 +183,15 @@ template<class ReturnMessageType, class F>
         if (attempt == 1 && max_tries != 1) {
           std::string retries_left = max_tries == 0 ? "infinite"
               : boost::lexical_cast<std::string>(max_tries - attempt);
+          std::string error = "Got no response from server " + service_uuid
+              + " (" + service_address + "), retrying ("
+              + boost::lexical_cast<std::string>(retries_left)
+              + " attempts left, waiting at least "
+              + boost::lexical_cast<std::string>(options.retry_delay_s)
+              + " seconds between two attempts).";
           xtreemfs::util::Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
-              << "Got no response from server " << service_uuid << " ("
-              << service_address << "), retrying ("
-              << retries_left << " attempts left, waiting at least "
-              << options.retry_delay_s << " seconds between two attempts)."
-              << std::endl;
+              << error << std::endl;
+          xtreemfs::util::ErrorLog::error_log->AppendError(error);
         }
 
         // If the request did return before the timeout was reached, wait until
@@ -232,8 +235,10 @@ template<class ReturnMessageType, class F>
     if (options.interrupt_signal && intr_pointer.get() != NULL) {
       if (xtreemfs::util::Logging::log->loggingActive(
               xtreemfs::util::LEVEL_DEBUG)) {
+        std::string error = "Caught interrupt, aborting sync request.";
         xtreemfs::util::Logging::log->getLog(xtreemfs::util::LEVEL_DEBUG)
-            << "Caught interrupt, aborting sync request." << std::endl;
+            << error << std::endl;
+        xtreemfs::util::ErrorLog::error_log->AppendError(error);
       }
       intr_pointer.reset(NULL);
       // Clear the current response.

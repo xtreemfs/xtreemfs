@@ -53,12 +53,6 @@ class FileInfo {
     return reference_count_;
   }
 
-  /** Only used for debug output. */
-  inline std::string path() {
-    boost::mutex::scoped_lock lock(mutex_);
-    return path_;
-  }
-
   inline void UpdateXLocSetAndRest(const xtreemfs::pbrpc::XLocSet& new_xlocset,
                                    bool replicate_on_close) {
     boost::mutex::scoped_lock lock(xlocset_mutex_);

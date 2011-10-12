@@ -13,8 +13,6 @@
 #include <string>
 #include <vector>
 
-#include "util/logging.h"
-
 #include "libxtreemfs/async_write_buffer.h"
 #include "libxtreemfs/callback/execute_sync_request.h"
 #include "libxtreemfs/file_info.h"
@@ -23,6 +21,8 @@
 #include "libxtreemfs/stripe_translator.h"
 #include "libxtreemfs/uuid_resolver.h"
 #include "libxtreemfs/xtreemfs_exception.h"
+#include "util/error_log.h"
+#include "util/logging.h"
 #include "xtreemfs/MRCServiceClient.h"
 #include "xtreemfs/OSD.pb.h"
 #include "xtreemfs/OSDServiceClient.h"
@@ -101,11 +101,14 @@ int FileHandleImplementation::Read(
   size_t received_data = 0;
 
   if (xlocs.replicas_size() == 0) {
-    Logging::log->getLog(LEVEL_ERROR)
-        << "no replica found for file:" << file_info_->path() << std::endl;
+    string path;
+    file_info_->GetPath(&path);
+    string error_msg = "No replica found for file: " + path;
+    Logging::log->getLog(LEVEL_ERROR) << error_msg << endl;
+    xtreemfs::util::ErrorLog::error_log->AppendError(error_msg);
     throw PosixErrorException(
         POSIX_ERROR_EIO,
-        "no replica found for file:" + file_info_->path());
+        "No replica found for file: " + path);
   }
   // Pick the first replica to determine striping policy.
   // (We assume that all replicas use the same striping policy.)
@@ -195,7 +198,9 @@ int FileHandleImplementation::Write(
   const XLocSet& xlocs = file_credentials.xlocs();
 
   if (xlocs.replicas_size() == 0) {
-    string error = "No replica found for file: " + file_info_->path();
+    string path;
+    file_info_->GetPath(&path);
+    string error = "No replica found for file: " + path;
     Logging::log->getLog(LEVEL_ERROR) << error << endl;
     throw PosixErrorException(POSIX_ERROR_EIO, error);
   }
@@ -899,9 +904,12 @@ void FileHandleImplementation::CallFinished(
     xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
     void* context) {
   if (error) {
-    Logging::log->getLog(LEVEL_WARN)
-        << "error in async filesize update " << file_info_->path() << endl;
-    Logging::log->getLog(LEVEL_WARN) << error->DebugString() << endl;
+    string path;
+    file_info_->GetPath(&path);
+    string error_msg = "Async filesize update for file: " + path
+        + "failed. Error: " + error->DebugString();
+    Logging::log->getLog(LEVEL_WARN) << error_msg << endl;
+    xtreemfs::util::ErrorLog::error_log->AppendError(error_msg);
   }
 
   file_info_->AsyncFileSizeUpdateResponseHandler(
@@ -924,9 +932,12 @@ void FileHandleImplementation::CallFinished(
   boost::mutex::scoped_lock lock(mutex_);
 
   if (error) {
-    Logging::log->getLog(LEVEL_ERROR)
-        << "error in XCap renewal " << file_info_->path() << endl;
-    Logging::log->getLog(LEVEL_ERROR) << error->DebugString() << endl;
+    string path;
+    file_info_->GetPath(&path);
+    string error_msg =  "Renewing XCap of file: " + path + " failed. Error: " +
+        error->DebugString();
+    Logging::log->getLog(LEVEL_ERROR) << error_msg << endl;
+    xtreemfs::util::ErrorLog::error_log->AppendError(error_msg);
   } else {
     // Overwrite current XCap only by a newer one (i.e. later expire time).
     if (new_xcap->expire_time_s() > xcap_.expire_time_s()) {
