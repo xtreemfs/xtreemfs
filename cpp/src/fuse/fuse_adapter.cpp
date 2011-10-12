@@ -159,6 +159,7 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
                                 *options_);
 
   xctl_.set_volume(volume_);
+  xctl_.set_uuid_resolver(client_->GetUUIDResolver());
 
   // Try to access Volume. If it fails, an error will be thrown.
   Stat stat;

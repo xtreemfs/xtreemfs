@@ -17,6 +17,8 @@
 #include <sys/stat.h>
 
 #include "json/json.h"
+#include "libxtreemfs/uuid_resolver.h"
+#include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "util/error_log.h"
 #include "util/logging.h"
@@ -40,6 +42,10 @@ XtfsUtilServer::~XtfsUtilServer() {
 
 void XtfsUtilServer::set_volume(Volume* volume) {
   volume_ = volume;
+}
+
+void XtfsUtilServer::set_uuid_resolver(UUIDResolver* uuid_resolver) {
+  uuid_resolver_ = uuid_resolver;
 }
 
 void XtfsUtilServer::ParseAndExecute(const xtreemfs::pbrpc::UserCredentials& uc,
@@ -471,9 +477,21 @@ void XtfsUtilServer::OpGetSuitableOSDs(
 
   (*output)["result"] = Json::Value(Json::objectValue);
   (*output)["result"]["osds"] = Json::Value(Json::arrayValue);
+  string address;
   for (list<string>::iterator iter = osds.begin();
        iter != osds.end(); ++iter) {
-    (*output)["result"]["osds"].append(*iter);
+    address = "";
+    try {
+      // Try to resolve the UUID to hostname and port.
+      uuid_resolver_->UUIDToAddress(*iter, &address);
+    } catch(const XtreemFSException &e) {
+      // Ignore errors if the address could not be obtained successfully.
+    }
+    if (address.empty()) {
+      (*output)["result"]["osds"].append(*iter);
+    } else {
+      (*output)["result"]["osds"].append(*iter + " (" + address+ ")");
+    }
   }
 }
 

@@ -13,9 +13,12 @@
 #include <string>
 
 #include "json/json-forwards.h"
-#include "libxtreemfs/volume.h"
+#include "pbrpc/RPC.pb.h"
 
 namespace xtreemfs {
+
+class UUIDResolver;
+class Volume;
 
 /** Handle for a xcntl pseudo file used to communicate with
  * the xtfsutil server inside the client.
@@ -79,6 +82,9 @@ class XtfsUtilServer {
 
   /** Sets the volume to be used. */
   void set_volume(Volume* volume);
+
+  /** Sets the UUIDResolver to be used. */
+  void set_uuid_resolver(UUIDResolver* uuid_resolver);
 
   /** Returns true, if the path points to a xctl pseudo file. */
   bool checkXctlFile(const std::string& path);
@@ -199,6 +205,8 @@ class XtfsUtilServer {
   std::string prefix_;
   /** Volume on which to execute operations. */
   Volume* volume_;
+  /** UUIDResolver to resolve UUIDs to addresses. */
+  UUIDResolver* uuid_resolver_;
 };
 
 }  // namespace xtreemfs

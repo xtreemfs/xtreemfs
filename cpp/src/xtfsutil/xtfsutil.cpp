@@ -5,6 +5,7 @@
  *
  */
 
+#include <boost/algorithm/string/case_conv.hpp>
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
 #include <errno.h>
@@ -12,17 +13,18 @@
 #include <stdio.h>
 #include <string>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/xattr.h>
 #include <unistd.h>
 #include <vector>
-#include <boost/algorithm/string/case_conv.hpp>
 
 #include "json/json.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 
 using namespace std;
 using namespace boost::program_options;
+namespace style = boost::program_options::command_line_style;
 
 std::string kVersionString = "1.3.0 (RC1, Tasty Tartlet)";
 
@@ -167,7 +169,8 @@ bool getattr(const string& xctl_file,
           for (int j = 0; j < replica["osds"].size(); ++j) {
             cout << "     OSD " << (j+1) << "               "
                 << replica["osds"][j]["uuid"].asString()
-                << "/" << replica["osds"][j]["address"].asString() << endl;
+                << " (" << replica["osds"][j]["address"].asString() << ")"
+                << endl;
           }
         }
         break;
@@ -305,14 +308,21 @@ bool SetDefaultRP(const string& xctl_file,
     return false;
   }
 
-  if (vm.count("replication-factor") == 0) {
-    cerr << "replication-factor must be set" << endl;
-    return false;
-  }
-
   const string policy =
       boost::to_upper_copy(vm["replication-policy"].as<string>());
-  const int factor = vm["replication-factor"].as<int>();
+
+  int factor;
+  if (vm.count("replication-factor") == 0) {
+    if (policy == "NONE") {
+      factor = 1;
+    } else {
+      cerr << "replication-factor must be set" << endl;
+      return false;
+    }
+  } else {
+    factor = vm["replication-factor"].as<int>();
+  }
+
   const bool is_full = vm.count("full") > 0;
 
   Json::Value request(Json::objectValue);
@@ -424,8 +434,8 @@ bool SetReplicationPolicy(const string& xctl_file,
 // Adds a replica and selects an OSD.
 bool AddReplica(const string& xctl_file,
                 const string& path,
-                const variables_map& vm) {
-  string osd_uuid = vm["add-replica"].as<string>();
+                const variables_map& vm,
+                string osd_uuid) {
   if (boost::to_upper_copy(osd_uuid) == "AUTO") {
     osd_uuid = "AUTO";
   }
@@ -686,11 +696,16 @@ bool SetRemoveACL(const string& full_path,
 }
 
 int main(int argc, char **argv) {
+  string option_add_replica, option_path;
+
+  options_description hidden("Hidden positional option");
+  hidden.add_options()
+      ("path", value(&option_path), "path on mounted XtreemFS volume");
+
   options_description desc("Allowed options");
   desc.add_options()
       ("help,h", "produce help message")
       ("version,V", "Show the version number.")
-      ("path", value<string>(), "path on mounted XtreemFS volume")
       ("errors", "show client errors for a volume")
       ("set-dsp", "set (change) the default striping policy (volume)")
       ("striping-policy,p",
@@ -700,21 +715,24 @@ int main(int argc, char **argv) {
        "striping width (number of OSDs)")
       ("striping-policy-stripe-size,s", value<int>(),
        "stripe size in kB (object size)")
-      ("set-drp", "set (change) the replication striping policy (volume)")
-      ("set-replication-policy,r", value<string>(),
-       "set (change) the replication policy for a file")
-      ("add-replica,a", value<string>()->implicit_value("AUTO"),
-       "adds a new replica on the osd with the given UUID or AUTO "
-       "for automatics OSD selection")
-      ("delete-replica,d", value<string>(),
-       "deletes the replica on the OSD with the given UUID")
-      ("list-osds,l", "list suitable OSDs for a file")
+      ("set-drp", "set (change) the default replication policy (volume)")
       ("replication-policy", value<string>(),
        "RONLY, WqRq, WaR1 or NONE to disable replication. The aliases"
        " 'readonly', 'quorum' and 'all' are also allowed.")
       ("replication-factor", value<int>(),
        "number of replicas to create for a file")
-      ("full", "full replica (readonly replication only)")
+      ("full", "full replica (readonly replication only, only allowed if"
+               " --set-drp or --add-replica is set)")
+      ("set-replication-policy,r", value<string>(),
+       "set (change) the replication policy for a file: RONLY, WqRq, WaR1 or"
+       " NONE to disable replication. The aliases"
+       " 'readonly', 'quorum' and 'all' are also allowed.")
+      ("add-replica,a", value(&option_add_replica)->implicit_value("AUTO"),
+       "adds a new replica on the osd with the given UUID or AUTO "
+       "for automatics OSD selection")
+      ("delete-replica,d", value<string>(),
+       "deletes the replica on the OSD with the given UUID")
+      ("list-osds,l", "list suitable OSDs for a file")
       ("set-osp", value<string>(),
        "set (change) the OSD Selection Policy (volume)")
       ("set-rsp", value<string>(),
@@ -732,21 +750,95 @@ int main(int argc, char **argv) {
   positional_options_description pd;
   pd.add("path", 1);
   
+  options_description cmdline_options;
+  cmdline_options.add(desc).add(hidden);
   variables_map vm;
-  store(command_line_parser(argc, argv).options(desc).positional(pd).run(), vm);
-  notify(vm);
+  try {
+    store(command_line_parser(argc, argv)
+              .positional(pd)
+              .options(cmdline_options)
+              .run(),
+          vm);
+    notify(vm);
+  } catch(const std::exception& e) {
+    cerr << "Invalid command line options: " << e.what() << endl
+         << endl
+         << "Usage: xtfsutil <path>" << endl
+         << "See xtfsutil -h for the complete list of available options."
+         << endl;
+    return 1;
+  }
 
   if (vm.count("version")) {
     cout << "xtfsutil " << kVersionString << endl;
     return 1;
   }
-  if (vm.count("help") || !vm.count("path")) {
-    cerr << "usage: xtfsutil <path>" << endl;
+
+  // Work around problem of omitted -a AUTO argument in which case the path
+  // ends up in vm["add-replica"].
+  if (!option_add_replica.empty() &&
+      !vm.count("help") && option_path.empty()) {
+    // path not set - may be it is accidentally stored in add-replica.
+    struct stat sb;
+    if (!stat(option_add_replica.c_str(), &sb)) {
+      // File exists, move path from add-replica to variable path.
+      option_path = option_add_replica;
+      option_add_replica = "AUTO";
+    }
+  }
+
+  if (vm.count("help") || option_path.empty()) {
+    cerr << "Usage: xtfsutil <path>" << endl;
     cerr << desc << endl;
     return 1;
   }
 
-  char* real_path_cstr = realpath(vm["path"].as<string>().c_str(), NULL);
+  // Do some checks on the allowed parameter combinations.
+  if (vm.count("full") > 0) {
+    if (vm.count("add-replica") == 0 && vm.count("set-drp") == 0) {
+      cerr << "--full is only allowed in conjunction with --add-replica or"
+              " --set-drp" << endl
+           << endl
+           << "Usage: xtfsutil <path>" << endl
+           << desc << endl;
+      return 1;
+    }
+  }
+  if (vm.count("replication-policy") > 0 ||
+      vm.count("replication-factor") > 0) {
+    if (vm.count("set-drp") == 0) {
+      cerr << "--replication-policy or --replication-factor are only allowed in"
+              " conjunction with --set-drp" << endl
+           << endl
+           << "Usage: xtfsutil <path>" << endl
+           << desc << endl;
+      return 1;
+    }
+  }
+  if (vm.count("striping-policy") > 0 ||
+      vm.count("striping-policy-width") > 0 ||
+      vm.count("striping-policy-stripe-size") > 0) {
+    if (vm.count("set-dsp") == 0) {
+      cerr << "--striping-policy, --striping-policy-width or"
+              " --striping-policy-stripe-size are only allowed in"
+              " conjunction with --set-dsp" << endl
+           << endl
+           << "Usage: xtfsutil <path>" << endl
+           << desc << endl;
+      return 1;
+    }
+  }
+  if (vm.count("value") > 0) {
+    if (vm.count("set-pattr") == 0) {
+      cerr << "--value is only allowed in conjunction with --set-pattr" << endl
+           << endl
+           << "Usage: xtfsutil <path>" << endl
+           << desc << endl;
+      return 1;
+    }
+  }
+
+  char* real_path_cstr = realpath(option_path.c_str(), NULL);
   
   // get xtreemfs.url xattr.
   char xtfs_url[2048];
@@ -802,7 +894,8 @@ int main(int argc, char **argv) {
   } else if (vm.count("set-replication-policy") > 0) {
     return SetReplicationPolicy(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else if (vm.count("add-replica") > 0) {
-    return AddReplica(xctl_file, path_on_volume, vm) ? 0 : 1;
+    return AddReplica(xctl_file, path_on_volume, vm, option_add_replica) ? 0
+           : 1;
   } else if (vm.count("delete-replica") > 0) {
     return DeleteReplica(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else if (vm.count("list-osds") > 0) {
