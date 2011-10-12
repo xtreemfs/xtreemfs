@@ -1569,7 +1569,7 @@ Like many other file systems, XtreemFS supports the concept of volumes. A volume
 \subsection{Creating Volumes}
 \label{sec:create_volume}
 
-Volumes can be created with the \texttt{mkfs.xtreemfs} command line utility. Please see \texttt{man mkfs.xtreemfs} for a full list of options and usage\index{Create Volume}\index{Volume!Create}\index{xtfs\_mkvol}\index{mkfs.xtreemfs}.
+Volumes can be created with the \texttt{mkfs.xtreemfs} command line utility. Please see \texttt{man mkfs.xtreemfs} for a full list of options and usage\index{Create Volume}\index{Volume!Create}\index{mkfs.xtreemfs}\index{mkfs.xtreemfs}.
 
 When creating a volume, it is recommended to specify the authorization policy (see Sec. \ref{sec:access_policies}). If not specified, POSIX permissions/ACLs will be chosen by default. Unlike most other policies, authorization policies cannot be changed afterwards.
 
@@ -1589,7 +1589,7 @@ For a complete list of parameters, please refer to the \texttt{mkfs.xtreemfs} ma
 
 \subsection{Deleting Volumes}
 
-Volumes can be deleted with the \texttt{rmfs.xtreemfs} tool. Deleting a volume implies that \emph{any data, i.e.\ all files and directories on the volume are irrecoverably lost}! Please see \texttt{man rmfs.xtreemfs} for a full list of options and usage\index{Delete Volume}\index{Volume!Delete}\index{xtfs\_rmvol}\index{rmfs.xtreemfs}. Please also note that \texttt{rmfs.xtreemfs} does not dispose of file contents on the OSD. To reclaim storage space occupied by the volume, it is therefore necessary to either remove all files from the volume before deleting it, or to run the cleanup tool (see Section \ref{sec:scrubber_cleanup}).
+Volumes can be deleted with the \texttt{rmfs.xtreemfs} tool. Deleting a volume implies that \emph{any data, i.e.\ all files and directories on the volume are irrecoverably lost}! Please see \texttt{man rmfs.xtreemfs} for a full list of options and usage\index{Delete Volume}\index{Volume!Delete}\index{rmfs.xtreemfs}\index{rmfs.xtreemfs}. Please also note that \texttt{rmfs.xtreemfs} does not dispose of file contents on the OSD. To reclaim storage space occupied by the volume, it is therefore necessary to either remove all files from the volume before deleting it, or to run the cleanup tool (see Section \ref{sec:scrubber_cleanup}).
 
 The volume \texttt{myVolume} residing on the MRC \texttt{my-mrc-host.com:32636} can e.g.\ be deleted as follows:
 
@@ -1615,7 +1615,7 @@ Once a volume has been created, it needs to be mounted in order to be accessed.
 
 \subsection{Mounting and Un-mounting}
 
-Before mounting XtreemFS volumes on a Linux machine, please ensure that the FUSE kernel module is loaded.\index{Volume!Mount}\index{Mount}\index{xtfs\_mount}\index{mount.xtreemfs} Please check your distribution's manual to see if users must be in a special group (e.g. \texttt{trusted} in openSuSE) to be allowed to mount FUSE file systems.
+Before mounting XtreemFS volumes on a Linux machine, please ensure that the FUSE kernel module is loaded.\index{Volume!Mount}\index{Mount}\index{mount.xtreemfs}\index{mount.xtreemfs} Please check your distribution's manual to see if users must be in a special group (e.g. \texttt{trusted} in openSuSE) to be allowed to mount FUSE file systems.
 
 
 \begin{verbatim}
@@ -1646,7 +1646,7 @@ To check that a volume is mounted, use the \texttt{mount} command. It outputs a 
 xtreemfs@localhost:32638/xtreemfs on /xtreemfs type fuse (...)
 \end{verbatim}
 
-Volumes are unmounted with the \texttt{umount.xtreemfs} tool\index{Volume!Un-mount}\index{Unmount}\index{xtfs\_umount}\index{umount.xtreemfs}:
+Volumes are unmounted with the \texttt{umount.xtreemfs} tool\index{Volume!Un-mount}\index{Unmount}\index{umount.xtreemfs}\index{umount.xtreemfs}:
 
 \begin{verbatim}
 $> umount.xtreemfs /xtreemfs
