@@ -102,8 +102,8 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
             
             rq.getCallback().failed(error);
             
-            if (Logging.isInfo()) {
-                Logging.logMessage(Logging.LEVEL_INFO, this, "%s @stage OLP state: %s with queue %s", 
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "%s @stage OLP state: %s with queue %s", 
                         error.getMessage(), olp.toString(), toString());
             }
         }

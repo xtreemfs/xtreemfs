@@ -8,6 +8,7 @@
 package org.xtreemfs.common.olp;
 
 import org.xtreemfs.common.stage.AutonomousComponent.AdmissionRefusedException;
+import org.xtreemfs.foundation.logging.Logging;
 
 /**
  * <p>The algorithm core controlling the interactions between the different parts of the overload-protection algorithm.
@@ -96,8 +97,8 @@ final class ProtectionAlgorithmCore {
      * <p>Method to stop daemons connected with the overload protection algorithm.</p>
      */
     void shutdown() {
-        
         sender.cancel();
+        Logging.logMessage(Logging.LEVEL_INFO, this, "Final state of the Overload-Protection Core:\n %s", toString());
     }
     
     /**

@@ -164,8 +164,8 @@ public abstract class OverloadProtectedComponent<R extends AugmentedRequest>
             requestCounter.incrementAndGet();
             enter(rq);
         } catch (AdmissionRefusedException error) {
-            if (Logging.isInfo()) {
-                Logging.logMessage(Logging.LEVEL_INFO, this, "%s @stage OLP state: %s", error.getMessage(), 
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "%s @stage OLP state: %s", error.getMessage(), 
                         olp.toString());
             }
             
