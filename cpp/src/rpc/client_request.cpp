@@ -72,8 +72,7 @@ ClientRequest::ClientRequest(const string& address,
       string errmsg = string("message is not valid. Not all required "
                              "fields have been initialized: ") +
           request_message->InitializationErrorString();
-      xtreemfs::util::Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
-          << errmsg << endl;
+      Logging::log->getLog(xtreemfs::util::LEVEL_ERROR) << errmsg << endl;
       throw std::runtime_error(errmsg);
     }
   }

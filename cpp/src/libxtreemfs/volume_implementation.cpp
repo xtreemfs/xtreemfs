@@ -107,7 +107,13 @@ void VolumeImplementation::CloseInternal() {
   boost::mutex::scoped_lock lock_oft(open_file_table_mutex_);
 
   // There must not be any FileInfo object left.
-  assert(open_file_table_.size() == 0);
+  if (open_file_table_.size() != 0) {
+    string error = "THERE ARE OPEN FILE HANDLES LEFT. MAKE IN YOUR"
+        " APPLICATION SURE THAT ALL FILE HANDLES ARE CLOSED BEFORE CLOSING"
+        " THE VOLUME!";
+    Logging::log->getLog(LEVEL_ERROR) << error << endl;
+    ErrorLog::error_log->AppendError(error);
+  }
 
   // Shutdown network client.
   network_client_->shutdown();
@@ -334,7 +340,7 @@ FileHandle* VolumeImplementation::OpenFile(
     string error = "MRC assigned no OSDs to file on open: " + path +
         ", xloc: " + open_response->creds().xlocs().DebugString();
     Logging::log->getLog(LEVEL_ERROR) << error << endl;
-    xtreemfs::util::ErrorLog::error_log->AppendError(error);
+    ErrorLog::error_log->AppendError(error);
     throw PosixErrorException(POSIX_ERROR_EIO, error);
   }
 

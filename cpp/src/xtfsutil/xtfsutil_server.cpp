@@ -116,7 +116,7 @@ void XtfsUtilServer::OpGetErrors(const xtreemfs::pbrpc::UserCredentials& uc,
                                  const Json::Value& input,
                                  Json::Value* output) {
   Json::Value result = Json::Value(Json::arrayValue);
-  list<string> errors = xtreemfs::util::ErrorLog::error_log->error_messages();
+  list<string> errors = ErrorLog::error_log->error_messages();
   for (list<string>::iterator iter = errors.begin();
        iter != errors.end(); ++iter) {
     result.append(*iter);

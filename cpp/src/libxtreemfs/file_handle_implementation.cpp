@@ -105,7 +105,7 @@ int FileHandleImplementation::Read(
     file_info_->GetPath(&path);
     string error_msg = "No replica found for file: " + path;
     Logging::log->getLog(LEVEL_ERROR) << error_msg << endl;
-    xtreemfs::util::ErrorLog::error_log->AppendError(error_msg);
+    ErrorLog::error_log->AppendError(error_msg);
     throw PosixErrorException(
         POSIX_ERROR_EIO,
         "No replica found for file: " + path);
@@ -909,7 +909,7 @@ void FileHandleImplementation::CallFinished(
     string error_msg = "Async filesize update for file: " + path
         + "failed. Error: " + error->DebugString();
     Logging::log->getLog(LEVEL_WARN) << error_msg << endl;
-    xtreemfs::util::ErrorLog::error_log->AppendError(error_msg);
+    ErrorLog::error_log->AppendError(error_msg);
   }
 
   file_info_->AsyncFileSizeUpdateResponseHandler(
@@ -937,7 +937,7 @@ void FileHandleImplementation::CallFinished(
     string error_msg =  "Renewing XCap of file: " + path + " failed. Error: " +
         error->DebugString();
     Logging::log->getLog(LEVEL_ERROR) << error_msg << endl;
-    xtreemfs::util::ErrorLog::error_log->AppendError(error_msg);
+    ErrorLog::error_log->AppendError(error_msg);
   } else {
     // Overwrite current XCap only by a newer one (i.e. later expire time).
     if (new_xcap->expire_time_s() > xcap_.expire_time_s()) {

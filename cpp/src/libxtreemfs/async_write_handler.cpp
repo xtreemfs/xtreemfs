@@ -63,7 +63,7 @@ AsyncWriteHandler::~AsyncWriteHandler() {
     string error = "The AsyncWriteHandler for the file with the path: " + path
         + " has pending writes left. This should NOT happen.";
     Logging::log->getLog(LEVEL_ERROR) << error << endl;
-    xtreemfs::util::ErrorLog::error_log->AppendError(error);
+    ErrorLog::error_log->AppendError(error);
   }
   if (waiting_blocking_threads_count_ > 0) {
     string path;
@@ -72,7 +72,7 @@ AsyncWriteHandler::~AsyncWriteHandler() {
         " with the path: " + path + " has remaining blocked threads waiting"
         " for the completion of pending writes left. This should NOT happen.";
     Logging::log->getLog(LEVEL_ERROR) << error << endl;
-    xtreemfs::util::ErrorLog::error_log->AppendError(error);
+    ErrorLog::error_log->AppendError(error);
   }
   if (waiting_observers_.size() > 0) {
     string path;
@@ -81,7 +81,7 @@ AsyncWriteHandler::~AsyncWriteHandler() {
         " with the path: " + path + " has remaining observers (calls waiting"
         " for the completion of pending writes) left. This should NOT happen.";
     Logging::log->getLog(LEVEL_ERROR) << error << endl;
-    xtreemfs::util::ErrorLog::error_log->AppendError(error);
+    ErrorLog::error_log->AppendError(error);
   }
   for (list<WaitForCompletionObserver*>::iterator it
            = waiting_observers_.begin();
