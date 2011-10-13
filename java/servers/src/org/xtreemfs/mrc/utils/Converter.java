@@ -16,8 +16,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
 import java.util.Map.Entry;
+import java.util.StringTokenizer;
 
 import org.xtreemfs.common.KeyValuePairs;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -146,7 +146,7 @@ public class Converter {
                         .getDataList(), "vivaldi_coordinates");
                 osd.put("uuid", uuid.toString());
                 osd.put("vivaldi_coordinates", coords);
-                osd.put("address", uuid.getAddress().getHostName() + ":" + uuid.getAddress().getPort());
+                osd.put("address", uuid.getAddressString());
                 osds.add(osd);
             }
             replica.put("osds", osds);

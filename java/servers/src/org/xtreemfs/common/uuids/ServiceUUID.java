@@ -106,6 +106,17 @@ public final class ServiceUUID implements Serializable, Comparable {
     }
     
     /**
+     * Returns the address as stored on the DIR.
+     * 
+     * @return String of the form "host:port".
+     * @throws org.xtreemfs.common.uuids.UnknownUUIDException
+     *             if the UUID cannot be resolved
+     */
+    public String getAddressString() throws UnknownUUIDException {
+        return getMappings()[0].address;
+    }
+    
+    /**
      * Returns the full URl of the service.
      * 
      * @return the URL of the service

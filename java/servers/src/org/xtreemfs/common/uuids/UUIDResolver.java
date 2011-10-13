@@ -16,8 +16,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.xtreemfs.common.GlobalConstants;
 
+import org.xtreemfs.common.GlobalConstants;
 import org.xtreemfs.common.util.NetUtils;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.TimeSync;
@@ -173,7 +173,7 @@ public final class UUIDResolver extends Thread {
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                             "matching uuid record found for uuid " + uuid + " with network " + network);
-                    UUIDCacheEntry e = new UUIDCacheEntry(uuid, validUntil, new Mapping(protocol, endpoint));
+                    UUIDCacheEntry e = new UUIDCacheEntry(uuid, validUntil, new Mapping(protocol, endpoint, address + ":" + port));
                     cache.put(uuid, e);
                     return e;
                 }
@@ -248,9 +248,9 @@ public final class UUIDResolver extends Thread {
         UUIDCacheEntry e = theInstance.cache.get(localUUID);
         if (e == null)
             e = new UUIDCacheEntry(localUUID, Long.MAX_VALUE, new Mapping(protocol, new InetSocketAddress(
-                "localhost", port)));
+                "localhost", port), "localhost:" + port));
         else
-            e.addMapping(new Mapping(protocol, new InetSocketAddress("localhost", port)));
+            e.addMapping(new Mapping(protocol, new InetSocketAddress("localhost", port), "localhost:" + port));
         
         e.setSticky(true);
         theInstance.cache.put(localUUID, e);
@@ -268,9 +268,9 @@ public final class UUIDResolver extends Thread {
         UUIDCacheEntry e = theInstance.cache.get(uuid);
         if (e == null)
             e = new UUIDCacheEntry(uuid, Long.MAX_VALUE, new Mapping(protocol, new InetSocketAddress(
-                hostname, port)));
+                hostname, port), hostname + ":" + port));
         else
-            e.addMapping(new Mapping(protocol, new InetSocketAddress(hostname, port)));
+            e.addMapping(new Mapping(protocol, new InetSocketAddress(hostname, port), hostname + ":" + port));
         
         e.setSticky(true);
         theInstance.cache.put(uuid, e);
