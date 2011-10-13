@@ -709,7 +709,7 @@ int main(int argc, char **argv) {
       ("errors", "show client errors for a volume")
       ("set-dsp", "set (change) the default striping policy (volume)")
       ("striping-policy,p",
-       value<string>()->default_value("RAID0"),
+       value<string>()->implicit_value("RAID0"),
        "striping policy (always RAID0)")
       ("striping-policy-width,w", value<int>(),
        "striping width (number of OSDs)")
