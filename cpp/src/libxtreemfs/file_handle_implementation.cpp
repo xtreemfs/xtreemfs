@@ -691,7 +691,8 @@ void FileHandleImplementation::PingReplica(
     if (xlocs.replicas(i).osd_uuids(0) == osd_uuid) {
       uuid_found = true;
       // Check replication flags, if it's a full replica.
-      if (!(xlocs.replicas(i).replication_flags() & REPL_FLAG_FULL_REPLICA)) {
+      if (xlocs.replica_update_policy() == "ronly" &&
+          !(xlocs.replicas(i).replication_flags() & REPL_FLAG_FULL_REPLICA)) {
         // Nothing to do here because the replication does not need to be
         // triggered for partial replicas.
         return;
