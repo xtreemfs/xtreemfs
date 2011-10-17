@@ -85,6 +85,7 @@ class UUIDIterator {
   std::list<UUIDItem*> uuids_;
 
   FRIEND_TEST(UUIDIteratorTest, ClearAndAddUUID);
+  FRIEND_TEST(UUIDIteratorTest, ConcurrentSetAndMarkAsFailed);
   FRIEND_TEST(UUIDIteratorTest, ResetAfterEndOfList);
   FRIEND_TEST(UUIDIteratorTest, SetCurrentUUID);
 };
