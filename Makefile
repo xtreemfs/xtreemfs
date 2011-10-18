@@ -278,4 +278,4 @@ server_distclean: check_server
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/servers/build-1.6.5.xml clean || exit 1;
 
 test: check_test client server
-	python $(XTFS_BINDIR)/../tests/xtestenv.py -c $(XTFS_BINDIR)/../tests/test_config.py short
+	python $(XTFS_BINDIR)/../tests/xtestenv -c $(XTFS_BINDIR)/../tests/test_config.py short
