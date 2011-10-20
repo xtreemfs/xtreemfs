@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -322,7 +323,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         &&lease.getLeaseHolder() == null
                         && lease.getLeaseTimeout_ms() == 0) {
                         Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,"(R:%s) was primary, lease error in cell %s, restarting replication: %s",localID, cellId,lease,error);
-                        failed(state, ErrorUtils.getInternalServerError(new IOException(fileId +": lease timed out, renew failed")));
+                        failed(state, ErrorUtils.getInternalServerError(new IOException(fileId +": lease timed out, renew failed")), "processLeaseStateChanged");
                     } else {
                         if ( (state.getState() == ReplicaState.BACKUP)
                             || (state.getState() == ReplicaState.PRIMARY)
@@ -342,7 +343,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         }
                     }
                 } else {
-                    failed(state, ErrorUtils.getInternalServerError(error));
+                    failed(state, ErrorUtils.getInternalServerError(error), "processLeaseStateChanged (error != null)");
                 }
             }
 
@@ -400,7 +401,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             }
 
             if (error != null) {
-                failed(state, error);
+                failed(state, error, "processSetAuthoritativeState");
             } else {
                 executeSetAuthState(localState, authState, state, fileId);
             }
@@ -422,7 +423,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                             ErrorUtils.formatError(error));
                 }
                 if (error != null) {
-                    failed(state, error);
+                    failed(state, error, "processDeleteObjectsComplete");
                 } else {
                    fetchObjects();
                 }
@@ -504,7 +505,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 if (error != null) {
                     numObjsInFlight--;
                     fetchObjects();
-                    failed(state, error);
+                    failed(state, error, "processObjectFetched");
                 } else {
                     final int bytes = data.getData().remaining();
                     master.getStorageStage().writeObjectWithoutGMax(fileId, record.getObjectNumber(),
@@ -573,7 +574,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 if (error != null) {
                     Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,"local state for %s failed: %s",
                                 state.getFileId(), error);
-                    failed(state, error);
+                    failed(state, error, "processReplicaStateAvailExecReset");
                 } else {
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) local state for %s available.",
@@ -636,7 +637,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     fstage.openCell(file.getPolicy().getCellId(), osdAddresses, true);
                     //wait for lease...
                 } catch (UnknownUUIDException ex) {
-                    failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
+                    failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex), "doWaitingForLease");
                 }
             }
 
@@ -675,7 +676,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 }
             }
         } catch (IOException ex) {
-            failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
+            failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex), "doPrimary");
         }
     }
 
@@ -697,8 +698,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }*/
     }
 
-    private void failed(ReplicatedFileState file, ErrorResponse ex) {
-        Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) replica for file %s failed: %s",localID, file.getFileId(),ErrorUtils.formatError(ex));
+    private void failed(ReplicatedFileState file, ErrorResponse ex, String methodName) {
+        Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) replica for file %s failed (in method: %s): %s", localID, file.getFileId(), methodName, ErrorUtils.formatError(ex));
         file.setPrimaryReset(false);
         file.setState(ReplicaState.OPEN);
         file.setCellOpen(false);
@@ -1084,7 +1085,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     callback.redirect(ex.getMasterUUID());
                 } catch (RetryException ex) {
                     final ErrorResponse err = ErrorUtils.getInternalServerError(ex);
-                    failed(state, err);
+                    failed(state, err, "processPrepareOp");
                     if (state.getState() == ReplicaState.BACKUP
                         || state.getState() == ReplicaState.PRIMARY) {
                         // Request is not in queue, we must notify
