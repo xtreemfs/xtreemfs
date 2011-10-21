@@ -58,8 +58,13 @@ VolumeImplementation::VolumeImplementation(
 }
 
 VolumeImplementation::~VolumeImplementation() {
-  // Make sure we were shutdown properly and there are no open files.
-  assert(open_file_table_.size() == 0);
+  // Warn the user about open files.
+  if (open_file_table_.size() != 0) {
+    string error = "Volume::~Volume(): The volume object will be deleted while"
+        " there are open FileHandles left. This will result in memory leaks.";
+    Logging::log->getLog(LEVEL_ERROR) << error << endl;
+    ErrorLog::error_log->AppendError(error);
+  }
 
   // Remove StripingPolicy objects.
   for (map<StripingPolicyType, StripeTranslator*>::iterator it
@@ -108,8 +113,8 @@ void VolumeImplementation::CloseInternal() {
 
   // There must not be any FileInfo object left.
   if (open_file_table_.size() != 0) {
-    string error = "THERE ARE OPEN FILE HANDLES LEFT. MAKE IN YOUR"
-        " APPLICATION SURE THAT ALL FILE HANDLES ARE CLOSED BEFORE CLOSING"
+    string error = "Volume::Close(): THERE ARE OPEN FILE HANDLES LEFT. MAKE IN"
+        " YOUR APPLICATION SURE THAT ALL FILE HANDLES ARE CLOSED BEFORE CLOSING"
         " THE VOLUME!";
     Logging::log->getLog(LEVEL_ERROR) << error << endl;
     ErrorLog::error_log->AppendError(error);

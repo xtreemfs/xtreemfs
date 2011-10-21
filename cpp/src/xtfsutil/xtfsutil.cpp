@@ -20,13 +20,14 @@
 #include <vector>
 
 #include "json/json.h"
+#include "libxtreemfs/version_management.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 
 using namespace std;
 using namespace boost::program_options;
 namespace style = boost::program_options::command_line_style;
 
-std::string kVersionString = "1.3.0 (RC1, Tasty Tartlet)";
+std::string kVersionString = XTREEMFS_VERSION_STRING;
 
 // Execute an operation via xctl file.
 bool executeOperation(const string& xctl_file,
@@ -266,13 +267,18 @@ bool SetDefaultSP(const string& xctl_file,
     cerr << "striping-policy-width must be set" << endl;
     return false;
   }
-
   if (vm.count("striping-policy-stripe-size") == 0) {
     cerr << "striping-policy-stripe-size must be set" << endl;
     return false;
   }
+  string policy;
+  if (vm.count("striping-policy") == 0) {
+    // If -p was left out, use the default policy "RAID0".
+    policy = "RAID0";
+  } else {
+    policy = vm["striping-policy"].as<string>();
+  }
 
-  const string policy = vm["striping-policy"].as<string>();
   const int width = vm["striping-policy-width"].as<int>();
   const int size = vm["striping-policy-stripe-size"].as<int>();
 

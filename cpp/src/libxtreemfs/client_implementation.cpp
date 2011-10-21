@@ -69,6 +69,13 @@ ClientImplementation::ClientImplementation(
 }
 
 ClientImplementation::~ClientImplementation() {
+  if (!list_open_volumes_.empty()) {
+    string error = "Client::~Client(): Not all XtreemFS volumes were closed."
+        " Did you forget to call Client::Shutdown()? Memory leaks are the"
+        " consequence.";
+    Logging::log->getLog(LEVEL_ERROR) << error << endl;
+    ErrorLog::error_log->AppendError(error);
+  }
   network_client_->shutdown();
   network_client_thread_->join();
 

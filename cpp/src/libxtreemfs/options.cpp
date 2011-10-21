@@ -14,6 +14,7 @@
 
 #include "rpc/ssl_options.h"
 #include "libxtreemfs/pbrpc_url.h"
+#include "libxtreemfs/version_management.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "util/logging.h"
 #include "xtreemfs/GlobalTypes.pb.h"
@@ -36,7 +37,7 @@ Options::Options()
       xtreemfs_advanced_options_("XtreemFS Advanced options") {
   // Version information.
   // If you change this, do not forget to change this also in xtfsutil.cpp!
-  version_string = "1.3.0 (RC1, Tasty Tartlet)";
+  version_string = XTREEMFS_VERSION_STRING;
 
   // XtreemFS URL Options.
   xtreemfs_url = "";
