@@ -42,6 +42,11 @@ public class GetLocalVolumesOperation extends MRCOperation {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                     "cannot retrieve volume list because volume manager has not yet been initialized");
         
+        // check password to ensure that user is authorized
+        if (master.getConfig().getAdminPassword().length() > 0
+                && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
+            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "invalid password");
+        
         Volumes.Builder vSet = Volumes.newBuilder();
         for (StorageManager sMan : sMans) {
             
