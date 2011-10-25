@@ -265,6 +265,7 @@ public class OpenOperation extends MRCOperation {
             rqArgs.getCoordinates(), xLocSet.getReplicasList(), xLocList).getReplicasList();
         xLocSet.clearReplicas();
         xLocSet.addAllReplicas(sortedReplList);
+        xLocSet.setReadOnlyFileSize(file.getSize());
         
         // issue a new capability
         Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), master
