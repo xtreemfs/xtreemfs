@@ -29,16 +29,16 @@ original_osd=$("$XTFSUTIL" "$TEMP_FILENAME_REPLICATED_FULL" | grep "OSD 1" | awk
 # Add a full replica
 "$XTFSUTIL" -r ronly "$TEMP_FILENAME_REPLICATED_FULL"
 "$XTFSUTIL" -a --full "$TEMP_FILENAME_REPLICATED_FULL"
-echo "Display md5sums of original file and copied file, which has two replicas:"
-md5sum "$TEMP_FILENAME"
-md5sum "$TEMP_FILENAME_REPLICATED_FULL"
+# echo "Display md5sums of original file and copied file, which has two replicas:"
+# md5sum "$TEMP_FILENAME"
+# md5sum "$TEMP_FILENAME_REPLICATED_FULL"
 echo "Waiting at least 5 seconds until the replication of the newly added full replica has probably completed..."
 sleep 5
 
 # Delete the original replica
 "$XTFSUTIL" -d $original_osd "$TEMP_FILENAME_REPLICATED_FULL"
-echo "md5sum of the left, second replica:"
-md5sum "$TEMP_FILENAME_REPLICATED_FULL"
+# echo "md5sum of the left, second replica:"
+# md5sum "$TEMP_FILENAME_REPLICATED_FULL"
 # Check if diff succeeds
 diff "$TEMP_FILENAME" "$TEMP_FILENAME_REPLICATED_FULL"
 
@@ -53,7 +53,7 @@ original_osd=$("$XTFSUTIL" "$TEMP_FILENAME_REPLICATED_PARTIAL" | grep "OSD 1" | 
 
 # Delete the original replica
 # This should NOT succeed as the left partial replica is not marked as complete yet in the MRC.
-"$XTFSUTIL" -d $original_osd "$TEMP_FILENAME_REPLICATED_PARTIAL" && echo "xtfsutil succeeded to delete the last full replica and now only partial replicas are left, i.e. the data of the file is lost."
+"$XTFSUTIL" -d $original_osd "$TEMP_FILENAME_REPLICATED_PARTIAL" && echo "ERROR: xtfsutil succeeded to delete the last full replica and now only partial replicas are left, i.e. the data of the file is lost." && false
 
 # Cleanup
 rm "$TEMP_FILENAME" "$TEMP_FILENAME_REPLICATED_FULL" "$TEMP_FILENAME_REPLICATED_PARTIAL"
