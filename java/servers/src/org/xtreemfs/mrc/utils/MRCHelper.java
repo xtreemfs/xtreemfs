@@ -773,9 +773,9 @@ public class MRCHelper {
         }
     }
     
-    public static List<String> getPolicyAttrNames(StorageManager sMan, long fileId) throws DatabaseException {
+    public static List<String> getSpecialAttrNames(StorageManager sMan, long fileId, String namePrefix) throws DatabaseException {
         
-        final String prefix = "xtreemfs." + POLICY_ATTR_PREFIX;
+        final String prefix = "xtreemfs." + namePrefix;
         final List<String> result = new LinkedList<String>();
         if (fileId != 1)
             return result;
@@ -790,7 +790,7 @@ public class MRCHelper {
         
         return result;
     }
-    
+        
     public static ServiceDataMap.Builder buildServiceDataMap(String... kvPairs) {
         
         assert (kvPairs.length % 2 == 0);

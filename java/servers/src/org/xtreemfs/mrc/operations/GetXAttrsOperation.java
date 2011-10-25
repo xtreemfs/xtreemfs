@@ -55,8 +55,8 @@ public class GetXAttrsOperation extends MRCOperation {
         PathResolver res = new PathResolver(sMan, p);
         
         // check whether the path prefix is searchable
-        faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
-                .getDetails().groupIds);
+        faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser,
+                rq.getDetails().groupIds);
         
         // check whether file exists
         res.checkIfFileDoesNotExist();
@@ -86,15 +86,20 @@ public class GetXAttrsOperation extends MRCOperation {
         // include system attributes
         for (SysAttrs attr : SysAttrs.values()) {
             String key = "xtreemfs." + attr.toString();
-            String value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(),
-                faMan, res.toString(), file, attr.toString());
+            String value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(), faMan,
+                    res.toString(), file, attr.toString());
             if (!value.equals(""))
                 attrs.put(key, value);
         }
         
         // include policy attributes
-        List<String> policyAttrNames = MRCHelper.getPolicyAttrNames(sMan, file.getId());
+        List<String> policyAttrNames = MRCHelper.getSpecialAttrNames(sMan, file.getId(), MRCHelper.POLICY_ATTR_PREFIX);
         for (String attr : policyAttrNames)
+            attrs.put(attr, "");
+        
+        // include volume attributes
+        List<String> volAttrAttrNames = MRCHelper.getSpecialAttrNames(sMan, file.getId(), MRCHelper.VOL_ATTR_PREFIX);
+        for (String attr : volAttrAttrNames)
             attrs.put(attr, "");
         
         listxattrResponse.Builder result = listxattrResponse.newBuilder();
