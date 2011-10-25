@@ -1,0 +1,14 @@
+This directory contains the POSIX file system test suite, obtained from: http://www.tuxera.com/community/posix-test-suite/
+
+Additionally, some changes were applied:
+- Some tests were disabled (by renaming them from xx.t to xx.t.<reason>, e.g. tests/chmod/02.t.length) as they do not apply to XtreemFS.
+- Also, the "mkfifo" and "xacl" directories were moved from the "tests" directory to the parent directory to disable them.
+- FIFO related test sequences were disabled by substituting "except" and "test_check" with its newly added "_noop" variants.
+
+In order to successfully run the POSIX Test Suite on a XtreemFS volume, the following conditions must be met:
+- volume must be created with option --chown-non-root
+- volume must be mounted with option -o allow_other
+- tests have to be executed as root
+
+To execute the tests, change to the to be tested XtreemFS directory first and run
+$ prove -r tests

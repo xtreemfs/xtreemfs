@@ -93,7 +93,7 @@ class TestEnvironment:
                     s.close()
                     break
                 except:
-                    print 'xtestenv: port', dir_port, ' is already in use'
+                    print 'xtestenv: port', dir_port, 'is already in use'
                     #traceback.print_exc()
                     dir_port += PORT_SKIP
                     if dir_port > 65000:
@@ -189,6 +189,7 @@ class TestEnvironment:
                                 xtreemfs_dir=self.__xtreemfs_dir,
                                 debug_level=self.__debug_level,
                                 mount_options=v['mount_options'],
+                                mkfs_options=v.setdefault('mkfs_options', []),
                                 mrc_uri=self.__mrc.getServiceUrl(),
                                 dir_uri=self.__dir.getServiceUrl(),
                                 pkcs12_file_path=pkcs12_file_path,
@@ -281,7 +282,7 @@ class TestEnvironment:
                 if perVolumeSuccess[vcName]:
                     print  "ok (", int(t_end - t_start), "s)"
                 else:
-                    print  "FAILED"
+                    print  "FAILED (", int(t_end - t_start), "s)"
 
                 os.chdir(original_cwd) # Change back so we can rmtree test_run_dir_path
                 try:
@@ -333,7 +334,7 @@ class TestEnvironment:
         if success:
             print  "ok (", int(t_end - t_start), "s)"
         else:
-            print  "FAILED"
+            print  "FAILED (", int(t_end - t_start), "s)"
 
         return success
 

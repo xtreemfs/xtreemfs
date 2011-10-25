@@ -42,7 +42,8 @@ VolumeConfigs = {
                     'stripe_width': 1,
                     'rwr_factor': 0,
                     'ronly_factor': 0,
-                    'mount_options': [ '-ouser_xattr' ]
+                    'mount_options': [ '-o', 'user_xattr', '-o', 'allow_other' ],
+                    'mkfs_options':  [ '--chown-non-root' ]
                 },
     'regular_two_osds' : {
                     'stripe_size': 128,
@@ -57,7 +58,8 @@ VolumeConfigs = {
                     'stripe_width': 1,
                     'rwr_factor': 0,
                     'ronly_factor': 0,
-                    'mount_options': [ '--metadata-cache-size=0', '-ouser_xattr' ]
+                    'mount_options': [ '--metadata-cache-size=0', '-o', 'user_xattr', '-o', 'allow_other' ],
+                    'mkfs_options':  [ '--chown-non-root' ]
                 },
     'directio' : {
                     'stripe_size': 128,
@@ -172,6 +174,12 @@ Tests = [
         'name': 'Add and delete replica manually (read-only replication)',
         'file': 'ronly_replication_add_delete_replica.sh',
         'VolumeConfigs': ['regular_two_osds'],
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'POSIX Test Suite (root required)',
+        'file': 'posix_test_suite.sh',
+        'VolumeConfigs': ['regular', 'nomdcache'],
         'TestSets': [ 'full', 'short', 'short-ssl', 'testing' ]
     },
     # SYSTEM TESTS

@@ -13,12 +13,14 @@ class Volume:
                  xtreemfs_dir,
                  debug_level,
                  mount_options,
+                 mkfs_options,
                  mrc_uri,
                  dir_uri,
                  pkcs12_file_path,
                  pkcs12_passphrase,
                  stripe_width,
                  stripe_size,
+                 rwr_policy,
                  rwr_factor,
                  ronly_factor):
         self.__mount_point_dir_path = os.path.abspath(mount_point_dir_path)
@@ -26,6 +28,7 @@ class Volume:
         self.__debug_level = debug_level
         self.__xtreemfs_dir = xtreemfs_dir
         self.__mount_options = mount_options
+        self.__mkfs_options = mkfs_options
         self.__mrc_uri = mrc_uri
         if not mrc_uri.endswith("/"):
             self.__mrc_uri += "/"
@@ -35,6 +38,7 @@ class Volume:
         self.__pkcs12_passphrase = pkcs12_passphrase
         self.__stripe_width = stripe_width
         self.__stripe_size = stripe_size
+        self.__rwr_policy = rwr_policy
         self.__rwr_factor = rwr_factor
         self.__ronly_factor = ronly_factor
         
@@ -51,6 +55,7 @@ class Volume:
         if self.__pkcs12_passphrase is not None: mkfs_xtreemfs_args.extend(("--pkcs12-passphrase", self.__pkcs12_passphrase))
         mkfs_xtreemfs_args.extend(("-s", str(self.__stripe_size)))
         mkfs_xtreemfs_args.extend(("-w", str(self.__stripe_width)))
+        mkfs_xtreemfs_args.extend(self.__mkfs_options)
 
         mkfs_xtreemfs_args.append(self.__mrc_uri + self.__name)
         mkfs_xtreemfs_args = " ".join(mkfs_xtreemfs_args)
@@ -105,7 +110,7 @@ class Volume:
         if self.__rwr_factor > 0:
             command = (self.__xtreemfs_dir + "/bin/xtfsutil " +
                        "--set-drp " +
-                       "--replication-policy=WqRq " +
+                       "--replication-policy="+str(self.__rwr_policy) + " " +
                        "--replication-factor="+str(self.__rwr_factor) + " " +
                        self.__mount_point_dir_path)
             retcode = subprocess.call(command, shell=True)
