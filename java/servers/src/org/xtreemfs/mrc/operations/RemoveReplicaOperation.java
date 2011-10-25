@@ -139,25 +139,23 @@ public class RemoveReplicaOperation extends MRCOperation {
         XLocList newXLocList = sMan.createXLocList(newReplList, oldXLocList.getReplUpdatePolicy(),
                 oldXLocList.getVersion() + 1);
         
-        // if the file is read-only replicated in 'partial' mode, check if at
-        // least one complete replica remains
-        if (ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(oldXLocList.getReplUpdatePolicy())
-                && ReplicationFlags.isPartialReplica(replica.getReplicationFlags())) {
+        // if the file is read-only replicated, check if at
+        // least one complete or one full replica remains
+        if (ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(oldXLocList.getReplUpdatePolicy())) {
             
-            boolean completeExists = false;
+            boolean completeOrFullExists = false;
             for (int k = 0; k < newXLocList.getReplicaCount(); k++) {
-                if (ReplicationFlags.isReplicaComplete(newXLocList.getReplica(k).getReplicationFlags())) {
-                    completeExists = true;
+                if (ReplicationFlags.isReplicaComplete(newXLocList.getReplica(k).getReplicationFlags())
+                        || ReplicationFlags.isFullReplica(newXLocList.getReplica(k).getReplicationFlags())) {
+                    completeOrFullExists = true;
                     break;
                 }
             }
             
-            if (!completeExists)
-                throw new UserException(
-                        POSIXErrno.POSIX_ERROR_EINVAL,
-                        "Could not remove OSD '"
-                                + rqArgs.getOsdUuid()
-                                + "': read-only replication w/ partial replicas requires at least one replica to remain that is marked as complete");
+            if (!completeOrFullExists)
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "Could not remove OSD '" + rqArgs.getOsdUuid()
+                        + "': read-only replication w/ partial replicas requires at "
+                        + "least one remaining replica that is full or complete");
         }
         
         // assign the new XLoc list
