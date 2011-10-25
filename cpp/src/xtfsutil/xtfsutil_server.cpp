@@ -181,7 +181,12 @@ void XtfsUtilServer::OpStat(const xtreemfs::pbrpc::UserCredentials& uc,
       result["rsel_policy"] = Json::Value(xtfs_attrs["xtreemfs.rsel_policy"]);
       result["num_dirs"] = Json::Value(xtfs_attrs["xtreemfs.num_dirs"]);
       result["num_files"] = Json::Value(xtfs_attrs["xtreemfs.num_files"]);
-      result["usable_osds"] = Json::Value(xtfs_attrs["xtreemfs.usable_osds"]);
+      Json::Value usable_osds_json;
+      if (reader.parse(xtfs_attrs["xtreemfs.usable_osds"],
+                       usable_osds_json,
+                       false)) {
+        result["usable_osds"] = usable_osds_json;
+      }
     }
   } else if (xtfs_attrs["xtreemfs.object_type"] == "3") {
     // Softlink.

@@ -244,6 +244,23 @@ bool getattr(const string& xctl_file,
           cout << "not set" << endl;
         }
 
+        cout << "Selectable OSDs      ";
+        if (stat.isMember("usable_osds") && stat["usable_osds"].size() > 0) {
+          Json::Value& usable_osds = stat["usable_osds"];
+          for(Json::ValueIterator it = usable_osds.begin();
+              it != usable_osds.end();
+              ++it) {
+            if (it != usable_osds.begin()) {
+              cout << endl << "                     ";
+            }
+            cout << it.key().asString() << " (" << (*it).asString() << ")";
+          }
+          cout << endl;
+
+        } else {
+          cout << "none available" << endl;
+        }
+
         break;
       }
       case 3 : {
