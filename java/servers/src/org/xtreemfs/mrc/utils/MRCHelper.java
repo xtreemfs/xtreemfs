@@ -377,8 +377,7 @@ public class MRCHelper {
                     Map<String, String> osds = new HashMap<String, String>();
                     for (Service srv : srvs.getServicesList()) {
                         ServiceUUID uuid = new ServiceUUID(srv.getUuid());
-                        InetAddress ia = uuid.getMappings()[0].resolvedAddr.getAddress();
-                        osds.put(uuid.toString(), ia.getCanonicalHostName());
+                        osds.put(uuid.toString(), uuid.getAddressString());
                     }
                     return JSONParser.writeJSON(osds);
                     
