@@ -854,9 +854,16 @@ int main(int argc, char **argv) {
   int length = getxattr(real_path_cstr, "xtreemfs.url", xtfs_url, 2048, 0, 0);
 #endif
   if (length <= 0) {
-    cerr << "Path doesn't point to an entity on an XtreemFS volume!" << endl;
-    cerr << "xattr xtreemfs.url is missing." << endl << endl;
-    return 1;
+    struct stat sb;
+    if (stat(real_path_cstr, &sb)) {
+      // Show more meaningful error message if path does not exist at all.
+      cerr << "File/Directory does not exist: " << option_path << endl << endl;
+      return 1;
+    } else {
+      cerr << "Path doesn't point to an entity on an XtreemFS volume!" << endl;
+      cerr << "xattr xtreemfs.url is missing." << endl << endl;
+      return 1;
+    }
   }
 
   string url(xtfs_url, length);
