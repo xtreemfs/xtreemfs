@@ -75,10 +75,18 @@ VolumeConfigs = {
                     'ronly_factor': 0,
                     'mount_options': [ '--max-read-tries=9999' ]
                 },
-    'replicated' : {
+    'replicated_wqrq' : {
                     'stripe_size': 128,
                     'stripe_width': 1,
                     'rwr_factor': 3,
+                    'ronly_factor': 0,
+                    'mount_options': [ '--max-read-tries=50', '--max-write-tries=50', '--max-tries=50' ]
+                },
+    'replicated_war1' : {
+                    'stripe_size': 128,
+                    'stripe_width': 1,
+                    'rwr_policy': 'all',
+                    'rwr_factor': 2,
                     'ronly_factor': 0,
                     'mount_options': [ '--max-read-tries=50', '--max-write-tries=50', '--max-tries=50' ]
                 },
@@ -95,43 +103,43 @@ Tests = [
     {
         'name': 'Erichs dd write',
         'file': '02_erichs_ddwrite.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1' ],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
         'name': 'Erichs data integrity test',
         'file': '03_erichs_data_integrity_test.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1' ],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
         'name': 'Find Grep Tar',
         'file': '05_findgreptar.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_war1' ],
         'TestSets': [ 'full', 'short' ]
     },
     {
         'name': 'fsx',
         'file': 'fsx.sh',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache', 'replicated_wqrq', 'replicated_war1' ],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
         'name': 'bonnie',
         'file': '10_bonnie.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1' ],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     {
         'name': 'IOZone diagnostic',
         'file': '11_iozone_diagnostic.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1' ],
         'TestSets': [ 'full' ]
     },
     {
         'name': 'IOZone throughput',
         'file': '12_iozone_throughput.py',
-        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated' ],
+        'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'replicated_wqrq', 'replicated_war1' ],
         'TestSets': [ 'full' ]
     },
     {
@@ -180,7 +188,7 @@ Tests = [
         'name': 'POSIX Test Suite (root required)',
         'file': 'posix_test_suite.sh',
         'VolumeConfigs': ['regular', 'nomdcache'],
-        'TestSets': [ 'full', 'short', 'short-ssl', 'testing' ]
+        'TestSets': [ 'full', 'short', 'short-ssl' ]
     },
     # SYSTEM TESTS
     {

@@ -196,6 +196,7 @@ class TestEnvironment:
                                 pkcs12_passphrase=pkcs12_passphrase,
                                 stripe_width=v['stripe_width'],
                                 stripe_size=v['stripe_size'],
+                                rwr_policy=v.setdefault('rwr_policy', 'quorum'),
                                 rwr_factor=v['rwr_factor'],
                                 ronly_factor=v['ronly_factor'])
                 self.__volumes[k] = volume
