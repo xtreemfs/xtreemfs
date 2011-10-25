@@ -6,27 +6,33 @@ TestSets = {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-		'snmp': False,
+                'snmp': False,
               },
     'full' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-		'snmp': False,
+                'snmp': False,
               },
     'short-ssl' : {
                 'ssl': True,
                 'mrc_repl': False,
                 'dir_repl': False,
-		'snmp': False,
+                'snmp': False,
               },
-    # This configuration is used for manual test environment
-    # set-ups.
+    # Used for testing new test scripts, therefore usually contains no tests.
+    'testing' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False,
+              },
+    # This configuration is used for manual test environment set-ups.
     'manual' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-		'snmp': True,
+                'snmp': True,
     }
 }
 
@@ -36,6 +42,14 @@ VolumeConfigs = {
                     'stripe_width': 1,
                     'rwr_factor': 0,
                     'ronly_factor': 0,
+                    'mount_options': [ '-ouser_xattr' ]
+                },
+    'regular_two_osds' : {
+                    'stripe_size': 128,
+                    'stripe_width': 1,
+                    'rwr_factor': 0,
+                    'ronly_factor': 0,
+                    'min_osds': 2,
                     'mount_options': [ '-ouser_xattr' ]
                 },
     'nomdcache' : {
@@ -153,6 +167,12 @@ Tests = [
         'file': 'system_scrub_test.sh',
         'VolumeConfigs': ['nomdcache'],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'Add and delete replica manually (read-only replication)',
+        'file': 'ronly_replication_add_delete_replica.sh',
+        'VolumeConfigs': ['regular_two_osds'],
+        'TestSets': [ 'full', 'short', 'short-ssl', 'testing' ]
     },
     # SYSTEM TESTS
     {
