@@ -53,7 +53,7 @@ original_osd=$("$XTFSUTIL" "$TEMP_FILENAME_REPLICATED_PARTIAL" | grep "OSD 1" | 
 
 # Delete the original replica
 # This should NOT succeed as the left partial replica is not marked as complete yet in the MRC.
-"$XTFSUTIL" -d $original_osd "$TEMP_FILENAME_REPLICATED_PARTIAL" && echo "ERROR: xtfsutil succeeded to delete the last full replica and now only partial replicas are left, i.e. the data of the file is lost." && false
+"$XTFSUTIL" -d $original_osd "$TEMP_FILENAME_REPLICATED_PARTIAL" &>/dev/null && echo "ERROR: xtfsutil succeeded to delete the last full replica and now only partial replicas are left, i.e. the data of the file is lost." && false
 
 # Cleanup
 rm "$TEMP_FILENAME" "$TEMP_FILENAME_REPLICATED_FULL" "$TEMP_FILENAME_REPLICATED_PARTIAL"
