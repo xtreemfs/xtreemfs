@@ -207,9 +207,14 @@ int xtreemfs_fuse_write(const char *path, const char *buf, size_t size,
     off_t offset, struct fuse_file_info *fi) {
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG)  << "xtreemfs_fuse_write " << path
-        << " size: " << size << endl;
+        << " s: " << size <<  " o:" << offset << endl;
   }
-  return fuse_adapter->write(path, buf, size, offset, fi);
+  int count = fuse_adapter->write(path, buf, size, offset, fi);
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "xtreemfs_fuse_write finished " << path
+        << " s:" << size <<  " o:" << offset << " w:" << count << endl;
+  }
+  return count;
 }
 
 int xtreemfs_fuse_statfs(const char *path, struct statvfs *statv) {
