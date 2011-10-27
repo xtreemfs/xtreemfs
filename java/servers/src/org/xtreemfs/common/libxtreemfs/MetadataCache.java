@@ -62,8 +62,7 @@ public class MetadataCache {
      */
     private Lock                                      readLock;
 
-    
-    /** 
+    /**
      * MetadataCache for Stat, listxattrResponse and XAttr objects per path.
      * 
      */
@@ -81,12 +80,11 @@ public class MetadataCache {
 
     }
 
-
     /**
      * Removes MetadataCacheEntry for path from cache
      * 
      * @param path
-     *          The path for the entry which should be invalidated.
+     *            The path for the entry which should be invalidated.
      */
     protected void invalidate(String path) {
 
@@ -103,34 +101,31 @@ public class MetadataCache {
         }
     }
 
-
     /**
      * Removes MetadataCacheEntry for path and any objects matching path+"/".
      * 
      * @param path
-     *          Path which should be invalidated. 
+     *            Path which should be invalidated.
      */
     protected void invalidatePrefix(String path) {
         if (path.isEmpty() || !enabled) {
             return;
         }
 
-        
-        
         // collect all entries that should be removed from pathIndex to remove them at the end.
         List<String> indizesToRemove = new ArrayList<String>();
-        
+
         writeLock.lock();
         try {
-            
+
             // At first, delete "path" from "cache" and "pathIndex"
             cache.remove(path);
             pathIndex.remove(path);
-            
-            
+
             // At second, remove all entries which have "path" respectively "path+'/'"
-            if (!path.endsWith("/")) path = path + "/";
-            
+            if (!path.endsWith("/"))
+                path = path + "/";
+
             for (String deletePath : pathIndex.tailSet(path)) {
                 // if the we reach the first element which don't have "path" as
                 // prefix we are finished.
@@ -149,14 +144,13 @@ public class MetadataCache {
         }
     }
 
-
     /**
      * Renames "path" to "newPath" and any object's path matching path+"/".
      * 
      * @param path
-     *          Path which should be renamed to "newPath".
+     *            Path which should be renamed to "newPath".
      * @param newPath
-     *          New name of "path".
+     *            New name of "path".
      */
     protected void renamePrefix(String path, String newPath) {
         if (path.isEmpty() || !enabled) {
@@ -168,16 +162,17 @@ public class MetadataCache {
 
         writeLock.lock();
         try {
-            
-            //At first, rename the directory itself.
+
+            // At first, rename the directory itself.
             MetadataCacheEntry entry = cache.remove(path);
             cache.put(newPath, entry);
-            
-            
+
             // Seconde, rename all entries with prefix that matches "path" respectively "path+'/'"
-            if (!path.endsWith("/")) path = path + "/";
-            if (!newPath.endsWith("/")) newPath = newPath + "/";
-            
+            if (!path.endsWith("/"))
+                path = path + "/";
+            if (!newPath.endsWith("/"))
+                newPath = newPath + "/";
+
             for (String renamePath : pathIndex.tailSet(path)) {
                 // if the we reach the first element which don't have "path" as
                 // prefix we are finished.
@@ -265,14 +260,13 @@ public class MetadataCache {
         return null;
     }
 
-
     /**
      * Stores/updates stat in cache for path.
      * 
      * @param path
-     *          Path related to the {@link Stat} object.
+     *            Path related to the {@link Stat} object.
      * @param stat
-     *          The {@link Stat} object which should be cached under "path".
+     *            The {@link Stat} object which should be cached under "path".
      */
     protected void updateStat(String path, Stat stat) {
         if (path.isEmpty() || !enabled) {
@@ -371,16 +365,15 @@ public class MetadataCache {
         }
     }
 
-
     /**
      * Updates the attributes given in "stat" and selected by "toSet".
      * 
      * @param path
-     *          Path of the cached object.
+     *            Path of the cached object.
      * @param stat
-     *          The {@link Stat} object cotaining the new values.
+     *            The {@link Stat} object cotaining the new values.
      * @param toSet
-     *          Bitmap describing which values should be updated. See {@link Setattrs}.
+     *            Bitmap describing which values should be updated. See {@link Setattrs}.
      */
     protected void updateStatAttributes(String path, Stat stat, int toSet) {
 
@@ -473,9 +466,9 @@ public class MetadataCache {
      * Updates file size and truncate epoch from an OSDWriteResponse.
      * 
      * @param path
-     *          Path of the cached object.
+     *            Path of the cached object.
      * @param response
-     *          {@link OSDWriteResponse} with new file size and truncate epoch.
+     *            {@link OSDWriteResponse} with new file size and truncate epoch.
      */
     protected void updateStatFromOSDWriteResponse(String path, OSDWriteResponse response) {
 
@@ -509,16 +502,16 @@ public class MetadataCache {
     }
 
     /**
-     * Returns a {@link DirectoryEntries} object (if it's found for "path") limited to entries starting 
-     * from "offset" up to "count" (or the maximum)S.
+     * Returns a {@link DirectoryEntries} object (if it's found for "path") limited to entries starting from
+     * "offset" up to "count" (or the maximum)S.
+     * 
      * @param path
-     *          Path of the cache object.
+     *            Path of the cache object.
      * @param offset
-     *          Index where to begin with retrieving DiretoryEntries.
+     *            Index where to begin with retrieving DiretoryEntries.
      * @param count
-     *          Number of entries which should be return.
-     * @return
-     *          {@link DirectoryEntries}
+     *            Number of entries which should be return.
+     * @return {@link DirectoryEntries}
      */
     protected DirectoryEntries getDirEntries(String path, int offset, int count) {
 
@@ -589,8 +582,9 @@ public class MetadataCache {
 
     /**
      * Invalidates the stat entry stored for "path".
+     * 
      * @param path
-     *          Path of the cache object.         
+     *            Path of the cache object.
      */
     protected void invalidateStat(String path) {
 
@@ -613,9 +607,9 @@ public class MetadataCache {
      * Stores/updates DirectoryEntries in cache for path.
      * 
      * @param path
-     *          Path where the object should be stored.
+     *            Path where the object should be stored.
      * @param dirEntries
-     *          {@link DirectoryEntries} object which should be cached.
+     *            {@link DirectoryEntries} object which should be cached.
      * 
      * @note This implementation assumes that "dirEntries" is always complete, i.e. it must be guaranteed that
      *       it contains all entries.
@@ -665,9 +659,9 @@ public class MetadataCache {
      * Removes "entryName" from the cached directory "pathToDirectory".
      * 
      * @param pathToDirectory
-     *          Path of the cached directory.
+     *            Path of the cached directory.
      * @param entryName
-     *          Name from the entry that should be removed from the cache {@link DirectoryEntries}.
+     *            Name from the entry that should be removed from the cache {@link DirectoryEntries}.
      */
     protected void invalidateDirEntry(String pathToDirectory, String entryName) {
 
@@ -704,7 +698,7 @@ public class MetadataCache {
      * Remove cached DirectoryEntries in cache for path.
      * 
      * @param path
-     *          Path of the cached object.
+     *            Path of the cached object.
      */
     protected void invalidateDirEntries(String path) {
 
@@ -724,21 +718,24 @@ public class MetadataCache {
     }
 
     /**
-     * Returns value for an XAttribute with "name" stored for "path" if it found. Null otherwise.
+     * Returns a {@link Tupel} with and Xattr and a boolean value. Xattr may be null if it is not found. The
+     * boolean value determines if the Xattrs where cached. (Xattrs can be cached but the Xattr "name" can not
+     * be in Xattrs)
+     * 
      * 
      * @param path
-     *          Path of the cached object.
+     *            Path of the cached object.
      * @param name
-     *          Name of the {@link XAttr}.
-     * @param xattrsCached
-     *TODO: Ask michael or figure out if this is needed.
-     * @return
-     *          {@link String} with Xattr value or null.
+     *            Name of the {@link XAttr}.
+     * 
+     * @return {@link Tupel} with Xattr value or null as first value and boolean as second.
      */
-    protected String getXAttr(String path, String name, boolean xattrsCached) {
+    protected Tupel<String, Boolean> getXAttr(String path, String name) {
+
+        boolean xattrsCached = false;
 
         if (path.isEmpty() || !enabled) {
-            return null;
+            return new Tupel<String, Boolean>(null, xattrsCached);
         }
 
         writeLock.lock();
@@ -750,17 +747,19 @@ public class MetadataCache {
                 // Entry found with valid Xattrs. Check timeout Xattrs
                 if (entry.getXattrTimeoutS() >= currentTimeMS) {
 
+                    xattrsCached = true;
+
                     for (XAttr xattr : entry.getXattrs().getXattrsList()) {
                         if (xattr.getName().equals(name)) {
                             if (Logging.isDebug()) {
                                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                                         "MetadataCache getXattr() hit: %s [%s]", path, cache.size());
                             }
-                            return xattr.getValue();
+                            return new Tupel<String, Boolean>(xattr.getValue(), xattrsCached);
                         }
                     }
                     // the Xattr "name" was not found;
-                    return null;
+                    return new Tupel<String, Boolean>(null, xattrsCached);
                 } else { // Cache entry is expired => remove from cache.
 
                     if (Logging.isDebug()) {
@@ -773,7 +772,7 @@ public class MetadataCache {
                         pathIndex.remove(path);
                     }
 
-                    return null;
+                    return new Tupel<String, Boolean>(null, xattrsCached);
                 }
 
             }
@@ -787,122 +786,123 @@ public class MetadataCache {
                     "MetadataCache getXattr() miss: %s [%s]", path, cache.size());
         }
 
-        return null;
+        return new Tupel<String, Boolean>(null, xattrsCached);
     }
 
     /**
-     * Returns the size of a value (string length) of an XAttribute "name" cached for "path" if it 
-     * exists and is still valid. 0 otherwhise.
+     * Returns a Tupel the size of a value (string length) of an XAttribute "name" cached for "path" if it
+     * exists and is still valid as first item. 0 otherwhise. And true as second item if the Xattrs where
+     * cached for path.
+     * 
      * 
      * @param path
-     *          Path of the cached object.
+     *            Path of the cached object.
      * @param name
-     *          Name of the {@link XAttr}.
-     * @param xattrsCached
-     *TODO: figure out if xattrsCached is needed.
-     * @return
-     *          Size of the value of the Xattr or 0.
+     *            Name of the {@link XAttr}.
+     * 
+     * @return A {@link Tupel} with size of the value of the Xattr or 0 as first and Boolean as second item.
      */
-    protected int getXAttrSize(String path, String name, boolean xattrsCached) {
+    protected Tupel<Integer, Boolean> getXAttrSize(String path, String name) {
+
+        boolean xattrCached = false;
         
         writeLock.lock();
         try {
             MetadataCacheEntry entry = cache.get(path);
-            long currentTimeS = System.currentTimeMillis()/1000;
-            
+            long currentTimeS = System.currentTimeMillis() / 1000;
+
             if (entry != null && entry.getXattrs() != null) {
                 if (entry.getXattrTimeoutS() >= currentTimeS) { // entry is still valid
                     
+                    xattrCached = true;
+                    
                     for (XAttr xattr : entry.getXattrs().getXattrsList()) {
                         if (xattr.getName().equals(name)) {
-                            
+
                             if (Logging.isDebug()) {
-                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, 
+                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                                         "MetadataCache getXattrSize() hit: %s [%s]", path, cache.size());
                             }
-                            return xattr.getValue().length();
+                            return new Tupel<Integer, Boolean>(xattr.getValue().length(), xattrCached);
                         }
                     }
-                    
+
                 } else { // cache entry is expired => remove from cache
-                    
+
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                                 "MetadataCache getXattrSize() expired: %s", path);
                     }
-                    
-                    //only delete entry when overall timeout is expired
+
+                    // only delete entry when overall timeout is expired
                     if (entry.getTimeoutS() < currentTimeS) {
                         cache.remove(path);
-                        pathIndex.remove(path);        
+                        pathIndex.remove(path);
                     }
                 }
             }
-            
+
         } finally {
             writeLock.unlock();
         }
-        
+
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, 
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                     "MetadataCache getXattrSize() miss: %s [%s]", path, cache.size());
         }
-        
-        return 0;
+
+        return new Tupel<Integer, Boolean>(0, false);
     }
 
     /**
-     * Get all extended attributes cached for "path". Return null if not cached Xattrs exists
-     * for that path.
+     * Get all extended attributes cached for "path". Return null if not cached Xattrs exists for that path.
      * 
      * @param path
-     *          Path of the cached object.
-     * @return
-     *          {@link listxattrResponse} or null.
+     *            Path of the cached object.
+     * @return {@link listxattrResponse} or null.
      */
     protected listxattrResponse getXAttrs(String path) {
-        
+
         writeLock.lock();
         try {
             MetadataCacheEntry entry = cache.get(path);
-            long currentTimeS = System.currentTimeMillis()/1000;
-            
+            long currentTimeS = System.currentTimeMillis() / 1000;
+
             if (entry != null && entry.getXattrs() != null) {
-                if (entry.getXattrTimeoutS() >= currentTimeS) { //cache entry is still valid; hit
-                    
+                if (entry.getXattrTimeoutS() >= currentTimeS) { // cache entry is still valid; hit
+
                     if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, 
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                                 "MetadataCache getXattrs() hit: %s [%s]", path, cache.size());
                     }
                     return entry.getXattrs();
-                    
+
                 } else { // entry is expired => remove it
 
                     if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, 
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                                 "MetadataCache getXattrs() expired: %s", path, cache.size());
                     }
-                    
+
                     // only delete object when overall timeout is expired
                     if (entry.getTimeoutS() < currentTimeS) {
                         cache.remove(path);
-                        pathIndex.remove(path);    
+                        pathIndex.remove(path);
                     }
                     return null;
-                    
+
                 }
             }
         } finally {
             writeLock.unlock();
         }
-        
-        
+
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, 
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                     "MetadataCache getXattrs() miss %s [%s]", path, cache.size());
         }
         return null;
-        
+
     }
 
     /**
@@ -910,45 +910,45 @@ public class MetadataCache {
      * cached.
      * 
      * @param path
-     *          Path of the cached object.
+     *            Path of the cached object.
      * @param name
-     *          Name of the {@link XAttr}.         
+     *            Name of the {@link XAttr}.
      * @param value
-     *          New value that should be set.
+     *            New value that should be set.
      */
     protected void updateXAttr(String path, String name, String value) {
-       
+
         if (path.isEmpty() || !enabled) {
             return;
         }
-        
+
         writeLock.lock();
         try {
-        
+
             // check if there is already an entry for "path"
             MetadataCacheEntry entry = cache.get(path);
-            
+
             if (entry == null) {
                 // Don't create a new entry with an incomplete xattr list.
                 return;
             }
-            
+
             if (entry.getXattrs() == null) {
-                // Don't create a new xattr list for an existing cache entry. 
+                // Don't create a new xattr list for an existing cache entry.
                 return;
             }
-            
-            long currentTimeS = System.currentTimeMillis()/1000;
+
+            long currentTimeS = System.currentTimeMillis() / 1000;
             if (entry.getXattrTimeoutS() < currentTimeS) {
                 // Don't update expired xattrs.
                 return;
             }
-            
+
             listxattrResponse.Builder newXattrs = entry.getXattrs().toBuilder();
-            
+
             boolean nameFound = false;
             for (int i = 0; i < newXattrs.getXattrsList().size(); i++) {
-                
+
                 // if Xattr with "name" found, update it, set "nameFound" to true und stop the loop
                 if (newXattrs.getXattrs(i).getName().equals(name)) {
                     nameFound = true;
@@ -957,18 +957,17 @@ public class MetadataCache {
                     newXattrs.setXattrs(i, xattr.build());
                     break;
                 }
-               
-                    
+
             }
-            
-            //if Xattr with "name" don't exists, add it to teh Xattr list.
+
+            // if Xattr with "name" don't exists, add it to teh Xattr list.
             if (!nameFound) {
                 newXattrs.addXattrs(XAttr.newBuilder().setName(name).setValue(value).build());
             }
-            
+
             // Replace the existing entry in cache - do not update TTL
             entry.setXattrs(newXattrs.build());
-            
+
         } finally {
             writeLock.unlock();
         }
@@ -978,63 +977,62 @@ public class MetadataCache {
      * Stores/updates XAttrs in cache for path.
      * 
      * @note This implementation assumes that the list of extended attributes is always complete.
-     *
+     * 
      * @param path
-     *          Path of the cached object.
+     *            Path of the cached object.
      * @param xattrs
-     *          New {@link listxattrResponse} that should be cached.
+     *            New {@link listxattrResponse} that should be cached.
      */
     protected void updateXAttrs(String path, listxattrResponse xattrs) {
-        
+
         if (path.isEmpty() || !enabled) {
             return;
         }
-        
+
         writeLock.lock();
         try {
             MetadataCacheEntry entry = cache.get(path);
-            //create a new entry if there isn't one in cache
+            // create a new entry if there isn't one in cache
             if (entry == null) {
-                
+
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, 
-                            "MetadataCache updateXattrs: new entry for path %s" , path);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                            "MetadataCache updateXattrs: new entry for path %s", path);
                 }
                 entry = new MetadataCacheEntry();
                 entry.setPath(path);
             }
-            
+
             entry.setXattrs(xattrs);
-            entry.setXattrTimeoutS(System.currentTimeMillis()/1000 + ttlS);
+            entry.setXattrTimeoutS(System.currentTimeMillis() / 1000 + ttlS);
             entry.setTimeoutS(entry.getXattrTimeoutS());
-            
+
             // we have to remove and readd the entry. If it was not in cache we are dealing with a
             // new entry and we have to insert in "pathIndex" too
             if (cache.remove(path) == null) {
                 pathIndex.add(path);
             }
             cache.put(path, entry);
-            
-            
+
         } finally {
             writeLock.unlock();
         }
-        
+
     }
 
     /**
      * Removes "name" from the list of extended attributes cached for "path".
      * 
      * @param path
-     *          Path of the cached object.
+     *            Path of the cached object.
      * @param name
-     *          Name of the {@link XAttr} that should be removed from cached Xattrs.
-     */         
+     *            Name of the {@link XAttr} that should be removed from cached Xattrs.
+     */
     protected void invalidateXAttr(String path, String name) {
         if (path.isEmpty() || !enabled) {
             return;
         }
-        
+
         writeLock.lock();
         try {
             MetadataCacheEntry entry = cache.get(path);
@@ -1042,28 +1040,28 @@ public class MetadataCache {
                 // there is no entry in the cache => nothing to do
                 return;
             }
-            
-            if (entry.getXattrs() ==  null) {
+
+            if (entry.getXattrs() == null) {
                 // don't create a new incomplete Xattr list.
                 return;
             }
-            
-            long currentTimeS = System.currentTimeMillis()/1000;
+
+            long currentTimeS = System.currentTimeMillis() / 1000;
             if (entry.getXattrTimeoutS() < currentTimeS) {
                 // Don't alter expired Xattr.
                 return;
             }
-            
+
             // Copy old Xattr without entry "name"
             listxattrResponse.Builder xattrs = listxattrResponse.newBuilder();
             for (XAttr xattr : entry.getXattrs().getXattrsList()) {
                 if (!xattr.getName().equals(name)) {
                     xattrs.addXattrs(xattr);
                 }
-            }          
-            
+            }
+
             entry.setXattrs(xattrs.build());
-            
+
         } finally {
             writeLock.unlock();
         }
@@ -1073,20 +1071,20 @@ public class MetadataCache {
      * Remove cached XAttrs in cache for path.
      * 
      * @param path
-     *          Path of the cached object.
+     *            Path of the cached object.
      */
     protected void invalidateXAttrs(String path) {
         if (path.isEmpty() || !enabled) {
             return;
         }
-        
+
         writeLock.lock();
         try {
             MetadataCacheEntry entry = cache.get(path);
             if (entry != null) {
                 entry.setXattrs(null);
             }
-            
+
         } finally {
             writeLock.unlock();
         }
@@ -1095,11 +1093,10 @@ public class MetadataCache {
     /**
      * Returns the current number of elements.
      * 
-     * @return 
-     *          long
+     * @return long
      */
     protected long size() {
-        
+
         readLock.lock();
         try {
             return cache.size();
@@ -1111,29 +1108,28 @@ public class MetadataCache {
     /**
      * Returns the maximum number of elements.
      * 
-     * @return
-     *          long
+     * @return long
      */
     protected long capacity() {
         return size;
     }
 
     /**
-     * Evicts first n oldest entries from cache. 
+     * Evicts first n oldest entries from cache.
      * 
      * @param n
-     *          Number of elements that should be evicted.
+     *            Number of elements that should be evicted.
      */
     private void evictUnmutexed(int n) {
         while (cache.size() > size - n) {
-            
+
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, 
-                        "MetadataCache evictUnmutexed: Deleting one entry from cache; " +
-                        "entries in total: %s", cache.size());
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                        "MetadataCache evictUnmutexed: Deleting one entry from cache; "
+                                + "entries in total: %s", cache.size());
             }
-            
-            //get first element of keys of the LinkedHashMap "cache".
+
+            // get first element of keys of the LinkedHashMap "cache".
             String path = cache.keySet().iterator().next();
             cache.remove(path);
             pathIndex.remove(path);

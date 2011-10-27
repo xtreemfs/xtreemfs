@@ -313,8 +313,8 @@ public abstract class Volume {
      * 
      * @remark Ownership is transferred to the caller.
      */
-    public abstract DirectoryEntries readDir(UserCredentials userCredentials, String path, long offset,
-            long count, boolean namesOnly) throws IOException;
+    public abstract DirectoryEntries readDir(UserCredentials userCredentials, String path, int offset,
+            int count, boolean namesOnly) throws IOException;
 
     /**
      * Returns the list of extended attributes stored for "path" (Entries may be cached).

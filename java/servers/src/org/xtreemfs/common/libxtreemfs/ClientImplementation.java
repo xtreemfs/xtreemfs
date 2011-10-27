@@ -160,6 +160,11 @@ public class ClientImplementation extends Client {
             }
         }
     }
+    
+    protected void closeVolume(Volume volume) {
+        boolean removed = listOpenVolumes.remove(volume);
+        assert(removed);
+    }
 
     /*
      * (non-Javadoc)
@@ -226,24 +231,8 @@ public class ClientImplementation extends Client {
                     volumeName);
 
         }
-
-        // RPCResponse<?> resp = null;
-        // try {
-        // resp = mrcClient.xtreemfs_mkvol(server, auth, userCredentials, volume);
-        // resp.get();
-        // } catch (Exception e) {
-        // if (Logging.isDebug()) {
-        // Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "%s", e.getMessage());
-        // }
-        // Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "Couldn't create volume %s",
-        // volumeName);
-        // } finally {
-        // if (resp != null) {
-        // resp.freeBuffers();
-        // }
-        // }
     }
-
+    
     /*
      * (non-Javadoc)
      * 

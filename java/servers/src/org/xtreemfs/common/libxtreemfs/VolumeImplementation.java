@@ -74,11 +74,15 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  */
 public class VolumeImplementation extends Volume {
 
-
     /**
      * UUID String of the client.
      */
     private String                            clientUuid;
+
+    /**
+     * Client who opened this volume.
+     */
+    private ClientImplementation              client;
 
     /**
      * UUIDResolver used by this volume.
@@ -136,6 +140,21 @@ public class VolumeImplementation extends Volume {
     private ConcurrentHashMap<Long, FileInfo> openFileTable;
 
     /**
+     * MetadataCache to cache already fetches Metadata.
+     */
+    private MetadataCache                     metadataCache;
+
+    /**
+     * XCap renewal thread to renew Xcap periodically.
+     */
+    private PeriodicXcapRenewalThread         xcapRenewalThread;
+
+    /**
+     * FileSize update thread to update file size periodically.
+     */
+    private PeriodicFileSizeUpdateThread      fileSizeUpdateThread;
+
+    /**
      * 
      */
     public VolumeImplementation(Client client, String clientUUID, UUIDIterator mrcUuidIterator,
@@ -146,12 +165,13 @@ public class VolumeImplementation extends Volume {
         this.volumeName = volumeName;
         this.volumeOptions = options;
         this.sslOptions = sslOptions;
-        // TODO: Ask if the mrcUUIDIterator needs to be copied since the calling method can later
-        // alter the content of this iterator.
+
         this.mrcUUIDIterator = mrcUuidIterator;
 
         this.userCredentialsBogus = UserCredentials.newBuilder().setUsername("xtreemfs").build();
         this.authBogus = RPCAuthentication.authNone;
+
+        this.metadataCache = new MetadataCache(options.getMetadataCacheSize(), options.getMetadataCacheTTLs());
     }
 
     /*
@@ -171,12 +191,13 @@ public class VolumeImplementation extends Volume {
 
         openFileTable = new ConcurrentHashMap<Long, FileInfo>();
 
-        // TODO: Do this stuff?!?!
         // // Start periodic threads.
-        // xcap_renewal_thread_.reset(new boost::thread(boost::bind(
-        // &xtreemfs::VolumeImplementation::PeriodicXCapRenewal, this)));
-        // filesize_writeback_thread_.reset(new boost::thread(boost::bind(
-        // &xtreemfs::VolumeImplementation::PeriodicFileSizeUpdate, this)));
+        fileSizeUpdateThread = new PeriodicFileSizeUpdateThread(this);
+        fileSizeUpdateThread.start();
+
+        xcapRenewalThread = new PeriodicXcapRenewalThread(this);
+        xcapRenewalThread.start();
+
     }
 
     /*
@@ -186,7 +207,26 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public void internalShutdown() {
-        // TODO Auto-generated method stub
+        // Stop periodic threads
+        try {
+            fileSizeUpdateThread.join();
+            xcapRenewalThread.join();
+        } catch (InterruptedException e) {
+        }
+
+        // There must no FileInfo left in "openFileTable".
+        assert (openFileTable.size() == 0);
+
+        // Shutdown network client.
+        networkClient.shutdown();
+        try {
+            networkClient.waitForShutdown();
+        } catch (Exception e) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "Volume: Couldn't shut"
+                        + " down network client corretly: %s ", e.getMessage());
+            }
+        }
 
     }
 
@@ -197,8 +237,11 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public void close() {
-        // TODO Auto-generated method stub
+        internalShutdown();
 
+        
+        client.closeVolume(this);
+        
     }
 
     /*
@@ -303,8 +346,13 @@ public class VolumeImplementation extends Volume {
         }
 
         assert (response != null);
-        // TODO: Update Metadatacache when implemented!
 
+        String parentDir = Helper.resolveParentDirectory(linkPath);
+        metadataCache.updateStatTime(parentDir, response.getTimestampS(), Setattrs.SETATTR_CTIME.getNumber()
+                | Setattrs.SETATTR_MTIME.getNumber());
+        // TODO: Retrieve stat as optional member of the response instead
+        // and update cached DirectoryEntries accordingly.
+        metadataCache.invalidateDirEntries(parentDir);
     }
 
     /*
@@ -339,7 +387,17 @@ public class VolumeImplementation extends Volume {
 
         assert (response != null);
 
-        // TODO: Update MetadataCache when it is implemented.
+        String parentDir = Helper.resolveParentDirectory(linkPath);
+        metadataCache.updateStatTime(parentDir, response.getTimestampS(), Setattrs.SETATTR_CTIME.getNumber()
+                | Setattrs.SETATTR_MTIME.getNumber());
+
+        // TODO: Retrieve stat as optional member of the response instead
+        // and update cached DirectoryEntries accordingly.
+        metadataCache.invalidateDirEntries(parentDir);
+
+        // Invalidate caches as we don't cache links and their targets.
+        metadataCache.invalidate(linkPath);
+        metadataCache.invalidate(targetPath);
     }
 
     /*
@@ -473,29 +531,26 @@ public class VolumeImplementation extends Volume {
         // the parent directory.
         if ((flags & SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()) > 0) {
             // TODO: Do this stuff if metadatacache is implemented.
-            // Sttring parentDir = ResolveParentDirectory(path);
-            // metadata_cache_.UpdateStatTime(
-            // parent_dir,
-            // timestamp_s,
-            // static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
-            // // TODO(mberlin): Retrieve stat as optional member of openResponse instead
-            // // and update cached DirectoryEntries accordingly.
-            // metadata_cache_.InvalidateDirEntries(parent_dir);
+            String parentDir = Helper.resolveParentDirectory(path);
+            metadataCache.updateStatTime(path, response.getTimestampS(), Setattrs.SETATTR_CTIME.getNumber()
+                    | Setattrs.SETATTR_MTIME.getNumber());
+            // TODO: Retrieve stat as optional member of the response instead
+            // and update cached DirectoryEntries accordingly.
+            metadataCache.invalidate(parentDir);
         }
 
         // If O_TRUNC was set, go on processing the truncate request.
         if ((flags & SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()) > 0) {
-            // TODO: Do this stuff if metadatacache is implemented.
+
             // Update mtime and ctime of the file if O_TRUNC was set.
-            // metadata_cache_.UpdateStatTime(
-            // path,
-            // timestamp_s,
-            // static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
-            //
-            // if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-            // Logging::log->getLog(LEVEL_DEBUG)
-            // << "open called with O_TRUNC." << endl;
-            // }
+            metadataCache.updateStatTime(path, response.getTimestampS(), Setattrs.SETATTR_CTIME.getNumber()
+                    | Setattrs.SETATTR_MTIME.getNumber());
+
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "open called with O_TRUNK.");
+            }
+
+            // TODO: Do this stuff
             //
             // try {
             // file_handle->TruncatePhaseTwoAndThree(user_credentials,
@@ -550,37 +605,47 @@ public class VolumeImplementation extends Volume {
     }
 
     private Stat getAttrHelper(UserCredentials userCredentials, String path) throws IOException {
-        // 1. Check if Stat object is cached.
+        // Check if Stat object is cached.
+        Stat stat = metadataCache.getStat(path);
 
-        // if not, retrive stat from MRC
-        getattrRequest request = getattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
-                .setKnownEtag(0).build();
-
-        getattrResponse response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("getattr", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, getattrRequest.class });
-
-            response = RPCCaller.<MRCServiceClient, getattrRequest, getattrResponse> makeCall(
-                    mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
-
-        assert (response != null);
-
-        Stat stat = response.getStbuf();
-        if (stat.getNlink() > 1) { // Do not cache hardlinks
-            // metadata_cache_.Invalidate(path); //TODO: Metadatastuff if cache is implemented.
+        if (stat != null) {
+            // Found in StatCache
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                        "getattr: serving from stat-cache %s  %s", path, stat.getSize());
+            }
         } else {
-            // metadata_cache_.UpdateStat(path, *stat_buffer);
+
+            // if not, retrive stat from MRC
+            getattrRequest request = getattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
+                    .setKnownEtag(0).build();
+
+            getattrResponse response = null;
+            try {
+                Method m = MRCServiceClient.class.getDeclaredMethod("getattr", new Class<?>[] {
+                        InetSocketAddress.class, Auth.class, UserCredentials.class, getattrRequest.class });
+
+                response = RPCCaller.<MRCServiceClient, getattrRequest, getattrResponse> makeCall(
+                        mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator,
+                        uuidResolver, volumeOptions.getMaxTries(), volumeOptions, false);
+            } catch (NoSuchMethodException nsm) {
+                // should never happen unless there is a programming error
+                nsm.printStackTrace();
+            } catch (SecurityException se) {
+                // should never happen unless there is a programming error
+                se.printStackTrace();
+            } catch (Exception e) {
+                throw new IOException(e);
+            }
+
+            assert (response != null);
+
+            stat = response.getStbuf();
+            if (stat.getNlink() > 1) { // Do not cache hardlinks
+                metadataCache.invalidate(path);
+            } else {
+                metadataCache.updateStat(path, stat);
+            }
         }
 
         return stat;
@@ -634,11 +699,10 @@ public class VolumeImplementation extends Volume {
         // as it might get cleared by the MRC.
         if (stat.getNlink() > 1
                 || (((toSet & Setattrs.SETATTR_MODE.getNumber()) > 0) && ((stat.getMode() & (1 << 10))) > 0)) {
-            // metadata_cache_.Invalidate(path); //TODO: metadatacache
+            metadataCache.invalidate(path);
         } else {
-            // metadata_cache_.UpdateStatAttributes(path, stat, toSet);
+            metadataCache.updateStatAttributes(path, stat, toSet);
         }
-
     }
 
     /*
@@ -650,6 +714,8 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public void unlink(UserCredentials userCredentials, String path) throws IOException {
+
+        // 1. Delete file at MRC.
         unlinkRequest request = unlinkRequest.newBuilder().setPath(path).setVolumeName(volumeName).build();
 
         unlinkResponse response = null;
@@ -673,9 +739,14 @@ public class VolumeImplementation extends Volume {
 
         assert (response != null);
 
-        // TODO: Invalidate Metadatacache as soon as it is implemented.
+        // 2. Invalidate metadata cache
+        metadataCache.invalidate(path);
+        String parentDir = Helper.resolveParentDirectory(path);
+        metadataCache.updateStatTime(path, response.getTimestampS(), Setattrs.SETATTR_CTIME.getNumber()
+                | Setattrs.SETATTR_MTIME.getNumber());
+        metadataCache.invalidateDirEntry(parentDir, Helper.getBasename(path));
 
-        // Delete objects of all replicas on the OSDs.
+        // 3. Delete objects of all replicas on the OSDs.
         if (response.hasCreds()) {
             unlinkAtOsd(response.getCreds(), path);
         }
@@ -761,35 +832,30 @@ public class VolumeImplementation extends Volume {
 
         // 3. Update caches // pseiferth: Implement metadatacache first.
         // Update the timestamps of parents of both directories.
-        // const std::string parent_path = ResolveParentDirectory(path);
-        // const std::string parent_new_path = ResolveParentDirectory(new_path);
-        // if (response->response()->timestamp_s() != 0) {
-        // metadata_cache_.UpdateStatTime(
-        // parent_path,
-        // response->response()->timestamp_s(),
-        // static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
-        // metadata_cache_.UpdateStatTime(
-        // parent_new_path,
-        // response->response()->timestamp_s(),
-        // static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
-        // }
-        // metadata_cache_.InvalidateDirEntry(parent_path, GetBasename(path));
-        // // TODO(mberlin): Add DirEntry instead to parent_new_path if stat available.
-        // metadata_cache_.InvalidateDirEntries(parent_new_path);
-        // // Overwrite an existing entry; no Prefix() operation needed because:
-        // // "If new names an existing directory, it shall be required to be an empty
-        // // directory."
-        // // see http://pubs.opengroup.org/onlinepubs/009695399/functions/rename.html
-        // metadata_cache_.Invalidate(new_path);
-        // // Rename all affected entries.
-        // metadata_cache_.RenamePrefix(path, new_path);
-        // // http://pubs.opengroup.org/onlinepubs/009695399/functions/rename.html:
-        // // "Some implementations mark for update the st_ctime field of renamed files
-        // // and some do not."
-        // // => XtreemFS does so, i.e. update the client's cache, too.
-        // metadata_cache_.UpdateStatTime(new_path,
-        // response->response()->timestamp_s(),
-        // static_cast<Setattrs>(SETATTR_CTIME));
+        String parentPath = Helper.resolveParentDirectory(path);
+        String parentNewPath = Helper.resolveParentDirectory(parentPath);
+        if (response.getTimestampS() != 0) {
+            metadataCache.updateStatTime(parentPath, response.getTimestampS(),
+                    Setattrs.SETATTR_CTIME.getNumber() | Setattrs.SETATTR_MTIME.getNumber());
+            metadataCache.updateStatTime(parentNewPath, response.getTimestampS(),
+                    Setattrs.SETATTR_CTIME.getNumber() | Setattrs.SETATTR_MTIME.getNumber());
+        }
+
+        metadataCache.invalidateDirEntry(parentPath, Helper.getBasename(path));
+        // TODO(mberlin): Add DirEntry instead to parent_new_path if stat available.
+        metadataCache.invalidateDirEntries(parentNewPath);
+        // Overwrite an existing entry; no Prefix() operation needed because:
+        // "If new names an existing directory, it shall be required to be an empty
+        // directory."
+        // see http://pubs.opengroup.org/onlinepubs/009695399/functions/rename.html
+        metadataCache.invalidate(newPath);
+        // Rename all affected entries.
+        metadataCache.renamePrefix(path, newPath);
+        // http://pubs.opengroup.org/onlinepubs/009695399/functions/rename.html:
+        // "Some implementations mark for update the st_ctime field of renamed files
+        // and some do not."
+        // => XtreemFS does so, i.e. update the client's cache, too.
+        metadataCache.updateStatTime(newPath, response.getTimestampS(), Setattrs.SETATTR_CTIME.getNumber());
 
         // 4. Rename path in all open FileInfo objects.
         for (Entry<Long, FileInfo> entry : openFileTable.entrySet()) {
@@ -831,15 +897,13 @@ public class VolumeImplementation extends Volume {
 
         assert (response != null);
 
-        // TODO: Update Metadata Cache
-        // const string parent_dir = ResolveParentDirectory(path);
-        // metadata_cache_.UpdateStatTime(
-        // parent_dir,
-        // response->response()->timestamp_s(),
-        // static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
-        // // TODO(mberlin): Retrieve stat as optional member of openResponse instead
-        // // and update cached DirectoryEntries accordingly.
-        // metadata_cache_.InvalidateDirEntries(parent_dir);
+        String parentDir = Helper.resolveParentDirectory(path);
+        metadataCache.updateStatTime(path, response.getTimestampS(), Setattrs.SETATTR_CTIME.getNumber()
+                | Setattrs.SETATTR_MTIME.getNumber());
+        // TODO: Retrieve stat as optional member of openResponse instead
+        // and update cached DirectoryEntries accordingly.
+        metadataCache.invalidateDirEntries(parentDir);
+
     }
 
     /*
@@ -874,14 +938,12 @@ public class VolumeImplementation extends Volume {
 
         assert (response != null);
 
-        // TODO: Update metadata cache!
-        // const string parent_dir = ResolveParentDirectory(path);
-        // metadata_cache_.UpdateStatTime(
-        // parent_dir,
-        // response->response()->timestamp_s(),
-        // static_cast<Setattrs>(SETATTR_CTIME | SETATTR_MTIME));
-        // metadata_cache_.InvalidatePrefix(path);
-        // metadata_cache_.InvalidateDirEntry(parent_dir, GetBasename(path));
+        // Invalidate Metadatacache.
+        String parentDir = Helper.resolveParentDirectory(path);
+        metadataCache.updateStatTime(parentDir, response.getTimestampS(), Setattrs.SETATTR_CTIME.getNumber()
+                | Setattrs.SETATTR_MTIME.getNumber());
+        metadataCache.invalidatePrefix(path);
+        metadataCache.invalidateDirEntry(path, Helper.getBasename(path));
 
     }
 
@@ -893,39 +955,35 @@ public class VolumeImplementation extends Volume {
      * .UserCredentials, java.lang.String, long, long, boolean)
      */
     @Override
-    public DirectoryEntries readDir(UserCredentials userCredentials, String path, long offset, long count,
+    public DirectoryEntries readDir(UserCredentials userCredentials, String path, int offset, int count,
             boolean namesOnly) throws IOException {
 
         DirectoryEntries result = null;
 
-        // TODO: get result from metadatacache as soon as it is implemented.
+        // Try to get DirectoryEntries from cache
+        result = metadataCache.getDirEntries(path, offset, count);
+        if (result != null) {
+            return result;
+        }
 
         DirectoryEntries.Builder dirEntriesBuilder = DirectoryEntries.newBuilder();
 
         // Process large requests in multiples of readdirChunkSize.
-        for (long currentOffset = offset; currentOffset < offset + count; offset += volumeOptions
+        for (int currentOffset = offset; currentOffset < offset + count; offset += volumeOptions
                 .getReaddirChunkSize()) {
 
-            long limitDirEntriesCountLong = (currentOffset > offset + count) ? (currentOffset - offset - count)
+            int limitDirEntriesCount = (currentOffset > offset + count) ? (currentOffset - offset - count)
                     : volumeOptions.getReaddirChunkSize();
-
-            // cast the long to int because readdir RPC Operation won't work with long values.
-            int limitDirEntriesCount = (int) limitDirEntriesCountLong;
-            if ((long) limitDirEntriesCount != limitDirEntriesCountLong) {
-                throw new IllegalArgumentException(limitDirEntriesCountLong
-                        + " cannot be cast to int without changing its value.");
-            }
 
             readdirRequest request = readdirRequest.newBuilder().setPath(path).setVolumeName(volumeName)
                     .setNamesOnly(namesOnly).setKnownEtag(0).setSeenDirectoryEntriesCount(currentOffset)
                     .setLimitDirectoryEntriesCount(limitDirEntriesCount).build();
 
-            DirectoryEntries response = null;
             try {
                 Method m = MRCServiceClient.class.getDeclaredMethod("readdir", new Class<?>[] {
                         InetSocketAddress.class, Auth.class, UserCredentials.class, readdirRequest.class });
 
-                response = RPCCaller.<MRCServiceClient, readdirRequest, DirectoryEntries> makeCall(
+                result = RPCCaller.<MRCServiceClient, readdirRequest, DirectoryEntries> makeCall(
                         mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator,
                         uuidResolver, volumeOptions.getMaxTries(), volumeOptions, false);
             } catch (NoSuchMethodException nsm) {
@@ -939,12 +997,12 @@ public class VolumeImplementation extends Volume {
                 // TODO: Find out when to throw a PosixErrorExcpetion.
             }
 
-            assert (response != null);
+            assert (result != null);
 
-            dirEntriesBuilder.addAllEntries(response.getEntriesList());
+            dirEntriesBuilder.addAllEntries(result.getEntriesList());
 
             // Break if this is the last chunk.
-            if (response.getEntriesCount() < (currentOffset + volumeOptions.getReaddirChunkSize())) {
+            if (result.getEntriesCount() < (currentOffset + volumeOptions.getReaddirChunkSize())) {
                 break;
             }
         }
@@ -954,28 +1012,27 @@ public class VolumeImplementation extends Volume {
         // the stat entries of listed files.
 
         // Cache the first stat buffers that fit into the cache.
-        // for (int i = 0;
-        // i < min(volume_options_.metadata_cache_size,
-        // static_cast<boost::uint64_t>(result->entries_size()));
-        // i++) {
-        // if (result->entries(i).stbuf().nlink() > 1) { // Do not cache hard links.
-        // metadata_cache_.Invalidate(path);
-        // } else {
-        // metadata_cache_.UpdateStat(
-        // ConcatenatePath(path, result->entries(i).name()),
-        // result->entries(i).stbuf());
-        // }
-        // }
+        int minimum = (int) ((volumeOptions.getMetadataCacheSize() > result.getEntriesCount()) ? volumeOptions
+                .getMetadataCacheSize() : result.getEntriesCount());
+        for (int i = 0; i < minimum; i++) {
+            if (result.getEntries(i).getStbuf().getNlink() > 1) { // Do not cache hard links.
+                metadataCache.invalidate(path);
+            } else {
+                metadataCache.updateStat(Helper.concatenatePath(path, result.getEntries(i).getName()), result
+                        .getEntries(i).getStbuf());
+            }
+        }
 
         // Cache the result if it's the complete directory.
         // We can't tell for sure whether result contains all directory entries if
         // it's size is not less than the requested "count".
-        // TODO(mberlin): Cache only names and no stat entries and remove names_only
+        // TODO: Cache only names and no stat entries and remove names_only
         // condition.
-        // TODO(mberlin): Set an upper bound of dentries, otherwise don't cache it.
-        // if (offset == 0 && result->entries_size() < count && !names_only) {
-        // metadata_cache_.UpdateDirEntries(path, *result);
-        // }
+        // TODO: Set an upper bound of dentries, otherwise don't cache it.
+
+        if (!namesOnly && offset == 0 && result.getEntriesCount() < count) {
+            metadataCache.updateDirEntries(path, result);
+        }
 
         return dirEntriesBuilder.build();
     }
@@ -1032,7 +1089,7 @@ public class VolumeImplementation extends Volume {
 
         assert (response != null);
 
-        // TODO: Update Metadatacache
+        metadataCache.updateXAttrs(path, response);
 
         return response;
     }
@@ -1048,7 +1105,7 @@ public class VolumeImplementation extends Volume {
     @Override
     public void setXAttr(UserCredentials userCredentials, String path, String name, String value, int flags)
             throws IOException {
-        // TODO Auto-generated method stub
+
         setxattrRequest request = setxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setName(name).setValue(value).setFlags(flags).build();
 
@@ -1073,7 +1130,7 @@ public class VolumeImplementation extends Volume {
 
         assert (response != null);
 
-        // TODO: Update metadatacache.
+        metadataCache.updateXAttr(path, name, value);
     }
 
     /*
@@ -1122,8 +1179,15 @@ public class VolumeImplementation extends Volume {
 
         } else {
             // No "xtreemfs." attribute, lookup metadata cache.
-
-            // TODO: lookup with metadatacache
+            Tupel<String, Boolean> cachedXattr = metadataCache.getXAttr(path, name);
+            if (cachedXattr.getFirst() == null) {
+                // Xattr not found in cache
+                if (cachedXattr.getSecond()) {
+                    // All attributes were cached but the requested attribute was not found,
+                    // i.e. it won't exist on the server.
+                    return null;
+                }
+            }
 
             // If not found in metadatacache retrieve the whole list when attrs weren't cached.
             listxattrResponse xattrList = listXAttrs(userCredentials, path);
@@ -1166,20 +1230,29 @@ public class VolumeImplementation extends Volume {
             }
         } else {
             // user attribute
-            // TODO: check if attribute is in metadatacache
-        }
+            Tupel<Integer, Boolean> cachedXattrSize = metadataCache.getXAttrSize(path, name);
 
-        // Retrive complete list of xattrs.
-        listxattrResponse xattrList = listXAttrs(userCredentials, path);
-        if (xattrList.getXattrsCount() > 0) {
-            for (XAttr xattr : xattrList.getXattrsList()) {
-                if (xattr.getName().equals(name)) {
-                    return xattr.getValue().length();
+            // valid user attribute was found in cache
+            if (cachedXattrSize.getFirst() != 0) {
+                return cachedXattrSize.getFirst();
+            }
+
+            // no valid user attribute was found in cache, but Xattrs for this path where cached.
+            if (cachedXattrSize.getSecond()) {
+                return 0;
+            }
+
+            // Retrive complete list of xattrs.
+            listxattrResponse xattrList = listXAttrs(userCredentials, path);
+            if (xattrList.getXattrsCount() > 0) {
+                for (XAttr xattr : xattrList.getXattrsList()) {
+                    if (xattr.getName().equals(name)) {
+                        return xattr.getValue().length();
+                    }
                 }
             }
+            return -1;
         }
-
-        return -1;
     }
 
     /*
@@ -1195,13 +1268,12 @@ public class VolumeImplementation extends Volume {
         removexattrRequest request = removexattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setName(name).build();
 
-        timestampResponse response = null;
         try {
             Method m = MRCServiceClient.class.getDeclaredMethod("removexattr", new Class<?>[] {
                     InetSocketAddress.class, Auth.class, UserCredentials.class, removexattrRequest.class });
 
-            response = RPCCaller.<MRCServiceClient, removexattrRequest, timestampResponse> makeCall(
-                    mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
+            RPCCaller.<MRCServiceClient, removexattrRequest, timestampResponse> makeCall(mrcServiceClient, m,
+                    userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
                     volumeOptions.getMaxTries(), volumeOptions, false);
         } catch (NoSuchMethodException nsm) {
             // should never happen unless there is a programming error
@@ -1214,8 +1286,7 @@ public class VolumeImplementation extends Volume {
             // TODO: Find out when to throw a PosixErrorExcpetion.
         }
 
-        // TODO: Update metadatacache when it is implemented.
-
+        metadataCache.invalidateXAttr(path, name);
     }
 
     /*
@@ -1306,7 +1377,6 @@ public class VolumeImplementation extends Volume {
     @Override
     public void removeReplica(UserCredentials userCredentials, String path, String osdUuid)
             throws IOException {
-        // TODO Auto-generated method stub
 
         // remove the replica
         xtreemfs_replica_removeRequest request = xtreemfs_replica_removeRequest.newBuilder()
@@ -1400,12 +1470,12 @@ public class VolumeImplementation extends Volume {
 
         return response.getOsdUuidsList();
     }
-    
-    /** 
-     * Called by FileHandle.Close() to remove file_handle from the list. 
+
+    /**
+     * Called by FileHandle.Close() to remove file_handle from the list.
      */
     protected void closeFile(long fileId, FileInfo fileInfo, FileHandleImplementation fileHandle) {
-        //TODO: Implement this method correctly.
+        // TODO: Implement this method correctly.
     }
 
     /**
@@ -1431,8 +1501,6 @@ public class VolumeImplementation extends Volume {
             return fileInfo;
         }
     }
-    
-    
 
     protected UUIDIterator getMrcUuidIterator() {
         return this.mrcUUIDIterator;
@@ -1452,6 +1520,10 @@ public class VolumeImplementation extends Volume {
 
     protected Options getOptions() {
         return this.volumeOptions;
+    }
+
+    protected ConcurrentHashMap<Long, FileInfo> getOpenFileTable() {
+        return this.openFileTable;
     }
 
     protected Auth getAuthBogus() {

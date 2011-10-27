@@ -19,11 +19,9 @@ import org.xtreemfs.foundation.VersionManagement;
  */
 public class Options {
 
-    
     enum XtreemFSServiceType {
         kDIR, kMRC
     };
-
 
     // XtreemFS URL Options.
     /**
@@ -57,27 +55,47 @@ public class Options {
     boolean     showVersion;
 
     // Optimizations.
-    /** Maximum number of entries of the StatCache */
-    // TODO: Find appropriate representation of uint64 in java. Now: long
+    /**
+     * Maximum number of entries of the StatCache
+     */
     long        metadataCacheSize;
 
-    /** Time to live for MetadataCache entries. */
-    long        metadataCacheTTL_s;
-    /** Maximum number of pending bytes (of async writes) per file. */
+    /**
+     * Time to live for MetadataCache entries.
+     */
+    long        metadataCacheTTLs;
+
+    /**
+     * Maximum number of pending bytes (of async writes) per file.
+     */
     int         maxWriteahead;
-    /** Maximum number of pending async write requests per file. */
+
+    /**
+     * Maximum number of pending async write requests per file.
+     */
     int         maxWriteaheadRequests;
-    /** Number of retrieved entries per readdir request. */
+
+    /**
+     * Number of retrieved entries per readdir request.
+     */
     int         readdirChunkSize;
 
     // Error Handling options.
-    /** How often shall a failed operation get retried? */
+    /**
+     * How often shall a failed operation get retried?
+     */
     int         maxTries;
-    /** How often shall a failed read operation get retried? */
+    /**
+     * How often shall a failed read operation get retried?
+     */
     int         maxReadTries;
-    /** How often shall a failed write operation get retried? */
+    /**
+     * How often shall a failed write operation get retried?
+     */
     int         maxWriteTries;
-    /** How long to wait after a failed request? */
+    /**
+     * How long to wait after a failed request?
+     */
     int         retryDelay_s;
 
     /**
@@ -99,6 +117,14 @@ public class Options {
      * The RPC Client closes connections after "linger_timeout_s" time of inactivity.
      */
     private int lingerTimeout_s;
+
+    public long getMetadataCacheSize() {
+        return metadataCacheSize;
+    }
+
+    public long getMetadataCacheTTLs() {
+        return metadataCacheTTLs;
+    }
 
     public int getInterruptSignal() {
         return interruptSignal;
@@ -141,12 +167,26 @@ public class Options {
     /** Periodic interval after which the gridmap file will be reloaded. */
     int     gridGridmapReloadInterval_m;
 
-    // Advanced XtreemFS options.
-    /** Interval for periodic file size updates in seconds. */
-    int     periodicFileSizeUpdatesInterval_s;
-    /** Interval for periodic xcap renewal in seconds. */
-    int     periodicXcapRenewalInterval_s;
+    // Advanced XtreemFS options
+    
+    /**
+     * Interval for periodic file size updates in seconds.
+     */
+    int     periodicFileSizeUpdatesIntervalS;
 
+    /**
+     * Interval for periodic xcap renewal in seconds.
+     */
+    int     periodicXcapRenewalIntervalS;
+
+    protected int getPeriodicXcapRenewalIntervalS() {
+        return periodicXcapRenewalIntervalS;
+    }
+
+    protected int getPeriodicFileSizeUpdatesIntervalS() {
+        return periodicFileSizeUpdatesIntervalS;
+    }
+    
     // User mapping.
     /** Type of the UserMapping used to resolve user and group IDs to names. */
     // TODO: Find out what this is.
@@ -189,9 +229,9 @@ public class Options {
     * 
     */
     public Options() {
-        
+
     }
-    
+
     /**
      * Temporary constructor for testing. Remove if commandline parsing is implemented
      */
@@ -200,7 +240,7 @@ public class Options {
         this.connectTimeout_s = connectionTimeout_s;
         this.maxTries = maxTries;
         this.retryDelay_s = retryDelay_s;
-        
+
         readdirChunkSize = 1024;
     }
 
@@ -247,13 +287,13 @@ public class Options {
     String showVersion(String component) {
         return component + VersionManagement.RELEASE_VERSION;
     }
-    
+
     /**
      * Return the version.
      * 
      */
     String getVersion() {
-        return VersionManagement.RELEASE_VERSION; 
+        return VersionManagement.RELEASE_VERSION;
     }
 
     /**
@@ -270,25 +310,25 @@ public class Options {
     protected void parseURL(XtreemFSServiceType service_type) {
         // TODO: Implement!
     }
-    
+
     /**
-     * Return maxTries. 
+     * Return maxTries.
      */
     public int getMaxTries() {
         return maxTries;
     }
-    
+
     /**
      * Return retryDelay_s.
      */
     public int getRetryDelay_s() {
         return retryDelay_s;
     }
-    
+
     public int getMaxWriteahead() {
         return maxWriteahead;
     }
-    
+
     public int getReaddirChunkSize() {
         return readdirChunkSize;
     }
