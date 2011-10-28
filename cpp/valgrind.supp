@@ -190,3 +190,10 @@
    obj:/lib/libcrypto.so.0.9.8
    ...
 }
+{
+   realpath static memory?
+   Memcheck:Leak
+   fun:malloc
+   fun:realpath@@GLIBC_*
+   fun:main
+}
