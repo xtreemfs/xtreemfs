@@ -35,11 +35,16 @@ public class ErrorUtils {
         return ErrorResponse.newBuilder().setErrorType(ErrorType.INTERNAL_SERVER_ERROR).setPosixErrno(POSIXErrno.POSIX_ERROR_EIO).
                 setErrorMessage(cause.toString()).setDebugInfo(OutputUtils.stackTraceToString(cause)).build();
     }
+    
+    public static ErrorResponse getInternalServerError(Throwable cause, String additionalErrorMessage) {
+        return ErrorResponse.newBuilder().setErrorType(ErrorType.INTERNAL_SERVER_ERROR).setPosixErrno(POSIXErrno.POSIX_ERROR_EIO).
+                setErrorMessage(additionalErrorMessage + cause.toString()).setDebugInfo(OutputUtils.stackTraceToString(cause)).build();
+    }
 
     public static String formatError(ErrorResponse error) {
         if (error == null)
             return "no error";
-        return error.getErrorType()+"/"+error.getPosixErrno()+": "+error.getErrorMessage() +(error.hasDebugInfo() ? "; "+error.getDebugInfo() : "");
+        return error.getErrorType()+"/"+error.getPosixErrno()+": "+error.getErrorMessage() +(error.hasDebugInfo() ? ";\n"+error.getDebugInfo() : "");
     }
 
 }

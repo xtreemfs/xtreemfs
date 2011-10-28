@@ -87,8 +87,8 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
         final int maxErrors = numRequests - numAcksRequired;
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) fetching replica state for %s from %d replicas (majority: %d)",
-                    localUUID, fileId, numRequests, numAcksRequired);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) fetching replica state for %s from %d replicas (majority: %d), local max: %d",
+                    localUUID, fileId, numRequests, numAcksRequired, this.localObjVersion);
         }
 
         final RPCResponse[] responses = new RPCResponse[remoteOSDUUIDs.size()];
@@ -133,10 +133,11 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                         if (numErrors > maxErrors) {
                             if (!exceptionSent) {
                                 exceptionSent = true;
+                                String errorMessage = String.format("(R:%s) read status FAILED for %s on %s (this is request #%d out of %d which failed)", localUUID, fileId, remoteOSDUUIDs.get(osdNum), numErrors, remoteOSDUUIDs.size());
                                 if (Logging.isDebug()) {
-                                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) read status FAILED for %s on %s",localUUID, fileId, remoteOSDUUIDs.get(osdNum));
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, errorMessage);
                                 }
-                                callback.failed(ErrorUtils.getInternalServerError(ex));
+                                callback.failed(ErrorUtils.getInternalServerError(ex, errorMessage));
                             }
                         }
                         return;
