@@ -164,6 +164,7 @@ class Client {
   /** Returns the available volumes on a MRC.
    *
    * @param mrc_address     String of the form "hostname:port".
+   * @param auth            Authentication data, e.g. of type AUTH_PASSWORD.
    *
    * @throws AddressToUUIDNotFoundException
    * @throws IOException
@@ -171,13 +172,15 @@ class Client {
    *
    * @remark Ownership is transferred to the caller. */
   virtual xtreemfs::pbrpc::Volumes* ListVolumes(
-      const std::string& mrc_address) = 0;
+      const std::string& mrc_address,
+      const xtreemfs::pbrpc::Auth& auth) = 0;
 
   /** Returns the available volumes on a MRC.
    *
    * @param uuid_iterator_with_mrc_addresses    UUIDIterator object which
    *                                            contains MRC addresses of the
    *                                            form "hostname:port".
+   * @param auth    Authentication data, e.g. of type AUTH_PASSWORD.
    *
    * @throws AddressToUUIDNotFoundException
    * @throws IOException
@@ -185,7 +188,8 @@ class Client {
    *
    * @remark Ownership of the return value is transferred to the caller. */
   virtual xtreemfs::pbrpc::Volumes* ListVolumes(
-      UUIDIterator* uuid_iterator_with_mrc_addresses) = 0;
+      UUIDIterator* uuid_iterator_with_mrc_addresses,
+      const xtreemfs::pbrpc::Auth& auth) = 0;
 
   /** Returns a pointer to a UUIDResolver object, which provides functions to
    *  resolve UUIDs to IP-Addresses and Ports.

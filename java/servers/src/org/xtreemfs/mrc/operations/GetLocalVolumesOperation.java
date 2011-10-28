@@ -9,7 +9,6 @@
 package org.xtreemfs.mrc.operations;
 
 import java.util.Collection;
-import java.util.Iterator;
 
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
@@ -45,7 +44,7 @@ public class GetLocalVolumesOperation extends MRCOperation {
         // check password to ensure that user is authorized
         if (master.getConfig().getAdminPassword().length() > 0
                 && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
-            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "invalid password");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Invalid password. If you see this error at mount.xtreemfs when mounting a volume, please update your client to version 1.3.1 or newer.");
         
         Volumes.Builder vSet = Volumes.newBuilder();
         for (StorageManager sMan : sMans) {

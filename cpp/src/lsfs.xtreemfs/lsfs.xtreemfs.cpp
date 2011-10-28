@@ -55,6 +55,14 @@ int main(int argc, char* argv[]) {
   user_credentials.set_username("xtreemfs");
   user_credentials.add_groups("xtreemfs");
 
+  Auth auth;
+  if (options.admin_password.empty()) {
+    auth.set_auth_type(AUTH_NONE);
+  } else {
+    auth.set_auth_type(AUTH_PASSWORD);
+    auth.mutable_auth_passwd()->set_password(options.admin_password);
+  }
+
   // Create a new client and start it.
   boost::scoped_ptr<Client> client(Client::CreateClient(
       "DIR-host-not-required-for-lsfs",  // Using a bogus value as DIR address.
@@ -69,7 +77,7 @@ int main(int argc, char* argv[]) {
   bool success = true;
   boost::scoped_ptr<xtreemfs::pbrpc::Volumes> volumes(NULL);
   try {
-    volumes.reset(client->ListVolumes(options.service_address));
+    volumes.reset(client->ListVolumes(options.service_address, auth));
   } catch (const XtreemFSException& e) {
     success = false;
     cout << "Failed to list the volumes, error:\n"
