@@ -32,15 +32,22 @@ getfattr -d -m . "$this_mount_point" 2>&1 | grep 'xtreemfs.volattr.chown_non_roo
 SUDO_CMD=""
 if [ $UID -ne 0 ]
 then
-  echo | sudo -S true &>/dev/null && SUDO_CMD="sudo" || {
-  cat <<EOF
+  echo | sudo -S "$PJD_POSIX_TEST_SUITE/bogus.t" &>/dev/null && SUDO_CMD="sudo" || {
+  if [ "$(hostname -f)" = "xtreem.zib.de" ]
+  then
+    # Failing this sudo check is never on option on our own test machine.
+    echo "Did not succeed to run 'prove' with sudo without password (this machine is: "$(hostname -f)")"
+    exit 1
+  else
+    cat <<EOF
 WARNING: This test has to be run as root.
 
 However, this test script is neither executed as root nor is it allowed to run 'sudo' without a password.
 
 Therefore this test will be skipped. Success will be returned to avoid confusion among non-developers who run the test suite.
 EOF
-  exit 0
+    exit 0
+  fi
 }
 fi
 
