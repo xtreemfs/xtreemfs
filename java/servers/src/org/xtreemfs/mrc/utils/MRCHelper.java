@@ -702,42 +702,68 @@ public class MRCHelper {
             
             String replUpdatePolicy = xlocs.getReplUpdatePolicy();
             
+            // Check allowed policies.
+            if (!ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(value)
+                    && !ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE.equals(value)
+                    && !ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(value)
+                    && !ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(value))
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "Invalid replica update policy: " + value);
+            
+            // WaRa was renamed to WaR1.
+            if (ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA.equals(value)) {
+                throw new UserException(
+                    POSIXErrno.POSIX_ERROR_EINVAL,
+                    "Do no longer use the policy WaRa. Instead you're probably looking for the WaR1 policy (write all replicas, read from one)."
+                        + value);
+            }
+
             if (ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(replUpdatePolicy) && xlocArray.length > 1)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
-                        "changing replica update policies of read-only-replicated files is not allowed");
+                    "changing replica update policies of read-only-replicated files is not allowed");
             
             if (ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(value)) {
                 // if there are more than one replica, report an error
                 if (xlocs.getReplicaCount() > 1)
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
-                            "number of replicas has to be reduced to 1 before replica update policy can be set to "
-                                    + ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE + " (current replica count = "
-                                    + xlocs.getReplicaCount() + ")");
+                        "number of replicas has to be reduced to 1 before replica update policy can be set to "
+                            + ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE + " (current replica count = "
+                            + xlocs.getReplicaCount() + ")");
             }
             
-            if (ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA.equals(value)) {
+            // Do not allow to switch between read-only and read/write replication
+            // as there are currently no mechanisms in place to guarantee that the replicas are synchronized.
+            if ((ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(replUpdatePolicy)
+                    && (ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(value)
+                            || ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE.equals(value)))
+                ||
+                (ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(value)
+                        && (ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(replUpdatePolicy)
+                                || ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE.equals(replUpdatePolicy)))) {
                 throw new UserException(
-                        POSIXErrno.POSIX_ERROR_EINVAL,
-                        "Do no longer use the policy WaRa. Instead you're probably looking for the WaR1 policy (write all replicas, read from one)."
-                                + value);
+                    POSIXErrno.POSIX_ERROR_EINVAL,
+                    "Currently, it is not possible to change from a read-only to a read/write replication policy or vise versa.");
             }
             
-            if (!ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(value)
-                    && !ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE.equals(value)
-                    && !ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(value)
-                    && !ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(value))
-                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "invalid replica update policy: " + value);
-            
+            // Update replication policy in new xloc list.
             newXLocList = sMan.createXLocList(xlocArray, value, xlocs.getVersion() + 1);
             
             // mark the first replica in the list as 'complete' (only relevant
             // for read-only replication)
-            newXLocList.getReplica(0).setReplicationFlags(
-                    ReplicationFlags.setFullReplica(ReplicationFlags.setReplicaIsComplete(newXLocList.getReplica(0)
-                            .getReplicationFlags())));
-                        
+            if (ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(value)) {
+                newXLocList.getReplica(0).setReplicationFlags(
+                        ReplicationFlags.setFullReplica(ReplicationFlags.setReplicaIsComplete(newXLocList.getReplica(0)
+                                .getReplicationFlags())));
+                file.setReadOnly(true);
+            }
+            
+            // Remove read only state of file if readonly policy gets reverted.
+            if (ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(replUpdatePolicy)
+                    && ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(value)) {
+                file.setReadOnly(false);
+            }
+            
+            // Write back updated file data.
             file.setXLocList(newXLocList);
-            file.setReadOnly(true);
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             break;
