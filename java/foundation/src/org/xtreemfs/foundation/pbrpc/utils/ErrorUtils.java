@@ -38,7 +38,7 @@ public class ErrorUtils {
     
     public static ErrorResponse getInternalServerError(Throwable cause, String additionalErrorMessage) {
         return ErrorResponse.newBuilder().setErrorType(ErrorType.INTERNAL_SERVER_ERROR).setPosixErrno(POSIXErrno.POSIX_ERROR_EIO).
-                setErrorMessage(additionalErrorMessage + cause.toString()).setDebugInfo(OutputUtils.stackTraceToString(cause)).build();
+                setErrorMessage(additionalErrorMessage + "; " + cause.toString()).setDebugInfo(OutputUtils.stackTraceToString(cause)).build();
     }
 
     public static String formatError(ErrorResponse error) {
