@@ -43,22 +43,22 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 public class xtfs_remove_osd {
 
     private static final String DEFAULT_DIR_CONFIG = "/etc/xos/xtreemfs/default_dir";
-    private OSDServiceClient osd;
-    private DIRClient dir;
-    private MRCServiceClient mrc;
-    private RPCNIOSocketClient dirClient;
-    private RPCNIOSocketClient osdClient;
-    private RPCNIOSocketClient mrcClient;
-    private InetSocketAddress osdAddr;
-    private InetSocketAddress mrcAddr;
-    private SSLOptions sslOptions;
-    private InetSocketAddress dirAddress;
-    private UUIDResolver resolver;
-    private RPCNIOSocketClient resolverClient;
-    private Auth authHeader;
-    private UserCredentials credentials;
-    private String osdUUIDString;
-    private ServiceUUID osdUUID;
+    private OSDServiceClient    osd;
+    private DIRClient           dir;
+    private MRCServiceClient    mrc;
+    private RPCNIOSocketClient  dirClient;
+    private RPCNIOSocketClient  osdClient;
+    private RPCNIOSocketClient  mrcClient;
+    private InetSocketAddress   osdAddr;
+    private InetSocketAddress   mrcAddr;
+    private SSLOptions          sslOptions;
+    private InetSocketAddress   dirAddress;
+    private UUIDResolver        resolver;
+    private RPCNIOSocketClient  resolverClient;
+    private Auth                authHeader;
+    private UserCredentials     credentials;
+    private String              osdUUIDString;
+    private ServiceUUID         osdUUID;
 
     public static void main(String[] args) {
 
@@ -68,8 +68,6 @@ public class xtfs_remove_osd {
             options = utils.getDefaultAdminToolOptions(true);
             List<String> arguments = new ArrayList<String>(1);
 
-
-
             CliOption oDir = new CliOption(CliOption.OPTIONTYPE.URL,
                     "directory service to use (e.g. 'pbrpc://localhost:32638')", "<uri>");
             oDir.urlDefaultPort = PORTS.DIR_PBRPC_PORT_DEFAULT.getNumber();
@@ -78,28 +76,29 @@ public class xtfs_remove_osd {
             options.put("s", new CliOption(CliOption.OPTIONTYPE.SWITCH, "shutdown OSD", ""));
             options.put("d", new CliOption(CliOption.OPTIONTYPE.SWITCH, "enbable debug output", ""));
             CLIParser.parseCLI(args, options, arguments);
-            
-            //start logging
+
+            // start logging
             if (options.get("d").switchValue) {
                 Logging.start(Logging.LEVEL_DEBUG);
             } else {
                 Logging.start(Logging.LEVEL_ERROR);
             }
 
-            if (options.get(utils.OPTION_HELP).switchValue || options.get(utils.OPTION_HELP_LONG).switchValue) {
+            if (options.get(utils.OPTION_HELP).switchValue || options.get(utils.OPTION_HELP_LONG).switchValue
+                    || arguments.size() == 0) {
                 usage(options);
                 return;
             }
 
-            if (arguments.size() != 1) {
-                // print error but not usage().
-                error("invalid number of arguments", options, false);
+            if (arguments.size() > 1) {
+                // print error.
+                error("invalid number of arguments", options, true);
             }
-
 
             ONCRPCServiceURL dirURL = options.get("dir").urlValue;
             boolean shutdown = options.get("s").switchValue;
-            String password = (options.get(utils.OPTION_ADMIN_PASS).stringValue != null) ? options.get(utils.OPTION_ADMIN_PASS).stringValue : "";
+            String password = (options.get(utils.OPTION_ADMIN_PASS).stringValue != null) ? options
+                    .get(utils.OPTION_ADMIN_PASS).stringValue : "";
             boolean useSSL = false;
             boolean gridSSL = false;
             String serviceCredsFile = null;
@@ -118,7 +117,8 @@ public class xtfs_remove_osd {
 
             // parse security info if protocol is 'https'
             if (dirURL != null
-                    && (Schemes.SCHEME_PBRPCS.equals(dirURL.getProtocol()) || Schemes.SCHEME_PBRPCG.equals(dirURL.getProtocol()))) {
+                    && (Schemes.SCHEME_PBRPCS.equals(dirURL.getProtocol()) || Schemes.SCHEME_PBRPCG
+                            .equals(dirURL.getProtocol()))) {
                 useSSL = true;
                 serviceCredsFile = options.get(utils.OPTION_USER_CREDS_FILE).stringValue;
                 serviceCredsPass = options.get(utils.OPTION_USER_CREDS_PASS).stringValue;
@@ -165,7 +165,6 @@ public class xtfs_remove_osd {
                     serviceCredsPass, SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile),
                     trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL, null) : null;
 
-
             xtfs_remove_osd removeOsd = new xtfs_remove_osd(dirAddr, osdUUID, sslOptions, password);
             removeOsd.initialize();
             removeOsd.drainOSD(shutdown);
@@ -189,12 +188,12 @@ public class xtfs_remove_osd {
             if (password.equals("")) {
                 this.authHeader = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
             } else {
-                this.authHeader = Auth.newBuilder().setAuthType(AuthType.AUTH_PASSWORD).setAuthPasswd(AuthPassword.newBuilder().setPassword(password).build()).build();
+                this.authHeader = Auth.newBuilder().setAuthType(AuthType.AUTH_PASSWORD)
+                        .setAuthPasswd(AuthPassword.newBuilder().setPassword(password).build()).build();
             }
 
             // TODO: use REAL user credentials (this is a SECURITY HOLE)
             this.credentials = UserCredentials.newBuilder().setUsername("root").addGroups("root").build();
-
 
         } catch (Exception e) {
             shutdown();
@@ -211,14 +210,13 @@ public class xtfs_remove_osd {
         dirClient.start();
         dirClient.waitForStartup();
         DIRServiceClient tmp = new DIRServiceClient(dirClient, dirAddress);
-        dir = new DIRClient(tmp, new InetSocketAddress[]{dirAddress}, 100, 15 * 1000);
+        dir = new DIRClient(tmp, new InetSocketAddress[] { dirAddress }, 100, 15 * 1000);
 
         resolverClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
         resolverClient.start();
         resolverClient.waitForStartup();
-        this.resolver = UUIDResolver.startNonSingelton(dir,1000, 10 * 10 * 1000);
-        
-        
+        this.resolver = UUIDResolver.startNonSingelton(dir, 1000, 10 * 10 * 1000);
+
         // create OSD client
         osdUUID = new ServiceUUID(osdUUIDString, resolver);
         osdUUID.resolve();
@@ -232,7 +230,8 @@ public class xtfs_remove_osd {
         // create MRC client
         ServiceSet sSet = null;
         try {
-            sSet = dir.xtreemfs_service_get_by_type(null, authHeader, credentials, ServiceType.SERVICE_TYPE_MRC);
+            sSet = dir.xtreemfs_service_get_by_type(null, authHeader, credentials,
+                    ServiceType.SERVICE_TYPE_MRC);
         } catch (IOException ioe) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.proc, new Object(),
                     OutputUtils.stackTraceToString(ioe));
@@ -281,36 +280,34 @@ public class xtfs_remove_osd {
      * Prints the error <code>message</code> and delegates to usage() if "printUsage" is true.
      * 
      * @param message
-     *                  The error message
+     *            The error message
      * @param options
-     *                  The CLI Options.
-     * @param printUsage 
-     *                  True if usage should be printed. False otherwise.
-     *                  
+     *            The CLI Options.
+     * @param printUsage
+     *            True if usage should be printed. False otherwise.
+     * 
      */
     private static void error(String message, Map<String, CliOption> options, boolean printUsage) {
         System.err.println(message);
 
         if (printUsage) {
             System.out.println();
-            usage(options);    
+            usage(options);
         }
         System.exit(1);
     }
-    
+
     /**
      * Prints the error <code>message</code> and delegates to usage().
      * 
      * @param message
-     *                  The error message
+     *            The error message
      * @param options
-     *                  The CLI Options.
+     *            The CLI Options.
      */
     private static void error(String message, Map<String, CliOption> options) {
         error(message, options, false);
     }
-    
-    
 
     public static void usage(Map<String, CliOption> options) {
 
