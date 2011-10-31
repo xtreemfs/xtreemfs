@@ -92,7 +92,8 @@ public class xtfs_remove_osd {
             }
 
             if (arguments.size() != 1) {
-                error("invalid number of arguments", options);
+                // print error but not usage().
+                error("invalid number of arguments", options, false);
             }
 
 
@@ -277,16 +278,39 @@ public class xtfs_remove_osd {
     }
 
     /**
+     * Prints the error <code>message</code> and delegates to usage() if "printUsage" is true.
+     * 
+     * @param message
+     *                  The error message
+     * @param options
+     *                  The CLI Options.
+     * @param printUsage 
+     *                  True if usage should be printed. False otherwise.
+     *                  
+     */
+    private static void error(String message, Map<String, CliOption> options, boolean printUsage) {
+        System.err.println(message);
+
+        if (printUsage) {
+            System.out.println();
+            usage(options);    
+        }
+        System.exit(1);
+    }
+    
+    /**
      * Prints the error <code>message</code> and delegates to usage().
      * 
      * @param message
+     *                  The error message
+     * @param options
+     *                  The CLI Options.
      */
     private static void error(String message, Map<String, CliOption> options) {
-        System.err.println(message);
-        System.out.println();
-        usage(options);
-        System.exit(1);
+        error(message, options, false);
     }
+    
+    
 
     public static void usage(Map<String, CliOption> options) {
 

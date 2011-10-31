@@ -12,7 +12,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import junit.framework.TestCase;
 
@@ -21,14 +20,12 @@ import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.File;
 import org.xtreemfs.common.clients.RandomAccessFile;
 import org.xtreemfs.common.clients.Volume;
-import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
@@ -41,7 +38,6 @@ import org.xtreemfs.osd.drain.OSDDrainException;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
@@ -462,7 +458,6 @@ public class OSDDrainTest extends TestCase {
         osdServer.clear();
         
         TimeSync.initializeLocal(60 * 1000, 50).waitForStartup();
-        
     }
 
 }
