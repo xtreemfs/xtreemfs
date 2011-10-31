@@ -32,7 +32,7 @@ getfattr -d -m . "$this_mount_point" 2>&1 | grep 'xtreemfs.volattr.chown_non_roo
 SUDO_CMD=""
 if [ $UID -ne 0 ]
 then
-  echo | sudo -S "$PJD_POSIX_TEST_SUITE/bogus.t" &>/dev/null && SUDO_CMD="sudo" || {
+  echo | sudo -S prove "$PJD_POSIX_TEST_SUITE/bogus.t" &>/dev/null && SUDO_CMD="sudo" || {
   if [ "$(hostname -f)" = "xtreem.zib.de" ]
   then
     # Failing this sudo check is never on option on our own test machine.
