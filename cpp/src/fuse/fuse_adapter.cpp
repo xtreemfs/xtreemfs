@@ -511,6 +511,17 @@ int FuseAdapter::getattr(const char *path, struct stat *statbuf) {
  *  - 1 (due to null termination). */
 int FuseAdapter::getxattr(
     const char *path, const char *name, char *value, size_t size) {
+  const string path_str(path);
+
+  // No getxattr for xtfsutil control files.
+  if (xctl_.checkXctlFile(path_str)) {
+#ifdef __linux
+      return -1 * ENODATA;  // Linux has no ENOATTR.
+#else
+      return -1 * ENOATTR;
+#endif
+  }
+
   bool xtreemfs_attribute_requested = !strncmp(name, "xtreemfs.", 9);
   if (!options_->enable_xattrs && !xtreemfs_attribute_requested) {
     return -1 * ENOTSUP;
@@ -522,7 +533,7 @@ int FuseAdapter::getxattr(
   try {
     if (size == 0) {
       int result = 0;
-      if (volume_->GetXAttrSize(user_credentials, string(path),
+      if (volume_->GetXAttrSize(user_credentials, path_str,
           string(name), &result)) {
         return result;
       } else {
@@ -534,7 +545,7 @@ int FuseAdapter::getxattr(
       }
     } else {
       string value_string;
-      if (volume_->GetXAttr(user_credentials, string(path),
+      if (volume_->GetXAttr(user_credentials, path_str,
                             string(name), &value_string)) {
         if (value_string.size() <= size) {
           // XAttrs are actually binary data and do not require a
