@@ -49,7 +49,7 @@ CLIENT_GOOGLE_TEST_CPP_MAIN = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest_main.
 CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
 
 TARGETS = client server foundation
-.PHONY:	clean distclean
+.PHONY:	clean distclean set_version
 
 # Some toplevel configuration
 XTFS_BINDIR = $(shell pwd)/bin
@@ -189,6 +189,10 @@ check_test:
 	@if [[ $(shell python -V 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f2) -lt 3 && $(shell python -V 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f1) -lt 3 ]]; then echo "python >= 2.4 required!"; exit 1; fi;
 	@echo "python ok"
 
+set_version:
+# Try to set the SVN revision and branch name as part of the version. We don't care if this may fail.
+	@./packaging/set_version.sh -s &>/dev/null; exit 0
+
 .PHONY:	client client_clean client_distclean client_thirdparty_clean client_package_macosx
 
 CLIENT_THIRDPARTY_REQUIREMENTS = $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
@@ -236,7 +240,7 @@ client_thirdparty_distclean:
 client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
 client_debug: client
 
-client: check_client client_thirdparty
+client: check_client client_thirdparty set_version
 	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG)
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)	
 	@cp   -a $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTFS_BINDIR)
@@ -262,7 +266,7 @@ client_package_macosx:
 	@echo "Package file created: $(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)"
 
 .PHONY: foundation foundation_clean
-foundation:
+foundation: set_version
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/foundation/build-1.6.5.xml jar
 foundation_clean:
 	$(ANT_BIN)  -D"file.encoding=UTF-8" -f java/foundation/build-1.6.5.xml clean || exit 1;
