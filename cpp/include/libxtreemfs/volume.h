@@ -182,6 +182,25 @@ class Volume {
       const std::string& path,
       xtreemfs::pbrpc::Stat* stat) = 0;
 
+  /** Retrieve the attributes of a file and writes the result in "stat".
+   *
+   * @param user_credentials    Name and Groups of the user.
+   * @param path    Path to the file/directory.
+   * @param ignore_metadata_cache   If true, do not use the cached value.
+   *                                The cache will be updated, though.
+   * @param stat[out]   Result of the operation will be stored here.
+   *
+   * @throws AddressToUUIDNotFoundException
+   * @throws IOException
+   * @throws PosixErrorException
+   * @throws UnknownAddressSchemeException
+   */
+  virtual void GetAttr(
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& path,
+      bool ignore_metadata_cache,
+      xtreemfs::pbrpc::Stat* stat) = 0;
+
   /** Sets the attributes given by "stat" and specified in "to_set".
    *
    * @note  If the mode, uid or gid is changed, the ctime of the file will be

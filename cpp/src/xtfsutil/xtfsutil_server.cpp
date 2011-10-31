@@ -26,6 +26,7 @@
 
 using namespace std;
 using namespace xtreemfs::util;
+using namespace xtreemfs::pbrpc;
 
 namespace xtreemfs {
 
@@ -381,6 +382,16 @@ void XtfsUtilServer::OpSetReplicationPolicy(
                     policy_name,
                     xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
   (*output)["result"] = Json::Value(Json::objectValue);
+
+  if (policy_name == "ronly" || policy_name == "") {
+    // Actual permissions of the file probably changed, update cache.
+    try {
+      Stat stat;
+      volume_->GetAttr(uc, path, true, &stat);
+    } catch(const exception& e) {
+      // Ignore errors.
+    }
+  }
 }
 
 void XtfsUtilServer::OpAddReplica(

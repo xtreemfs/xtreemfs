@@ -26,8 +26,19 @@ diff "$TEMP_FILENAME" "$TEMP_FILENAME_REPLICATED_PARTIAL"
 ## FULL Replica
 # Remember the OSD UUID of the original replica
 original_osd=$("$XTFSUTIL" "$TEMP_FILENAME_REPLICATED_FULL" | grep "OSD 1" | awk '{ print $3 }')
+original_permissions=$(stat -c "%a" "$TEMP_FILENAME_REPLICATED_FULL")
 # Add a full replica
 "$XTFSUTIL" -r ronly "$TEMP_FILENAME_REPLICATED_FULL"
+readonly_permissions=$(stat -c "%a" "$TEMP_FILENAME_REPLICATED_FULL")
+if [ "$original_permissions" == "$readonly_permissions" ]
+then
+  cat <<EOF
+Changing to the readonly policy does affect the actual permissions of the file as write permissions are removed.
+
+However, permissions did not change. Before: $original_permissions After: $readonly_permissions
+EOF
+  exit 1
+fi
 "$XTFSUTIL" -a --full "$TEMP_FILENAME_REPLICATED_FULL"
 # echo "Display md5sums of original file and copied file, which has two replicas:"
 # md5sum "$TEMP_FILENAME"
@@ -42,6 +53,18 @@ sleep 5
 # Check if diff succeeds
 diff "$TEMP_FILENAME" "$TEMP_FILENAME_REPLICATED_FULL"
 
+# Reset replication policy to none and check if original permissions are restored.
+"$XTFSUTIL" -r none "$TEMP_FILENAME_REPLICATED_FULL"
+readwrite_permissions=$(stat -c "%a" "$TEMP_FILENAME_REPLICATED_FULL")
+if [ "$original_permissions" != "$readwrite_permissions" ]
+then
+  cat <<EOF
+After changing back the replication policy to 'none', the original permissions of a file should be in effect again.
+
+However, permissions were not restored. Before setting readonly: $original_permissions After setting none: $readwrite_permissions
+EOF
+  exit 1
+fi
 
 ## PARTIAL Replica
 # Remember the OSD UUID of the original replica
@@ -56,4 +79,4 @@ original_osd=$("$XTFSUTIL" "$TEMP_FILENAME_REPLICATED_PARTIAL" | grep "OSD 1" | 
 "$XTFSUTIL" -d $original_osd "$TEMP_FILENAME_REPLICATED_PARTIAL" &>/dev/null && echo "ERROR: xtfsutil succeeded to delete the last full replica and now only partial replicas are left, i.e. the data of the file is lost." && false
 
 # Cleanup
-rm "$TEMP_FILENAME" "$TEMP_FILENAME_REPLICATED_FULL" "$TEMP_FILENAME_REPLICATED_PARTIAL"
+rm -f "$TEMP_FILENAME" "$TEMP_FILENAME_REPLICATED_FULL" "$TEMP_FILENAME_REPLICATED_PARTIAL"

@@ -116,10 +116,17 @@ class VolumeImplementation : public Volume {
       const std::string& path,
       xtreemfs::pbrpc::Stat* stat);
 
+  virtual void GetAttr(
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& path,
+      bool ignore_metadata_cache,
+      xtreemfs::pbrpc::Stat* stat);
+
   /** If file_info is unknown and set to NULL, GetFileInfo(path) is used. */
   void GetAttr(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
       const std::string& path,
+      bool ignore_metadata_cache,
       xtreemfs::pbrpc::Stat* stat_buffer,
       FileInfo* file_info);
 
@@ -281,6 +288,7 @@ class VolumeImplementation : public Volume {
    */
   void GetAttrHelper(const xtreemfs::pbrpc::UserCredentials& user_credentials,
                      const std::string& path,
+                     bool ignore_metadata_cache,
                      xtreemfs::pbrpc::Stat* stat_buffer);
 
   /** Obtain or create a new FileInfo object in the open_file_table_

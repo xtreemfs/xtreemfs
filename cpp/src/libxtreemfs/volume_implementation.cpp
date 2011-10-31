@@ -464,15 +464,24 @@ void VolumeImplementation::GetAttr(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
     xtreemfs::pbrpc::Stat* stat_buffer) {
-  GetAttr(user_credentials, path, stat_buffer, NULL);
+  GetAttr(user_credentials, path, false, stat_buffer, NULL);
+}
+
+void VolumeImplementation::GetAttr(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::string& path,
+    bool ignore_metadata_cache,
+    xtreemfs::pbrpc::Stat* stat_buffer) {
+  GetAttr(user_credentials, path, ignore_metadata_cache, stat_buffer, NULL);
 }
 
 void VolumeImplementation::GetAttrHelper(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
+    bool ignore_metadata_cache,
     xtreemfs::pbrpc::Stat* stat_buffer) {
   // Check if the information was cached.
-  if (metadata_cache_.GetStat(path, stat_buffer)) {
+  if (!ignore_metadata_cache && metadata_cache_.GetStat(path, stat_buffer)) {
     // Found in StatCache.
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
       Logging::log->getLog(LEVEL_DEBUG)
@@ -514,10 +523,11 @@ void VolumeImplementation::GetAttrHelper(
 void VolumeImplementation::GetAttr(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
+    bool ignore_metadata_cache,
     xtreemfs::pbrpc::Stat* stat_buffer,
     FileInfo* file_info) {
   // Retrieve stat object from cache or MRC.
-  GetAttrHelper(user_credentials, path, stat_buffer);
+  GetAttrHelper(user_credentials, path, ignore_metadata_cache, stat_buffer);
 
   // Wait until async writes have finished and merge StatCache object with
   // possibly newer information from FileInfo.
@@ -565,7 +575,10 @@ void VolumeImplementation::GetAttr(
           // have to retrieve the file size once again from the MRC or stat cache.
           // Return lock on open_file_table_.
           oft_lock.unlock();
-          GetAttrHelper(user_credentials, path, stat_buffer);
+          GetAttrHelper(user_credentials,
+                        path,
+                        ignore_metadata_cache,
+                        stat_buffer);
         }
       } else {
         // Open file table was never unlocked and it's still safe to access the
