@@ -8,6 +8,7 @@ package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
 
+import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
@@ -85,7 +86,7 @@ public abstract class FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void flush() throws IOException;
+    public abstract void flush() throws IOException, PosixErrorException;
 
     /**
      * Truncates the file to "newFileSize_ bytes".
@@ -100,7 +101,8 @@ public abstract class FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      **/
-    public abstract void truncate(UserCredentials userCredentials, int newfileSize) throws IOException;
+    public abstract void truncate(UserCredentials userCredentials, long newFileSize) throws IOException,
+            PosixErrorException;
 
     /**
      * Retrieve the attributes of this file and writes the result in "stat".
@@ -144,7 +146,7 @@ public abstract class FileHandle {
      * @remark Ownership is transferred to the caller.
      */
     public abstract Lock acquireLock(UserCredentials userCredentials, int processId, long offset,
-            long length, boolean exclusive, boolean waitForLock) throws IOException;
+            long length, boolean exclusive, boolean waitForLock) throws IOException, PosixErrorException;
 
     /**
      * Checks if the requested lock does not result in conflicts. If true, the returned Lock object contains

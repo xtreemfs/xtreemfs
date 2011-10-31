@@ -7,9 +7,9 @@
 package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
+import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -24,6 +24,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getattrRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 
 /**
@@ -57,7 +58,7 @@ public class FileInfo {
     /**
      * Used to protect "path".
      */
-    private final java.util.concurrent.locks.Lock           pathLock                  = new ReentrantLock();
+    private final java.util.concurrent.locks.Lock           pathLock;
 
     /**
      * Extracted from the FileHandle's XCap: true if an explicit close() has to be send to the MRC in order to
@@ -78,7 +79,7 @@ public class FileInfo {
     /**
      * Use this to protect "xlocset" and "replicateOnClose".
      */
-    java.util.concurrent.locks.Lock                         xLocSetMutex              = new ReentrantLock();
+    java.util.concurrent.locks.Lock                         xLocSetLock;
 
     /**
      * UUIDIterator which contains the UUIDs of all replicas.
@@ -115,10 +116,10 @@ public class FileInfo {
     /**
      * Pending file size update after a write() operation, may be NULL.
      * 
-     * If osdWriteResponse != NULL, the fileSize and truncateEpoch of the referenced OSDWriteResponse have to
-     * be respected, e.g. when answering a GetAttr request. This osdWriteResponse also corresponds to the
-     * "maximum" of all known OSDWriteReponses. The maximum has the highest truncate_epoch, or if equal
-     * compared to another response, the higher sizeInBytes value.
+     * If osdWriteResponse != NULL, the fileSize and "truncateEpoch" of the referenced
+     * {@link OSDWriteResponse} have to be respected, e.g. when answering a {@link getattrRequest}. This
+     * "osdWriteResponse" also corresponds to the "maximum" of all known OSDWriteReponses. The maximum has the
+     * highest "truncateEpoch", or if equal compared to another response, the higher "sizeInBytes" value.
      */
     private OSDWriteResponse                                osdWriteResponse;
 
@@ -136,19 +137,18 @@ public class FileInfo {
      * Always lock to access "osdWriteResponse", "osdWriteResponseStatus", "osdWriteResponseXcap" or
      * "pendingFilesizeUpdates".
      */
-    private final java.util.concurrent.locks.Lock           osdWriteResponseLock      = new ReentrantLock();
+    private final java.util.concurrent.locks.Lock           osdWriteResponseLock;
 
     /**
      * Used by NotifyFileSizeUpdateCompletition() to notify waiting threads.
      */
-    private final Condition                                 osdWriteResponseCondition = osdWriteResponseLock
-                                                                                              .newCondition();
+    private final Condition                                 osdWriteResponseCondition;
 
     /**
-     * Proceeds async writes, handles the callbacks and provides a WaitForPendingWrites() method for barrier
+     * Proceeds async writes, handles the callbacks and provides a waitForPendingWrites() method for barrier
      * operations like read.
      */
-    // AsyncWriteHandler async_write_handler_;
+    AsyncWriteHandler                                       asyncWriteHandler;
 
     /**
      * 
@@ -165,13 +165,37 @@ public class FileInfo {
         referenceCount = new AtomicInteger(0);
         osdWriteResponse = null;
         osdWriteResponseStatus = FilesizeUpdateStatus.kClean;
-        // TODO: Initialize async write handler.
+        osdWriteResponseLock = new ReentrantLock();
+        osdWriteResponseCondition = osdWriteResponseLock.newCondition();
+
+        pathLock = new ReentrantLock();
+        xLocSetLock = new ReentrantLock();
 
         openFileHandles = new ConcurrentLinkedQueue<FileHandleImplementation>();
         activeLocks = new ConcurrentHashMap<Integer, Lock>();
+
+        asyncWriteHandler = new AsyncWriteHandler(this, volume.getMrcUuidIterator(),
+                volume.getUUIDResolver(), volume.getOsdServiceClient(), volume.getAuthBogus(),
+                volume.getUserCredentialsBogus(), volume.getOptions().getMaxWriteahead(), volume.getOptions()
+                        .getMaxWriteaheadRequests(), volume.getOptions().getMaxWriteTries());
+
+        // Add the UUIDs of all replicas to the UUID Iterator.
+        for (int i = 0; i < xlocset.getReplicasCount(); i++) {
+            osdUuidIterator.addUUID(xlocset.getReplicas(i).getOsdUuids(0));
+        }
     }
 
-    public void UpdateXLocSetAndRest(XLocSet newXlocset, boolean replicateOnClose) {
+    /**
+     * Create a copy of "newXlocSet" and save it to the "xlocset" member. "replicateOnClose" will be save in
+     * the corresponding member, too.
+     * 
+     * @param newXlocset
+     *            XlocSet that will be copied and set.
+     * @param replicateOnClose
+     *            true if replicate on close is used. false otherwise.
+     * 
+     */
+    protected void updateXLocSetAndRest(XLocSet newXlocset, boolean replicateOnClose) {
 
         xlocset = XLocSet.newBuilder(newXlocset).build();
 
@@ -423,7 +447,6 @@ public class FileInfo {
      * Blocks until all asynchronous file size updates are completed.
      */
     protected void waitForPendingFileSizeUpdates() {
-        // TODO: Ask michael if the Helper is needed.
         while (pendingFilesizeUpdates.size() > 0) {
             try {
                 osdWriteResponseCondition.wait();
@@ -473,29 +496,37 @@ public class FileInfo {
     /**
      * Compares "lock" against list of active locks.
      * 
-     * Sets conflict_found to true and copies the conflicting, active lock into "conflicting_lock". If no
-     * conflict was found, "lock_for_pid_cached" is set to true if there exists already a lock for
-     * lock.client_pid(). Additionally, "cached_lock_for_pid_equal" will be set to true, lock is equal to the
+     * Returns a {@link Tupel} where the first elements is the conflicting lock if such exits or null. The
+     * second element is a array of three boolean value in the following order: conflictFound,
+     * lockForPidCached, cachedLockForPidEqual.
+     * 
+     * conflictFound is set to true and the conflicting, active lock return if there is a conflict. If no
+     * conflict was found, lockForPidCached is set to true if there exists already a lock for
+     * lock.getClientPid(). Additionally, cachedLockForPidEqual" will be set to true, lock is equal to the
      * lock active for this pid.
+     * 
+     * 
+     * @param lock
+     *            The {@link Lock} the locks in the list of active locks should be compared with.
+     * 
+     * @return A Tupel<Lock, boolean[]>.
      */
-    protected void checkLock(Lock lock, Lock conflicting_lock, boolean lockForPidCached,
-            boolean cachedLockForPidEqual, boolean conflictFound) {
-        // TODO: Return all the values in some useful datastructures.
+    protected Tupel<Lock, boolean[]> checkLock(Lock lock) {
 
         assert (lock.getClientUuid().equals(clientUuid));
 
-        boolean lockForPidCached_ = false;
-        boolean cachedLockForPidEqual_ = false;
-        boolean conflictFound_ = false;
+        boolean conflictFound = false;
+        boolean lockForPidCached = false;
+        boolean cachedLockForPidEqual = false;
 
         Lock conflictionLock = null;
 
         for (Entry<Integer, Lock> entry : activeLocks.entrySet()) {
 
             if (entry.getKey() == lock.getClientPid()) {
-                lockForPidCached_ = true;
+                lockForPidCached = true;
                 if (Helper.checkIfLocksAreEqual(lock, entry.getValue())) {
-                    cachedLockForPidEqual_ = true;
+                    cachedLockForPidEqual = true;
                 }
                 continue;
             }
@@ -508,6 +539,9 @@ public class FileInfo {
                 break;
             }
         }
+
+        boolean[] bools = new boolean[] { conflictFound, lockForPidCached, cachedLockForPidEqual };
+        return new Tupel<Lock, boolean[]>(conflictionLock, bools);
     }
 
     /**
@@ -546,14 +580,14 @@ public class FileInfo {
     /**
      * Flushes pending async writes and file size updates.
      */
-    protected void flush(FileHandleImplementation fileHandle) {
+    protected void flush(FileHandleImplementation fileHandle) throws IOException {
         flush(fileHandle, false);
     }
 
     /**
-     * Same as Flush(), takes special actions if called by FileHandle::Close().
+     * Same as Flush(), takes special actions if called by FileHandle.close().
      */
-    protected void flush(FileHandleImplementation fileHandle, boolean closeFile) {
+    protected void flush(FileHandleImplementation fileHandle, boolean closeFile) throws IOException {
         // We don't wait only for fileHandle's pending writes but for all writes of
         // this file.
         waitForPendingAsyncWrites();
@@ -564,49 +598,82 @@ public class FileInfo {
     /**
      * Flushes a pending file size update.
      */
-    protected void flushPendingFileSizeUpdate(FileHandleImplementation fileHandle) {
+    protected void flushPendingFileSizeUpdate(FileHandleImplementation fileHandle) throws IOException {
         flushPendingFileSizeUpdate(fileHandle, false);
     }
 
     /**
-     * Calls async_write_handler_.Write().
+     * Calls asyncWriteHandler.write().
      * 
      * @remark Ownership of write_buffer is transferred to caller.
      */
-    // void asyncWrite(AsyncWriteBuffer writeBuffer) {
-    //
-    // }
+    void asyncWrite(AsyncWriteBuffer writeBuffer) {
+        asyncWriteHandler.write(writeBuffer);
+    }
 
     /**
      * Calls asyncWriteHandler.waitForPendingWrites() (resulting in blocking until all pending async writes
      * are finished).
      */
     protected void waitForPendingAsyncWrites() {
-        // TODO: Implement.
-
+        asyncWriteHandler.waitForPendingWrites();
     }
 
     /**
-     * Returns result of async_write_handler_.WaitForPendingWritesNonBlocking().
+     * Same as flushPendingFileSizeUpdate(), takes special actions if called by close().
      * 
-     * @remark Ownership is not transferred to the caller.
+     * @throws IOException
      */
-    // boolean waitForPendingAsyncWritesNonBlocking(
-    // boost::condition* condition_variable,
-    // bool* wait_completed,
-    // boost::mutex* wait_completed_mutex);
-
-    /**
-     * Same as FlushPendingFileSizeUpdate(), takes special actions if called by Close().
-     */
-    private void flushPendingFileSizeUpdate(FileHandleImplementation fileHandle, boolean closeFile) {
+    private void flushPendingFileSizeUpdate(FileHandleImplementation fileHandle, boolean closeFile)
+            throws IOException {
         // File size write back.
-        boolean noResponseSent = true;
-        if (osdWriteResponse != null) {
+        osdWriteResponseLock.lock();
+        try {
 
+            boolean noResponseSent = true;
+            if (osdWriteResponse != null) {
+                waitForPendingFileSizeUpdates();
+                if (osdWriteResponseStatus == FilesizeUpdateStatus.kDirty) {
+                    osdWriteResponseStatus = FilesizeUpdateStatus.kDirtyAndSyncPending;
+
+                    // Create a copy of OSDWriteResponse to pass to FileHandle.
+                    OSDWriteResponse responseCopy = osdWriteResponse.toBuilder().build();
+                    osdWriteResponseLock.unlock();
+                    try {
+                        fileHandle.writeBackFileSize(responseCopy, closeFile);
+                    } catch (IOException e) {
+                        osdWriteResponseStatus = FilesizeUpdateStatus.kDirty;
+                        throw e;
+                    }
+
+                    osdWriteResponseLock.lock();
+                    noResponseSent = false;
+
+                    // Only update the status if the response object has not changed
+                    // meanwhile.
+                    if (Helper.compareOSDWriteResponses(osdWriteResponse, responseCopy) == 0) {
+                        osdWriteResponseStatus = FilesizeUpdateStatus.kClean;
+                    }
+                }
+            }
+
+            // TODO: Ask if here must be locked.
+            if (noResponseSent && closeFile && replicateOnClose) {
+                // Send an explicit close only if the on-close-replication should be
+                // triggered. Use an empty OSDWriteResponse object therefore.
+                fileHandle.writeBackFileSize(OSDWriteResponse.getDefaultInstance(), closeFile);
+            }
+
+        } finally {
+            osdWriteResponseLock.unlock();
         }
+
     }
+
     /** See WaitForPendingFileSizeUpdates(). */
     // private void waitForPendingFileSizeUpdatesHelper(boost::mutex::scoped_lock* lock);
 
+    protected XLocSet getXLocSet() {
+        return xlocset;
+    }
 }

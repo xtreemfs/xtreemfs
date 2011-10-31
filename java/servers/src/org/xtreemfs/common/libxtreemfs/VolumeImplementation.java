@@ -1488,7 +1488,8 @@ public class VolumeImplementation extends Volume {
         FileInfo fileInfo = openFileTable.get(fileId);
 
         if (fileInfo != null) {
-            fileInfo.UpdateXLocSetAndRest(xlocset, replicateOnClose);
+            //TODO: Figure out why xlocset should be set. oO
+            //fileInfo.UpdateXLocSetAndRest(xlocset, replicateOnClose);
             return fileInfo;
         } else {
             // File has not been opened yet, add it.

@@ -317,6 +317,10 @@ public class Options {
     public int getMaxTries() {
         return maxTries;
     }
+    
+    protected int getMaxWriteTries() {
+        return maxWriteTries;
+    }
 
     /**
      * Return retryDelay_s.
@@ -328,8 +332,14 @@ public class Options {
     public int getMaxWriteahead() {
         return maxWriteahead;
     }
+    
+    protected int getMaxWriteaheadRequests() {
+        return maxWriteaheadRequests;
+    }
 
     public int getReaddirChunkSize() {
         return readdirChunkSize;
     }
+    
+    
 }

@@ -27,11 +27,18 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  */
 public class RPCCaller {
 
-    // TODO: use MaxTries and Options to repeat calls on failure.
-    @SuppressWarnings("unchecked")
-    public static <C, R, V> V makeCall(C client, Method m, UserCredentials userCredentials, Auth auth,
+    protected static <C, R, V> V makeCall(C client, Method m, UserCredentials userCredentials, Auth auth,
             R request, UUIDIterator uuidIterator, UUIDResolver uuidResolver, int maxTries, Options options,
             boolean uuidIteratorHasAddresses) throws Exception {
+        return RPCCaller.<C, R, V> makeCall(client, m, userCredentials, auth, request, uuidIterator,
+                uuidResolver, maxTries, options, uuidIteratorHasAddresses, false);
+    }
+
+    // TODO: use MaxTries and Options to repeat calls on failure.
+    @SuppressWarnings("unchecked")
+    protected static <C, R, V> V makeCall(C client, Method m, UserCredentials userCredentials, Auth auth,
+            R request, UUIDIterator uuidIterator, UUIDResolver uuidResolver, int maxTries, Options options,
+            boolean uuidIteratorHasAddresses, boolean delayRetryOnError) throws Exception {
 
         assert (m.getDeclaringClass().isInstance(client));
         assert (uuidIteratorHasAddresses || uuidResolver != null);
@@ -83,14 +90,14 @@ public class RPCCaller {
     }
 
     /**
-     * Create an InetSocketAddress depending on the address and the type of service object is.
-     * If address does not contain a port a default port depending on the client object is used.
-     *  
+     * Create an InetSocketAddress depending on the address and the type of service object is. If address does
+     * not contain a port a default port depending on the client object is used.
+     * 
      * @param address
-     *          The address.
+     *            The address.
      * @param client
-     *          The service object used to determine which default port should used when address
-     *          does not contain a port.
+     *            The service object used to determine which default port should used when address does not
+     *            contain a port.
      * @return
      */
     private static InetSocketAddress getInetSocketAddressFromAddressAndServiceClient(String address,
