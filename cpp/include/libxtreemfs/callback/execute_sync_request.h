@@ -88,6 +88,7 @@ template<class ReturnMessageType, class F>
 #endif
 
   int attempt = 0;
+  bool redirected = false;
   bool interrupted = false;
   ReturnMessageType response = NULL;
   std::string service_uuid = "";
@@ -129,37 +130,11 @@ template<class ReturnMessageType, class F>
       // An error has happened. Differ between communication problems (retry
       // allowed) and application errors (need to pass to the caller).
 
-      // Special handling of an UUID redirection.
+      // Increase number of retries by one if this last attempt got a redirect.
       if (response->error()->error_type() == xtreemfs::pbrpc::REDIRECT) {
-        assert(response->error()->has_redirect_to_server_uuid());
-        uuid_iterator->SetCurrentUUID(
-            response->error()->redirect_to_server_uuid());
-        // Log the redirect.
-        xtreemfs::util::LogLevel level = xtreemfs::util::LEVEL_INFO;
-        std::string error;
-        if (uuid_iterator_has_addresses) {
-          error = "The server: " + service_address
-                + " redirected to the current master: "
-                + response->error()->redirect_to_server_uuid()
-                + " at attempt: " + boost::lexical_cast<std::string>(attempt);
-        } else {
-          error = "The server with the UUID: " + service_uuid
-                + " redirected to the current master with the UUID: "
-                + response->error()->redirect_to_server_uuid()
-                + " at attempt: " + boost::lexical_cast<std::string>(attempt);
-        }
-        if (xtreemfs::util::Logging::log->loggingActive(level)) {
-          xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
-        }
-        xtreemfs::util::ErrorLog::error_log->AppendError(error);
-
         if (max_tries != 0 && attempt == max_tries) {
-          // This was the last retry, but we give it another chance.
           max_tries++;
         }
-
-        // Do a fast retry and do not delay until the next attempt.
-        continue;
       }
 
       // Retry (and delay) only if at least one retry is left
@@ -168,30 +143,66 @@ template<class ReturnMessageType, class F>
            (attempt == max_tries && delay_last_attempt)) &&
           // AND it is an recoverable error.
           (response->error()->error_type() == xtreemfs::pbrpc::IO_ERROR ||
-           response->error()->error_type()
-               == xtreemfs::pbrpc::INTERNAL_SERVER_ERROR)) {
-        // Mark the current UUID as failed and get the next one.
-        if (uuid_iterator_has_addresses) {
-          uuid_iterator->MarkUUIDAsFailed(service_address);
-          uuid_iterator->GetUUID(&service_address);
-        } else {
-          uuid_iterator->MarkUUIDAsFailed(service_uuid);
-          uuid_iterator->GetUUID(&service_uuid);
-        }
+           response->error()->error_type() == xtreemfs::pbrpc::INTERNAL_SERVER_ERROR ||  // NOLINT
+           response->error()->error_type() == xtreemfs::pbrpc::REDIRECT)) {
 
-        // Log only the first retry.
-        if (attempt == 1 && max_tries != 1) {
-          std::string retries_left = max_tries == 0 ? "infinite"
-              : boost::lexical_cast<std::string>(max_tries - attempt);
-          std::string error = "Got no response from server " + service_uuid
-              + " (" + service_address + "), retrying ("
-              + boost::lexical_cast<std::string>(retries_left)
-              + " attempts left, waiting at least "
-              + boost::lexical_cast<std::string>(options.retry_delay_s)
-              + " seconds between two attempts).";
-          xtreemfs::util::Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
-              << error << std::endl;
+        // Special handling of REDIRECT "errors".
+        if (response->error()->error_type() == xtreemfs::pbrpc::REDIRECT) {
+          assert(response->error()->has_redirect_to_server_uuid());
+          uuid_iterator->SetCurrentUUID(
+              response->error()->redirect_to_server_uuid());
+          // Log the redirect.
+          xtreemfs::util::LogLevel level = xtreemfs::util::LEVEL_INFO;
+          std::string error;
+          if (uuid_iterator_has_addresses) {
+            error = "The server: " + service_address
+                  + " redirected to the current master: "
+                  + response->error()->redirect_to_server_uuid()
+                  + " at attempt: " + boost::lexical_cast<std::string>(attempt)
+                  + " fast redirect? " + (redirected ? "yes" : "no");
+          } else {
+            error = "The server with the UUID: " + service_uuid
+                  + " redirected to the current master with the UUID: "
+                  + response->error()->redirect_to_server_uuid()
+                  + " at attempt: " + boost::lexical_cast<std::string>(attempt)
+                  + " fast redirect? " + (redirected ? "yes" : "no");
+          }
+          if (xtreemfs::util::Logging::log->loggingActive(level)) {
+            xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
+          }
           xtreemfs::util::ErrorLog::error_log->AppendError(error);
+
+          // If it's the first redirect, do a fast retry and do not delay.
+          if (!redirected) {
+            redirected = true;
+            continue;
+          }
+        } else {
+          // Communication error or Internal Server Error.
+
+          // Mark the current UUID as failed and get the next one.
+          if (uuid_iterator_has_addresses) {
+            uuid_iterator->MarkUUIDAsFailed(service_address);
+            uuid_iterator->GetUUID(&service_address);
+          } else {
+            uuid_iterator->MarkUUIDAsFailed(service_uuid);
+            uuid_iterator->GetUUID(&service_uuid);
+          }
+
+          // Log only the first retry.
+          if (attempt == 1 && max_tries != 1) {
+            std::string retries_left = max_tries == 0 ? "infinite"
+                : boost::lexical_cast<std::string>(max_tries - attempt);
+            std::string error = "Got no response from server " + service_uuid
+                + " (" + service_address + "), retrying ("
+                + boost::lexical_cast<std::string>(retries_left)
+                + " attempts left, waiting at least "
+                + boost::lexical_cast<std::string>(options.retry_delay_s)
+                + " seconds between two attempts).";
+            xtreemfs::util::Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
+                << error << std::endl;
+            xtreemfs::util::ErrorLog::error_log->AppendError(error);
+          }
         }
 
         // If the request did return before the timeout was reached, wait until
@@ -225,7 +236,7 @@ template<class ReturnMessageType, class F>
           }
         } while (delay_time_left > 0);
       } else {
-        break;  // Do not retry if error occured - throw exception.
+        break;  // Do not retry if error occurred - throw exception.
       }
     } else {
       // No error happened, check for possible interruption.
