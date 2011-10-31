@@ -159,13 +159,13 @@ template<class ReturnMessageType, class F>
                   + " redirected to the current master: "
                   + response->error()->redirect_to_server_uuid()
                   + " at attempt: " + boost::lexical_cast<std::string>(attempt)
-                  + " fast redirect? " + (redirected ? "yes" : "no");
+                  + " fast redirect? " + (!redirected ? "yes" : "no");
           } else {
             error = "The server with the UUID: " + service_uuid
                   + " redirected to the current master with the UUID: "
                   + response->error()->redirect_to_server_uuid()
                   + " at attempt: " + boost::lexical_cast<std::string>(attempt)
-                  + " fast redirect? " + (redirected ? "yes" : "no");
+                  + " fast redirect? " + (!redirected ? "yes" : "no");
           }
           if (xtreemfs::util::Logging::log->loggingActive(level)) {
             xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
