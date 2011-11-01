@@ -62,8 +62,8 @@ function update_version() {
       then
         echo "Failed to run sed on file: $file" 
       fi
-    else
-      #echo "No need to replace: $current_version with: $version_string"
+#    else
+#      echo "No need to replace: $current_version with: $version_string"
     fi
   done
 }
