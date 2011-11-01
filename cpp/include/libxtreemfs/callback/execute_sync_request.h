@@ -292,10 +292,6 @@ template<class ReturnMessageType, class F>
     const xtreemfs::pbrpc::ErrorType error_type = error_resp->error_type();
     const std::string error_message = error_resp->error_message();
     const xtreemfs::pbrpc::POSIXErrno posix_errno = error_resp->posix_errno();
-    std::string redirect_to_server_uuid = "";
-    if (error_resp->has_redirect_to_server_uuid()) {
-        redirect_to_server_uuid = error_resp->redirect_to_server_uuid();
-    }
 
     // Free buffers.
     response->DeleteBuffers();
