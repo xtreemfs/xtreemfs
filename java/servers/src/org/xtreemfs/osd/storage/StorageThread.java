@@ -360,11 +360,7 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "checksum is %d", objChksm);
             }
             
-            // custom processing time measurement for on-disk operation that depends on the buffer size
-            stageRequest.beginMeasurement();
             final ObjectInformation obj = layout.readObject(fileId, fi, objNo, offset, length, objVer);
-            stageRequest.endMeasurement();
-            
             if (versionTimestamp != 0) {
                 int lastObj = fi.getVersionTable().getLatestVersionBefore(versionTimestamp).getObjCount() - 1;
                 obj.setLastLocalObjectNo(lastObj);
@@ -430,11 +426,8 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
             final int size = (Integer) stageRequest.getArgs()[3];
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             final long version = fi.getLatestObjectVersion(objNo) + 1;
-            
-            // custom processing time measurement for on-disk operation that depends on the buffer size
-            stageRequest.beginMeasurement();
+
             layout.createPaddingObject(fileId, fi, objNo, version, size);
-            stageRequest.endMeasurement();
             
             return callback.success(OSDWriteResponse.newBuilder().build(), stageRequest);
             
@@ -500,10 +493,7 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
                 fi.setLastObjectNumber(objNo);
             }
             
-            // custom processing time measurement for on-disk operation that depends on the buffer size
-            stageRequest.beginMeasurement();
             layout.writeObject(fileId, fi, data, objNo, offset, newVersion, syncWrite, isCow);
-            stageRequest.endMeasurement();
             
             // if a new version was created, update the "latest versions" file
             if (cow.cowEnabled() && (isCow || largestV == 0))

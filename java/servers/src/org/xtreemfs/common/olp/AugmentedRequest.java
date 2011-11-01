@@ -135,11 +135,19 @@ public abstract class AugmentedRequest {
             		"remaining processing time.");
         }
         
-        long remaining = (deltaMaxTime + startTime) - System.currentTimeMillis();
+        long remaining = getOutdatingTimeStamp() - System.currentTimeMillis();
         if (remaining <= 0) {
             throw new RequestExpiredException(this);
         }
         return remaining;
+    }
+    
+    /**
+     * @return the system timestamp for this request to become void at.
+     */
+    final long getOutdatingTimeStamp() {
+        
+        return startTime + deltaMaxTime;
     }
 
     /**

@@ -7,8 +7,6 @@
  */
 package org.xtreemfs.common.olp;
 
-import java.util.List;
-
 /**
  * <p>Simple Monitor implementation that uses the average-metric on a fixed amount of samples for calculating 
  * performance information of this stage.</p>
@@ -20,26 +18,6 @@ import java.util.List;
  * @see Monitor
  */
 class SimpleMonitor extends Monitor {
-    
-    /**
-     * <p>Number of samples to collect before calculating there average.</p>
-     */
-    private final static int SAMPLE_AMOUNT = 10;
-    
-    /**
-     * <p>Contains samples of fixed time measurements in ms of different types of requests.</p>
-     */
-    private final double[][] fixedTimeMeasurements;
-    
-    /**
-     * <p>Contains samples of variable time measurements in ms/byte of different types of requests.</p>
-     */
-    private final double[][] variableTimeMeasurements;
-    
-    /**
-     * <p>Contains the current indices for the next sample to insert for different types of requests.</p>
-     */
-    private final int[]      measurmentIndex;
         
     /**
      * <p>Constructor initializing necessary fields for collecting measurement samples.</p>
@@ -50,107 +28,27 @@ class SimpleMonitor extends Monitor {
      * @param listener - to send the summarized performance information to.
      * @see Monitor
      */
-    SimpleMonitor(boolean isForInternalRequests, int numTypes, PerformanceMeasurementListener listener) {
-        super(listener, isForInternalRequests);
-        
-        fixedTimeMeasurements = new double[numTypes][SAMPLE_AMOUNT];
-        variableTimeMeasurements = new double[numTypes][SAMPLE_AMOUNT];
-        measurmentIndex = new int[numTypes];
-        
-        for (int i = 0; i < numTypes; i++) {
-            fixedTimeMeasurements[i] = new double[SAMPLE_AMOUNT];
-            variableTimeMeasurements[i] = new double[SAMPLE_AMOUNT];
-        }
+    SimpleMonitor(PerformanceMeasurementListener listener, int numTypes, boolean isForInternalRequests) {
+        super(listener, numTypes, isForInternalRequests);
     }
     
     /* (non-Javadoc)
-     * @see org.xtreemfs.common.olp.Monitor#record(int, double, double)
+     * @see org.xtreemfs.common.olp.Monitor#record(int, long, double)
      */
     @Override
-    public void record(int type, double fixedProcessingTime, double variableProcessingTime) {
-        
+    public void record(int type, long size, double processingTime) {
+                
         // record measurement
-        fixedTimeMeasurements[type][measurmentIndex[type]] = fixedProcessingTime;
-        variableTimeMeasurements[type][measurmentIndex[type]] = variableProcessingTime;
-        measurmentIndex[type]++;
+        processingTimeMeasurements[type].add(processingTime);
+        sizeMeasurements[type].add((double) size);
         
         // summarize samples if necessary
-        if(measurmentIndex[type] == SAMPLE_AMOUNT) {
+        if(processingTimeMeasurements[type].size() == INITIAL_SAMPLE_AMOUNT) {
             
-            listener.updateFixedProcessingTimeAverage(type, summarizeMeasurements(fixedTimeMeasurements[type]), 
-                    isForInternalRequests);
-            listener.updateVariableProcessingTimeAverage(type, summarizeMeasurements(variableTimeMeasurements[type]), 
-                    isForInternalRequests);
+            publishCollectedData(type, estimateLeastSquares(type));
             
-            measurmentIndex[type] = 0;
+            processingTimeMeasurements[type].clear();
+            sizeMeasurements[type].clear();
         }
-    }
-    
-    /* (non-Javadoc)
-     * @see org.xtreemfs.common.olp.Monitor#summarizeMeasurements(double[])
-     */
-    @Override
-    double summarizeMeasurements(double[] measurements) {
-        
-        double avg = 0;
-        for (double sample : measurements) {
-            avg += sample;
-        }
-        return avg / measurements.length;
-    }
-
-    /* (non-Javadoc)
-     * @see org.xtreemfs.common.olp.Monitor#summarizeMeasurements(java.util.List)
-     */
-    @Override
-    double summarizeMeasurements(List<Double> measurements) {
-        throw new UnsupportedOperationException();
-    }
-    
-    /* (non-Javadoc)
-     * @see java.lang.Object#toString()
-     */
-    @Override
-    public String toString() {
-        
-        final StringBuilder builder = new StringBuilder();
-        
-        final int numTypes = fixedTimeMeasurements.length;
-        
-        builder.append("Fixed processing time measurements:\n");
-        for (int i = 0; i < numTypes; i++) {
-            builder.append(i + "\t");
-        }
-        builder.append("\n");
-        for (int j = 0; j < SAMPLE_AMOUNT; j++) {
-            for (int i = 0; i < numTypes; i++) {
-                if (j < measurmentIndex[i]) {
-                    builder.append(String.format("%.2f", fixedTimeMeasurements[i][j]) + "\t");
-                } else {
-                    builder.append("\t");
-                }
-            }
-            builder.append("\n");
-        }
-        builder.append("\n");
-        
-        builder.append("Variable processing time measurements:\n");
-        for (int i = 0; i < numTypes; i++) {
-            builder.append(i + "\t");
-        }
-        builder.append("\n");
-        for (int j = 0; j < SAMPLE_AMOUNT; j++) {
-            for (int i = 0; i < numTypes; i++) {
-                if (j < measurmentIndex[i]) {
-                    builder.append(String.format("%.2f", variableTimeMeasurements[i][j]) + "\t");
-                } else {
-                    builder.append("\t");
-                }
-            }
-            builder.append("\n");
-        }
-        builder.append("\n");
-        
-        return builder.toString();
     }
 }

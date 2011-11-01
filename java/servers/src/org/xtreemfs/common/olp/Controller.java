@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 import org.xtreemfs.common.olp.Monitor.PerformanceMeasurementListener;
+import org.xtreemfs.foundation.logging.Logging;
 
 /**
  * 
@@ -110,18 +111,31 @@ class Controller implements PerformanceMeasurementListener {
      */
     double estimateResponseTime(int type, long size, boolean hasPriority) {
         
-        double result = Double.longBitsToDouble(fixedProcessingTimeAverages.get(type));
+        final double fixed = Double.longBitsToDouble(fixedProcessingTimeAverages.get(type));
+        final double variable;
         if (size > 0L) {
             
-            result += Double.longBitsToDouble(variableProcessingTimeAverages.get(type)) * size;
-        }
-        if (hasPriority) {
-            
-            result += estimatePriorityWaitingTime();
+            variable = Double.longBitsToDouble(variableProcessingTimeAverages.get(type)) * size;
         } else {
             
-            result += estimateWaitingTime();
+            variable = 0L;
         }
+        
+        final double waiting;
+        if (hasPriority) {
+            
+            waiting = estimatePriorityWaitingTime();
+        } else {
+            
+            waiting = estimateWaitingTime();
+        }
+        
+        final double result = fixed + variable + waiting;
+        
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "Estimated response time for type (%d) @size %d with %s " +
+        		"priority: %.4f fixed + %.4f variable + %.4f waiting = %.4f", type, size, 
+        		String.valueOf(hasPriority), fixed, variable, waiting, result);
+        
         return result;
     }
     
@@ -242,7 +256,8 @@ class Controller implements PerformanceMeasurementListener {
  */
     
     /**
-     * @return the estimated waiting time for the next request enqueued.
+     * @return the estimated waiting time for the next request enqueued 
+     *         (includes estimations for priority and internal requests).
      */
     private double estimateWaitingTime() {
         
@@ -251,17 +266,31 @@ class Controller implements PerformanceMeasurementListener {
         final int numTypes = fixedProcessingTimeAverages.length();
         for (int i = 0; i < numTypes; i++) {
             
-            result += Double.longBitsToDouble(fixedProcessingTimeAverages.get(i)) * queueComposition.get(i);
-            result += Double.longBitsToDouble(variableProcessingTimeAverages.get(i)) * queueBandwidthComposition.get(i);
+            double avg = Double.longBitsToDouble(fixedProcessingTimeAverages.get(i));
+            long rqs = queueComposition.get(i);
+            long pRqs = priorityQueueComposition.get(i);
+            
+            result += avg * (rqs + pRqs);
+            
+            avg = Double.longBitsToDouble(variableProcessingTimeAverages.get(i));
+            rqs = queueBandwidthComposition.get(i);
+            pRqs = priorityQueueBandwidthComposition.get(i);
+            
+            result += avg * (rqs + pRqs);
         }
         
         final int numInternalTypes = internalFixedProcessingTimeAverages.length();
         for (int i = 0; i < numInternalTypes; i++) {
             
-            result += Double.longBitsToDouble(internalFixedProcessingTimeAverages.get(i)) * 
-                      internalQueueComposition.get(i);
-            result += Double.longBitsToDouble(internalVariableProcessingTimeAverages.get(i)) * 
-                      internalQueueBandwidthComposition.get(i);
+            double avg = Double.longBitsToDouble(internalFixedProcessingTimeAverages.get(i));
+            long rqs = internalQueueComposition.get(i);
+            
+            result += avg * rqs;
+            
+            avg = Double.longBitsToDouble(internalVariableProcessingTimeAverages.get(i));
+            rqs = internalQueueBandwidthComposition.get(i);
+            
+            result += avg * rqs;
         }
         
         return result;
@@ -277,9 +306,15 @@ class Controller implements PerformanceMeasurementListener {
         final int numTypes = fixedProcessingTimeAverages.length();
         for (int i = 0; i < numTypes; i++) {
             
-            result += Double.longBitsToDouble(fixedProcessingTimeAverages.get(i)) * priorityQueueComposition.get(i);
-            result += Double.longBitsToDouble(variableProcessingTimeAverages.get(i)) * 
-                      priorityQueueBandwidthComposition.get(i);
+            double avg = Double.longBitsToDouble(fixedProcessingTimeAverages.get(i));
+            long rqs = priorityQueueComposition.get(i);
+            
+            result += avg * rqs;
+            
+            avg = Double.longBitsToDouble(variableProcessingTimeAverages.get(i));
+            rqs = priorityQueueBandwidthComposition.get(i);
+            
+            result += avg * rqs;
         }
         
         return result;
@@ -288,7 +323,7 @@ class Controller implements PerformanceMeasurementListener {
     /**
      * @param fixedProcessingTime
      * @param variableProcessingTime
-     * @return 
+     * @return estimated waiting time for the given state (includes estimations for priority and internal requests).
      */
     private double estimateWaitingTime(double[] fixedProcessingTime, double[] variableProcessingTime) {
         
@@ -297,8 +332,9 @@ class Controller implements PerformanceMeasurementListener {
         final int numTypes = fixedProcessingTime.length;
         for (int i = 0; i < numTypes; i++) {
             
-            result += fixedProcessingTime[i] * queueComposition.get(i);
-            result += variableProcessingTime[i] * queueBandwidthComposition.get(i);
+            result += fixedProcessingTime[i] * (queueComposition.get(i) + priorityQueueComposition.get(i));
+            result += variableProcessingTime[i] * 
+                      (queueBandwidthComposition.get(i) + priorityQueueBandwidthComposition.get(i));
         }
         
         final int numInternalTypes = internalFixedProcessingTimeAverages.length();
@@ -316,7 +352,7 @@ class Controller implements PerformanceMeasurementListener {
     /**
      * @param fixedProcessingTime
      * @param variableProcessingTime
-     * @return
+     * @return estimated waiting time for the given state
      */
     private double estimatePriorityWaitingTime(double[] fixedProcessingTime, double[] variableProcessingTime) {
         
@@ -355,7 +391,8 @@ class Controller implements PerformanceMeasurementListener {
             builder.append(String.format("%.2f", Double.longBitsToDouble(fixedProcessingTimeAverages.get(i))) + "\t");
         }
         for (int i = 0; i < numInternalTypes; i++) {
-            builder.append(String.format("%.2f", Double.longBitsToDouble(internalFixedProcessingTimeAverages.get(i))) + "\t");
+            builder.append(String.format("%.2f", Double.longBitsToDouble(internalFixedProcessingTimeAverages.get(i))) + 
+                    "\t");
         }
         builder.append("\n\n");
         
@@ -368,10 +405,12 @@ class Controller implements PerformanceMeasurementListener {
         }
         builder.append("\n");
         for (int i = 0; i < numTypes; i++) {
-            builder.append(String.format("%.2f", Double.longBitsToDouble(variableProcessingTimeAverages.get(i))) + "\t");
+            builder.append(String.format("%.2f", Double.longBitsToDouble(variableProcessingTimeAverages.get(i))) + 
+                    "\t");
         }
         for (int i = 0; i < numInternalTypes; i++) {
-            builder.append(String.format("%.2f", Double.longBitsToDouble(internalVariableProcessingTimeAverages.get(i))) + "\t");
+            builder.append(String.format("%.2f", Double.longBitsToDouble(internalVariableProcessingTimeAverages.get(i))) 
+                    + "\t");
         }
         builder.append("\n\n");
         

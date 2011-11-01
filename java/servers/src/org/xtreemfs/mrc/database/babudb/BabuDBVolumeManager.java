@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -257,7 +258,15 @@ public class BabuDBVolumeManager implements VolumeManager {
     public Collection<StorageManager> getStorageManagers() {
         if (!initialized.get())
             return null;
-        return volsById.values();
+        
+        final Collection<StorageManager> result = new HashSet<StorageManager>();
+        final Collection<StorageManager> sMans = volsById.values();
+        synchronized (volsById) {
+            for (StorageManager sMan : sMans) {
+                result.add(sMan);
+            }
+        }
+        return result;
     }
     
     @Override

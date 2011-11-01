@@ -74,8 +74,8 @@ final class ProtectionAlgorithmCore {
         this.id = stageId;
         this.actuator = new Actuator();
         this.controller = new Controller(numTypes, numInternalTypes, numSubsequentStages);
-        this.monitor = new SimpleMonitor(false, numTypes, controller);
-        this.internalRequestMonitor = new SimpleMonitor(true, numInternalTypes, controller);
+        this.monitor = new AdvancedMonitor(controller, numTypes, false);
+        this.internalRequestMonitor = new AdvancedMonitor(controller, numInternalTypes, true);
         this.sender = new PerformanceInformationSender(this);
     }
     
@@ -198,15 +198,13 @@ final class ProtectionAlgorithmCore {
         
         if (stageRequest.hasValidMonitoringInformation()) {
             
-            final double varProcessingTime = stageRequest.getVariableProcessingTime();
-            final double fixProcessingTime = stageRequest.getFixedProcessingTime();
-            
             if (request.isNativeInternalRequest()) {
 
-                internalRequestMonitor.record(request.getType(), fixProcessingTime, varProcessingTime);                
+                internalRequestMonitor.record(request.getType(), stageRequest.getSize(), 
+                        stageRequest.getProcessingTime());                
             } else {
                 
-                monitor.record(request.getType(), fixProcessingTime, varProcessingTime);
+                monitor.record(request.getType(), stageRequest.getSize(), stageRequest.getProcessingTime());
             }
         }
     }

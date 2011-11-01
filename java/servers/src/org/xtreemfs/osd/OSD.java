@@ -57,12 +57,8 @@ public class OSD {
                         if (Logging.isInfo())
                             Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
                                 "received shutdown signal");
-                        
-                        ctrl.heartbeatThread.shutdown();
-                        // FIXME: provide a solution that does not attempt to
-                        // shut down an OSD that is already being shut down due
-                        // to an error
-                        // ctrl.shutdown();
+
+                        ctrl.shutdown();
                         
                         if (Logging.isInfo())
                             Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,

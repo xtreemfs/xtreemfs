@@ -19,6 +19,8 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -53,7 +55,7 @@ public final class WriteOperation extends OSDOperation {
     }
 
     @Override
-    public ErrorResponse startRequest(OSDRequest rq, RPCRequestCallback callback) {
+    public ErrorResponse startRequest(OSDRequest rq, final RPCRequestCallback callback) {
         
         final writeRequest args = (writeRequest) rq.getRequestArgs();
 
@@ -92,9 +94,28 @@ public final class WriteOperation extends OSDOperation {
             if ( (rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
                || (rq.getLocationList().getNumReplicas() == 1) ){
 
-                master.getStorageStage().writeObject(args.getObjectNumber(), sp,
-                        args.getOffset(), rq.getRPCRequest().getData().createViewBuffer(), rq.getCowPolicy(),
-                        rq.getLocationList(), syncWrite, null, rq, callback);
+                final ReusableBuffer data = rq.getRPCRequest().getData().createViewBuffer();
+                
+                master.getStorageStage().writeObject(args.getObjectNumber(), sp, args.getOffset(), data, 
+                        rq.getCowPolicy(), rq.getLocationList(), syncWrite, null, rq, 
+                        new AbstractRPCRequestCallback(callback) {
+                            
+                            @Override
+                            public <S extends StageRequest<?>> boolean success(Object result, S stageRequest)
+                                    throws ErrorResponseException {
+                                return callback.success(result, stageRequest);
+                            }
+                            
+                            /* (non-Javadoc)
+                             * @see org.xtreemfs.common.stage.AbstractRPCRequestCallback#failed(java.lang.Throwable)
+                             */
+                            @Override
+                            public void failed(Throwable error) {
+                                
+                                if (data != null) BufferPool.free(data);
+                                super.failed(error);
+                            }
+                        });
             } else {
                 replicatedWrite(rq, args, syncWrite, callback);
             }
@@ -117,11 +138,12 @@ public final class WriteOperation extends OSDOperation {
 
                 assert(((Long) newObjectVersion) > 0L);
 
-                master.getStorageStage().writeObject(args.getObjectNumber(),
+                final ReusableBuffer data = rq.getRPCRequest().getData().createViewBuffer();
+                
+                master.getStorageStage().writeObject(args.getObjectNumber(), 
                         rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                        args.getOffset(), rq.getRPCRequest().getData().createViewBuffer(), rq.getCowPolicy(),
-                        rq.getLocationList(), syncWrite, (Long) newObjectVersion, rq, 
-                        new AbstractRPCRequestCallback(callback) {
+                        args.getOffset(), data, rq.getCowPolicy(), rq.getLocationList(), syncWrite, 
+                        (Long) newObjectVersion, rq, new AbstractRPCRequestCallback(callback) {
                    
                     @SuppressWarnings("unchecked")
                     @Override
@@ -142,6 +164,7 @@ public final class WriteOperation extends OSDOperation {
                         // clean-up the pending RWR request
                         ((OLPStageRequest<AugmentedRequest>) rwrStageRequest).voidMeasurments();
                         master.getRWReplicationStage().exit((StageRequest<AugmentedRequest>) rwrStageRequest);
+                        if (data != null) BufferPool.free(data);
                         super.failed(error);
                     }
                 });

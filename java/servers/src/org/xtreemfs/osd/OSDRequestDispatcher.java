@@ -189,6 +189,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     private final Map<Integer, Integer>                 requestTypeMap = new HashMap<Integer, Integer>();
     
+    private boolean doShutdown                          = false;
     public OSDRequestDispatcher(final OSDConfig config) throws Exception {
         
         Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS OSD version "
@@ -586,7 +587,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
     }
     
-    public void shutdown() {
+    public synchronized void shutdown() {
+        
+        // provides a solution that does not attempt to
+        // shut down an OSD that is already being shut down due
+        // to an error
+        if (doShutdown) return;
+        else doShutdown = true;
         
         try {
             
@@ -646,7 +653,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         }
     }
     
-    public void asyncShutdown() {
+    public synchronized void asyncShutdown() {
+        
+        // provides a solution that does not attempt to
+        // shut down an OSD that is already being shut down due
+        // to an error
+        if (doShutdown) return;
+        else doShutdown = true;
+        
         try {
             
             for (OSDStatusListener listener : statusListener) {

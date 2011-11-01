@@ -82,6 +82,9 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
                         olp.hasAdmission(next.getRequest(), next.getSize());
                     } catch (AdmissionRefusedException error) {
                         
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "%s Overruled by %s.", 
+                                error.getMessage(), String.valueOf(request));
+                        
                         iter.remove();
                         next.voidMeasurments();
                         next.getCallback().failed(error);
