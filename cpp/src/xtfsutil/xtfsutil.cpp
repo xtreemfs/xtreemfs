@@ -390,7 +390,7 @@ bool SetReplicationPolicy(const string& xctl_file,
                           const variables_map& vm) {
 
 
-  const string policy =
+  const string policy_uppercase =
       boost::to_upper_copy(vm["set-replication-policy"].as<string>());
 
   // Check file.
@@ -407,21 +407,20 @@ bool SetReplicationPolicy(const string& xctl_file,
       getattr_response["result"]["locations"]["replicas"].size() > 1;
   string current_policy =
       getattr_response["result"]["locations"]["update-policy"].asString();
-  boost::to_upper(current_policy);
 
   Json::Value request(Json::objectValue);
   request["operation"] = "setReplicationPolicy";
   request["path"] = path;
-  if (policy == "RONLY" || policy == "READONLY") {
+  if (policy_uppercase == "RONLY" || policy_uppercase == "READONLY") {
     request["policy"] = "ronly";
-  } else if (policy == "WQRQ" || policy == "QUORUM") {
+  } else if (policy_uppercase == "WQRQ" || policy_uppercase == "QUORUM") {
     request["policy"] = "WqRq";
-  } else if (policy == "WAR1" || policy == "ALL") {
+  } else if (policy_uppercase == "WAR1" || policy_uppercase == "ALL") {
     request["policy"] = "WaR1";
-  } else if (policy == "NONE") {
+  } else if (policy_uppercase == "NONE") {
     request["policy"] = "";
   } else {
-    cerr << "Unknown replication policy: " << policy << endl;
+    cerr << "Unknown replication policy: " << policy_uppercase << endl;
     return false;
   }
 
@@ -446,7 +445,18 @@ bool SetReplicationPolicy(const string& xctl_file,
   
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
-    cout << "Changed replication policy to: " << policy << endl;
+    cout << "Changed replication policy to: "
+         << (request["policy"].asString().empty() ? "NONE"
+                 : request["policy"].asString())
+         << endl;
+    if (request["policy"].asString() == "WaR1") {
+      cout << "\n"
+           << "Please note that manually adding replicas does not work if the"
+               " 'all' (WaR1) replication policy is used.\n"
+               "See issue 226 for more details:"
+               " http://code.google.com/p/xtreemfs/issues/detail?id=226"
+           << endl;
+    }
     return true;
   } else {
     cerr << "FAILED" << endl;
