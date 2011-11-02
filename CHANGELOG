@@ -7,7 +7,7 @@
     * merged all user tools into a new general-purpose tool 'xtfsutil'
     * changed license from GPL to BSD
 
-XX-NOV-2011: release 1.3.1
+02-NOV-2011: release 1.3.1
     * Added 'xtfs_remove_osd' utility to remove OSDs from an XtreemFS installation. All files on the OSD to be removed will be relocated to different OSDs.
     * Added first support for asynchronous writes in the client. Mounting with '--max-writeahead' and '--max-writeahead-requests' allows the user to specify the maximum number of bytes and requests to be sent to an OSD before receiving an acknowledgment. However, this feature currently does not work together with replication and retries.
     * Added monitoring support to servers. Various characteristics are accessible now via SNMP, such as data transfer statistics, memory usage, numbers of files and directories, etc. A Ganglia plugin makes it possible to visualize them.
@@ -16,8 +16,9 @@ XX-NOV-2011: release 1.3.1
     * made several usability changes to xtfsutil
     * added '/babudb' subpage to MRC/DIR status page that shows internal database statistics
     * added Gentoo overlay
-    * installing XtreemFS now symlinks '/usr/bin/mount.xtreemfs' to '/sbin/mount.xtreemfs' in order to support XtreemFS mounting via fstab
+    * installing XtreemFS now creates symlinks '/sbin/mount.xtreemfs' and '/sbin/umount.xtreemfs' in order to support XtreemFS mounting via fstab (however, not all client options are available in the fstab yet, see issue 205)
+    * the replication policy "WaRa" was renamed to "WaR1"
     * fixed issues 196, 198-204, 206-209, 211-218, 220, 222
     * fixed a wide range of issues w/ read-only and read-write replication of files
-    * fixed issues w/ several MRC calls when admin passwords were specified
+    * fixed issues w/ several MRC calls when admin passwords were specified (a consequence of this is that an XtreemFS 1.3.0 client can no longer mount admin_password protected MRCs; upgrade the client to 1.3.1 to fix this)
     * fixed various client issues, such as deadlocks and memory leaks
