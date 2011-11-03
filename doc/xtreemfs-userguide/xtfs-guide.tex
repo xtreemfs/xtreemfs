@@ -14,8 +14,6 @@
 
 \title{XtreemFS Installation and User Guide}
 
-\date{Version 1.3.0}
-
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
 
@@ -34,7 +32,7 @@
 \begin{flushleft}
 \sffamily \begin{LARGE}The XtreemFS Installation and User Guide\end{LARGE}
 
-Version 1.3
+Version 1.3.x
 \end{flushleft}
 
 
@@ -2180,7 +2178,7 @@ Please be aware that when files or directories are accessed, the actual evaluati
 
 \section{Vivaldi}
 \label{sec:vivaldi}
-\textbf{Attention:} Vivaldi is currently not included in Release 1.3.0 but will become available in one of the next minor releases.
+\textbf{Attention:} Vivaldi is currently not included in Release 1.3.x but will become available in one of the next major releases.
 Client machines that want to use vivaldi network coordinates for replica and OSD selection must calculate their own coordinates relative to the OSDs. This is done by the \texttt{xtfs\_vivaldi} utility which must be started on each client machine. Ideally, this process is started during boot with the \texttt{xtreemfs-vivaldi} init.d scripts provided. The utility must be started with the directory service address and the path to a file in which the coordinates are stored.
 
 \begin{verbatim}
