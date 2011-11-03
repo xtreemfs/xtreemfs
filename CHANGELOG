@@ -7,7 +7,7 @@
     * merged all user tools into a new general-purpose tool 'xtfsutil'
     * changed license from GPL to BSD
 
-02-NOV-2011: release 1.3.1
+03-NOV-2011: release 1.3.1
     * Added 'xtfs_remove_osd' utility to remove OSDs from an XtreemFS installation. All files on the OSD to be removed will be relocated to different OSDs.
     * Added first support for asynchronous writes in the client. Mounting with '--max-writeahead' and '--max-writeahead-requests' allows the user to specify the maximum number of bytes and requests to be sent to an OSD before receiving an acknowledgment. However, this feature currently does not work together with replication and retries.
     * Added monitoring support to servers. Various characteristics are accessible now via SNMP, such as data transfer statistics, memory usage, numbers of files and directories, etc. A Ganglia plugin makes it possible to visualize them.
