@@ -251,7 +251,7 @@ client_distclean: check_client client_thirdparty_distclean
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
 
 CLIENT_PACKAGE_MACOSX_OUTPUT_DIR = XtreemFS_Client_MacOSX.mpkg
-CLIENT_PACKAGE_MACOSX_OUTPUT_FILE = XtreemFS_installer.dmg
+CLIENT_PACKAGE_MACOSX_OUTPUT_FILE = XtreemFS_Client_MacOSX_installer.dmg
 client_package_macosx:
 # Clean everything first to ensure we package a clean client.
 	@$(MAKE) client_distclean
