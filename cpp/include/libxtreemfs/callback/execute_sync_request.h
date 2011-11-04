@@ -208,6 +208,7 @@ template<class ReturnMessageType, class F>
             interrupted = true;
             break;
           }
+
 #ifdef WIN32
           GetSystemTimeAsFileTime(&current_time);
 
@@ -225,6 +226,7 @@ template<class ReturnMessageType, class F>
               - ((current_time.tv_sec * 1000000 + current_time.tv_usec) -
                  (request_sent.tv_sec * 1000000 + request_sent.tv_usec));
 #endif
+
           if (!error.empty()) {
             // Append time left to error message.
             error += ", waiting "
