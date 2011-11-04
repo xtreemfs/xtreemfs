@@ -636,7 +636,9 @@ public class StorageThread extends Stage {
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             
             if (fi.getTruncateEpoch() >= epochNumber) {
-                cback.truncateComplete(OSDWriteResponse.newBuilder().build(), null);
+                cback.truncateComplete(
+                        OSDWriteResponse.newBuilder().setSizeInBytes(fi.getFilesize())
+                                .setTruncateEpoch((int) fi.getTruncateEpoch()).build(), null);
                 /*
                  * cback.truncateComplete(null, new
                  * OSDException(ErrorCodes.EPOCH_OUTDATED,
