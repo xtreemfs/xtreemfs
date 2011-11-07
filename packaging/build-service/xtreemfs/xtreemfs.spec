@@ -16,7 +16,12 @@ Summary:        XtreemFS base package
 Source0:        XtreemFS-%{version}.tar.gz
 
 #requires for any distribution
-BuildRequires:  ant >= 1.6.5 ant-apache-regexp >= 1.6.5 ant-nodeps >= 1.6.5 java-devel >= 1.6.0
+%if 0%{?sles_version} == 10
+# no need for ant-nodeps for SLE 10
+%else
+BuildRequires:  ant-nodeps >= 1.6.5
+%endif
+BuildRequires:  ant >= 1.6.5 ant-apache-regexp >= 1.6.5 java-devel >= 1.6.0
 %if %{client_subpackage}
 BuildRequires:  gcc-c++ >= 4.1 fuse >= 2.6 fuse-devel >= 2.6 openssl-devel >= 0.9.8 cmake >= 2.6 boost-devel >= 1.35 libattr-devel >= 2
 %endif
@@ -142,12 +147,12 @@ mkdir -p $RPM_BUILD_ROOT/etc/xos/xtreemfs/truststore/certs/
 %if %{client_subpackage}
 rm $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-client/LICENSE
 rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-client
+rm $RPM_BUILD_ROOT/etc/xos/xtreemfs/default_dir # disable for Vivaldi
 %endif
 rm $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-server/LICENSE
 rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-server
 rm $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-tools/LICENSE
 rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-tools
-rm $RPM_BUILD_ROOT/etc/xos/xtreemfs/default_dir # disable for Vivaldi
 
 %pre server
 /usr/sbin/groupadd xtreemfs 2>/dev/null || :
