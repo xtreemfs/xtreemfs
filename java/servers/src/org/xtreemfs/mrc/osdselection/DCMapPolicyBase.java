@@ -104,8 +104,18 @@ public abstract class DCMapPolicyBase implements OSDSelectionPolicy {
                         + "' is not a valid integer");
                 }
             }
-            String dcMatch = p.getProperty(dcs[i] + ".addresses");
-            if (dcMatch != null) {
+            
+            // evaluate the address ranges for the data centers
+            String dcMatch = p.getProperty("addresses." + dcs[i]);
+            if (dcMatch == null)
+                dcMatch = p.getProperty(dcs[i] + ".addresses");
+            if (dcMatch == null) {
+                matchers[i] = new Inet4AddressMatcher[0];
+                // allow empty datacenters
+                Logging.logMessage(Logging.LEVEL_WARN, this, "datacenter '" + dcs[i] + "' has no entries!");
+            }
+            
+            else {
                 String entries[] = dcMatch.split(",");
                 matchers[i] = new Inet4AddressMatcher[entries.length];
                 for (int e = 0; e < entries.length; e++) {
@@ -139,10 +149,6 @@ public abstract class DCMapPolicyBase implements OSDSelectionPolicy {
                     }
                 }
                 
-            } else {
-                matchers[i] = new Inet4AddressMatcher[0];
-                // allow empty datacenters
-                Logging.logMessage(Logging.LEVEL_WARN, this, "datacenter '" + dcs[i] + "' has no entries!");
             }
         }
         

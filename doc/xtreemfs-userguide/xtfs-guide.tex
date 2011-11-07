@@ -2441,11 +2441,11 @@ This policy uses domain names of clients and OSDs to determine the distance betw
 
 \begin{itemize}
 
- \item \textbf{DNS based OSD Selection (policy ID 3000)}\\
- The FQDN of the client and all OSDs is compared and the maximum match (from the end of the FQDN) is used to sort the OSDs. The policy sorts the list of OSDs in descending order by the number of characters that match. This policy can be used to automatically select OSDs which are close to the client, if the length of the match between two DNS entries also indicate a low latency between two machines.
-
- \item \textbf{Data center map-based sorting (policy ID 3001)}\\
+ \item \textbf{Data center map-based sorting (policy ID 3000)}\\
  Sorts the list of OSDs in ascending order of their distance to the client, according to the data center map.
+
+ \item \textbf{DNS based OSD Selection (policy ID 3001)}\\
+ The FQDN of the client and all OSDs is compared and the maximum match (from the end of the FQDN) is used to sort the OSDs. The policy sorts the list of OSDs in descending order by the number of characters that match. This policy can be used to automatically select OSDs which are close to the client, if the length of the match between two DNS entries also indicate a low latency between two machines.
 
  \item \textbf{Shuffling (policy ID 3002)}\\
  Shuffles the given list of OSDs.

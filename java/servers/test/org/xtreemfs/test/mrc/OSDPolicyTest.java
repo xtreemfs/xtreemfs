@@ -350,11 +350,11 @@ public class OSDPolicyTest extends TestCase {
         UUIDResolver.addTestMapping("osd4", "csr-pc29.zib.de", 2222, false);
         UUIDResolver.addTestMapping("osd5", "download.xtreemfs.com", 2222, false);
         
-        InetAddress clientAddr = InetAddress.getByName("xtreemfs.zib.de");
+        InetAddress clientAddr = InetAddress.getByName("xtreem.zib.de");
         ServiceSet.Builder sortedList = policy.getOSDs(ServiceSet.newBuilder().addAllServices(
             osds.getServicesList()), clientAddr, null, null, Integer.MAX_VALUE);
-        assertEquals("osd3", sortedList.getServices(0).getUuid());
-        assertEquals("osd1", sortedList.getServices(1).getUuid());
+        assertEquals("osd1", sortedList.getServices(0).getUuid());
+        assertEquals("osd3", sortedList.getServices(1).getUuid());
         assertEquals("osd4", sortedList.getServices(2).getUuid());
         assertEquals("osd2", sortedList.getServices(3).getUuid());
         assertEquals("osd5", sortedList.getServices(4).getUuid());
@@ -389,7 +389,7 @@ public class OSDPolicyTest extends TestCase {
         UUIDResolver.addTestMapping("osd4", "csr-pc29.zib.de", 2222, false);
         UUIDResolver.addTestMapping("osd5", "download.xtreemfs.com", 2222, false);
         
-        InetAddress clientAddr = InetAddress.getByName("xtreemfs.zib.de");
+        InetAddress clientAddr = InetAddress.getByName("xtreem.zib.de");
         ServiceSet.Builder sortedList = policy.getOSDs(ServiceSet.newBuilder().addAllServices(
             osds.getServicesList()), clientAddr, null, null, 1);
         assertEquals(1, sortedList.getServicesCount());
@@ -472,7 +472,7 @@ public class OSDPolicyTest extends TestCase {
         UUIDResolver.addTestMapping("osd4", "csr-pc29.zib.de", 2222, false);
         UUIDResolver.addTestMapping("osd5", "download.xtreemfs.com", 2222, false);
         
-        InetAddress clientAddr = InetAddress.getByName("xtreemfs.zib.de");
+        InetAddress clientAddr = InetAddress.getByName("xtreem.zib.de");
         VivaldiCoordinates clientCoordinates = VivaldiCoordinates.newBuilder().setXCoordinate(0.0)
                 .setYCoordinate(0.0).setLocalError(0.1).build();
         
