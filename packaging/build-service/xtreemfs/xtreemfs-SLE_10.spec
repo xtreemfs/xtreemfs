@@ -1,6 +1,6 @@
 # norootforbuild
 
-%define client_subpackage 1
+%define client_subpackage 0
 
 Name:           xtreemfs
 Version:        _VERSION_
