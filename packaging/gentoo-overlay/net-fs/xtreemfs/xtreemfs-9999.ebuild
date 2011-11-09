@@ -83,3 +83,10 @@ pkg_preinst() {
 	fowners xtreemfs:xtreemfs /var/log/xtreemfs
 	fperms 755 /var/log/xtreemfs
 }
+
+pkg_postinst() {
+        ${S}/packaging/generate_uuid /etc/xtreemfs/dirconfig.properties
+        ${S}/packaging/generate_uuid /etc/xtreemfs/mrcconfig.properties
+        ${S}/packaging/generate_uuid /etc/xtreemfs/osdconfig.properties
+
+}
