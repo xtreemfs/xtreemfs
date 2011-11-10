@@ -212,8 +212,7 @@ public class GeneralImpl extends General {
         
         if (statusMonitor.getInitiatingService().equals(ServiceTypes.OSD)) {
             return statusMonitor.getOsdConfig().getUUID().toString();
-        }
-        
+        }  
         throw new SnmpStatusException("Internal error. Couldn't fetch values.");
     }
 

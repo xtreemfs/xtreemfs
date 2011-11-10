@@ -10,16 +10,16 @@ package org.xtreemfs.common.monitoring;
 
 import javax.management.MBeanServer;
 
+import org.xtreemfs.common.monitoring.StatusMonitor.ServiceTypes;
 import org.xtreemfs.common.monitoring.generatedcode.Osd;
 
 import com.sun.management.snmp.SnmpStatusException;
 
 
 /**
- * 
+ * This class represents the monitoring information exposed by the SNMP agent regarding to the
+ * OSD.
  *
- * <br>May 19, 2011
- * @author bzcseife
  */
 @SuppressWarnings("serial")
 public class OsdImpl extends Osd {
@@ -89,6 +89,9 @@ public class OsdImpl extends Osd {
     
     @Override
     public Integer getPreprocStageQueueLength() throws SnmpStatusException {
+        if (!statusMonitor.getInitiatingService().equals(ServiceTypes.OSD)) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchName);
+        }
         if (statusMonitor.getMasterOSD() != null) {
             return statusMonitor.getMasterOSD().getPreprocStage().getQueueLength();
         } 
@@ -97,7 +100,9 @@ public class OsdImpl extends Osd {
     
     @Override
     public Integer getStorageStageQueueLength() throws SnmpStatusException {
-     
+        if (!statusMonitor.getInitiatingService().equals(ServiceTypes.OSD)) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchName);
+        }
         if (statusMonitor.getMasterOSD() != null) {
             return statusMonitor.getMasterOSD().getStorageStage().getQueueLength();
         }
@@ -106,6 +111,9 @@ public class OsdImpl extends Osd {
     
     @Override
     public Integer getDeletionStageQueueLength() throws SnmpStatusException {
+        if (!statusMonitor.getInitiatingService().equals(ServiceTypes.OSD)) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchName);
+        }
         if (statusMonitor.getMasterOSD() != null) {
             return statusMonitor.getMasterOSD().getDeletionStage().getQueueLength();
         }
@@ -114,6 +122,9 @@ public class OsdImpl extends Osd {
     
     @Override
     public Long getFreeSpace() throws SnmpStatusException {
+        if (!statusMonitor.getInitiatingService().equals(ServiceTypes.OSD)) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchName);
+        }
         if (statusMonitor.getMasterOSD() != null) {
             return statusMonitor.getMasterOSD().getFreeSpace();
         }
@@ -122,6 +133,9 @@ public class OsdImpl extends Osd {
     
     @Override
     public Integer getNumOpenFiles() throws SnmpStatusException {
+        if (!statusMonitor.getInitiatingService().equals(ServiceTypes.OSD)) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchName);
+        }
         if (statusMonitor.getMasterOSD() != null) {
             return statusMonitor.getMasterOSD().getPreprocStage().getNumOpenFiles();
         }
@@ -130,10 +144,61 @@ public class OsdImpl extends Osd {
     
     @Override
     public Long getNumDeletedFiles() throws SnmpStatusException {
+        if (!statusMonitor.getInitiatingService().equals(ServiceTypes.OSD)) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchName);
+        }
         if (statusMonitor.getMasterOSD() != null) {
             return statusMonitor.getMasterOSD().getDeletionStage().getNumFilesDeleted();
         }
         return -1l;
+    }
+    
+    @Override
+    public Long getNumBytesTX() throws SnmpStatusException {
+        if (!statusMonitor.getInitiatingService().equals(ServiceTypes.OSD)) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchName);
+        }
+        return NumBytesTX;
+    }
+
+    @Override
+    public Long getNumBytesRX() throws SnmpStatusException {
+        if (!statusMonitor.getInitiatingService().equals(ServiceTypes.OSD)) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchName);
+        }
+        return NumBytesRX;
+    }
+
+    @Override
+    public Long getNumReplBytesRX() throws SnmpStatusException {
+        if (!statusMonitor.getInitiatingService().equals(ServiceTypes.OSD)) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchName);
+        }
+        return NumReplBytesRX;
+    }
+
+    @Override
+    public Long getNumObjsTX() throws SnmpStatusException {
+        if (!statusMonitor.getInitiatingService().equals(ServiceTypes.OSD)) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchName);
+        }
+        return NumObjsTX;
+    }
+
+    @Override
+    public Long getNumReplObjsRX() throws SnmpStatusException {
+        if (!statusMonitor.getInitiatingService().equals(ServiceTypes.OSD)) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchName);
+        }
+        return NumReplObjsRX;
+    }
+
+    @Override
+    public Long getNumObjsRX() throws SnmpStatusException {
+        if (!statusMonitor.getInitiatingService().equals(ServiceTypes.OSD)) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchName);
+        }
+        return NumObjsRX;
     }
 
 }

@@ -11,7 +11,10 @@ package org.xtreemfs.common.monitoring;
 
 import javax.management.MBeanServer;
 
+import org.xtreemfs.common.monitoring.StatusMonitor.ServiceTypes;
 import org.xtreemfs.common.monitoring.generatedcode.Dir;
+
+import com.sun.management.snmp.SnmpStatusException;
 
 
 
@@ -20,35 +23,34 @@ import org.xtreemfs.common.monitoring.generatedcode.Dir;
  * This class represents the monitoring information exposed by the SNMP agent regarding to the
  * Directory Service.
  *
- * <br>May 5, 2011
- * 
- * @author bzcseife
  */
 @SuppressWarnings("serial")
 public class DirImpl extends Dir {
         
+    private StatusMonitor statusMonitor;
+    
     public DirImpl(XTREEMFS_MIBImpl myMib, StatusMonitor statusMonitor) {
         super(myMib);
         
         AddressMappingCount = 0;
         ServiceCount = 0;
-    
+        
+        this.statusMonitor = statusMonitor;
         // Set a reference to this Object to be able to access it within
         // the application
         statusMonitor.setDirGroup(this);
-        
     }
 
     public DirImpl(XTREEMFS_MIBImpl myMib, MBeanServer server, StatusMonitor statusMonitor) {
         super(myMib, server);
-        
+      
         AddressMappingCount = 0;
         ServiceCount = 0;
         
+        this.statusMonitor = statusMonitor;
         // Set a reference to this Object to be able to access it within
         // the application
         statusMonitor.setDirGroup(this);
-        
     }    
     
     
@@ -78,6 +80,22 @@ public class DirImpl extends Dir {
      **/
     protected void serviceDeregistered() {
         ServiceCount--;
+    }
+    
+    @Override
+    public Integer getServiceCount() throws SnmpStatusException {
+        if (!statusMonitor.getInitiatingService().equals(ServiceTypes.DIR)) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchName);
+        }
+        return ServiceCount;
+    }
+
+    @Override
+    public Integer getAddressMappingCount() throws SnmpStatusException {
+        if (!statusMonitor.getInitiatingService().equals(ServiceTypes.DIR)) {
+            throw new SnmpStatusException(SnmpStatusException.noSuchName);
+        }
+        return AddressMappingCount;
     }
         
 }

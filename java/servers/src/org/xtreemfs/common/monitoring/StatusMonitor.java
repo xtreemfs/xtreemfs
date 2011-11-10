@@ -40,46 +40,44 @@ public class StatusMonitor implements DIRStatusListener, MRCStatusListener, OSDS
         DIR, MRC, OSD
     }
 
-    private DIRConfig            dirConfig           = null;
-    private MRCConfig            mrcConfig           = null;
-    private OSDConfig            osdConfig           = null;
+    private DIRConfig            dirConfig         = null;
+    private MRCConfig            mrcConfig         = null;
+    private OSDConfig            osdConfig         = null;
 
-    private DIRRequestDispatcher masterDIR           = null;
-    private MRCRequestDispatcher masterMRC           = null;
-    private OSDRequestDispatcher masterOSD           = null;
-
+    private DIRRequestDispatcher masterDIR         = null;
+    private MRCRequestDispatcher masterMRC         = null;
+    private OSDRequestDispatcher masterOSD         = null;
 
     /**
      * The {@link SnmpAdaptorServer} representing the SNMP adaptor.
      */
-    private SnmpAdaptorServer    snmpAdaptor         = null;
+    private SnmpAdaptorServer    snmpAdaptor       = null;
 
     /**
      * The MIB containing all SNMP related informations
      */
-    private XTREEMFS_MIB         xtfsmib             = null;
+    private XTREEMFS_MIB         xtfsmib           = null;
 
     /**
      * Reference to the DIR Implementation to access it
      */
-    private DirImpl              dirGroup            = null;
-
+    private DirImpl              dirGroup          = null;
 
     /**
      * Reference to the MRC implementation to access it
      */
-    private MrcImpl              mrcGroup            = null;
+    private MrcImpl              mrcGroup          = null;
 
     /**
      * Reference to the OSD implementation to access it
      */
-    private OsdImpl              osdGroup            = null;
+    private OsdImpl              osdGroup          = null;
 
     /**
      * Saves what kind of service (DIR, MRC or OSD) uses this class. This is used in the General Group to know
      * where to get specific information.
      */
-    private ServiceTypes         initiatingService   = null;
+    private ServiceTypes         initiatingService = null;
 
     /**
      * Constructor when this class is running inside a DIR.
@@ -103,7 +101,7 @@ public class StatusMonitor implements DIRStatusListener, MRCStatusListener, OSDS
         this(ServiceTypes.DIR, addr, port, null);
         this.masterDIR = dirReqDisp;
     }
-    
+
     /**
      * Constructor when this class is running inside a DIR.
      * 
@@ -151,7 +149,6 @@ public class StatusMonitor implements DIRStatusListener, MRCStatusListener, OSDS
         this.masterMRC = mrcReqDisp;
     }
 
-    
     /**
      * Constructor when this class is running inside a MRC.
      * 
@@ -174,7 +171,7 @@ public class StatusMonitor implements DIRStatusListener, MRCStatusListener, OSDS
         this(ServiceTypes.MRC, addr, port, aclFile);
         this.masterMRC = mrcReqDisp;
     }
-    
+
     /**
      * Constructor when this class is running inside an OSD.
      * 
@@ -197,18 +194,6 @@ public class StatusMonitor implements DIRStatusListener, MRCStatusListener, OSDS
         this(ServiceTypes.OSD, addr, port, null);
         this.masterOSD = osdReqDisp;
     }
-    
-    /**
-     * Constructor when this class is running inside an OSD.
-     * 
-     * @param osdReqDisp
-     * @param port
-     * @param aclFile
-     */
-    public StatusMonitor(OSDRequestDispatcher osdReqDisp,  int port, String aclFile) {
-        this(ServiceTypes.OSD, null, port, aclFile);
-        this.masterOSD = osdReqDisp;
-    }    
 
     /**
      * Constructor when this class is running inside an OSD.
@@ -217,11 +202,23 @@ public class StatusMonitor implements DIRStatusListener, MRCStatusListener, OSDS
      * @param port
      * @param aclFile
      */
-    public StatusMonitor(OSDRequestDispatcher osdReqDisp, InetAddress addr,  int port, String aclFile) {
+    public StatusMonitor(OSDRequestDispatcher osdReqDisp, int port, String aclFile) {
+        this(ServiceTypes.OSD, null, port, aclFile);
+        this.masterOSD = osdReqDisp;
+    }
+
+    /**
+     * Constructor when this class is running inside an OSD.
+     * 
+     * @param osdReqDisp
+     * @param port
+     * @param aclFile
+     */
+    public StatusMonitor(OSDRequestDispatcher osdReqDisp, InetAddress addr, int port, String aclFile) {
         this(ServiceTypes.OSD, addr, port, aclFile);
         this.masterOSD = osdReqDisp;
-    }    
-    
+    }
+
     private StatusMonitor(ServiceTypes type, InetAddress addr, int port, String aclFile) {
 
         initiatingService = type;
@@ -229,26 +226,24 @@ public class StatusMonitor implements DIRStatusListener, MRCStatusListener, OSDS
         JdmkAcl acl = null;
         if (aclFile != null) {
             // JdmkACL specifies the ACL file.
-          try {
-              acl = new JdmkAcl("Xtreemfs ACL", aclFile);
-          } catch (IllegalArgumentException iae) {
-              Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.misc, this,
-                      "ACL file problem. The file %s is not a valid ACL file or did not exist.", aclFile);
-          } catch (UnknownHostException uhe) {
-              Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.misc, this,
-                    "", uhe.getMessage());
-          }
+            try {
+                acl = new JdmkAcl("Xtreemfs ACL", aclFile);
+            } catch (IllegalArgumentException iae) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.misc, this,
+                        "ACL file problem. The file %s is not a valid ACL file or did not exist.", aclFile);
+            } catch (UnknownHostException uhe) {
+                Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.misc, this, "", uhe.getMessage());
+            }
         }
-        
-        
-        //if there is no ACL File everyone who can access the the network can read the information 
+
+        // if there is no ACL File everyone who can access the the network can read the information
         // exposed by SNMP from everywhere within the network!
         if (acl == null) {
             Logging.logMessage(Logging.LEVEL_NOTICE, Logging.Category.misc, this,
-                "SNMP agen will start without a ACL file. Everyone on your network can access the " +
-                "information exposed by the SNMP agent!");
+                    "SNMP agen will start without a ACL file. Everyone on your network can access the "
+                            + "information exposed by the SNMP agent!");
         }
-        
+
         // create and start the SNMP adaptor
         if (addr != null) {
             snmpAdaptor = new SnmpAdaptorServer(acl, port, addr);
@@ -270,14 +265,14 @@ public class StatusMonitor implements DIRStatusListener, MRCStatusListener, OSDS
                     "Failed to start SNMP agent at port %s", port);
         }
 
-        xtfsmib = new XTREEMFS_MIBImpl(this, initiatingService);
+        xtfsmib = new XTREEMFS_MIBImpl(this);
 
         try {
             xtfsmib.init();
         } catch (IllegalAccessException e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.misc, this,  "Failed to start SNMP agent: %s",
-                    e.getMessage());
-            
+            Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.misc, this,
+                    "Failed to start SNMP agent: %s", e.getMessage());
+
         }
 
         xtfsmib.setSnmpAdaptor(snmpAdaptor);
@@ -315,7 +310,7 @@ public class StatusMonitor implements DIRStatusListener, MRCStatusListener, OSDS
     // Methods of the DIR Listener Interface.
     @Override
     public void addressMappingAdded() {
-       dirGroup.addressMappingAdded();
+        dirGroup.addressMappingAdded();
     }
 
     @Override
@@ -348,8 +343,6 @@ public class StatusMonitor implements DIRStatusListener, MRCStatusListener, OSDS
         this.dirGroup = dirGroup;
     }
 
-
-
     /**
      * This method is used by {@link MRCImpl} constructor to make itself accessible by this class.
      * 
@@ -375,7 +368,6 @@ public class StatusMonitor implements DIRStatusListener, MRCStatusListener, OSDS
         this.mrcConfig = config;
 
     }
-
 
     @Override
     public void volumeCreated() {
@@ -424,8 +416,8 @@ public class StatusMonitor implements DIRStatusListener, MRCStatusListener, OSDS
         osdGroup.setNumReplObjsRX(numReplObjsRX);
     }
 
-	@Override
-	public void shuttingDown() {
-		snmpAdaptor.stop();
-	}
+    @Override
+    public void shuttingDown() {
+        snmpAdaptor.stop();
+    }
 }

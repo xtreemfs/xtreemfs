@@ -11,7 +11,6 @@ package org.xtreemfs.common.monitoring;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
-import org.xtreemfs.common.monitoring.StatusMonitor.ServiceTypes;
 import org.xtreemfs.common.monitoring.generatedcode.XTREEMFS_MIB;
 
 @SuppressWarnings("serial")
@@ -22,12 +21,10 @@ public class XTREEMFS_MIBImpl extends XTREEMFS_MIB {
     /**
      * Defines what kind of service is created the snmp agent
      */
-    private ServiceTypes  service;
 
-    public XTREEMFS_MIBImpl(StatusMonitor statusMonitor, ServiceTypes service) {
+    public XTREEMFS_MIBImpl(StatusMonitor statusMonitor) {
         super();
         this.statusMonitor = statusMonitor;
-        this.service = service;
     }
 
     // Overwrite this method in order to ensure that your own Dir implementation is used.
@@ -36,14 +33,10 @@ public class XTREEMFS_MIBImpl extends XTREEMFS_MIB {
             MBeanServer server) {
         // if this runs in a DIR Service, return customized Dir group. Otherwise return the default
         // one created method of the super-class
-        if (service.equals(ServiceTypes.DIR)) {
-            if (server != null) {
-                return new DirImpl(this, server, statusMonitor);
-            } else {
-                return new DirImpl(this, statusMonitor);
-            }
+        if (server != null) {
+            return new DirImpl(this, server, statusMonitor);
         } else {
-            return super.createDirMBean(groupName, groupOid, groupObjname, server);
+            return new DirImpl(this, statusMonitor);
         }
     }
 
@@ -64,14 +57,10 @@ public class XTREEMFS_MIBImpl extends XTREEMFS_MIB {
             MBeanServer server) {
         // if this runs in a DIR Service, return customized Mrc group. Otherwise return the default
         // one created method of the super-class
-        if (service.equals(ServiceTypes.MRC)) {
-            if (server != null) {
-                return new MrcImpl(this, server, statusMonitor);
-            } else {
-                return new MrcImpl(this, statusMonitor);
-            }
+        if (server != null) {
+            return new MrcImpl(this, server, statusMonitor);
         } else {
-            return super.createMrcMBean(groupName, groupOid, groupObjname, server);
+            return new MrcImpl(this, statusMonitor);
         }
     }
 
@@ -81,15 +70,12 @@ public class XTREEMFS_MIBImpl extends XTREEMFS_MIB {
             MBeanServer server) {
         // if this runs in a DIR Service, return customized Dir group. Otherwhise return the default
         // one created method of the super-class
-        if (service.equals(ServiceTypes.OSD)) {
-            if (server != null) {
-                return new OsdImpl(this, server, statusMonitor);
-            } else {
-                return new OsdImpl(this, statusMonitor);
-            }
+        if (server != null) {
+            return new OsdImpl(this, server, statusMonitor);
         } else {
-            return super.createOsdMBean(groupName, groupOid, groupObjname, server);
+            return new OsdImpl(this, statusMonitor);
         }
+
     }
 
 }
