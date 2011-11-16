@@ -1297,7 +1297,7 @@ acl = {
  }
 }
 \end{verbatim}
-\texttt{communites} is the SNMP community string your managers have to use and \texttt{managers} is a list of hostname, ip address or subnets in prefix notation (i.e. "xtreemfs-host", "192.168.0.54" or "192.168.0.3/24").
+\texttt{communites} is the SNMP community string your managers have to use and \texttt{managers} is a comma-separated list of hostnames, ip addresses or subnets in prefix notation (i.e. "xtreemfs-host", "192.168.0.54" or "192.168.0.3/24").
 
 Note: If you comment out the \texttt{snmp.aclfile} line every host on your network can access all information through the SNMP agent.
 
