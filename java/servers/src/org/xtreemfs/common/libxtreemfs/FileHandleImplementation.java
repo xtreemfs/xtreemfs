@@ -7,34 +7,42 @@
 package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Vector;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.commons.logging.Log;
+import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
+import org.xtreemfs.common.libxtreemfs.exceptions.UUIDIteratorListIsEmpyException;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest;
+import org.xtreemfs.osd.operations.GetObjectSetOperation;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SERVICES;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.statvfsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.timestampResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
@@ -47,40 +55,40 @@ public class FileHandleImplementation extends FileHandle {
     /**
      * UUID of the Client (needed to distinguish Locks of different clients).
      */
-    private String                                clientUuid;
+    private String                            clientUuid;
 
     /**
      * UUIDIterator of the MRC.
      */
-    private UUIDIterator                          mrcUuidIterator;
+    private UUIDIterator                      mrcUuidIterator;
 
     /**
      * UUIDIterator which contains the UUIDs of all replicas.
      */
-    private UUIDIterator                          osdUuidIterator;
+    private UUIDIterator                      osdUuidIterator;
 
     /**
      * Needed to resolve UUIDs.
      */
-    private UUIDResolver                          uuidResolver;
+    private UUIDResolver                      uuidResolver;
 
     /**
      * Multiple FileHandle may refer to the same File and therefore unique file properties (e.g. Path, FileId,
      * XlocSet) are stored in a FileInfo object.
      */
-    private FileInfo                              fileInfo;
+    private FileInfo                          fileInfo;
 
     // TODO(mberlin): Add flags member.
 
     /**
      * Capabilitiy for the file, used to authorize against services
      */
-    private XCap                                  xcap;
+    private XCap                              xcap;
 
     /**
      * True if there is an outstanding xcap_renew callback.
      */
-    private boolean                               xcapRenewalPending;
+    private boolean                           xcapRenewalPending;
 
     /**
      * Used to wait for pending XCap renewal callbacks.
@@ -90,49 +98,50 @@ public class FileHandleImplementation extends FileHandle {
     /**
      * Contains a file size update which has to be written back (or NULL).
      */
-    private OSDWriteResponse                      osdWriteResponseForAsyncWriteBack;
+    private OSDWriteResponse                  osdWriteResponseForAsyncWriteBack;
 
     /**
      * MRCServiceClient from the VolumeImplemention
      */
-    private MRCServiceClient                      mrcServiceClient;
+    private MRCServiceClient                  mrcServiceClient;
 
     /**
      * Pointer to object owned by VolumeImplemention
      */
-    private OSDServiceClient                      osdServiceClient;
+    private OSDServiceClient                  osdServiceClient;
 
-    // TODO: Figure out if this is needed and add it to constructor if neccessary.
-    // const std::map<xtreemfs::pbrpc::StripingPolicyType,
-    // StripeTranslator*>& stripe_translators_;
+    /**
+     * Stores which {@link StripingPolicyType} corresponds to which {@link StripeTranslator}.
+     */
+    Map<StripingPolicyType, StripeTranslator> stripeTranslators;
 
     /**
      * Set to true if async writes (max requests > 0, no O_SYNC) are enabled.
      */
-    private boolean                               asyncWritesEnabled;
+    private boolean                           asyncWritesEnabled;
 
     /**
      * Set to true if an async write of this file_handle failed. If true, this file_handle is broken and no
      * further writes/reads/truncates are possible.
      */
-    private boolean                               asyncWritesFailed;
+    private boolean                           asyncWritesFailed;
 
-    private Options                               volumeOptions;
+    private Options                           volumeOptions;
 
     /**
      * Auth needed for ServiceClients. Always set to AUTH_NONE by Volume.
      */
-    private Auth                                  authBogus;
+    private Auth                              authBogus;
 
     /**
      * For same reason needed as authBogus. Always set to user "xtreemfs".
      */
-    private UserCredentials                       userCredentialsBogus;
+    private UserCredentials                   userCredentialsBogus;
 
     /**
      * All modifications to this object must aquire a Lock first.
      */
-    private java.util.concurrent.locks.Lock fileHandleLock;
+    private java.util.concurrent.locks.Lock   fileHandleLock;
 
     /**
      * 
@@ -141,7 +150,6 @@ public class FileHandleImplementation extends FileHandle {
             UUIDIterator mrcUuidIterator, UUIDIterator osdUuidIterator, UUIDResolver uuidResolver,
             MRCServiceClient mrcServiceClient, OSDServiceClient osdServiceClient, boolean asyncWritesEnabled,
             Options options, Auth authBogus, UserCredentials userCredentialsBogus) {
-
         this.clientUuid = clientUuid;
         this.fileInfo = fileInfo;
         this.xcap = xcap;
@@ -152,9 +160,10 @@ public class FileHandleImplementation extends FileHandle {
         this.volumeOptions = options;
         this.authBogus = authBogus;
         this.userCredentialsBogus = userCredentialsBogus;
-        
+
         fileHandleLock = new ReentrantLock();
 
+        stripeTranslators = new HashMap<StripingPolicyType, StripeTranslator>();
     }
 
     /*
@@ -166,9 +175,98 @@ public class FileHandleImplementation extends FileHandle {
      */
     @Override
     public int read(UserCredentials userCredentials, ReusableBuffer buf, int count, int offset)
-            throws IOException {
-        // TODO Auto-generated method stub
-        return 0;
+            throws IOException, PosixErrorException {
+        fileInfo.waitForPendingAsyncWrites();
+
+        // Prepare read request
+        readRequest.Builder readRqBuilder = readRequest.newBuilder();
+        FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
+
+        fileHandleLock.lock();
+        try {
+            if (asyncWritesFailed) {
+                throw new PosixErrorException(POSIXErrno.POSIX_ERROR_EIO, "A previous asynchronous"
+                        + " write did fail. No more actions on this file handle are allowed.");
+            }
+            // TODO(mberlin): XCap might expire while retrying a request. Provide a
+            // mechanism to renew the xcap in the request.
+            fcBuilder.setXcap(xcap.toBuilder());
+            readRqBuilder.setFileId(xcap.getFileId());
+
+        } finally {
+            fileHandleLock.unlock();
+        }
+
+        fcBuilder.setXlocs(fileInfo.getXLocSet());
+
+        int receivedData = 0;
+
+        if (fcBuilder.getXlocs().getReplicasCount() == 0) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "No replica found for fiel %s",
+                    fileInfo.getPath());
+            throw new PosixErrorException(POSIXErrno.POSIX_ERROR_EIO, "no replica found for file: "
+                    + fileInfo.getPath());
+        }
+        // Build readRequest with fileCredentials and use it as template for further ReadRequests.
+        readRequest readRequestTemplate = readRqBuilder.setFileCredentials(fcBuilder).build();
+
+        // Pick the first replica to determine striping policy.
+        // (We assume that all replicas use the same striping policy.)
+        StripingPolicy policy = readRequestTemplate.getFileCredentials().getXlocs().getReplicas(0)
+                .getStripingPolicy();
+        StripeTranslator translator = getStripeTranslator(policy.getType());
+
+        // Map offset to corresponding OSDs.
+        Vector<ReadOperation> operations = new Vector<ReadOperation>();
+        translator.translateReadRequest(count, offset, policy, operations);
+
+        UUIDIterator tempUuidIteratorForStriping = new UUIDIterator();
+        String osdUuid = "";
+
+        // Read all objects
+        for (int j = 0; j < operations.size(); j++) {
+
+            readRqBuilder = readRequestTemplate.toBuilder();
+
+            readRqBuilder.setObjectNumber(operations.get(j).getObjNumber());
+            readRqBuilder.setObjectVersion(0);
+            readRqBuilder.setOffset(operations.get(j).getReqOffset());
+            readRqBuilder.setLength(operations.get(j).getReqSize());
+
+            // Differ between striping and the rest (replication, no replication).
+            UUIDIterator uuidIterator;
+            if (readRqBuilder.getFileCredentials().getXlocs().getReplicas(0).getOsdUuidsCount() > 1) {
+                // Replica is striped. Pick UUID from xlocset.
+                osdUuid = Helper.getOSDUUIDFromXlocSet(fcBuilder.getXlocs(), 0, // Use first and only replica.
+                        operations.get(j).getOsdOffset());
+                tempUuidIteratorForStriping.clearAndAddUUID(osdUuid);
+                uuidIterator = tempUuidIteratorForStriping;
+            } else {
+                // TODO(mberlin): Enhance UUIDIterator to read from different replicas.
+                uuidIterator = osdUuidIterator;
+            }
+
+            buf.position(operations.get(j).getBufferStart());
+            // If synccall gets a buffer it fill it with data from the response.
+            ObjectData data = RPCCaller.<readRequest, ObjectData> syncCall(SERVICES.OSD,
+                    userCredentialsBogus, authBogus, volumeOptions, uuidResolver, uuidIterator, true,
+                    readRqBuilder.build(), buf, new CallGenerator<readRequest, ObjectData>() {
+
+                        @Override
+                        public RPCResponse<ObjectData> executeCall(InetSocketAddress server, Auth auth,
+                                UserCredentials userCreds, readRequest callRequest) throws IOException {
+                            return osdServiceClient.read(server, auth, userCreds, callRequest);
+
+                        }
+                    });
+            // if zeropadding > 0, put zeros at the end of the buffer.
+            for (int i = 0; i < data.getZeroPadding(); i++) {
+                buf.put((byte) 0);
+            }
+
+            receivedData += buf.position() - operations.get(j).getBufferStart();
+        }
+        return receivedData;
     }
 
     /*
@@ -180,9 +278,130 @@ public class FileHandleImplementation extends FileHandle {
      */
     @Override
     public synchronized int write(UserCredentials userCredentials, ReusableBuffer buf, int count, int offset)
-            throws IOException {
+            throws IOException, PosixErrorException {
         // TODO Auto-generated method stub
-        return 0;
+        FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
+        fileHandleLock.lock();
+        try {
+            if (asyncWritesFailed) {
+                assert (asyncWritesEnabled);
+                throw new PosixErrorException(POSIXErrno.POSIX_ERROR_EIO, "A previous asynchronous "
+                        + "write did fail. No further writes on this file handle are allowed.");
+            }
+            fcBuilder.setXcap(xcap.toBuilder());
+        } finally {
+            fileHandleLock.unlock();
+        }
+
+        fcBuilder.setXlocs(fileInfo.getXLocSet());
+
+        String globalFileId = fcBuilder.getXcap().getFileId();
+        XLocSet xlocs = fcBuilder.getXlocs();
+
+        if (xlocs.getReplicasCount() == 0) {
+            String error = "No replica found for file: " + fileInfo.getPath();
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, error);
+            throw new PosixErrorException(POSIXErrno.POSIX_ERROR_EIO, error);
+        }
+
+        // Map operation to stripes.
+        Vector<WriteOperation> operations = new Vector<WriteOperation>();
+        StripingPolicy stripingPolicy = xlocs.getReplicas(0).getStripingPolicy();
+        StripeTranslator translator = getStripeTranslator(stripingPolicy.getType());
+
+        translator.translateWriteRequest(count, offset, stripingPolicy, buf, operations);
+
+        FileCredentials fileCredentials = fcBuilder.build();
+
+        String osdUuid = "";
+        writeRequest.Builder request;
+
+        if (asyncWritesEnabled) {
+            // Write all objects.
+            for (int j = 0; j < operations.size(); j++) {
+                request = writeRequest.newBuilder();
+                request.setFileCredentials(fileCredentials);
+                request.setFileId(globalFileId);
+
+                request.setObjectNumber(operations.get(j).getObjNumber());
+                request.setObjectVersion(0);
+                request.setOffset(operations.get(j).getOsdOffset());
+                request.setLeaseTimeout(0);
+
+                ObjectData data = ObjectData.newBuilder().setChecksum(0).setInvalidChecksumOnOsd(false)
+                        .setZeroPadding(0).build();
+                request.setObjectData(data);
+
+                // Create new WriteBuffer and differ between striping and the rest (
+                // (replication = use UUIDIterator, no replication = set specific UUID).
+                AsyncWriteBuffer writeBuffer;
+
+                if (xlocs.getReplicas(0).getOsdUuidsCount() > 1) {
+                    // Replica is striped. Pick UUID from xlocset
+                    writeBuffer = new AsyncWriteBuffer(request.build(), operations.get(j).getReqData(),
+                            operations.get(j).getReqSize(), this, Helper.getOSDUUIDFromXlocSet(xlocs, 0,
+                                    operations.get(j).getOsdOffset()));
+                } else {
+                    writeBuffer = new AsyncWriteBuffer(request.build(), operations.get(j).getReqData(),
+                            operations.get(j).getReqSize(), this);
+                }
+                
+                // TODO(mberlin): Currently the UserCredentials are ignored by the OSD and
+                //                therefore we avoid copying them into write_buffer.
+                fileInfo.asyncWrite(writeBuffer);
+                
+                // Processing of file size updates is handled by the FileInfo's
+                // AsyncWriteHandler.
+            }
+        } else {
+            // synchroneous write
+            for (int j = 0; j < operations.size(); j++) {
+                request = writeRequest.newBuilder();
+                request.setFileCredentials(fileCredentials);
+                request.setFileId(globalFileId);
+                request.setObjectNumber(operations.get(j).getObjNumber());
+                request.setObjectVersion(0);
+                request.setOffset(operations.get(j).getOsdOffset());
+                request.setLeaseTimeout(0);
+
+                ObjectData data = ObjectData.newBuilder().setChecksum(0).setInvalidChecksumOnOsd(false)
+                        .setZeroPadding(0).build();
+                request.setObjectData(data);
+
+                // Differ between striping and the rest (replication, no replication).
+                UUIDIterator uuidIterator;
+                if (xlocs.getReplicas(0).getOsdUuidsCount() > 1) {
+                    // Replica is striped. Pick UUID from Xlocset. Use first and only replica.
+                    osdUuid = Helper.getOSDUUIDFromXlocSet(xlocs, 0, operations.get(j).getOsdOffset());
+                    uuidIterator = new UUIDIterator();
+                    uuidIterator.clearAndAddUUID(osdUuid);
+                } else {
+                    // TODO: enhance UUIDIterator to read from different replicas.
+                    uuidIterator = osdUuidIterator;
+                }
+
+                final ReusableBuffer finalBuf = buf;
+                OSDWriteResponse response = RPCCaller.<writeRequest, OSDWriteResponse> syncCall(SERVICES.OSD,
+                        userCredentials, authBogus, volumeOptions, uuidResolver, uuidIterator, false,
+                        request.build(), new CallGenerator<writeRequest, OSDWriteResponse>() {
+
+                            @Override
+                            public RPCResponse<OSDWriteResponse> executeCall(InetSocketAddress server,
+                                    Auth authHeader, UserCredentials userCreds, writeRequest input)
+                                    throws IOException {
+                                // TODO Auto-generated method stub
+                                return osdServiceClient.write(server, authHeader, userCreds, input, finalBuf);
+                            }
+                        });
+
+                // If the filesize has changed, remember OSDWriteResponse for later file
+                // size update towards the MRC (executed by PeriodicFileSizeUpdateThread)
+                if (response.hasSizeInBytes()) {
+                    fileInfo.tryToUpdateOSDWriteResponse(response, xcap);
+                }
+            }
+        }
+        return count;
     }
 
     /*
@@ -223,9 +442,7 @@ public class FileHandleImplementation extends FileHandle {
     @Override
     public void truncate(UserCredentials userCredentials, long newFileSize) throws IOException,
             PosixErrorException {
-
         fileInfo.waitForPendingAsyncWrites();
-
         XCap xcapCopy;
 
         fileHandleLock.lock();
@@ -241,22 +458,14 @@ public class FileHandleImplementation extends FileHandle {
         }
 
         // 1. Call truncate at the MRC (in order to increase the trunc epoch).
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("ftruncate", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, XCap.class });
-
-            RPCCaller.<MRCServiceClient, XCap, XCap> makeCall(mrcServiceClient, m, userCredentialsBogus,
-                    authBogus, xcapCopy, mrcUuidIterator, uuidResolver, volumeOptions.getMaxTries(),
-                    volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
+        RPCCaller.<XCap, XCap> syncCall(SERVICES.MRC, userCredentials, authBogus, volumeOptions,
+                uuidResolver, mrcUuidIterator, false, xcapCopy, new CallGenerator<XCap, XCap>() {
+                    @Override
+                    public RPCResponse<XCap> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, XCap input) throws IOException {
+                        return mrcServiceClient.ftruncate(server, authHeader, userCreds, input);
+                    }
+                });
 
         truncatePhaseTwoAndThree(userCredentials, newFileSize);
     }
@@ -289,23 +498,16 @@ public class FileHandleImplementation extends FileHandle {
         requestBuilder.setFileCredentials(fileCredentialsBuilder.build());
         requestBuilder.setNewFileSize(newFileSize);
 
-        OSDWriteResponse response = null;
-        try {
-            Method m = OSDServiceClient.class.getDeclaredMethod("truncate", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, truncateRequest.class });
-
-            response = RPCCaller.<OSDServiceClient, truncateRequest, OSDWriteResponse> makeCall(
-                    osdServiceClient, m, userCredentialsBogus, authBogus, requestBuilder.build(),
-                    osdUuidIterator, uuidResolver, volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
+        OSDWriteResponse response = RPCCaller.<truncateRequest, OSDWriteResponse> syncCall(SERVICES.OSD,
+                userCredentials, authBogus, volumeOptions, uuidResolver, osdUuidIterator, false,
+                requestBuilder.build(), new CallGenerator<truncateRequest, OSDWriteResponse>() {
+                    @Override
+                    public RPCResponse<OSDWriteResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, truncateRequest input)
+                            throws IOException {
+                        return osdServiceClient.truncate(server, authHeader, userCreds, input);
+                    }
+                });
 
         assert (response != null);
         assert (response.hasSizeInBytes());
@@ -341,7 +543,6 @@ public class FileHandleImplementation extends FileHandle {
     @Override
     public Lock acquireLock(UserCredentials userCredentials, int processId, long offset, long length,
             boolean exclusive, boolean waitForLock) throws IOException, PosixErrorException {
-
         // Create Lock object for the acquire lock request.
         Lock.Builder lockBuilder = Lock.newBuilder();
         lockBuilder.setClientUuid(clientUuid);
@@ -383,62 +584,51 @@ public class FileHandleImplementation extends FileHandle {
 
         Lock response = null;
         if (!waitForLock) {
-            try {
-                Method m = OSDServiceClient.class.getDeclaredMethod("xtreemfs_lock_acquire", new Class<?>[] {
-                        InetSocketAddress.class, Auth.class, UserCredentials.class, lockRequest.class });
-
-                response = RPCCaller.<OSDServiceClient, lockRequest, Lock> makeCall(osdServiceClient, m,
-                        userCredentialsBogus, authBogus, request, osdUuidIterator, uuidResolver,
-                        volumeOptions.getMaxTries(), volumeOptions, false);
-            } catch (NoSuchMethodException nsm) {
-                // should never happen unless there is a programming error
-                nsm.printStackTrace();
-            } catch (SecurityException se) {
-                // should never happen unless there is a programming error
-                se.printStackTrace();
-            } catch (Exception e) {
-                throw new IOException(e);
-            }
+            response = RPCCaller.<lockRequest, Lock> syncCall(SERVICES.OSD, userCredentials, authBogus,
+                    volumeOptions, uuidResolver, osdUuidIterator, false, request,
+                    new CallGenerator<lockRequest, Lock>() {
+                        @Override
+                        public RPCResponse<Lock> executeCall(InetSocketAddress server, Auth authHeader,
+                                UserCredentials userCreds, lockRequest input) throws IOException {
+                            return osdServiceClient.xtreemfs_lock_acquire(server, authHeader, userCreds,
+                                    input);
+                        }
+                    });
         } else {
             // Retry to obtain the lock in case of EAGAIN responses.\
             int retriesLeft = volumeOptions.getMaxTries();
             while (retriesLeft >= 0) {
                 retriesLeft--;
                 try {
-                    Method m = OSDServiceClient.class.getDeclaredMethod("xtreemfs_lock_acquire",
-                            new Class<?>[] { InetSocketAddress.class, Auth.class, UserCredentials.class,
-                                    lockRequest.class });
-
-                    response = RPCCaller.<OSDServiceClient, lockRequest, Lock> makeCall(osdServiceClient, m,
-                            userCredentialsBogus, authBogus, request, osdUuidIterator, uuidResolver,
-                            volumeOptions.getMaxTries(), volumeOptions, false, true);
-
+                    response = RPCCaller.<lockRequest, Lock> syncCall(SERVICES.OSD, userCredentials,
+                            authBogus, volumeOptions, uuidResolver, osdUuidIterator, false, true, request,
+                            new CallGenerator<lockRequest, Lock>() {
+                                @Override
+                                public RPCResponse<Lock> executeCall(InetSocketAddress server,
+                                        Auth authHeader, UserCredentials userCreds, lockRequest input)
+                                        throws IOException {
+                                    return osdServiceClient.xtreemfs_lock_acquire(server, authHeader,
+                                            userCreds, input);
+                                }
+                            });
                     // break if there is no error.
                     break;
-                } catch (NoSuchMethodException nsm) {
-                    // should never happen unless there is a programming error
-                    nsm.printStackTrace();
-                } catch (SecurityException se) {
-                    // should never happen unless there is a programming error
-                    se.printStackTrace();
-                } catch (PosixErrorException pe) {
-                    if (!pe.getPosixError().equals(POSIXErrno.POSIX_ERROR_EAGAIN)) {
-                        // TODO: makeCall() does not throw PosixError yet. Find out how to find out
-                        // if there was an error and extract posix error code from the error response.
-
-                        // Only retry if there exists a conflicting lock and the server did
-                        // return an EAGAIN - otherwise rethrow the exception.
-                        throw pe;
-                    }
+                    // } catch (PosixErrorException pe) {
+                    // if (!pe.getPosixError().equals(POSIXErrno.POSIX_ERROR_EAGAIN)) {
+                    // // TODO: makeCall() does not throw PosixError yet. Find out how to find out
+                    // // if there was an error and extract posix error code from the error response.
+                    //
+                    // // Only retry if there exists a conflicting lock and the server did
+                    // // return an EAGAIN - otherwise rethrow the exception.
+                    // throw pe;
+                    // }
                 } catch (Exception e) {
                     throw new IOException(e);
                 }
             }
         }
-
         // "Cache" new lock.
         fileInfo.putLock(response);
-
         return response;
     }
 
@@ -452,7 +642,6 @@ public class FileHandleImplementation extends FileHandle {
     @Override
     public Lock checkLock(UserCredentials userCredentials, int processId, long offset, long length,
             boolean exclusive) throws IOException {
-
         // Create lock object for the check lock request.
         Lock.Builder lockBuilder = Lock.newBuilder();
         lockBuilder.setClientUuid(clientUuid);
@@ -492,24 +681,15 @@ public class FileHandleImplementation extends FileHandle {
         lockRequest request = lockRequest.newBuilder().setLockRequest(lock)
                 .setFileCredentials(fcBuilder.build()).build();
 
-        Lock response = null;
-        try {
-            Method m = OSDServiceClient.class.getDeclaredMethod("xtreemfs_lock_check", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, lockRequest.class });
-
-            response = RPCCaller.<OSDServiceClient, lockRequest, Lock> makeCall(osdServiceClient, m,
-                    userCredentialsBogus, authBogus, request, osdUuidIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
-
+        Lock response = RPCCaller.<lockRequest, Lock> syncCall(SERVICES.OSD, userCredentials, authBogus,
+                volumeOptions, uuidResolver, osdUuidIterator, false, request,
+                new CallGenerator<lockRequest, Lock>() {
+                    @Override
+                    public RPCResponse<Lock> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, lockRequest input) throws IOException {
+                        return osdServiceClient.xtreemfs_lock_check(server, authHeader, userCreds, input);
+                    }
+                });
         return response;
     }
 
@@ -523,7 +703,6 @@ public class FileHandleImplementation extends FileHandle {
     @Override
     public void releaseLock(UserCredentials userCredentials, int processId, long offset, long length,
             boolean exclusive) throws IOException {
-
         Lock.Builder lockBuilder = Lock.newBuilder();
         lockBuilder.setClientUuid(clientUuid);
         lockBuilder.setClientPid(processId);
@@ -531,7 +710,6 @@ public class FileHandleImplementation extends FileHandle {
         lockBuilder.setLength(length);
         lockBuilder.setExclusive(exclusive);
         releaseLock(userCredentials, lockBuilder.build());
-
     }
 
     /*
@@ -565,23 +743,17 @@ public class FileHandleImplementation extends FileHandle {
 
         lockRequest unlockRequest = lockRequest.newBuilder().setFileCredentials(fcBuilder.build())
                 .setLockRequest(lock).build();
-        try {
-            Method m = OSDServiceClient.class.getDeclaredMethod("xtreemfs_lock_release", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, lockRequest.class });
 
-            RPCCaller.<OSDServiceClient, lockRequest, emptyResponse> makeCall(osdServiceClient, m,
-                    userCredentialsBogus, authBogus, unlockRequest, osdUuidIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
-        
+        RPCCaller.<lockRequest, emptyResponse> syncCall(SERVICES.OSD, userCredentials, authBogus,
+                volumeOptions, uuidResolver, osdUuidIterator, false, unlockRequest,
+                new CallGenerator<lockRequest, emptyResponse>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, lockRequest input) throws IOException {
+                        return osdServiceClient.xtreemfs_lock_release(server, authHeader, userCreds, input);
+                    }
+                });
         fileInfo.delLock(lock);
     }
 
@@ -593,7 +765,6 @@ public class FileHandleImplementation extends FileHandle {
     @Override
     public void releaseLockOfProcess(int processId) throws IOException {
         fileInfo.releaseLockOfProcess(this, processId);
-
     }
 
     /**
@@ -615,7 +786,6 @@ public class FileHandleImplementation extends FileHandle {
     @Override
     public void pingReplica(UserCredentials userCredentials, String osdUuid) throws IOException {
         // TODO Auto-generated method stub
-
     }
 
     /*
@@ -652,28 +822,20 @@ public class FileHandleImplementation extends FileHandle {
         // set close file to false because true implies synchronous call.
         rqBuilder.setCloseFile(false);
 
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("xtreemfs_update_filesize", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class,
-                    xtreemfs_update_file_sizeRequest.class });
-
-            RPCCaller.<MRCServiceClient, xtreemfs_update_file_sizeRequest, timestampResponse> makeCall(
-                    mrcServiceClient, m, userCredentialsBogus, authBogus, rqBuilder.build(), mrcUuidIterator,
-                    uuidResolver, volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
-
+        RPCCaller.<xtreemfs_update_file_sizeRequest, timestampResponse> syncCall(SERVICES.MRC,
+                userCredentialsBogus, authBogus, volumeOptions, uuidResolver, mrcUuidIterator, false,
+                rqBuilder.build(), new CallGenerator<xtreemfs_update_file_sizeRequest, timestampResponse>() {
+                    @Override
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, xtreemfs_update_file_sizeRequest input)
+                            throws IOException {
+                        return mrcServiceClient.xtreemfs_update_file_size(server, authHeader, userCreds,
+                                input);
+                    }
+                });
     }
 
     protected void setOsdWriteResponseForAsyncWriteBack(OSDWriteResponse osdwr) {
-
         fileHandleLock.lock();
         try {
             assert (osdWriteResponseForAsyncWriteBack == null);
@@ -681,7 +843,6 @@ public class FileHandleImplementation extends FileHandle {
         } finally {
             fileHandleLock.unlock();
         }
-
     }
 
     protected void renewXCapAsync() throws IOException {
@@ -696,30 +857,39 @@ public class FileHandleImplementation extends FileHandle {
                         "Renew SCap for fileId: %s  Expiration in: %s", Helper.extractFileIdFromXcap(xcap),
                         xcap.getExpireTimeoutS() - System.currentTimeMillis() / 1000);
             }
-
             xcapCopy = this.xcap.toBuilder().build();
             xcapRenewalPending = true;
         } finally {
             fileHandleLock.unlock();
         }
 
+        String address = null;
         try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("xtreemfs_renew_capability", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, XCap.class });
-
-            RPCCaller.<MRCServiceClient, XCap, XCap> makeCall(mrcServiceClient, m, userCredentialsBogus,
-                    authBogus, xcapCopy, mrcUuidIterator, uuidResolver, volumeOptions.getMaxTries(),
-                    volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-
-            throw new IOException(e);
+            address = uuidResolver.uuidToAddress(mrcUuidIterator.getUUID());
+        } catch (UUIDIteratorListIsEmpyException e) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                        "Renew XCapAsync: Couldn't renew XCap. Reason: mrcUuidIterator is empty!");
+            }
         }
+        InetSocketAddress server = RPCCaller.getInetSocketAddressFromAddressAndServiceClient(address,
+                SERVICES.MRC);
+
+        RPCResponse<XCap> r = mrcServiceClient.xtreemfs_renew_capability(server, authBogus,
+                userCredentialsBogus, xcapCopy);
+
+        r.registerListener(new RPCResponseAvailableListener<XCap>() {
+            @Override
+            public void responseAvailable(RPCResponse<XCap> r) {
+                try {
+                    r.get();
+                } catch (Exception e) {
+                    // Ignore error since this is an asynchronous call.
+                } finally {
+                    r.freeBuffers();
+                }
+            }
+        });
     }
 
     /**
@@ -768,23 +938,19 @@ public class FileHandleImplementation extends FileHandle {
         requestBuilder.setOsdWriteResponse(response.toBuilder().build());
         requestBuilder.setCloseFile(closeFile);
 
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("xtreemfs_update_file_size", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class,
-                    xtreemfs_update_file_sizeRequest.class });
+        RPCCaller.<xtreemfs_update_file_sizeRequest, timestampResponse> syncCall(SERVICES.MRC,
+                userCredentialsBogus, authBogus, volumeOptions, uuidResolver, mrcUuidIterator, false,
+                requestBuilder.build(),
+                new CallGenerator<xtreemfs_update_file_sizeRequest, timestampResponse>() {
+                    @Override
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, xtreemfs_update_file_sizeRequest input)
+                            throws IOException {
 
-            RPCCaller.<MRCServiceClient, xtreemfs_update_file_sizeRequest, timestampResponse> makeCall(
-                    mrcServiceClient, m, userCredentialsBogus, authBogus, requestBuilder.build(),
-                    mrcUuidIterator, uuidResolver, volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
+                        return mrcServiceClient.xtreemfs_update_file_size(server, authHeader, userCreds,
+                                input);
+                    }
+                });
     }
 
     /**
@@ -797,6 +963,17 @@ public class FileHandleImplementation extends FileHandle {
         } finally {
             fileHandleLock.unlock();
         }
+    }
+
+    private StripeTranslator getStripeTranslator(StripingPolicyType type) throws IOException {
+        // Find the corresponding StripingPolicy
+        StripeTranslator st = stripeTranslators.get(type);
+
+        if (st == null) {
+            // TODO: Throws XtreemfsException like in cpp implementation instead?
+            throw new IOException("No StripingPolicy foudn for type:" + type);
+        }
+        return st;
     }
 
 }

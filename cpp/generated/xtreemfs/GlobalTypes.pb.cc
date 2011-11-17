@@ -2,6 +2,9 @@
 
 #define INTERNAL_SUPPRESS_PROTOBUF_FIELD_DEPRECATION
 #include "xtreemfs/GlobalTypes.pb.h"
+
+#include <algorithm>
+
 #include <google/protobuf/stubs/once.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/wire_format_lite_inl.h>
@@ -57,6 +60,7 @@ const ::google::protobuf::EnumDescriptor* PORTS_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* CONSTANTS_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* SYSTEM_V_FCNTL_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* REPL_FLAG_descriptor_ = NULL;
+const ::google::protobuf::EnumDescriptor* SERVICES_descriptor_ = NULL;
 
 }  // namespace
 
@@ -263,6 +267,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
   CONSTANTS_descriptor_ = file->enum_type(6);
   SYSTEM_V_FCNTL_descriptor_ = file->enum_type(7);
   REPL_FLAG_descriptor_ = file->enum_type(8);
+  SERVICES_descriptor_ = file->enum_type(9);
 }
 
 namespace {
@@ -404,8 +409,9 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
     "RANDOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FI"
     "RST\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020"
     "\022-\n)REPL_FLAG_STRATEGY_SEQUENTIAL_PREFET"
-    "CHING\020 B(\n&org.xtreemfs.pbrpc.generatedi"
-    "nterfaces", 2809);
+    "CHING\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n"
+    "\003OSD\020\003B(\n&org.xtreemfs.pbrpc.generatedin"
+    "terfaces", 2848);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/GlobalTypes.proto", &protobuf_RegisterTypes);
   NewFileSize::default_instance_ = new NewFileSize();
@@ -590,6 +596,21 @@ bool REPL_FLAG_IsValid(int value) {
   }
 }
 
+const ::google::protobuf::EnumDescriptor* SERVICES_descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return SERVICES_descriptor_;
+}
+bool SERVICES_IsValid(int value) {
+  switch(value) {
+    case 1:
+    case 2:
+    case 3:
+      return true;
+    default:
+      return false;
+  }
+}
+
 
 // ===================================================================
 
@@ -670,7 +691,7 @@ bool NewFileSize::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &size_in_bytes_)));
-          _set_bit(0);
+          set_has_size_in_bytes();
         } else {
           goto handle_uninterpreted;
         }
@@ -686,7 +707,7 @@ bool NewFileSize::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &truncate_epoch_)));
-          _set_bit(1);
+          set_has_truncate_epoch();
         } else {
           goto handle_uninterpreted;
         }
@@ -713,12 +734,12 @@ bool NewFileSize::MergePartialFromCodedStream(
 void NewFileSize::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required fixed64 size_in_bytes = 1;
-  if (_has_bit(0)) {
+  if (has_size_in_bytes()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(1, this->size_in_bytes(), output);
   }
   
   // required fixed32 truncate_epoch = 2;
-  if (_has_bit(1)) {
+  if (has_truncate_epoch()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(2, this->truncate_epoch(), output);
   }
   
@@ -731,12 +752,12 @@ void NewFileSize::SerializeWithCachedSizes(
 ::google::protobuf::uint8* NewFileSize::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required fixed64 size_in_bytes = 1;
-  if (_has_bit(0)) {
+  if (has_size_in_bytes()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(1, this->size_in_bytes(), target);
   }
   
   // required fixed32 truncate_epoch = 2;
-  if (_has_bit(1)) {
+  if (has_truncate_epoch()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(2, this->truncate_epoch(), target);
   }
   
@@ -788,10 +809,10 @@ void NewFileSize::MergeFrom(const ::google::protobuf::Message& from) {
 void NewFileSize::MergeFrom(const NewFileSize& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_size_in_bytes()) {
       set_size_in_bytes(from.size_in_bytes());
     }
-    if (from._has_bit(1)) {
+    if (from.has_truncate_epoch()) {
       set_truncate_epoch(from.truncate_epoch());
     }
   }
@@ -938,7 +959,7 @@ bool StripingPolicy::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &stripe_size_)));
-          _set_bit(1);
+          set_has_stripe_size();
         } else {
           goto handle_uninterpreted;
         }
@@ -954,7 +975,7 @@ bool StripingPolicy::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &width_)));
-          _set_bit(2);
+          set_has_width();
         } else {
           goto handle_uninterpreted;
         }
@@ -981,18 +1002,18 @@ bool StripingPolicy::MergePartialFromCodedStream(
 void StripingPolicy::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required .xtreemfs.pbrpc.StripingPolicyType type = 1;
-  if (_has_bit(0)) {
+  if (has_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       1, this->type(), output);
   }
   
   // required fixed32 stripe_size = 2;
-  if (_has_bit(1)) {
+  if (has_stripe_size()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(2, this->stripe_size(), output);
   }
   
   // required fixed32 width = 3;
-  if (_has_bit(2)) {
+  if (has_width()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(3, this->width(), output);
   }
   
@@ -1005,18 +1026,18 @@ void StripingPolicy::SerializeWithCachedSizes(
 ::google::protobuf::uint8* StripingPolicy::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required .xtreemfs.pbrpc.StripingPolicyType type = 1;
-  if (_has_bit(0)) {
+  if (has_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       1, this->type(), target);
   }
   
   // required fixed32 stripe_size = 2;
-  if (_has_bit(1)) {
+  if (has_stripe_size()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(2, this->stripe_size(), target);
   }
   
   // required fixed32 width = 3;
-  if (_has_bit(2)) {
+  if (has_width()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(3, this->width(), target);
   }
   
@@ -1074,13 +1095,13 @@ void StripingPolicy::MergeFrom(const ::google::protobuf::Message& from) {
 void StripingPolicy::MergeFrom(const StripingPolicy& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_type()) {
       set_type(from.type());
     }
-    if (from._has_bit(1)) {
+    if (from.has_stripe_size()) {
       set_stripe_size(from.stripe_size());
     }
-    if (from._has_bit(2)) {
+    if (from.has_width()) {
       set_width(from.width());
     }
   }
@@ -1188,7 +1209,7 @@ Replica* Replica::New() const {
 void Replica::Clear() {
   if (_has_bits_[1 / 32] & (0xffu << (1 % 32))) {
     replication_flags_ = 0u;
-    if (_has_bit(2)) {
+    if (has_striping_policy()) {
       if (striping_policy_ != NULL) striping_policy_->::xtreemfs::pbrpc::StripingPolicy::Clear();
     }
   }
@@ -1229,7 +1250,7 @@ bool Replica::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &replication_flags_)));
-          _set_bit(1);
+          set_has_replication_flags();
         } else {
           goto handle_uninterpreted;
         }
@@ -1279,12 +1300,12 @@ void Replica::SerializeWithCachedSizes(
   }
   
   // required fixed32 replication_flags = 2;
-  if (_has_bit(1)) {
+  if (has_replication_flags()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(2, this->replication_flags(), output);
   }
   
   // required .xtreemfs.pbrpc.StripingPolicy striping_policy = 3;
-  if (_has_bit(2)) {
+  if (has_striping_policy()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       3, this->striping_policy(), output);
   }
@@ -1307,12 +1328,12 @@ void Replica::SerializeWithCachedSizes(
   }
   
   // required fixed32 replication_flags = 2;
-  if (_has_bit(1)) {
+  if (has_replication_flags()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(2, this->replication_flags(), target);
   }
   
   // required .xtreemfs.pbrpc.StripingPolicy striping_policy = 3;
-  if (_has_bit(2)) {
+  if (has_striping_policy()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         3, this->striping_policy(), target);
@@ -1376,10 +1397,10 @@ void Replica::MergeFrom(const Replica& from) {
   GOOGLE_CHECK_NE(&from, this);
   osd_uuids_.MergeFrom(from.osd_uuids_);
   if (from._has_bits_[1 / 32] & (0xffu << (1 % 32))) {
-    if (from._has_bit(1)) {
+    if (from.has_replication_flags()) {
       set_replication_flags(from.replication_flags());
     }
-    if (from._has_bit(2)) {
+    if (from.has_striping_policy()) {
       mutable_striping_policy()->::xtreemfs::pbrpc::StripingPolicy::MergeFrom(from.striping_policy());
     }
   }
@@ -1634,9 +1655,6 @@ void Replicas::Swap(Replicas* other) {
 
 // ===================================================================
 
-const ::std::string XCap::_default_client_identity_;
-const ::std::string XCap::_default_file_id_;
-const ::std::string XCap::_default_server_signature_;
 #ifndef _MSC_VER
 const int XCap::kAccessModeFieldNumber;
 const int XCap::kClientIdentityFieldNumber;
@@ -1667,12 +1685,12 @@ XCap::XCap(const XCap& from)
 void XCap::SharedCtor() {
   _cached_size_ = 0;
   access_mode_ = 0u;
-  client_identity_ = const_cast< ::std::string*>(&_default_client_identity_);
+  client_identity_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   expire_time_s_ = GOOGLE_ULONGLONG(0);
   expire_timeout_s_ = 0u;
-  file_id_ = const_cast< ::std::string*>(&_default_file_id_);
+  file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   replicate_on_close_ = false;
-  server_signature_ = const_cast< ::std::string*>(&_default_server_signature_);
+  server_signature_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   truncate_epoch_ = 0u;
   snap_config_ = 0;
   snap_timestamp_ = GOOGLE_ULONGLONG(0);
@@ -1684,13 +1702,13 @@ XCap::~XCap() {
 }
 
 void XCap::SharedDtor() {
-  if (client_identity_ != &_default_client_identity_) {
+  if (client_identity_ != &::google::protobuf::internal::kEmptyString) {
     delete client_identity_;
   }
-  if (file_id_ != &_default_file_id_) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
     delete file_id_;
   }
-  if (server_signature_ != &_default_server_signature_) {
+  if (server_signature_ != &::google::protobuf::internal::kEmptyString) {
     delete server_signature_;
   }
   if (this != default_instance_) {
@@ -1720,21 +1738,21 @@ XCap* XCap::New() const {
 void XCap::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     access_mode_ = 0u;
-    if (_has_bit(1)) {
-      if (client_identity_ != &_default_client_identity_) {
+    if (has_client_identity()) {
+      if (client_identity_ != &::google::protobuf::internal::kEmptyString) {
         client_identity_->clear();
       }
     }
     expire_time_s_ = GOOGLE_ULONGLONG(0);
     expire_timeout_s_ = 0u;
-    if (_has_bit(4)) {
-      if (file_id_ != &_default_file_id_) {
+    if (has_file_id()) {
+      if (file_id_ != &::google::protobuf::internal::kEmptyString) {
         file_id_->clear();
       }
     }
     replicate_on_close_ = false;
-    if (_has_bit(6)) {
-      if (server_signature_ != &_default_server_signature_) {
+    if (has_server_signature()) {
+      if (server_signature_ != &::google::protobuf::internal::kEmptyString) {
         server_signature_->clear();
       }
     }
@@ -1761,7 +1779,7 @@ bool XCap::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &access_mode_)));
-          _set_bit(0);
+          set_has_access_mode();
         } else {
           goto handle_uninterpreted;
         }
@@ -1794,7 +1812,7 @@ bool XCap::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &expire_time_s_)));
-          _set_bit(2);
+          set_has_expire_time_s();
         } else {
           goto handle_uninterpreted;
         }
@@ -1810,7 +1828,7 @@ bool XCap::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &expire_timeout_s_)));
-          _set_bit(3);
+          set_has_expire_timeout_s();
         } else {
           goto handle_uninterpreted;
         }
@@ -1843,7 +1861,7 @@ bool XCap::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
                  input, &replicate_on_close_)));
-          _set_bit(5);
+          set_has_replicate_on_close();
         } else {
           goto handle_uninterpreted;
         }
@@ -1876,7 +1894,7 @@ bool XCap::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &truncate_epoch_)));
-          _set_bit(7);
+          set_has_truncate_epoch();
         } else {
           goto handle_uninterpreted;
         }
@@ -1913,7 +1931,7 @@ bool XCap::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &snap_timestamp_)));
-          _set_bit(9);
+          set_has_snap_timestamp();
         } else {
           goto handle_uninterpreted;
         }
@@ -1940,12 +1958,12 @@ bool XCap::MergePartialFromCodedStream(
 void XCap::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required fixed32 access_mode = 1;
-  if (_has_bit(0)) {
+  if (has_access_mode()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(1, this->access_mode(), output);
   }
   
   // required string client_identity = 2;
-  if (_has_bit(1)) {
+  if (has_client_identity()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->client_identity().data(), this->client_identity().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1954,17 +1972,17 @@ void XCap::SerializeWithCachedSizes(
   }
   
   // required fixed64 expire_time_s = 3;
-  if (_has_bit(2)) {
+  if (has_expire_time_s()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(3, this->expire_time_s(), output);
   }
   
   // required fixed32 expire_timeout_s = 4;
-  if (_has_bit(3)) {
+  if (has_expire_timeout_s()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(4, this->expire_timeout_s(), output);
   }
   
   // required string file_id = 5;
-  if (_has_bit(4)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1973,12 +1991,12 @@ void XCap::SerializeWithCachedSizes(
   }
   
   // required bool replicate_on_close = 6;
-  if (_has_bit(5)) {
+  if (has_replicate_on_close()) {
     ::google::protobuf::internal::WireFormatLite::WriteBool(6, this->replicate_on_close(), output);
   }
   
   // required string server_signature = 7;
-  if (_has_bit(6)) {
+  if (has_server_signature()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->server_signature().data(), this->server_signature().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1987,18 +2005,18 @@ void XCap::SerializeWithCachedSizes(
   }
   
   // required fixed32 truncate_epoch = 8;
-  if (_has_bit(7)) {
+  if (has_truncate_epoch()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(8, this->truncate_epoch(), output);
   }
   
   // required .xtreemfs.pbrpc.SnapConfig snap_config = 9;
-  if (_has_bit(8)) {
+  if (has_snap_config()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       9, this->snap_config(), output);
   }
   
   // required fixed64 snap_timestamp = 10;
-  if (_has_bit(9)) {
+  if (has_snap_timestamp()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(10, this->snap_timestamp(), output);
   }
   
@@ -2011,12 +2029,12 @@ void XCap::SerializeWithCachedSizes(
 ::google::protobuf::uint8* XCap::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required fixed32 access_mode = 1;
-  if (_has_bit(0)) {
+  if (has_access_mode()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(1, this->access_mode(), target);
   }
   
   // required string client_identity = 2;
-  if (_has_bit(1)) {
+  if (has_client_identity()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->client_identity().data(), this->client_identity().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2026,17 +2044,17 @@ void XCap::SerializeWithCachedSizes(
   }
   
   // required fixed64 expire_time_s = 3;
-  if (_has_bit(2)) {
+  if (has_expire_time_s()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(3, this->expire_time_s(), target);
   }
   
   // required fixed32 expire_timeout_s = 4;
-  if (_has_bit(3)) {
+  if (has_expire_timeout_s()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(4, this->expire_timeout_s(), target);
   }
   
   // required string file_id = 5;
-  if (_has_bit(4)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2046,12 +2064,12 @@ void XCap::SerializeWithCachedSizes(
   }
   
   // required bool replicate_on_close = 6;
-  if (_has_bit(5)) {
+  if (has_replicate_on_close()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(6, this->replicate_on_close(), target);
   }
   
   // required string server_signature = 7;
-  if (_has_bit(6)) {
+  if (has_server_signature()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->server_signature().data(), this->server_signature().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2061,18 +2079,18 @@ void XCap::SerializeWithCachedSizes(
   }
   
   // required fixed32 truncate_epoch = 8;
-  if (_has_bit(7)) {
+  if (has_truncate_epoch()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(8, this->truncate_epoch(), target);
   }
   
   // required .xtreemfs.pbrpc.SnapConfig snap_config = 9;
-  if (_has_bit(8)) {
+  if (has_snap_config()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       9, this->snap_config(), target);
   }
   
   // required fixed64 snap_timestamp = 10;
-  if (_has_bit(9)) {
+  if (has_snap_timestamp()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(10, this->snap_timestamp(), target);
   }
   
@@ -2173,36 +2191,36 @@ void XCap::MergeFrom(const ::google::protobuf::Message& from) {
 void XCap::MergeFrom(const XCap& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_access_mode()) {
       set_access_mode(from.access_mode());
     }
-    if (from._has_bit(1)) {
+    if (from.has_client_identity()) {
       set_client_identity(from.client_identity());
     }
-    if (from._has_bit(2)) {
+    if (from.has_expire_time_s()) {
       set_expire_time_s(from.expire_time_s());
     }
-    if (from._has_bit(3)) {
+    if (from.has_expire_timeout_s()) {
       set_expire_timeout_s(from.expire_timeout_s());
     }
-    if (from._has_bit(4)) {
+    if (from.has_file_id()) {
       set_file_id(from.file_id());
     }
-    if (from._has_bit(5)) {
+    if (from.has_replicate_on_close()) {
       set_replicate_on_close(from.replicate_on_close());
     }
-    if (from._has_bit(6)) {
+    if (from.has_server_signature()) {
       set_server_signature(from.server_signature());
     }
-    if (from._has_bit(7)) {
+    if (from.has_truncate_epoch()) {
       set_truncate_epoch(from.truncate_epoch());
     }
   }
   if (from._has_bits_[8 / 32] & (0xffu << (8 % 32))) {
-    if (from._has_bit(8)) {
+    if (from.has_snap_config()) {
       set_snap_config(from.snap_config());
     }
-    if (from._has_bit(9)) {
+    if (from.has_snap_timestamp()) {
       set_snap_timestamp(from.snap_timestamp());
     }
   }
@@ -2256,7 +2274,6 @@ void XCap::Swap(XCap* other) {
 
 // ===================================================================
 
-const ::std::string XLocSet::_default_replica_update_policy_;
 #ifndef _MSC_VER
 const int XLocSet::kReadOnlyFileSizeFieldNumber;
 const int XLocSet::kReplicasFieldNumber;
@@ -2281,7 +2298,7 @@ XLocSet::XLocSet(const XLocSet& from)
 void XLocSet::SharedCtor() {
   _cached_size_ = 0;
   read_only_file_size_ = GOOGLE_ULONGLONG(0);
-  replica_update_policy_ = const_cast< ::std::string*>(&_default_replica_update_policy_);
+  replica_update_policy_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   version_ = 0u;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -2291,7 +2308,7 @@ XLocSet::~XLocSet() {
 }
 
 void XLocSet::SharedDtor() {
-  if (replica_update_policy_ != &_default_replica_update_policy_) {
+  if (replica_update_policy_ != &::google::protobuf::internal::kEmptyString) {
     delete replica_update_policy_;
   }
   if (this != default_instance_) {
@@ -2321,8 +2338,8 @@ XLocSet* XLocSet::New() const {
 void XLocSet::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     read_only_file_size_ = GOOGLE_ULONGLONG(0);
-    if (_has_bit(2)) {
-      if (replica_update_policy_ != &_default_replica_update_policy_) {
+    if (has_replica_update_policy()) {
+      if (replica_update_policy_ != &::google::protobuf::internal::kEmptyString) {
         replica_update_policy_->clear();
       }
     }
@@ -2346,7 +2363,7 @@ bool XLocSet::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &read_only_file_size_)));
-          _set_bit(0);
+          set_has_read_only_file_size();
         } else {
           goto handle_uninterpreted;
         }
@@ -2394,7 +2411,7 @@ bool XLocSet::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &version_)));
-          _set_bit(3);
+          set_has_version();
         } else {
           goto handle_uninterpreted;
         }
@@ -2421,7 +2438,7 @@ bool XLocSet::MergePartialFromCodedStream(
 void XLocSet::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required fixed64 read_only_file_size = 1;
-  if (_has_bit(0)) {
+  if (has_read_only_file_size()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(1, this->read_only_file_size(), output);
   }
   
@@ -2432,7 +2449,7 @@ void XLocSet::SerializeWithCachedSizes(
   }
   
   // required string replica_update_policy = 3;
-  if (_has_bit(2)) {
+  if (has_replica_update_policy()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->replica_update_policy().data(), this->replica_update_policy().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2441,7 +2458,7 @@ void XLocSet::SerializeWithCachedSizes(
   }
   
   // required fixed32 version = 4;
-  if (_has_bit(3)) {
+  if (has_version()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(4, this->version(), output);
   }
   
@@ -2454,7 +2471,7 @@ void XLocSet::SerializeWithCachedSizes(
 ::google::protobuf::uint8* XLocSet::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required fixed64 read_only_file_size = 1;
-  if (_has_bit(0)) {
+  if (has_read_only_file_size()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(1, this->read_only_file_size(), target);
   }
   
@@ -2466,7 +2483,7 @@ void XLocSet::SerializeWithCachedSizes(
   }
   
   // required string replica_update_policy = 3;
-  if (_has_bit(2)) {
+  if (has_replica_update_policy()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->replica_update_policy().data(), this->replica_update_policy().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2476,7 +2493,7 @@ void XLocSet::SerializeWithCachedSizes(
   }
   
   // required fixed32 version = 4;
-  if (_has_bit(3)) {
+  if (has_version()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(4, this->version(), target);
   }
   
@@ -2544,13 +2561,13 @@ void XLocSet::MergeFrom(const XLocSet& from) {
   GOOGLE_CHECK_NE(&from, this);
   replicas_.MergeFrom(from.replicas_);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_read_only_file_size()) {
       set_read_only_file_size(from.read_only_file_size());
     }
-    if (from._has_bit(2)) {
+    if (from.has_replica_update_policy()) {
       set_replica_update_policy(from.replica_update_policy());
     }
-    if (from._has_bit(3)) {
+    if (from.has_version()) {
       set_version(from.version());
     }
   }
@@ -2662,10 +2679,10 @@ FileCredentials* FileCredentials::New() const {
 
 void FileCredentials::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
+    if (has_xcap()) {
       if (xcap_ != NULL) xcap_->::xtreemfs::pbrpc::XCap::Clear();
     }
-    if (_has_bit(1)) {
+    if (has_xlocs()) {
       if (xlocs_ != NULL) xlocs_->::xtreemfs::pbrpc::XLocSet::Clear();
     }
   }
@@ -2725,13 +2742,13 @@ bool FileCredentials::MergePartialFromCodedStream(
 void FileCredentials::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required .xtreemfs.pbrpc.XCap xcap = 1;
-  if (_has_bit(0)) {
+  if (has_xcap()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       1, this->xcap(), output);
   }
   
   // required .xtreemfs.pbrpc.XLocSet xlocs = 2;
-  if (_has_bit(1)) {
+  if (has_xlocs()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       2, this->xlocs(), output);
   }
@@ -2745,14 +2762,14 @@ void FileCredentials::SerializeWithCachedSizes(
 ::google::protobuf::uint8* FileCredentials::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required .xtreemfs.pbrpc.XCap xcap = 1;
-  if (_has_bit(0)) {
+  if (has_xcap()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         1, this->xcap(), target);
   }
   
   // required .xtreemfs.pbrpc.XLocSet xlocs = 2;
-  if (_has_bit(1)) {
+  if (has_xlocs()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         2, this->xlocs(), target);
@@ -2810,10 +2827,10 @@ void FileCredentials::MergeFrom(const ::google::protobuf::Message& from) {
 void FileCredentials::MergeFrom(const FileCredentials& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_xcap()) {
       mutable_xcap()->::xtreemfs::pbrpc::XCap::MergeFrom(from.xcap());
     }
-    if (from._has_bit(1)) {
+    if (from.has_xlocs()) {
       mutable_xlocs()->::xtreemfs::pbrpc::XLocSet::MergeFrom(from.xlocs());
     }
   }
@@ -2922,7 +2939,7 @@ FileCredentialsSet* FileCredentialsSet::New() const {
 
 void FileCredentialsSet::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
+    if (has_file_credentials()) {
       if (file_credentials_ != NULL) file_credentials_->::xtreemfs::pbrpc::FileCredentials::Clear();
     }
   }
@@ -2968,7 +2985,7 @@ bool FileCredentialsSet::MergePartialFromCodedStream(
 void FileCredentialsSet::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // optional .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
-  if (_has_bit(0)) {
+  if (has_file_credentials()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       1, this->file_credentials(), output);
   }
@@ -2982,7 +2999,7 @@ void FileCredentialsSet::SerializeWithCachedSizes(
 ::google::protobuf::uint8* FileCredentialsSet::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // optional .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
-  if (_has_bit(0)) {
+  if (has_file_credentials()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         1, this->file_credentials(), target);
@@ -3033,7 +3050,7 @@ void FileCredentialsSet::MergeFrom(const ::google::protobuf::Message& from) {
 void FileCredentialsSet::MergeFrom(const FileCredentialsSet& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_file_credentials()) {
       mutable_file_credentials()->::xtreemfs::pbrpc::FileCredentials::MergeFrom(from.file_credentials());
     }
   }
@@ -3160,7 +3177,7 @@ bool VivaldiCoordinates::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
                  input, &x_coordinate_)));
-          _set_bit(0);
+          set_has_x_coordinate();
         } else {
           goto handle_uninterpreted;
         }
@@ -3176,7 +3193,7 @@ bool VivaldiCoordinates::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
                  input, &y_coordinate_)));
-          _set_bit(1);
+          set_has_y_coordinate();
         } else {
           goto handle_uninterpreted;
         }
@@ -3192,7 +3209,7 @@ bool VivaldiCoordinates::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
                  input, &local_error_)));
-          _set_bit(2);
+          set_has_local_error();
         } else {
           goto handle_uninterpreted;
         }
@@ -3219,17 +3236,17 @@ bool VivaldiCoordinates::MergePartialFromCodedStream(
 void VivaldiCoordinates::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required double x_coordinate = 1;
-  if (_has_bit(0)) {
+  if (has_x_coordinate()) {
     ::google::protobuf::internal::WireFormatLite::WriteDouble(1, this->x_coordinate(), output);
   }
   
   // required double y_coordinate = 2;
-  if (_has_bit(1)) {
+  if (has_y_coordinate()) {
     ::google::protobuf::internal::WireFormatLite::WriteDouble(2, this->y_coordinate(), output);
   }
   
   // required double local_error = 3;
-  if (_has_bit(2)) {
+  if (has_local_error()) {
     ::google::protobuf::internal::WireFormatLite::WriteDouble(3, this->local_error(), output);
   }
   
@@ -3242,17 +3259,17 @@ void VivaldiCoordinates::SerializeWithCachedSizes(
 ::google::protobuf::uint8* VivaldiCoordinates::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required double x_coordinate = 1;
-  if (_has_bit(0)) {
+  if (has_x_coordinate()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(1, this->x_coordinate(), target);
   }
   
   // required double y_coordinate = 2;
-  if (_has_bit(1)) {
+  if (has_y_coordinate()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(2, this->y_coordinate(), target);
   }
   
   // required double local_error = 3;
-  if (_has_bit(2)) {
+  if (has_local_error()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(3, this->local_error(), target);
   }
   
@@ -3309,13 +3326,13 @@ void VivaldiCoordinates::MergeFrom(const ::google::protobuf::Message& from) {
 void VivaldiCoordinates::MergeFrom(const VivaldiCoordinates& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_x_coordinate()) {
       set_x_coordinate(from.x_coordinate());
     }
-    if (from._has_bit(1)) {
+    if (from.has_y_coordinate()) {
       set_y_coordinate(from.y_coordinate());
     }
-    if (from._has_bit(2)) {
+    if (from.has_local_error()) {
       set_local_error(from.local_error());
     }
   }
@@ -3439,7 +3456,7 @@ bool OSDWriteResponse::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &size_in_bytes_)));
-          _set_bit(0);
+          set_has_size_in_bytes();
         } else {
           goto handle_uninterpreted;
         }
@@ -3455,7 +3472,7 @@ bool OSDWriteResponse::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &truncate_epoch_)));
-          _set_bit(1);
+          set_has_truncate_epoch();
         } else {
           goto handle_uninterpreted;
         }
@@ -3482,12 +3499,12 @@ bool OSDWriteResponse::MergePartialFromCodedStream(
 void OSDWriteResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // optional fixed64 size_in_bytes = 1;
-  if (_has_bit(0)) {
+  if (has_size_in_bytes()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(1, this->size_in_bytes(), output);
   }
   
   // optional fixed32 truncate_epoch = 2;
-  if (_has_bit(1)) {
+  if (has_truncate_epoch()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(2, this->truncate_epoch(), output);
   }
   
@@ -3500,12 +3517,12 @@ void OSDWriteResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* OSDWriteResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // optional fixed64 size_in_bytes = 1;
-  if (_has_bit(0)) {
+  if (has_size_in_bytes()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(1, this->size_in_bytes(), target);
   }
   
   // optional fixed32 truncate_epoch = 2;
-  if (_has_bit(1)) {
+  if (has_truncate_epoch()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(2, this->truncate_epoch(), target);
   }
   
@@ -3557,10 +3574,10 @@ void OSDWriteResponse::MergeFrom(const ::google::protobuf::Message& from) {
 void OSDWriteResponse::MergeFrom(const OSDWriteResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_size_in_bytes()) {
       set_size_in_bytes(from.size_in_bytes());
     }
-    if (from._has_bit(1)) {
+    if (from.has_truncate_epoch()) {
       set_truncate_epoch(from.truncate_epoch());
     }
   }
@@ -3605,8 +3622,6 @@ void OSDWriteResponse::Swap(OSDWriteResponse* other) {
 
 // ===================================================================
 
-const ::std::string KeyValuePair::_default_key_;
-const ::std::string KeyValuePair::_default_value_;
 #ifndef _MSC_VER
 const int KeyValuePair::kKeyFieldNumber;
 const int KeyValuePair::kValueFieldNumber;
@@ -3628,8 +3643,8 @@ KeyValuePair::KeyValuePair(const KeyValuePair& from)
 
 void KeyValuePair::SharedCtor() {
   _cached_size_ = 0;
-  key_ = const_cast< ::std::string*>(&_default_key_);
-  value_ = const_cast< ::std::string*>(&_default_value_);
+  key_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  value_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -3638,10 +3653,10 @@ KeyValuePair::~KeyValuePair() {
 }
 
 void KeyValuePair::SharedDtor() {
-  if (key_ != &_default_key_) {
+  if (key_ != &::google::protobuf::internal::kEmptyString) {
     delete key_;
   }
-  if (value_ != &_default_value_) {
+  if (value_ != &::google::protobuf::internal::kEmptyString) {
     delete value_;
   }
   if (this != default_instance_) {
@@ -3670,13 +3685,13 @@ KeyValuePair* KeyValuePair::New() const {
 
 void KeyValuePair::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (key_ != &_default_key_) {
+    if (has_key()) {
+      if (key_ != &::google::protobuf::internal::kEmptyString) {
         key_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (value_ != &_default_value_) {
+    if (has_value()) {
+      if (value_ != &::google::protobuf::internal::kEmptyString) {
         value_->clear();
       }
     }
@@ -3743,7 +3758,7 @@ bool KeyValuePair::MergePartialFromCodedStream(
 void KeyValuePair::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string key = 1;
-  if (_has_bit(0)) {
+  if (has_key()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->key().data(), this->key().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3752,7 +3767,7 @@ void KeyValuePair::SerializeWithCachedSizes(
   }
   
   // required string value = 2;
-  if (_has_bit(1)) {
+  if (has_value()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->value().data(), this->value().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3769,7 +3784,7 @@ void KeyValuePair::SerializeWithCachedSizes(
 ::google::protobuf::uint8* KeyValuePair::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string key = 1;
-  if (_has_bit(0)) {
+  if (has_key()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->key().data(), this->key().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3779,7 +3794,7 @@ void KeyValuePair::SerializeWithCachedSizes(
   }
   
   // required string value = 2;
-  if (_has_bit(1)) {
+  if (has_value()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->value().data(), this->value().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3840,10 +3855,10 @@ void KeyValuePair::MergeFrom(const ::google::protobuf::Message& from) {
 void KeyValuePair::MergeFrom(const KeyValuePair& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_key()) {
       set_key(from.key());
     }
-    if (from._has_bit(1)) {
+    if (from.has_value()) {
       set_value(from.value());
     }
   }

@@ -2,6 +2,9 @@
 
 #define INTERNAL_SUPPRESS_PROTOBUF_FIELD_DEPRECATION
 #include "pbrpc/Ping.pb.h"
+
+#include <algorithm>
+
 #include <google/protobuf/stubs/once.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/wire_format_lite_inl.h>
@@ -33,7 +36,6 @@ const ::google::protobuf::internal::GeneratedMessageReflection*
 const ::google::protobuf::Descriptor* Ping_emptyResponse_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   Ping_emptyResponse_reflection_ = NULL;
-const ::google::protobuf::ServiceDescriptor* PingService_descriptor_ = NULL;
 
 }  // namespace
 
@@ -134,7 +136,6 @@ void protobuf_AssignDesc_pbrpc_2fPing_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(Ping_emptyResponse));
-  PingService_descriptor_ = file->service(0);
 }
 
 namespace {
@@ -228,7 +229,6 @@ struct StaticDescriptorInitializer_pbrpc_2fPing_2eproto {
 
 // ===================================================================
 
-const ::std::string PingRequest::_default_text_;
 #ifndef _MSC_VER
 const int PingRequest::kTextFieldNumber;
 const int PingRequest::kSendErrorFieldNumber;
@@ -250,7 +250,7 @@ PingRequest::PingRequest(const PingRequest& from)
 
 void PingRequest::SharedCtor() {
   _cached_size_ = 0;
-  text_ = const_cast< ::std::string*>(&_default_text_);
+  text_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   senderror_ = false;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -260,7 +260,7 @@ PingRequest::~PingRequest() {
 }
 
 void PingRequest::SharedDtor() {
-  if (text_ != &_default_text_) {
+  if (text_ != &::google::protobuf::internal::kEmptyString) {
     delete text_;
   }
   if (this != default_instance_) {
@@ -289,8 +289,8 @@ PingRequest* PingRequest::New() const {
 
 void PingRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (text_ != &_default_text_) {
+    if (has_text()) {
+      if (text_ != &::google::protobuf::internal::kEmptyString) {
         text_->clear();
       }
     }
@@ -330,7 +330,7 @@ bool PingRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
                  input, &senderror_)));
-          _set_bit(1);
+          set_has_senderror();
         } else {
           goto handle_uninterpreted;
         }
@@ -357,7 +357,7 @@ bool PingRequest::MergePartialFromCodedStream(
 void PingRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string text = 1;
-  if (_has_bit(0)) {
+  if (has_text()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->text().data(), this->text().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -366,7 +366,7 @@ void PingRequest::SerializeWithCachedSizes(
   }
   
   // required bool sendError = 2;
-  if (_has_bit(1)) {
+  if (has_senderror()) {
     ::google::protobuf::internal::WireFormatLite::WriteBool(2, this->senderror(), output);
   }
   
@@ -379,7 +379,7 @@ void PingRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* PingRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string text = 1;
-  if (_has_bit(0)) {
+  if (has_text()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->text().data(), this->text().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -389,7 +389,7 @@ void PingRequest::SerializeWithCachedSizes(
   }
   
   // required bool sendError = 2;
-  if (_has_bit(1)) {
+  if (has_senderror()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(2, this->senderror(), target);
   }
   
@@ -443,10 +443,10 @@ void PingRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void PingRequest::MergeFrom(const PingRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_text()) {
       set_text(from.text());
     }
-    if (from._has_bit(1)) {
+    if (from.has_senderror()) {
       set_senderror(from.senderror());
     }
   }
@@ -492,7 +492,6 @@ void PingRequest::Swap(PingRequest* other) {
 
 // ===================================================================
 
-const ::std::string PingResponse_PingResult::_default_text_;
 #ifndef _MSC_VER
 const int PingResponse_PingResult::kTextFieldNumber;
 #endif  // !_MSC_VER
@@ -513,7 +512,7 @@ PingResponse_PingResult::PingResponse_PingResult(const PingResponse_PingResult& 
 
 void PingResponse_PingResult::SharedCtor() {
   _cached_size_ = 0;
-  text_ = const_cast< ::std::string*>(&_default_text_);
+  text_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -522,7 +521,7 @@ PingResponse_PingResult::~PingResponse_PingResult() {
 }
 
 void PingResponse_PingResult::SharedDtor() {
-  if (text_ != &_default_text_) {
+  if (text_ != &::google::protobuf::internal::kEmptyString) {
     delete text_;
   }
   if (this != default_instance_) {
@@ -551,8 +550,8 @@ PingResponse_PingResult* PingResponse_PingResult::New() const {
 
 void PingResponse_PingResult::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (text_ != &_default_text_) {
+    if (has_text()) {
+      if (text_ != &::google::protobuf::internal::kEmptyString) {
         text_->clear();
       }
     }
@@ -602,7 +601,7 @@ bool PingResponse_PingResult::MergePartialFromCodedStream(
 void PingResponse_PingResult::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string text = 1;
-  if (_has_bit(0)) {
+  if (has_text()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->text().data(), this->text().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -619,7 +618,7 @@ void PingResponse_PingResult::SerializeWithCachedSizes(
 ::google::protobuf::uint8* PingResponse_PingResult::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string text = 1;
-  if (_has_bit(0)) {
+  if (has_text()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->text().data(), this->text().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -673,7 +672,7 @@ void PingResponse_PingResult::MergeFrom(const ::google::protobuf::Message& from)
 void PingResponse_PingResult::MergeFrom(const PingResponse_PingResult& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_text()) {
       set_text(from.text());
     }
   }
@@ -718,7 +717,6 @@ void PingResponse_PingResult::Swap(PingResponse_PingResult* other) {
 
 // -------------------------------------------------------------------
 
-const ::std::string PingResponse_PingError::_default_errormessage_;
 #ifndef _MSC_VER
 const int PingResponse_PingError::kErrorMessageFieldNumber;
 #endif  // !_MSC_VER
@@ -739,7 +737,7 @@ PingResponse_PingError::PingResponse_PingError(const PingResponse_PingError& fro
 
 void PingResponse_PingError::SharedCtor() {
   _cached_size_ = 0;
-  errormessage_ = const_cast< ::std::string*>(&_default_errormessage_);
+  errormessage_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -748,7 +746,7 @@ PingResponse_PingError::~PingResponse_PingError() {
 }
 
 void PingResponse_PingError::SharedDtor() {
-  if (errormessage_ != &_default_errormessage_) {
+  if (errormessage_ != &::google::protobuf::internal::kEmptyString) {
     delete errormessage_;
   }
   if (this != default_instance_) {
@@ -777,8 +775,8 @@ PingResponse_PingError* PingResponse_PingError::New() const {
 
 void PingResponse_PingError::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (errormessage_ != &_default_errormessage_) {
+    if (has_errormessage()) {
+      if (errormessage_ != &::google::protobuf::internal::kEmptyString) {
         errormessage_->clear();
       }
     }
@@ -828,7 +826,7 @@ bool PingResponse_PingError::MergePartialFromCodedStream(
 void PingResponse_PingError::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string errorMessage = 1;
-  if (_has_bit(0)) {
+  if (has_errormessage()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->errormessage().data(), this->errormessage().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -845,7 +843,7 @@ void PingResponse_PingError::SerializeWithCachedSizes(
 ::google::protobuf::uint8* PingResponse_PingError::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string errorMessage = 1;
-  if (_has_bit(0)) {
+  if (has_errormessage()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->errormessage().data(), this->errormessage().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -899,7 +897,7 @@ void PingResponse_PingError::MergeFrom(const ::google::protobuf::Message& from) 
 void PingResponse_PingError::MergeFrom(const PingResponse_PingError& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_errormessage()) {
       set_errormessage(from.errormessage());
     }
   }
@@ -1005,10 +1003,10 @@ PingResponse* PingResponse::New() const {
 
 void PingResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
+    if (has_result()) {
       if (result_ != NULL) result_->::xtreemfs::pbrpc::PingResponse_PingResult::Clear();
     }
-    if (_has_bit(1)) {
+    if (has_error()) {
       if (error_ != NULL) error_->::xtreemfs::pbrpc::PingResponse_PingError::Clear();
     }
   }
@@ -1068,13 +1066,13 @@ bool PingResponse::MergePartialFromCodedStream(
 void PingResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;
-  if (_has_bit(0)) {
+  if (has_result()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       1, this->result(), output);
   }
   
   // optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;
-  if (_has_bit(1)) {
+  if (has_error()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       2, this->error(), output);
   }
@@ -1088,14 +1086,14 @@ void PingResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* PingResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // optional .xtreemfs.pbrpc.PingResponse.PingResult result = 1;
-  if (_has_bit(0)) {
+  if (has_result()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         1, this->result(), target);
   }
   
   // optional .xtreemfs.pbrpc.PingResponse.PingError error = 2;
-  if (_has_bit(1)) {
+  if (has_error()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         2, this->error(), target);
@@ -1153,10 +1151,10 @@ void PingResponse::MergeFrom(const ::google::protobuf::Message& from) {
 void PingResponse::MergeFrom(const PingResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_result()) {
       mutable_result()->::xtreemfs::pbrpc::PingResponse_PingResult::MergeFrom(from.result());
     }
-    if (from._has_bit(1)) {
+    if (from.has_error()) {
       mutable_error()->::xtreemfs::pbrpc::PingResponse_PingError::MergeFrom(from.error());
     }
   }
@@ -1514,115 +1512,6 @@ void Ping_emptyResponse::Swap(Ping_emptyResponse* other) {
   return metadata;
 }
 
-
-// ===================================================================
-
-PingService::~PingService() {}
-
-const ::google::protobuf::ServiceDescriptor* PingService::descriptor() {
-  protobuf_AssignDescriptorsOnce();
-  return PingService_descriptor_;
-}
-
-const ::google::protobuf::ServiceDescriptor* PingService::GetDescriptor() {
-  protobuf_AssignDescriptorsOnce();
-  return PingService_descriptor_;
-}
-
-void PingService::doPing(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::PingRequest*,
-                         ::xtreemfs::pbrpc::PingResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method doPing() not implemented.");
-  done->Run();
-}
-
-void PingService::emptyPing(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::Ping_emptyRequest*,
-                         ::xtreemfs::pbrpc::Ping_emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method emptyPing() not implemented.");
-  done->Run();
-}
-
-void PingService::CallMethod(const ::google::protobuf::MethodDescriptor* method,
-                             ::google::protobuf::RpcController* controller,
-                             const ::google::protobuf::Message* request,
-                             ::google::protobuf::Message* response,
-                             ::google::protobuf::Closure* done) {
-  GOOGLE_DCHECK_EQ(method->service(), PingService_descriptor_);
-  switch(method->index()) {
-    case 0:
-      doPing(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::PingRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::PingResponse*>(response),
-             done);
-      break;
-    case 1:
-      emptyPing(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::Ping_emptyRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::Ping_emptyResponse*>(response),
-             done);
-      break;
-    default:
-      GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
-      break;
-  }
-}
-
-const ::google::protobuf::Message& PingService::GetRequestPrototype(
-    const ::google::protobuf::MethodDescriptor* method) const {
-  GOOGLE_DCHECK_EQ(method->service(), descriptor());
-  switch(method->index()) {
-    case 0:
-      return ::xtreemfs::pbrpc::PingRequest::default_instance();
-    case 1:
-      return ::xtreemfs::pbrpc::Ping_emptyRequest::default_instance();
-    default:
-      GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
-      return *reinterpret_cast< ::google::protobuf::Message*>(NULL);
-  }
-}
-
-const ::google::protobuf::Message& PingService::GetResponsePrototype(
-    const ::google::protobuf::MethodDescriptor* method) const {
-  GOOGLE_DCHECK_EQ(method->service(), descriptor());
-  switch(method->index()) {
-    case 0:
-      return ::xtreemfs::pbrpc::PingResponse::default_instance();
-    case 1:
-      return ::xtreemfs::pbrpc::Ping_emptyResponse::default_instance();
-    default:
-      GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
-      return *reinterpret_cast< ::google::protobuf::Message*>(NULL);
-  }
-}
-
-PingService_Stub::PingService_Stub(::google::protobuf::RpcChannel* channel)
-  : channel_(channel), owns_channel_(false) {}
-PingService_Stub::PingService_Stub(
-    ::google::protobuf::RpcChannel* channel,
-    ::google::protobuf::Service::ChannelOwnership ownership)
-  : channel_(channel),
-    owns_channel_(ownership == ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
-PingService_Stub::~PingService_Stub() {
-  if (owns_channel_) delete channel_;
-}
-
-void PingService_Stub::doPing(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::PingRequest* request,
-                              ::xtreemfs::pbrpc::PingResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(0),
-                       controller, request, response, done);
-}
-void PingService_Stub::emptyPing(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::Ping_emptyRequest* request,
-                              ::xtreemfs::pbrpc::Ping_emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(1),
-                       controller, request, response, done);
-}
 
 // @@protoc_insertion_point(namespace_scope)
 

@@ -2,6 +2,9 @@
 
 #define INTERNAL_SUPPRESS_PROTOBUF_FIELD_DEPRECATION
 #include "pbrpc/RPC.pb.h"
+
+#include <algorithm>
+
 #include <google/protobuf/stubs/once.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/wire_format_lite_inl.h>
@@ -212,8 +215,8 @@ void protobuf_AddDesc_pbrpc_2fRPC_2eproto() {
     "eemfs.pbrpc.AuthPassword\022\021\n\tauth_data\030\002 "
     "\001(\014\"\270\004\n\tRPCHeader\022\017\n\007call_id\030\001 \002(\007\0221\n\014me"
     "ssage_type\030\002 \002(\0162\033.xtreemfs.pbrpc.Messag"
-    "eType\022?\n\016request_header\030\003 \001(\0132\'.xtreemfs"
-    ".pbrpc.RPCHeader.RequestHeader\022?\n\016error_"
+    "eType\022\?\n\016request_header\030\003 \001(\0132\'.xtreemfs"
+    ".pbrpc.RPCHeader.RequestHeader\022\?\n\016error_"
     "response\030\004 \001(\0132\'.xtreemfs.pbrpc.RPCHeade"
     "r.ErrorResponse\032\224\001\n\rRequestHeader\022\024\n\014int"
     "erface_id\030\001 \002(\007\022\017\n\007proc_id\030\002 \002(\007\0223\n\nuser"
@@ -346,7 +349,6 @@ bool POSIXErrno_IsValid(int value) {
 
 // ===================================================================
 
-const ::std::string UserCredentials::_default_username_;
 #ifndef _MSC_VER
 const int UserCredentials::kUsernameFieldNumber;
 const int UserCredentials::kGroupsFieldNumber;
@@ -368,7 +370,7 @@ UserCredentials::UserCredentials(const UserCredentials& from)
 
 void UserCredentials::SharedCtor() {
   _cached_size_ = 0;
-  username_ = const_cast< ::std::string*>(&_default_username_);
+  username_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -377,7 +379,7 @@ UserCredentials::~UserCredentials() {
 }
 
 void UserCredentials::SharedDtor() {
-  if (username_ != &_default_username_) {
+  if (username_ != &::google::protobuf::internal::kEmptyString) {
     delete username_;
   }
   if (this != default_instance_) {
@@ -406,8 +408,8 @@ UserCredentials* UserCredentials::New() const {
 
 void UserCredentials::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (username_ != &_default_username_) {
+    if (has_username()) {
+      if (username_ != &::google::protobuf::internal::kEmptyString) {
         username_->clear();
       }
     }
@@ -476,7 +478,7 @@ bool UserCredentials::MergePartialFromCodedStream(
 void UserCredentials::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string username = 1;
-  if (_has_bit(0)) {
+  if (has_username()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->username().data(), this->username().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -502,7 +504,7 @@ void UserCredentials::SerializeWithCachedSizes(
 ::google::protobuf::uint8* UserCredentials::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string username = 1;
-  if (_has_bit(0)) {
+  if (has_username()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->username().data(), this->username().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -573,7 +575,7 @@ void UserCredentials::MergeFrom(const UserCredentials& from) {
   GOOGLE_CHECK_NE(&from, this);
   groups_.MergeFrom(from.groups_);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_username()) {
       set_username(from.username());
     }
   }
@@ -619,7 +621,6 @@ void UserCredentials::Swap(UserCredentials* other) {
 
 // ===================================================================
 
-const ::std::string AuthPassword::_default_password_;
 #ifndef _MSC_VER
 const int AuthPassword::kPasswordFieldNumber;
 #endif  // !_MSC_VER
@@ -640,7 +641,7 @@ AuthPassword::AuthPassword(const AuthPassword& from)
 
 void AuthPassword::SharedCtor() {
   _cached_size_ = 0;
-  password_ = const_cast< ::std::string*>(&_default_password_);
+  password_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -649,7 +650,7 @@ AuthPassword::~AuthPassword() {
 }
 
 void AuthPassword::SharedDtor() {
-  if (password_ != &_default_password_) {
+  if (password_ != &::google::protobuf::internal::kEmptyString) {
     delete password_;
   }
   if (this != default_instance_) {
@@ -678,8 +679,8 @@ AuthPassword* AuthPassword::New() const {
 
 void AuthPassword::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (password_ != &_default_password_) {
+    if (has_password()) {
+      if (password_ != &::google::protobuf::internal::kEmptyString) {
         password_->clear();
       }
     }
@@ -729,7 +730,7 @@ bool AuthPassword::MergePartialFromCodedStream(
 void AuthPassword::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string password = 1;
-  if (_has_bit(0)) {
+  if (has_password()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->password().data(), this->password().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -746,7 +747,7 @@ void AuthPassword::SerializeWithCachedSizes(
 ::google::protobuf::uint8* AuthPassword::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string password = 1;
-  if (_has_bit(0)) {
+  if (has_password()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->password().data(), this->password().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -800,7 +801,7 @@ void AuthPassword::MergeFrom(const ::google::protobuf::Message& from) {
 void AuthPassword::MergeFrom(const AuthPassword& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_password()) {
       set_password(from.password());
     }
   }
@@ -845,7 +846,6 @@ void AuthPassword::Swap(AuthPassword* other) {
 
 // ===================================================================
 
-const ::std::string Auth::_default_auth_data_;
 #ifndef _MSC_VER
 const int Auth::kAuthTypeFieldNumber;
 const int Auth::kAuthPasswdFieldNumber;
@@ -871,7 +871,7 @@ void Auth::SharedCtor() {
   _cached_size_ = 0;
   auth_type_ = 0;
   auth_passwd_ = NULL;
-  auth_data_ = const_cast< ::std::string*>(&_default_auth_data_);
+  auth_data_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -880,7 +880,7 @@ Auth::~Auth() {
 }
 
 void Auth::SharedDtor() {
-  if (auth_data_ != &_default_auth_data_) {
+  if (auth_data_ != &::google::protobuf::internal::kEmptyString) {
     delete auth_data_;
   }
   if (this != default_instance_) {
@@ -911,11 +911,11 @@ Auth* Auth::New() const {
 void Auth::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     auth_type_ = 0;
-    if (_has_bit(1)) {
+    if (has_auth_passwd()) {
       if (auth_passwd_ != NULL) auth_passwd_->::xtreemfs::pbrpc::AuthPassword::Clear();
     }
-    if (_has_bit(2)) {
-      if (auth_data_ != &_default_auth_data_) {
+    if (has_auth_data()) {
+      if (auth_data_ != &::google::protobuf::internal::kEmptyString) {
         auth_data_->clear();
       }
     }
@@ -997,19 +997,19 @@ bool Auth::MergePartialFromCodedStream(
 void Auth::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required .xtreemfs.pbrpc.AuthType auth_type = 1;
-  if (_has_bit(0)) {
+  if (has_auth_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       1, this->auth_type(), output);
   }
   
   // optional bytes auth_data = 2;
-  if (_has_bit(2)) {
+  if (has_auth_data()) {
     ::google::protobuf::internal::WireFormatLite::WriteBytes(
       2, this->auth_data(), output);
   }
   
   // optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;
-  if (_has_bit(1)) {
+  if (has_auth_passwd()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       3, this->auth_passwd(), output);
   }
@@ -1023,20 +1023,20 @@ void Auth::SerializeWithCachedSizes(
 ::google::protobuf::uint8* Auth::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required .xtreemfs.pbrpc.AuthType auth_type = 1;
-  if (_has_bit(0)) {
+  if (has_auth_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       1, this->auth_type(), target);
   }
   
   // optional bytes auth_data = 2;
-  if (_has_bit(2)) {
+  if (has_auth_data()) {
     target =
       ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
         2, this->auth_data(), target);
   }
   
   // optional .xtreemfs.pbrpc.AuthPassword auth_passwd = 3;
-  if (_has_bit(1)) {
+  if (has_auth_passwd()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         3, this->auth_passwd(), target);
@@ -1100,13 +1100,13 @@ void Auth::MergeFrom(const ::google::protobuf::Message& from) {
 void Auth::MergeFrom(const Auth& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_auth_type()) {
       set_auth_type(from.auth_type());
     }
-    if (from._has_bit(1)) {
+    if (from.has_auth_passwd()) {
       mutable_auth_passwd()->::xtreemfs::pbrpc::AuthPassword::MergeFrom(from.auth_passwd());
     }
-    if (from._has_bit(2)) {
+    if (from.has_auth_data()) {
       set_auth_data(from.auth_data());
     }
   }
@@ -1223,10 +1223,10 @@ void RPCHeader_RequestHeader::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     interface_id_ = 0u;
     proc_id_ = 0u;
-    if (_has_bit(2)) {
+    if (has_user_creds()) {
       if (user_creds_ != NULL) user_creds_->::xtreemfs::pbrpc::UserCredentials::Clear();
     }
-    if (_has_bit(3)) {
+    if (has_auth_data()) {
       if (auth_data_ != NULL) auth_data_->::xtreemfs::pbrpc::Auth::Clear();
     }
   }
@@ -1247,7 +1247,7 @@ bool RPCHeader_RequestHeader::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &interface_id_)));
-          _set_bit(0);
+          set_has_interface_id();
         } else {
           goto handle_uninterpreted;
         }
@@ -1263,7 +1263,7 @@ bool RPCHeader_RequestHeader::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &proc_id_)));
-          _set_bit(1);
+          set_has_proc_id();
         } else {
           goto handle_uninterpreted;
         }
@@ -1318,23 +1318,23 @@ bool RPCHeader_RequestHeader::MergePartialFromCodedStream(
 void RPCHeader_RequestHeader::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required fixed32 interface_id = 1;
-  if (_has_bit(0)) {
+  if (has_interface_id()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(1, this->interface_id(), output);
   }
   
   // required fixed32 proc_id = 2;
-  if (_has_bit(1)) {
+  if (has_proc_id()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(2, this->proc_id(), output);
   }
   
   // required .xtreemfs.pbrpc.UserCredentials user_creds = 3;
-  if (_has_bit(2)) {
+  if (has_user_creds()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       3, this->user_creds(), output);
   }
   
   // required .xtreemfs.pbrpc.Auth auth_data = 4;
-  if (_has_bit(3)) {
+  if (has_auth_data()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       4, this->auth_data(), output);
   }
@@ -1348,24 +1348,24 @@ void RPCHeader_RequestHeader::SerializeWithCachedSizes(
 ::google::protobuf::uint8* RPCHeader_RequestHeader::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required fixed32 interface_id = 1;
-  if (_has_bit(0)) {
+  if (has_interface_id()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(1, this->interface_id(), target);
   }
   
   // required fixed32 proc_id = 2;
-  if (_has_bit(1)) {
+  if (has_proc_id()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(2, this->proc_id(), target);
   }
   
   // required .xtreemfs.pbrpc.UserCredentials user_creds = 3;
-  if (_has_bit(2)) {
+  if (has_user_creds()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         3, this->user_creds(), target);
   }
   
   // required .xtreemfs.pbrpc.Auth auth_data = 4;
-  if (_has_bit(3)) {
+  if (has_auth_data()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         4, this->auth_data(), target);
@@ -1433,16 +1433,16 @@ void RPCHeader_RequestHeader::MergeFrom(const ::google::protobuf::Message& from)
 void RPCHeader_RequestHeader::MergeFrom(const RPCHeader_RequestHeader& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_interface_id()) {
       set_interface_id(from.interface_id());
     }
-    if (from._has_bit(1)) {
+    if (from.has_proc_id()) {
       set_proc_id(from.proc_id());
     }
-    if (from._has_bit(2)) {
+    if (from.has_user_creds()) {
       mutable_user_creds()->::xtreemfs::pbrpc::UserCredentials::MergeFrom(from.user_creds());
     }
-    if (from._has_bit(3)) {
+    if (from.has_auth_data()) {
       mutable_auth_data()->::xtreemfs::pbrpc::Auth::MergeFrom(from.auth_data());
     }
   }
@@ -1496,9 +1496,6 @@ void RPCHeader_RequestHeader::Swap(RPCHeader_RequestHeader* other) {
 
 // -------------------------------------------------------------------
 
-const ::std::string RPCHeader_ErrorResponse::_default_error_message_;
-const ::std::string RPCHeader_ErrorResponse::_default_debug_info_;
-const ::std::string RPCHeader_ErrorResponse::_default_redirect_to_server_uuid_;
 #ifndef _MSC_VER
 const int RPCHeader_ErrorResponse::kErrorTypeFieldNumber;
 const int RPCHeader_ErrorResponse::kPosixErrnoFieldNumber;
@@ -1525,9 +1522,9 @@ void RPCHeader_ErrorResponse::SharedCtor() {
   _cached_size_ = 0;
   error_type_ = 1;
   posix_errno_ = 9999;
-  error_message_ = const_cast< ::std::string*>(&_default_error_message_);
-  debug_info_ = const_cast< ::std::string*>(&_default_debug_info_);
-  redirect_to_server_uuid_ = const_cast< ::std::string*>(&_default_redirect_to_server_uuid_);
+  error_message_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  debug_info_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  redirect_to_server_uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -1536,13 +1533,13 @@ RPCHeader_ErrorResponse::~RPCHeader_ErrorResponse() {
 }
 
 void RPCHeader_ErrorResponse::SharedDtor() {
-  if (error_message_ != &_default_error_message_) {
+  if (error_message_ != &::google::protobuf::internal::kEmptyString) {
     delete error_message_;
   }
-  if (debug_info_ != &_default_debug_info_) {
+  if (debug_info_ != &::google::protobuf::internal::kEmptyString) {
     delete debug_info_;
   }
-  if (redirect_to_server_uuid_ != &_default_redirect_to_server_uuid_) {
+  if (redirect_to_server_uuid_ != &::google::protobuf::internal::kEmptyString) {
     delete redirect_to_server_uuid_;
   }
   if (this != default_instance_) {
@@ -1573,18 +1570,18 @@ void RPCHeader_ErrorResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     error_type_ = 1;
     posix_errno_ = 9999;
-    if (_has_bit(2)) {
-      if (error_message_ != &_default_error_message_) {
+    if (has_error_message()) {
+      if (error_message_ != &::google::protobuf::internal::kEmptyString) {
         error_message_->clear();
       }
     }
-    if (_has_bit(3)) {
-      if (debug_info_ != &_default_debug_info_) {
+    if (has_debug_info()) {
+      if (debug_info_ != &::google::protobuf::internal::kEmptyString) {
         debug_info_->clear();
       }
     }
-    if (_has_bit(4)) {
-      if (redirect_to_server_uuid_ != &_default_redirect_to_server_uuid_) {
+    if (has_redirect_to_server_uuid()) {
+      if (redirect_to_server_uuid_ != &::google::protobuf::internal::kEmptyString) {
         redirect_to_server_uuid_->clear();
       }
     }
@@ -1710,19 +1707,19 @@ bool RPCHeader_ErrorResponse::MergePartialFromCodedStream(
 void RPCHeader_ErrorResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required .xtreemfs.pbrpc.ErrorType error_type = 1;
-  if (_has_bit(0)) {
+  if (has_error_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       1, this->error_type(), output);
   }
   
   // optional .xtreemfs.pbrpc.POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];
-  if (_has_bit(1)) {
+  if (has_posix_errno()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       2, this->posix_errno(), output);
   }
   
   // optional string error_message = 3;
-  if (_has_bit(2)) {
+  if (has_error_message()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->error_message().data(), this->error_message().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1731,7 +1728,7 @@ void RPCHeader_ErrorResponse::SerializeWithCachedSizes(
   }
   
   // optional string debug_info = 4;
-  if (_has_bit(3)) {
+  if (has_debug_info()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->debug_info().data(), this->debug_info().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1740,7 +1737,7 @@ void RPCHeader_ErrorResponse::SerializeWithCachedSizes(
   }
   
   // optional string redirect_to_server_uuid = 5;
-  if (_has_bit(4)) {
+  if (has_redirect_to_server_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->redirect_to_server_uuid().data(), this->redirect_to_server_uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1757,19 +1754,19 @@ void RPCHeader_ErrorResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* RPCHeader_ErrorResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required .xtreemfs.pbrpc.ErrorType error_type = 1;
-  if (_has_bit(0)) {
+  if (has_error_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       1, this->error_type(), target);
   }
   
   // optional .xtreemfs.pbrpc.POSIXErrno posix_errno = 2 [default = POSIX_ERROR_NONE];
-  if (_has_bit(1)) {
+  if (has_posix_errno()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       2, this->posix_errno(), target);
   }
   
   // optional string error_message = 3;
-  if (_has_bit(2)) {
+  if (has_error_message()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->error_message().data(), this->error_message().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1779,7 +1776,7 @@ void RPCHeader_ErrorResponse::SerializeWithCachedSizes(
   }
   
   // optional string debug_info = 4;
-  if (_has_bit(3)) {
+  if (has_debug_info()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->debug_info().data(), this->debug_info().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1789,7 +1786,7 @@ void RPCHeader_ErrorResponse::SerializeWithCachedSizes(
   }
   
   // optional string redirect_to_server_uuid = 5;
-  if (_has_bit(4)) {
+  if (has_redirect_to_server_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->redirect_to_server_uuid().data(), this->redirect_to_server_uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1869,19 +1866,19 @@ void RPCHeader_ErrorResponse::MergeFrom(const ::google::protobuf::Message& from)
 void RPCHeader_ErrorResponse::MergeFrom(const RPCHeader_ErrorResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_error_type()) {
       set_error_type(from.error_type());
     }
-    if (from._has_bit(1)) {
+    if (from.has_posix_errno()) {
       set_posix_errno(from.posix_errno());
     }
-    if (from._has_bit(2)) {
+    if (from.has_error_message()) {
       set_error_message(from.error_message());
     }
-    if (from._has_bit(3)) {
+    if (from.has_debug_info()) {
       set_debug_info(from.debug_info());
     }
-    if (from._has_bit(4)) {
+    if (from.has_redirect_to_server_uuid()) {
       set_redirect_to_server_uuid(from.redirect_to_server_uuid());
     }
   }
@@ -1997,10 +1994,10 @@ void RPCHeader::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     call_id_ = 0u;
     message_type_ = 0;
-    if (_has_bit(2)) {
+    if (has_request_header()) {
       if (request_header_ != NULL) request_header_->::xtreemfs::pbrpc::RPCHeader_RequestHeader::Clear();
     }
-    if (_has_bit(3)) {
+    if (has_error_response()) {
       if (error_response_ != NULL) error_response_->::xtreemfs::pbrpc::RPCHeader_ErrorResponse::Clear();
     }
   }
@@ -2021,7 +2018,7 @@ bool RPCHeader::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &call_id_)));
-          _set_bit(0);
+          set_has_call_id();
         } else {
           goto handle_uninterpreted;
         }
@@ -2097,24 +2094,24 @@ bool RPCHeader::MergePartialFromCodedStream(
 void RPCHeader::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required fixed32 call_id = 1;
-  if (_has_bit(0)) {
+  if (has_call_id()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(1, this->call_id(), output);
   }
   
   // required .xtreemfs.pbrpc.MessageType message_type = 2;
-  if (_has_bit(1)) {
+  if (has_message_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       2, this->message_type(), output);
   }
   
   // optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;
-  if (_has_bit(2)) {
+  if (has_request_header()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       3, this->request_header(), output);
   }
   
   // optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;
-  if (_has_bit(3)) {
+  if (has_error_response()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       4, this->error_response(), output);
   }
@@ -2128,25 +2125,25 @@ void RPCHeader::SerializeWithCachedSizes(
 ::google::protobuf::uint8* RPCHeader::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required fixed32 call_id = 1;
-  if (_has_bit(0)) {
+  if (has_call_id()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(1, this->call_id(), target);
   }
   
   // required .xtreemfs.pbrpc.MessageType message_type = 2;
-  if (_has_bit(1)) {
+  if (has_message_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       2, this->message_type(), target);
   }
   
   // optional .xtreemfs.pbrpc.RPCHeader.RequestHeader request_header = 3;
-  if (_has_bit(2)) {
+  if (has_request_header()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         3, this->request_header(), target);
   }
   
   // optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error_response = 4;
-  if (_has_bit(3)) {
+  if (has_error_response()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         4, this->error_response(), target);
@@ -2215,16 +2212,16 @@ void RPCHeader::MergeFrom(const ::google::protobuf::Message& from) {
 void RPCHeader::MergeFrom(const RPCHeader& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_call_id()) {
       set_call_id(from.call_id());
     }
-    if (from._has_bit(1)) {
+    if (from.has_message_type()) {
       set_message_type(from.message_type());
     }
-    if (from._has_bit(2)) {
+    if (from.has_request_header()) {
       mutable_request_header()->::xtreemfs::pbrpc::RPCHeader_RequestHeader::MergeFrom(from.request_header());
     }
-    if (from._has_bit(3)) {
+    if (from.has_error_response()) {
       mutable_error_response()->::xtreemfs::pbrpc::RPCHeader_ErrorResponse::MergeFrom(from.error_response());
     }
   }

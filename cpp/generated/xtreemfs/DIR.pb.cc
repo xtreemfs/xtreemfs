@@ -2,6 +2,9 @@
 
 #define INTERNAL_SUPPRESS_PROTOBUF_FIELD_DEPRECATION
 #include "xtreemfs/DIR.pb.h"
+
+#include <algorithm>
+
 #include <google/protobuf/stubs/once.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/wire_format_lite_inl.h>
@@ -74,7 +77,6 @@ const ::google::protobuf::internal::GeneratedMessageReflection*
   configurationSetResponse_reflection_ = NULL;
 const ::google::protobuf::EnumDescriptor* ServiceType_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* ServiceStatus_descriptor_ = NULL;
-const ::google::protobuf::ServiceDescriptor* DIRService_descriptor_ = NULL;
 
 }  // namespace
 
@@ -389,7 +391,6 @@ void protobuf_AssignDesc_xtreemfs_2fDIR_2eproto() {
       sizeof(configurationSetResponse));
   ServiceType_descriptor_ = file->enum_type(0);
   ServiceStatus_descriptor_ = file->enum_type(1);
-  DIRService_descriptor_ = file->service(0);
 }
 
 namespace {
@@ -663,11 +664,6 @@ bool ServiceStatus_IsValid(int value) {
 
 // ===================================================================
 
-const ::std::string AddressMapping::_default_uuid_;
-const ::std::string AddressMapping::_default_protocol_;
-const ::std::string AddressMapping::_default_address_;
-const ::std::string AddressMapping::_default_match_network_;
-const ::std::string AddressMapping::_default_uri_;
 #ifndef _MSC_VER
 const int AddressMapping::kUuidFieldNumber;
 const int AddressMapping::kVersionFieldNumber;
@@ -695,14 +691,14 @@ AddressMapping::AddressMapping(const AddressMapping& from)
 
 void AddressMapping::SharedCtor() {
   _cached_size_ = 0;
-  uuid_ = const_cast< ::std::string*>(&_default_uuid_);
+  uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   version_ = GOOGLE_ULONGLONG(0);
-  protocol_ = const_cast< ::std::string*>(&_default_protocol_);
-  address_ = const_cast< ::std::string*>(&_default_address_);
+  protocol_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  address_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   port_ = 0u;
-  match_network_ = const_cast< ::std::string*>(&_default_match_network_);
+  match_network_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ttl_s_ = 0u;
-  uri_ = const_cast< ::std::string*>(&_default_uri_);
+  uri_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -711,19 +707,19 @@ AddressMapping::~AddressMapping() {
 }
 
 void AddressMapping::SharedDtor() {
-  if (uuid_ != &_default_uuid_) {
+  if (uuid_ != &::google::protobuf::internal::kEmptyString) {
     delete uuid_;
   }
-  if (protocol_ != &_default_protocol_) {
+  if (protocol_ != &::google::protobuf::internal::kEmptyString) {
     delete protocol_;
   }
-  if (address_ != &_default_address_) {
+  if (address_ != &::google::protobuf::internal::kEmptyString) {
     delete address_;
   }
-  if (match_network_ != &_default_match_network_) {
+  if (match_network_ != &::google::protobuf::internal::kEmptyString) {
     delete match_network_;
   }
-  if (uri_ != &_default_uri_) {
+  if (uri_ != &::google::protobuf::internal::kEmptyString) {
     delete uri_;
   }
   if (this != default_instance_) {
@@ -752,31 +748,31 @@ AddressMapping* AddressMapping::New() const {
 
 void AddressMapping::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (uuid_ != &_default_uuid_) {
+    if (has_uuid()) {
+      if (uuid_ != &::google::protobuf::internal::kEmptyString) {
         uuid_->clear();
       }
     }
     version_ = GOOGLE_ULONGLONG(0);
-    if (_has_bit(2)) {
-      if (protocol_ != &_default_protocol_) {
+    if (has_protocol()) {
+      if (protocol_ != &::google::protobuf::internal::kEmptyString) {
         protocol_->clear();
       }
     }
-    if (_has_bit(3)) {
-      if (address_ != &_default_address_) {
+    if (has_address()) {
+      if (address_ != &::google::protobuf::internal::kEmptyString) {
         address_->clear();
       }
     }
     port_ = 0u;
-    if (_has_bit(5)) {
-      if (match_network_ != &_default_match_network_) {
+    if (has_match_network()) {
+      if (match_network_ != &::google::protobuf::internal::kEmptyString) {
         match_network_->clear();
       }
     }
     ttl_s_ = 0u;
-    if (_has_bit(7)) {
-      if (uri_ != &_default_uri_) {
+    if (has_uri()) {
+      if (uri_ != &::google::protobuf::internal::kEmptyString) {
         uri_->clear();
       }
     }
@@ -815,7 +811,7 @@ bool AddressMapping::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &version_)));
-          _set_bit(1);
+          set_has_version();
         } else {
           goto handle_uninterpreted;
         }
@@ -865,7 +861,7 @@ bool AddressMapping::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &port_)));
-          _set_bit(4);
+          set_has_port();
         } else {
           goto handle_uninterpreted;
         }
@@ -898,7 +894,7 @@ bool AddressMapping::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &ttl_s_)));
-          _set_bit(6);
+          set_has_ttl_s();
         } else {
           goto handle_uninterpreted;
         }
@@ -942,7 +938,7 @@ bool AddressMapping::MergePartialFromCodedStream(
 void AddressMapping::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string uuid = 1;
-  if (_has_bit(0)) {
+  if (has_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->uuid().data(), this->uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -951,12 +947,12 @@ void AddressMapping::SerializeWithCachedSizes(
   }
   
   // required fixed64 version = 2;
-  if (_has_bit(1)) {
+  if (has_version()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(2, this->version(), output);
   }
   
   // required string protocol = 3;
-  if (_has_bit(2)) {
+  if (has_protocol()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->protocol().data(), this->protocol().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -965,7 +961,7 @@ void AddressMapping::SerializeWithCachedSizes(
   }
   
   // required string address = 4;
-  if (_has_bit(3)) {
+  if (has_address()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->address().data(), this->address().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -974,12 +970,12 @@ void AddressMapping::SerializeWithCachedSizes(
   }
   
   // required fixed32 port = 5;
-  if (_has_bit(4)) {
+  if (has_port()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(5, this->port(), output);
   }
   
   // required string match_network = 6;
-  if (_has_bit(5)) {
+  if (has_match_network()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->match_network().data(), this->match_network().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -988,12 +984,12 @@ void AddressMapping::SerializeWithCachedSizes(
   }
   
   // required fixed32 ttl_s = 7;
-  if (_has_bit(6)) {
+  if (has_ttl_s()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(7, this->ttl_s(), output);
   }
   
   // required string uri = 8;
-  if (_has_bit(7)) {
+  if (has_uri()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->uri().data(), this->uri().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1010,7 +1006,7 @@ void AddressMapping::SerializeWithCachedSizes(
 ::google::protobuf::uint8* AddressMapping::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string uuid = 1;
-  if (_has_bit(0)) {
+  if (has_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->uuid().data(), this->uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1020,12 +1016,12 @@ void AddressMapping::SerializeWithCachedSizes(
   }
   
   // required fixed64 version = 2;
-  if (_has_bit(1)) {
+  if (has_version()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(2, this->version(), target);
   }
   
   // required string protocol = 3;
-  if (_has_bit(2)) {
+  if (has_protocol()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->protocol().data(), this->protocol().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1035,7 +1031,7 @@ void AddressMapping::SerializeWithCachedSizes(
   }
   
   // required string address = 4;
-  if (_has_bit(3)) {
+  if (has_address()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->address().data(), this->address().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1045,12 +1041,12 @@ void AddressMapping::SerializeWithCachedSizes(
   }
   
   // required fixed32 port = 5;
-  if (_has_bit(4)) {
+  if (has_port()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(5, this->port(), target);
   }
   
   // required string match_network = 6;
-  if (_has_bit(5)) {
+  if (has_match_network()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->match_network().data(), this->match_network().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1060,12 +1056,12 @@ void AddressMapping::SerializeWithCachedSizes(
   }
   
   // required fixed32 ttl_s = 7;
-  if (_has_bit(6)) {
+  if (has_ttl_s()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(7, this->ttl_s(), target);
   }
   
   // required string uri = 8;
-  if (_has_bit(7)) {
+  if (has_uri()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->uri().data(), this->uri().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1162,28 +1158,28 @@ void AddressMapping::MergeFrom(const ::google::protobuf::Message& from) {
 void AddressMapping::MergeFrom(const AddressMapping& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_uuid()) {
       set_uuid(from.uuid());
     }
-    if (from._has_bit(1)) {
+    if (from.has_version()) {
       set_version(from.version());
     }
-    if (from._has_bit(2)) {
+    if (from.has_protocol()) {
       set_protocol(from.protocol());
     }
-    if (from._has_bit(3)) {
+    if (from.has_address()) {
       set_address(from.address());
     }
-    if (from._has_bit(4)) {
+    if (from.has_port()) {
       set_port(from.port());
     }
-    if (from._has_bit(5)) {
+    if (from.has_match_network()) {
       set_match_network(from.match_network());
     }
-    if (from._has_bit(6)) {
+    if (from.has_ttl_s()) {
       set_ttl_s(from.ttl_s());
     }
-    if (from._has_bit(7)) {
+    if (from.has_uri()) {
       set_uri(from.uri());
     }
   }
@@ -1440,8 +1436,6 @@ void AddressMappingSet::Swap(AddressMappingSet* other) {
 
 // ===================================================================
 
-const ::std::string DirService::_default_address_;
-const ::std::string DirService::_default_protocol_;
 #ifndef _MSC_VER
 const int DirService::kAddressFieldNumber;
 const int DirService::kPortFieldNumber;
@@ -1465,9 +1459,9 @@ DirService::DirService(const DirService& from)
 
 void DirService::SharedCtor() {
   _cached_size_ = 0;
-  address_ = const_cast< ::std::string*>(&_default_address_);
+  address_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   port_ = 0u;
-  protocol_ = const_cast< ::std::string*>(&_default_protocol_);
+  protocol_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   interface_version_ = 0u;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -1477,10 +1471,10 @@ DirService::~DirService() {
 }
 
 void DirService::SharedDtor() {
-  if (address_ != &_default_address_) {
+  if (address_ != &::google::protobuf::internal::kEmptyString) {
     delete address_;
   }
-  if (protocol_ != &_default_protocol_) {
+  if (protocol_ != &::google::protobuf::internal::kEmptyString) {
     delete protocol_;
   }
   if (this != default_instance_) {
@@ -1509,14 +1503,14 @@ DirService* DirService::New() const {
 
 void DirService::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (address_ != &_default_address_) {
+    if (has_address()) {
+      if (address_ != &::google::protobuf::internal::kEmptyString) {
         address_->clear();
       }
     }
     port_ = 0u;
-    if (_has_bit(2)) {
-      if (protocol_ != &_default_protocol_) {
+    if (has_protocol()) {
+      if (protocol_ != &::google::protobuf::internal::kEmptyString) {
         protocol_->clear();
       }
     }
@@ -1556,7 +1550,7 @@ bool DirService::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &port_)));
-          _set_bit(1);
+          set_has_port();
         } else {
           goto handle_uninterpreted;
         }
@@ -1589,7 +1583,7 @@ bool DirService::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &interface_version_)));
-          _set_bit(3);
+          set_has_interface_version();
         } else {
           goto handle_uninterpreted;
         }
@@ -1616,7 +1610,7 @@ bool DirService::MergePartialFromCodedStream(
 void DirService::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string address = 1;
-  if (_has_bit(0)) {
+  if (has_address()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->address().data(), this->address().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1625,12 +1619,12 @@ void DirService::SerializeWithCachedSizes(
   }
   
   // required fixed32 port = 2;
-  if (_has_bit(1)) {
+  if (has_port()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(2, this->port(), output);
   }
   
   // required string protocol = 3;
-  if (_has_bit(2)) {
+  if (has_protocol()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->protocol().data(), this->protocol().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1639,7 +1633,7 @@ void DirService::SerializeWithCachedSizes(
   }
   
   // required fixed32 interface_version = 4;
-  if (_has_bit(3)) {
+  if (has_interface_version()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(4, this->interface_version(), output);
   }
   
@@ -1652,7 +1646,7 @@ void DirService::SerializeWithCachedSizes(
 ::google::protobuf::uint8* DirService::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string address = 1;
-  if (_has_bit(0)) {
+  if (has_address()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->address().data(), this->address().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1662,12 +1656,12 @@ void DirService::SerializeWithCachedSizes(
   }
   
   // required fixed32 port = 2;
-  if (_has_bit(1)) {
+  if (has_port()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(2, this->port(), target);
   }
   
   // required string protocol = 3;
-  if (_has_bit(2)) {
+  if (has_protocol()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->protocol().data(), this->protocol().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -1677,7 +1671,7 @@ void DirService::SerializeWithCachedSizes(
   }
   
   // required fixed32 interface_version = 4;
-  if (_has_bit(3)) {
+  if (has_interface_version()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(4, this->interface_version(), target);
   }
   
@@ -1743,16 +1737,16 @@ void DirService::MergeFrom(const ::google::protobuf::Message& from) {
 void DirService::MergeFrom(const DirService& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_address()) {
       set_address(from.address());
     }
-    if (from._has_bit(1)) {
+    if (from.has_port()) {
       set_port(from.port());
     }
-    if (from._has_bit(2)) {
+    if (from.has_protocol()) {
       set_protocol(from.protocol());
     }
-    if (from._has_bit(3)) {
+    if (from.has_interface_version()) {
       set_interface_version(from.interface_version());
     }
   }
@@ -2005,8 +1999,6 @@ void ServiceDataMap::Swap(ServiceDataMap* other) {
 
 // ===================================================================
 
-const ::std::string Service::_default_uuid_;
-const ::std::string Service::_default_name_;
 #ifndef _MSC_VER
 const int Service::kTypeFieldNumber;
 const int Service::kUuidFieldNumber;
@@ -2034,9 +2026,9 @@ Service::Service(const Service& from)
 void Service::SharedCtor() {
   _cached_size_ = 0;
   type_ = 0;
-  uuid_ = const_cast< ::std::string*>(&_default_uuid_);
+  uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   version_ = GOOGLE_ULONGLONG(0);
-  name_ = const_cast< ::std::string*>(&_default_name_);
+  name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   last_updated_s_ = GOOGLE_ULONGLONG(0);
   data_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -2047,10 +2039,10 @@ Service::~Service() {
 }
 
 void Service::SharedDtor() {
-  if (uuid_ != &_default_uuid_) {
+  if (uuid_ != &::google::protobuf::internal::kEmptyString) {
     delete uuid_;
   }
-  if (name_ != &_default_name_) {
+  if (name_ != &::google::protobuf::internal::kEmptyString) {
     delete name_;
   }
   if (this != default_instance_) {
@@ -2081,19 +2073,19 @@ Service* Service::New() const {
 void Service::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     type_ = 0;
-    if (_has_bit(1)) {
-      if (uuid_ != &_default_uuid_) {
+    if (has_uuid()) {
+      if (uuid_ != &::google::protobuf::internal::kEmptyString) {
         uuid_->clear();
       }
     }
     version_ = GOOGLE_ULONGLONG(0);
-    if (_has_bit(3)) {
-      if (name_ != &_default_name_) {
+    if (has_name()) {
+      if (name_ != &::google::protobuf::internal::kEmptyString) {
         name_->clear();
       }
     }
     last_updated_s_ = GOOGLE_ULONGLONG(0);
-    if (_has_bit(5)) {
+    if (has_data()) {
       if (data_ != NULL) data_->::xtreemfs::pbrpc::ServiceDataMap::Clear();
     }
   }
@@ -2152,7 +2144,7 @@ bool Service::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &version_)));
-          _set_bit(2);
+          set_has_version();
         } else {
           goto handle_uninterpreted;
         }
@@ -2185,7 +2177,7 @@ bool Service::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &last_updated_s_)));
-          _set_bit(4);
+          set_has_last_updated_s();
         } else {
           goto handle_uninterpreted;
         }
@@ -2226,13 +2218,13 @@ bool Service::MergePartialFromCodedStream(
 void Service::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required .xtreemfs.pbrpc.ServiceType type = 1;
-  if (_has_bit(0)) {
+  if (has_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       1, this->type(), output);
   }
   
   // required string uuid = 2;
-  if (_has_bit(1)) {
+  if (has_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->uuid().data(), this->uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2241,12 +2233,12 @@ void Service::SerializeWithCachedSizes(
   }
   
   // required fixed64 version = 3;
-  if (_has_bit(2)) {
+  if (has_version()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(3, this->version(), output);
   }
   
   // required string name = 4;
-  if (_has_bit(3)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2255,12 +2247,12 @@ void Service::SerializeWithCachedSizes(
   }
   
   // required fixed64 last_updated_s = 5;
-  if (_has_bit(4)) {
+  if (has_last_updated_s()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(5, this->last_updated_s(), output);
   }
   
   // required .xtreemfs.pbrpc.ServiceDataMap data = 6;
-  if (_has_bit(5)) {
+  if (has_data()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       6, this->data(), output);
   }
@@ -2274,13 +2266,13 @@ void Service::SerializeWithCachedSizes(
 ::google::protobuf::uint8* Service::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required .xtreemfs.pbrpc.ServiceType type = 1;
-  if (_has_bit(0)) {
+  if (has_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       1, this->type(), target);
   }
   
   // required string uuid = 2;
-  if (_has_bit(1)) {
+  if (has_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->uuid().data(), this->uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2290,12 +2282,12 @@ void Service::SerializeWithCachedSizes(
   }
   
   // required fixed64 version = 3;
-  if (_has_bit(2)) {
+  if (has_version()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(3, this->version(), target);
   }
   
   // required string name = 4;
-  if (_has_bit(3)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2305,12 +2297,12 @@ void Service::SerializeWithCachedSizes(
   }
   
   // required fixed64 last_updated_s = 5;
-  if (_has_bit(4)) {
+  if (has_last_updated_s()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(5, this->last_updated_s(), target);
   }
   
   // required .xtreemfs.pbrpc.ServiceDataMap data = 6;
-  if (_has_bit(5)) {
+  if (has_data()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         6, this->data(), target);
@@ -2391,22 +2383,22 @@ void Service::MergeFrom(const ::google::protobuf::Message& from) {
 void Service::MergeFrom(const Service& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_type()) {
       set_type(from.type());
     }
-    if (from._has_bit(1)) {
+    if (from.has_uuid()) {
       set_uuid(from.uuid());
     }
-    if (from._has_bit(2)) {
+    if (from.has_version()) {
       set_version(from.version());
     }
-    if (from._has_bit(3)) {
+    if (from.has_name()) {
       set_name(from.name());
     }
-    if (from._has_bit(4)) {
+    if (from.has_last_updated_s()) {
       set_last_updated_s(from.last_updated_s());
     }
-    if (from._has_bit(5)) {
+    if (from.has_data()) {
       mutable_data()->::xtreemfs::pbrpc::ServiceDataMap::MergeFrom(from.data());
     }
   }
@@ -2664,7 +2656,6 @@ void ServiceSet::Swap(ServiceSet* other) {
 
 // ===================================================================
 
-const ::std::string Configuration::_default_uuid_;
 #ifndef _MSC_VER
 const int Configuration::kUuidFieldNumber;
 const int Configuration::kParameterFieldNumber;
@@ -2687,7 +2678,7 @@ Configuration::Configuration(const Configuration& from)
 
 void Configuration::SharedCtor() {
   _cached_size_ = 0;
-  uuid_ = const_cast< ::std::string*>(&_default_uuid_);
+  uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   version_ = GOOGLE_ULONGLONG(0);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -2697,7 +2688,7 @@ Configuration::~Configuration() {
 }
 
 void Configuration::SharedDtor() {
-  if (uuid_ != &_default_uuid_) {
+  if (uuid_ != &::google::protobuf::internal::kEmptyString) {
     delete uuid_;
   }
   if (this != default_instance_) {
@@ -2726,8 +2717,8 @@ Configuration* Configuration::New() const {
 
 void Configuration::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (uuid_ != &_default_uuid_) {
+    if (has_uuid()) {
+      if (uuid_ != &::google::protobuf::internal::kEmptyString) {
         uuid_->clear();
       }
     }
@@ -2783,7 +2774,7 @@ bool Configuration::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &version_)));
-          _set_bit(2);
+          set_has_version();
         } else {
           goto handle_uninterpreted;
         }
@@ -2810,7 +2801,7 @@ bool Configuration::MergePartialFromCodedStream(
 void Configuration::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string uuid = 1;
-  if (_has_bit(0)) {
+  if (has_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->uuid().data(), this->uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2825,7 +2816,7 @@ void Configuration::SerializeWithCachedSizes(
   }
   
   // required fixed64 version = 3;
-  if (_has_bit(2)) {
+  if (has_version()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(3, this->version(), output);
   }
   
@@ -2838,7 +2829,7 @@ void Configuration::SerializeWithCachedSizes(
 ::google::protobuf::uint8* Configuration::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string uuid = 1;
-  if (_has_bit(0)) {
+  if (has_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->uuid().data(), this->uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2855,7 +2846,7 @@ void Configuration::SerializeWithCachedSizes(
   }
   
   // required fixed64 version = 3;
-  if (_has_bit(2)) {
+  if (has_version()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(3, this->version(), target);
   }
   
@@ -2918,10 +2909,10 @@ void Configuration::MergeFrom(const Configuration& from) {
   GOOGLE_CHECK_NE(&from, this);
   parameter_.MergeFrom(from.parameter_);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_uuid()) {
       set_uuid(from.uuid());
     }
-    if (from._has_bit(2)) {
+    if (from.has_version()) {
       set_version(from.version());
     }
   }
@@ -2971,7 +2962,6 @@ void Configuration::Swap(Configuration* other) {
 
 // ===================================================================
 
-const ::std::string addressMappingGetRequest::_default_uuid_;
 #ifndef _MSC_VER
 const int addressMappingGetRequest::kUuidFieldNumber;
 #endif  // !_MSC_VER
@@ -2992,7 +2982,7 @@ addressMappingGetRequest::addressMappingGetRequest(const addressMappingGetReques
 
 void addressMappingGetRequest::SharedCtor() {
   _cached_size_ = 0;
-  uuid_ = const_cast< ::std::string*>(&_default_uuid_);
+  uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -3001,7 +2991,7 @@ addressMappingGetRequest::~addressMappingGetRequest() {
 }
 
 void addressMappingGetRequest::SharedDtor() {
-  if (uuid_ != &_default_uuid_) {
+  if (uuid_ != &::google::protobuf::internal::kEmptyString) {
     delete uuid_;
   }
   if (this != default_instance_) {
@@ -3030,8 +3020,8 @@ addressMappingGetRequest* addressMappingGetRequest::New() const {
 
 void addressMappingGetRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (uuid_ != &_default_uuid_) {
+    if (has_uuid()) {
+      if (uuid_ != &::google::protobuf::internal::kEmptyString) {
         uuid_->clear();
       }
     }
@@ -3081,7 +3071,7 @@ bool addressMappingGetRequest::MergePartialFromCodedStream(
 void addressMappingGetRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string uuid = 1;
-  if (_has_bit(0)) {
+  if (has_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->uuid().data(), this->uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3098,7 +3088,7 @@ void addressMappingGetRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* addressMappingGetRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string uuid = 1;
-  if (_has_bit(0)) {
+  if (has_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->uuid().data(), this->uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3152,7 +3142,7 @@ void addressMappingGetRequest::MergeFrom(const ::google::protobuf::Message& from
 void addressMappingGetRequest::MergeFrom(const addressMappingGetRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_uuid()) {
       set_uuid(from.uuid());
     }
   }
@@ -3254,7 +3244,7 @@ addressMappingGetResponse* addressMappingGetResponse::New() const {
 
 void addressMappingGetResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
+    if (has_result()) {
       if (result_ != NULL) result_->::xtreemfs::pbrpc::AddressMappingSet::Clear();
     }
   }
@@ -3300,7 +3290,7 @@ bool addressMappingGetResponse::MergePartialFromCodedStream(
 void addressMappingGetResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // optional .xtreemfs.pbrpc.AddressMappingSet result = 1;
-  if (_has_bit(0)) {
+  if (has_result()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       1, this->result(), output);
   }
@@ -3314,7 +3304,7 @@ void addressMappingGetResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* addressMappingGetResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // optional .xtreemfs.pbrpc.AddressMappingSet result = 1;
-  if (_has_bit(0)) {
+  if (has_result()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         1, this->result(), target);
@@ -3365,7 +3355,7 @@ void addressMappingGetResponse::MergeFrom(const ::google::protobuf::Message& fro
 void addressMappingGetResponse::MergeFrom(const addressMappingGetResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_result()) {
       mutable_result()->::xtreemfs::pbrpc::AddressMappingSet::MergeFrom(from.result());
     }
   }
@@ -3486,7 +3476,7 @@ bool addressMappingSetResponse::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &new_version_)));
-          _set_bit(0);
+          set_has_new_version();
         } else {
           goto handle_uninterpreted;
         }
@@ -3513,7 +3503,7 @@ bool addressMappingSetResponse::MergePartialFromCodedStream(
 void addressMappingSetResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // optional fixed64 new_version = 1;
-  if (_has_bit(0)) {
+  if (has_new_version()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(1, this->new_version(), output);
   }
   
@@ -3526,7 +3516,7 @@ void addressMappingSetResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* addressMappingSetResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // optional fixed64 new_version = 1;
-  if (_has_bit(0)) {
+  if (has_new_version()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(1, this->new_version(), target);
   }
   
@@ -3573,7 +3563,7 @@ void addressMappingSetResponse::MergeFrom(const ::google::protobuf::Message& fro
 void addressMappingSetResponse::MergeFrom(const addressMappingSetResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_new_version()) {
       set_new_version(from.new_version());
     }
   }
@@ -3691,7 +3681,7 @@ bool globalTimeSGetResponse::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &time_in_seconds_)));
-          _set_bit(0);
+          set_has_time_in_seconds();
         } else {
           goto handle_uninterpreted;
         }
@@ -3718,7 +3708,7 @@ bool globalTimeSGetResponse::MergePartialFromCodedStream(
 void globalTimeSGetResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required fixed64 time_in_seconds = 1;
-  if (_has_bit(0)) {
+  if (has_time_in_seconds()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(1, this->time_in_seconds(), output);
   }
   
@@ -3731,7 +3721,7 @@ void globalTimeSGetResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* globalTimeSGetResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required fixed64 time_in_seconds = 1;
-  if (_has_bit(0)) {
+  if (has_time_in_seconds()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(1, this->time_in_seconds(), target);
   }
   
@@ -3778,7 +3768,7 @@ void globalTimeSGetResponse::MergeFrom(const ::google::protobuf::Message& from) 
 void globalTimeSGetResponse::MergeFrom(const globalTimeSGetResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_time_in_seconds()) {
       set_time_in_seconds(from.time_in_seconds());
     }
   }
@@ -3823,7 +3813,6 @@ void globalTimeSGetResponse::Swap(globalTimeSGetResponse* other) {
 
 // ===================================================================
 
-const ::std::string serviceDeregisterRequest::_default_uuid_;
 #ifndef _MSC_VER
 const int serviceDeregisterRequest::kUuidFieldNumber;
 #endif  // !_MSC_VER
@@ -3844,7 +3833,7 @@ serviceDeregisterRequest::serviceDeregisterRequest(const serviceDeregisterReques
 
 void serviceDeregisterRequest::SharedCtor() {
   _cached_size_ = 0;
-  uuid_ = const_cast< ::std::string*>(&_default_uuid_);
+  uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -3853,7 +3842,7 @@ serviceDeregisterRequest::~serviceDeregisterRequest() {
 }
 
 void serviceDeregisterRequest::SharedDtor() {
-  if (uuid_ != &_default_uuid_) {
+  if (uuid_ != &::google::protobuf::internal::kEmptyString) {
     delete uuid_;
   }
   if (this != default_instance_) {
@@ -3882,8 +3871,8 @@ serviceDeregisterRequest* serviceDeregisterRequest::New() const {
 
 void serviceDeregisterRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (uuid_ != &_default_uuid_) {
+    if (has_uuid()) {
+      if (uuid_ != &::google::protobuf::internal::kEmptyString) {
         uuid_->clear();
       }
     }
@@ -3933,7 +3922,7 @@ bool serviceDeregisterRequest::MergePartialFromCodedStream(
 void serviceDeregisterRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string uuid = 1;
-  if (_has_bit(0)) {
+  if (has_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->uuid().data(), this->uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3950,7 +3939,7 @@ void serviceDeregisterRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* serviceDeregisterRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string uuid = 1;
-  if (_has_bit(0)) {
+  if (has_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->uuid().data(), this->uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -4004,7 +3993,7 @@ void serviceDeregisterRequest::MergeFrom(const ::google::protobuf::Message& from
 void serviceDeregisterRequest::MergeFrom(const serviceDeregisterRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_uuid()) {
       set_uuid(from.uuid());
     }
   }
@@ -4049,7 +4038,6 @@ void serviceDeregisterRequest::Swap(serviceDeregisterRequest* other) {
 
 // ===================================================================
 
-const ::std::string serviceGetByNameRequest::_default_name_;
 #ifndef _MSC_VER
 const int serviceGetByNameRequest::kNameFieldNumber;
 #endif  // !_MSC_VER
@@ -4070,7 +4058,7 @@ serviceGetByNameRequest::serviceGetByNameRequest(const serviceGetByNameRequest& 
 
 void serviceGetByNameRequest::SharedCtor() {
   _cached_size_ = 0;
-  name_ = const_cast< ::std::string*>(&_default_name_);
+  name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -4079,7 +4067,7 @@ serviceGetByNameRequest::~serviceGetByNameRequest() {
 }
 
 void serviceGetByNameRequest::SharedDtor() {
-  if (name_ != &_default_name_) {
+  if (name_ != &::google::protobuf::internal::kEmptyString) {
     delete name_;
   }
   if (this != default_instance_) {
@@ -4108,8 +4096,8 @@ serviceGetByNameRequest* serviceGetByNameRequest::New() const {
 
 void serviceGetByNameRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (name_ != &_default_name_) {
+    if (has_name()) {
+      if (name_ != &::google::protobuf::internal::kEmptyString) {
         name_->clear();
       }
     }
@@ -4159,7 +4147,7 @@ bool serviceGetByNameRequest::MergePartialFromCodedStream(
 void serviceGetByNameRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string name = 1;
-  if (_has_bit(0)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -4176,7 +4164,7 @@ void serviceGetByNameRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* serviceGetByNameRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string name = 1;
-  if (_has_bit(0)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -4230,7 +4218,7 @@ void serviceGetByNameRequest::MergeFrom(const ::google::protobuf::Message& from)
 void serviceGetByNameRequest::MergeFrom(const serviceGetByNameRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_name()) {
       set_name(from.name());
     }
   }
@@ -4275,7 +4263,6 @@ void serviceGetByNameRequest::Swap(serviceGetByNameRequest* other) {
 
 // ===================================================================
 
-const ::std::string serviceGetByUUIDRequest::_default_name_;
 #ifndef _MSC_VER
 const int serviceGetByUUIDRequest::kNameFieldNumber;
 #endif  // !_MSC_VER
@@ -4296,7 +4283,7 @@ serviceGetByUUIDRequest::serviceGetByUUIDRequest(const serviceGetByUUIDRequest& 
 
 void serviceGetByUUIDRequest::SharedCtor() {
   _cached_size_ = 0;
-  name_ = const_cast< ::std::string*>(&_default_name_);
+  name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -4305,7 +4292,7 @@ serviceGetByUUIDRequest::~serviceGetByUUIDRequest() {
 }
 
 void serviceGetByUUIDRequest::SharedDtor() {
-  if (name_ != &_default_name_) {
+  if (name_ != &::google::protobuf::internal::kEmptyString) {
     delete name_;
   }
   if (this != default_instance_) {
@@ -4334,8 +4321,8 @@ serviceGetByUUIDRequest* serviceGetByUUIDRequest::New() const {
 
 void serviceGetByUUIDRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (name_ != &_default_name_) {
+    if (has_name()) {
+      if (name_ != &::google::protobuf::internal::kEmptyString) {
         name_->clear();
       }
     }
@@ -4385,7 +4372,7 @@ bool serviceGetByUUIDRequest::MergePartialFromCodedStream(
 void serviceGetByUUIDRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string name = 1;
-  if (_has_bit(0)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -4402,7 +4389,7 @@ void serviceGetByUUIDRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* serviceGetByUUIDRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string name = 1;
-  if (_has_bit(0)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -4456,7 +4443,7 @@ void serviceGetByUUIDRequest::MergeFrom(const ::google::protobuf::Message& from)
 void serviceGetByUUIDRequest::MergeFrom(const serviceGetByUUIDRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_name()) {
       set_name(from.name());
     }
   }
@@ -4607,7 +4594,7 @@ bool serviceGetByTypeRequest::MergePartialFromCodedStream(
 void serviceGetByTypeRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required .xtreemfs.pbrpc.ServiceType type = 1;
-  if (_has_bit(0)) {
+  if (has_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       1, this->type(), output);
   }
@@ -4621,7 +4608,7 @@ void serviceGetByTypeRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* serviceGetByTypeRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required .xtreemfs.pbrpc.ServiceType type = 1;
-  if (_has_bit(0)) {
+  if (has_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       1, this->type(), target);
   }
@@ -4670,7 +4657,7 @@ void serviceGetByTypeRequest::MergeFrom(const ::google::protobuf::Message& from)
 void serviceGetByTypeRequest::MergeFrom(const serviceGetByTypeRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_type()) {
       set_type(from.type());
     }
   }
@@ -4772,7 +4759,7 @@ serviceRegisterRequest* serviceRegisterRequest::New() const {
 
 void serviceRegisterRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
+    if (has_service()) {
       if (service_ != NULL) service_->::xtreemfs::pbrpc::Service::Clear();
     }
   }
@@ -4818,7 +4805,7 @@ bool serviceRegisterRequest::MergePartialFromCodedStream(
 void serviceRegisterRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required .xtreemfs.pbrpc.Service service = 1;
-  if (_has_bit(0)) {
+  if (has_service()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       1, this->service(), output);
   }
@@ -4832,7 +4819,7 @@ void serviceRegisterRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* serviceRegisterRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required .xtreemfs.pbrpc.Service service = 1;
-  if (_has_bit(0)) {
+  if (has_service()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         1, this->service(), target);
@@ -4883,7 +4870,7 @@ void serviceRegisterRequest::MergeFrom(const ::google::protobuf::Message& from) 
 void serviceRegisterRequest::MergeFrom(const serviceRegisterRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_service()) {
       mutable_service()->::xtreemfs::pbrpc::Service::MergeFrom(from.service());
     }
   }
@@ -5005,7 +4992,7 @@ bool serviceRegisterResponse::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &new_version_)));
-          _set_bit(0);
+          set_has_new_version();
         } else {
           goto handle_uninterpreted;
         }
@@ -5032,7 +5019,7 @@ bool serviceRegisterResponse::MergePartialFromCodedStream(
 void serviceRegisterResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required fixed64 new_version = 1;
-  if (_has_bit(0)) {
+  if (has_new_version()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(1, this->new_version(), output);
   }
   
@@ -5045,7 +5032,7 @@ void serviceRegisterResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* serviceRegisterResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required fixed64 new_version = 1;
-  if (_has_bit(0)) {
+  if (has_new_version()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(1, this->new_version(), target);
   }
   
@@ -5092,7 +5079,7 @@ void serviceRegisterResponse::MergeFrom(const ::google::protobuf::Message& from)
 void serviceRegisterResponse::MergeFrom(const serviceRegisterResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_new_version()) {
       set_new_version(from.new_version());
     }
   }
@@ -5137,7 +5124,6 @@ void serviceRegisterResponse::Swap(serviceRegisterResponse* other) {
 
 // ===================================================================
 
-const ::std::string configurationGetRequest::_default_uuid_;
 #ifndef _MSC_VER
 const int configurationGetRequest::kUuidFieldNumber;
 #endif  // !_MSC_VER
@@ -5158,7 +5144,7 @@ configurationGetRequest::configurationGetRequest(const configurationGetRequest& 
 
 void configurationGetRequest::SharedCtor() {
   _cached_size_ = 0;
-  uuid_ = const_cast< ::std::string*>(&_default_uuid_);
+  uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -5167,7 +5153,7 @@ configurationGetRequest::~configurationGetRequest() {
 }
 
 void configurationGetRequest::SharedDtor() {
-  if (uuid_ != &_default_uuid_) {
+  if (uuid_ != &::google::protobuf::internal::kEmptyString) {
     delete uuid_;
   }
   if (this != default_instance_) {
@@ -5196,8 +5182,8 @@ configurationGetRequest* configurationGetRequest::New() const {
 
 void configurationGetRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (uuid_ != &_default_uuid_) {
+    if (has_uuid()) {
+      if (uuid_ != &::google::protobuf::internal::kEmptyString) {
         uuid_->clear();
       }
     }
@@ -5247,7 +5233,7 @@ bool configurationGetRequest::MergePartialFromCodedStream(
 void configurationGetRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string uuid = 1;
-  if (_has_bit(0)) {
+  if (has_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->uuid().data(), this->uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -5264,7 +5250,7 @@ void configurationGetRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* configurationGetRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string uuid = 1;
-  if (_has_bit(0)) {
+  if (has_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->uuid().data(), this->uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -5318,7 +5304,7 @@ void configurationGetRequest::MergeFrom(const ::google::protobuf::Message& from)
 void configurationGetRequest::MergeFrom(const configurationGetRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_uuid()) {
       set_uuid(from.uuid());
     }
   }
@@ -5437,7 +5423,7 @@ bool configurationSetResponse::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &new_version_)));
-          _set_bit(0);
+          set_has_new_version();
         } else {
           goto handle_uninterpreted;
         }
@@ -5464,7 +5450,7 @@ bool configurationSetResponse::MergePartialFromCodedStream(
 void configurationSetResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // optional fixed64 new_version = 1;
-  if (_has_bit(0)) {
+  if (has_new_version()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(1, this->new_version(), output);
   }
   
@@ -5477,7 +5463,7 @@ void configurationSetResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* configurationSetResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // optional fixed64 new_version = 1;
-  if (_has_bit(0)) {
+  if (has_new_version()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(1, this->new_version(), target);
   }
   
@@ -5524,7 +5510,7 @@ void configurationSetResponse::MergeFrom(const ::google::protobuf::Message& from
 void configurationSetResponse::MergeFrom(const configurationSetResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_new_version()) {
       set_new_version(from.new_version());
     }
   }
@@ -5565,440 +5551,6 @@ void configurationSetResponse::Swap(configurationSetResponse* other) {
   return metadata;
 }
 
-
-// ===================================================================
-
-DIRService::~DIRService() {}
-
-const ::google::protobuf::ServiceDescriptor* DIRService::descriptor() {
-  protobuf_AssignDescriptorsOnce();
-  return DIRService_descriptor_;
-}
-
-const ::google::protobuf::ServiceDescriptor* DIRService::GetDescriptor() {
-  protobuf_AssignDescriptorsOnce();
-  return DIRService_descriptor_;
-}
-
-void DIRService::xtreemfs_address_mappings_get(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::addressMappingGetRequest*,
-                         ::xtreemfs::pbrpc::AddressMappingSet*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_address_mappings_get() not implemented.");
-  done->Run();
-}
-
-void DIRService::xtreemfs_address_mappings_remove(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::addressMappingGetRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_address_mappings_remove() not implemented.");
-  done->Run();
-}
-
-void DIRService::xtreemfs_address_mappings_set(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::AddressMappingSet*,
-                         ::xtreemfs::pbrpc::addressMappingSetResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_address_mappings_set() not implemented.");
-  done->Run();
-}
-
-void DIRService::xtreemfs_discover_dir(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::emptyRequest*,
-                         ::xtreemfs::pbrpc::DirService*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_discover_dir() not implemented.");
-  done->Run();
-}
-
-void DIRService::xtreemfs_global_time_s_get(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::emptyRequest*,
-                         ::xtreemfs::pbrpc::globalTimeSGetResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_global_time_s_get() not implemented.");
-  done->Run();
-}
-
-void DIRService::xtreemfs_service_deregister(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::serviceDeregisterRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_service_deregister() not implemented.");
-  done->Run();
-}
-
-void DIRService::xtreemfs_service_get_by_name(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::serviceGetByNameRequest*,
-                         ::xtreemfs::pbrpc::ServiceSet*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_service_get_by_name() not implemented.");
-  done->Run();
-}
-
-void DIRService::xtreemfs_service_get_by_type(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::serviceGetByTypeRequest*,
-                         ::xtreemfs::pbrpc::ServiceSet*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_service_get_by_type() not implemented.");
-  done->Run();
-}
-
-void DIRService::xtreemfs_service_get_by_uuid(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::serviceGetByUUIDRequest*,
-                         ::xtreemfs::pbrpc::ServiceSet*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_service_get_by_uuid() not implemented.");
-  done->Run();
-}
-
-void DIRService::xtreemfs_service_offline(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::serviceGetByUUIDRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_service_offline() not implemented.");
-  done->Run();
-}
-
-void DIRService::xtreemfs_service_register(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::serviceRegisterRequest*,
-                         ::xtreemfs::pbrpc::serviceRegisterResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_service_register() not implemented.");
-  done->Run();
-}
-
-void DIRService::xtreemfs_checkpoint(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::emptyRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_checkpoint() not implemented.");
-  done->Run();
-}
-
-void DIRService::xtreemfs_shutdown(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::emptyRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_shutdown() not implemented.");
-  done->Run();
-}
-
-void DIRService::xtreemfs_configuration_get(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::configurationGetRequest*,
-                         ::xtreemfs::pbrpc::Configuration*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_configuration_get() not implemented.");
-  done->Run();
-}
-
-void DIRService::xtreemfs_configuration_set(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::Configuration*,
-                         ::xtreemfs::pbrpc::configurationSetResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_configuration_set() not implemented.");
-  done->Run();
-}
-
-void DIRService::CallMethod(const ::google::protobuf::MethodDescriptor* method,
-                             ::google::protobuf::RpcController* controller,
-                             const ::google::protobuf::Message* request,
-                             ::google::protobuf::Message* response,
-                             ::google::protobuf::Closure* done) {
-  GOOGLE_DCHECK_EQ(method->service(), DIRService_descriptor_);
-  switch(method->index()) {
-    case 0:
-      xtreemfs_address_mappings_get(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::addressMappingGetRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::AddressMappingSet*>(response),
-             done);
-      break;
-    case 1:
-      xtreemfs_address_mappings_remove(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::addressMappingGetRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 2:
-      xtreemfs_address_mappings_set(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::AddressMappingSet*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::addressMappingSetResponse*>(response),
-             done);
-      break;
-    case 3:
-      xtreemfs_discover_dir(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::emptyRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::DirService*>(response),
-             done);
-      break;
-    case 4:
-      xtreemfs_global_time_s_get(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::emptyRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::globalTimeSGetResponse*>(response),
-             done);
-      break;
-    case 5:
-      xtreemfs_service_deregister(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::serviceDeregisterRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 6:
-      xtreemfs_service_get_by_name(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::serviceGetByNameRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::ServiceSet*>(response),
-             done);
-      break;
-    case 7:
-      xtreemfs_service_get_by_type(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::serviceGetByTypeRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::ServiceSet*>(response),
-             done);
-      break;
-    case 8:
-      xtreemfs_service_get_by_uuid(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::serviceGetByUUIDRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::ServiceSet*>(response),
-             done);
-      break;
-    case 9:
-      xtreemfs_service_offline(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::serviceGetByUUIDRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 10:
-      xtreemfs_service_register(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::serviceRegisterRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::serviceRegisterResponse*>(response),
-             done);
-      break;
-    case 11:
-      xtreemfs_checkpoint(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::emptyRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 12:
-      xtreemfs_shutdown(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::emptyRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 13:
-      xtreemfs_configuration_get(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::configurationGetRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::Configuration*>(response),
-             done);
-      break;
-    case 14:
-      xtreemfs_configuration_set(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::Configuration*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::configurationSetResponse*>(response),
-             done);
-      break;
-    default:
-      GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
-      break;
-  }
-}
-
-const ::google::protobuf::Message& DIRService::GetRequestPrototype(
-    const ::google::protobuf::MethodDescriptor* method) const {
-  GOOGLE_DCHECK_EQ(method->service(), descriptor());
-  switch(method->index()) {
-    case 0:
-      return ::xtreemfs::pbrpc::addressMappingGetRequest::default_instance();
-    case 1:
-      return ::xtreemfs::pbrpc::addressMappingGetRequest::default_instance();
-    case 2:
-      return ::xtreemfs::pbrpc::AddressMappingSet::default_instance();
-    case 3:
-      return ::xtreemfs::pbrpc::emptyRequest::default_instance();
-    case 4:
-      return ::xtreemfs::pbrpc::emptyRequest::default_instance();
-    case 5:
-      return ::xtreemfs::pbrpc::serviceDeregisterRequest::default_instance();
-    case 6:
-      return ::xtreemfs::pbrpc::serviceGetByNameRequest::default_instance();
-    case 7:
-      return ::xtreemfs::pbrpc::serviceGetByTypeRequest::default_instance();
-    case 8:
-      return ::xtreemfs::pbrpc::serviceGetByUUIDRequest::default_instance();
-    case 9:
-      return ::xtreemfs::pbrpc::serviceGetByUUIDRequest::default_instance();
-    case 10:
-      return ::xtreemfs::pbrpc::serviceRegisterRequest::default_instance();
-    case 11:
-      return ::xtreemfs::pbrpc::emptyRequest::default_instance();
-    case 12:
-      return ::xtreemfs::pbrpc::emptyRequest::default_instance();
-    case 13:
-      return ::xtreemfs::pbrpc::configurationGetRequest::default_instance();
-    case 14:
-      return ::xtreemfs::pbrpc::Configuration::default_instance();
-    default:
-      GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
-      return *reinterpret_cast< ::google::protobuf::Message*>(NULL);
-  }
-}
-
-const ::google::protobuf::Message& DIRService::GetResponsePrototype(
-    const ::google::protobuf::MethodDescriptor* method) const {
-  GOOGLE_DCHECK_EQ(method->service(), descriptor());
-  switch(method->index()) {
-    case 0:
-      return ::xtreemfs::pbrpc::AddressMappingSet::default_instance();
-    case 1:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 2:
-      return ::xtreemfs::pbrpc::addressMappingSetResponse::default_instance();
-    case 3:
-      return ::xtreemfs::pbrpc::DirService::default_instance();
-    case 4:
-      return ::xtreemfs::pbrpc::globalTimeSGetResponse::default_instance();
-    case 5:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 6:
-      return ::xtreemfs::pbrpc::ServiceSet::default_instance();
-    case 7:
-      return ::xtreemfs::pbrpc::ServiceSet::default_instance();
-    case 8:
-      return ::xtreemfs::pbrpc::ServiceSet::default_instance();
-    case 9:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 10:
-      return ::xtreemfs::pbrpc::serviceRegisterResponse::default_instance();
-    case 11:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 12:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 13:
-      return ::xtreemfs::pbrpc::Configuration::default_instance();
-    case 14:
-      return ::xtreemfs::pbrpc::configurationSetResponse::default_instance();
-    default:
-      GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
-      return *reinterpret_cast< ::google::protobuf::Message*>(NULL);
-  }
-}
-
-DIRService_Stub::DIRService_Stub(::google::protobuf::RpcChannel* channel)
-  : channel_(channel), owns_channel_(false) {}
-DIRService_Stub::DIRService_Stub(
-    ::google::protobuf::RpcChannel* channel,
-    ::google::protobuf::Service::ChannelOwnership ownership)
-  : channel_(channel),
-    owns_channel_(ownership == ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
-DIRService_Stub::~DIRService_Stub() {
-  if (owns_channel_) delete channel_;
-}
-
-void DIRService_Stub::xtreemfs_address_mappings_get(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::addressMappingGetRequest* request,
-                              ::xtreemfs::pbrpc::AddressMappingSet* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(0),
-                       controller, request, response, done);
-}
-void DIRService_Stub::xtreemfs_address_mappings_remove(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::addressMappingGetRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(1),
-                       controller, request, response, done);
-}
-void DIRService_Stub::xtreemfs_address_mappings_set(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::AddressMappingSet* request,
-                              ::xtreemfs::pbrpc::addressMappingSetResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(2),
-                       controller, request, response, done);
-}
-void DIRService_Stub::xtreemfs_discover_dir(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::emptyRequest* request,
-                              ::xtreemfs::pbrpc::DirService* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(3),
-                       controller, request, response, done);
-}
-void DIRService_Stub::xtreemfs_global_time_s_get(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::emptyRequest* request,
-                              ::xtreemfs::pbrpc::globalTimeSGetResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(4),
-                       controller, request, response, done);
-}
-void DIRService_Stub::xtreemfs_service_deregister(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::serviceDeregisterRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(5),
-                       controller, request, response, done);
-}
-void DIRService_Stub::xtreemfs_service_get_by_name(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::serviceGetByNameRequest* request,
-                              ::xtreemfs::pbrpc::ServiceSet* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(6),
-                       controller, request, response, done);
-}
-void DIRService_Stub::xtreemfs_service_get_by_type(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::serviceGetByTypeRequest* request,
-                              ::xtreemfs::pbrpc::ServiceSet* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(7),
-                       controller, request, response, done);
-}
-void DIRService_Stub::xtreemfs_service_get_by_uuid(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::serviceGetByUUIDRequest* request,
-                              ::xtreemfs::pbrpc::ServiceSet* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(8),
-                       controller, request, response, done);
-}
-void DIRService_Stub::xtreemfs_service_offline(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::serviceGetByUUIDRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(9),
-                       controller, request, response, done);
-}
-void DIRService_Stub::xtreemfs_service_register(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::serviceRegisterRequest* request,
-                              ::xtreemfs::pbrpc::serviceRegisterResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(10),
-                       controller, request, response, done);
-}
-void DIRService_Stub::xtreemfs_checkpoint(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::emptyRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(11),
-                       controller, request, response, done);
-}
-void DIRService_Stub::xtreemfs_shutdown(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::emptyRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(12),
-                       controller, request, response, done);
-}
-void DIRService_Stub::xtreemfs_configuration_get(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::configurationGetRequest* request,
-                              ::xtreemfs::pbrpc::Configuration* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(13),
-                       controller, request, response, done);
-}
-void DIRService_Stub::xtreemfs_configuration_set(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::Configuration* request,
-                              ::xtreemfs::pbrpc::configurationSetResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(14),
-                       controller, request, response, done);
-}
 
 // @@protoc_insertion_point(namespace_scope)
 

@@ -7,18 +7,20 @@
 package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
+
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -26,6 +28,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SERVICES;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
@@ -239,9 +242,8 @@ public class VolumeImplementation extends Volume {
     public void close() {
         internalShutdown();
 
-        
         client.closeVolume(this);
-        
+
     }
 
     /*
@@ -253,28 +255,18 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public StatVFS statFS(UserCredentials userCredentials) throws IOException {
-
         statvfsRequest request = statvfsRequest.newBuilder().setKnownEtag(0).setVolumeName(volumeName)
                 .build();
 
-        StatVFS stat = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("statvfs", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, statvfsRequest.class });
-
-            stat = RPCCaller.<MRCServiceClient, statvfsRequest, StatVFS> makeCall(mrcServiceClient, m,
-                    userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-
-            throw new IOException(e);
-        }
+        StatVFS stat = RPCCaller.<statvfsRequest, StatVFS> syncCall(SERVICES.MRC, userCredentials, authBogus,
+                volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<statvfsRequest, StatVFS>() {
+                    @Override
+                    public RPCResponse<StatVFS> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, statvfsRequest input) throws IOException {
+                        return mrcServiceClient.statvfs(server, authHeader, userCreds, input);
+                    }
+                });
         return stat;
     }
 
@@ -287,27 +279,19 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public String readLink(UserCredentials userCredentials, String path) throws IOException {
-
         readlinkRequest request = readlinkRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .build();
-        readlinkResponse response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("readlink", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, readlinkRequest.class });
 
-            RPCCaller.<MRCServiceClient, readlinkRequest, readlinkResponse> makeCall(mrcServiceClient, m,
-                    userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
-
+        readlinkResponse response = RPCCaller.<readlinkRequest, readlinkResponse> syncCall(SERVICES.MRC,
+                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<readlinkRequest, readlinkResponse>() {
+                    @Override
+                    public RPCResponse<readlinkResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, readlinkRequest input)
+                            throws IOException {
+                        return mrcServiceClient.readlink(server, authHeader, userCreds, input);
+                    }
+                });
         // The XtreemFS MRC always returns one resolved target or throws an EINVAL.
         assert (response != null && response.getLinkTargetPathCount() == 1);
 
@@ -324,26 +308,19 @@ public class VolumeImplementation extends Volume {
     @Override
     public void symlink(UserCredentials userCredentials, String targetPath, String linkPath)
             throws IOException {
-
         symlinkRequest request = symlinkRequest.newBuilder().setLinkPath(linkPath).setTargetPath(targetPath)
                 .setVolumeName(volumeName).build();
-        timestampResponse response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("", new Class<?>[] { InetSocketAddress.class,
-                    Auth.class, UserCredentials.class, symlinkRequest.class });
 
-            response = RPCCaller.<MRCServiceClient, symlinkRequest, timestampResponse> makeCall(
-                    mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
+        timestampResponse response = RPCCaller.<symlinkRequest, timestampResponse> syncCall(SERVICES.MRC,
+                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<symlinkRequest, timestampResponse>() {
+                    @Override
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, symlinkRequest input)
+                            throws IOException {
+                        return mrcServiceClient.symlink(server, authHeader, userCreds, input);
+                    }
+                });
 
         assert (response != null);
 
@@ -363,27 +340,19 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public void link(UserCredentials userCredentials, String targetPath, String linkPath) throws IOException {
-
         linkRequest request = linkRequest.newBuilder().setLinkPath(linkPath).setTargetPath(targetPath)
                 .setVolumeName(volumeName).build();
 
-        timestampResponse response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("link", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, linkRequest.class });
-
-            response = RPCCaller.<MRCServiceClient, linkRequest, timestampResponse> makeCall(
-                    mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
+        timestampResponse response = RPCCaller.<linkRequest, timestampResponse> syncCall(SERVICES.MRC,
+                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<linkRequest, timestampResponse>() {
+                    @Override
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, linkRequest input) throws IOException {
+                        return mrcServiceClient.link(server, authHeader, userCreds, input);
+                    }
+                });
+        ;
 
         assert (response != null);
 
@@ -413,24 +382,16 @@ public class VolumeImplementation extends Volume {
         accessRequest request = accessRequest.newBuilder().setFlags(flags).setPath(path)
                 .setVolumeName(volumeName).build();
 
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("access", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, accessRequest.class });
-
-            RPCCaller.<MRCServiceClient, accessRequest, emptyResponse> makeCall(mrcServiceClient, m,
-                    userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-            // TODO: Find out when to throw a PosixErrorExcpetion.
-        }
-
+        RPCCaller.<accessRequest, emptyResponse> syncCall(SERVICES.MRC, userCredentials, authBogus,
+                volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<accessRequest, emptyResponse>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, accessRequest input) throws IOException {
+                        return mrcServiceClient.access(server, authHeader, userCreds, input);
+                    }
+                });
     }
 
     /*
@@ -486,24 +447,15 @@ public class VolumeImplementation extends Volume {
         openRequest request = openRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setFlags(flags).setMode(mode).setAttributes(0).build();
 
-        openResponse response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("open", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, openRequest.class });
-
-            response = RPCCaller.<MRCServiceClient, openRequest, openResponse> makeCall(mrcServiceClient, m,
-                    userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-            // TODO: Find out when to throw a PosixErrorExcpetion.
-        }
+        openResponse response = RPCCaller.<openRequest, openResponse> syncCall(SERVICES.MRC, userCredentials,
+                authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<openRequest, openResponse>() {
+                    @Override
+                    public RPCResponse<openResponse> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, openRequest input) throws IOException {
+                        return mrcServiceClient.open(server, authHeader, userCreds, input);
+                    }
+                });
 
         assert (response != null);
 
@@ -530,7 +482,6 @@ public class VolumeImplementation extends Volume {
         // st_mtime fields of the file and the st_ctime and st_mtime fields of
         // the parent directory.
         if ((flags & SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()) > 0) {
-            // TODO: Do this stuff if metadatacache is implemented.
             String parentDir = Helper.resolveParentDirectory(path);
             metadataCache.updateStatTime(path, response.getTimestampS(), Setattrs.SETATTR_CTIME.getNumber()
                     | Setattrs.SETATTR_MTIME.getNumber());
@@ -620,23 +571,16 @@ public class VolumeImplementation extends Volume {
             getattrRequest request = getattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                     .setKnownEtag(0).build();
 
-            getattrResponse response = null;
-            try {
-                Method m = MRCServiceClient.class.getDeclaredMethod("getattr", new Class<?>[] {
-                        InetSocketAddress.class, Auth.class, UserCredentials.class, getattrRequest.class });
-
-                response = RPCCaller.<MRCServiceClient, getattrRequest, getattrResponse> makeCall(
-                        mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator,
-                        uuidResolver, volumeOptions.getMaxTries(), volumeOptions, false);
-            } catch (NoSuchMethodException nsm) {
-                // should never happen unless there is a programming error
-                nsm.printStackTrace();
-            } catch (SecurityException se) {
-                // should never happen unless there is a programming error
-                se.printStackTrace();
-            } catch (Exception e) {
-                throw new IOException(e);
-            }
+            getattrResponse response = RPCCaller.<getattrRequest, getattrResponse> syncCall(SERVICES.MRC,
+                    userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                    new CallGenerator<getattrRequest, getattrResponse>() {
+                        @Override
+                        public RPCResponse<getattrResponse> executeCall(InetSocketAddress server,
+                                Auth authHeader, UserCredentials userCreds, getattrRequest input)
+                                throws IOException {
+                            return mrcServiceClient.getattr(server, authHeader, userCreds, input);
+                        }
+                    });
 
             assert (response != null);
 
@@ -647,7 +591,6 @@ public class VolumeImplementation extends Volume {
                 metadataCache.updateStat(path, stat);
             }
         }
-
         return stat;
     }
 
@@ -662,27 +605,19 @@ public class VolumeImplementation extends Volume {
     @Override
     public void setAttr(UserCredentials userCredentials, String path, Stat stat, int toSet)
             throws IOException {
-
         setattrRequest request = setattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setStbuf(stat).setToSet(toSet).build();
 
-        timestampResponse response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("setattr", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, setattrRequest.class });
-
-            response = RPCCaller.<MRCServiceClient, setattrRequest, timestampResponse> makeCall(
-                    mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
+        timestampResponse response = RPCCaller.<setattrRequest, timestampResponse> syncCall(SERVICES.MRC,
+                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<setattrRequest, timestampResponse>() {
+                    @Override
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, setattrRequest input)
+                            throws IOException {
+                        return mrcServiceClient.setattr(server, authHeader, userCreds, input);
+                    }
+                });
 
         assert (response != null);
 
@@ -692,7 +627,7 @@ public class VolumeImplementation extends Volume {
                 || ((toSet & Setattrs.SETATTR_GID.getNumber()) > 0)) {
 
             toSet = (toSet | Setattrs.SETATTR_CTIME.getNumber());
-            stat = stat.toBuilder().setAtimeNs(response.getTimestampS() * 1000000000).build();
+            stat = stat.toBuilder().setAtimeNs(1000000000L * response.getTimestampS()).build();
         }
 
         // Do not cache hardlinks or chmod operations which try to set the SGID bit
@@ -714,28 +649,18 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public void unlink(UserCredentials userCredentials, String path) throws IOException {
-
         // 1. Delete file at MRC.
         unlinkRequest request = unlinkRequest.newBuilder().setPath(path).setVolumeName(volumeName).build();
 
-        unlinkResponse response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("unlink", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, unlinkRequest.class });
-
-            response = RPCCaller.<MRCServiceClient, unlinkRequest, unlinkResponse> makeCall(mrcServiceClient,
-                    m, userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-            // TODO: Find out when to throw a PosixErrorExcpetion.
-        }
+        unlinkResponse response = RPCCaller.<unlinkRequest, unlinkResponse> syncCall(SERVICES.MRC,
+                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<unlinkRequest, unlinkResponse>() {
+                    @Override
+                    public RPCResponse<unlinkResponse> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, unlinkRequest input) throws IOException {
+                        return mrcServiceClient.unlink(server, authHeader, userCreds, input);
+                    }
+                });
 
         assert (response != null);
 
@@ -753,36 +678,26 @@ public class VolumeImplementation extends Volume {
     }
 
     private void unlinkAtOsd(FileCredentials fc, String path) throws IOException {
-
-        XLocSet xlocs = fc.getXlocs();
-
         unlink_osd_Request request = unlink_osd_Request.newBuilder().setFileCredentials(fc)
                 .setFileId(fc.getXcap().getFileId()).build();
 
         UUIDIterator osdUuidIterator = new UUIDIterator();
 
         // Remove _all_ replicas.
-        for (int i = 0; i < xlocs.getReplicasCount(); i++) {
-            osdUuidIterator.clearAndAddUUID(Helper.getOSDUUIDFromXlocSet(xlocs, i, 0));
+        for (int i = 0; i < fc.getXlocs().getReplicasCount(); i++) {
+            osdUuidIterator.clearAndAddUUID(Helper.getOSDUUIDFromXlocSet(fc.getXlocs(), i, 0));
 
-            try {
-                Method m = OSDServiceClient.class.getDeclaredMethod("unlink",
-                        new Class<?>[] { InetSocketAddress.class, Auth.class, UserCredentials.class,
-                                unlink_osd_Request.class });
-                RPCCaller.<OSDServiceClient, unlink_osd_Request, emptyResponse> makeCall(osdServiceClient, m,
-                        userCredentialsBogus, authBogus, request, osdUuidIterator, uuidResolver,
-                        volumeOptions.getMaxTries(), volumeOptions, false);
-
-            } catch (NoSuchMethodException nsm) {
-                // should never happen unless there is a programming error
-                nsm.printStackTrace();
-            } catch (SecurityException se) {
-                // should never happen unless there is a programming error
-                se.printStackTrace();
-            } catch (Exception e) {
-                throw new IOException(e);
-                // TODO: Find out when to throw a PosixErrorExcpetion.
-            }
+            RPCCaller.<unlink_osd_Request, emptyResponse> syncCall(SERVICES.OSD, userCredentialsBogus,
+                    authBogus, volumeOptions, uuidResolver, osdUuidIterator, false, request,
+                    new CallGenerator<unlink_osd_Request, emptyResponse>() {
+                        @SuppressWarnings("unchecked")
+                        @Override
+                        public RPCResponse<emptyResponse> executeCall(InetSocketAddress server,
+                                Auth authHeader, UserCredentials userCreds, unlink_osd_Request input)
+                                throws IOException {
+                            return osdServiceClient.unlink(server, authHeader, userCreds, input);
+                        }
+                    });
         }
     }
 
@@ -795,7 +710,6 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public void rename(UserCredentials userCredentials, String path, String newPath) throws IOException {
-
         if (path.equals(newPath)) {
             return; // Do nothing.
         }
@@ -804,24 +718,15 @@ public class VolumeImplementation extends Volume {
         renameRequest request = renameRequest.newBuilder().setVolumeName(volumeName).setSourcePath(path)
                 .setTargetPath(newPath).build();
 
-        renameResponse response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("rename", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, renameRequest.class });
-
-            response = RPCCaller.<MRCServiceClient, renameRequest, renameResponse> makeCall(mrcServiceClient,
-                    m, userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-            // TODO: Find out when to throw a PosixErrorExcpetion.
-        }
+        renameResponse response = RPCCaller.<renameRequest, renameResponse> syncCall(SERVICES.MRC,
+                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<renameRequest, renameResponse>() {
+                    @Override
+                    public RPCResponse<renameResponse> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, renameRequest input) throws IOException {
+                        return mrcServiceClient.rename(server, authHeader, userCreds, input);
+                    }
+                });
 
         assert (response != null);
 
@@ -872,28 +777,19 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public void createDirectory(UserCredentials userCredentials, String path, int mode) throws IOException {
-
         mkdirRequest request = mkdirRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setMode(mode).build();
 
-        timestampResponse response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("mkdir", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, mkdirRequest.class });
-
-            response = RPCCaller.<MRCServiceClient, mkdirRequest, timestampResponse> makeCall(
-                    mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-            // TODO: Find out when to throw a PosixErrorExcpetion.
-        }
+        timestampResponse response = RPCCaller.<mkdirRequest, timestampResponse> syncCall(SERVICES.MRC,
+                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<mkdirRequest, timestampResponse>() {
+                    @Override
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, mkdirRequest input)
+                            throws IOException {
+                        return mrcServiceClient.mkdir(server, authHeader, userCreds, input);
+                    }
+                });
 
         assert (response != null);
 
@@ -917,24 +813,16 @@ public class VolumeImplementation extends Volume {
     public void removeDirectory(UserCredentials userCredentials, String path) throws IOException {
         rmdirRequest request = rmdirRequest.newBuilder().setVolumeName(volumeName).setPath(path).build();
 
-        timestampResponse response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("rmdir", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, rmdirRequest.class });
-
-            response = RPCCaller.<MRCServiceClient, rmdirRequest, timestampResponse> makeCall(
-                    mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-            // TODO: Find out when to throw a PosixErrorExcpetion.
-        }
+        timestampResponse response = RPCCaller.<rmdirRequest, timestampResponse> syncCall(SERVICES.MRC,
+                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<rmdirRequest, timestampResponse>() {
+                    @Override
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, rmdirRequest input)
+                            throws IOException {
+                        return mrcServiceClient.rmdir(server, authHeader, userCreds, input);
+                    }
+                });
 
         assert (response != null);
 
@@ -957,7 +845,6 @@ public class VolumeImplementation extends Volume {
     @Override
     public DirectoryEntries readDir(UserCredentials userCredentials, String path, int offset, int count,
             boolean namesOnly) throws IOException {
-
         DirectoryEntries result = null;
 
         // Try to get DirectoryEntries from cache
@@ -979,23 +866,16 @@ public class VolumeImplementation extends Volume {
                     .setNamesOnly(namesOnly).setKnownEtag(0).setSeenDirectoryEntriesCount(currentOffset)
                     .setLimitDirectoryEntriesCount(limitDirEntriesCount).build();
 
-            try {
-                Method m = MRCServiceClient.class.getDeclaredMethod("readdir", new Class<?>[] {
-                        InetSocketAddress.class, Auth.class, UserCredentials.class, readdirRequest.class });
-
-                result = RPCCaller.<MRCServiceClient, readdirRequest, DirectoryEntries> makeCall(
-                        mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator,
-                        uuidResolver, volumeOptions.getMaxTries(), volumeOptions, false);
-            } catch (NoSuchMethodException nsm) {
-                // should never happen unless there is a programming error
-                nsm.printStackTrace();
-            } catch (SecurityException se) {
-                // should never happen unless there is a programming error
-                se.printStackTrace();
-            } catch (Exception e) {
-                throw new IOException(e);
-                // TODO: Find out when to throw a PosixErrorExcpetion.
-            }
+            result = RPCCaller.<readdirRequest, DirectoryEntries> syncCall(SERVICES.MRC, userCredentials,
+                    authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                    new CallGenerator<readdirRequest, DirectoryEntries>() {
+                        @Override
+                        public RPCResponse<DirectoryEntries> executeCall(InetSocketAddress server,
+                                Auth authHeader, UserCredentials userCreds, readdirRequest input)
+                                throws IOException {
+                            return mrcServiceClient.readdir(server, authHeader, userCreds, input);
+                        }
+                    });
 
             assert (result != null);
 
@@ -1007,7 +887,6 @@ public class VolumeImplementation extends Volume {
             }
         }
 
-        // TODO: Use metadatachache when it is implemented.
         // TODO: Merge possible pending file size updates of files into
         // the stat entries of listed files.
 
@@ -1059,7 +938,6 @@ public class VolumeImplementation extends Volume {
     @Override
     public listxattrResponse listXAttrs(UserCredentials userCredentials, String path, boolean useCache)
             throws IOException {
-
         // Check if information was cached.
         if (useCache) {
             // TODO: retrieve information from metadatacache if available.
@@ -1068,24 +946,16 @@ public class VolumeImplementation extends Volume {
         listxattrRequest request = listxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setNamesOnly(false).build();
 
-        listxattrResponse response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("listxattr", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, listxattrRequest.class });
-
-            response = RPCCaller.<MRCServiceClient, listxattrRequest, listxattrResponse> makeCall(
-                    mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-            // TODO: Find out when to throw a PosixErrorExcpetion.
-        }
+        listxattrResponse response = RPCCaller.<listxattrRequest, listxattrResponse> syncCall(SERVICES.MRC,
+                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<listxattrRequest, listxattrResponse>() {
+                    @Override
+                    public RPCResponse<listxattrResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, listxattrRequest input)
+                            throws IOException {
+                        return mrcServiceClient.listxattr(server, authHeader, userCreds, input);
+                    }
+                });
 
         assert (response != null);
 
@@ -1105,28 +975,19 @@ public class VolumeImplementation extends Volume {
     @Override
     public void setXAttr(UserCredentials userCredentials, String path, String name, String value, int flags)
             throws IOException {
-
         setxattrRequest request = setxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setName(name).setValue(value).setFlags(flags).build();
 
-        timestampResponse response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("setxattr", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, setxattrRequest.class });
-
-            response = RPCCaller.<MRCServiceClient, setxattrRequest, timestampResponse> makeCall(
-                    mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-            // TODO: Find out when to throw a PosixErrorExcpetion.
-        }
+        timestampResponse response = RPCCaller.<setxattrRequest, timestampResponse> syncCall(SERVICES.MRC,
+                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<setxattrRequest, timestampResponse>() {
+                    @Override
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, setxattrRequest input)
+                            throws IOException {
+                        return mrcServiceClient.setxattr(server, authHeader, userCreds, input);
+                    }
+                });
 
         assert (response != null);
 
@@ -1142,7 +1003,6 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public String getXAttr(UserCredentials userCredentials, String path, String name) throws IOException {
-
         boolean xtreemfsAttrRequest = name.substring(0, 9).equals("xtreemfs.");
 
         if (xtreemfsAttrRequest) {
@@ -1150,24 +1010,16 @@ public class VolumeImplementation extends Volume {
             getxattrRequest request = getxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                     .setName(name).build();
 
-            getxattrResponse response = null;
-            try {
-                Method m = MRCServiceClient.class.getDeclaredMethod("getxattr", new Class<?>[] {
-                        InetSocketAddress.class, Auth.class, UserCredentials.class, getxattrRequest.class });
-
-                response = RPCCaller.<MRCServiceClient, getxattrRequest, getxattrResponse> makeCall(
-                        mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator,
-                        uuidResolver, volumeOptions.getMaxTries(), volumeOptions, false);
-            } catch (NoSuchMethodException nsm) {
-                // should never happen unless there is a programming error
-                nsm.printStackTrace();
-            } catch (SecurityException se) {
-                // should never happen unless there is a programming error
-                se.printStackTrace();
-            } catch (Exception e) {
-                throw new IOException(e);
-                // TODO: Find out when to throw a PosixErrorExcpetion.
-            }
+            getxattrResponse response = RPCCaller.<getxattrRequest, getxattrResponse> syncCall(SERVICES.MRC,
+                    userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                    new CallGenerator<getxattrRequest, getxattrResponse>() {
+                        @Override
+                        public RPCResponse<getxattrResponse> executeCall(InetSocketAddress server,
+                                Auth authHeader, UserCredentials userCreds, getxattrRequest input)
+                                throws IOException {
+                            return mrcServiceClient.getxattr(server, authHeader, userCreds, input);
+                        }
+                    });
 
             assert (response != null);
 
@@ -1264,28 +1116,19 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public void removeXAttr(UserCredentials userCredentials, String path, String name) throws IOException {
-
         removexattrRequest request = removexattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setName(name).build();
 
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("removexattr", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, removexattrRequest.class });
-
-            RPCCaller.<MRCServiceClient, removexattrRequest, timestampResponse> makeCall(mrcServiceClient, m,
-                    userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-            // TODO: Find out when to throw a PosixErrorExcpetion.
-        }
-
+        RPCCaller.<removexattrRequest, timestampResponse> syncCall(SERVICES.MRC, userCredentials, authBogus,
+                volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<removexattrRequest, timestampResponse>() {
+                    @Override
+                    public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, removexattrRequest input)
+                            throws IOException {
+                        return mrcServiceClient.removexattr(server, authHeader, userCreds, input);
+                    }
+                });
         metadataCache.invalidateXAttr(path, name);
     }
 
@@ -1299,28 +1142,19 @@ public class VolumeImplementation extends Volume {
     @Override
     public void addReplica(UserCredentials userCredentials, String path, Replica newReplica)
             throws IOException, PosixErrorException {
-
         xtreemfs_replica_addRequest request = xtreemfs_replica_addRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).setNewReplica(newReplica).build();
 
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("xtreemfs_replica_add", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class,
-                    xtreemfs_replica_addRequest.class });
-
-            RPCCaller.<MRCServiceClient, xtreemfs_replica_addRequest, emptyResponse> makeCall(
-                    mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-            // TODO: Find out when to throw a PosixErrorExcpetion.
-        }
+        RPCCaller.<xtreemfs_replica_addRequest, emptyResponse> syncCall(SERVICES.MRC, userCredentials,
+                authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<xtreemfs_replica_addRequest, emptyResponse>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, xtreemfs_replica_addRequest input) throws IOException {
+                        return mrcServiceClient.xtreemfs_replica_add(server, authHeader, userCreds, input);
+                    }
+                });
 
         // Trigger the replication at this point by reading at least one byte.
         FileHandle fileHandle = openFile(userCredentials, path,
@@ -1338,29 +1172,18 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public Replicas listReplicas(UserCredentials userCredentials, String path) throws IOException {
-
         xtreemfs_replica_listRequest request = xtreemfs_replica_listRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).build();
 
-        Replicas response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("xtreemfs_replica_list", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class,
-                    xtreemfs_replica_listRequest.class });
-
-            response = RPCCaller.<MRCServiceClient, xtreemfs_replica_listRequest, Replicas> makeCall(
-                    mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-            // TODO: Find out when to throw a PosixErrorExcpetion.
-        }
+        Replicas response = RPCCaller.<xtreemfs_replica_listRequest, Replicas> syncCall(SERVICES.MRC,
+                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<xtreemfs_replica_listRequest, Replicas>() {
+                    @Override
+                    public RPCResponse<Replicas> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, xtreemfs_replica_listRequest input) throws IOException {
+                        return mrcServiceClient.xtreemfs_replica_list(server, authHeader, userCreds, input);
+                    }
+                });
 
         assert (response != null);
 
@@ -1377,31 +1200,20 @@ public class VolumeImplementation extends Volume {
     @Override
     public void removeReplica(UserCredentials userCredentials, String path, String osdUuid)
             throws IOException {
-
         // remove the replica
         xtreemfs_replica_removeRequest request = xtreemfs_replica_removeRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).setOsdUuid(osdUuid).build();
 
-        FileCredentials response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("xtreemfs_replica_remove", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class,
-                    xtreemfs_replica_removeRequest.class });
-
-            response = RPCCaller
-                    .<MRCServiceClient, xtreemfs_replica_removeRequest, FileCredentials> makeCall(
-                            mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator,
-                            uuidResolver, volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-            // TODO: Find out when to throw a PosixErrorExcpetion.
-        }
+        FileCredentials response = RPCCaller.<xtreemfs_replica_removeRequest, FileCredentials> syncCall(
+                SERVICES.MRC, userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator,
+                false, request, new CallGenerator<xtreemfs_replica_removeRequest, FileCredentials>() {
+                    @Override
+                    public RPCResponse<FileCredentials> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, xtreemfs_replica_removeRequest input)
+                            throws IOException {
+                        return mrcServiceClient.xtreemfs_replica_remove(server, authHeader, userCreds, input);
+                    }
+                });
 
         assert (response != null);
 
@@ -1412,23 +1224,16 @@ public class VolumeImplementation extends Volume {
         unlink_osd_Request request2 = unlink_osd_Request.newBuilder()
                 .setFileId(response.getXcap().getFileId()).setFileCredentials(response).build();
 
-        try {
-            Method m = OSDServiceClient.class.getDeclaredMethod("unlink", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, unlink_osd_Request.class });
-
-            RPCCaller.<OSDServiceClient, unlink_osd_Request, emptyResponse> makeCall(osdServiceClient, m,
-                    userCredentials, authBogus, request2, osdUuidIterator, uuidResolver,
-                    volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-            // TODO: Find out when to throw a PosixErrorExcpetion.
-        }
+        RPCCaller.<unlink_osd_Request, emptyResponse> syncCall(SERVICES.OSD, userCredentials, authBogus,
+                volumeOptions, uuidResolver, mrcUUIDIterator, false, request2,
+                new CallGenerator<unlink_osd_Request, emptyResponse>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, unlink_osd_Request input) throws IOException {
+                        return osdServiceClient.unlink(server, authHeader, userCreds, input);
+                    }
+                });
     }
 
     /*
@@ -1441,30 +1246,28 @@ public class VolumeImplementation extends Volume {
     @Override
     public List<String> getSuitableOSDs(UserCredentials userCredentials, String path, int numberOfOsds)
             throws IOException {
-
         xtreemfs_get_suitable_osdsRequest request = xtreemfs_get_suitable_osdsRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).setNumOsds(numberOfOsds).build();
 
-        xtreemfs_get_suitable_osdsResponse response = null;
-        try {
-            Method m = MRCServiceClient.class.getDeclaredMethod("xtreemfs_replica_remove", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class,
-                    xtreemfs_get_suitable_osdsRequest.class });
-
-            response = RPCCaller
-                    .<MRCServiceClient, xtreemfs_get_suitable_osdsRequest, xtreemfs_get_suitable_osdsResponse> makeCall(
-                            mrcServiceClient, m, userCredentials, authBogus, request, mrcUUIDIterator,
-                            uuidResolver, volumeOptions.getMaxTries(), volumeOptions, false);
-        } catch (NoSuchMethodException nsm) {
-            // should never happen unless there is a programming error
-            nsm.printStackTrace();
-        } catch (SecurityException se) {
-            // should never happen unless there is a programming error
-            se.printStackTrace();
-        } catch (Exception e) {
-            throw new IOException(e);
-            // TODO: Find out when to throw a PosixErrorExcpetion.
-        }
+        xtreemfs_get_suitable_osdsResponse response = RPCCaller
+                .<xtreemfs_get_suitable_osdsRequest, xtreemfs_get_suitable_osdsResponse> syncCall(
+                        SERVICES.MRC,
+                        userCredentials,
+                        authBogus,
+                        volumeOptions,
+                        uuidResolver,
+                        mrcUUIDIterator,
+                        false,
+                        request,
+                        new CallGenerator<xtreemfs_get_suitable_osdsRequest, xtreemfs_get_suitable_osdsResponse>() {
+                            @Override
+                            public RPCResponse<xtreemfs_get_suitable_osdsResponse> executeCall(
+                                    InetSocketAddress server, Auth authHeader, UserCredentials userCreds,
+                                    xtreemfs_get_suitable_osdsRequest input) throws IOException {
+                                return mrcServiceClient.xtreemfs_get_suitable_osds(server, authHeader,
+                                        userCreds, input);
+                            }
+                        });
 
         assert (response != null);
 
@@ -1488,8 +1291,7 @@ public class VolumeImplementation extends Volume {
         FileInfo fileInfo = openFileTable.get(fileId);
 
         if (fileInfo != null) {
-            //TODO: Figure out why xlocset should be set. oO
-            //fileInfo.UpdateXLocSetAndRest(xlocset, replicateOnClose);
+            fileInfo.updateXLocSetAndRest(xlocset, replicateOnClose);
             return fileInfo;
         } else {
             // File has not been opened yet, add it.

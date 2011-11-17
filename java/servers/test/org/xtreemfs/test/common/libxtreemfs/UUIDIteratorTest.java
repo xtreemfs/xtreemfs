@@ -7,6 +7,8 @@
 package org.xtreemfs.test.common.libxtreemfs;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -104,9 +106,9 @@ public class UUIDIteratorTest extends TestCase {
         // After clearing the UUIDIterator and getUUID call should raise an UUIDIteratorListIsEmpyException
         uuidIterator.clear();
         try {
-            uuidIterator.getUUID();    
-        } catch (Exception e) {
-            assertTrue(UUIDIteratorListIsEmpyException.class.isInstance(e));
+            uuidIterator.getUUID();
+            fail("UUIDIteratorListIsEmptyExcaption should have been raised");
+        } catch (UUIDIteratorListIsEmpyException e) {
         }
         
         // clear and add should set current UUID to the added uuid.
@@ -118,6 +120,44 @@ public class UUIDIteratorTest extends TestCase {
         uuidIterator.markUUIDAsFailed(uuidIterator.getUUID());
         assertEquals(UUID_STRING1, uuidIterator.getUUID());
         
+        // debug string should also work!
+        uuidIterator.debugString();
+        
+    }
+    
+    public void testAddUuidCollection() {
+        List<String> uuidList = new LinkedList<String>();
+        uuidList.add("uuidstring1");
+        uuidList.add("uuidstring2");
+        uuidList.add("uuidstring3");
+        
+        UUIDIterator iterator = new UUIDIterator();
+        iterator.addUUIDs(uuidList);
+        
+        assertEquals(3, iterator.size());
+    }
+    
+    public void testSetCurrentUuid() throws Exception {
+        final String UUID_STRING1 = "uuidstring1";
+        final String UUID_STRING2 = "uuidstring2";
+        final String UUID_STRING3 = "uuidstring3";
+        
+        UUIDIterator iterator = new UUIDIterator();
+        iterator.addUUID(UUID_STRING1);
+        iterator.addUUID(UUID_STRING2);
+        
+        assertEquals(2, iterator.size());
+        assertEquals(UUID_STRING1, iterator.getUUID());
+
+        // uuid already in iterator. Should only be set.
+        iterator.setCurrentUUID(UUID_STRING2);
+        assertEquals(UUID_STRING2, iterator.getUUID());
+        assertEquals(2, iterator.size());
+        
+        // new UUID, should be added and set!
+        iterator.setCurrentUUID(UUID_STRING3);
+        assertEquals(UUID_STRING3, iterator.getUUID());
+        assertEquals(3, iterator.size());
     }
 
 }

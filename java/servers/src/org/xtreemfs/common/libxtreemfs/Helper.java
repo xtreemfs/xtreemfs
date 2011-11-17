@@ -31,11 +31,10 @@ public class Helper {
      * 
      */
     // TODO: Ask michael why his uuid has length 36. oO
-    public static String GenerateVersion4UUID() {
-
+    public static String generateVersion4UUID() {
         // Base62 characters for UUID generation.
         char set[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
-        String uuid = new String();
+        String uuid = "";
 
         int block_length[] = { 8, 4, 4, 4, 12 };
 
@@ -56,7 +55,6 @@ public class Helper {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, new Helper(), "Generated client UUID: %s",
                     uuid);
         }
-
         return uuid;
     }
 

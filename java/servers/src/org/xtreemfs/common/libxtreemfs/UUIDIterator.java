@@ -7,6 +7,7 @@
 package org.xtreemfs.common.libxtreemfs;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.UUIDIteratorListIsEmpyException;
 
@@ -24,7 +25,7 @@ import org.xtreemfs.common.libxtreemfs.exceptions.UUIDIteratorListIsEmpyExceptio
  */
 public class UUIDIterator {
 
-    private class UUIDItem {
+    static private class UUIDItem {
 
         public String  uuid;
 
@@ -64,6 +65,12 @@ public class UUIDIterator {
 
         if (uuids.size() == 1) {
             currentUUID = entry;
+        }
+    }
+    
+    public synchronized void addUUIDs(Collection<String> uuids) {
+        for (String uuid : uuids) {
+            addUUID(uuid);
         }
     }
 

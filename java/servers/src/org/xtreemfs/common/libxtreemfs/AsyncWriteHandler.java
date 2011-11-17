@@ -177,7 +177,7 @@ public class AsyncWriteHandler {
                 waitingBlockingThreadsCount++;
                 while (state != State.IDLE) {
                     try {
-                        allPendingWritesDidComplete.wait();    
+                        allPendingWritesDidComplete.await();    
                     } catch (InterruptedException e) {
                         // TODO: REALLY handle exception.
                     }            

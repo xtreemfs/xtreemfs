@@ -8,11 +8,27 @@ public final class OSD {
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistry registry) {
   }
+  public interface InternalGmaxOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required fixed64 epoch = 1;
+    boolean hasEpoch();
+    long getEpoch();
+    
+    // required fixed64 file_size = 2;
+    boolean hasFileSize();
+    long getFileSize();
+    
+    // required fixed64 last_object_id = 3;
+    boolean hasLastObjectId();
+    long getLastObjectId();
+  }
   public static final class InternalGmax extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements InternalGmaxOrBuilder {
     // Use InternalGmax.newBuilder() to construct.
-    private InternalGmax() {
-      initFields();
+    private InternalGmax(Builder builder) {
+      super(builder);
     }
     private InternalGmax(boolean noInit) {}
     
@@ -35,47 +51,74 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_InternalGmax_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required fixed64 epoch = 1;
     public static final int EPOCH_FIELD_NUMBER = 1;
-    private boolean hasEpoch;
-    private long epoch_ = 0L;
-    public boolean hasEpoch() { return hasEpoch; }
-    public long getEpoch() { return epoch_; }
+    private long epoch_;
+    public boolean hasEpoch() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public long getEpoch() {
+      return epoch_;
+    }
     
     // required fixed64 file_size = 2;
     public static final int FILE_SIZE_FIELD_NUMBER = 2;
-    private boolean hasFileSize;
-    private long fileSize_ = 0L;
-    public boolean hasFileSize() { return hasFileSize; }
-    public long getFileSize() { return fileSize_; }
+    private long fileSize_;
+    public boolean hasFileSize() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public long getFileSize() {
+      return fileSize_;
+    }
     
     // required fixed64 last_object_id = 3;
     public static final int LAST_OBJECT_ID_FIELD_NUMBER = 3;
-    private boolean hasLastObjectId;
-    private long lastObjectId_ = 0L;
-    public boolean hasLastObjectId() { return hasLastObjectId; }
-    public long getLastObjectId() { return lastObjectId_; }
+    private long lastObjectId_;
+    public boolean hasLastObjectId() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public long getLastObjectId() {
+      return lastObjectId_;
+    }
     
     private void initFields() {
+      epoch_ = 0L;
+      fileSize_ = 0L;
+      lastObjectId_ = 0L;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasEpoch) return false;
-      if (!hasFileSize) return false;
-      if (!hasLastObjectId) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasEpoch()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileSize()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasLastObjectId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasEpoch()) {
-        output.writeFixed64(1, getEpoch());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeFixed64(1, epoch_);
       }
-      if (hasFileSize()) {
-        output.writeFixed64(2, getFileSize());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeFixed64(2, fileSize_);
       }
-      if (hasLastObjectId()) {
-        output.writeFixed64(3, getLastObjectId());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed64(3, lastObjectId_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -86,21 +129,26 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasEpoch()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(1, getEpoch());
+          .computeFixed64Size(1, epoch_);
       }
-      if (hasFileSize()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(2, getFileSize());
+          .computeFixed64Size(2, fileSize_);
       }
-      if (hasLastObjectId()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(3, getLastObjectId());
+          .computeFixed64Size(3, lastObjectId_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax parseFrom(
@@ -177,34 +225,55 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmaxOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_InternalGmax_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_InternalGmax_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax();
+        super.clear();
+        epoch_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileSize_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        lastObjectId_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -216,33 +285,43 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax returnMe = result;
-        result = null;
-        return returnMe;
+        result.epoch_ = epoch_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileSize_ = fileSize_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.lastObjectId_ = lastObjectId_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -269,6 +348,22 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasEpoch()) {
+          
+          return false;
+        }
+        if (!hasFileSize()) {
+          
+          return false;
+        }
+        if (!hasLastObjectId()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -281,83 +376,98 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 9: {
-              setEpoch(input.readFixed64());
+              bitField0_ |= 0x00000001;
+              epoch_ = input.readFixed64();
               break;
             }
             case 17: {
-              setFileSize(input.readFixed64());
+              bitField0_ |= 0x00000002;
+              fileSize_ = input.readFixed64();
               break;
             }
             case 25: {
-              setLastObjectId(input.readFixed64());
+              bitField0_ |= 0x00000004;
+              lastObjectId_ = input.readFixed64();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required fixed64 epoch = 1;
+      private long epoch_ ;
       public boolean hasEpoch() {
-        return result.hasEpoch();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public long getEpoch() {
-        return result.getEpoch();
+        return epoch_;
       }
       public Builder setEpoch(long value) {
-        result.hasEpoch = true;
-        result.epoch_ = value;
+        bitField0_ |= 0x00000001;
+        epoch_ = value;
+        onChanged();
         return this;
       }
       public Builder clearEpoch() {
-        result.hasEpoch = false;
-        result.epoch_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        epoch_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 file_size = 2;
+      private long fileSize_ ;
       public boolean hasFileSize() {
-        return result.hasFileSize();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       public long getFileSize() {
-        return result.getFileSize();
+        return fileSize_;
       }
       public Builder setFileSize(long value) {
-        result.hasFileSize = true;
-        result.fileSize_ = value;
+        bitField0_ |= 0x00000002;
+        fileSize_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileSize() {
-        result.hasFileSize = false;
-        result.fileSize_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileSize_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 last_object_id = 3;
+      private long lastObjectId_ ;
       public boolean hasLastObjectId() {
-        return result.hasLastObjectId();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public long getLastObjectId() {
-        return result.getLastObjectId();
+        return lastObjectId_;
       }
       public Builder setLastObjectId(long value) {
-        result.hasLastObjectId = true;
-        result.lastObjectId_ = value;
+        bitField0_ |= 0x00000004;
+        lastObjectId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearLastObjectId() {
-        result.hasLastObjectId = false;
-        result.lastObjectId_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        lastObjectId_ = 0L;
+        onChanged();
         return this;
       }
       
@@ -366,18 +476,41 @@ public final class OSD {
     
     static {
       defaultInstance = new InternalGmax(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.InternalGmax)
   }
   
+  public interface LockOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required fixed32 client_pid = 1;
+    boolean hasClientPid();
+    int getClientPid();
+    
+    // required string client_uuid = 2;
+    boolean hasClientUuid();
+    String getClientUuid();
+    
+    // required fixed64 length = 3;
+    boolean hasLength();
+    long getLength();
+    
+    // required fixed64 offset = 4;
+    boolean hasOffset();
+    long getOffset();
+    
+    // required bool exclusive = 5;
+    boolean hasExclusive();
+    boolean getExclusive();
+  }
   public static final class Lock extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements LockOrBuilder {
     // Use Lock.newBuilder() to construct.
-    private Lock() {
-      initFields();
+    private Lock(Builder builder) {
+      super(builder);
     }
     private Lock(boolean noInit) {}
     
@@ -400,69 +533,132 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_Lock_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required fixed32 client_pid = 1;
     public static final int CLIENT_PID_FIELD_NUMBER = 1;
-    private boolean hasClientPid;
-    private int clientPid_ = 0;
-    public boolean hasClientPid() { return hasClientPid; }
-    public int getClientPid() { return clientPid_; }
+    private int clientPid_;
+    public boolean hasClientPid() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public int getClientPid() {
+      return clientPid_;
+    }
     
     // required string client_uuid = 2;
     public static final int CLIENT_UUID_FIELD_NUMBER = 2;
-    private boolean hasClientUuid;
-    private java.lang.String clientUuid_ = "";
-    public boolean hasClientUuid() { return hasClientUuid; }
-    public java.lang.String getClientUuid() { return clientUuid_; }
+    private Object clientUuid_;
+    public boolean hasClientUuid() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getClientUuid() {
+      Object ref = clientUuid_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          clientUuid_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getClientUuidBytes() {
+      Object ref = clientUuid_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        clientUuid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required fixed64 length = 3;
     public static final int LENGTH_FIELD_NUMBER = 3;
-    private boolean hasLength;
-    private long length_ = 0L;
-    public boolean hasLength() { return hasLength; }
-    public long getLength() { return length_; }
+    private long length_;
+    public boolean hasLength() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public long getLength() {
+      return length_;
+    }
     
     // required fixed64 offset = 4;
     public static final int OFFSET_FIELD_NUMBER = 4;
-    private boolean hasOffset;
-    private long offset_ = 0L;
-    public boolean hasOffset() { return hasOffset; }
-    public long getOffset() { return offset_; }
+    private long offset_;
+    public boolean hasOffset() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public long getOffset() {
+      return offset_;
+    }
     
     // required bool exclusive = 5;
     public static final int EXCLUSIVE_FIELD_NUMBER = 5;
-    private boolean hasExclusive;
-    private boolean exclusive_ = false;
-    public boolean hasExclusive() { return hasExclusive; }
-    public boolean getExclusive() { return exclusive_; }
+    private boolean exclusive_;
+    public boolean hasExclusive() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    public boolean getExclusive() {
+      return exclusive_;
+    }
     
     private void initFields() {
+      clientPid_ = 0;
+      clientUuid_ = "";
+      length_ = 0L;
+      offset_ = 0L;
+      exclusive_ = false;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasClientPid) return false;
-      if (!hasClientUuid) return false;
-      if (!hasLength) return false;
-      if (!hasOffset) return false;
-      if (!hasExclusive) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasClientPid()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasClientUuid()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasLength()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasOffset()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasExclusive()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasClientPid()) {
-        output.writeFixed32(1, getClientPid());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeFixed32(1, clientPid_);
       }
-      if (hasClientUuid()) {
-        output.writeString(2, getClientUuid());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getClientUuidBytes());
       }
-      if (hasLength()) {
-        output.writeFixed64(3, getLength());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed64(3, length_);
       }
-      if (hasOffset()) {
-        output.writeFixed64(4, getOffset());
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeFixed64(4, offset_);
       }
-      if (hasExclusive()) {
-        output.writeBool(5, getExclusive());
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeBool(5, exclusive_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -473,29 +669,34 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasClientPid()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(1, getClientPid());
+          .computeFixed32Size(1, clientPid_);
       }
-      if (hasClientUuid()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getClientUuid());
+          .computeBytesSize(2, getClientUuidBytes());
       }
-      if (hasLength()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(3, getLength());
+          .computeFixed64Size(3, length_);
       }
-      if (hasOffset()) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(4, getOffset());
+          .computeFixed64Size(4, offset_);
       }
-      if (hasExclusive()) {
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(5, getExclusive());
+          .computeBoolSize(5, exclusive_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock parseFrom(
@@ -572,34 +773,59 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.LockOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_Lock_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_Lock_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock();
+        super.clear();
+        clientPid_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        clientUuid_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        length_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        offset_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        exclusive_ = false;
+        bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -611,33 +837,51 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock returnMe = result;
-        result = null;
-        return returnMe;
+        result.clientPid_ = clientPid_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.clientUuid_ = clientUuid_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.length_ = length_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.offset_ = offset_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.exclusive_ = exclusive_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -670,6 +914,30 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasClientPid()) {
+          
+          return false;
+        }
+        if (!hasClientUuid()) {
+          
+          return false;
+        }
+        if (!hasLength()) {
+          
+          return false;
+        }
+        if (!hasOffset()) {
+          
+          return false;
+        }
+        if (!hasExclusive()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -682,130 +950,165 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 13: {
-              setClientPid(input.readFixed32());
+              bitField0_ |= 0x00000001;
+              clientPid_ = input.readFixed32();
               break;
             }
             case 18: {
-              setClientUuid(input.readString());
+              bitField0_ |= 0x00000002;
+              clientUuid_ = input.readBytes();
               break;
             }
             case 25: {
-              setLength(input.readFixed64());
+              bitField0_ |= 0x00000004;
+              length_ = input.readFixed64();
               break;
             }
             case 33: {
-              setOffset(input.readFixed64());
+              bitField0_ |= 0x00000008;
+              offset_ = input.readFixed64();
               break;
             }
             case 40: {
-              setExclusive(input.readBool());
+              bitField0_ |= 0x00000010;
+              exclusive_ = input.readBool();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required fixed32 client_pid = 1;
+      private int clientPid_ ;
       public boolean hasClientPid() {
-        return result.hasClientPid();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public int getClientPid() {
-        return result.getClientPid();
+        return clientPid_;
       }
       public Builder setClientPid(int value) {
-        result.hasClientPid = true;
-        result.clientPid_ = value;
+        bitField0_ |= 0x00000001;
+        clientPid_ = value;
+        onChanged();
         return this;
       }
       public Builder clearClientPid() {
-        result.hasClientPid = false;
-        result.clientPid_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        clientPid_ = 0;
+        onChanged();
         return this;
       }
       
       // required string client_uuid = 2;
+      private Object clientUuid_ = "";
       public boolean hasClientUuid() {
-        return result.hasClientUuid();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getClientUuid() {
-        return result.getClientUuid();
+      public String getClientUuid() {
+        Object ref = clientUuid_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          clientUuid_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setClientUuid(java.lang.String value) {
+      public Builder setClientUuid(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasClientUuid = true;
-        result.clientUuid_ = value;
+  bitField0_ |= 0x00000002;
+        clientUuid_ = value;
+        onChanged();
         return this;
       }
       public Builder clearClientUuid() {
-        result.hasClientUuid = false;
-        result.clientUuid_ = getDefaultInstance().getClientUuid();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        clientUuid_ = getDefaultInstance().getClientUuid();
+        onChanged();
         return this;
+      }
+      void setClientUuid(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        clientUuid_ = value;
+        onChanged();
       }
       
       // required fixed64 length = 3;
+      private long length_ ;
       public boolean hasLength() {
-        return result.hasLength();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public long getLength() {
-        return result.getLength();
+        return length_;
       }
       public Builder setLength(long value) {
-        result.hasLength = true;
-        result.length_ = value;
+        bitField0_ |= 0x00000004;
+        length_ = value;
+        onChanged();
         return this;
       }
       public Builder clearLength() {
-        result.hasLength = false;
-        result.length_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        length_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 offset = 4;
+      private long offset_ ;
       public boolean hasOffset() {
-        return result.hasOffset();
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       public long getOffset() {
-        return result.getOffset();
+        return offset_;
       }
       public Builder setOffset(long value) {
-        result.hasOffset = true;
-        result.offset_ = value;
+        bitField0_ |= 0x00000008;
+        offset_ = value;
+        onChanged();
         return this;
       }
       public Builder clearOffset() {
-        result.hasOffset = false;
-        result.offset_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        offset_ = 0L;
+        onChanged();
         return this;
       }
       
       // required bool exclusive = 5;
+      private boolean exclusive_ ;
       public boolean hasExclusive() {
-        return result.hasExclusive();
+        return ((bitField0_ & 0x00000010) == 0x00000010);
       }
       public boolean getExclusive() {
-        return result.getExclusive();
+        return exclusive_;
       }
       public Builder setExclusive(boolean value) {
-        result.hasExclusive = true;
-        result.exclusive_ = value;
+        bitField0_ |= 0x00000010;
+        exclusive_ = value;
+        onChanged();
         return this;
       }
       public Builder clearExclusive() {
-        result.hasExclusive = false;
-        result.exclusive_ = false;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        exclusive_ = false;
+        onChanged();
         return this;
       }
       
@@ -814,18 +1117,33 @@ public final class OSD {
     
     static {
       defaultInstance = new Lock(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.Lock)
   }
   
+  public interface ObjectDataOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required fixed32 checksum = 1;
+    boolean hasChecksum();
+    int getChecksum();
+    
+    // required bool invalid_checksum_on_osd = 2;
+    boolean hasInvalidChecksumOnOsd();
+    boolean getInvalidChecksumOnOsd();
+    
+    // required fixed32 zero_padding = 3;
+    boolean hasZeroPadding();
+    int getZeroPadding();
+  }
   public static final class ObjectData extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements ObjectDataOrBuilder {
     // Use ObjectData.newBuilder() to construct.
-    private ObjectData() {
-      initFields();
+    private ObjectData(Builder builder) {
+      super(builder);
     }
     private ObjectData(boolean noInit) {}
     
@@ -848,47 +1166,74 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ObjectData_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required fixed32 checksum = 1;
     public static final int CHECKSUM_FIELD_NUMBER = 1;
-    private boolean hasChecksum;
-    private int checksum_ = 0;
-    public boolean hasChecksum() { return hasChecksum; }
-    public int getChecksum() { return checksum_; }
+    private int checksum_;
+    public boolean hasChecksum() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public int getChecksum() {
+      return checksum_;
+    }
     
     // required bool invalid_checksum_on_osd = 2;
     public static final int INVALID_CHECKSUM_ON_OSD_FIELD_NUMBER = 2;
-    private boolean hasInvalidChecksumOnOsd;
-    private boolean invalidChecksumOnOsd_ = false;
-    public boolean hasInvalidChecksumOnOsd() { return hasInvalidChecksumOnOsd; }
-    public boolean getInvalidChecksumOnOsd() { return invalidChecksumOnOsd_; }
+    private boolean invalidChecksumOnOsd_;
+    public boolean hasInvalidChecksumOnOsd() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public boolean getInvalidChecksumOnOsd() {
+      return invalidChecksumOnOsd_;
+    }
     
     // required fixed32 zero_padding = 3;
     public static final int ZERO_PADDING_FIELD_NUMBER = 3;
-    private boolean hasZeroPadding;
-    private int zeroPadding_ = 0;
-    public boolean hasZeroPadding() { return hasZeroPadding; }
-    public int getZeroPadding() { return zeroPadding_; }
+    private int zeroPadding_;
+    public boolean hasZeroPadding() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public int getZeroPadding() {
+      return zeroPadding_;
+    }
     
     private void initFields() {
+      checksum_ = 0;
+      invalidChecksumOnOsd_ = false;
+      zeroPadding_ = 0;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasChecksum) return false;
-      if (!hasInvalidChecksumOnOsd) return false;
-      if (!hasZeroPadding) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasChecksum()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasInvalidChecksumOnOsd()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasZeroPadding()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasChecksum()) {
-        output.writeFixed32(1, getChecksum());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeFixed32(1, checksum_);
       }
-      if (hasInvalidChecksumOnOsd()) {
-        output.writeBool(2, getInvalidChecksumOnOsd());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBool(2, invalidChecksumOnOsd_);
       }
-      if (hasZeroPadding()) {
-        output.writeFixed32(3, getZeroPadding());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed32(3, zeroPadding_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -899,21 +1244,26 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasChecksum()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(1, getChecksum());
+          .computeFixed32Size(1, checksum_);
       }
-      if (hasInvalidChecksumOnOsd()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(2, getInvalidChecksumOnOsd());
+          .computeBoolSize(2, invalidChecksumOnOsd_);
       }
-      if (hasZeroPadding()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(3, getZeroPadding());
+          .computeFixed32Size(3, zeroPadding_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData parseFrom(
@@ -990,34 +1340,55 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ObjectData_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ObjectData_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData();
+        super.clear();
+        checksum_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        invalidChecksumOnOsd_ = false;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        zeroPadding_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -1029,33 +1400,43 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData returnMe = result;
-        result = null;
-        return returnMe;
+        result.checksum_ = checksum_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.invalidChecksumOnOsd_ = invalidChecksumOnOsd_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.zeroPadding_ = zeroPadding_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -1082,6 +1463,22 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasChecksum()) {
+          
+          return false;
+        }
+        if (!hasInvalidChecksumOnOsd()) {
+          
+          return false;
+        }
+        if (!hasZeroPadding()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -1094,83 +1491,98 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 13: {
-              setChecksum(input.readFixed32());
+              bitField0_ |= 0x00000001;
+              checksum_ = input.readFixed32();
               break;
             }
             case 16: {
-              setInvalidChecksumOnOsd(input.readBool());
+              bitField0_ |= 0x00000002;
+              invalidChecksumOnOsd_ = input.readBool();
               break;
             }
             case 29: {
-              setZeroPadding(input.readFixed32());
+              bitField0_ |= 0x00000004;
+              zeroPadding_ = input.readFixed32();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required fixed32 checksum = 1;
+      private int checksum_ ;
       public boolean hasChecksum() {
-        return result.hasChecksum();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public int getChecksum() {
-        return result.getChecksum();
+        return checksum_;
       }
       public Builder setChecksum(int value) {
-        result.hasChecksum = true;
-        result.checksum_ = value;
+        bitField0_ |= 0x00000001;
+        checksum_ = value;
+        onChanged();
         return this;
       }
       public Builder clearChecksum() {
-        result.hasChecksum = false;
-        result.checksum_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        checksum_ = 0;
+        onChanged();
         return this;
       }
       
       // required bool invalid_checksum_on_osd = 2;
+      private boolean invalidChecksumOnOsd_ ;
       public boolean hasInvalidChecksumOnOsd() {
-        return result.hasInvalidChecksumOnOsd();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       public boolean getInvalidChecksumOnOsd() {
-        return result.getInvalidChecksumOnOsd();
+        return invalidChecksumOnOsd_;
       }
       public Builder setInvalidChecksumOnOsd(boolean value) {
-        result.hasInvalidChecksumOnOsd = true;
-        result.invalidChecksumOnOsd_ = value;
+        bitField0_ |= 0x00000002;
+        invalidChecksumOnOsd_ = value;
+        onChanged();
         return this;
       }
       public Builder clearInvalidChecksumOnOsd() {
-        result.hasInvalidChecksumOnOsd = false;
-        result.invalidChecksumOnOsd_ = false;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        invalidChecksumOnOsd_ = false;
+        onChanged();
         return this;
       }
       
       // required fixed32 zero_padding = 3;
+      private int zeroPadding_ ;
       public boolean hasZeroPadding() {
-        return result.hasZeroPadding();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public int getZeroPadding() {
-        return result.getZeroPadding();
+        return zeroPadding_;
       }
       public Builder setZeroPadding(int value) {
-        result.hasZeroPadding = true;
-        result.zeroPadding_ = value;
+        bitField0_ |= 0x00000004;
+        zeroPadding_ = value;
+        onChanged();
         return this;
       }
       public Builder clearZeroPadding() {
-        result.hasZeroPadding = false;
-        result.zeroPadding_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        zeroPadding_ = 0;
+        onChanged();
         return this;
       }
       
@@ -1179,18 +1591,33 @@ public final class OSD {
     
     static {
       defaultInstance = new ObjectData(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.ObjectData)
   }
   
+  public interface ObjectListOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required bytes set = 1;
+    boolean hasSet();
+    com.google.protobuf.ByteString getSet();
+    
+    // required fixed32 stripe_width = 2;
+    boolean hasStripeWidth();
+    int getStripeWidth();
+    
+    // required fixed32 first_ = 3;
+    boolean hasFirst();
+    int getFirst();
+  }
   public static final class ObjectList extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements ObjectListOrBuilder {
     // Use ObjectList.newBuilder() to construct.
-    private ObjectList() {
-      initFields();
+    private ObjectList(Builder builder) {
+      super(builder);
     }
     private ObjectList(boolean noInit) {}
     
@@ -1213,47 +1640,74 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ObjectList_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required bytes set = 1;
     public static final int SET_FIELD_NUMBER = 1;
-    private boolean hasSet;
-    private com.google.protobuf.ByteString set_ = com.google.protobuf.ByteString.EMPTY;
-    public boolean hasSet() { return hasSet; }
-    public com.google.protobuf.ByteString getSet() { return set_; }
+    private com.google.protobuf.ByteString set_;
+    public boolean hasSet() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public com.google.protobuf.ByteString getSet() {
+      return set_;
+    }
     
     // required fixed32 stripe_width = 2;
     public static final int STRIPE_WIDTH_FIELD_NUMBER = 2;
-    private boolean hasStripeWidth;
-    private int stripeWidth_ = 0;
-    public boolean hasStripeWidth() { return hasStripeWidth; }
-    public int getStripeWidth() { return stripeWidth_; }
+    private int stripeWidth_;
+    public boolean hasStripeWidth() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public int getStripeWidth() {
+      return stripeWidth_;
+    }
     
     // required fixed32 first_ = 3;
     public static final int FIRST__FIELD_NUMBER = 3;
-    private boolean hasFirst;
-    private int first_ = 0;
-    public boolean hasFirst() { return hasFirst; }
-    public int getFirst() { return first_; }
+    private int first_;
+    public boolean hasFirst() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public int getFirst() {
+      return first_;
+    }
     
     private void initFields() {
+      set_ = com.google.protobuf.ByteString.EMPTY;
+      stripeWidth_ = 0;
+      first_ = 0;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasSet) return false;
-      if (!hasStripeWidth) return false;
-      if (!hasFirst) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasSet()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasStripeWidth()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFirst()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasSet()) {
-        output.writeBytes(1, getSet());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, set_);
       }
-      if (hasStripeWidth()) {
-        output.writeFixed32(2, getStripeWidth());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeFixed32(2, stripeWidth_);
       }
-      if (hasFirst()) {
-        output.writeFixed32(3, getFirst());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed32(3, first_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -1264,21 +1718,26 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasSet()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, getSet());
+          .computeBytesSize(1, set_);
       }
-      if (hasStripeWidth()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(2, getStripeWidth());
+          .computeFixed32Size(2, stripeWidth_);
       }
-      if (hasFirst()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(3, getFirst());
+          .computeFixed32Size(3, first_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList parseFrom(
@@ -1355,34 +1814,55 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ObjectList_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ObjectList_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList();
+        super.clear();
+        set_ = com.google.protobuf.ByteString.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        stripeWidth_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        first_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -1394,33 +1874,43 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList returnMe = result;
-        result = null;
-        return returnMe;
+        result.set_ = set_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.stripeWidth_ = stripeWidth_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.first_ = first_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -1447,6 +1937,22 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasSet()) {
+          
+          return false;
+        }
+        if (!hasStripeWidth()) {
+          
+          return false;
+        }
+        if (!hasFirst()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -1459,86 +1965,101 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 10: {
-              setSet(input.readBytes());
+              bitField0_ |= 0x00000001;
+              set_ = input.readBytes();
               break;
             }
             case 21: {
-              setStripeWidth(input.readFixed32());
+              bitField0_ |= 0x00000002;
+              stripeWidth_ = input.readFixed32();
               break;
             }
             case 29: {
-              setFirst(input.readFixed32());
+              bitField0_ |= 0x00000004;
+              first_ = input.readFixed32();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required bytes set = 1;
+      private com.google.protobuf.ByteString set_ = com.google.protobuf.ByteString.EMPTY;
       public boolean hasSet() {
-        return result.hasSet();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public com.google.protobuf.ByteString getSet() {
-        return result.getSet();
+        return set_;
       }
       public Builder setSet(com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasSet = true;
-        result.set_ = value;
+  bitField0_ |= 0x00000001;
+        set_ = value;
+        onChanged();
         return this;
       }
       public Builder clearSet() {
-        result.hasSet = false;
-        result.set_ = getDefaultInstance().getSet();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        set_ = getDefaultInstance().getSet();
+        onChanged();
         return this;
       }
       
       // required fixed32 stripe_width = 2;
+      private int stripeWidth_ ;
       public boolean hasStripeWidth() {
-        return result.hasStripeWidth();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       public int getStripeWidth() {
-        return result.getStripeWidth();
+        return stripeWidth_;
       }
       public Builder setStripeWidth(int value) {
-        result.hasStripeWidth = true;
-        result.stripeWidth_ = value;
+        bitField0_ |= 0x00000002;
+        stripeWidth_ = value;
+        onChanged();
         return this;
       }
       public Builder clearStripeWidth() {
-        result.hasStripeWidth = false;
-        result.stripeWidth_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        stripeWidth_ = 0;
+        onChanged();
         return this;
       }
       
       // required fixed32 first_ = 3;
+      private int first_ ;
       public boolean hasFirst() {
-        return result.hasFirst();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public int getFirst() {
-        return result.getFirst();
+        return first_;
       }
       public Builder setFirst(int value) {
-        result.hasFirst = true;
-        result.first_ = value;
+        bitField0_ |= 0x00000004;
+        first_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFirst() {
-        result.hasFirst = false;
-        result.first_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        first_ = 0;
+        onChanged();
         return this;
       }
       
@@ -1547,18 +2068,29 @@ public final class OSD {
     
     static {
       defaultInstance = new ObjectList(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.ObjectList)
   }
   
+  public interface ObjectVersionOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required fixed64 object_number = 1;
+    boolean hasObjectNumber();
+    long getObjectNumber();
+    
+    // required fixed64 object_version = 2;
+    boolean hasObjectVersion();
+    long getObjectVersion();
+  }
   public static final class ObjectVersion extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements ObjectVersionOrBuilder {
     // Use ObjectVersion.newBuilder() to construct.
-    private ObjectVersion() {
-      initFields();
+    private ObjectVersion(Builder builder) {
+      super(builder);
     }
     private ObjectVersion(boolean noInit) {}
     
@@ -1581,36 +2113,56 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ObjectVersion_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required fixed64 object_number = 1;
     public static final int OBJECT_NUMBER_FIELD_NUMBER = 1;
-    private boolean hasObjectNumber;
-    private long objectNumber_ = 0L;
-    public boolean hasObjectNumber() { return hasObjectNumber; }
-    public long getObjectNumber() { return objectNumber_; }
+    private long objectNumber_;
+    public boolean hasObjectNumber() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public long getObjectNumber() {
+      return objectNumber_;
+    }
     
     // required fixed64 object_version = 2;
     public static final int OBJECT_VERSION_FIELD_NUMBER = 2;
-    private boolean hasObjectVersion;
-    private long objectVersion_ = 0L;
-    public boolean hasObjectVersion() { return hasObjectVersion; }
-    public long getObjectVersion() { return objectVersion_; }
+    private long objectVersion_;
+    public boolean hasObjectVersion() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public long getObjectVersion() {
+      return objectVersion_;
+    }
     
     private void initFields() {
+      objectNumber_ = 0L;
+      objectVersion_ = 0L;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasObjectNumber) return false;
-      if (!hasObjectVersion) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasObjectNumber()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectVersion()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasObjectNumber()) {
-        output.writeFixed64(1, getObjectNumber());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeFixed64(1, objectNumber_);
       }
-      if (hasObjectVersion()) {
-        output.writeFixed64(2, getObjectVersion());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeFixed64(2, objectVersion_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -1621,17 +2173,22 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasObjectNumber()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(1, getObjectNumber());
+          .computeFixed64Size(1, objectNumber_);
       }
-      if (hasObjectVersion()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(2, getObjectVersion());
+          .computeFixed64Size(2, objectVersion_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion parseFrom(
@@ -1708,34 +2265,53 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ObjectVersion_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ObjectVersion_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion();
+        super.clear();
+        objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -1747,33 +2323,39 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion returnMe = result;
-        result = null;
-        return returnMe;
+        result.objectNumber_ = objectNumber_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.objectVersion_ = objectVersion_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -1797,6 +2379,18 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasObjectNumber()) {
+          
+          return false;
+        }
+        if (!hasObjectVersion()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -1809,61 +2403,72 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 9: {
-              setObjectNumber(input.readFixed64());
+              bitField0_ |= 0x00000001;
+              objectNumber_ = input.readFixed64();
               break;
             }
             case 17: {
-              setObjectVersion(input.readFixed64());
+              bitField0_ |= 0x00000002;
+              objectVersion_ = input.readFixed64();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required fixed64 object_number = 1;
+      private long objectNumber_ ;
       public boolean hasObjectNumber() {
-        return result.hasObjectNumber();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public long getObjectNumber() {
-        return result.getObjectNumber();
+        return objectNumber_;
       }
       public Builder setObjectNumber(long value) {
-        result.hasObjectNumber = true;
-        result.objectNumber_ = value;
+        bitField0_ |= 0x00000001;
+        objectNumber_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectNumber() {
-        result.hasObjectNumber = false;
-        result.objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        objectNumber_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 object_version = 2;
+      private long objectVersion_ ;
       public boolean hasObjectVersion() {
-        return result.hasObjectVersion();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       public long getObjectVersion() {
-        return result.getObjectVersion();
+        return objectVersion_;
       }
       public Builder setObjectVersion(long value) {
-        result.hasObjectVersion = true;
-        result.objectVersion_ = value;
+        bitField0_ |= 0x00000002;
+        objectVersion_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectVersion() {
-        result.hasObjectVersion = false;
-        result.objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        objectVersion_ = 0L;
+        onChanged();
         return this;
       }
       
@@ -1872,18 +2477,29 @@ public final class OSD {
     
     static {
       defaultInstance = new ObjectVersion(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.ObjectVersion)
   }
   
+  public interface TruncateRecordOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required fixed64 version = 1;
+    boolean hasVersion();
+    long getVersion();
+    
+    // required fixed64 last_object_number = 2;
+    boolean hasLastObjectNumber();
+    long getLastObjectNumber();
+  }
   public static final class TruncateRecord extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements TruncateRecordOrBuilder {
     // Use TruncateRecord.newBuilder() to construct.
-    private TruncateRecord() {
-      initFields();
+    private TruncateRecord(Builder builder) {
+      super(builder);
     }
     private TruncateRecord(boolean noInit) {}
     
@@ -1906,36 +2522,56 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_TruncateRecord_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required fixed64 version = 1;
     public static final int VERSION_FIELD_NUMBER = 1;
-    private boolean hasVersion;
-    private long version_ = 0L;
-    public boolean hasVersion() { return hasVersion; }
-    public long getVersion() { return version_; }
+    private long version_;
+    public boolean hasVersion() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public long getVersion() {
+      return version_;
+    }
     
     // required fixed64 last_object_number = 2;
     public static final int LAST_OBJECT_NUMBER_FIELD_NUMBER = 2;
-    private boolean hasLastObjectNumber;
-    private long lastObjectNumber_ = 0L;
-    public boolean hasLastObjectNumber() { return hasLastObjectNumber; }
-    public long getLastObjectNumber() { return lastObjectNumber_; }
+    private long lastObjectNumber_;
+    public boolean hasLastObjectNumber() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public long getLastObjectNumber() {
+      return lastObjectNumber_;
+    }
     
     private void initFields() {
+      version_ = 0L;
+      lastObjectNumber_ = 0L;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasVersion) return false;
-      if (!hasLastObjectNumber) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasVersion()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasLastObjectNumber()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasVersion()) {
-        output.writeFixed64(1, getVersion());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeFixed64(1, version_);
       }
-      if (hasLastObjectNumber()) {
-        output.writeFixed64(2, getLastObjectNumber());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeFixed64(2, lastObjectNumber_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -1946,17 +2582,22 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasVersion()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(1, getVersion());
+          .computeFixed64Size(1, version_);
       }
-      if (hasLastObjectNumber()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(2, getLastObjectNumber());
+          .computeFixed64Size(2, lastObjectNumber_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord parseFrom(
@@ -2033,34 +2674,53 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecordOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_TruncateRecord_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_TruncateRecord_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord();
+        super.clear();
+        version_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        lastObjectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -2072,33 +2732,39 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord returnMe = result;
-        result = null;
-        return returnMe;
+        result.version_ = version_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.lastObjectNumber_ = lastObjectNumber_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -2122,6 +2788,18 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasVersion()) {
+          
+          return false;
+        }
+        if (!hasLastObjectNumber()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -2134,61 +2812,72 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 9: {
-              setVersion(input.readFixed64());
+              bitField0_ |= 0x00000001;
+              version_ = input.readFixed64();
               break;
             }
             case 17: {
-              setLastObjectNumber(input.readFixed64());
+              bitField0_ |= 0x00000002;
+              lastObjectNumber_ = input.readFixed64();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required fixed64 version = 1;
+      private long version_ ;
       public boolean hasVersion() {
-        return result.hasVersion();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public long getVersion() {
-        return result.getVersion();
+        return version_;
       }
       public Builder setVersion(long value) {
-        result.hasVersion = true;
-        result.version_ = value;
+        bitField0_ |= 0x00000001;
+        version_ = value;
+        onChanged();
         return this;
       }
       public Builder clearVersion() {
-        result.hasVersion = false;
-        result.version_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        version_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 last_object_number = 2;
+      private long lastObjectNumber_ ;
       public boolean hasLastObjectNumber() {
-        return result.hasLastObjectNumber();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       public long getLastObjectNumber() {
-        return result.getLastObjectNumber();
+        return lastObjectNumber_;
       }
       public Builder setLastObjectNumber(long value) {
-        result.hasLastObjectNumber = true;
-        result.lastObjectNumber_ = value;
+        bitField0_ |= 0x00000002;
+        lastObjectNumber_ = value;
+        onChanged();
         return this;
       }
       public Builder clearLastObjectNumber() {
-        result.hasLastObjectNumber = false;
-        result.lastObjectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        lastObjectNumber_ = 0L;
+        onChanged();
         return this;
       }
       
@@ -2197,18 +2886,31 @@ public final class OSD {
     
     static {
       defaultInstance = new TruncateRecord(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.TruncateRecord)
   }
   
+  public interface TruncateLogOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // repeated .xtreemfs.pbrpc.TruncateRecord records = 1;
+    java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord> 
+        getRecordsList();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord getRecords(int index);
+    int getRecordsCount();
+    java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecordOrBuilder> 
+        getRecordsOrBuilderList();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecordOrBuilder getRecordsOrBuilder(
+        int index);
+  }
   public static final class TruncateLog extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements TruncateLogOrBuilder {
     // Use TruncateLog.newBuilder() to construct.
-    private TruncateLog() {
-      initFields();
+    private TruncateLog(Builder builder) {
+      super(builder);
     }
     private TruncateLog(boolean noInit) {}
     
@@ -2233,30 +2935,48 @@ public final class OSD {
     
     // repeated .xtreemfs.pbrpc.TruncateRecord records = 1;
     public static final int RECORDS_FIELD_NUMBER = 1;
-    private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord> records_ =
-      java.util.Collections.emptyList();
+    private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord> records_;
     public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord> getRecordsList() {
       return records_;
     }
-    public int getRecordsCount() { return records_.size(); }
+    public java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecordOrBuilder> 
+        getRecordsOrBuilderList() {
+      return records_;
+    }
+    public int getRecordsCount() {
+      return records_.size();
+    }
     public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord getRecords(int index) {
+      return records_.get(index);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecordOrBuilder getRecordsOrBuilder(
+        int index) {
       return records_.get(index);
     }
     
     private void initFields() {
+      records_ = java.util.Collections.emptyList();
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord element : getRecordsList()) {
-        if (!element.isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      for (int i = 0; i < getRecordsCount(); i++) {
+        if (!getRecords(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
       }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord element : getRecordsList()) {
-        output.writeMessage(1, element);
+      for (int i = 0; i < records_.size(); i++) {
+        output.writeMessage(1, records_.get(i));
       }
       getUnknownFields().writeTo(output);
     }
@@ -2267,13 +2987,18 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord element : getRecordsList()) {
+      for (int i = 0; i < records_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, element);
+          .computeMessageSize(1, records_.get(i));
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog parseFrom(
@@ -2350,34 +3075,56 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLogOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_TruncateLog_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_TruncateLog_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getRecordsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (recordsBuilder_ == null) {
+          records_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000001);
+        } else {
+          recordsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog();
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -2389,37 +3136,38 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog(this);
+        int from_bitField0_ = bitField0_;
+        if (recordsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001)) {
+            records_ = java.util.Collections.unmodifiableList(records_);
+            bitField0_ = (bitField0_ & ~0x00000001);
+          }
+          result.records_ = records_;
+        } else {
+          result.records_ = recordsBuilder_.build();
         }
-        if (result.records_ != java.util.Collections.EMPTY_LIST) {
-          result.records_ =
-            java.util.Collections.unmodifiableList(result.records_);
-        }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog returnMe = result;
-        result = null;
-        return returnMe;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -2433,14 +3181,44 @@ public final class OSD {
       
       public Builder mergeFrom(org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog other) {
         if (other == org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance()) return this;
-        if (!other.records_.isEmpty()) {
-          if (result.records_.isEmpty()) {
-            result.records_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord>();
+        if (recordsBuilder_ == null) {
+          if (!other.records_.isEmpty()) {
+            if (records_.isEmpty()) {
+              records_ = other.records_;
+              bitField0_ = (bitField0_ & ~0x00000001);
+            } else {
+              ensureRecordsIsMutable();
+              records_.addAll(other.records_);
+            }
+            onChanged();
           }
-          result.records_.addAll(other.records_);
+        } else {
+          if (!other.records_.isEmpty()) {
+            if (recordsBuilder_.isEmpty()) {
+              recordsBuilder_.dispose();
+              recordsBuilder_ = null;
+              records_ = other.records_;
+              bitField0_ = (bitField0_ & ~0x00000001);
+              recordsBuilder_ = 
+                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
+                   getRecordsFieldBuilder() : null;
+            } else {
+              recordsBuilder_.addAllMessages(other.records_);
+            }
+          }
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
+      }
+      
+      public final boolean isInitialized() {
+        for (int i = 0; i < getRecordsCount(); i++) {
+          if (!getRecords(i).isInitialized()) {
+            
+            return false;
+          }
+        }
+        return true;
       }
       
       public Builder mergeFrom(
@@ -2455,11 +3233,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -2474,56 +3254,192 @@ public final class OSD {
         }
       }
       
+      private int bitField0_;
       
       // repeated .xtreemfs.pbrpc.TruncateRecord records = 1;
+      private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord> records_ =
+        java.util.Collections.emptyList();
+      private void ensureRecordsIsMutable() {
+        if (!((bitField0_ & 0x00000001) == 0x00000001)) {
+          records_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord>(records_);
+          bitField0_ |= 0x00000001;
+         }
+      }
+      
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecordOrBuilder> recordsBuilder_;
+      
       public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord> getRecordsList() {
-        return java.util.Collections.unmodifiableList(result.records_);
+        if (recordsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(records_);
+        } else {
+          return recordsBuilder_.getMessageList();
+        }
       }
       public int getRecordsCount() {
-        return result.getRecordsCount();
+        if (recordsBuilder_ == null) {
+          return records_.size();
+        } else {
+          return recordsBuilder_.getCount();
+        }
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord getRecords(int index) {
-        return result.getRecords(index);
-      }
-      public Builder setRecords(int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (recordsBuilder_ == null) {
+          return records_.get(index);
+        } else {
+          return recordsBuilder_.getMessage(index);
         }
-        result.records_.set(index, value);
+      }
+      public Builder setRecords(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord value) {
+        if (recordsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureRecordsIsMutable();
+          records_.set(index, value);
+          onChanged();
+        } else {
+          recordsBuilder_.setMessage(index, value);
+        }
         return this;
       }
-      public Builder setRecords(int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.Builder builderForValue) {
-        result.records_.set(index, builderForValue.build());
+      public Builder setRecords(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.Builder builderForValue) {
+        if (recordsBuilder_ == null) {
+          ensureRecordsIsMutable();
+          records_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          recordsBuilder_.setMessage(index, builderForValue.build());
+        }
         return this;
       }
       public Builder addRecords(org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (recordsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureRecordsIsMutable();
+          records_.add(value);
+          onChanged();
+        } else {
+          recordsBuilder_.addMessage(value);
         }
-        if (result.records_.isEmpty()) {
-          result.records_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord>();
-        }
-        result.records_.add(value);
         return this;
       }
-      public Builder addRecords(org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.Builder builderForValue) {
-        if (result.records_.isEmpty()) {
-          result.records_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord>();
+      public Builder addRecords(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord value) {
+        if (recordsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureRecordsIsMutable();
+          records_.add(index, value);
+          onChanged();
+        } else {
+          recordsBuilder_.addMessage(index, value);
         }
-        result.records_.add(builderForValue.build());
+        return this;
+      }
+      public Builder addRecords(
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.Builder builderForValue) {
+        if (recordsBuilder_ == null) {
+          ensureRecordsIsMutable();
+          records_.add(builderForValue.build());
+          onChanged();
+        } else {
+          recordsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      public Builder addRecords(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.Builder builderForValue) {
+        if (recordsBuilder_ == null) {
+          ensureRecordsIsMutable();
+          records_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          recordsBuilder_.addMessage(index, builderForValue.build());
+        }
         return this;
       }
       public Builder addAllRecords(
           java.lang.Iterable<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord> values) {
-        if (result.records_.isEmpty()) {
-          result.records_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord>();
+        if (recordsBuilder_ == null) {
+          ensureRecordsIsMutable();
+          super.addAll(values, records_);
+          onChanged();
+        } else {
+          recordsBuilder_.addAllMessages(values);
         }
-        super.addAll(values, result.records_);
         return this;
       }
       public Builder clearRecords() {
-        result.records_ = java.util.Collections.emptyList();
+        if (recordsBuilder_ == null) {
+          records_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000001);
+          onChanged();
+        } else {
+          recordsBuilder_.clear();
+        }
         return this;
+      }
+      public Builder removeRecords(int index) {
+        if (recordsBuilder_ == null) {
+          ensureRecordsIsMutable();
+          records_.remove(index);
+          onChanged();
+        } else {
+          recordsBuilder_.remove(index);
+        }
+        return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.Builder getRecordsBuilder(
+          int index) {
+        return getRecordsFieldBuilder().getBuilder(index);
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecordOrBuilder getRecordsOrBuilder(
+          int index) {
+        if (recordsBuilder_ == null) {
+          return records_.get(index);  } else {
+          return recordsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      public java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecordOrBuilder> 
+           getRecordsOrBuilderList() {
+        if (recordsBuilder_ != null) {
+          return recordsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(records_);
+        }
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.Builder addRecordsBuilder() {
+        return getRecordsFieldBuilder().addBuilder(
+            org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.getDefaultInstance());
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.Builder addRecordsBuilder(
+          int index) {
+        return getRecordsFieldBuilder().addBuilder(
+            index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.getDefaultInstance());
+      }
+      public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.Builder> 
+           getRecordsBuilderList() {
+        return getRecordsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecordOrBuilder> 
+          getRecordsFieldBuilder() {
+        if (recordsBuilder_ == null) {
+          recordsBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecordOrBuilder>(
+                  records_,
+                  ((bitField0_ & 0x00000001) == 0x00000001),
+                  getParentForChildren(),
+                  isClean());
+          records_ = null;
+        }
+        return recordsBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.TruncateLog)
@@ -2531,18 +3447,52 @@ public final class OSD {
     
     static {
       defaultInstance = new TruncateLog(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.TruncateLog)
   }
   
+  public interface ReplicaStatusOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required fixed64 truncate_epoch = 1;
+    boolean hasTruncateEpoch();
+    long getTruncateEpoch();
+    
+    // required fixed64 file_size = 2;
+    boolean hasFileSize();
+    long getFileSize();
+    
+    // required fixed64 max_obj_version = 3;
+    boolean hasMaxObjVersion();
+    long getMaxObjVersion();
+    
+    // required fixed32 primary_epoch = 4;
+    boolean hasPrimaryEpoch();
+    int getPrimaryEpoch();
+    
+    // repeated .xtreemfs.pbrpc.ObjectVersion objectVersions = 5;
+    java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion> 
+        getObjectVersionsList();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion getObjectVersions(int index);
+    int getObjectVersionsCount();
+    java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionOrBuilder> 
+        getObjectVersionsOrBuilderList();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionOrBuilder getObjectVersionsOrBuilder(
+        int index);
+    
+    // required .xtreemfs.pbrpc.TruncateLog truncate_log = 6;
+    boolean hasTruncateLog();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog getTruncateLog();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLogOrBuilder getTruncateLogOrBuilder();
+  }
   public static final class ReplicaStatus extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements ReplicaStatusOrBuilder {
     // Use ReplicaStatus.newBuilder() to construct.
-    private ReplicaStatus() {
-      initFields();
+    private ReplicaStatus(Builder builder) {
+      super(builder);
     }
     private ReplicaStatus(boolean noInit) {}
     
@@ -2565,89 +3515,148 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ReplicaStatus_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required fixed64 truncate_epoch = 1;
     public static final int TRUNCATE_EPOCH_FIELD_NUMBER = 1;
-    private boolean hasTruncateEpoch;
-    private long truncateEpoch_ = 0L;
-    public boolean hasTruncateEpoch() { return hasTruncateEpoch; }
-    public long getTruncateEpoch() { return truncateEpoch_; }
+    private long truncateEpoch_;
+    public boolean hasTruncateEpoch() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public long getTruncateEpoch() {
+      return truncateEpoch_;
+    }
     
     // required fixed64 file_size = 2;
     public static final int FILE_SIZE_FIELD_NUMBER = 2;
-    private boolean hasFileSize;
-    private long fileSize_ = 0L;
-    public boolean hasFileSize() { return hasFileSize; }
-    public long getFileSize() { return fileSize_; }
+    private long fileSize_;
+    public boolean hasFileSize() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public long getFileSize() {
+      return fileSize_;
+    }
     
     // required fixed64 max_obj_version = 3;
     public static final int MAX_OBJ_VERSION_FIELD_NUMBER = 3;
-    private boolean hasMaxObjVersion;
-    private long maxObjVersion_ = 0L;
-    public boolean hasMaxObjVersion() { return hasMaxObjVersion; }
-    public long getMaxObjVersion() { return maxObjVersion_; }
+    private long maxObjVersion_;
+    public boolean hasMaxObjVersion() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public long getMaxObjVersion() {
+      return maxObjVersion_;
+    }
     
     // required fixed32 primary_epoch = 4;
     public static final int PRIMARY_EPOCH_FIELD_NUMBER = 4;
-    private boolean hasPrimaryEpoch;
-    private int primaryEpoch_ = 0;
-    public boolean hasPrimaryEpoch() { return hasPrimaryEpoch; }
-    public int getPrimaryEpoch() { return primaryEpoch_; }
+    private int primaryEpoch_;
+    public boolean hasPrimaryEpoch() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public int getPrimaryEpoch() {
+      return primaryEpoch_;
+    }
     
     // repeated .xtreemfs.pbrpc.ObjectVersion objectVersions = 5;
     public static final int OBJECTVERSIONS_FIELD_NUMBER = 5;
-    private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion> objectVersions_ =
-      java.util.Collections.emptyList();
+    private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion> objectVersions_;
     public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion> getObjectVersionsList() {
       return objectVersions_;
     }
-    public int getObjectVersionsCount() { return objectVersions_.size(); }
+    public java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionOrBuilder> 
+        getObjectVersionsOrBuilderList() {
+      return objectVersions_;
+    }
+    public int getObjectVersionsCount() {
+      return objectVersions_.size();
+    }
     public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion getObjectVersions(int index) {
+      return objectVersions_.get(index);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionOrBuilder getObjectVersionsOrBuilder(
+        int index) {
       return objectVersions_.get(index);
     }
     
     // required .xtreemfs.pbrpc.TruncateLog truncate_log = 6;
     public static final int TRUNCATE_LOG_FIELD_NUMBER = 6;
-    private boolean hasTruncateLog;
     private org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog truncateLog_;
-    public boolean hasTruncateLog() { return hasTruncateLog; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog getTruncateLog() { return truncateLog_; }
+    public boolean hasTruncateLog() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog getTruncateLog() {
+      return truncateLog_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLogOrBuilder getTruncateLogOrBuilder() {
+      return truncateLog_;
+    }
     
     private void initFields() {
+      truncateEpoch_ = 0L;
+      fileSize_ = 0L;
+      maxObjVersion_ = 0L;
+      primaryEpoch_ = 0;
+      objectVersions_ = java.util.Collections.emptyList();
       truncateLog_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance();
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasTruncateEpoch) return false;
-      if (!hasFileSize) return false;
-      if (!hasMaxObjVersion) return false;
-      if (!hasPrimaryEpoch) return false;
-      if (!hasTruncateLog) return false;
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion element : getObjectVersionsList()) {
-        if (!element.isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasTruncateEpoch()) {
+        memoizedIsInitialized = 0;
+        return false;
       }
-      if (!getTruncateLog().isInitialized()) return false;
+      if (!hasFileSize()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasMaxObjVersion()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasPrimaryEpoch()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasTruncateLog()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      for (int i = 0; i < getObjectVersionsCount(); i++) {
+        if (!getObjectVersions(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      if (!getTruncateLog().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasTruncateEpoch()) {
-        output.writeFixed64(1, getTruncateEpoch());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeFixed64(1, truncateEpoch_);
       }
-      if (hasFileSize()) {
-        output.writeFixed64(2, getFileSize());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeFixed64(2, fileSize_);
       }
-      if (hasMaxObjVersion()) {
-        output.writeFixed64(3, getMaxObjVersion());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed64(3, maxObjVersion_);
       }
-      if (hasPrimaryEpoch()) {
-        output.writeFixed32(4, getPrimaryEpoch());
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeFixed32(4, primaryEpoch_);
       }
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion element : getObjectVersionsList()) {
-        output.writeMessage(5, element);
+      for (int i = 0; i < objectVersions_.size(); i++) {
+        output.writeMessage(5, objectVersions_.get(i));
       }
-      if (hasTruncateLog()) {
-        output.writeMessage(6, getTruncateLog());
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeMessage(6, truncateLog_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -2658,33 +3667,38 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasTruncateEpoch()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(1, getTruncateEpoch());
+          .computeFixed64Size(1, truncateEpoch_);
       }
-      if (hasFileSize()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(2, getFileSize());
+          .computeFixed64Size(2, fileSize_);
       }
-      if (hasMaxObjVersion()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(3, getMaxObjVersion());
+          .computeFixed64Size(3, maxObjVersion_);
       }
-      if (hasPrimaryEpoch()) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(4, getPrimaryEpoch());
+          .computeFixed32Size(4, primaryEpoch_);
       }
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion element : getObjectVersionsList()) {
+      for (int i = 0; i < objectVersions_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(5, element);
+          .computeMessageSize(5, objectVersions_.get(i));
       }
-      if (hasTruncateLog()) {
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(6, getTruncateLog());
+          .computeMessageSize(6, truncateLog_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus parseFrom(
@@ -2761,34 +3775,71 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatusOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ReplicaStatus_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ReplicaStatus_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getObjectVersionsFieldBuilder();
+          getTruncateLogFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        truncateEpoch_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileSize_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        maxObjVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        primaryEpoch_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        if (objectVersionsBuilder_ == null) {
+          objectVersions_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000010);
+        } else {
+          objectVersionsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus();
+        if (truncateLogBuilder_ == null) {
+          truncateLog_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance();
+        } else {
+          truncateLogBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000020);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -2800,37 +3851,64 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        if (result.objectVersions_ != java.util.Collections.EMPTY_LIST) {
-          result.objectVersions_ =
-            java.util.Collections.unmodifiableList(result.objectVersions_);
+        result.truncateEpoch_ = truncateEpoch_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus returnMe = result;
-        result = null;
-        return returnMe;
+        result.fileSize_ = fileSize_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.maxObjVersion_ = maxObjVersion_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.primaryEpoch_ = primaryEpoch_;
+        if (objectVersionsBuilder_ == null) {
+          if (((bitField0_ & 0x00000010) == 0x00000010)) {
+            objectVersions_ = java.util.Collections.unmodifiableList(objectVersions_);
+            bitField0_ = (bitField0_ & ~0x00000010);
+          }
+          result.objectVersions_ = objectVersions_;
+        } else {
+          result.objectVersions_ = objectVersionsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        if (truncateLogBuilder_ == null) {
+          result.truncateLog_ = truncateLog_;
+        } else {
+          result.truncateLog_ = truncateLogBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -2856,17 +3934,71 @@ public final class OSD {
         if (other.hasPrimaryEpoch()) {
           setPrimaryEpoch(other.getPrimaryEpoch());
         }
-        if (!other.objectVersions_.isEmpty()) {
-          if (result.objectVersions_.isEmpty()) {
-            result.objectVersions_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion>();
+        if (objectVersionsBuilder_ == null) {
+          if (!other.objectVersions_.isEmpty()) {
+            if (objectVersions_.isEmpty()) {
+              objectVersions_ = other.objectVersions_;
+              bitField0_ = (bitField0_ & ~0x00000010);
+            } else {
+              ensureObjectVersionsIsMutable();
+              objectVersions_.addAll(other.objectVersions_);
+            }
+            onChanged();
           }
-          result.objectVersions_.addAll(other.objectVersions_);
+        } else {
+          if (!other.objectVersions_.isEmpty()) {
+            if (objectVersionsBuilder_.isEmpty()) {
+              objectVersionsBuilder_.dispose();
+              objectVersionsBuilder_ = null;
+              objectVersions_ = other.objectVersions_;
+              bitField0_ = (bitField0_ & ~0x00000010);
+              objectVersionsBuilder_ = 
+                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
+                   getObjectVersionsFieldBuilder() : null;
+            } else {
+              objectVersionsBuilder_.addAllMessages(other.objectVersions_);
+            }
+          }
         }
         if (other.hasTruncateLog()) {
           mergeTruncateLog(other.getTruncateLog());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
+      }
+      
+      public final boolean isInitialized() {
+        if (!hasTruncateEpoch()) {
+          
+          return false;
+        }
+        if (!hasFileSize()) {
+          
+          return false;
+        }
+        if (!hasMaxObjVersion()) {
+          
+          return false;
+        }
+        if (!hasPrimaryEpoch()) {
+          
+          return false;
+        }
+        if (!hasTruncateLog()) {
+          
+          return false;
+        }
+        for (int i = 0; i < getObjectVersionsCount(); i++) {
+          if (!getObjectVersions(i).isInitialized()) {
+            
+            return false;
+          }
+        }
+        if (!getTruncateLog().isInitialized()) {
+          
+          return false;
+        }
+        return true;
       }
       
       public Builder mergeFrom(
@@ -2881,29 +4013,35 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 9: {
-              setTruncateEpoch(input.readFixed64());
+              bitField0_ |= 0x00000001;
+              truncateEpoch_ = input.readFixed64();
               break;
             }
             case 17: {
-              setFileSize(input.readFixed64());
+              bitField0_ |= 0x00000002;
+              fileSize_ = input.readFixed64();
               break;
             }
             case 25: {
-              setMaxObjVersion(input.readFixed64());
+              bitField0_ |= 0x00000004;
+              maxObjVersion_ = input.readFixed64();
               break;
             }
             case 37: {
-              setPrimaryEpoch(input.readFixed32());
+              bitField0_ |= 0x00000008;
+              primaryEpoch_ = input.readFixed32();
               break;
             }
             case 42: {
@@ -2925,165 +4063,366 @@ public final class OSD {
         }
       }
       
+      private int bitField0_;
       
       // required fixed64 truncate_epoch = 1;
+      private long truncateEpoch_ ;
       public boolean hasTruncateEpoch() {
-        return result.hasTruncateEpoch();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public long getTruncateEpoch() {
-        return result.getTruncateEpoch();
+        return truncateEpoch_;
       }
       public Builder setTruncateEpoch(long value) {
-        result.hasTruncateEpoch = true;
-        result.truncateEpoch_ = value;
+        bitField0_ |= 0x00000001;
+        truncateEpoch_ = value;
+        onChanged();
         return this;
       }
       public Builder clearTruncateEpoch() {
-        result.hasTruncateEpoch = false;
-        result.truncateEpoch_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        truncateEpoch_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 file_size = 2;
+      private long fileSize_ ;
       public boolean hasFileSize() {
-        return result.hasFileSize();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       public long getFileSize() {
-        return result.getFileSize();
+        return fileSize_;
       }
       public Builder setFileSize(long value) {
-        result.hasFileSize = true;
-        result.fileSize_ = value;
+        bitField0_ |= 0x00000002;
+        fileSize_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileSize() {
-        result.hasFileSize = false;
-        result.fileSize_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileSize_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 max_obj_version = 3;
+      private long maxObjVersion_ ;
       public boolean hasMaxObjVersion() {
-        return result.hasMaxObjVersion();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public long getMaxObjVersion() {
-        return result.getMaxObjVersion();
+        return maxObjVersion_;
       }
       public Builder setMaxObjVersion(long value) {
-        result.hasMaxObjVersion = true;
-        result.maxObjVersion_ = value;
+        bitField0_ |= 0x00000004;
+        maxObjVersion_ = value;
+        onChanged();
         return this;
       }
       public Builder clearMaxObjVersion() {
-        result.hasMaxObjVersion = false;
-        result.maxObjVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        maxObjVersion_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed32 primary_epoch = 4;
+      private int primaryEpoch_ ;
       public boolean hasPrimaryEpoch() {
-        return result.hasPrimaryEpoch();
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       public int getPrimaryEpoch() {
-        return result.getPrimaryEpoch();
+        return primaryEpoch_;
       }
       public Builder setPrimaryEpoch(int value) {
-        result.hasPrimaryEpoch = true;
-        result.primaryEpoch_ = value;
+        bitField0_ |= 0x00000008;
+        primaryEpoch_ = value;
+        onChanged();
         return this;
       }
       public Builder clearPrimaryEpoch() {
-        result.hasPrimaryEpoch = false;
-        result.primaryEpoch_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        primaryEpoch_ = 0;
+        onChanged();
         return this;
       }
       
       // repeated .xtreemfs.pbrpc.ObjectVersion objectVersions = 5;
+      private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion> objectVersions_ =
+        java.util.Collections.emptyList();
+      private void ensureObjectVersionsIsMutable() {
+        if (!((bitField0_ & 0x00000010) == 0x00000010)) {
+          objectVersions_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion>(objectVersions_);
+          bitField0_ |= 0x00000010;
+         }
+      }
+      
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionOrBuilder> objectVersionsBuilder_;
+      
       public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion> getObjectVersionsList() {
-        return java.util.Collections.unmodifiableList(result.objectVersions_);
+        if (objectVersionsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(objectVersions_);
+        } else {
+          return objectVersionsBuilder_.getMessageList();
+        }
       }
       public int getObjectVersionsCount() {
-        return result.getObjectVersionsCount();
+        if (objectVersionsBuilder_ == null) {
+          return objectVersions_.size();
+        } else {
+          return objectVersionsBuilder_.getCount();
+        }
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion getObjectVersions(int index) {
-        return result.getObjectVersions(index);
-      }
-      public Builder setObjectVersions(int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (objectVersionsBuilder_ == null) {
+          return objectVersions_.get(index);
+        } else {
+          return objectVersionsBuilder_.getMessage(index);
         }
-        result.objectVersions_.set(index, value);
+      }
+      public Builder setObjectVersions(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion value) {
+        if (objectVersionsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureObjectVersionsIsMutable();
+          objectVersions_.set(index, value);
+          onChanged();
+        } else {
+          objectVersionsBuilder_.setMessage(index, value);
+        }
         return this;
       }
-      public Builder setObjectVersions(int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.Builder builderForValue) {
-        result.objectVersions_.set(index, builderForValue.build());
+      public Builder setObjectVersions(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.Builder builderForValue) {
+        if (objectVersionsBuilder_ == null) {
+          ensureObjectVersionsIsMutable();
+          objectVersions_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          objectVersionsBuilder_.setMessage(index, builderForValue.build());
+        }
         return this;
       }
       public Builder addObjectVersions(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (objectVersionsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureObjectVersionsIsMutable();
+          objectVersions_.add(value);
+          onChanged();
+        } else {
+          objectVersionsBuilder_.addMessage(value);
         }
-        if (result.objectVersions_.isEmpty()) {
-          result.objectVersions_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion>();
-        }
-        result.objectVersions_.add(value);
         return this;
       }
-      public Builder addObjectVersions(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.Builder builderForValue) {
-        if (result.objectVersions_.isEmpty()) {
-          result.objectVersions_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion>();
+      public Builder addObjectVersions(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion value) {
+        if (objectVersionsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureObjectVersionsIsMutable();
+          objectVersions_.add(index, value);
+          onChanged();
+        } else {
+          objectVersionsBuilder_.addMessage(index, value);
         }
-        result.objectVersions_.add(builderForValue.build());
+        return this;
+      }
+      public Builder addObjectVersions(
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.Builder builderForValue) {
+        if (objectVersionsBuilder_ == null) {
+          ensureObjectVersionsIsMutable();
+          objectVersions_.add(builderForValue.build());
+          onChanged();
+        } else {
+          objectVersionsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      public Builder addObjectVersions(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.Builder builderForValue) {
+        if (objectVersionsBuilder_ == null) {
+          ensureObjectVersionsIsMutable();
+          objectVersions_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          objectVersionsBuilder_.addMessage(index, builderForValue.build());
+        }
         return this;
       }
       public Builder addAllObjectVersions(
           java.lang.Iterable<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion> values) {
-        if (result.objectVersions_.isEmpty()) {
-          result.objectVersions_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion>();
+        if (objectVersionsBuilder_ == null) {
+          ensureObjectVersionsIsMutable();
+          super.addAll(values, objectVersions_);
+          onChanged();
+        } else {
+          objectVersionsBuilder_.addAllMessages(values);
         }
-        super.addAll(values, result.objectVersions_);
         return this;
       }
       public Builder clearObjectVersions() {
-        result.objectVersions_ = java.util.Collections.emptyList();
+        if (objectVersionsBuilder_ == null) {
+          objectVersions_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000010);
+          onChanged();
+        } else {
+          objectVersionsBuilder_.clear();
+        }
         return this;
+      }
+      public Builder removeObjectVersions(int index) {
+        if (objectVersionsBuilder_ == null) {
+          ensureObjectVersionsIsMutable();
+          objectVersions_.remove(index);
+          onChanged();
+        } else {
+          objectVersionsBuilder_.remove(index);
+        }
+        return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.Builder getObjectVersionsBuilder(
+          int index) {
+        return getObjectVersionsFieldBuilder().getBuilder(index);
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionOrBuilder getObjectVersionsOrBuilder(
+          int index) {
+        if (objectVersionsBuilder_ == null) {
+          return objectVersions_.get(index);  } else {
+          return objectVersionsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      public java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionOrBuilder> 
+           getObjectVersionsOrBuilderList() {
+        if (objectVersionsBuilder_ != null) {
+          return objectVersionsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(objectVersions_);
+        }
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.Builder addObjectVersionsBuilder() {
+        return getObjectVersionsFieldBuilder().addBuilder(
+            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.getDefaultInstance());
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.Builder addObjectVersionsBuilder(
+          int index) {
+        return getObjectVersionsFieldBuilder().addBuilder(
+            index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.getDefaultInstance());
+      }
+      public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.Builder> 
+           getObjectVersionsBuilderList() {
+        return getObjectVersionsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionOrBuilder> 
+          getObjectVersionsFieldBuilder() {
+        if (objectVersionsBuilder_ == null) {
+          objectVersionsBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionOrBuilder>(
+                  objectVersions_,
+                  ((bitField0_ & 0x00000010) == 0x00000010),
+                  getParentForChildren(),
+                  isClean());
+          objectVersions_ = null;
+        }
+        return objectVersionsBuilder_;
       }
       
       // required .xtreemfs.pbrpc.TruncateLog truncate_log = 6;
+      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog truncateLog_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLogOrBuilder> truncateLogBuilder_;
       public boolean hasTruncateLog() {
-        return result.hasTruncateLog();
+        return ((bitField0_ & 0x00000020) == 0x00000020);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog getTruncateLog() {
-        return result.getTruncateLog();
+        if (truncateLogBuilder_ == null) {
+          return truncateLog_;
+        } else {
+          return truncateLogBuilder_.getMessage();
+        }
       }
       public Builder setTruncateLog(org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (truncateLogBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          truncateLog_ = value;
+          onChanged();
+        } else {
+          truncateLogBuilder_.setMessage(value);
         }
-        result.hasTruncateLog = true;
-        result.truncateLog_ = value;
+        bitField0_ |= 0x00000020;
         return this;
       }
-      public Builder setTruncateLog(org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.Builder builderForValue) {
-        result.hasTruncateLog = true;
-        result.truncateLog_ = builderForValue.build();
+      public Builder setTruncateLog(
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.Builder builderForValue) {
+        if (truncateLogBuilder_ == null) {
+          truncateLog_ = builderForValue.build();
+          onChanged();
+        } else {
+          truncateLogBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000020;
         return this;
       }
       public Builder mergeTruncateLog(org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog value) {
-        if (result.hasTruncateLog() &&
-            result.truncateLog_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance()) {
-          result.truncateLog_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.newBuilder(result.truncateLog_).mergeFrom(value).buildPartial();
+        if (truncateLogBuilder_ == null) {
+          if (((bitField0_ & 0x00000020) == 0x00000020) &&
+              truncateLog_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance()) {
+            truncateLog_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.newBuilder(truncateLog_).mergeFrom(value).buildPartial();
+          } else {
+            truncateLog_ = value;
+          }
+          onChanged();
         } else {
-          result.truncateLog_ = value;
+          truncateLogBuilder_.mergeFrom(value);
         }
-        result.hasTruncateLog = true;
+        bitField0_ |= 0x00000020;
         return this;
       }
       public Builder clearTruncateLog() {
-        result.hasTruncateLog = false;
-        result.truncateLog_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance();
+        if (truncateLogBuilder_ == null) {
+          truncateLog_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance();
+          onChanged();
+        } else {
+          truncateLogBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000020);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.Builder getTruncateLogBuilder() {
+        bitField0_ |= 0x00000020;
+        onChanged();
+        return getTruncateLogFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLogOrBuilder getTruncateLogOrBuilder() {
+        if (truncateLogBuilder_ != null) {
+          return truncateLogBuilder_.getMessageOrBuilder();
+        } else {
+          return truncateLog_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLogOrBuilder> 
+          getTruncateLogFieldBuilder() {
+        if (truncateLogBuilder_ == null) {
+          truncateLogBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLogOrBuilder>(
+                  truncateLog_,
+                  getParentForChildren(),
+                  isClean());
+          truncateLog_ = null;
+        }
+        return truncateLogBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.ReplicaStatus)
@@ -3091,18 +4430,34 @@ public final class OSD {
     
     static {
       defaultInstance = new ReplicaStatus(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.ReplicaStatus)
   }
   
+  public interface ObjectVersionMappingOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required fixed64 object_number = 1;
+    boolean hasObjectNumber();
+    long getObjectNumber();
+    
+    // required fixed64 object_version = 2;
+    boolean hasObjectVersion();
+    long getObjectVersion();
+    
+    // repeated string osd_uuids = 3;
+    java.util.List<String> getOsdUuidsList();
+    int getOsdUuidsCount();
+    String getOsdUuids(int index);
+  }
   public static final class ObjectVersionMapping extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements ObjectVersionMappingOrBuilder {
     // Use ObjectVersionMapping.newBuilder() to construct.
-    private ObjectVersionMapping() {
-      initFields();
+    private ObjectVersionMapping(Builder builder) {
+      super(builder);
     }
     private ObjectVersionMapping(boolean noInit) {}
     
@@ -3125,51 +4480,74 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ObjectVersionMapping_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required fixed64 object_number = 1;
     public static final int OBJECT_NUMBER_FIELD_NUMBER = 1;
-    private boolean hasObjectNumber;
-    private long objectNumber_ = 0L;
-    public boolean hasObjectNumber() { return hasObjectNumber; }
-    public long getObjectNumber() { return objectNumber_; }
+    private long objectNumber_;
+    public boolean hasObjectNumber() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public long getObjectNumber() {
+      return objectNumber_;
+    }
     
     // required fixed64 object_version = 2;
     public static final int OBJECT_VERSION_FIELD_NUMBER = 2;
-    private boolean hasObjectVersion;
-    private long objectVersion_ = 0L;
-    public boolean hasObjectVersion() { return hasObjectVersion; }
-    public long getObjectVersion() { return objectVersion_; }
+    private long objectVersion_;
+    public boolean hasObjectVersion() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public long getObjectVersion() {
+      return objectVersion_;
+    }
     
     // repeated string osd_uuids = 3;
     public static final int OSD_UUIDS_FIELD_NUMBER = 3;
-    private java.util.List<java.lang.String> osdUuids_ =
-      java.util.Collections.emptyList();
-    public java.util.List<java.lang.String> getOsdUuidsList() {
+    private com.google.protobuf.LazyStringList osdUuids_;
+    public java.util.List<String>
+        getOsdUuidsList() {
       return osdUuids_;
     }
-    public int getOsdUuidsCount() { return osdUuids_.size(); }
-    public java.lang.String getOsdUuids(int index) {
+    public int getOsdUuidsCount() {
+      return osdUuids_.size();
+    }
+    public String getOsdUuids(int index) {
       return osdUuids_.get(index);
     }
     
     private void initFields() {
+      objectNumber_ = 0L;
+      objectVersion_ = 0L;
+      osdUuids_ = com.google.protobuf.LazyStringArrayList.EMPTY;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasObjectNumber) return false;
-      if (!hasObjectVersion) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasObjectNumber()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectVersion()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasObjectNumber()) {
-        output.writeFixed64(1, getObjectNumber());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeFixed64(1, objectNumber_);
       }
-      if (hasObjectVersion()) {
-        output.writeFixed64(2, getObjectVersion());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeFixed64(2, objectVersion_);
       }
-      for (java.lang.String element : getOsdUuidsList()) {
-        output.writeString(3, element);
+      for (int i = 0; i < osdUuids_.size(); i++) {
+        output.writeBytes(3, osdUuids_.getByteString(i));
       }
       getUnknownFields().writeTo(output);
     }
@@ -3180,19 +4558,19 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasObjectNumber()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(1, getObjectNumber());
+          .computeFixed64Size(1, objectNumber_);
       }
-      if (hasObjectVersion()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(2, getObjectVersion());
+          .computeFixed64Size(2, objectVersion_);
       }
       {
         int dataSize = 0;
-        for (java.lang.String element : getOsdUuidsList()) {
+        for (int i = 0; i < osdUuids_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeStringSizeNoTag(element);
+            .computeBytesSizeNoTag(osdUuids_.getByteString(i));
         }
         size += dataSize;
         size += 1 * getOsdUuidsList().size();
@@ -3200,6 +4578,11 @@ public final class OSD {
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping parseFrom(
@@ -3276,34 +4659,55 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMappingOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ObjectVersionMapping_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_ObjectVersionMapping_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping();
+        super.clear();
+        objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        osdUuids_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -3315,37 +4719,45 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        if (result.osdUuids_ != java.util.Collections.EMPTY_LIST) {
-          result.osdUuids_ =
-            java.util.Collections.unmodifiableList(result.osdUuids_);
+        result.objectNumber_ = objectNumber_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping returnMe = result;
-        result = null;
-        return returnMe;
+        result.objectVersion_ = objectVersion_;
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+          osdUuids_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              osdUuids_);
+          bitField0_ = (bitField0_ & ~0x00000004);
+        }
+        result.osdUuids_ = osdUuids_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -3366,13 +4778,29 @@ public final class OSD {
           setObjectVersion(other.getObjectVersion());
         }
         if (!other.osdUuids_.isEmpty()) {
-          if (result.osdUuids_.isEmpty()) {
-            result.osdUuids_ = new java.util.ArrayList<java.lang.String>();
+          if (osdUuids_.isEmpty()) {
+            osdUuids_ = other.osdUuids_;
+            bitField0_ = (bitField0_ & ~0x00000004);
+          } else {
+            ensureOsdUuidsIsMutable();
+            osdUuids_.addAll(other.osdUuids_);
           }
-          result.osdUuids_.addAll(other.osdUuids_);
+          onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
+      }
+      
+      public final boolean isInitialized() {
+        if (!hasObjectNumber()) {
+          
+          return false;
+        }
+        if (!hasObjectVersion()) {
+          
+          return false;
+        }
+        return true;
       }
       
       public Builder mergeFrom(
@@ -3387,106 +4815,134 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 9: {
-              setObjectNumber(input.readFixed64());
+              bitField0_ |= 0x00000001;
+              objectNumber_ = input.readFixed64();
               break;
             }
             case 17: {
-              setObjectVersion(input.readFixed64());
+              bitField0_ |= 0x00000002;
+              objectVersion_ = input.readFixed64();
               break;
             }
             case 26: {
-              addOsdUuids(input.readString());
+              ensureOsdUuidsIsMutable();
+              osdUuids_.add(input.readBytes());
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required fixed64 object_number = 1;
+      private long objectNumber_ ;
       public boolean hasObjectNumber() {
-        return result.hasObjectNumber();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public long getObjectNumber() {
-        return result.getObjectNumber();
+        return objectNumber_;
       }
       public Builder setObjectNumber(long value) {
-        result.hasObjectNumber = true;
-        result.objectNumber_ = value;
+        bitField0_ |= 0x00000001;
+        objectNumber_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectNumber() {
-        result.hasObjectNumber = false;
-        result.objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        objectNumber_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 object_version = 2;
+      private long objectVersion_ ;
       public boolean hasObjectVersion() {
-        return result.hasObjectVersion();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       public long getObjectVersion() {
-        return result.getObjectVersion();
+        return objectVersion_;
       }
       public Builder setObjectVersion(long value) {
-        result.hasObjectVersion = true;
-        result.objectVersion_ = value;
+        bitField0_ |= 0x00000002;
+        objectVersion_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectVersion() {
-        result.hasObjectVersion = false;
-        result.objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        objectVersion_ = 0L;
+        onChanged();
         return this;
       }
       
       // repeated string osd_uuids = 3;
-      public java.util.List<java.lang.String> getOsdUuidsList() {
-        return java.util.Collections.unmodifiableList(result.osdUuids_);
+      private com.google.protobuf.LazyStringList osdUuids_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensureOsdUuidsIsMutable() {
+        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
+          osdUuids_ = new com.google.protobuf.LazyStringArrayList(osdUuids_);
+          bitField0_ |= 0x00000004;
+         }
+      }
+      public java.util.List<String>
+          getOsdUuidsList() {
+        return java.util.Collections.unmodifiableList(osdUuids_);
       }
       public int getOsdUuidsCount() {
-        return result.getOsdUuidsCount();
+        return osdUuids_.size();
       }
-      public java.lang.String getOsdUuids(int index) {
-        return result.getOsdUuids(index);
+      public String getOsdUuids(int index) {
+        return osdUuids_.get(index);
       }
-      public Builder setOsdUuids(int index, java.lang.String value) {
+      public Builder setOsdUuids(
+          int index, String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.osdUuids_.set(index, value);
+  ensureOsdUuidsIsMutable();
+        osdUuids_.set(index, value);
+        onChanged();
         return this;
       }
-      public Builder addOsdUuids(java.lang.String value) {
+      public Builder addOsdUuids(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  if (result.osdUuids_.isEmpty()) {
-          result.osdUuids_ = new java.util.ArrayList<java.lang.String>();
-        }
-        result.osdUuids_.add(value);
+  ensureOsdUuidsIsMutable();
+        osdUuids_.add(value);
+        onChanged();
         return this;
       }
       public Builder addAllOsdUuids(
-          java.lang.Iterable<? extends java.lang.String> values) {
-        if (result.osdUuids_.isEmpty()) {
-          result.osdUuids_ = new java.util.ArrayList<java.lang.String>();
-        }
-        super.addAll(values, result.osdUuids_);
+          java.lang.Iterable<String> values) {
+        ensureOsdUuidsIsMutable();
+        super.addAll(values, osdUuids_);
+        onChanged();
         return this;
       }
       public Builder clearOsdUuids() {
-        result.osdUuids_ = java.util.Collections.emptyList();
+        osdUuids_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        onChanged();
         return this;
+      }
+      void addOsdUuids(com.google.protobuf.ByteString value) {
+        ensureOsdUuidsIsMutable();
+        osdUuids_.add(value);
+        onChanged();
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.ObjectVersionMapping)
@@ -3494,18 +4950,44 @@ public final class OSD {
     
     static {
       defaultInstance = new ObjectVersionMapping(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.ObjectVersionMapping)
   }
   
+  public interface AuthoritativeReplicaStateOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required fixed64 truncate_epoch = 1;
+    boolean hasTruncateEpoch();
+    long getTruncateEpoch();
+    
+    // required fixed64 max_obj_version = 4;
+    boolean hasMaxObjVersion();
+    long getMaxObjVersion();
+    
+    // repeated .xtreemfs.pbrpc.ObjectVersionMapping objectVersions = 2;
+    java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping> 
+        getObjectVersionsList();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping getObjectVersions(int index);
+    int getObjectVersionsCount();
+    java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMappingOrBuilder> 
+        getObjectVersionsOrBuilderList();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMappingOrBuilder getObjectVersionsOrBuilder(
+        int index);
+    
+    // required .xtreemfs.pbrpc.TruncateLog truncate_log = 3;
+    boolean hasTruncateLog();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog getTruncateLog();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLogOrBuilder getTruncateLogOrBuilder();
+  }
   public static final class AuthoritativeReplicaState extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements AuthoritativeReplicaStateOrBuilder {
     // Use AuthoritativeReplicaState.newBuilder() to construct.
-    private AuthoritativeReplicaState() {
-      initFields();
+    private AuthoritativeReplicaState(Builder builder) {
+      super(builder);
     }
     private AuthoritativeReplicaState(boolean noInit) {}
     
@@ -3528,67 +5010,112 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_AuthoritativeReplicaState_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required fixed64 truncate_epoch = 1;
     public static final int TRUNCATE_EPOCH_FIELD_NUMBER = 1;
-    private boolean hasTruncateEpoch;
-    private long truncateEpoch_ = 0L;
-    public boolean hasTruncateEpoch() { return hasTruncateEpoch; }
-    public long getTruncateEpoch() { return truncateEpoch_; }
+    private long truncateEpoch_;
+    public boolean hasTruncateEpoch() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public long getTruncateEpoch() {
+      return truncateEpoch_;
+    }
     
     // required fixed64 max_obj_version = 4;
     public static final int MAX_OBJ_VERSION_FIELD_NUMBER = 4;
-    private boolean hasMaxObjVersion;
-    private long maxObjVersion_ = 0L;
-    public boolean hasMaxObjVersion() { return hasMaxObjVersion; }
-    public long getMaxObjVersion() { return maxObjVersion_; }
+    private long maxObjVersion_;
+    public boolean hasMaxObjVersion() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public long getMaxObjVersion() {
+      return maxObjVersion_;
+    }
     
     // repeated .xtreemfs.pbrpc.ObjectVersionMapping objectVersions = 2;
     public static final int OBJECTVERSIONS_FIELD_NUMBER = 2;
-    private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping> objectVersions_ =
-      java.util.Collections.emptyList();
+    private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping> objectVersions_;
     public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping> getObjectVersionsList() {
       return objectVersions_;
     }
-    public int getObjectVersionsCount() { return objectVersions_.size(); }
+    public java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMappingOrBuilder> 
+        getObjectVersionsOrBuilderList() {
+      return objectVersions_;
+    }
+    public int getObjectVersionsCount() {
+      return objectVersions_.size();
+    }
     public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping getObjectVersions(int index) {
+      return objectVersions_.get(index);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMappingOrBuilder getObjectVersionsOrBuilder(
+        int index) {
       return objectVersions_.get(index);
     }
     
     // required .xtreemfs.pbrpc.TruncateLog truncate_log = 3;
     public static final int TRUNCATE_LOG_FIELD_NUMBER = 3;
-    private boolean hasTruncateLog;
     private org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog truncateLog_;
-    public boolean hasTruncateLog() { return hasTruncateLog; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog getTruncateLog() { return truncateLog_; }
+    public boolean hasTruncateLog() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog getTruncateLog() {
+      return truncateLog_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLogOrBuilder getTruncateLogOrBuilder() {
+      return truncateLog_;
+    }
     
     private void initFields() {
+      truncateEpoch_ = 0L;
+      maxObjVersion_ = 0L;
+      objectVersions_ = java.util.Collections.emptyList();
       truncateLog_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance();
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasTruncateEpoch) return false;
-      if (!hasMaxObjVersion) return false;
-      if (!hasTruncateLog) return false;
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping element : getObjectVersionsList()) {
-        if (!element.isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasTruncateEpoch()) {
+        memoizedIsInitialized = 0;
+        return false;
       }
-      if (!getTruncateLog().isInitialized()) return false;
+      if (!hasMaxObjVersion()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasTruncateLog()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      for (int i = 0; i < getObjectVersionsCount(); i++) {
+        if (!getObjectVersions(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      if (!getTruncateLog().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasTruncateEpoch()) {
-        output.writeFixed64(1, getTruncateEpoch());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeFixed64(1, truncateEpoch_);
       }
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping element : getObjectVersionsList()) {
-        output.writeMessage(2, element);
+      for (int i = 0; i < objectVersions_.size(); i++) {
+        output.writeMessage(2, objectVersions_.get(i));
       }
-      if (hasTruncateLog()) {
-        output.writeMessage(3, getTruncateLog());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeMessage(3, truncateLog_);
       }
-      if (hasMaxObjVersion()) {
-        output.writeFixed64(4, getMaxObjVersion());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeFixed64(4, maxObjVersion_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -3599,25 +5126,30 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasTruncateEpoch()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(1, getTruncateEpoch());
+          .computeFixed64Size(1, truncateEpoch_);
       }
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping element : getObjectVersionsList()) {
+      for (int i = 0; i < objectVersions_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, element);
+          .computeMessageSize(2, objectVersions_.get(i));
       }
-      if (hasTruncateLog()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, getTruncateLog());
+          .computeMessageSize(3, truncateLog_);
       }
-      if (hasMaxObjVersion()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(4, getMaxObjVersion());
+          .computeFixed64Size(4, maxObjVersion_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState parseFrom(
@@ -3694,34 +5226,67 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaStateOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_AuthoritativeReplicaState_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_AuthoritativeReplicaState_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getObjectVersionsFieldBuilder();
+          getTruncateLogFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        truncateEpoch_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        maxObjVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        if (objectVersionsBuilder_ == null) {
+          objectVersions_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000004);
+        } else {
+          objectVersionsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState();
+        if (truncateLogBuilder_ == null) {
+          truncateLog_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance();
+        } else {
+          truncateLogBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -3733,37 +5298,56 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        if (result.objectVersions_ != java.util.Collections.EMPTY_LIST) {
-          result.objectVersions_ =
-            java.util.Collections.unmodifiableList(result.objectVersions_);
+        result.truncateEpoch_ = truncateEpoch_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState returnMe = result;
-        result = null;
-        return returnMe;
+        result.maxObjVersion_ = maxObjVersion_;
+        if (objectVersionsBuilder_ == null) {
+          if (((bitField0_ & 0x00000004) == 0x00000004)) {
+            objectVersions_ = java.util.Collections.unmodifiableList(objectVersions_);
+            bitField0_ = (bitField0_ & ~0x00000004);
+          }
+          result.objectVersions_ = objectVersions_;
+        } else {
+          result.objectVersions_ = objectVersionsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        if (truncateLogBuilder_ == null) {
+          result.truncateLog_ = truncateLog_;
+        } else {
+          result.truncateLog_ = truncateLogBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -3783,17 +5367,63 @@ public final class OSD {
         if (other.hasMaxObjVersion()) {
           setMaxObjVersion(other.getMaxObjVersion());
         }
-        if (!other.objectVersions_.isEmpty()) {
-          if (result.objectVersions_.isEmpty()) {
-            result.objectVersions_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping>();
+        if (objectVersionsBuilder_ == null) {
+          if (!other.objectVersions_.isEmpty()) {
+            if (objectVersions_.isEmpty()) {
+              objectVersions_ = other.objectVersions_;
+              bitField0_ = (bitField0_ & ~0x00000004);
+            } else {
+              ensureObjectVersionsIsMutable();
+              objectVersions_.addAll(other.objectVersions_);
+            }
+            onChanged();
           }
-          result.objectVersions_.addAll(other.objectVersions_);
+        } else {
+          if (!other.objectVersions_.isEmpty()) {
+            if (objectVersionsBuilder_.isEmpty()) {
+              objectVersionsBuilder_.dispose();
+              objectVersionsBuilder_ = null;
+              objectVersions_ = other.objectVersions_;
+              bitField0_ = (bitField0_ & ~0x00000004);
+              objectVersionsBuilder_ = 
+                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
+                   getObjectVersionsFieldBuilder() : null;
+            } else {
+              objectVersionsBuilder_.addAllMessages(other.objectVersions_);
+            }
+          }
         }
         if (other.hasTruncateLog()) {
           mergeTruncateLog(other.getTruncateLog());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
+      }
+      
+      public final boolean isInitialized() {
+        if (!hasTruncateEpoch()) {
+          
+          return false;
+        }
+        if (!hasMaxObjVersion()) {
+          
+          return false;
+        }
+        if (!hasTruncateLog()) {
+          
+          return false;
+        }
+        for (int i = 0; i < getObjectVersionsCount(); i++) {
+          if (!getObjectVersions(i).isInitialized()) {
+            
+            return false;
+          }
+        }
+        if (!getTruncateLog().isInitialized()) {
+          
+          return false;
+        }
+        return true;
       }
       
       public Builder mergeFrom(
@@ -3808,17 +5438,20 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 9: {
-              setTruncateEpoch(input.readFixed64());
+              bitField0_ |= 0x00000001;
+              truncateEpoch_ = input.readFixed64();
               break;
             }
             case 18: {
@@ -3837,136 +5470,332 @@ public final class OSD {
               break;
             }
             case 33: {
-              setMaxObjVersion(input.readFixed64());
+              bitField0_ |= 0x00000002;
+              maxObjVersion_ = input.readFixed64();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required fixed64 truncate_epoch = 1;
+      private long truncateEpoch_ ;
       public boolean hasTruncateEpoch() {
-        return result.hasTruncateEpoch();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public long getTruncateEpoch() {
-        return result.getTruncateEpoch();
+        return truncateEpoch_;
       }
       public Builder setTruncateEpoch(long value) {
-        result.hasTruncateEpoch = true;
-        result.truncateEpoch_ = value;
+        bitField0_ |= 0x00000001;
+        truncateEpoch_ = value;
+        onChanged();
         return this;
       }
       public Builder clearTruncateEpoch() {
-        result.hasTruncateEpoch = false;
-        result.truncateEpoch_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        truncateEpoch_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 max_obj_version = 4;
+      private long maxObjVersion_ ;
       public boolean hasMaxObjVersion() {
-        return result.hasMaxObjVersion();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       public long getMaxObjVersion() {
-        return result.getMaxObjVersion();
+        return maxObjVersion_;
       }
       public Builder setMaxObjVersion(long value) {
-        result.hasMaxObjVersion = true;
-        result.maxObjVersion_ = value;
+        bitField0_ |= 0x00000002;
+        maxObjVersion_ = value;
+        onChanged();
         return this;
       }
       public Builder clearMaxObjVersion() {
-        result.hasMaxObjVersion = false;
-        result.maxObjVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        maxObjVersion_ = 0L;
+        onChanged();
         return this;
       }
       
       // repeated .xtreemfs.pbrpc.ObjectVersionMapping objectVersions = 2;
+      private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping> objectVersions_ =
+        java.util.Collections.emptyList();
+      private void ensureObjectVersionsIsMutable() {
+        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
+          objectVersions_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping>(objectVersions_);
+          bitField0_ |= 0x00000004;
+         }
+      }
+      
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMappingOrBuilder> objectVersionsBuilder_;
+      
       public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping> getObjectVersionsList() {
-        return java.util.Collections.unmodifiableList(result.objectVersions_);
+        if (objectVersionsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(objectVersions_);
+        } else {
+          return objectVersionsBuilder_.getMessageList();
+        }
       }
       public int getObjectVersionsCount() {
-        return result.getObjectVersionsCount();
+        if (objectVersionsBuilder_ == null) {
+          return objectVersions_.size();
+        } else {
+          return objectVersionsBuilder_.getCount();
+        }
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping getObjectVersions(int index) {
-        return result.getObjectVersions(index);
-      }
-      public Builder setObjectVersions(int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (objectVersionsBuilder_ == null) {
+          return objectVersions_.get(index);
+        } else {
+          return objectVersionsBuilder_.getMessage(index);
         }
-        result.objectVersions_.set(index, value);
+      }
+      public Builder setObjectVersions(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping value) {
+        if (objectVersionsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureObjectVersionsIsMutable();
+          objectVersions_.set(index, value);
+          onChanged();
+        } else {
+          objectVersionsBuilder_.setMessage(index, value);
+        }
         return this;
       }
-      public Builder setObjectVersions(int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.Builder builderForValue) {
-        result.objectVersions_.set(index, builderForValue.build());
+      public Builder setObjectVersions(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.Builder builderForValue) {
+        if (objectVersionsBuilder_ == null) {
+          ensureObjectVersionsIsMutable();
+          objectVersions_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          objectVersionsBuilder_.setMessage(index, builderForValue.build());
+        }
         return this;
       }
       public Builder addObjectVersions(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (objectVersionsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureObjectVersionsIsMutable();
+          objectVersions_.add(value);
+          onChanged();
+        } else {
+          objectVersionsBuilder_.addMessage(value);
         }
-        if (result.objectVersions_.isEmpty()) {
-          result.objectVersions_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping>();
-        }
-        result.objectVersions_.add(value);
         return this;
       }
-      public Builder addObjectVersions(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.Builder builderForValue) {
-        if (result.objectVersions_.isEmpty()) {
-          result.objectVersions_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping>();
+      public Builder addObjectVersions(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping value) {
+        if (objectVersionsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureObjectVersionsIsMutable();
+          objectVersions_.add(index, value);
+          onChanged();
+        } else {
+          objectVersionsBuilder_.addMessage(index, value);
         }
-        result.objectVersions_.add(builderForValue.build());
+        return this;
+      }
+      public Builder addObjectVersions(
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.Builder builderForValue) {
+        if (objectVersionsBuilder_ == null) {
+          ensureObjectVersionsIsMutable();
+          objectVersions_.add(builderForValue.build());
+          onChanged();
+        } else {
+          objectVersionsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      public Builder addObjectVersions(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.Builder builderForValue) {
+        if (objectVersionsBuilder_ == null) {
+          ensureObjectVersionsIsMutable();
+          objectVersions_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          objectVersionsBuilder_.addMessage(index, builderForValue.build());
+        }
         return this;
       }
       public Builder addAllObjectVersions(
           java.lang.Iterable<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping> values) {
-        if (result.objectVersions_.isEmpty()) {
-          result.objectVersions_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping>();
+        if (objectVersionsBuilder_ == null) {
+          ensureObjectVersionsIsMutable();
+          super.addAll(values, objectVersions_);
+          onChanged();
+        } else {
+          objectVersionsBuilder_.addAllMessages(values);
         }
-        super.addAll(values, result.objectVersions_);
         return this;
       }
       public Builder clearObjectVersions() {
-        result.objectVersions_ = java.util.Collections.emptyList();
+        if (objectVersionsBuilder_ == null) {
+          objectVersions_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000004);
+          onChanged();
+        } else {
+          objectVersionsBuilder_.clear();
+        }
         return this;
+      }
+      public Builder removeObjectVersions(int index) {
+        if (objectVersionsBuilder_ == null) {
+          ensureObjectVersionsIsMutable();
+          objectVersions_.remove(index);
+          onChanged();
+        } else {
+          objectVersionsBuilder_.remove(index);
+        }
+        return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.Builder getObjectVersionsBuilder(
+          int index) {
+        return getObjectVersionsFieldBuilder().getBuilder(index);
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMappingOrBuilder getObjectVersionsOrBuilder(
+          int index) {
+        if (objectVersionsBuilder_ == null) {
+          return objectVersions_.get(index);  } else {
+          return objectVersionsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      public java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMappingOrBuilder> 
+           getObjectVersionsOrBuilderList() {
+        if (objectVersionsBuilder_ != null) {
+          return objectVersionsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(objectVersions_);
+        }
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.Builder addObjectVersionsBuilder() {
+        return getObjectVersionsFieldBuilder().addBuilder(
+            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.getDefaultInstance());
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.Builder addObjectVersionsBuilder(
+          int index) {
+        return getObjectVersionsFieldBuilder().addBuilder(
+            index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.getDefaultInstance());
+      }
+      public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.Builder> 
+           getObjectVersionsBuilderList() {
+        return getObjectVersionsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMappingOrBuilder> 
+          getObjectVersionsFieldBuilder() {
+        if (objectVersionsBuilder_ == null) {
+          objectVersionsBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMappingOrBuilder>(
+                  objectVersions_,
+                  ((bitField0_ & 0x00000004) == 0x00000004),
+                  getParentForChildren(),
+                  isClean());
+          objectVersions_ = null;
+        }
+        return objectVersionsBuilder_;
       }
       
       // required .xtreemfs.pbrpc.TruncateLog truncate_log = 3;
+      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog truncateLog_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLogOrBuilder> truncateLogBuilder_;
       public boolean hasTruncateLog() {
-        return result.hasTruncateLog();
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog getTruncateLog() {
-        return result.getTruncateLog();
+        if (truncateLogBuilder_ == null) {
+          return truncateLog_;
+        } else {
+          return truncateLogBuilder_.getMessage();
+        }
       }
       public Builder setTruncateLog(org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (truncateLogBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          truncateLog_ = value;
+          onChanged();
+        } else {
+          truncateLogBuilder_.setMessage(value);
         }
-        result.hasTruncateLog = true;
-        result.truncateLog_ = value;
+        bitField0_ |= 0x00000008;
         return this;
       }
-      public Builder setTruncateLog(org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.Builder builderForValue) {
-        result.hasTruncateLog = true;
-        result.truncateLog_ = builderForValue.build();
+      public Builder setTruncateLog(
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.Builder builderForValue) {
+        if (truncateLogBuilder_ == null) {
+          truncateLog_ = builderForValue.build();
+          onChanged();
+        } else {
+          truncateLogBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000008;
         return this;
       }
       public Builder mergeTruncateLog(org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog value) {
-        if (result.hasTruncateLog() &&
-            result.truncateLog_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance()) {
-          result.truncateLog_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.newBuilder(result.truncateLog_).mergeFrom(value).buildPartial();
+        if (truncateLogBuilder_ == null) {
+          if (((bitField0_ & 0x00000008) == 0x00000008) &&
+              truncateLog_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance()) {
+            truncateLog_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.newBuilder(truncateLog_).mergeFrom(value).buildPartial();
+          } else {
+            truncateLog_ = value;
+          }
+          onChanged();
         } else {
-          result.truncateLog_ = value;
+          truncateLogBuilder_.mergeFrom(value);
         }
-        result.hasTruncateLog = true;
+        bitField0_ |= 0x00000008;
         return this;
       }
       public Builder clearTruncateLog() {
-        result.hasTruncateLog = false;
-        result.truncateLog_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance();
+        if (truncateLogBuilder_ == null) {
+          truncateLog_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.getDefaultInstance();
+          onChanged();
+        } else {
+          truncateLogBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.Builder getTruncateLogBuilder() {
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return getTruncateLogFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLogOrBuilder getTruncateLogOrBuilder() {
+        if (truncateLogBuilder_ != null) {
+          return truncateLogBuilder_.getMessageOrBuilder();
+        } else {
+          return truncateLog_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLogOrBuilder> 
+          getTruncateLogFieldBuilder() {
+        if (truncateLogBuilder_ == null) {
+          truncateLogBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLogOrBuilder>(
+                  truncateLog_,
+                  getParentForChildren(),
+                  isClean());
+          truncateLog_ = null;
+        }
+        return truncateLogBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.AuthoritativeReplicaState)
@@ -3974,18 +5803,36 @@ public final class OSD {
     
     static {
       defaultInstance = new AuthoritativeReplicaState(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.AuthoritativeReplicaState)
   }
   
+  public interface InternalReadLocalResponseOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.ObjectData data = 1;
+    boolean hasData();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData getData();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder getDataOrBuilder();
+    
+    // repeated .xtreemfs.pbrpc.ObjectList object_set = 2;
+    java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> 
+        getObjectSetList();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList getObjectSet(int index);
+    int getObjectSetCount();
+    java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder> 
+        getObjectSetOrBuilderList();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder getObjectSetOrBuilder(
+        int index);
+  }
   public static final class InternalReadLocalResponse extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements InternalReadLocalResponseOrBuilder {
     // Use InternalReadLocalResponse.newBuilder() to construct.
-    private InternalReadLocalResponse() {
-      initFields();
+    private InternalReadLocalResponse(Builder builder) {
+      super(builder);
     }
     private InternalReadLocalResponse(boolean noInit) {}
     
@@ -4008,45 +5855,76 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_InternalReadLocalResponse_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.ObjectData data = 1;
     public static final int DATA_FIELD_NUMBER = 1;
-    private boolean hasData;
     private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData data_;
-    public boolean hasData() { return hasData; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData getData() { return data_; }
+    public boolean hasData() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData getData() {
+      return data_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder getDataOrBuilder() {
+      return data_;
+    }
     
     // repeated .xtreemfs.pbrpc.ObjectList object_set = 2;
     public static final int OBJECT_SET_FIELD_NUMBER = 2;
-    private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> objectSet_ =
-      java.util.Collections.emptyList();
+    private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> objectSet_;
     public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> getObjectSetList() {
       return objectSet_;
     }
-    public int getObjectSetCount() { return objectSet_.size(); }
+    public java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder> 
+        getObjectSetOrBuilderList() {
+      return objectSet_;
+    }
+    public int getObjectSetCount() {
+      return objectSet_.size();
+    }
     public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList getObjectSet(int index) {
+      return objectSet_.get(index);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder getObjectSetOrBuilder(
+        int index) {
       return objectSet_.get(index);
     }
     
     private void initFields() {
       data_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
+      objectSet_ = java.util.Collections.emptyList();
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasData) return false;
-      if (!getData().isInitialized()) return false;
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList element : getObjectSetList()) {
-        if (!element.isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasData()) {
+        memoizedIsInitialized = 0;
+        return false;
       }
+      if (!getData().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      for (int i = 0; i < getObjectSetCount(); i++) {
+        if (!getObjectSet(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasData()) {
-        output.writeMessage(1, getData());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, data_);
       }
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList element : getObjectSetList()) {
-        output.writeMessage(2, element);
+      for (int i = 0; i < objectSet_.size(); i++) {
+        output.writeMessage(2, objectSet_.get(i));
       }
       getUnknownFields().writeTo(output);
     }
@@ -4057,17 +5935,22 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasData()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getData());
+          .computeMessageSize(1, data_);
       }
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList element : getObjectSetList()) {
+      for (int i = 0; i < objectSet_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, element);
+          .computeMessageSize(2, objectSet_.get(i));
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse parseFrom(
@@ -4144,34 +6027,63 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_InternalReadLocalResponse_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_InternalReadLocalResponse_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getDataFieldBuilder();
+          getObjectSetFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (dataBuilder_ == null) {
+          data_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
+        } else {
+          dataBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        if (objectSetBuilder_ == null) {
+          objectSet_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000002);
+        } else {
+          objectSetBuilder_.clear();
+        }
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -4183,37 +6095,48 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        if (result.objectSet_ != java.util.Collections.EMPTY_LIST) {
-          result.objectSet_ =
-            java.util.Collections.unmodifiableList(result.objectSet_);
+        if (dataBuilder_ == null) {
+          result.data_ = data_;
+        } else {
+          result.data_ = dataBuilder_.build();
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse returnMe = result;
-        result = null;
-        return returnMe;
+        if (objectSetBuilder_ == null) {
+          if (((bitField0_ & 0x00000002) == 0x00000002)) {
+            objectSet_ = java.util.Collections.unmodifiableList(objectSet_);
+            bitField0_ = (bitField0_ & ~0x00000002);
+          }
+          result.objectSet_ = objectSet_;
+        } else {
+          result.objectSet_ = objectSetBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -4230,14 +6153,52 @@ public final class OSD {
         if (other.hasData()) {
           mergeData(other.getData());
         }
-        if (!other.objectSet_.isEmpty()) {
-          if (result.objectSet_.isEmpty()) {
-            result.objectSet_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList>();
+        if (objectSetBuilder_ == null) {
+          if (!other.objectSet_.isEmpty()) {
+            if (objectSet_.isEmpty()) {
+              objectSet_ = other.objectSet_;
+              bitField0_ = (bitField0_ & ~0x00000002);
+            } else {
+              ensureObjectSetIsMutable();
+              objectSet_.addAll(other.objectSet_);
+            }
+            onChanged();
           }
-          result.objectSet_.addAll(other.objectSet_);
+        } else {
+          if (!other.objectSet_.isEmpty()) {
+            if (objectSetBuilder_.isEmpty()) {
+              objectSetBuilder_.dispose();
+              objectSetBuilder_ = null;
+              objectSet_ = other.objectSet_;
+              bitField0_ = (bitField0_ & ~0x00000002);
+              objectSetBuilder_ = 
+                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
+                   getObjectSetFieldBuilder() : null;
+            } else {
+              objectSetBuilder_.addAllMessages(other.objectSet_);
+            }
+          }
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
+      }
+      
+      public final boolean isInitialized() {
+        if (!hasData()) {
+          
+          return false;
+        }
+        if (!getData().isInitialized()) {
+          
+          return false;
+        }
+        for (int i = 0; i < getObjectSetCount(); i++) {
+          if (!getObjectSet(i).isInitialized()) {
+            
+            return false;
+          }
+        }
+        return true;
       }
       
       public Builder mergeFrom(
@@ -4252,11 +6213,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -4280,93 +6243,282 @@ public final class OSD {
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.ObjectData data = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData data_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder> dataBuilder_;
       public boolean hasData() {
-        return result.hasData();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData getData() {
-        return result.getData();
+        if (dataBuilder_ == null) {
+          return data_;
+        } else {
+          return dataBuilder_.getMessage();
+        }
       }
       public Builder setData(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (dataBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          data_ = value;
+          onChanged();
+        } else {
+          dataBuilder_.setMessage(value);
         }
-        result.hasData = true;
-        result.data_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setData(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder builderForValue) {
-        result.hasData = true;
-        result.data_ = builderForValue.build();
+      public Builder setData(
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder builderForValue) {
+        if (dataBuilder_ == null) {
+          data_ = builderForValue.build();
+          onChanged();
+        } else {
+          dataBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeData(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData value) {
-        if (result.hasData() &&
-            result.data_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance()) {
-          result.data_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.newBuilder(result.data_).mergeFrom(value).buildPartial();
+        if (dataBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              data_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance()) {
+            data_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.newBuilder(data_).mergeFrom(value).buildPartial();
+          } else {
+            data_ = value;
+          }
+          onChanged();
         } else {
-          result.data_ = value;
+          dataBuilder_.mergeFrom(value);
         }
-        result.hasData = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearData() {
-        result.hasData = false;
-        result.data_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
+        if (dataBuilder_ == null) {
+          data_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
+          onChanged();
+        } else {
+          dataBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder getDataBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getDataFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder getDataOrBuilder() {
+        if (dataBuilder_ != null) {
+          return dataBuilder_.getMessageOrBuilder();
+        } else {
+          return data_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder> 
+          getDataFieldBuilder() {
+        if (dataBuilder_ == null) {
+          dataBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder>(
+                  data_,
+                  getParentForChildren(),
+                  isClean());
+          data_ = null;
+        }
+        return dataBuilder_;
       }
       
       // repeated .xtreemfs.pbrpc.ObjectList object_set = 2;
+      private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> objectSet_ =
+        java.util.Collections.emptyList();
+      private void ensureObjectSetIsMutable() {
+        if (!((bitField0_ & 0x00000002) == 0x00000002)) {
+          objectSet_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList>(objectSet_);
+          bitField0_ |= 0x00000002;
+         }
+      }
+      
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder> objectSetBuilder_;
+      
       public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> getObjectSetList() {
-        return java.util.Collections.unmodifiableList(result.objectSet_);
+        if (objectSetBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(objectSet_);
+        } else {
+          return objectSetBuilder_.getMessageList();
+        }
       }
       public int getObjectSetCount() {
-        return result.getObjectSetCount();
+        if (objectSetBuilder_ == null) {
+          return objectSet_.size();
+        } else {
+          return objectSetBuilder_.getCount();
+        }
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList getObjectSet(int index) {
-        return result.getObjectSet(index);
-      }
-      public Builder setObjectSet(int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (objectSetBuilder_ == null) {
+          return objectSet_.get(index);
+        } else {
+          return objectSetBuilder_.getMessage(index);
         }
-        result.objectSet_.set(index, value);
+      }
+      public Builder setObjectSet(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList value) {
+        if (objectSetBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureObjectSetIsMutable();
+          objectSet_.set(index, value);
+          onChanged();
+        } else {
+          objectSetBuilder_.setMessage(index, value);
+        }
         return this;
       }
-      public Builder setObjectSet(int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder builderForValue) {
-        result.objectSet_.set(index, builderForValue.build());
+      public Builder setObjectSet(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder builderForValue) {
+        if (objectSetBuilder_ == null) {
+          ensureObjectSetIsMutable();
+          objectSet_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          objectSetBuilder_.setMessage(index, builderForValue.build());
+        }
         return this;
       }
       public Builder addObjectSet(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (objectSetBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureObjectSetIsMutable();
+          objectSet_.add(value);
+          onChanged();
+        } else {
+          objectSetBuilder_.addMessage(value);
         }
-        if (result.objectSet_.isEmpty()) {
-          result.objectSet_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList>();
-        }
-        result.objectSet_.add(value);
         return this;
       }
-      public Builder addObjectSet(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder builderForValue) {
-        if (result.objectSet_.isEmpty()) {
-          result.objectSet_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList>();
+      public Builder addObjectSet(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList value) {
+        if (objectSetBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureObjectSetIsMutable();
+          objectSet_.add(index, value);
+          onChanged();
+        } else {
+          objectSetBuilder_.addMessage(index, value);
         }
-        result.objectSet_.add(builderForValue.build());
+        return this;
+      }
+      public Builder addObjectSet(
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder builderForValue) {
+        if (objectSetBuilder_ == null) {
+          ensureObjectSetIsMutable();
+          objectSet_.add(builderForValue.build());
+          onChanged();
+        } else {
+          objectSetBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      public Builder addObjectSet(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder builderForValue) {
+        if (objectSetBuilder_ == null) {
+          ensureObjectSetIsMutable();
+          objectSet_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          objectSetBuilder_.addMessage(index, builderForValue.build());
+        }
         return this;
       }
       public Builder addAllObjectSet(
           java.lang.Iterable<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> values) {
-        if (result.objectSet_.isEmpty()) {
-          result.objectSet_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList>();
+        if (objectSetBuilder_ == null) {
+          ensureObjectSetIsMutable();
+          super.addAll(values, objectSet_);
+          onChanged();
+        } else {
+          objectSetBuilder_.addAllMessages(values);
         }
-        super.addAll(values, result.objectSet_);
         return this;
       }
       public Builder clearObjectSet() {
-        result.objectSet_ = java.util.Collections.emptyList();
+        if (objectSetBuilder_ == null) {
+          objectSet_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000002);
+          onChanged();
+        } else {
+          objectSetBuilder_.clear();
+        }
         return this;
+      }
+      public Builder removeObjectSet(int index) {
+        if (objectSetBuilder_ == null) {
+          ensureObjectSetIsMutable();
+          objectSet_.remove(index);
+          onChanged();
+        } else {
+          objectSetBuilder_.remove(index);
+        }
+        return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder getObjectSetBuilder(
+          int index) {
+        return getObjectSetFieldBuilder().getBuilder(index);
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder getObjectSetOrBuilder(
+          int index) {
+        if (objectSetBuilder_ == null) {
+          return objectSet_.get(index);  } else {
+          return objectSetBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      public java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder> 
+           getObjectSetOrBuilderList() {
+        if (objectSetBuilder_ != null) {
+          return objectSetBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(objectSet_);
+        }
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder addObjectSetBuilder() {
+        return getObjectSetFieldBuilder().addBuilder(
+            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.getDefaultInstance());
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder addObjectSetBuilder(
+          int index) {
+        return getObjectSetFieldBuilder().addBuilder(
+            index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.getDefaultInstance());
+      }
+      public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder> 
+           getObjectSetBuilderList() {
+        return getObjectSetFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder> 
+          getObjectSetFieldBuilder() {
+        if (objectSetBuilder_ == null) {
+          objectSetBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder>(
+                  objectSet_,
+                  ((bitField0_ & 0x00000002) == 0x00000002),
+                  getParentForChildren(),
+                  isClean());
+          objectSet_ = null;
+        }
+        return objectSetBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.InternalReadLocalResponse)
@@ -4374,18 +6526,46 @@ public final class OSD {
     
     static {
       defaultInstance = new InternalReadLocalResponse(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.InternalReadLocalResponse)
   }
   
+  public interface readRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+    
+    // required fixed64 object_number = 3;
+    boolean hasObjectNumber();
+    long getObjectNumber();
+    
+    // required fixed64 object_version = 4;
+    boolean hasObjectVersion();
+    long getObjectVersion();
+    
+    // required fixed32 offset = 5;
+    boolean hasOffset();
+    int getOffset();
+    
+    // required fixed32 length = 6;
+    boolean hasLength();
+    int getLength();
+  }
   public static final class readRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements readRequestOrBuilder {
     // Use readRequest.newBuilder() to construct.
-    private readRequest() {
-      initFields();
+    private readRequest(Builder builder) {
+      super(builder);
     }
     private readRequest(boolean noInit) {}
     
@@ -4408,82 +6588,157 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_readRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required fixed64 object_number = 3;
     public static final int OBJECT_NUMBER_FIELD_NUMBER = 3;
-    private boolean hasObjectNumber;
-    private long objectNumber_ = 0L;
-    public boolean hasObjectNumber() { return hasObjectNumber; }
-    public long getObjectNumber() { return objectNumber_; }
+    private long objectNumber_;
+    public boolean hasObjectNumber() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public long getObjectNumber() {
+      return objectNumber_;
+    }
     
     // required fixed64 object_version = 4;
     public static final int OBJECT_VERSION_FIELD_NUMBER = 4;
-    private boolean hasObjectVersion;
-    private long objectVersion_ = 0L;
-    public boolean hasObjectVersion() { return hasObjectVersion; }
-    public long getObjectVersion() { return objectVersion_; }
+    private long objectVersion_;
+    public boolean hasObjectVersion() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public long getObjectVersion() {
+      return objectVersion_;
+    }
     
     // required fixed32 offset = 5;
     public static final int OFFSET_FIELD_NUMBER = 5;
-    private boolean hasOffset;
-    private int offset_ = 0;
-    public boolean hasOffset() { return hasOffset; }
-    public int getOffset() { return offset_; }
+    private int offset_;
+    public boolean hasOffset() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    public int getOffset() {
+      return offset_;
+    }
     
     // required fixed32 length = 6;
     public static final int LENGTH_FIELD_NUMBER = 6;
-    private boolean hasLength;
-    private int length_ = 0;
-    public boolean hasLength() { return hasLength; }
-    public int getLength() { return length_; }
+    private int length_;
+    public boolean hasLength() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    public int getLength() {
+      return length_;
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
+      objectNumber_ = 0L;
+      objectVersion_ = 0L;
+      offset_ = 0;
+      length_ = 0;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!hasObjectNumber) return false;
-      if (!hasObjectVersion) return false;
-      if (!hasOffset) return false;
-      if (!hasLength) return false;
-      if (!getFileCredentials().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectNumber()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectVersion()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasOffset()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasLength()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
-      if (hasObjectNumber()) {
-        output.writeFixed64(3, getObjectNumber());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed64(3, objectNumber_);
       }
-      if (hasObjectVersion()) {
-        output.writeFixed64(4, getObjectVersion());
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeFixed64(4, objectVersion_);
       }
-      if (hasOffset()) {
-        output.writeFixed32(5, getOffset());
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeFixed32(5, offset_);
       }
-      if (hasLength()) {
-        output.writeFixed32(6, getLength());
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeFixed32(6, length_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -4494,33 +6749,38 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
-      if (hasObjectNumber()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(3, getObjectNumber());
+          .computeFixed64Size(3, objectNumber_);
       }
-      if (hasObjectVersion()) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(4, getObjectVersion());
+          .computeFixed64Size(4, objectVersion_);
       }
-      if (hasOffset()) {
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(5, getOffset());
+          .computeFixed32Size(5, offset_);
       }
-      if (hasLength()) {
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(6, getLength());
+          .computeFixed32Size(6, length_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest parseFrom(
@@ -4597,34 +6857,66 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_readRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_readRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        offset_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        length_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000020);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -4636,33 +6928,59 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.objectNumber_ = objectNumber_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.objectVersion_ = objectVersion_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.offset_ = offset_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.length_ = length_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -4698,6 +7016,38 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!hasObjectNumber()) {
+          
+          return false;
+        }
+        if (!hasObjectVersion()) {
+          
+          return false;
+        }
+        if (!hasOffset()) {
+          
+          return false;
+        }
+        if (!hasLength()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -4710,11 +7060,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -4729,157 +7081,243 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
             case 25: {
-              setObjectNumber(input.readFixed64());
+              bitField0_ |= 0x00000004;
+              objectNumber_ = input.readFixed64();
               break;
             }
             case 33: {
-              setObjectVersion(input.readFixed64());
+              bitField0_ |= 0x00000008;
+              objectVersion_ = input.readFixed64();
               break;
             }
             case 45: {
-              setOffset(input.readFixed32());
+              bitField0_ |= 0x00000010;
+              offset_ = input.readFixed32();
               break;
             }
             case 53: {
-              setLength(input.readFixed32());
+              bitField0_ |= 0x00000020;
+              length_ = input.readFixed32();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // required fixed64 object_number = 3;
+      private long objectNumber_ ;
       public boolean hasObjectNumber() {
-        return result.hasObjectNumber();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public long getObjectNumber() {
-        return result.getObjectNumber();
+        return objectNumber_;
       }
       public Builder setObjectNumber(long value) {
-        result.hasObjectNumber = true;
-        result.objectNumber_ = value;
+        bitField0_ |= 0x00000004;
+        objectNumber_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectNumber() {
-        result.hasObjectNumber = false;
-        result.objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        objectNumber_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 object_version = 4;
+      private long objectVersion_ ;
       public boolean hasObjectVersion() {
-        return result.hasObjectVersion();
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       public long getObjectVersion() {
-        return result.getObjectVersion();
+        return objectVersion_;
       }
       public Builder setObjectVersion(long value) {
-        result.hasObjectVersion = true;
-        result.objectVersion_ = value;
+        bitField0_ |= 0x00000008;
+        objectVersion_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectVersion() {
-        result.hasObjectVersion = false;
-        result.objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        objectVersion_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed32 offset = 5;
+      private int offset_ ;
       public boolean hasOffset() {
-        return result.hasOffset();
+        return ((bitField0_ & 0x00000010) == 0x00000010);
       }
       public int getOffset() {
-        return result.getOffset();
+        return offset_;
       }
       public Builder setOffset(int value) {
-        result.hasOffset = true;
-        result.offset_ = value;
+        bitField0_ |= 0x00000010;
+        offset_ = value;
+        onChanged();
         return this;
       }
       public Builder clearOffset() {
-        result.hasOffset = false;
-        result.offset_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        offset_ = 0;
+        onChanged();
         return this;
       }
       
       // required fixed32 length = 6;
+      private int length_ ;
       public boolean hasLength() {
-        return result.hasLength();
+        return ((bitField0_ & 0x00000020) == 0x00000020);
       }
       public int getLength() {
-        return result.getLength();
+        return length_;
       }
       public Builder setLength(int value) {
-        result.hasLength = true;
-        result.length_ = value;
+        bitField0_ |= 0x00000020;
+        length_ = value;
+        onChanged();
         return this;
       }
       public Builder clearLength() {
-        result.hasLength = false;
-        result.length_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        length_ = 0;
+        onChanged();
         return this;
       }
       
@@ -4888,18 +7326,34 @@ public final class OSD {
     
     static {
       defaultInstance = new readRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.readRequest)
   }
   
+  public interface truncateRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+    
+    // required fixed64 new_file_size = 3;
+    boolean hasNewFileSize();
+    long getNewFileSize();
+  }
   public static final class truncateRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements truncateRequestOrBuilder {
     // Use truncateRequest.newBuilder() to construct.
-    private truncateRequest() {
-      initFields();
+    private truncateRequest(Builder builder) {
+      super(builder);
     }
     private truncateRequest(boolean noInit) {}
     
@@ -4922,49 +7376,103 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_truncateRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required fixed64 new_file_size = 3;
     public static final int NEW_FILE_SIZE_FIELD_NUMBER = 3;
-    private boolean hasNewFileSize;
-    private long newFileSize_ = 0L;
-    public boolean hasNewFileSize() { return hasNewFileSize; }
-    public long getNewFileSize() { return newFileSize_; }
+    private long newFileSize_;
+    public boolean hasNewFileSize() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public long getNewFileSize() {
+      return newFileSize_;
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
+      newFileSize_ = 0L;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!hasNewFileSize) return false;
-      if (!getFileCredentials().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasNewFileSize()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
-      if (hasNewFileSize()) {
-        output.writeFixed64(3, getNewFileSize());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed64(3, newFileSize_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -4975,21 +7483,26 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
-      if (hasNewFileSize()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(3, getNewFileSize());
+          .computeFixed64Size(3, newFileSize_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest parseFrom(
@@ -5066,34 +7579,60 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_truncateRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_truncateRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        newFileSize_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -5105,33 +7644,47 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.newFileSize_ = newFileSize_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -5158,6 +7711,26 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!hasNewFileSize()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -5170,11 +7743,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -5189,91 +7764,165 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
             case 25: {
-              setNewFileSize(input.readFixed64());
+              bitField0_ |= 0x00000004;
+              newFileSize_ = input.readFixed64();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // required fixed64 new_file_size = 3;
+      private long newFileSize_ ;
       public boolean hasNewFileSize() {
-        return result.hasNewFileSize();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public long getNewFileSize() {
-        return result.getNewFileSize();
+        return newFileSize_;
       }
       public Builder setNewFileSize(long value) {
-        result.hasNewFileSize = true;
-        result.newFileSize_ = value;
+        bitField0_ |= 0x00000004;
+        newFileSize_ = value;
+        onChanged();
         return this;
       }
       public Builder clearNewFileSize() {
-        result.hasNewFileSize = false;
-        result.newFileSize_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        newFileSize_ = 0L;
+        onChanged();
         return this;
       }
       
@@ -5282,18 +7931,30 @@ public final class OSD {
     
     static {
       defaultInstance = new truncateRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.truncateRequest)
   }
   
+  public interface unlink_osd_RequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+  }
   public static final class unlink_osd_Request extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements unlink_osd_RequestOrBuilder {
     // Use unlink_osd_Request.newBuilder() to construct.
-    private unlink_osd_Request() {
-      initFields();
+    private unlink_osd_Request(Builder builder) {
+      super(builder);
     }
     private unlink_osd_Request(boolean noInit) {}
     
@@ -5316,38 +7977,85 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_unlink_osd_Request_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!getFileCredentials().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -5358,17 +8066,22 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request parseFrom(
@@ -5445,34 +8158,58 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_RequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_unlink_osd_Request_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_unlink_osd_Request_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -5484,33 +8221,43 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -5534,6 +8281,22 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -5546,11 +8309,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -5565,70 +8330,140 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.unlink_osd_Request)
@@ -5636,18 +8471,51 @@ public final class OSD {
     
     static {
       defaultInstance = new unlink_osd_Request(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.unlink_osd_Request)
   }
   
+  public interface writeRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+    
+    // required fixed64 object_number = 3;
+    boolean hasObjectNumber();
+    long getObjectNumber();
+    
+    // required fixed64 object_version = 4;
+    boolean hasObjectVersion();
+    long getObjectVersion();
+    
+    // required fixed32 offset = 5;
+    boolean hasOffset();
+    int getOffset();
+    
+    // required fixed64 lease_timeout = 6;
+    boolean hasLeaseTimeout();
+    long getLeaseTimeout();
+    
+    // required .xtreemfs.pbrpc.ObjectData object_data = 7;
+    boolean hasObjectData();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData getObjectData();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder getObjectDataOrBuilder();
+  }
   public static final class writeRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements writeRequestOrBuilder {
     // Use writeRequest.newBuilder() to construct.
-    private writeRequest() {
-      initFields();
+    private writeRequest(Builder builder) {
+      super(builder);
     }
     private writeRequest(boolean noInit) {}
     
@@ -5670,95 +8538,182 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_writeRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required fixed64 object_number = 3;
     public static final int OBJECT_NUMBER_FIELD_NUMBER = 3;
-    private boolean hasObjectNumber;
-    private long objectNumber_ = 0L;
-    public boolean hasObjectNumber() { return hasObjectNumber; }
-    public long getObjectNumber() { return objectNumber_; }
+    private long objectNumber_;
+    public boolean hasObjectNumber() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public long getObjectNumber() {
+      return objectNumber_;
+    }
     
     // required fixed64 object_version = 4;
     public static final int OBJECT_VERSION_FIELD_NUMBER = 4;
-    private boolean hasObjectVersion;
-    private long objectVersion_ = 0L;
-    public boolean hasObjectVersion() { return hasObjectVersion; }
-    public long getObjectVersion() { return objectVersion_; }
+    private long objectVersion_;
+    public boolean hasObjectVersion() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public long getObjectVersion() {
+      return objectVersion_;
+    }
     
     // required fixed32 offset = 5;
     public static final int OFFSET_FIELD_NUMBER = 5;
-    private boolean hasOffset;
-    private int offset_ = 0;
-    public boolean hasOffset() { return hasOffset; }
-    public int getOffset() { return offset_; }
+    private int offset_;
+    public boolean hasOffset() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    public int getOffset() {
+      return offset_;
+    }
     
     // required fixed64 lease_timeout = 6;
     public static final int LEASE_TIMEOUT_FIELD_NUMBER = 6;
-    private boolean hasLeaseTimeout;
-    private long leaseTimeout_ = 0L;
-    public boolean hasLeaseTimeout() { return hasLeaseTimeout; }
-    public long getLeaseTimeout() { return leaseTimeout_; }
+    private long leaseTimeout_;
+    public boolean hasLeaseTimeout() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    public long getLeaseTimeout() {
+      return leaseTimeout_;
+    }
     
     // required .xtreemfs.pbrpc.ObjectData object_data = 7;
     public static final int OBJECT_DATA_FIELD_NUMBER = 7;
-    private boolean hasObjectData;
     private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData objectData_;
-    public boolean hasObjectData() { return hasObjectData; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData getObjectData() { return objectData_; }
+    public boolean hasObjectData() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData getObjectData() {
+      return objectData_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder getObjectDataOrBuilder() {
+      return objectData_;
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
+      objectNumber_ = 0L;
+      objectVersion_ = 0L;
+      offset_ = 0;
+      leaseTimeout_ = 0L;
       objectData_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!hasObjectNumber) return false;
-      if (!hasObjectVersion) return false;
-      if (!hasOffset) return false;
-      if (!hasLeaseTimeout) return false;
-      if (!hasObjectData) return false;
-      if (!getFileCredentials().isInitialized()) return false;
-      if (!getObjectData().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectNumber()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectVersion()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasOffset()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasLeaseTimeout()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectData()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getObjectData().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
-      if (hasObjectNumber()) {
-        output.writeFixed64(3, getObjectNumber());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed64(3, objectNumber_);
       }
-      if (hasObjectVersion()) {
-        output.writeFixed64(4, getObjectVersion());
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeFixed64(4, objectVersion_);
       }
-      if (hasOffset()) {
-        output.writeFixed32(5, getOffset());
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeFixed32(5, offset_);
       }
-      if (hasLeaseTimeout()) {
-        output.writeFixed64(6, getLeaseTimeout());
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeFixed64(6, leaseTimeout_);
       }
-      if (hasObjectData()) {
-        output.writeMessage(7, getObjectData());
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeMessage(7, objectData_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -5769,37 +8724,42 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
-      if (hasObjectNumber()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(3, getObjectNumber());
+          .computeFixed64Size(3, objectNumber_);
       }
-      if (hasObjectVersion()) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(4, getObjectVersion());
+          .computeFixed64Size(4, objectVersion_);
       }
-      if (hasOffset()) {
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(5, getOffset());
+          .computeFixed32Size(5, offset_);
       }
-      if (hasLeaseTimeout()) {
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(6, getLeaseTimeout());
+          .computeFixed64Size(6, leaseTimeout_);
       }
-      if (hasObjectData()) {
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(7, getObjectData());
+          .computeMessageSize(7, objectData_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest parseFrom(
@@ -5876,34 +8836,73 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_writeRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_writeRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+          getObjectDataFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        offset_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        leaseTimeout_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        if (objectDataBuilder_ == null) {
+          objectData_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
+        } else {
+          objectDataBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000040);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -5915,33 +8914,67 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.objectNumber_ = objectNumber_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.objectVersion_ = objectVersion_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.offset_ = offset_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.leaseTimeout_ = leaseTimeout_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        if (objectDataBuilder_ == null) {
+          result.objectData_ = objectData_;
+        } else {
+          result.objectData_ = objectDataBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -5980,6 +9013,46 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!hasObjectNumber()) {
+          
+          return false;
+        }
+        if (!hasObjectVersion()) {
+          
+          return false;
+        }
+        if (!hasOffset()) {
+          
+          return false;
+        }
+        if (!hasLeaseTimeout()) {
+          
+          return false;
+        }
+        if (!hasObjectData()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        if (!getObjectData().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -5992,11 +9065,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -6011,23 +9086,28 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
             case 25: {
-              setObjectNumber(input.readFixed64());
+              bitField0_ |= 0x00000004;
+              objectNumber_ = input.readFixed64();
               break;
             }
             case 33: {
-              setObjectVersion(input.readFixed64());
+              bitField0_ |= 0x00000008;
+              objectVersion_ = input.readFixed64();
               break;
             }
             case 45: {
-              setOffset(input.readFixed32());
+              bitField0_ |= 0x00000010;
+              offset_ = input.readFixed32();
               break;
             }
             case 49: {
-              setLeaseTimeout(input.readFixed64());
+              bitField0_ |= 0x00000020;
+              leaseTimeout_ = input.readFixed64();
               break;
             }
             case 58: {
@@ -6043,172 +9123,306 @@ public final class OSD {
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // required fixed64 object_number = 3;
+      private long objectNumber_ ;
       public boolean hasObjectNumber() {
-        return result.hasObjectNumber();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public long getObjectNumber() {
-        return result.getObjectNumber();
+        return objectNumber_;
       }
       public Builder setObjectNumber(long value) {
-        result.hasObjectNumber = true;
-        result.objectNumber_ = value;
+        bitField0_ |= 0x00000004;
+        objectNumber_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectNumber() {
-        result.hasObjectNumber = false;
-        result.objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        objectNumber_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 object_version = 4;
+      private long objectVersion_ ;
       public boolean hasObjectVersion() {
-        return result.hasObjectVersion();
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       public long getObjectVersion() {
-        return result.getObjectVersion();
+        return objectVersion_;
       }
       public Builder setObjectVersion(long value) {
-        result.hasObjectVersion = true;
-        result.objectVersion_ = value;
+        bitField0_ |= 0x00000008;
+        objectVersion_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectVersion() {
-        result.hasObjectVersion = false;
-        result.objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        objectVersion_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed32 offset = 5;
+      private int offset_ ;
       public boolean hasOffset() {
-        return result.hasOffset();
+        return ((bitField0_ & 0x00000010) == 0x00000010);
       }
       public int getOffset() {
-        return result.getOffset();
+        return offset_;
       }
       public Builder setOffset(int value) {
-        result.hasOffset = true;
-        result.offset_ = value;
+        bitField0_ |= 0x00000010;
+        offset_ = value;
+        onChanged();
         return this;
       }
       public Builder clearOffset() {
-        result.hasOffset = false;
-        result.offset_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        offset_ = 0;
+        onChanged();
         return this;
       }
       
       // required fixed64 lease_timeout = 6;
+      private long leaseTimeout_ ;
       public boolean hasLeaseTimeout() {
-        return result.hasLeaseTimeout();
+        return ((bitField0_ & 0x00000020) == 0x00000020);
       }
       public long getLeaseTimeout() {
-        return result.getLeaseTimeout();
+        return leaseTimeout_;
       }
       public Builder setLeaseTimeout(long value) {
-        result.hasLeaseTimeout = true;
-        result.leaseTimeout_ = value;
+        bitField0_ |= 0x00000020;
+        leaseTimeout_ = value;
+        onChanged();
         return this;
       }
       public Builder clearLeaseTimeout() {
-        result.hasLeaseTimeout = false;
-        result.leaseTimeout_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        leaseTimeout_ = 0L;
+        onChanged();
         return this;
       }
       
       // required .xtreemfs.pbrpc.ObjectData object_data = 7;
+      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData objectData_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder> objectDataBuilder_;
       public boolean hasObjectData() {
-        return result.hasObjectData();
+        return ((bitField0_ & 0x00000040) == 0x00000040);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData getObjectData() {
-        return result.getObjectData();
+        if (objectDataBuilder_ == null) {
+          return objectData_;
+        } else {
+          return objectDataBuilder_.getMessage();
+        }
       }
       public Builder setObjectData(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (objectDataBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          objectData_ = value;
+          onChanged();
+        } else {
+          objectDataBuilder_.setMessage(value);
         }
-        result.hasObjectData = true;
-        result.objectData_ = value;
+        bitField0_ |= 0x00000040;
         return this;
       }
-      public Builder setObjectData(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder builderForValue) {
-        result.hasObjectData = true;
-        result.objectData_ = builderForValue.build();
+      public Builder setObjectData(
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder builderForValue) {
+        if (objectDataBuilder_ == null) {
+          objectData_ = builderForValue.build();
+          onChanged();
+        } else {
+          objectDataBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000040;
         return this;
       }
       public Builder mergeObjectData(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData value) {
-        if (result.hasObjectData() &&
-            result.objectData_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance()) {
-          result.objectData_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.newBuilder(result.objectData_).mergeFrom(value).buildPartial();
+        if (objectDataBuilder_ == null) {
+          if (((bitField0_ & 0x00000040) == 0x00000040) &&
+              objectData_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance()) {
+            objectData_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.newBuilder(objectData_).mergeFrom(value).buildPartial();
+          } else {
+            objectData_ = value;
+          }
+          onChanged();
         } else {
-          result.objectData_ = value;
+          objectDataBuilder_.mergeFrom(value);
         }
-        result.hasObjectData = true;
+        bitField0_ |= 0x00000040;
         return this;
       }
       public Builder clearObjectData() {
-        result.hasObjectData = false;
-        result.objectData_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
+        if (objectDataBuilder_ == null) {
+          objectData_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
+          onChanged();
+        } else {
+          objectDataBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000040);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder getObjectDataBuilder() {
+        bitField0_ |= 0x00000040;
+        onChanged();
+        return getObjectDataFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder getObjectDataOrBuilder() {
+        if (objectDataBuilder_ != null) {
+          return objectDataBuilder_.getMessageOrBuilder();
+        } else {
+          return objectData_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder> 
+          getObjectDataFieldBuilder() {
+        if (objectDataBuilder_ == null) {
+          objectDataBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder>(
+                  objectData_,
+                  getParentForChildren(),
+                  isClean());
+          objectData_ = null;
+        }
+        return objectDataBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.writeRequest)
@@ -6216,18 +9430,37 @@ public final class OSD {
     
     static {
       defaultInstance = new writeRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.writeRequest)
   }
   
+  public interface xtreemfs_broadcast_gmaxRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required string file_id = 1;
+    boolean hasFileId();
+    String getFileId();
+    
+    // required fixed64 truncate_epoch = 2;
+    boolean hasTruncateEpoch();
+    long getTruncateEpoch();
+    
+    // required fixed64 last_object = 3;
+    boolean hasLastObject();
+    long getLastObject();
+    
+    // required fixed64 file_size = 4;
+    boolean hasFileSize();
+    long getFileSize();
+  }
   public static final class xtreemfs_broadcast_gmaxRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_broadcast_gmaxRequestOrBuilder {
     // Use xtreemfs_broadcast_gmaxRequest.newBuilder() to construct.
-    private xtreemfs_broadcast_gmaxRequest() {
-      initFields();
+    private xtreemfs_broadcast_gmaxRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_broadcast_gmaxRequest(boolean noInit) {}
     
@@ -6250,58 +9483,114 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_broadcast_gmaxRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required string file_id = 1;
     public static final int FILE_ID_FIELD_NUMBER = 1;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required fixed64 truncate_epoch = 2;
     public static final int TRUNCATE_EPOCH_FIELD_NUMBER = 2;
-    private boolean hasTruncateEpoch;
-    private long truncateEpoch_ = 0L;
-    public boolean hasTruncateEpoch() { return hasTruncateEpoch; }
-    public long getTruncateEpoch() { return truncateEpoch_; }
+    private long truncateEpoch_;
+    public boolean hasTruncateEpoch() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public long getTruncateEpoch() {
+      return truncateEpoch_;
+    }
     
     // required fixed64 last_object = 3;
     public static final int LAST_OBJECT_FIELD_NUMBER = 3;
-    private boolean hasLastObject;
-    private long lastObject_ = 0L;
-    public boolean hasLastObject() { return hasLastObject; }
-    public long getLastObject() { return lastObject_; }
+    private long lastObject_;
+    public boolean hasLastObject() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public long getLastObject() {
+      return lastObject_;
+    }
     
     // required fixed64 file_size = 4;
     public static final int FILE_SIZE_FIELD_NUMBER = 4;
-    private boolean hasFileSize;
-    private long fileSize_ = 0L;
-    public boolean hasFileSize() { return hasFileSize; }
-    public long getFileSize() { return fileSize_; }
+    private long fileSize_;
+    public boolean hasFileSize() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public long getFileSize() {
+      return fileSize_;
+    }
     
     private void initFields() {
+      fileId_ = "";
+      truncateEpoch_ = 0L;
+      lastObject_ = 0L;
+      fileSize_ = 0L;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileId) return false;
-      if (!hasTruncateEpoch) return false;
-      if (!hasLastObject) return false;
-      if (!hasFileSize) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasTruncateEpoch()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasLastObject()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileSize()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileId()) {
-        output.writeString(1, getFileId());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getFileIdBytes());
       }
-      if (hasTruncateEpoch()) {
-        output.writeFixed64(2, getTruncateEpoch());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeFixed64(2, truncateEpoch_);
       }
-      if (hasLastObject()) {
-        output.writeFixed64(3, getLastObject());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed64(3, lastObject_);
       }
-      if (hasFileSize()) {
-        output.writeFixed64(4, getFileSize());
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeFixed64(4, fileSize_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -6312,25 +9601,30 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(1, getFileId());
+          .computeBytesSize(1, getFileIdBytes());
       }
-      if (hasTruncateEpoch()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(2, getTruncateEpoch());
+          .computeFixed64Size(2, truncateEpoch_);
       }
-      if (hasLastObject()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(3, getLastObject());
+          .computeFixed64Size(3, lastObject_);
       }
-      if (hasFileSize()) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(4, getFileSize());
+          .computeFixed64Size(4, fileSize_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest parseFrom(
@@ -6407,34 +9701,57 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_broadcast_gmaxRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_broadcast_gmaxRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest();
+        super.clear();
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        truncateEpoch_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        lastObject_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        fileSize_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -6446,33 +9763,47 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest returnMe = result;
-        result = null;
-        return returnMe;
+        result.fileId_ = fileId_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.truncateEpoch_ = truncateEpoch_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.lastObject_ = lastObject_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.fileSize_ = fileSize_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -6502,6 +9833,26 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!hasTruncateEpoch()) {
+          
+          return false;
+        }
+        if (!hasLastObject()) {
+          
+          return false;
+        }
+        if (!hasFileSize()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -6514,108 +9865,139 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 10: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000001;
+              fileId_ = input.readBytes();
               break;
             }
             case 17: {
-              setTruncateEpoch(input.readFixed64());
+              bitField0_ |= 0x00000002;
+              truncateEpoch_ = input.readFixed64();
               break;
             }
             case 25: {
-              setLastObject(input.readFixed64());
+              bitField0_ |= 0x00000004;
+              lastObject_ = input.readFixed64();
               break;
             }
             case 33: {
-              setFileSize(input.readFixed64());
+              bitField0_ |= 0x00000008;
+              fileSize_ = input.readFixed64();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required string file_id = 1;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000001;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000001;
+        fileId_ = value;
+        onChanged();
       }
       
       // required fixed64 truncate_epoch = 2;
+      private long truncateEpoch_ ;
       public boolean hasTruncateEpoch() {
-        return result.hasTruncateEpoch();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       public long getTruncateEpoch() {
-        return result.getTruncateEpoch();
+        return truncateEpoch_;
       }
       public Builder setTruncateEpoch(long value) {
-        result.hasTruncateEpoch = true;
-        result.truncateEpoch_ = value;
+        bitField0_ |= 0x00000002;
+        truncateEpoch_ = value;
+        onChanged();
         return this;
       }
       public Builder clearTruncateEpoch() {
-        result.hasTruncateEpoch = false;
-        result.truncateEpoch_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        truncateEpoch_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 last_object = 3;
+      private long lastObject_ ;
       public boolean hasLastObject() {
-        return result.hasLastObject();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public long getLastObject() {
-        return result.getLastObject();
+        return lastObject_;
       }
       public Builder setLastObject(long value) {
-        result.hasLastObject = true;
-        result.lastObject_ = value;
+        bitField0_ |= 0x00000004;
+        lastObject_ = value;
+        onChanged();
         return this;
       }
       public Builder clearLastObject() {
-        result.hasLastObject = false;
-        result.lastObject_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        lastObject_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 file_size = 4;
+      private long fileSize_ ;
       public boolean hasFileSize() {
-        return result.hasFileSize();
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       public long getFileSize() {
-        return result.getFileSize();
+        return fileSize_;
       }
       public Builder setFileSize(long value) {
-        result.hasFileSize = true;
-        result.fileSize_ = value;
+        bitField0_ |= 0x00000008;
+        fileSize_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileSize() {
-        result.hasFileSize = false;
-        result.fileSize_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        fileSize_ = 0L;
+        onChanged();
         return this;
       }
       
@@ -6624,18 +10006,38 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_broadcast_gmaxRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_broadcast_gmaxRequest)
   }
   
+  public interface xtreemfs_check_objectRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+    
+    // required fixed64 object_number = 3;
+    boolean hasObjectNumber();
+    long getObjectNumber();
+    
+    // required fixed64 object_version = 4;
+    boolean hasObjectVersion();
+    long getObjectVersion();
+  }
   public static final class xtreemfs_check_objectRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_check_objectRequestOrBuilder {
     // Use xtreemfs_check_objectRequest.newBuilder() to construct.
-    private xtreemfs_check_objectRequest() {
-      initFields();
+    private xtreemfs_check_objectRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_check_objectRequest(boolean noInit) {}
     
@@ -6658,60 +10060,121 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_check_objectRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required fixed64 object_number = 3;
     public static final int OBJECT_NUMBER_FIELD_NUMBER = 3;
-    private boolean hasObjectNumber;
-    private long objectNumber_ = 0L;
-    public boolean hasObjectNumber() { return hasObjectNumber; }
-    public long getObjectNumber() { return objectNumber_; }
+    private long objectNumber_;
+    public boolean hasObjectNumber() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public long getObjectNumber() {
+      return objectNumber_;
+    }
     
     // required fixed64 object_version = 4;
     public static final int OBJECT_VERSION_FIELD_NUMBER = 4;
-    private boolean hasObjectVersion;
-    private long objectVersion_ = 0L;
-    public boolean hasObjectVersion() { return hasObjectVersion; }
-    public long getObjectVersion() { return objectVersion_; }
+    private long objectVersion_;
+    public boolean hasObjectVersion() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public long getObjectVersion() {
+      return objectVersion_;
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
+      objectNumber_ = 0L;
+      objectVersion_ = 0L;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!hasObjectNumber) return false;
-      if (!hasObjectVersion) return false;
-      if (!getFileCredentials().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectNumber()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectVersion()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
-      if (hasObjectNumber()) {
-        output.writeFixed64(3, getObjectNumber());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed64(3, objectNumber_);
       }
-      if (hasObjectVersion()) {
-        output.writeFixed64(4, getObjectVersion());
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeFixed64(4, objectVersion_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -6722,25 +10185,30 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
-      if (hasObjectNumber()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(3, getObjectNumber());
+          .computeFixed64Size(3, objectNumber_);
       }
-      if (hasObjectVersion()) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(4, getObjectVersion());
+          .computeFixed64Size(4, objectVersion_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest parseFrom(
@@ -6817,34 +10285,62 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_check_objectRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_check_objectRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -6856,33 +10352,51 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.objectNumber_ = objectNumber_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.objectVersion_ = objectVersion_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -6912,6 +10426,30 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!hasObjectNumber()) {
+          
+          return false;
+        }
+        if (!hasObjectVersion()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -6924,11 +10462,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -6943,113 +10483,191 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
             case 25: {
-              setObjectNumber(input.readFixed64());
+              bitField0_ |= 0x00000004;
+              objectNumber_ = input.readFixed64();
               break;
             }
             case 33: {
-              setObjectVersion(input.readFixed64());
+              bitField0_ |= 0x00000008;
+              objectVersion_ = input.readFixed64();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // required fixed64 object_number = 3;
+      private long objectNumber_ ;
       public boolean hasObjectNumber() {
-        return result.hasObjectNumber();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public long getObjectNumber() {
-        return result.getObjectNumber();
+        return objectNumber_;
       }
       public Builder setObjectNumber(long value) {
-        result.hasObjectNumber = true;
-        result.objectNumber_ = value;
+        bitField0_ |= 0x00000004;
+        objectNumber_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectNumber() {
-        result.hasObjectNumber = false;
-        result.objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        objectNumber_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 object_version = 4;
+      private long objectVersion_ ;
       public boolean hasObjectVersion() {
-        return result.hasObjectVersion();
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       public long getObjectVersion() {
-        return result.getObjectVersion();
+        return objectVersion_;
       }
       public Builder setObjectVersion(long value) {
-        result.hasObjectVersion = true;
-        result.objectVersion_ = value;
+        bitField0_ |= 0x00000008;
+        objectVersion_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectVersion() {
-        result.hasObjectVersion = false;
-        result.objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        objectVersion_ = 0L;
+        onChanged();
         return this;
       }
       
@@ -7058,18 +10676,26 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_check_objectRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_check_objectRequest)
   }
   
+  public interface xtreemfs_cleanup_get_resultsResponseOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // repeated string results = 1;
+    java.util.List<String> getResultsList();
+    int getResultsCount();
+    String getResults(int index);
+  }
   public static final class xtreemfs_cleanup_get_resultsResponse extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_cleanup_get_resultsResponseOrBuilder {
     // Use xtreemfs_cleanup_get_resultsResponse.newBuilder() to construct.
-    private xtreemfs_cleanup_get_resultsResponse() {
-      initFields();
+    private xtreemfs_cleanup_get_resultsResponse(Builder builder) {
+      super(builder);
     }
     private xtreemfs_cleanup_get_resultsResponse(boolean noInit) {}
     
@@ -7094,27 +10720,35 @@ public final class OSD {
     
     // repeated string results = 1;
     public static final int RESULTS_FIELD_NUMBER = 1;
-    private java.util.List<java.lang.String> results_ =
-      java.util.Collections.emptyList();
-    public java.util.List<java.lang.String> getResultsList() {
+    private com.google.protobuf.LazyStringList results_;
+    public java.util.List<String>
+        getResultsList() {
       return results_;
     }
-    public int getResultsCount() { return results_.size(); }
-    public java.lang.String getResults(int index) {
+    public int getResultsCount() {
+      return results_.size();
+    }
+    public String getResults(int index) {
       return results_.get(index);
     }
     
     private void initFields() {
+      results_ = com.google.protobuf.LazyStringArrayList.EMPTY;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      for (java.lang.String element : getResultsList()) {
-        output.writeString(1, element);
+      for (int i = 0; i < results_.size(); i++) {
+        output.writeBytes(1, results_.getByteString(i));
       }
       getUnknownFields().writeTo(output);
     }
@@ -7127,9 +10761,9 @@ public final class OSD {
       size = 0;
       {
         int dataSize = 0;
-        for (java.lang.String element : getResultsList()) {
+        for (int i = 0; i < results_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeStringSizeNoTag(element);
+            .computeBytesSizeNoTag(results_.getByteString(i));
         }
         size += dataSize;
         size += 1 * getResultsList().size();
@@ -7137,6 +10771,11 @@ public final class OSD {
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse parseFrom(
@@ -7213,34 +10852,51 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_cleanup_get_resultsResponse_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_cleanup_get_resultsResponse_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse();
+        super.clear();
+        results_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -7252,37 +10908,35 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse(this);
+        int from_bitField0_ = bitField0_;
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          results_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              results_);
+          bitField0_ = (bitField0_ & ~0x00000001);
         }
-        if (result.results_ != java.util.Collections.EMPTY_LIST) {
-          result.results_ =
-            java.util.Collections.unmodifiableList(result.results_);
-        }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse returnMe = result;
-        result = null;
-        return returnMe;
+        result.results_ = results_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -7297,13 +10951,21 @@ public final class OSD {
       public Builder mergeFrom(org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse other) {
         if (other == org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse.getDefaultInstance()) return this;
         if (!other.results_.isEmpty()) {
-          if (result.results_.isEmpty()) {
-            result.results_ = new java.util.ArrayList<java.lang.String>();
+          if (results_.isEmpty()) {
+            results_ = other.results_;
+            bitField0_ = (bitField0_ & ~0x00000001);
+          } else {
+            ensureResultsIsMutable();
+            results_.addAll(other.results_);
           }
-          result.results_.addAll(other.results_);
+          onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
+      }
+      
+      public final boolean isInitialized() {
+        return true;
       }
       
       public Builder mergeFrom(
@@ -7318,62 +10980,82 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 10: {
-              addResults(input.readString());
+              ensureResultsIsMutable();
+              results_.add(input.readBytes());
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // repeated string results = 1;
-      public java.util.List<java.lang.String> getResultsList() {
-        return java.util.Collections.unmodifiableList(result.results_);
+      private com.google.protobuf.LazyStringList results_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensureResultsIsMutable() {
+        if (!((bitField0_ & 0x00000001) == 0x00000001)) {
+          results_ = new com.google.protobuf.LazyStringArrayList(results_);
+          bitField0_ |= 0x00000001;
+         }
+      }
+      public java.util.List<String>
+          getResultsList() {
+        return java.util.Collections.unmodifiableList(results_);
       }
       public int getResultsCount() {
-        return result.getResultsCount();
+        return results_.size();
       }
-      public java.lang.String getResults(int index) {
-        return result.getResults(index);
+      public String getResults(int index) {
+        return results_.get(index);
       }
-      public Builder setResults(int index, java.lang.String value) {
+      public Builder setResults(
+          int index, String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.results_.set(index, value);
+  ensureResultsIsMutable();
+        results_.set(index, value);
+        onChanged();
         return this;
       }
-      public Builder addResults(java.lang.String value) {
+      public Builder addResults(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  if (result.results_.isEmpty()) {
-          result.results_ = new java.util.ArrayList<java.lang.String>();
-        }
-        result.results_.add(value);
+  ensureResultsIsMutable();
+        results_.add(value);
+        onChanged();
         return this;
       }
       public Builder addAllResults(
-          java.lang.Iterable<? extends java.lang.String> values) {
-        if (result.results_.isEmpty()) {
-          result.results_ = new java.util.ArrayList<java.lang.String>();
-        }
-        super.addAll(values, result.results_);
+          java.lang.Iterable<String> values) {
+        ensureResultsIsMutable();
+        super.addAll(values, results_);
+        onChanged();
         return this;
       }
       public Builder clearResults() {
-        result.results_ = java.util.Collections.emptyList();
+        results_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
         return this;
+      }
+      void addResults(com.google.protobuf.ByteString value) {
+        ensureResultsIsMutable();
+        results_.add(value);
+        onChanged();
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.xtreemfs_cleanup_get_resultsResponse)
@@ -7381,18 +11063,25 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_cleanup_get_resultsResponse(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_cleanup_get_resultsResponse)
   }
   
+  public interface xtreemfs_cleanup_is_runningResponseOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required bool is_running = 1;
+    boolean hasIsRunning();
+    boolean getIsRunning();
+  }
   public static final class xtreemfs_cleanup_is_runningResponse extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_cleanup_is_runningResponseOrBuilder {
     // Use xtreemfs_cleanup_is_runningResponse.newBuilder() to construct.
-    private xtreemfs_cleanup_is_runningResponse() {
-      initFields();
+    private xtreemfs_cleanup_is_runningResponse(Builder builder) {
+      super(builder);
     }
     private xtreemfs_cleanup_is_runningResponse(boolean noInit) {}
     
@@ -7415,25 +11104,38 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_cleanup_is_runningResponse_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required bool is_running = 1;
     public static final int IS_RUNNING_FIELD_NUMBER = 1;
-    private boolean hasIsRunning;
-    private boolean isRunning_ = false;
-    public boolean hasIsRunning() { return hasIsRunning; }
-    public boolean getIsRunning() { return isRunning_; }
+    private boolean isRunning_;
+    public boolean hasIsRunning() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public boolean getIsRunning() {
+      return isRunning_;
+    }
     
     private void initFields() {
+      isRunning_ = false;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasIsRunning) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasIsRunning()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasIsRunning()) {
-        output.writeBool(1, getIsRunning());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBool(1, isRunning_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -7444,13 +11146,18 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasIsRunning()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(1, getIsRunning());
+          .computeBoolSize(1, isRunning_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse parseFrom(
@@ -7527,34 +11234,51 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_cleanup_is_runningResponse_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_cleanup_is_runningResponse_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse();
+        super.clear();
+        isRunning_ = false;
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -7566,33 +11290,35 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse returnMe = result;
-        result = null;
-        return returnMe;
+        result.isRunning_ = isRunning_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -7613,6 +11339,14 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasIsRunning()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -7625,39 +11359,46 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 8: {
-              setIsRunning(input.readBool());
+              bitField0_ |= 0x00000001;
+              isRunning_ = input.readBool();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required bool is_running = 1;
+      private boolean isRunning_ ;
       public boolean hasIsRunning() {
-        return result.hasIsRunning();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public boolean getIsRunning() {
-        return result.getIsRunning();
+        return isRunning_;
       }
       public Builder setIsRunning(boolean value) {
-        result.hasIsRunning = true;
-        result.isRunning_ = value;
+        bitField0_ |= 0x00000001;
+        isRunning_ = value;
+        onChanged();
         return this;
       }
       public Builder clearIsRunning() {
-        result.hasIsRunning = false;
-        result.isRunning_ = false;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        isRunning_ = false;
+        onChanged();
         return this;
       }
       
@@ -7666,18 +11407,33 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_cleanup_is_runningResponse(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_cleanup_is_runningResponse)
   }
   
+  public interface xtreemfs_cleanup_startRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required bool remove_zombies = 1;
+    boolean hasRemoveZombies();
+    boolean getRemoveZombies();
+    
+    // required bool remove_unavail_volume = 2;
+    boolean hasRemoveUnavailVolume();
+    boolean getRemoveUnavailVolume();
+    
+    // required bool lost_and_found = 3;
+    boolean hasLostAndFound();
+    boolean getLostAndFound();
+  }
   public static final class xtreemfs_cleanup_startRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_cleanup_startRequestOrBuilder {
     // Use xtreemfs_cleanup_startRequest.newBuilder() to construct.
-    private xtreemfs_cleanup_startRequest() {
-      initFields();
+    private xtreemfs_cleanup_startRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_cleanup_startRequest(boolean noInit) {}
     
@@ -7700,47 +11456,74 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_cleanup_startRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required bool remove_zombies = 1;
     public static final int REMOVE_ZOMBIES_FIELD_NUMBER = 1;
-    private boolean hasRemoveZombies;
-    private boolean removeZombies_ = false;
-    public boolean hasRemoveZombies() { return hasRemoveZombies; }
-    public boolean getRemoveZombies() { return removeZombies_; }
+    private boolean removeZombies_;
+    public boolean hasRemoveZombies() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public boolean getRemoveZombies() {
+      return removeZombies_;
+    }
     
     // required bool remove_unavail_volume = 2;
     public static final int REMOVE_UNAVAIL_VOLUME_FIELD_NUMBER = 2;
-    private boolean hasRemoveUnavailVolume;
-    private boolean removeUnavailVolume_ = false;
-    public boolean hasRemoveUnavailVolume() { return hasRemoveUnavailVolume; }
-    public boolean getRemoveUnavailVolume() { return removeUnavailVolume_; }
+    private boolean removeUnavailVolume_;
+    public boolean hasRemoveUnavailVolume() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public boolean getRemoveUnavailVolume() {
+      return removeUnavailVolume_;
+    }
     
     // required bool lost_and_found = 3;
     public static final int LOST_AND_FOUND_FIELD_NUMBER = 3;
-    private boolean hasLostAndFound;
-    private boolean lostAndFound_ = false;
-    public boolean hasLostAndFound() { return hasLostAndFound; }
-    public boolean getLostAndFound() { return lostAndFound_; }
+    private boolean lostAndFound_;
+    public boolean hasLostAndFound() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public boolean getLostAndFound() {
+      return lostAndFound_;
+    }
     
     private void initFields() {
+      removeZombies_ = false;
+      removeUnavailVolume_ = false;
+      lostAndFound_ = false;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasRemoveZombies) return false;
-      if (!hasRemoveUnavailVolume) return false;
-      if (!hasLostAndFound) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasRemoveZombies()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasRemoveUnavailVolume()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasLostAndFound()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasRemoveZombies()) {
-        output.writeBool(1, getRemoveZombies());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBool(1, removeZombies_);
       }
-      if (hasRemoveUnavailVolume()) {
-        output.writeBool(2, getRemoveUnavailVolume());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBool(2, removeUnavailVolume_);
       }
-      if (hasLostAndFound()) {
-        output.writeBool(3, getLostAndFound());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBool(3, lostAndFound_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -7751,21 +11534,26 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasRemoveZombies()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(1, getRemoveZombies());
+          .computeBoolSize(1, removeZombies_);
       }
-      if (hasRemoveUnavailVolume()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(2, getRemoveUnavailVolume());
+          .computeBoolSize(2, removeUnavailVolume_);
       }
-      if (hasLostAndFound()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(3, getLostAndFound());
+          .computeBoolSize(3, lostAndFound_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest parseFrom(
@@ -7842,34 +11630,55 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_cleanup_startRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_cleanup_startRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest();
+        super.clear();
+        removeZombies_ = false;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        removeUnavailVolume_ = false;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        lostAndFound_ = false;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -7881,33 +11690,43 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest returnMe = result;
-        result = null;
-        return returnMe;
+        result.removeZombies_ = removeZombies_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.removeUnavailVolume_ = removeUnavailVolume_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.lostAndFound_ = lostAndFound_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -7934,6 +11753,22 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasRemoveZombies()) {
+          
+          return false;
+        }
+        if (!hasRemoveUnavailVolume()) {
+          
+          return false;
+        }
+        if (!hasLostAndFound()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -7946,83 +11781,98 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 8: {
-              setRemoveZombies(input.readBool());
+              bitField0_ |= 0x00000001;
+              removeZombies_ = input.readBool();
               break;
             }
             case 16: {
-              setRemoveUnavailVolume(input.readBool());
+              bitField0_ |= 0x00000002;
+              removeUnavailVolume_ = input.readBool();
               break;
             }
             case 24: {
-              setLostAndFound(input.readBool());
+              bitField0_ |= 0x00000004;
+              lostAndFound_ = input.readBool();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required bool remove_zombies = 1;
+      private boolean removeZombies_ ;
       public boolean hasRemoveZombies() {
-        return result.hasRemoveZombies();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public boolean getRemoveZombies() {
-        return result.getRemoveZombies();
+        return removeZombies_;
       }
       public Builder setRemoveZombies(boolean value) {
-        result.hasRemoveZombies = true;
-        result.removeZombies_ = value;
+        bitField0_ |= 0x00000001;
+        removeZombies_ = value;
+        onChanged();
         return this;
       }
       public Builder clearRemoveZombies() {
-        result.hasRemoveZombies = false;
-        result.removeZombies_ = false;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        removeZombies_ = false;
+        onChanged();
         return this;
       }
       
       // required bool remove_unavail_volume = 2;
+      private boolean removeUnavailVolume_ ;
       public boolean hasRemoveUnavailVolume() {
-        return result.hasRemoveUnavailVolume();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       public boolean getRemoveUnavailVolume() {
-        return result.getRemoveUnavailVolume();
+        return removeUnavailVolume_;
       }
       public Builder setRemoveUnavailVolume(boolean value) {
-        result.hasRemoveUnavailVolume = true;
-        result.removeUnavailVolume_ = value;
+        bitField0_ |= 0x00000002;
+        removeUnavailVolume_ = value;
+        onChanged();
         return this;
       }
       public Builder clearRemoveUnavailVolume() {
-        result.hasRemoveUnavailVolume = false;
-        result.removeUnavailVolume_ = false;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        removeUnavailVolume_ = false;
+        onChanged();
         return this;
       }
       
       // required bool lost_and_found = 3;
+      private boolean lostAndFound_ ;
       public boolean hasLostAndFound() {
-        return result.hasLostAndFound();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public boolean getLostAndFound() {
-        return result.getLostAndFound();
+        return lostAndFound_;
       }
       public Builder setLostAndFound(boolean value) {
-        result.hasLostAndFound = true;
-        result.lostAndFound_ = value;
+        bitField0_ |= 0x00000004;
+        lostAndFound_ = value;
+        onChanged();
         return this;
       }
       public Builder clearLostAndFound() {
-        result.hasLostAndFound = false;
-        result.lostAndFound_ = false;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        lostAndFound_ = false;
+        onChanged();
         return this;
       }
       
@@ -8031,18 +11881,25 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_cleanup_startRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_cleanup_startRequest)
   }
   
+  public interface xtreemfs_cleanup_statusResponseOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required string status = 1;
+    boolean hasStatus();
+    String getStatus();
+  }
   public static final class xtreemfs_cleanup_statusResponse extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_cleanup_statusResponseOrBuilder {
     // Use xtreemfs_cleanup_statusResponse.newBuilder() to construct.
-    private xtreemfs_cleanup_statusResponse() {
-      initFields();
+    private xtreemfs_cleanup_statusResponse(Builder builder) {
+      super(builder);
     }
     private xtreemfs_cleanup_statusResponse(boolean noInit) {}
     
@@ -8065,25 +11922,60 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_cleanup_statusResponse_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required string status = 1;
     public static final int STATUS_FIELD_NUMBER = 1;
-    private boolean hasStatus;
-    private java.lang.String status_ = "";
-    public boolean hasStatus() { return hasStatus; }
-    public java.lang.String getStatus() { return status_; }
+    private Object status_;
+    public boolean hasStatus() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public String getStatus() {
+      Object ref = status_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          status_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getStatusBytes() {
+      Object ref = status_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        status_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     private void initFields() {
+      status_ = "";
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasStatus) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasStatus()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasStatus()) {
-        output.writeString(1, getStatus());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getStatusBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -8094,13 +11986,18 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasStatus()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(1, getStatus());
+          .computeBytesSize(1, getStatusBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse parseFrom(
@@ -8177,34 +12074,51 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_cleanup_statusResponse_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_cleanup_statusResponse_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse();
+        super.clear();
+        status_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -8216,33 +12130,35 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse returnMe = result;
-        result = null;
-        return returnMe;
+        result.status_ = status_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -8263,6 +12179,14 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasStatus()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -8275,43 +12199,62 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 10: {
-              setStatus(input.readString());
+              bitField0_ |= 0x00000001;
+              status_ = input.readBytes();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required string status = 1;
+      private Object status_ = "";
       public boolean hasStatus() {
-        return result.hasStatus();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
-      public java.lang.String getStatus() {
-        return result.getStatus();
+      public String getStatus() {
+        Object ref = status_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          status_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setStatus(java.lang.String value) {
+      public Builder setStatus(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasStatus = true;
-        result.status_ = value;
+  bitField0_ |= 0x00000001;
+        status_ = value;
+        onChanged();
         return this;
       }
       public Builder clearStatus() {
-        result.hasStatus = false;
-        result.status_ = getDefaultInstance().getStatus();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        status_ = getDefaultInstance().getStatus();
+        onChanged();
         return this;
+      }
+      void setStatus(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000001;
+        status_ = value;
+        onChanged();
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.xtreemfs_cleanup_statusResponse)
@@ -8319,18 +12262,38 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_cleanup_statusResponse(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_cleanup_statusResponse)
   }
   
+  public interface xtreemfs_rwr_fetchRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+    
+    // required fixed64 object_number = 3;
+    boolean hasObjectNumber();
+    long getObjectNumber();
+    
+    // required fixed64 object_version = 4;
+    boolean hasObjectVersion();
+    long getObjectVersion();
+  }
   public static final class xtreemfs_rwr_fetchRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_rwr_fetchRequestOrBuilder {
     // Use xtreemfs_rwr_fetchRequest.newBuilder() to construct.
-    private xtreemfs_rwr_fetchRequest() {
-      initFields();
+    private xtreemfs_rwr_fetchRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_rwr_fetchRequest(boolean noInit) {}
     
@@ -8353,60 +12316,121 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_fetchRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required fixed64 object_number = 3;
     public static final int OBJECT_NUMBER_FIELD_NUMBER = 3;
-    private boolean hasObjectNumber;
-    private long objectNumber_ = 0L;
-    public boolean hasObjectNumber() { return hasObjectNumber; }
-    public long getObjectNumber() { return objectNumber_; }
+    private long objectNumber_;
+    public boolean hasObjectNumber() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public long getObjectNumber() {
+      return objectNumber_;
+    }
     
     // required fixed64 object_version = 4;
     public static final int OBJECT_VERSION_FIELD_NUMBER = 4;
-    private boolean hasObjectVersion;
-    private long objectVersion_ = 0L;
-    public boolean hasObjectVersion() { return hasObjectVersion; }
-    public long getObjectVersion() { return objectVersion_; }
+    private long objectVersion_;
+    public boolean hasObjectVersion() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public long getObjectVersion() {
+      return objectVersion_;
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
+      objectNumber_ = 0L;
+      objectVersion_ = 0L;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!hasObjectNumber) return false;
-      if (!hasObjectVersion) return false;
-      if (!getFileCredentials().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectNumber()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectVersion()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
-      if (hasObjectNumber()) {
-        output.writeFixed64(3, getObjectNumber());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed64(3, objectNumber_);
       }
-      if (hasObjectVersion()) {
-        output.writeFixed64(4, getObjectVersion());
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeFixed64(4, objectVersion_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -8417,25 +12441,30 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
-      if (hasObjectNumber()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(3, getObjectNumber());
+          .computeFixed64Size(3, objectNumber_);
       }
-      if (hasObjectVersion()) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(4, getObjectVersion());
+          .computeFixed64Size(4, objectVersion_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest parseFrom(
@@ -8512,34 +12541,62 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_fetchRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_fetchRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -8551,33 +12608,51 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.objectNumber_ = objectNumber_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.objectVersion_ = objectVersion_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -8607,6 +12682,30 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!hasObjectNumber()) {
+          
+          return false;
+        }
+        if (!hasObjectVersion()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -8619,11 +12718,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -8638,113 +12739,191 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
             case 25: {
-              setObjectNumber(input.readFixed64());
+              bitField0_ |= 0x00000004;
+              objectNumber_ = input.readFixed64();
               break;
             }
             case 33: {
-              setObjectVersion(input.readFixed64());
+              bitField0_ |= 0x00000008;
+              objectVersion_ = input.readFixed64();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // required fixed64 object_number = 3;
+      private long objectNumber_ ;
       public boolean hasObjectNumber() {
-        return result.hasObjectNumber();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public long getObjectNumber() {
-        return result.getObjectNumber();
+        return objectNumber_;
       }
       public Builder setObjectNumber(long value) {
-        result.hasObjectNumber = true;
-        result.objectNumber_ = value;
+        bitField0_ |= 0x00000004;
+        objectNumber_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectNumber() {
-        result.hasObjectNumber = false;
-        result.objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        objectNumber_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 object_version = 4;
+      private long objectVersion_ ;
       public boolean hasObjectVersion() {
-        return result.hasObjectVersion();
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       public long getObjectVersion() {
-        return result.getObjectVersion();
+        return objectVersion_;
       }
       public Builder setObjectVersion(long value) {
-        result.hasObjectVersion = true;
-        result.objectVersion_ = value;
+        bitField0_ |= 0x00000008;
+        objectVersion_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectVersion() {
-        result.hasObjectVersion = false;
-        result.objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        objectVersion_ = 0L;
+        onChanged();
         return this;
       }
       
@@ -8753,18 +12932,29 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_rwr_fetchRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_rwr_fetchRequest)
   }
   
+  public interface xtreemfs_rwr_flease_msgRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required string sender_hostname = 1;
+    boolean hasSenderHostname();
+    String getSenderHostname();
+    
+    // required fixed32 sender_port = 2;
+    boolean hasSenderPort();
+    int getSenderPort();
+  }
   public static final class xtreemfs_rwr_flease_msgRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_rwr_flease_msgRequestOrBuilder {
     // Use xtreemfs_rwr_flease_msgRequest.newBuilder() to construct.
-    private xtreemfs_rwr_flease_msgRequest() {
-      initFields();
+    private xtreemfs_rwr_flease_msgRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_rwr_flease_msgRequest(boolean noInit) {}
     
@@ -8787,36 +12977,78 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_flease_msgRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required string sender_hostname = 1;
     public static final int SENDER_HOSTNAME_FIELD_NUMBER = 1;
-    private boolean hasSenderHostname;
-    private java.lang.String senderHostname_ = "";
-    public boolean hasSenderHostname() { return hasSenderHostname; }
-    public java.lang.String getSenderHostname() { return senderHostname_; }
+    private Object senderHostname_;
+    public boolean hasSenderHostname() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public String getSenderHostname() {
+      Object ref = senderHostname_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          senderHostname_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getSenderHostnameBytes() {
+      Object ref = senderHostname_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        senderHostname_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required fixed32 sender_port = 2;
     public static final int SENDER_PORT_FIELD_NUMBER = 2;
-    private boolean hasSenderPort;
-    private int senderPort_ = 0;
-    public boolean hasSenderPort() { return hasSenderPort; }
-    public int getSenderPort() { return senderPort_; }
+    private int senderPort_;
+    public boolean hasSenderPort() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public int getSenderPort() {
+      return senderPort_;
+    }
     
     private void initFields() {
+      senderHostname_ = "";
+      senderPort_ = 0;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasSenderHostname) return false;
-      if (!hasSenderPort) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasSenderHostname()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasSenderPort()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasSenderHostname()) {
-        output.writeString(1, getSenderHostname());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getSenderHostnameBytes());
       }
-      if (hasSenderPort()) {
-        output.writeFixed32(2, getSenderPort());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeFixed32(2, senderPort_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -8827,17 +13059,22 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasSenderHostname()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(1, getSenderHostname());
+          .computeBytesSize(1, getSenderHostnameBytes());
       }
-      if (hasSenderPort()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(2, getSenderPort());
+          .computeFixed32Size(2, senderPort_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest parseFrom(
@@ -8914,34 +13151,53 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_flease_msgRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_flease_msgRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest();
+        super.clear();
+        senderHostname_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        senderPort_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -8953,33 +13209,39 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest returnMe = result;
-        result = null;
-        return returnMe;
+        result.senderHostname_ = senderHostname_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.senderPort_ = senderPort_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -9003,6 +13265,18 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasSenderHostname()) {
+          
+          return false;
+        }
+        if (!hasSenderPort()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -9015,64 +13289,87 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 10: {
-              setSenderHostname(input.readString());
+              bitField0_ |= 0x00000001;
+              senderHostname_ = input.readBytes();
               break;
             }
             case 21: {
-              setSenderPort(input.readFixed32());
+              bitField0_ |= 0x00000002;
+              senderPort_ = input.readFixed32();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required string sender_hostname = 1;
+      private Object senderHostname_ = "";
       public boolean hasSenderHostname() {
-        return result.hasSenderHostname();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
-      public java.lang.String getSenderHostname() {
-        return result.getSenderHostname();
+      public String getSenderHostname() {
+        Object ref = senderHostname_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          senderHostname_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setSenderHostname(java.lang.String value) {
+      public Builder setSenderHostname(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasSenderHostname = true;
-        result.senderHostname_ = value;
+  bitField0_ |= 0x00000001;
+        senderHostname_ = value;
+        onChanged();
         return this;
       }
       public Builder clearSenderHostname() {
-        result.hasSenderHostname = false;
-        result.senderHostname_ = getDefaultInstance().getSenderHostname();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        senderHostname_ = getDefaultInstance().getSenderHostname();
+        onChanged();
         return this;
+      }
+      void setSenderHostname(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000001;
+        senderHostname_ = value;
+        onChanged();
       }
       
       // required fixed32 sender_port = 2;
+      private int senderPort_ ;
       public boolean hasSenderPort() {
-        return result.hasSenderPort();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       public int getSenderPort() {
-        return result.getSenderPort();
+        return senderPort_;
       }
       public Builder setSenderPort(int value) {
-        result.hasSenderPort = true;
-        result.senderPort_ = value;
+        bitField0_ |= 0x00000002;
+        senderPort_ = value;
+        onChanged();
         return this;
       }
       public Builder clearSenderPort() {
-        result.hasSenderPort = false;
-        result.senderPort_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        senderPort_ = 0;
+        onChanged();
         return this;
       }
       
@@ -9081,18 +13378,34 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_rwr_flease_msgRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_rwr_flease_msgRequest)
   }
   
+  public interface xtreemfs_rwr_set_primary_epochRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+    
+    // required fixed32 primary_epoch = 3;
+    boolean hasPrimaryEpoch();
+    int getPrimaryEpoch();
+  }
   public static final class xtreemfs_rwr_set_primary_epochRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_rwr_set_primary_epochRequestOrBuilder {
     // Use xtreemfs_rwr_set_primary_epochRequest.newBuilder() to construct.
-    private xtreemfs_rwr_set_primary_epochRequest() {
-      initFields();
+    private xtreemfs_rwr_set_primary_epochRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_rwr_set_primary_epochRequest(boolean noInit) {}
     
@@ -9115,49 +13428,103 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_set_primary_epochRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required fixed32 primary_epoch = 3;
     public static final int PRIMARY_EPOCH_FIELD_NUMBER = 3;
-    private boolean hasPrimaryEpoch;
-    private int primaryEpoch_ = 0;
-    public boolean hasPrimaryEpoch() { return hasPrimaryEpoch; }
-    public int getPrimaryEpoch() { return primaryEpoch_; }
+    private int primaryEpoch_;
+    public boolean hasPrimaryEpoch() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public int getPrimaryEpoch() {
+      return primaryEpoch_;
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
+      primaryEpoch_ = 0;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!hasPrimaryEpoch) return false;
-      if (!getFileCredentials().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasPrimaryEpoch()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
-      if (hasPrimaryEpoch()) {
-        output.writeFixed32(3, getPrimaryEpoch());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed32(3, primaryEpoch_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -9168,21 +13535,26 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
-      if (hasPrimaryEpoch()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(3, getPrimaryEpoch());
+          .computeFixed32Size(3, primaryEpoch_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest parseFrom(
@@ -9259,34 +13631,60 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_set_primary_epochRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_set_primary_epochRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        primaryEpoch_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -9298,33 +13696,47 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.primaryEpoch_ = primaryEpoch_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -9351,6 +13763,26 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!hasPrimaryEpoch()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -9363,11 +13795,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -9382,91 +13816,165 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
             case 29: {
-              setPrimaryEpoch(input.readFixed32());
+              bitField0_ |= 0x00000004;
+              primaryEpoch_ = input.readFixed32();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // required fixed32 primary_epoch = 3;
+      private int primaryEpoch_ ;
       public boolean hasPrimaryEpoch() {
-        return result.hasPrimaryEpoch();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public int getPrimaryEpoch() {
-        return result.getPrimaryEpoch();
+        return primaryEpoch_;
       }
       public Builder setPrimaryEpoch(int value) {
-        result.hasPrimaryEpoch = true;
-        result.primaryEpoch_ = value;
+        bitField0_ |= 0x00000004;
+        primaryEpoch_ = value;
+        onChanged();
         return this;
       }
       public Builder clearPrimaryEpoch() {
-        result.hasPrimaryEpoch = false;
-        result.primaryEpoch_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        primaryEpoch_ = 0;
+        onChanged();
         return this;
       }
       
@@ -9475,18 +13983,34 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_rwr_set_primary_epochRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_rwr_set_primary_epochRequest)
   }
   
+  public interface xtreemfs_rwr_statusRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+    
+    // required fixed64 max_local_obj_version = 3;
+    boolean hasMaxLocalObjVersion();
+    long getMaxLocalObjVersion();
+  }
   public static final class xtreemfs_rwr_statusRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_rwr_statusRequestOrBuilder {
     // Use xtreemfs_rwr_statusRequest.newBuilder() to construct.
-    private xtreemfs_rwr_statusRequest() {
-      initFields();
+    private xtreemfs_rwr_statusRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_rwr_statusRequest(boolean noInit) {}
     
@@ -9509,49 +14033,103 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_statusRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required fixed64 max_local_obj_version = 3;
     public static final int MAX_LOCAL_OBJ_VERSION_FIELD_NUMBER = 3;
-    private boolean hasMaxLocalObjVersion;
-    private long maxLocalObjVersion_ = 0L;
-    public boolean hasMaxLocalObjVersion() { return hasMaxLocalObjVersion; }
-    public long getMaxLocalObjVersion() { return maxLocalObjVersion_; }
+    private long maxLocalObjVersion_;
+    public boolean hasMaxLocalObjVersion() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public long getMaxLocalObjVersion() {
+      return maxLocalObjVersion_;
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
+      maxLocalObjVersion_ = 0L;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!hasMaxLocalObjVersion) return false;
-      if (!getFileCredentials().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasMaxLocalObjVersion()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
-      if (hasMaxLocalObjVersion()) {
-        output.writeFixed64(3, getMaxLocalObjVersion());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed64(3, maxLocalObjVersion_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -9562,21 +14140,26 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
-      if (hasMaxLocalObjVersion()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(3, getMaxLocalObjVersion());
+          .computeFixed64Size(3, maxLocalObjVersion_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest parseFrom(
@@ -9653,34 +14236,60 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_statusRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_statusRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        maxLocalObjVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -9692,33 +14301,47 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.maxLocalObjVersion_ = maxLocalObjVersion_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -9745,6 +14368,26 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!hasMaxLocalObjVersion()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -9757,11 +14400,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -9776,91 +14421,165 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
             case 25: {
-              setMaxLocalObjVersion(input.readFixed64());
+              bitField0_ |= 0x00000004;
+              maxLocalObjVersion_ = input.readFixed64();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // required fixed64 max_local_obj_version = 3;
+      private long maxLocalObjVersion_ ;
       public boolean hasMaxLocalObjVersion() {
-        return result.hasMaxLocalObjVersion();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public long getMaxLocalObjVersion() {
-        return result.getMaxLocalObjVersion();
+        return maxLocalObjVersion_;
       }
       public Builder setMaxLocalObjVersion(long value) {
-        result.hasMaxLocalObjVersion = true;
-        result.maxLocalObjVersion_ = value;
+        bitField0_ |= 0x00000004;
+        maxLocalObjVersion_ = value;
+        onChanged();
         return this;
       }
       public Builder clearMaxLocalObjVersion() {
-        result.hasMaxLocalObjVersion = false;
-        result.maxLocalObjVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        maxLocalObjVersion_ = 0L;
+        onChanged();
         return this;
       }
       
@@ -9869,18 +14588,38 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_rwr_statusRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_rwr_statusRequest)
   }
   
+  public interface xtreemfs_rwr_truncateRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+    
+    // required fixed64 new_file_size = 3;
+    boolean hasNewFileSize();
+    long getNewFileSize();
+    
+    // required fixed64 object_version = 4;
+    boolean hasObjectVersion();
+    long getObjectVersion();
+  }
   public static final class xtreemfs_rwr_truncateRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_rwr_truncateRequestOrBuilder {
     // Use xtreemfs_rwr_truncateRequest.newBuilder() to construct.
-    private xtreemfs_rwr_truncateRequest() {
-      initFields();
+    private xtreemfs_rwr_truncateRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_rwr_truncateRequest(boolean noInit) {}
     
@@ -9903,60 +14642,121 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_truncateRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required fixed64 new_file_size = 3;
     public static final int NEW_FILE_SIZE_FIELD_NUMBER = 3;
-    private boolean hasNewFileSize;
-    private long newFileSize_ = 0L;
-    public boolean hasNewFileSize() { return hasNewFileSize; }
-    public long getNewFileSize() { return newFileSize_; }
+    private long newFileSize_;
+    public boolean hasNewFileSize() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public long getNewFileSize() {
+      return newFileSize_;
+    }
     
     // required fixed64 object_version = 4;
     public static final int OBJECT_VERSION_FIELD_NUMBER = 4;
-    private boolean hasObjectVersion;
-    private long objectVersion_ = 0L;
-    public boolean hasObjectVersion() { return hasObjectVersion; }
-    public long getObjectVersion() { return objectVersion_; }
+    private long objectVersion_;
+    public boolean hasObjectVersion() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public long getObjectVersion() {
+      return objectVersion_;
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
+      newFileSize_ = 0L;
+      objectVersion_ = 0L;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!hasNewFileSize) return false;
-      if (!hasObjectVersion) return false;
-      if (!getFileCredentials().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasNewFileSize()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectVersion()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
-      if (hasNewFileSize()) {
-        output.writeFixed64(3, getNewFileSize());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed64(3, newFileSize_);
       }
-      if (hasObjectVersion()) {
-        output.writeFixed64(4, getObjectVersion());
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeFixed64(4, objectVersion_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -9967,25 +14767,30 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
-      if (hasNewFileSize()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(3, getNewFileSize());
+          .computeFixed64Size(3, newFileSize_);
       }
-      if (hasObjectVersion()) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(4, getObjectVersion());
+          .computeFixed64Size(4, objectVersion_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest parseFrom(
@@ -10062,34 +14867,62 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_truncateRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_truncateRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        newFileSize_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -10101,33 +14934,51 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.newFileSize_ = newFileSize_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.objectVersion_ = objectVersion_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -10157,6 +15008,30 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!hasNewFileSize()) {
+          
+          return false;
+        }
+        if (!hasObjectVersion()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -10169,11 +15044,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -10188,113 +15065,191 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
             case 25: {
-              setNewFileSize(input.readFixed64());
+              bitField0_ |= 0x00000004;
+              newFileSize_ = input.readFixed64();
               break;
             }
             case 33: {
-              setObjectVersion(input.readFixed64());
+              bitField0_ |= 0x00000008;
+              objectVersion_ = input.readFixed64();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // required fixed64 new_file_size = 3;
+      private long newFileSize_ ;
       public boolean hasNewFileSize() {
-        return result.hasNewFileSize();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public long getNewFileSize() {
-        return result.getNewFileSize();
+        return newFileSize_;
       }
       public Builder setNewFileSize(long value) {
-        result.hasNewFileSize = true;
-        result.newFileSize_ = value;
+        bitField0_ |= 0x00000004;
+        newFileSize_ = value;
+        onChanged();
         return this;
       }
       public Builder clearNewFileSize() {
-        result.hasNewFileSize = false;
-        result.newFileSize_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        newFileSize_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 object_version = 4;
+      private long objectVersion_ ;
       public boolean hasObjectVersion() {
-        return result.hasObjectVersion();
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       public long getObjectVersion() {
-        return result.getObjectVersion();
+        return objectVersion_;
       }
       public Builder setObjectVersion(long value) {
-        result.hasObjectVersion = true;
-        result.objectVersion_ = value;
+        bitField0_ |= 0x00000008;
+        objectVersion_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectVersion() {
-        result.hasObjectVersion = false;
-        result.objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        objectVersion_ = 0L;
+        onChanged();
         return this;
       }
       
@@ -10303,18 +15258,51 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_rwr_truncateRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_rwr_truncateRequest)
   }
   
+  public interface xtreemfs_rwr_updateRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+    
+    // required fixed64 new_file_size = 3;
+    boolean hasNewFileSize();
+    long getNewFileSize();
+    
+    // required fixed64 object_number = 7;
+    boolean hasObjectNumber();
+    long getObjectNumber();
+    
+    // required fixed64 object_version = 4;
+    boolean hasObjectVersion();
+    long getObjectVersion();
+    
+    // required fixed32 offset = 5;
+    boolean hasOffset();
+    int getOffset();
+    
+    // required .xtreemfs.pbrpc.ObjectData obj = 6;
+    boolean hasObj();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData getObj();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder getObjOrBuilder();
+  }
   public static final class xtreemfs_rwr_updateRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_rwr_updateRequestOrBuilder {
     // Use xtreemfs_rwr_updateRequest.newBuilder() to construct.
-    private xtreemfs_rwr_updateRequest() {
-      initFields();
+    private xtreemfs_rwr_updateRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_rwr_updateRequest(boolean noInit) {}
     
@@ -10337,95 +15325,182 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_updateRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required fixed64 new_file_size = 3;
     public static final int NEW_FILE_SIZE_FIELD_NUMBER = 3;
-    private boolean hasNewFileSize;
-    private long newFileSize_ = 0L;
-    public boolean hasNewFileSize() { return hasNewFileSize; }
-    public long getNewFileSize() { return newFileSize_; }
+    private long newFileSize_;
+    public boolean hasNewFileSize() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public long getNewFileSize() {
+      return newFileSize_;
+    }
     
     // required fixed64 object_number = 7;
     public static final int OBJECT_NUMBER_FIELD_NUMBER = 7;
-    private boolean hasObjectNumber;
-    private long objectNumber_ = 0L;
-    public boolean hasObjectNumber() { return hasObjectNumber; }
-    public long getObjectNumber() { return objectNumber_; }
+    private long objectNumber_;
+    public boolean hasObjectNumber() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public long getObjectNumber() {
+      return objectNumber_;
+    }
     
     // required fixed64 object_version = 4;
     public static final int OBJECT_VERSION_FIELD_NUMBER = 4;
-    private boolean hasObjectVersion;
-    private long objectVersion_ = 0L;
-    public boolean hasObjectVersion() { return hasObjectVersion; }
-    public long getObjectVersion() { return objectVersion_; }
+    private long objectVersion_;
+    public boolean hasObjectVersion() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    public long getObjectVersion() {
+      return objectVersion_;
+    }
     
     // required fixed32 offset = 5;
     public static final int OFFSET_FIELD_NUMBER = 5;
-    private boolean hasOffset;
-    private int offset_ = 0;
-    public boolean hasOffset() { return hasOffset; }
-    public int getOffset() { return offset_; }
+    private int offset_;
+    public boolean hasOffset() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    public int getOffset() {
+      return offset_;
+    }
     
     // required .xtreemfs.pbrpc.ObjectData obj = 6;
     public static final int OBJ_FIELD_NUMBER = 6;
-    private boolean hasObj;
     private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData obj_;
-    public boolean hasObj() { return hasObj; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData getObj() { return obj_; }
+    public boolean hasObj() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData getObj() {
+      return obj_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder getObjOrBuilder() {
+      return obj_;
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
+      newFileSize_ = 0L;
+      objectNumber_ = 0L;
+      objectVersion_ = 0L;
+      offset_ = 0;
       obj_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!hasNewFileSize) return false;
-      if (!hasObjectNumber) return false;
-      if (!hasObjectVersion) return false;
-      if (!hasOffset) return false;
-      if (!hasObj) return false;
-      if (!getFileCredentials().isInitialized()) return false;
-      if (!getObj().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasNewFileSize()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectNumber()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectVersion()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasOffset()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObj()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getObj().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
-      if (hasNewFileSize()) {
-        output.writeFixed64(3, getNewFileSize());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed64(3, newFileSize_);
       }
-      if (hasObjectVersion()) {
-        output.writeFixed64(4, getObjectVersion());
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeFixed64(4, objectVersion_);
       }
-      if (hasOffset()) {
-        output.writeFixed32(5, getOffset());
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeFixed32(5, offset_);
       }
-      if (hasObj()) {
-        output.writeMessage(6, getObj());
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeMessage(6, obj_);
       }
-      if (hasObjectNumber()) {
-        output.writeFixed64(7, getObjectNumber());
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeFixed64(7, objectNumber_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -10436,37 +15511,42 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
-      if (hasNewFileSize()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(3, getNewFileSize());
+          .computeFixed64Size(3, newFileSize_);
       }
-      if (hasObjectVersion()) {
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(4, getObjectVersion());
+          .computeFixed64Size(4, objectVersion_);
       }
-      if (hasOffset()) {
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(5, getOffset());
+          .computeFixed32Size(5, offset_);
       }
-      if (hasObj()) {
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(6, getObj());
+          .computeMessageSize(6, obj_);
       }
-      if (hasObjectNumber()) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(7, getObjectNumber());
+          .computeFixed64Size(7, objectNumber_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest parseFrom(
@@ -10543,34 +15623,73 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_updateRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_updateRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+          getObjFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        newFileSize_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        offset_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        if (objBuilder_ == null) {
+          obj_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
+        } else {
+          objBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000040);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -10582,33 +15701,67 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.newFileSize_ = newFileSize_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.objectNumber_ = objectNumber_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.objectVersion_ = objectVersion_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.offset_ = offset_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        if (objBuilder_ == null) {
+          result.obj_ = obj_;
+        } else {
+          result.obj_ = objBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -10647,6 +15800,46 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!hasNewFileSize()) {
+          
+          return false;
+        }
+        if (!hasObjectNumber()) {
+          
+          return false;
+        }
+        if (!hasObjectVersion()) {
+          
+          return false;
+        }
+        if (!hasOffset()) {
+          
+          return false;
+        }
+        if (!hasObj()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        if (!getObj().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -10659,11 +15852,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -10678,19 +15873,23 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
             case 25: {
-              setNewFileSize(input.readFixed64());
+              bitField0_ |= 0x00000004;
+              newFileSize_ = input.readFixed64();
               break;
             }
             case 33: {
-              setObjectVersion(input.readFixed64());
+              bitField0_ |= 0x00000010;
+              objectVersion_ = input.readFixed64();
               break;
             }
             case 45: {
-              setOffset(input.readFixed32());
+              bitField0_ |= 0x00000020;
+              offset_ = input.readFixed32();
               break;
             }
             case 50: {
@@ -10703,179 +15902,314 @@ public final class OSD {
               break;
             }
             case 57: {
-              setObjectNumber(input.readFixed64());
+              bitField0_ |= 0x00000008;
+              objectNumber_ = input.readFixed64();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // required fixed64 new_file_size = 3;
+      private long newFileSize_ ;
       public boolean hasNewFileSize() {
-        return result.hasNewFileSize();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public long getNewFileSize() {
-        return result.getNewFileSize();
+        return newFileSize_;
       }
       public Builder setNewFileSize(long value) {
-        result.hasNewFileSize = true;
-        result.newFileSize_ = value;
+        bitField0_ |= 0x00000004;
+        newFileSize_ = value;
+        onChanged();
         return this;
       }
       public Builder clearNewFileSize() {
-        result.hasNewFileSize = false;
-        result.newFileSize_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        newFileSize_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 object_number = 7;
+      private long objectNumber_ ;
       public boolean hasObjectNumber() {
-        return result.hasObjectNumber();
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       public long getObjectNumber() {
-        return result.getObjectNumber();
+        return objectNumber_;
       }
       public Builder setObjectNumber(long value) {
-        result.hasObjectNumber = true;
-        result.objectNumber_ = value;
+        bitField0_ |= 0x00000008;
+        objectNumber_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectNumber() {
-        result.hasObjectNumber = false;
-        result.objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        objectNumber_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 object_version = 4;
+      private long objectVersion_ ;
       public boolean hasObjectVersion() {
-        return result.hasObjectVersion();
+        return ((bitField0_ & 0x00000010) == 0x00000010);
       }
       public long getObjectVersion() {
-        return result.getObjectVersion();
+        return objectVersion_;
       }
       public Builder setObjectVersion(long value) {
-        result.hasObjectVersion = true;
-        result.objectVersion_ = value;
+        bitField0_ |= 0x00000010;
+        objectVersion_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectVersion() {
-        result.hasObjectVersion = false;
-        result.objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        objectVersion_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed32 offset = 5;
+      private int offset_ ;
       public boolean hasOffset() {
-        return result.hasOffset();
+        return ((bitField0_ & 0x00000020) == 0x00000020);
       }
       public int getOffset() {
-        return result.getOffset();
+        return offset_;
       }
       public Builder setOffset(int value) {
-        result.hasOffset = true;
-        result.offset_ = value;
+        bitField0_ |= 0x00000020;
+        offset_ = value;
+        onChanged();
         return this;
       }
       public Builder clearOffset() {
-        result.hasOffset = false;
-        result.offset_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        offset_ = 0;
+        onChanged();
         return this;
       }
       
       // required .xtreemfs.pbrpc.ObjectData obj = 6;
+      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData obj_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder> objBuilder_;
       public boolean hasObj() {
-        return result.hasObj();
+        return ((bitField0_ & 0x00000040) == 0x00000040);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData getObj() {
-        return result.getObj();
+        if (objBuilder_ == null) {
+          return obj_;
+        } else {
+          return objBuilder_.getMessage();
+        }
       }
       public Builder setObj(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (objBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          obj_ = value;
+          onChanged();
+        } else {
+          objBuilder_.setMessage(value);
         }
-        result.hasObj = true;
-        result.obj_ = value;
+        bitField0_ |= 0x00000040;
         return this;
       }
-      public Builder setObj(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder builderForValue) {
-        result.hasObj = true;
-        result.obj_ = builderForValue.build();
+      public Builder setObj(
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder builderForValue) {
+        if (objBuilder_ == null) {
+          obj_ = builderForValue.build();
+          onChanged();
+        } else {
+          objBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000040;
         return this;
       }
       public Builder mergeObj(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData value) {
-        if (result.hasObj() &&
-            result.obj_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance()) {
-          result.obj_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.newBuilder(result.obj_).mergeFrom(value).buildPartial();
+        if (objBuilder_ == null) {
+          if (((bitField0_ & 0x00000040) == 0x00000040) &&
+              obj_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance()) {
+            obj_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.newBuilder(obj_).mergeFrom(value).buildPartial();
+          } else {
+            obj_ = value;
+          }
+          onChanged();
         } else {
-          result.obj_ = value;
+          objBuilder_.mergeFrom(value);
         }
-        result.hasObj = true;
+        bitField0_ |= 0x00000040;
         return this;
       }
       public Builder clearObj() {
-        result.hasObj = false;
-        result.obj_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
+        if (objBuilder_ == null) {
+          obj_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
+          onChanged();
+        } else {
+          objBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000040);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder getObjBuilder() {
+        bitField0_ |= 0x00000040;
+        onChanged();
+        return getObjFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder getObjOrBuilder() {
+        if (objBuilder_ != null) {
+          return objBuilder_.getMessageOrBuilder();
+        } else {
+          return obj_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder> 
+          getObjFieldBuilder() {
+        if (objBuilder_ == null) {
+          objBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectDataOrBuilder>(
+                  obj_,
+                  getParentForChildren(),
+                  isClean());
+          obj_ = null;
+        }
+        return objBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.xtreemfs_rwr_updateRequest)
@@ -10883,18 +16217,30 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_rwr_updateRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_rwr_updateRequest)
   }
   
+  public interface xtreemfs_internal_get_gmaxRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+  }
   public static final class xtreemfs_internal_get_gmaxRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_internal_get_gmaxRequestOrBuilder {
     // Use xtreemfs_internal_get_gmaxRequest.newBuilder() to construct.
-    private xtreemfs_internal_get_gmaxRequest() {
-      initFields();
+    private xtreemfs_internal_get_gmaxRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_internal_get_gmaxRequest(boolean noInit) {}
     
@@ -10917,38 +16263,85 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_get_gmaxRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!getFileCredentials().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -10959,17 +16352,22 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest parseFrom(
@@ -11046,34 +16444,58 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_get_gmaxRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_get_gmaxRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -11085,33 +16507,43 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -11135,6 +16567,22 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -11147,11 +16595,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -11166,70 +16616,140 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.xtreemfs_internal_get_gmaxRequest)
@@ -11237,18 +16757,30 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_internal_get_gmaxRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_internal_get_gmaxRequest)
   }
   
+  public interface xtreemfs_internal_get_file_sizeRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+  }
   public static final class xtreemfs_internal_get_file_sizeRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_internal_get_file_sizeRequestOrBuilder {
     // Use xtreemfs_internal_get_file_sizeRequest.newBuilder() to construct.
-    private xtreemfs_internal_get_file_sizeRequest() {
-      initFields();
+    private xtreemfs_internal_get_file_sizeRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_internal_get_file_sizeRequest(boolean noInit) {}
     
@@ -11271,38 +16803,85 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_get_file_sizeRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!getFileCredentials().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -11313,17 +16892,22 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest parseFrom(
@@ -11400,34 +16984,58 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_get_file_sizeRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_get_file_sizeRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -11439,33 +17047,43 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -11489,6 +17107,22 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -11501,11 +17135,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -11520,70 +17156,140 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.xtreemfs_internal_get_file_sizeRequest)
@@ -11591,18 +17297,25 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_internal_get_file_sizeRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_internal_get_file_sizeRequest)
   }
   
+  public interface xtreemfs_internal_get_file_sizeResponseOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required fixed64 file_size = 1;
+    boolean hasFileSize();
+    long getFileSize();
+  }
   public static final class xtreemfs_internal_get_file_sizeResponse extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_internal_get_file_sizeResponseOrBuilder {
     // Use xtreemfs_internal_get_file_sizeResponse.newBuilder() to construct.
-    private xtreemfs_internal_get_file_sizeResponse() {
-      initFields();
+    private xtreemfs_internal_get_file_sizeResponse(Builder builder) {
+      super(builder);
     }
     private xtreemfs_internal_get_file_sizeResponse(boolean noInit) {}
     
@@ -11625,25 +17338,38 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_get_file_sizeResponse_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required fixed64 file_size = 1;
     public static final int FILE_SIZE_FIELD_NUMBER = 1;
-    private boolean hasFileSize;
-    private long fileSize_ = 0L;
-    public boolean hasFileSize() { return hasFileSize; }
-    public long getFileSize() { return fileSize_; }
+    private long fileSize_;
+    public boolean hasFileSize() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public long getFileSize() {
+      return fileSize_;
+    }
     
     private void initFields() {
+      fileSize_ = 0L;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileSize) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileSize()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileSize()) {
-        output.writeFixed64(1, getFileSize());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeFixed64(1, fileSize_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -11654,13 +17380,18 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileSize()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(1, getFileSize());
+          .computeFixed64Size(1, fileSize_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse parseFrom(
@@ -11737,34 +17468,51 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_get_file_sizeResponse_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_get_file_sizeResponse_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse();
+        super.clear();
+        fileSize_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -11776,33 +17524,35 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse returnMe = result;
-        result = null;
-        return returnMe;
+        result.fileSize_ = fileSize_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -11823,6 +17573,14 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileSize()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -11835,39 +17593,46 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 9: {
-              setFileSize(input.readFixed64());
+              bitField0_ |= 0x00000001;
+              fileSize_ = input.readFixed64();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required fixed64 file_size = 1;
+      private long fileSize_ ;
       public boolean hasFileSize() {
-        return result.hasFileSize();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public long getFileSize() {
-        return result.getFileSize();
+        return fileSize_;
       }
       public Builder setFileSize(long value) {
-        result.hasFileSize = true;
-        result.fileSize_ = value;
+        bitField0_ |= 0x00000001;
+        fileSize_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileSize() {
-        result.hasFileSize = false;
-        result.fileSize_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileSize_ = 0L;
+        onChanged();
         return this;
       }
       
@@ -11876,18 +17641,60 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_internal_get_file_sizeResponse(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_internal_get_file_sizeResponse)
   }
   
+  public interface xtreemfs_internal_read_localRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+    
+    // required fixed64 object_number = 3;
+    boolean hasObjectNumber();
+    long getObjectNumber();
+    
+    // required fixed64 object_version = 4;
+    boolean hasObjectVersion();
+    long getObjectVersion();
+    
+    // required fixed32 offset = 5;
+    boolean hasOffset();
+    int getOffset();
+    
+    // required fixed32 length = 6;
+    boolean hasLength();
+    int getLength();
+    
+    // required bool attach_object_list = 7;
+    boolean hasAttachObjectList();
+    boolean getAttachObjectList();
+    
+    // repeated .xtreemfs.pbrpc.ObjectList required_objects = 8;
+    java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> 
+        getRequiredObjectsList();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList getRequiredObjects(int index);
+    int getRequiredObjectsCount();
+    java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder> 
+        getRequiredObjectsOrBuilderList();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder getRequiredObjectsOrBuilder(
+        int index);
+  }
   public static final class xtreemfs_internal_read_localRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_internal_read_localRequestOrBuilder {
     // Use xtreemfs_internal_read_localRequest.newBuilder() to construct.
-    private xtreemfs_internal_read_localRequest() {
-      initFields();
+    private xtreemfs_internal_read_localRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_internal_read_localRequest(boolean noInit) {}
     
@@ -11910,111 +17717,206 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_read_localRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required fixed64 object_number = 3;
     public static final int OBJECT_NUMBER_FIELD_NUMBER = 3;
-    private boolean hasObjectNumber;
-    private long objectNumber_ = 0L;
-    public boolean hasObjectNumber() { return hasObjectNumber; }
-    public long getObjectNumber() { return objectNumber_; }
+    private long objectNumber_;
+    public boolean hasObjectNumber() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public long getObjectNumber() {
+      return objectNumber_;
+    }
     
     // required fixed64 object_version = 4;
     public static final int OBJECT_VERSION_FIELD_NUMBER = 4;
-    private boolean hasObjectVersion;
-    private long objectVersion_ = 0L;
-    public boolean hasObjectVersion() { return hasObjectVersion; }
-    public long getObjectVersion() { return objectVersion_; }
+    private long objectVersion_;
+    public boolean hasObjectVersion() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    public long getObjectVersion() {
+      return objectVersion_;
+    }
     
     // required fixed32 offset = 5;
     public static final int OFFSET_FIELD_NUMBER = 5;
-    private boolean hasOffset;
-    private int offset_ = 0;
-    public boolean hasOffset() { return hasOffset; }
-    public int getOffset() { return offset_; }
+    private int offset_;
+    public boolean hasOffset() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    public int getOffset() {
+      return offset_;
+    }
     
     // required fixed32 length = 6;
     public static final int LENGTH_FIELD_NUMBER = 6;
-    private boolean hasLength;
-    private int length_ = 0;
-    public boolean hasLength() { return hasLength; }
-    public int getLength() { return length_; }
+    private int length_;
+    public boolean hasLength() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    public int getLength() {
+      return length_;
+    }
     
     // required bool attach_object_list = 7;
     public static final int ATTACH_OBJECT_LIST_FIELD_NUMBER = 7;
-    private boolean hasAttachObjectList;
-    private boolean attachObjectList_ = false;
-    public boolean hasAttachObjectList() { return hasAttachObjectList; }
-    public boolean getAttachObjectList() { return attachObjectList_; }
+    private boolean attachObjectList_;
+    public boolean hasAttachObjectList() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    public boolean getAttachObjectList() {
+      return attachObjectList_;
+    }
     
     // repeated .xtreemfs.pbrpc.ObjectList required_objects = 8;
     public static final int REQUIRED_OBJECTS_FIELD_NUMBER = 8;
-    private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> requiredObjects_ =
-      java.util.Collections.emptyList();
+    private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> requiredObjects_;
     public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> getRequiredObjectsList() {
       return requiredObjects_;
     }
-    public int getRequiredObjectsCount() { return requiredObjects_.size(); }
+    public java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder> 
+        getRequiredObjectsOrBuilderList() {
+      return requiredObjects_;
+    }
+    public int getRequiredObjectsCount() {
+      return requiredObjects_.size();
+    }
     public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList getRequiredObjects(int index) {
+      return requiredObjects_.get(index);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder getRequiredObjectsOrBuilder(
+        int index) {
       return requiredObjects_.get(index);
     }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
+      objectNumber_ = 0L;
+      objectVersion_ = 0L;
+      offset_ = 0;
+      length_ = 0;
+      attachObjectList_ = false;
+      requiredObjects_ = java.util.Collections.emptyList();
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!hasObjectNumber) return false;
-      if (!hasObjectVersion) return false;
-      if (!hasOffset) return false;
-      if (!hasLength) return false;
-      if (!hasAttachObjectList) return false;
-      if (!getFileCredentials().isInitialized()) return false;
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList element : getRequiredObjectsList()) {
-        if (!element.isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
       }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectNumber()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasObjectVersion()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasOffset()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasLength()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasAttachObjectList()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      for (int i = 0; i < getRequiredObjectsCount(); i++) {
+        if (!getRequiredObjects(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
-      if (hasObjectNumber()) {
-        output.writeFixed64(3, getObjectNumber());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed64(3, objectNumber_);
       }
-      if (hasObjectVersion()) {
-        output.writeFixed64(4, getObjectVersion());
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeFixed64(4, objectVersion_);
       }
-      if (hasOffset()) {
-        output.writeFixed32(5, getOffset());
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeFixed32(5, offset_);
       }
-      if (hasLength()) {
-        output.writeFixed32(6, getLength());
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeFixed32(6, length_);
       }
-      if (hasAttachObjectList()) {
-        output.writeBool(7, getAttachObjectList());
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeBool(7, attachObjectList_);
       }
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList element : getRequiredObjectsList()) {
-        output.writeMessage(8, element);
+      for (int i = 0; i < requiredObjects_.size(); i++) {
+        output.writeMessage(8, requiredObjects_.get(i));
       }
       getUnknownFields().writeTo(output);
     }
@@ -12025,41 +17927,46 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
-      if (hasObjectNumber()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(3, getObjectNumber());
+          .computeFixed64Size(3, objectNumber_);
       }
-      if (hasObjectVersion()) {
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed64Size(4, getObjectVersion());
+          .computeFixed64Size(4, objectVersion_);
       }
-      if (hasOffset()) {
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(5, getOffset());
+          .computeFixed32Size(5, offset_);
       }
-      if (hasLength()) {
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(6, getLength());
+          .computeFixed32Size(6, length_);
       }
-      if (hasAttachObjectList()) {
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(7, getAttachObjectList());
+          .computeBoolSize(7, attachObjectList_);
       }
-      for (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList element : getRequiredObjectsList()) {
+      for (int i = 0; i < requiredObjects_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(8, element);
+          .computeMessageSize(8, requiredObjects_.get(i));
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest parseFrom(
@@ -12136,34 +18043,75 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_read_localRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_read_localRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+          getRequiredObjectsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        offset_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        length_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        attachObjectList_ = false;
+        bitField0_ = (bitField0_ & ~0x00000040);
+        if (requiredObjectsBuilder_ == null) {
+          requiredObjects_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000080);
+        } else {
+          requiredObjectsBuilder_.clear();
+        }
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -12175,37 +18123,72 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        if (result.requiredObjects_ != java.util.Collections.EMPTY_LIST) {
-          result.requiredObjects_ =
-            java.util.Collections.unmodifiableList(result.requiredObjects_);
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.objectNumber_ = objectNumber_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.objectVersion_ = objectVersion_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.offset_ = offset_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.length_ = length_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        result.attachObjectList_ = attachObjectList_;
+        if (requiredObjectsBuilder_ == null) {
+          if (((bitField0_ & 0x00000080) == 0x00000080)) {
+            requiredObjects_ = java.util.Collections.unmodifiableList(requiredObjects_);
+            bitField0_ = (bitField0_ & ~0x00000080);
+          }
+          result.requiredObjects_ = requiredObjects_;
+        } else {
+          result.requiredObjects_ = requiredObjectsBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -12240,14 +18223,76 @@ public final class OSD {
         if (other.hasAttachObjectList()) {
           setAttachObjectList(other.getAttachObjectList());
         }
-        if (!other.requiredObjects_.isEmpty()) {
-          if (result.requiredObjects_.isEmpty()) {
-            result.requiredObjects_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList>();
+        if (requiredObjectsBuilder_ == null) {
+          if (!other.requiredObjects_.isEmpty()) {
+            if (requiredObjects_.isEmpty()) {
+              requiredObjects_ = other.requiredObjects_;
+              bitField0_ = (bitField0_ & ~0x00000080);
+            } else {
+              ensureRequiredObjectsIsMutable();
+              requiredObjects_.addAll(other.requiredObjects_);
+            }
+            onChanged();
           }
-          result.requiredObjects_.addAll(other.requiredObjects_);
+        } else {
+          if (!other.requiredObjects_.isEmpty()) {
+            if (requiredObjectsBuilder_.isEmpty()) {
+              requiredObjectsBuilder_.dispose();
+              requiredObjectsBuilder_ = null;
+              requiredObjects_ = other.requiredObjects_;
+              bitField0_ = (bitField0_ & ~0x00000080);
+              requiredObjectsBuilder_ = 
+                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
+                   getRequiredObjectsFieldBuilder() : null;
+            } else {
+              requiredObjectsBuilder_.addAllMessages(other.requiredObjects_);
+            }
+          }
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
+      }
+      
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!hasObjectNumber()) {
+          
+          return false;
+        }
+        if (!hasObjectVersion()) {
+          
+          return false;
+        }
+        if (!hasOffset()) {
+          
+          return false;
+        }
+        if (!hasLength()) {
+          
+          return false;
+        }
+        if (!hasAttachObjectList()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        for (int i = 0; i < getRequiredObjectsCount(); i++) {
+          if (!getRequiredObjects(i).isInitialized()) {
+            
+            return false;
+          }
+        }
+        return true;
       }
       
       public Builder mergeFrom(
@@ -12262,11 +18307,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -12281,27 +18328,33 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
             case 25: {
-              setObjectNumber(input.readFixed64());
+              bitField0_ |= 0x00000004;
+              objectNumber_ = input.readFixed64();
               break;
             }
             case 33: {
-              setObjectVersion(input.readFixed64());
+              bitField0_ |= 0x00000008;
+              objectVersion_ = input.readFixed64();
               break;
             }
             case 45: {
-              setOffset(input.readFixed32());
+              bitField0_ |= 0x00000010;
+              offset_ = input.readFixed32();
               break;
             }
             case 53: {
-              setLength(input.readFixed32());
+              bitField0_ |= 0x00000020;
+              length_ = input.readFixed32();
               break;
             }
             case 56: {
-              setAttachObjectList(input.readBool());
+              bitField0_ |= 0x00000040;
+              attachObjectList_ = input.readBool();
               break;
             }
             case 66: {
@@ -12314,204 +18367,423 @@ public final class OSD {
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // required fixed64 object_number = 3;
+      private long objectNumber_ ;
       public boolean hasObjectNumber() {
-        return result.hasObjectNumber();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public long getObjectNumber() {
-        return result.getObjectNumber();
+        return objectNumber_;
       }
       public Builder setObjectNumber(long value) {
-        result.hasObjectNumber = true;
-        result.objectNumber_ = value;
+        bitField0_ |= 0x00000004;
+        objectNumber_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectNumber() {
-        result.hasObjectNumber = false;
-        result.objectNumber_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        objectNumber_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed64 object_version = 4;
+      private long objectVersion_ ;
       public boolean hasObjectVersion() {
-        return result.hasObjectVersion();
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       public long getObjectVersion() {
-        return result.getObjectVersion();
+        return objectVersion_;
       }
       public Builder setObjectVersion(long value) {
-        result.hasObjectVersion = true;
-        result.objectVersion_ = value;
+        bitField0_ |= 0x00000008;
+        objectVersion_ = value;
+        onChanged();
         return this;
       }
       public Builder clearObjectVersion() {
-        result.hasObjectVersion = false;
-        result.objectVersion_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        objectVersion_ = 0L;
+        onChanged();
         return this;
       }
       
       // required fixed32 offset = 5;
+      private int offset_ ;
       public boolean hasOffset() {
-        return result.hasOffset();
+        return ((bitField0_ & 0x00000010) == 0x00000010);
       }
       public int getOffset() {
-        return result.getOffset();
+        return offset_;
       }
       public Builder setOffset(int value) {
-        result.hasOffset = true;
-        result.offset_ = value;
+        bitField0_ |= 0x00000010;
+        offset_ = value;
+        onChanged();
         return this;
       }
       public Builder clearOffset() {
-        result.hasOffset = false;
-        result.offset_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000010);
+        offset_ = 0;
+        onChanged();
         return this;
       }
       
       // required fixed32 length = 6;
+      private int length_ ;
       public boolean hasLength() {
-        return result.hasLength();
+        return ((bitField0_ & 0x00000020) == 0x00000020);
       }
       public int getLength() {
-        return result.getLength();
+        return length_;
       }
       public Builder setLength(int value) {
-        result.hasLength = true;
-        result.length_ = value;
+        bitField0_ |= 0x00000020;
+        length_ = value;
+        onChanged();
         return this;
       }
       public Builder clearLength() {
-        result.hasLength = false;
-        result.length_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        length_ = 0;
+        onChanged();
         return this;
       }
       
       // required bool attach_object_list = 7;
+      private boolean attachObjectList_ ;
       public boolean hasAttachObjectList() {
-        return result.hasAttachObjectList();
+        return ((bitField0_ & 0x00000040) == 0x00000040);
       }
       public boolean getAttachObjectList() {
-        return result.getAttachObjectList();
+        return attachObjectList_;
       }
       public Builder setAttachObjectList(boolean value) {
-        result.hasAttachObjectList = true;
-        result.attachObjectList_ = value;
+        bitField0_ |= 0x00000040;
+        attachObjectList_ = value;
+        onChanged();
         return this;
       }
       public Builder clearAttachObjectList() {
-        result.hasAttachObjectList = false;
-        result.attachObjectList_ = false;
+        bitField0_ = (bitField0_ & ~0x00000040);
+        attachObjectList_ = false;
+        onChanged();
         return this;
       }
       
       // repeated .xtreemfs.pbrpc.ObjectList required_objects = 8;
+      private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> requiredObjects_ =
+        java.util.Collections.emptyList();
+      private void ensureRequiredObjectsIsMutable() {
+        if (!((bitField0_ & 0x00000080) == 0x00000080)) {
+          requiredObjects_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList>(requiredObjects_);
+          bitField0_ |= 0x00000080;
+         }
+      }
+      
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder> requiredObjectsBuilder_;
+      
       public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> getRequiredObjectsList() {
-        return java.util.Collections.unmodifiableList(result.requiredObjects_);
+        if (requiredObjectsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(requiredObjects_);
+        } else {
+          return requiredObjectsBuilder_.getMessageList();
+        }
       }
       public int getRequiredObjectsCount() {
-        return result.getRequiredObjectsCount();
+        if (requiredObjectsBuilder_ == null) {
+          return requiredObjects_.size();
+        } else {
+          return requiredObjectsBuilder_.getCount();
+        }
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList getRequiredObjects(int index) {
-        return result.getRequiredObjects(index);
-      }
-      public Builder setRequiredObjects(int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (requiredObjectsBuilder_ == null) {
+          return requiredObjects_.get(index);
+        } else {
+          return requiredObjectsBuilder_.getMessage(index);
         }
-        result.requiredObjects_.set(index, value);
+      }
+      public Builder setRequiredObjects(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList value) {
+        if (requiredObjectsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureRequiredObjectsIsMutable();
+          requiredObjects_.set(index, value);
+          onChanged();
+        } else {
+          requiredObjectsBuilder_.setMessage(index, value);
+        }
         return this;
       }
-      public Builder setRequiredObjects(int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder builderForValue) {
-        result.requiredObjects_.set(index, builderForValue.build());
+      public Builder setRequiredObjects(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder builderForValue) {
+        if (requiredObjectsBuilder_ == null) {
+          ensureRequiredObjectsIsMutable();
+          requiredObjects_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          requiredObjectsBuilder_.setMessage(index, builderForValue.build());
+        }
         return this;
       }
       public Builder addRequiredObjects(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (requiredObjectsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureRequiredObjectsIsMutable();
+          requiredObjects_.add(value);
+          onChanged();
+        } else {
+          requiredObjectsBuilder_.addMessage(value);
         }
-        if (result.requiredObjects_.isEmpty()) {
-          result.requiredObjects_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList>();
-        }
-        result.requiredObjects_.add(value);
         return this;
       }
-      public Builder addRequiredObjects(org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder builderForValue) {
-        if (result.requiredObjects_.isEmpty()) {
-          result.requiredObjects_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList>();
+      public Builder addRequiredObjects(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList value) {
+        if (requiredObjectsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureRequiredObjectsIsMutable();
+          requiredObjects_.add(index, value);
+          onChanged();
+        } else {
+          requiredObjectsBuilder_.addMessage(index, value);
         }
-        result.requiredObjects_.add(builderForValue.build());
+        return this;
+      }
+      public Builder addRequiredObjects(
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder builderForValue) {
+        if (requiredObjectsBuilder_ == null) {
+          ensureRequiredObjectsIsMutable();
+          requiredObjects_.add(builderForValue.build());
+          onChanged();
+        } else {
+          requiredObjectsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      public Builder addRequiredObjects(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder builderForValue) {
+        if (requiredObjectsBuilder_ == null) {
+          ensureRequiredObjectsIsMutable();
+          requiredObjects_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          requiredObjectsBuilder_.addMessage(index, builderForValue.build());
+        }
         return this;
       }
       public Builder addAllRequiredObjects(
           java.lang.Iterable<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> values) {
-        if (result.requiredObjects_.isEmpty()) {
-          result.requiredObjects_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList>();
+        if (requiredObjectsBuilder_ == null) {
+          ensureRequiredObjectsIsMutable();
+          super.addAll(values, requiredObjects_);
+          onChanged();
+        } else {
+          requiredObjectsBuilder_.addAllMessages(values);
         }
-        super.addAll(values, result.requiredObjects_);
         return this;
       }
       public Builder clearRequiredObjects() {
-        result.requiredObjects_ = java.util.Collections.emptyList();
+        if (requiredObjectsBuilder_ == null) {
+          requiredObjects_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000080);
+          onChanged();
+        } else {
+          requiredObjectsBuilder_.clear();
+        }
         return this;
+      }
+      public Builder removeRequiredObjects(int index) {
+        if (requiredObjectsBuilder_ == null) {
+          ensureRequiredObjectsIsMutable();
+          requiredObjects_.remove(index);
+          onChanged();
+        } else {
+          requiredObjectsBuilder_.remove(index);
+        }
+        return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder getRequiredObjectsBuilder(
+          int index) {
+        return getRequiredObjectsFieldBuilder().getBuilder(index);
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder getRequiredObjectsOrBuilder(
+          int index) {
+        if (requiredObjectsBuilder_ == null) {
+          return requiredObjects_.get(index);  } else {
+          return requiredObjectsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      public java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder> 
+           getRequiredObjectsOrBuilderList() {
+        if (requiredObjectsBuilder_ != null) {
+          return requiredObjectsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(requiredObjects_);
+        }
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder addRequiredObjectsBuilder() {
+        return getRequiredObjectsFieldBuilder().addBuilder(
+            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.getDefaultInstance());
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder addRequiredObjectsBuilder(
+          int index) {
+        return getRequiredObjectsFieldBuilder().addBuilder(
+            index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.getDefaultInstance());
+      }
+      public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder> 
+           getRequiredObjectsBuilderList() {
+        return getRequiredObjectsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder> 
+          getRequiredObjectsFieldBuilder() {
+        if (requiredObjectsBuilder_ == null) {
+          requiredObjectsBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectListOrBuilder>(
+                  requiredObjects_,
+                  ((bitField0_ & 0x00000080) == 0x00000080),
+                  getParentForChildren(),
+                  isClean());
+          requiredObjects_ = null;
+        }
+        return requiredObjectsBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.xtreemfs_internal_read_localRequest)
@@ -12519,18 +18791,30 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_internal_read_localRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_internal_read_localRequest)
   }
   
+  public interface xtreemfs_internal_get_object_setRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+  }
   public static final class xtreemfs_internal_get_object_setRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_internal_get_object_setRequestOrBuilder {
     // Use xtreemfs_internal_get_object_setRequest.newBuilder() to construct.
-    private xtreemfs_internal_get_object_setRequest() {
-      initFields();
+    private xtreemfs_internal_get_object_setRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_internal_get_object_setRequest(boolean noInit) {}
     
@@ -12553,38 +18837,85 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_get_object_setRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!getFileCredentials().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -12595,17 +18926,22 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest parseFrom(
@@ -12682,34 +19018,58 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_get_object_setRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_get_object_setRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -12721,33 +19081,43 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -12771,6 +19141,22 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -12783,11 +19169,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -12802,70 +19190,140 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.xtreemfs_internal_get_object_setRequest)
@@ -12873,18 +19331,26 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_internal_get_object_setRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_internal_get_object_setRequest)
   }
   
+  public interface xtreemfs_internal_get_fileid_listResponseOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // repeated string file_ids = 1;
+    java.util.List<String> getFileIdsList();
+    int getFileIdsCount();
+    String getFileIds(int index);
+  }
   public static final class xtreemfs_internal_get_fileid_listResponse extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_internal_get_fileid_listResponseOrBuilder {
     // Use xtreemfs_internal_get_fileid_listResponse.newBuilder() to construct.
-    private xtreemfs_internal_get_fileid_listResponse() {
-      initFields();
+    private xtreemfs_internal_get_fileid_listResponse(Builder builder) {
+      super(builder);
     }
     private xtreemfs_internal_get_fileid_listResponse(boolean noInit) {}
     
@@ -12909,27 +19375,35 @@ public final class OSD {
     
     // repeated string file_ids = 1;
     public static final int FILE_IDS_FIELD_NUMBER = 1;
-    private java.util.List<java.lang.String> fileIds_ =
-      java.util.Collections.emptyList();
-    public java.util.List<java.lang.String> getFileIdsList() {
+    private com.google.protobuf.LazyStringList fileIds_;
+    public java.util.List<String>
+        getFileIdsList() {
       return fileIds_;
     }
-    public int getFileIdsCount() { return fileIds_.size(); }
-    public java.lang.String getFileIds(int index) {
+    public int getFileIdsCount() {
+      return fileIds_.size();
+    }
+    public String getFileIds(int index) {
       return fileIds_.get(index);
     }
     
     private void initFields() {
+      fileIds_ = com.google.protobuf.LazyStringArrayList.EMPTY;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      for (java.lang.String element : getFileIdsList()) {
-        output.writeString(1, element);
+      for (int i = 0; i < fileIds_.size(); i++) {
+        output.writeBytes(1, fileIds_.getByteString(i));
       }
       getUnknownFields().writeTo(output);
     }
@@ -12942,9 +19416,9 @@ public final class OSD {
       size = 0;
       {
         int dataSize = 0;
-        for (java.lang.String element : getFileIdsList()) {
+        for (int i = 0; i < fileIds_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeStringSizeNoTag(element);
+            .computeBytesSizeNoTag(fileIds_.getByteString(i));
         }
         size += dataSize;
         size += 1 * getFileIdsList().size();
@@ -12952,6 +19426,11 @@ public final class OSD {
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse parseFrom(
@@ -13028,34 +19507,51 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_get_fileid_listResponse_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_internal_get_fileid_listResponse_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse();
+        super.clear();
+        fileIds_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -13067,37 +19563,35 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse(this);
+        int from_bitField0_ = bitField0_;
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          fileIds_ = new com.google.protobuf.UnmodifiableLazyStringList(
+              fileIds_);
+          bitField0_ = (bitField0_ & ~0x00000001);
         }
-        if (result.fileIds_ != java.util.Collections.EMPTY_LIST) {
-          result.fileIds_ =
-            java.util.Collections.unmodifiableList(result.fileIds_);
-        }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse returnMe = result;
-        result = null;
-        return returnMe;
+        result.fileIds_ = fileIds_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -13112,13 +19606,21 @@ public final class OSD {
       public Builder mergeFrom(org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse other) {
         if (other == org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse.getDefaultInstance()) return this;
         if (!other.fileIds_.isEmpty()) {
-          if (result.fileIds_.isEmpty()) {
-            result.fileIds_ = new java.util.ArrayList<java.lang.String>();
+          if (fileIds_.isEmpty()) {
+            fileIds_ = other.fileIds_;
+            bitField0_ = (bitField0_ & ~0x00000001);
+          } else {
+            ensureFileIdsIsMutable();
+            fileIds_.addAll(other.fileIds_);
           }
-          result.fileIds_.addAll(other.fileIds_);
+          onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
+      }
+      
+      public final boolean isInitialized() {
+        return true;
       }
       
       public Builder mergeFrom(
@@ -13133,62 +19635,82 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
             }
             case 10: {
-              addFileIds(input.readString());
+              ensureFileIdsIsMutable();
+              fileIds_.add(input.readBytes());
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // repeated string file_ids = 1;
-      public java.util.List<java.lang.String> getFileIdsList() {
-        return java.util.Collections.unmodifiableList(result.fileIds_);
+      private com.google.protobuf.LazyStringList fileIds_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      private void ensureFileIdsIsMutable() {
+        if (!((bitField0_ & 0x00000001) == 0x00000001)) {
+          fileIds_ = new com.google.protobuf.LazyStringArrayList(fileIds_);
+          bitField0_ |= 0x00000001;
+         }
+      }
+      public java.util.List<String>
+          getFileIdsList() {
+        return java.util.Collections.unmodifiableList(fileIds_);
       }
       public int getFileIdsCount() {
-        return result.getFileIdsCount();
+        return fileIds_.size();
       }
-      public java.lang.String getFileIds(int index) {
-        return result.getFileIds(index);
+      public String getFileIds(int index) {
+        return fileIds_.get(index);
       }
-      public Builder setFileIds(int index, java.lang.String value) {
+      public Builder setFileIds(
+          int index, String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.fileIds_.set(index, value);
+  ensureFileIdsIsMutable();
+        fileIds_.set(index, value);
+        onChanged();
         return this;
       }
-      public Builder addFileIds(java.lang.String value) {
+      public Builder addFileIds(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  if (result.fileIds_.isEmpty()) {
-          result.fileIds_ = new java.util.ArrayList<java.lang.String>();
-        }
-        result.fileIds_.add(value);
+  ensureFileIdsIsMutable();
+        fileIds_.add(value);
+        onChanged();
         return this;
       }
       public Builder addAllFileIds(
-          java.lang.Iterable<? extends java.lang.String> values) {
-        if (result.fileIds_.isEmpty()) {
-          result.fileIds_ = new java.util.ArrayList<java.lang.String>();
-        }
-        super.addAll(values, result.fileIds_);
+          java.lang.Iterable<String> values) {
+        ensureFileIdsIsMutable();
+        super.addAll(values, fileIds_);
+        onChanged();
         return this;
       }
       public Builder clearFileIds() {
-        result.fileIds_ = java.util.Collections.emptyList();
+        fileIds_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
         return this;
+      }
+      void addFileIds(com.google.protobuf.ByteString value) {
+        ensureFileIdsIsMutable();
+        fileIds_.add(value);
+        onChanged();
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.xtreemfs_internal_get_fileid_listResponse)
@@ -13196,18 +19718,31 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_internal_get_fileid_listResponse(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_internal_get_fileid_listResponse)
   }
   
+  public interface lockRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required .xtreemfs.pbrpc.Lock lock_request = 2;
+    boolean hasLockRequest();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock getLockRequest();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.LockOrBuilder getLockRequestOrBuilder();
+  }
   public static final class lockRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements lockRequestOrBuilder {
     // Use lockRequest.newBuilder() to construct.
-    private lockRequest() {
-      initFields();
+    private lockRequest(Builder builder) {
+      super(builder);
     }
     private lockRequest(boolean noInit) {}
     
@@ -13230,40 +19765,70 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_lockRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required .xtreemfs.pbrpc.Lock lock_request = 2;
     public static final int LOCK_REQUEST_FIELD_NUMBER = 2;
-    private boolean hasLockRequest;
     private org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock lockRequest_;
-    public boolean hasLockRequest() { return hasLockRequest; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock getLockRequest() { return lockRequest_; }
+    public boolean hasLockRequest() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock getLockRequest() {
+      return lockRequest_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.LockOrBuilder getLockRequestOrBuilder() {
+      return lockRequest_;
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
       lockRequest_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance();
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasLockRequest) return false;
-      if (!getFileCredentials().isInitialized()) return false;
-      if (!getLockRequest().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasLockRequest()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getLockRequest().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasLockRequest()) {
-        output.writeMessage(2, getLockRequest());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeMessage(2, lockRequest_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -13274,17 +19839,22 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasLockRequest()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, getLockRequest());
+          .computeMessageSize(2, lockRequest_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest parseFrom(
@@ -13361,34 +19931,63 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_lockRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_lockRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+          getLockRequestFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        if (lockRequestBuilder_ == null) {
+          lockRequest_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance();
+        } else {
+          lockRequestBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -13400,33 +19999,47 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        if (lockRequestBuilder_ == null) {
+          result.lockRequest_ = lockRequest_;
+        } else {
+          result.lockRequest_ = lockRequestBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -13450,6 +20063,26 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasLockRequest()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        if (!getLockRequest().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -13462,11 +20095,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -13493,79 +20128,186 @@ public final class OSD {
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required .xtreemfs.pbrpc.Lock lock_request = 2;
+      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock lockRequest_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock, org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.LockOrBuilder> lockRequestBuilder_;
       public boolean hasLockRequest() {
-        return result.hasLockRequest();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock getLockRequest() {
-        return result.getLockRequest();
+        if (lockRequestBuilder_ == null) {
+          return lockRequest_;
+        } else {
+          return lockRequestBuilder_.getMessage();
+        }
       }
       public Builder setLockRequest(org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (lockRequestBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          lockRequest_ = value;
+          onChanged();
+        } else {
+          lockRequestBuilder_.setMessage(value);
         }
-        result.hasLockRequest = true;
-        result.lockRequest_ = value;
+        bitField0_ |= 0x00000002;
         return this;
       }
-      public Builder setLockRequest(org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.Builder builderForValue) {
-        result.hasLockRequest = true;
-        result.lockRequest_ = builderForValue.build();
+      public Builder setLockRequest(
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.Builder builderForValue) {
+        if (lockRequestBuilder_ == null) {
+          lockRequest_ = builderForValue.build();
+          onChanged();
+        } else {
+          lockRequestBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000002;
         return this;
       }
       public Builder mergeLockRequest(org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock value) {
-        if (result.hasLockRequest() &&
-            result.lockRequest_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance()) {
-          result.lockRequest_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.newBuilder(result.lockRequest_).mergeFrom(value).buildPartial();
+        if (lockRequestBuilder_ == null) {
+          if (((bitField0_ & 0x00000002) == 0x00000002) &&
+              lockRequest_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance()) {
+            lockRequest_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.newBuilder(lockRequest_).mergeFrom(value).buildPartial();
+          } else {
+            lockRequest_ = value;
+          }
+          onChanged();
         } else {
-          result.lockRequest_ = value;
+          lockRequestBuilder_.mergeFrom(value);
         }
-        result.hasLockRequest = true;
+        bitField0_ |= 0x00000002;
         return this;
       }
       public Builder clearLockRequest() {
-        result.hasLockRequest = false;
-        result.lockRequest_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance();
+        if (lockRequestBuilder_ == null) {
+          lockRequest_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance();
+          onChanged();
+        } else {
+          lockRequestBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.Builder getLockRequestBuilder() {
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return getLockRequestFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.LockOrBuilder getLockRequestOrBuilder() {
+        if (lockRequestBuilder_ != null) {
+          return lockRequestBuilder_.getMessageOrBuilder();
+        } else {
+          return lockRequest_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock, org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.LockOrBuilder> 
+          getLockRequestFieldBuilder() {
+        if (lockRequestBuilder_ == null) {
+          lockRequestBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock, org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.LockOrBuilder>(
+                  lockRequest_,
+                  getParentForChildren(),
+                  isClean());
+          lockRequest_ = null;
+        }
+        return lockRequestBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.lockRequest)
@@ -13573,18 +20315,30 @@ public final class OSD {
     
     static {
       defaultInstance = new lockRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.lockRequest)
   }
   
+  public interface xtreemfs_pingMesssageOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.VivaldiCoordinates coordinates = 1;
+    boolean hasCoordinates();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates getCoordinates();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinatesOrBuilder getCoordinatesOrBuilder();
+    
+    // required bool request_response = 2;
+    boolean hasRequestResponse();
+    boolean getRequestResponse();
+  }
   public static final class xtreemfs_pingMesssage extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_pingMesssageOrBuilder {
     // Use xtreemfs_pingMesssage.newBuilder() to construct.
-    private xtreemfs_pingMesssage() {
-      initFields();
+    private xtreemfs_pingMesssage(Builder builder) {
+      super(builder);
     }
     private xtreemfs_pingMesssage(boolean noInit) {}
     
@@ -13607,38 +20361,63 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_pingMesssage_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.VivaldiCoordinates coordinates = 1;
     public static final int COORDINATES_FIELD_NUMBER = 1;
-    private boolean hasCoordinates;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates coordinates_;
-    public boolean hasCoordinates() { return hasCoordinates; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates getCoordinates() { return coordinates_; }
+    public boolean hasCoordinates() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates getCoordinates() {
+      return coordinates_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinatesOrBuilder getCoordinatesOrBuilder() {
+      return coordinates_;
+    }
     
     // required bool request_response = 2;
     public static final int REQUEST_RESPONSE_FIELD_NUMBER = 2;
-    private boolean hasRequestResponse;
-    private boolean requestResponse_ = false;
-    public boolean hasRequestResponse() { return hasRequestResponse; }
-    public boolean getRequestResponse() { return requestResponse_; }
+    private boolean requestResponse_;
+    public boolean hasRequestResponse() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public boolean getRequestResponse() {
+      return requestResponse_;
+    }
     
     private void initFields() {
       coordinates_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.getDefaultInstance();
+      requestResponse_ = false;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasCoordinates) return false;
-      if (!hasRequestResponse) return false;
-      if (!getCoordinates().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasCoordinates()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasRequestResponse()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getCoordinates().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasCoordinates()) {
-        output.writeMessage(1, getCoordinates());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, coordinates_);
       }
-      if (hasRequestResponse()) {
-        output.writeBool(2, getRequestResponse());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBool(2, requestResponse_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -13649,17 +20428,22 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasCoordinates()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getCoordinates());
+          .computeMessageSize(1, coordinates_);
       }
-      if (hasRequestResponse()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(2, getRequestResponse());
+          .computeBoolSize(2, requestResponse_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage parseFrom(
@@ -13736,34 +20520,58 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssageOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_pingMesssage_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_pingMesssage_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getCoordinatesFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (coordinatesBuilder_ == null) {
+          coordinates_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.getDefaultInstance();
+        } else {
+          coordinatesBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        requestResponse_ = false;
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -13775,33 +20583,43 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage returnMe = result;
-        result = null;
-        return returnMe;
+        if (coordinatesBuilder_ == null) {
+          result.coordinates_ = coordinates_;
+        } else {
+          result.coordinates_ = coordinatesBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.requestResponse_ = requestResponse_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -13825,6 +20643,22 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasCoordinates()) {
+          
+          return false;
+        }
+        if (!hasRequestResponse()) {
+          
+          return false;
+        }
+        if (!getCoordinates().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -13837,11 +20671,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -13856,66 +20692,124 @@ public final class OSD {
               break;
             }
             case 16: {
-              setRequestResponse(input.readBool());
+              bitField0_ |= 0x00000002;
+              requestResponse_ = input.readBool();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.VivaldiCoordinates coordinates = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates coordinates_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinatesOrBuilder> coordinatesBuilder_;
       public boolean hasCoordinates() {
-        return result.hasCoordinates();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates getCoordinates() {
-        return result.getCoordinates();
+        if (coordinatesBuilder_ == null) {
+          return coordinates_;
+        } else {
+          return coordinatesBuilder_.getMessage();
+        }
       }
       public Builder setCoordinates(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (coordinatesBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          coordinates_ = value;
+          onChanged();
+        } else {
+          coordinatesBuilder_.setMessage(value);
         }
-        result.hasCoordinates = true;
-        result.coordinates_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setCoordinates(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.Builder builderForValue) {
-        result.hasCoordinates = true;
-        result.coordinates_ = builderForValue.build();
+      public Builder setCoordinates(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.Builder builderForValue) {
+        if (coordinatesBuilder_ == null) {
+          coordinates_ = builderForValue.build();
+          onChanged();
+        } else {
+          coordinatesBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeCoordinates(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates value) {
-        if (result.hasCoordinates() &&
-            result.coordinates_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.getDefaultInstance()) {
-          result.coordinates_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.newBuilder(result.coordinates_).mergeFrom(value).buildPartial();
+        if (coordinatesBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              coordinates_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.getDefaultInstance()) {
+            coordinates_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.newBuilder(coordinates_).mergeFrom(value).buildPartial();
+          } else {
+            coordinates_ = value;
+          }
+          onChanged();
         } else {
-          result.coordinates_ = value;
+          coordinatesBuilder_.mergeFrom(value);
         }
-        result.hasCoordinates = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearCoordinates() {
-        result.hasCoordinates = false;
-        result.coordinates_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.getDefaultInstance();
+        if (coordinatesBuilder_ == null) {
+          coordinates_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.getDefaultInstance();
+          onChanged();
+        } else {
+          coordinatesBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.Builder getCoordinatesBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getCoordinatesFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinatesOrBuilder getCoordinatesOrBuilder() {
+        if (coordinatesBuilder_ != null) {
+          return coordinatesBuilder_.getMessageOrBuilder();
+        } else {
+          return coordinates_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinatesOrBuilder> 
+          getCoordinatesFieldBuilder() {
+        if (coordinatesBuilder_ == null) {
+          coordinatesBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinatesOrBuilder>(
+                  coordinates_,
+                  getParentForChildren(),
+                  isClean());
+          coordinates_ = null;
+        }
+        return coordinatesBuilder_;
       }
       
       // required bool request_response = 2;
+      private boolean requestResponse_ ;
       public boolean hasRequestResponse() {
-        return result.hasRequestResponse();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       public boolean getRequestResponse() {
-        return result.getRequestResponse();
+        return requestResponse_;
       }
       public Builder setRequestResponse(boolean value) {
-        result.hasRequestResponse = true;
-        result.requestResponse_ = value;
+        bitField0_ |= 0x00000002;
+        requestResponse_ = value;
+        onChanged();
         return this;
       }
       public Builder clearRequestResponse() {
-        result.hasRequestResponse = false;
-        result.requestResponse_ = false;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        requestResponse_ = false;
+        onChanged();
         return this;
       }
       
@@ -13924,18 +20818,35 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_pingMesssage(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_pingMesssage)
   }
   
+  public interface xtreemfs_rwr_auth_stateRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+    
+    // required .xtreemfs.pbrpc.AuthoritativeReplicaState state = 3;
+    boolean hasState();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState getState();
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaStateOrBuilder getStateOrBuilder();
+  }
   public static final class xtreemfs_rwr_auth_stateRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_rwr_auth_stateRequestOrBuilder {
     // Use xtreemfs_rwr_auth_stateRequest.newBuilder() to construct.
-    private xtreemfs_rwr_auth_stateRequest() {
-      initFields();
+    private xtreemfs_rwr_auth_stateRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_rwr_auth_stateRequest(boolean noInit) {}
     
@@ -13958,51 +20869,110 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_auth_stateRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required .xtreemfs.pbrpc.AuthoritativeReplicaState state = 3;
     public static final int STATE_FIELD_NUMBER = 3;
-    private boolean hasState;
     private org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState state_;
-    public boolean hasState() { return hasState; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState getState() { return state_; }
+    public boolean hasState() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState getState() {
+      return state_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaStateOrBuilder getStateOrBuilder() {
+      return state_;
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
       state_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.getDefaultInstance();
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!hasState) return false;
-      if (!getFileCredentials().isInitialized()) return false;
-      if (!getState().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasState()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getState().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
-      if (hasState()) {
-        output.writeMessage(3, getState());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeMessage(3, state_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -14013,21 +20983,26 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
-      if (hasState()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, getState());
+          .computeMessageSize(3, state_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest parseFrom(
@@ -14104,34 +21079,65 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_auth_stateRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_auth_stateRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+          getStateFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        if (stateBuilder_ == null) {
+          state_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.getDefaultInstance();
+        } else {
+          stateBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -14143,33 +21149,51 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        if (stateBuilder_ == null) {
+          result.state_ = state_;
+        } else {
+          result.state_ = stateBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -14196,6 +21220,30 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!hasState()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        if (!getState().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -14208,11 +21256,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -14227,7 +21277,8 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
             case 26: {
@@ -14243,100 +21294,222 @@ public final class OSD {
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // required .xtreemfs.pbrpc.AuthoritativeReplicaState state = 3;
+      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState state_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState, org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaStateOrBuilder> stateBuilder_;
       public boolean hasState() {
-        return result.hasState();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState getState() {
-        return result.getState();
+        if (stateBuilder_ == null) {
+          return state_;
+        } else {
+          return stateBuilder_.getMessage();
+        }
       }
       public Builder setState(org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (stateBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          state_ = value;
+          onChanged();
+        } else {
+          stateBuilder_.setMessage(value);
         }
-        result.hasState = true;
-        result.state_ = value;
+        bitField0_ |= 0x00000004;
         return this;
       }
-      public Builder setState(org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.Builder builderForValue) {
-        result.hasState = true;
-        result.state_ = builderForValue.build();
+      public Builder setState(
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.Builder builderForValue) {
+        if (stateBuilder_ == null) {
+          state_ = builderForValue.build();
+          onChanged();
+        } else {
+          stateBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000004;
         return this;
       }
       public Builder mergeState(org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState value) {
-        if (result.hasState() &&
-            result.state_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.getDefaultInstance()) {
-          result.state_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.newBuilder(result.state_).mergeFrom(value).buildPartial();
+        if (stateBuilder_ == null) {
+          if (((bitField0_ & 0x00000004) == 0x00000004) &&
+              state_ != org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.getDefaultInstance()) {
+            state_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.newBuilder(state_).mergeFrom(value).buildPartial();
+          } else {
+            state_ = value;
+          }
+          onChanged();
         } else {
-          result.state_ = value;
+          stateBuilder_.mergeFrom(value);
         }
-        result.hasState = true;
+        bitField0_ |= 0x00000004;
         return this;
       }
       public Builder clearState() {
-        result.hasState = false;
-        result.state_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.getDefaultInstance();
+        if (stateBuilder_ == null) {
+          state_ = org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.getDefaultInstance();
+          onChanged();
+        } else {
+          stateBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.Builder getStateBuilder() {
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return getStateFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaStateOrBuilder getStateOrBuilder() {
+        if (stateBuilder_ != null) {
+          return stateBuilder_.getMessageOrBuilder();
+        } else {
+          return state_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState, org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaStateOrBuilder> 
+          getStateFieldBuilder() {
+        if (stateBuilder_ == null) {
+          stateBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState, org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaStateOrBuilder>(
+                  state_,
+                  getParentForChildren(),
+                  isClean());
+          state_ = null;
+        }
+        return stateBuilder_;
       }
       
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.xtreemfs_rwr_auth_stateRequest)
@@ -14344,18 +21517,34 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_rwr_auth_stateRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_rwr_auth_stateRequest)
   }
   
+  public interface xtreemfs_rwr_reset_completeRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+    
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    boolean hasFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+    
+    // required string file_id = 2;
+    boolean hasFileId();
+    String getFileId();
+    
+    // required fixed32 primary_epoch = 3;
+    boolean hasPrimaryEpoch();
+    int getPrimaryEpoch();
+  }
   public static final class xtreemfs_rwr_reset_completeRequest extends
-      com.google.protobuf.GeneratedMessage {
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_rwr_reset_completeRequestOrBuilder {
     // Use xtreemfs_rwr_reset_completeRequest.newBuilder() to construct.
-    private xtreemfs_rwr_reset_completeRequest() {
-      initFields();
+    private xtreemfs_rwr_reset_completeRequest(Builder builder) {
+      super(builder);
     }
     private xtreemfs_rwr_reset_completeRequest(boolean noInit) {}
     
@@ -14378,49 +21567,103 @@ public final class OSD {
       return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_reset_completeRequest_fieldAccessorTable;
     }
     
+    private int bitField0_;
     // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
     public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
-    private boolean hasFileCredentials;
     private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
-    public boolean hasFileCredentials() { return hasFileCredentials; }
-    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() { return fileCredentials_; }
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
     
     // required string file_id = 2;
     public static final int FILE_ID_FIELD_NUMBER = 2;
-    private boolean hasFileId;
-    private java.lang.String fileId_ = "";
-    public boolean hasFileId() { return hasFileId; }
-    public java.lang.String getFileId() { return fileId_; }
+    private Object fileId_;
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    public String getFileId() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        if (com.google.protobuf.Internal.isValidUtf8(bs)) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    private com.google.protobuf.ByteString getFileIdBytes() {
+      Object ref = fileId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
     
     // required fixed32 primary_epoch = 3;
     public static final int PRIMARY_EPOCH_FIELD_NUMBER = 3;
-    private boolean hasPrimaryEpoch;
-    private int primaryEpoch_ = 0;
-    public boolean hasPrimaryEpoch() { return hasPrimaryEpoch; }
-    public int getPrimaryEpoch() { return primaryEpoch_; }
+    private int primaryEpoch_;
+    public boolean hasPrimaryEpoch() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    public int getPrimaryEpoch() {
+      return primaryEpoch_;
+    }
     
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
+      primaryEpoch_ = 0;
     }
+    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      if (!hasFileCredentials) return false;
-      if (!hasFileId) return false;
-      if (!hasPrimaryEpoch) return false;
-      if (!getFileCredentials().isInitialized()) return false;
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+      
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasPrimaryEpoch()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasFileCredentials()) {
-        output.writeMessage(1, getFileCredentials());
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
       }
-      if (hasFileId()) {
-        output.writeString(2, getFileId());
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
       }
-      if (hasPrimaryEpoch()) {
-        output.writeFixed32(3, getPrimaryEpoch());
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeFixed32(3, primaryEpoch_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -14431,21 +21674,26 @@ public final class OSD {
       if (size != -1) return size;
     
       size = 0;
-      if (hasFileCredentials()) {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getFileCredentials());
+          .computeMessageSize(1, fileCredentials_);
       }
-      if (hasFileId()) {
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getFileId());
+          .computeBytesSize(2, getFileIdBytes());
       }
-      if (hasPrimaryEpoch()) {
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFixed32Size(3, getPrimaryEpoch());
+          .computeFixed32Size(3, primaryEpoch_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
+    }
+    
+    @java.lang.Override
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest parseFrom(
@@ -14522,34 +21770,60 @@ public final class OSD {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest result;
-      
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest();
-        return builder;
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_reset_completeRequest_descriptor;
       }
       
-      protected org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest internalGetResult() {
-        return result;
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_rwr_reset_completeRequest_fieldAccessorTable;
+      }
+      
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+      
+      private Builder(BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
       }
       
       public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
         }
-        result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        primaryEpoch_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000004);
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(result);
+        return create().mergeFrom(buildPartial());
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -14561,33 +21835,47 @@ public final class OSD {
         return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest.getDefaultInstance();
       }
       
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest build() {
-        if (result != null && !isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return buildPartial();
+        return result;
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest result = buildPartial();
+        if (!result.isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return buildPartial();
+        return result;
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
         }
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest returnMe = result;
-        result = null;
-        return returnMe;
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.primaryEpoch_ = primaryEpoch_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -14614,6 +21902,26 @@ public final class OSD {
         return this;
       }
       
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!hasPrimaryEpoch()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        return true;
+      }
+      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -14626,11 +21934,13 @@ public final class OSD {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
+              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
+                onChanged();
                 return this;
               }
               break;
@@ -14645,91 +21955,165 @@ public final class OSD {
               break;
             }
             case 18: {
-              setFileId(input.readString());
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
               break;
             }
             case 29: {
-              setPrimaryEpoch(input.readFixed32());
+              bitField0_ |= 0x00000004;
+              primaryEpoch_ = input.readFixed32();
               break;
             }
           }
         }
       }
       
+      private int bitField0_;
       
       // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
       public boolean hasFileCredentials() {
-        return result.hasFileCredentials();
+        return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
-        return result.getFileCredentials();
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
       }
       public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (value == null) {
-          throw new NullPointerException();
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
         }
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = value;
+        bitField0_ |= 0x00000001;
         return this;
       }
-      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
-        result.hasFileCredentials = true;
-        result.fileCredentials_ = builderForValue.build();
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
-        if (result.hasFileCredentials() &&
-            result.fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
-          result.fileCredentials_ =
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(result.fileCredentials_).mergeFrom(value).buildPartial();
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
         } else {
-          result.fileCredentials_ = value;
+          fileCredentialsBuilder_.mergeFrom(value);
         }
-        result.hasFileCredentials = true;
+        bitField0_ |= 0x00000001;
         return this;
       }
       public Builder clearFileCredentials() {
-        result.hasFileCredentials = false;
-        result.fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
         return this;
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
       }
       
       // required string file_id = 2;
+      private Object fileId_ = "";
       public boolean hasFileId() {
-        return result.hasFileId();
+        return ((bitField0_ & 0x00000002) == 0x00000002);
       }
-      public java.lang.String getFileId() {
-        return result.getFileId();
+      public String getFileId() {
+        Object ref = fileId_;
+        if (!(ref instanceof String)) {
+          String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
-      public Builder setFileId(java.lang.String value) {
+      public Builder setFileId(String value) {
         if (value == null) {
     throw new NullPointerException();
   }
-  result.hasFileId = true;
-        result.fileId_ = value;
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
         return this;
       }
       public Builder clearFileId() {
-        result.hasFileId = false;
-        result.fileId_ = getDefaultInstance().getFileId();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
         return this;
+      }
+      void setFileId(com.google.protobuf.ByteString value) {
+        bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
       }
       
       // required fixed32 primary_epoch = 3;
+      private int primaryEpoch_ ;
       public boolean hasPrimaryEpoch() {
-        return result.hasPrimaryEpoch();
+        return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       public int getPrimaryEpoch() {
-        return result.getPrimaryEpoch();
+        return primaryEpoch_;
       }
       public Builder setPrimaryEpoch(int value) {
-        result.hasPrimaryEpoch = true;
-        result.primaryEpoch_ = value;
+        bitField0_ |= 0x00000004;
+        primaryEpoch_ = value;
+        onChanged();
         return this;
       }
       public Builder clearPrimaryEpoch() {
-        result.hasPrimaryEpoch = false;
-        result.primaryEpoch_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        primaryEpoch_ = 0;
+        onChanged();
         return this;
       }
       
@@ -14738,2247 +22122,10 @@ public final class OSD {
     
     static {
       defaultInstance = new xtreemfs_rwr_reset_completeRequest(true);
-      org.xtreemfs.pbrpc.generatedinterfaces.OSD.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_rwr_reset_completeRequest)
-  }
-  
-  public static abstract class OSDService
-      implements com.google.protobuf.Service {
-    protected OSDService() {}
-    
-    public interface Interface {
-      public abstract void read(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done);
-      
-      public abstract void truncate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse> done);
-      
-      public abstract void unlink(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-      
-      public abstract void write(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse> done);
-      
-      public abstract void xtreemfsBroadcastGmax(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-      
-      public abstract void xtreemfsCheckObject(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done);
-      
-      public abstract void xtreemfsCleanupGetResults(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse> done);
-      
-      public abstract void xtreemfsCleanupIsRunning(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse> done);
-      
-      public abstract void xtreemfsCleanupStart(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-      
-      public abstract void xtreemfsCleanupStatus(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse> done);
-      
-      public abstract void xtreemfsCleanupStop(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-      
-      public abstract void xtreemfsCleanupVersionsStart(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-      
-      public abstract void xtreemfsRwrFetch(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done);
-      
-      public abstract void xtreemfsRwrFleaseMsg(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-      
-      public abstract void xtreemfsRwrNotify(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-      
-      public abstract void xtreemfsRwrSetPrimaryEpoch(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done);
-      
-      public abstract void xtreemfsRwrStatus(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus> done);
-      
-      public abstract void xtreemfsRwrTruncate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-      
-      public abstract void xtreemfsRwrUpdate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-      
-      public abstract void xtreemfsRwrAuthState(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-      
-      public abstract void xtreemfsRwrResetComplete(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-      
-      public abstract void xtreemfsInternalGetGmax(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax> done);
-      
-      public abstract void xtreemfsInternalTruncate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse> done);
-      
-      public abstract void xtreemfsInternalGetFileSize(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse> done);
-      
-      public abstract void xtreemfsInternalReadLocal(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse> done);
-      
-      public abstract void xtreemfsInternalGetObjectSet(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> done);
-      
-      public abstract void xtreemfsInternalGetFileidList(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse> done);
-      
-      public abstract void xtreemfsLockAcquire(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock> done);
-      
-      public abstract void xtreemfsLockCheck(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock> done);
-      
-      public abstract void xtreemfsLockRelease(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-      
-      public abstract void xtreemfsPing(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage> done);
-      
-      public abstract void xtreemfsShutdown(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-      
-    }
-    
-    public static com.google.protobuf.Service newReflectiveService(
-        final Interface impl) {
-      return new OSDService() {
-        @Override
-        public  void read(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done) {
-          impl.read(controller, request, done);
-        }
-        
-        @Override
-        public  void truncate(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse> done) {
-          impl.truncate(controller, request, done);
-        }
-        
-        @Override
-        public  void unlink(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-          impl.unlink(controller, request, done);
-        }
-        
-        @Override
-        public  void write(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse> done) {
-          impl.write(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsBroadcastGmax(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-          impl.xtreemfsBroadcastGmax(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsCheckObject(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done) {
-          impl.xtreemfsCheckObject(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsCleanupGetResults(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse> done) {
-          impl.xtreemfsCleanupGetResults(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsCleanupIsRunning(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse> done) {
-          impl.xtreemfsCleanupIsRunning(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsCleanupStart(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-          impl.xtreemfsCleanupStart(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsCleanupStatus(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse> done) {
-          impl.xtreemfsCleanupStatus(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsCleanupStop(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-          impl.xtreemfsCleanupStop(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsCleanupVersionsStart(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-          impl.xtreemfsCleanupVersionsStart(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsRwrFetch(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done) {
-          impl.xtreemfsRwrFetch(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsRwrFleaseMsg(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-          impl.xtreemfsRwrFleaseMsg(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsRwrNotify(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-          impl.xtreemfsRwrNotify(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsRwrSetPrimaryEpoch(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done) {
-          impl.xtreemfsRwrSetPrimaryEpoch(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsRwrStatus(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus> done) {
-          impl.xtreemfsRwrStatus(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsRwrTruncate(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-          impl.xtreemfsRwrTruncate(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsRwrUpdate(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-          impl.xtreemfsRwrUpdate(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsRwrAuthState(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-          impl.xtreemfsRwrAuthState(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsRwrResetComplete(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-          impl.xtreemfsRwrResetComplete(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsInternalGetGmax(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax> done) {
-          impl.xtreemfsInternalGetGmax(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsInternalTruncate(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse> done) {
-          impl.xtreemfsInternalTruncate(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsInternalGetFileSize(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse> done) {
-          impl.xtreemfsInternalGetFileSize(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsInternalReadLocal(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse> done) {
-          impl.xtreemfsInternalReadLocal(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsInternalGetObjectSet(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> done) {
-          impl.xtreemfsInternalGetObjectSet(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsInternalGetFileidList(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse> done) {
-          impl.xtreemfsInternalGetFileidList(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsLockAcquire(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock> done) {
-          impl.xtreemfsLockAcquire(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsLockCheck(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock> done) {
-          impl.xtreemfsLockCheck(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsLockRelease(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-          impl.xtreemfsLockRelease(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsPing(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage> done) {
-          impl.xtreemfsPing(controller, request, done);
-        }
-        
-        @Override
-        public  void xtreemfsShutdown(
-            com.google.protobuf.RpcController controller,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-          impl.xtreemfsShutdown(controller, request, done);
-        }
-        
-      };
-    }
-    
-    public static com.google.protobuf.BlockingService
-        newReflectiveBlockingService(final BlockingInterface impl) {
-      return new com.google.protobuf.BlockingService() {
-        public final com.google.protobuf.Descriptors.ServiceDescriptor
-            getDescriptorForType() {
-          return getDescriptor();
-        }
-        
-        public final com.google.protobuf.Message callBlockingMethod(
-            com.google.protobuf.Descriptors.MethodDescriptor method,
-            com.google.protobuf.RpcController controller,
-            com.google.protobuf.Message request)
-            throws com.google.protobuf.ServiceException {
-          if (method.getService() != getDescriptor()) {
-            throw new java.lang.IllegalArgumentException(
-              "Service.callBlockingMethod() given method descriptor for " +
-              "wrong service type.");
-          }
-          switch(method.getIndex()) {
-            case 0:
-              return impl.read(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest)request);
-            case 1:
-              return impl.truncate(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest)request);
-            case 2:
-              return impl.unlink(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request)request);
-            case 3:
-              return impl.write(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest)request);
-            case 4:
-              return impl.xtreemfsBroadcastGmax(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest)request);
-            case 5:
-              return impl.xtreemfsCheckObject(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest)request);
-            case 6:
-              return impl.xtreemfsCleanupGetResults(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request);
-            case 7:
-              return impl.xtreemfsCleanupIsRunning(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request);
-            case 8:
-              return impl.xtreemfsCleanupStart(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest)request);
-            case 9:
-              return impl.xtreemfsCleanupStatus(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request);
-            case 10:
-              return impl.xtreemfsCleanupStop(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request);
-            case 11:
-              return impl.xtreemfsCleanupVersionsStart(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request);
-            case 12:
-              return impl.xtreemfsRwrFetch(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest)request);
-            case 13:
-              return impl.xtreemfsRwrFleaseMsg(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest)request);
-            case 14:
-              return impl.xtreemfsRwrNotify(controller, (org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials)request);
-            case 15:
-              return impl.xtreemfsRwrSetPrimaryEpoch(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest)request);
-            case 16:
-              return impl.xtreemfsRwrStatus(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest)request);
-            case 17:
-              return impl.xtreemfsRwrTruncate(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest)request);
-            case 18:
-              return impl.xtreemfsRwrUpdate(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest)request);
-            case 19:
-              return impl.xtreemfsRwrAuthState(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest)request);
-            case 20:
-              return impl.xtreemfsRwrResetComplete(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest)request);
-            case 21:
-              return impl.xtreemfsInternalGetGmax(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest)request);
-            case 22:
-              return impl.xtreemfsInternalTruncate(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest)request);
-            case 23:
-              return impl.xtreemfsInternalGetFileSize(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest)request);
-            case 24:
-              return impl.xtreemfsInternalReadLocal(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest)request);
-            case 25:
-              return impl.xtreemfsInternalGetObjectSet(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest)request);
-            case 26:
-              return impl.xtreemfsInternalGetFileidList(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request);
-            case 27:
-              return impl.xtreemfsLockAcquire(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest)request);
-            case 28:
-              return impl.xtreemfsLockCheck(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest)request);
-            case 29:
-              return impl.xtreemfsLockRelease(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest)request);
-            case 30:
-              return impl.xtreemfsPing(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage)request);
-            case 31:
-              return impl.xtreemfsShutdown(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request);
-            default:
-              throw new java.lang.AssertionError("Can't get here.");
-          }
-        }
-        
-        public final com.google.protobuf.Message
-            getRequestPrototype(
-            com.google.protobuf.Descriptors.MethodDescriptor method) {
-          if (method.getService() != getDescriptor()) {
-            throw new java.lang.IllegalArgumentException(
-              "Service.getRequestPrototype() given method " +
-              "descriptor for wrong service type.");
-          }
-          switch(method.getIndex()) {
-            case 0:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest.getDefaultInstance();
-            case 1:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest.getDefaultInstance();
-            case 2:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request.getDefaultInstance();
-            case 3:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest.getDefaultInstance();
-            case 4:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest.getDefaultInstance();
-            case 5:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest.getDefaultInstance();
-            case 6:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
-            case 7:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
-            case 8:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest.getDefaultInstance();
-            case 9:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
-            case 10:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
-            case 11:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
-            case 12:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest.getDefaultInstance();
-            case 13:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest.getDefaultInstance();
-            case 14:
-              return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
-            case 15:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest.getDefaultInstance();
-            case 16:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest.getDefaultInstance();
-            case 17:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest.getDefaultInstance();
-            case 18:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest.getDefaultInstance();
-            case 19:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest.getDefaultInstance();
-            case 20:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest.getDefaultInstance();
-            case 21:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest.getDefaultInstance();
-            case 22:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest.getDefaultInstance();
-            case 23:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest.getDefaultInstance();
-            case 24:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest.getDefaultInstance();
-            case 25:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest.getDefaultInstance();
-            case 26:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
-            case 27:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest.getDefaultInstance();
-            case 28:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest.getDefaultInstance();
-            case 29:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest.getDefaultInstance();
-            case 30:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage.getDefaultInstance();
-            case 31:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
-            default:
-              throw new java.lang.AssertionError("Can't get here.");
-          }
-        }
-        
-        public final com.google.protobuf.Message
-            getResponsePrototype(
-            com.google.protobuf.Descriptors.MethodDescriptor method) {
-          if (method.getService() != getDescriptor()) {
-            throw new java.lang.IllegalArgumentException(
-              "Service.getResponsePrototype() given method " +
-              "descriptor for wrong service type.");
-          }
-          switch(method.getIndex()) {
-            case 0:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
-            case 1:
-              return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance();
-            case 2:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-            case 3:
-              return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance();
-            case 4:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-            case 5:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
-            case 6:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse.getDefaultInstance();
-            case 7:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse.getDefaultInstance();
-            case 8:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-            case 9:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse.getDefaultInstance();
-            case 10:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-            case 11:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-            case 12:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
-            case 13:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-            case 14:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-            case 15:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
-            case 16:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance();
-            case 17:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-            case 18:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-            case 19:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-            case 20:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-            case 21:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax.getDefaultInstance();
-            case 22:
-              return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance();
-            case 23:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse.getDefaultInstance();
-            case 24:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse.getDefaultInstance();
-            case 25:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.getDefaultInstance();
-            case 26:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse.getDefaultInstance();
-            case 27:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance();
-            case 28:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance();
-            case 29:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-            case 30:
-              return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage.getDefaultInstance();
-            case 31:
-              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-            default:
-              throw new java.lang.AssertionError("Can't get here.");
-          }
-        }
-        
-      };
-    }
-    
-    public abstract void read(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done);
-    
-    public abstract void truncate(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse> done);
-    
-    public abstract void unlink(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-    
-    public abstract void write(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse> done);
-    
-    public abstract void xtreemfsBroadcastGmax(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-    
-    public abstract void xtreemfsCheckObject(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done);
-    
-    public abstract void xtreemfsCleanupGetResults(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse> done);
-    
-    public abstract void xtreemfsCleanupIsRunning(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse> done);
-    
-    public abstract void xtreemfsCleanupStart(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-    
-    public abstract void xtreemfsCleanupStatus(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse> done);
-    
-    public abstract void xtreemfsCleanupStop(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-    
-    public abstract void xtreemfsCleanupVersionsStart(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-    
-    public abstract void xtreemfsRwrFetch(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done);
-    
-    public abstract void xtreemfsRwrFleaseMsg(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-    
-    public abstract void xtreemfsRwrNotify(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-    
-    public abstract void xtreemfsRwrSetPrimaryEpoch(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done);
-    
-    public abstract void xtreemfsRwrStatus(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus> done);
-    
-    public abstract void xtreemfsRwrTruncate(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-    
-    public abstract void xtreemfsRwrUpdate(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-    
-    public abstract void xtreemfsRwrAuthState(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-    
-    public abstract void xtreemfsRwrResetComplete(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-    
-    public abstract void xtreemfsInternalGetGmax(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax> done);
-    
-    public abstract void xtreemfsInternalTruncate(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse> done);
-    
-    public abstract void xtreemfsInternalGetFileSize(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse> done);
-    
-    public abstract void xtreemfsInternalReadLocal(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse> done);
-    
-    public abstract void xtreemfsInternalGetObjectSet(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> done);
-    
-    public abstract void xtreemfsInternalGetFileidList(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse> done);
-    
-    public abstract void xtreemfsLockAcquire(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock> done);
-    
-    public abstract void xtreemfsLockCheck(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock> done);
-    
-    public abstract void xtreemfsLockRelease(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-    
-    public abstract void xtreemfsPing(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage> done);
-    
-    public abstract void xtreemfsShutdown(
-        com.google.protobuf.RpcController controller,
-        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
-    
-    public static final
-        com.google.protobuf.Descriptors.ServiceDescriptor
-        getDescriptor() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.OSD.getDescriptor().getServices().get(0);
-    }
-    public final com.google.protobuf.Descriptors.ServiceDescriptor
-        getDescriptorForType() {
-      return getDescriptor();
-    }
-    
-    public final void callMethod(
-        com.google.protobuf.Descriptors.MethodDescriptor method,
-        com.google.protobuf.RpcController controller,
-        com.google.protobuf.Message request,
-        com.google.protobuf.RpcCallback<
-          com.google.protobuf.Message> done) {
-      if (method.getService() != getDescriptor()) {
-        throw new java.lang.IllegalArgumentException(
-          "Service.callMethod() given method descriptor for wrong " +
-          "service type.");
-      }
-      switch(method.getIndex()) {
-        case 0:
-          this.read(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData>specializeCallback(
-              done));
-          return;
-        case 1:
-          this.truncate(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse>specializeCallback(
-              done));
-          return;
-        case 2:
-          this.unlink(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse>specializeCallback(
-              done));
-          return;
-        case 3:
-          this.write(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse>specializeCallback(
-              done));
-          return;
-        case 4:
-          this.xtreemfsBroadcastGmax(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse>specializeCallback(
-              done));
-          return;
-        case 5:
-          this.xtreemfsCheckObject(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData>specializeCallback(
-              done));
-          return;
-        case 6:
-          this.xtreemfsCleanupGetResults(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse>specializeCallback(
-              done));
-          return;
-        case 7:
-          this.xtreemfsCleanupIsRunning(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse>specializeCallback(
-              done));
-          return;
-        case 8:
-          this.xtreemfsCleanupStart(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse>specializeCallback(
-              done));
-          return;
-        case 9:
-          this.xtreemfsCleanupStatus(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse>specializeCallback(
-              done));
-          return;
-        case 10:
-          this.xtreemfsCleanupStop(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse>specializeCallback(
-              done));
-          return;
-        case 11:
-          this.xtreemfsCleanupVersionsStart(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse>specializeCallback(
-              done));
-          return;
-        case 12:
-          this.xtreemfsRwrFetch(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData>specializeCallback(
-              done));
-          return;
-        case 13:
-          this.xtreemfsRwrFleaseMsg(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse>specializeCallback(
-              done));
-          return;
-        case 14:
-          this.xtreemfsRwrNotify(controller, (org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse>specializeCallback(
-              done));
-          return;
-        case 15:
-          this.xtreemfsRwrSetPrimaryEpoch(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData>specializeCallback(
-              done));
-          return;
-        case 16:
-          this.xtreemfsRwrStatus(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus>specializeCallback(
-              done));
-          return;
-        case 17:
-          this.xtreemfsRwrTruncate(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse>specializeCallback(
-              done));
-          return;
-        case 18:
-          this.xtreemfsRwrUpdate(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse>specializeCallback(
-              done));
-          return;
-        case 19:
-          this.xtreemfsRwrAuthState(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse>specializeCallback(
-              done));
-          return;
-        case 20:
-          this.xtreemfsRwrResetComplete(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse>specializeCallback(
-              done));
-          return;
-        case 21:
-          this.xtreemfsInternalGetGmax(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax>specializeCallback(
-              done));
-          return;
-        case 22:
-          this.xtreemfsInternalTruncate(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse>specializeCallback(
-              done));
-          return;
-        case 23:
-          this.xtreemfsInternalGetFileSize(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse>specializeCallback(
-              done));
-          return;
-        case 24:
-          this.xtreemfsInternalReadLocal(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse>specializeCallback(
-              done));
-          return;
-        case 25:
-          this.xtreemfsInternalGetObjectSet(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList>specializeCallback(
-              done));
-          return;
-        case 26:
-          this.xtreemfsInternalGetFileidList(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse>specializeCallback(
-              done));
-          return;
-        case 27:
-          this.xtreemfsLockAcquire(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock>specializeCallback(
-              done));
-          return;
-        case 28:
-          this.xtreemfsLockCheck(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock>specializeCallback(
-              done));
-          return;
-        case 29:
-          this.xtreemfsLockRelease(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse>specializeCallback(
-              done));
-          return;
-        case 30:
-          this.xtreemfsPing(controller, (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage>specializeCallback(
-              done));
-          return;
-        case 31:
-          this.xtreemfsShutdown(controller, (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest)request,
-            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse>specializeCallback(
-              done));
-          return;
-        default:
-          throw new java.lang.AssertionError("Can't get here.");
-      }
-    }
-    
-    public final com.google.protobuf.Message
-        getRequestPrototype(
-        com.google.protobuf.Descriptors.MethodDescriptor method) {
-      if (method.getService() != getDescriptor()) {
-        throw new java.lang.IllegalArgumentException(
-          "Service.getRequestPrototype() given method " +
-          "descriptor for wrong service type.");
-      }
-      switch(method.getIndex()) {
-        case 0:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest.getDefaultInstance();
-        case 1:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest.getDefaultInstance();
-        case 2:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request.getDefaultInstance();
-        case 3:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest.getDefaultInstance();
-        case 4:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest.getDefaultInstance();
-        case 5:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest.getDefaultInstance();
-        case 6:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
-        case 7:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
-        case 8:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest.getDefaultInstance();
-        case 9:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
-        case 10:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
-        case 11:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
-        case 12:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest.getDefaultInstance();
-        case 13:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest.getDefaultInstance();
-        case 14:
-          return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
-        case 15:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest.getDefaultInstance();
-        case 16:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest.getDefaultInstance();
-        case 17:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest.getDefaultInstance();
-        case 18:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest.getDefaultInstance();
-        case 19:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest.getDefaultInstance();
-        case 20:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest.getDefaultInstance();
-        case 21:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest.getDefaultInstance();
-        case 22:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest.getDefaultInstance();
-        case 23:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest.getDefaultInstance();
-        case 24:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest.getDefaultInstance();
-        case 25:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest.getDefaultInstance();
-        case 26:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
-        case 27:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest.getDefaultInstance();
-        case 28:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest.getDefaultInstance();
-        case 29:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest.getDefaultInstance();
-        case 30:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage.getDefaultInstance();
-        case 31:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
-        default:
-          throw new java.lang.AssertionError("Can't get here.");
-      }
-    }
-    
-    public final com.google.protobuf.Message
-        getResponsePrototype(
-        com.google.protobuf.Descriptors.MethodDescriptor method) {
-      if (method.getService() != getDescriptor()) {
-        throw new java.lang.IllegalArgumentException(
-          "Service.getResponsePrototype() given method " +
-          "descriptor for wrong service type.");
-      }
-      switch(method.getIndex()) {
-        case 0:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
-        case 1:
-          return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance();
-        case 2:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-        case 3:
-          return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance();
-        case 4:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-        case 5:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
-        case 6:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse.getDefaultInstance();
-        case 7:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse.getDefaultInstance();
-        case 8:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-        case 9:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse.getDefaultInstance();
-        case 10:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-        case 11:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-        case 12:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
-        case 13:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-        case 14:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-        case 15:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance();
-        case 16:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance();
-        case 17:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-        case 18:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-        case 19:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-        case 20:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-        case 21:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax.getDefaultInstance();
-        case 22:
-          return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance();
-        case 23:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse.getDefaultInstance();
-        case 24:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse.getDefaultInstance();
-        case 25:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.getDefaultInstance();
-        case 26:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse.getDefaultInstance();
-        case 27:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance();
-        case 28:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance();
-        case 29:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-        case 30:
-          return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage.getDefaultInstance();
-        case 31:
-          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
-        default:
-          throw new java.lang.AssertionError("Can't get here.");
-      }
-    }
-    
-    public static Stub newStub(
-        com.google.protobuf.RpcChannel channel) {
-      return new Stub(channel);
-    }
-    
-    public static final class Stub extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.OSDService implements Interface {
-      private Stub(com.google.protobuf.RpcChannel channel) {
-        this.channel = channel;
-      }
-      
-      private final com.google.protobuf.RpcChannel channel;
-      
-      public com.google.protobuf.RpcChannel getChannel() {
-        return channel;
-      }
-      
-      public  void read(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(0),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance()));
-      }
-      
-      public  void truncate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(1),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance()));
-      }
-      
-      public  void unlink(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(2),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance()));
-      }
-      
-      public  void write(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(3),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsBroadcastGmax(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(4),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsCheckObject(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(5),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsCleanupGetResults(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(6),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsCleanupIsRunning(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(7),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsCleanupStart(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(8),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsCleanupStatus(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(9),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsCleanupStop(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(10),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsCleanupVersionsStart(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(11),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsRwrFetch(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(12),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsRwrFleaseMsg(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(13),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsRwrNotify(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(14),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsRwrSetPrimaryEpoch(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(15),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsRwrStatus(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(16),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsRwrTruncate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(17),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsRwrUpdate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(18),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsRwrAuthState(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(19),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsRwrResetComplete(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(20),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsInternalGetGmax(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(21),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsInternalTruncate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(22),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsInternalGetFileSize(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(23),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsInternalReadLocal(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(24),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsInternalGetObjectSet(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(25),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsInternalGetFileidList(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(26),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsLockAcquire(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(27),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsLockCheck(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(28),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsLockRelease(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(29),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsPing(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(30),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage.getDefaultInstance()));
-      }
-      
-      public  void xtreemfsShutdown(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request,
-          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
-        channel.callMethod(
-          getDescriptor().getMethods().get(31),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance(),
-          com.google.protobuf.RpcUtil.generalizeCallback(
-            done,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.class,
-            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance()));
-      }
-    }
-    
-    public static BlockingInterface newBlockingStub(
-        com.google.protobuf.BlockingRpcChannel channel) {
-      return new BlockingStub(channel);
-    }
-    
-    public interface BlockingInterface {
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData read(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse truncate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse unlink(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse write(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsBroadcastGmax(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData xtreemfsCheckObject(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse xtreemfsCleanupGetResults(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse xtreemfsCleanupIsRunning(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsCleanupStart(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse xtreemfsCleanupStatus(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsCleanupStop(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsCleanupVersionsStart(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData xtreemfsRwrFetch(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsRwrFleaseMsg(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsRwrNotify(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData xtreemfsRwrSetPrimaryEpoch(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus xtreemfsRwrStatus(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsRwrTruncate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsRwrUpdate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsRwrAuthState(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsRwrResetComplete(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax xtreemfsInternalGetGmax(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse xtreemfsInternalTruncate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse xtreemfsInternalGetFileSize(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse xtreemfsInternalReadLocal(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList xtreemfsInternalGetObjectSet(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse xtreemfsInternalGetFileidList(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock xtreemfsLockAcquire(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock xtreemfsLockCheck(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsLockRelease(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage xtreemfsPing(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage request)
-          throws com.google.protobuf.ServiceException;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsShutdown(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
-          throws com.google.protobuf.ServiceException;
-    }
-    
-    private static final class BlockingStub implements BlockingInterface {
-      private BlockingStub(com.google.protobuf.BlockingRpcChannel channel) {
-        this.channel = channel;
-      }
-      
-      private final com.google.protobuf.BlockingRpcChannel channel;
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData read(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(0),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse truncate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(1),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse unlink(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(2),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse write(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(3),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsBroadcastGmax(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_broadcast_gmaxRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(4),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData xtreemfsCheckObject(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_check_objectRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(5),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse xtreemfsCleanupGetResults(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(6),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse xtreemfsCleanupIsRunning(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(7),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsCleanupStart(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_startRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(8),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse xtreemfsCleanupStatus(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(9),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsCleanupStop(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(10),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsCleanupVersionsStart(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(11),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData xtreemfsRwrFetch(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(12),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsRwrFleaseMsg(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(13),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsRwrNotify(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(14),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData xtreemfsRwrSetPrimaryEpoch(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_set_primary_epochRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(15),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus xtreemfsRwrStatus(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_statusRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(16),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsRwrTruncate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_truncateRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(17),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsRwrUpdate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_updateRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(18),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsRwrAuthState(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(19),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsRwrResetComplete(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_completeRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(20),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax xtreemfsInternalGetGmax(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_gmaxRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(21),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse xtreemfsInternalTruncate(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(22),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse xtreemfsInternalGetFileSize(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(23),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse xtreemfsInternalReadLocal(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_read_localRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(24),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList xtreemfsInternalGetObjectSet(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_object_setRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(25),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse xtreemfsInternalGetFileidList(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(26),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock xtreemfsLockAcquire(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(27),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock xtreemfsLockCheck(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(28),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsLockRelease(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.lockRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(29),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage xtreemfsPing(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(30),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage.getDefaultInstance());
-      }
-      
-      
-      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsShutdown(
-          com.google.protobuf.RpcController controller,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest request)
-          throws com.google.protobuf.ServiceException {
-        return (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(31),
-          controller,
-          request,
-          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance());
-      }
-      
-    }
   }
   
   private static com.google.protobuf.Descriptors.Descriptor
@@ -17698,8 +22845,6 @@ public final class OSD {
           org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor(),
         }, assigner);
   }
-  
-  public static void internalForceInit() {}
   
   // @@protoc_insertion_point(outer_class_scope)
 }

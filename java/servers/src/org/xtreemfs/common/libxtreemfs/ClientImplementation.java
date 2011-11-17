@@ -7,11 +7,11 @@
 package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -20,6 +20,7 @@ import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -32,6 +33,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SERVICES;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
@@ -67,26 +69,23 @@ public class ClientImplementation extends Client {
     /** Options class which contains the log_level string and logfile path. */
     private Options                                options                   = null;
 
-    // TODO: create UUID Cache
-    // private UUIDCache uuidcache =null;
-
     private ConcurrentLinkedQueue<Volume>          listOpenVolumes           = null;
 
     private org.xtreemfs.common.uuids.UUIDResolver uuidResolver              = null;
 
     /**
-     * The RPC Client processes requests from a queue and executes callbacks in its thread.
+     * A DIRServiceClient is a wrapper for an RPC Client.
      */
-    // TODO: Figure out how to this and if it is necessary.
-    // boost::scoped_ptr<xtreemfs::rpc::Client> network_client_;
-    // boost::scoped_ptr<boost::thread> network_client_thread_;
-
-    /** A DIRServiceClient is a wrapper for an RPC Client. */
     private DIRServiceClient                       dirServiceClient          = null;
 
+    /**
+     * The RPC Client processes requests from a queue and executes callbacks in its thread.
+     */
     private RPCNIOSocketClient                     networkClient             = null;
 
-    /** Random, non-persistent UUID to distinguish locks of different clients. */
+    /**
+     * Random, non-persistent UUID to distinguish locks of different clients.
+     */
     private String                                 clientUUID                = null;
 
     /**
@@ -94,7 +93,6 @@ public class ClientImplementation extends Client {
      */
     public ClientImplementation(String dirAddress, UserCredentials userCredentials, SSLOptions sslOptions,
             Options options) {
-
         dirServiceUserCredentials = userCredentials;
         dirServiceSSLOptions = sslOptions;
         this.options = options;
@@ -115,7 +113,6 @@ public class ClientImplementation extends Client {
         }
 
         listOpenVolumes = new ConcurrentLinkedQueue<Volume>();
-
     }
 
     public void start() throws Exception {
@@ -126,7 +123,7 @@ public class ClientImplementation extends Client {
 
         dirServiceClient = new DIRServiceClient(networkClient, null);
 
-        clientUUID = Helper.GenerateVersion4UUID();
+        clientUUID = Helper.generateVersion4UUID();
         assert (clientUUID != null && clientUUID != "");
 
         // Create nonSingleton uuidResolver to resolve UUIDs.
@@ -160,10 +157,10 @@ public class ClientImplementation extends Client {
             }
         }
     }
-    
+
     protected void closeVolume(Volume volume) {
         boolean removed = listOpenVolumes.remove(volume);
-        assert(removed);
+        assert (removed);
     }
 
     /*
@@ -173,8 +170,7 @@ public class ClientImplementation extends Client {
      * org.xtreemfs.foundation.SSLOptions, org.xtreemfs.common.libxtreemfs.Options)
      */
     @Override
-    public Volume openVolume(String volumeName, SSLOptions sslOptions, Options options)
-            throws Exception {
+    public Volume openVolume(String volumeName, SSLOptions sslOptions, Options options) throws Exception {
 
         UUIDIterator mrcUuidIterator = new UUIDIterator();
         volumeNameToMRCUUID(volumeName, mrcUuidIterator);
@@ -203,36 +199,14 @@ public class ClientImplementation extends Client {
             AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
             int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes)
             throws IOException {
-
-        MRCServiceClient mrcClient = new MRCServiceClient(networkClient, null);
-
-        StripingPolicy sp = StripingPolicy.newBuilder().setType(defaultStripingPolicyType)
-                .setStripeSize(defaultStripeSize).setWidth(defaultStripeWidth).build();
-
-        org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume volume = org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume
-                .newBuilder().setName(volumeName).setMode(mode).setOwnerUserId(ownerUsername)
-                .setOwnerGroupId(ownerGroupname).setAccessControlPolicy(accessPolicyType)
-                .setDefaultStripingPolicy(sp).addAllAttrs(volumeAttributes).setId("").build();
-
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUID(mrcAddress);
 
-        try {
-            Method m = MRCServiceClient.class.getMethod("xtreemfs_mkvol", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class,
-                    org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume.class });
-
-            RPCCaller
-                    .<MRCServiceClient, org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume, emptyResponse> makeCall(
-                            mrcClient, m, userCredentials, auth, volume, iteratorWithAddresses, this,
-                            options.getMaxTries(), options, true);
-        } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "Couldn't create volume %s",
-                    volumeName);
-
-        }
+        createVolume(iteratorWithAddresses, auth, userCredentials, volumeName, mode, ownerUsername,
+                ownerGroupname, accessPolicyType, defaultStripingPolicyType, defaultStripeSize,
+                defaultStripeWidth, volumeAttributes);
     }
-    
+
     /*
      * (non-Javadoc)
      * 
@@ -248,8 +222,39 @@ public class ClientImplementation extends Client {
             AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
             int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes)
             throws IOException {
-        // TODO Auto-generated method stub
+        UUIDIterator iteratorWithAddresses = new UUIDIterator();
+        iteratorWithAddresses.addUUIDs(mrcAddresses);
+        createVolume(iteratorWithAddresses, auth, userCredentials, volumeName, mode, ownerUsername, ownerGroupname,
+                accessPolicyType, defaultStripingPolicyType, defaultStripeSize, defaultStripeWidth,
+                volumeAttributes);
+    }
 
+    private void createVolume(UUIDIterator mrcAddresses, Auth auth, UserCredentials userCredentials,
+            String volumeName, int mode, String ownerUsername, String ownerGroupname,
+            AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
+            int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes)
+            throws IOException {
+        final MRCServiceClient mrcClient = new MRCServiceClient(networkClient, null);
+
+        StripingPolicy sp = StripingPolicy.newBuilder().setType(defaultStripingPolicyType)
+                .setStripeSize(defaultStripeSize).setWidth(defaultStripeWidth).build();
+
+        org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume volume = org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume
+                .newBuilder().setName(volumeName).setMode(mode).setOwnerUserId(ownerUsername)
+                .setOwnerGroupId(ownerGroupname).setAccessControlPolicy(accessPolicyType)
+                .setDefaultStripingPolicy(sp).addAllAttrs(volumeAttributes).setId("").build();
+
+        RPCCaller.<org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume, emptyResponse> syncCall(SERVICES.MRC,
+                userCredentials, auth, options, this, mrcAddresses, true, volume,
+                new CallGenerator<org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume, emptyResponse>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth auth,
+                            UserCredentials userCreds, org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volume input)
+                            throws IOException {
+                        return mrcClient.xtreemfs_mkvol(server, auth, userCreds, input);
+                    };
+                });
     }
 
     /*
@@ -262,21 +267,10 @@ public class ClientImplementation extends Client {
     @Override
     public void deleteVolume(String mrcAddress, Auth auth, UserCredentials userCredentials, String volumeName)
             throws IOException {
-
-        MRCServiceClient mrcServiceClient = new MRCServiceClient(networkClient, null);
-
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUID(mrcAddress);
 
-        try {
-            Method m = MRCServiceClient.class.getMethod("xtreemfs_rmvol", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, String.class });
-            RPCCaller.<MRCServiceClient, String, emptyResponse> makeCall(mrcServiceClient, m,
-                    userCredentials, auth, volumeName, iteratorWithAddresses, this, 2, options, true);
-        } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "Failed to remove volume %s",
-                    volumeName);
-        }
+        deleteVolume(iteratorWithAddresses, auth, userCredentials, volumeName);
     }
 
     /*
@@ -289,8 +283,25 @@ public class ClientImplementation extends Client {
     @Override
     public void deleteVolume(List<String> mrcAddresses, Auth auth, UserCredentials userCredentials,
             String volumeName) throws IOException {
-        // TODO Auto-generated method stub
+        UUIDIterator iteratorWithAddresses = new UUIDIterator();
+        iteratorWithAddresses.addUUIDs(mrcAddresses);
 
+        deleteVolume(iteratorWithAddresses, auth, userCredentials, volumeName);
+    }
+
+    private void deleteVolume(UUIDIterator mrcAddresses, Auth auth, UserCredentials userCredentials,
+            String volumeName) throws IOException {
+        final MRCServiceClient mrcServiceClient = new MRCServiceClient(networkClient, null);
+
+        RPCCaller.<String, emptyResponse> syncCall(SERVICES.MRC, userCredentials, auth, options, this,
+                mrcAddresses, true, volumeName, new CallGenerator<String, emptyResponse>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, String input) throws IOException {
+                        return mrcServiceClient.xtreemfs_rmvol(server, authHeader, userCreds, input);
+                    }
+                });
     }
 
     /*
@@ -301,7 +312,7 @@ public class ClientImplementation extends Client {
     @Override
     public Volumes listVolumes(String mrcAddress) throws IOException {
 
-        MRCServiceClient mrcServiceClient = new MRCServiceClient(networkClient, null);
+        final MRCServiceClient mrcServiceClient = new MRCServiceClient(networkClient, null);
 
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUID(mrcAddress);
@@ -309,19 +320,15 @@ public class ClientImplementation extends Client {
         // use bogus user credentials
         UserCredentials userCredentials = UserCredentials.newBuilder().setUsername("xtreemfs").build();
 
-        Volumes volumes = null;
-        try {
-            Method m = MRCServiceClient.class.getMethod("xtreemfs_lsvol", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, emptyRequest.class });
-            volumes = RPCCaller.<MRCServiceClient, emptyRequest, Volumes> makeCall(mrcServiceClient, m,
-                    userCredentials, authBogus, emptyRequest.newBuilder().build(), iteratorWithAddresses,
-                    this, options.getMaxTries(), options, true);
-        } catch (Exception e) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "Failed to list volumes on MRC %s",
-                    mrcAddress);
-            throw new IOException(e);
-        }
-
+        Volumes volumes = RPCCaller.<emptyRequest, Volumes> syncCall(SERVICES.MRC, userCredentials,
+                authBogus, options, this, iteratorWithAddresses, true, emptyRequest.getDefaultInstance(),
+                new CallGenerator<emptyRequest, Volumes>() {
+                    @Override
+                    public RPCResponse<Volumes> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, emptyRequest input) throws IOException {
+                        return mrcServiceClient.xtreemfs_lsvol(server, authHeader, userCreds, input);
+                    };
+                });
         return volumes;
     }
 
@@ -332,7 +339,6 @@ public class ClientImplementation extends Client {
      */
     @Override
     public UUIDResolver getUUIDResolver() {
-        // TODO: Ask michael about the static_cast in the cpp version of this method.
         return this;
     }
 
@@ -379,16 +385,17 @@ public class ClientImplementation extends Client {
         // cut if off.
         String parsedVolumeName = parseVolumeName(volumeName);
 
-        ServiceSet sSet = null;
-        try {
-            Method m = DIRServiceClient.class.getMethod("xtreemfs_service_get_by_name", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, String.class });
-            sSet = RPCCaller.<DIRServiceClient, String, ServiceSet> makeCall(dirServiceClient, m,
-                    dirServiceUserCredentials, dirServiceAuth, parsedVolumeName, dirServiceAddresses, this,
-                    options.getMaxTries(), options, true);
-        } catch (Exception e) {
-            // TODO: throw useful Exception
-        }
+        ServiceSet sSet = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, dirServiceUserCredentials,
+                dirServiceAuth, options, this, dirServiceAddresses, true, parsedVolumeName,
+                new CallGenerator<String, ServiceSet>() {
+
+                    @Override
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, String input) throws IOException {
+                        return dirServiceClient.xtreemfs_service_get_by_name(server, authHeader, userCreds,
+                                input);
+                    }
+                });
 
         // check if there is an service which is a VOLUME and then filter the MRC of this volume
         // from its ServiceDataMap.
@@ -443,17 +450,16 @@ public class ClientImplementation extends Client {
         // Everything behind the @ has to be removed as it identifies the snapshot.
         String parsedVolumeName = parseVolumeName(volumeName);
 
-        ServiceSet sSet = null;
-        try {
-            Method m = DIRServiceClient.class.getMethod("xtreemfs_service_get_by_name", new Class<?>[] {
-                    InetSocketAddress.class, Auth.class, UserCredentials.class, String.class });
-            sSet = RPCCaller.<DIRServiceClient, String, ServiceSet> makeCall(dirServiceClient, m,
-                    dirServiceUserCredentials, dirServiceAuth, parsedVolumeName, dirServiceAddresses, this,
-                    options.getMaxTries(), options, true);
-        } catch (Exception e) {
-            e.printStackTrace();
-            // TODO: Throws Exception with the same name like used in the CPP implementation.
-        }
+        ServiceSet sSet = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, dirServiceUserCredentials,
+                dirServiceAuth, options, this, dirServiceAddresses, true, parsedVolumeName,
+                new CallGenerator<String, ServiceSet>() {
+                    @Override
+                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, String input) throws IOException {
+                        return dirServiceClient.xtreemfs_service_get_by_name(server, authHeader, userCreds,
+                                input);
+                    }
+                });
 
         // Iterate over ServiceSet to find an appropriate MRC
         boolean mrcFound = false;

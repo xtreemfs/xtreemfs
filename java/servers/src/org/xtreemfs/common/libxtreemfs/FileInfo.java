@@ -7,7 +7,6 @@
 package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
-import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -196,9 +195,12 @@ public class FileInfo {
      * 
      */
     protected void updateXLocSetAndRest(XLocSet newXlocset, boolean replicateOnClose) {
-
-        xlocset = XLocSet.newBuilder(newXlocset).build();
-
+        xLocSetLock.lock();
+        try {
+            xlocset = XLocSet.newBuilder(newXlocset).build();    
+        } finally {
+            xLocSetLock.unlock();
+        }
         this.replicateOnClose = replicateOnClose;
     }
 
@@ -254,9 +256,7 @@ public class FileInfo {
      */
     protected int decreaseReferenceCount() {
         int count = referenceCount.decrementAndGet();
-
         assert (count >= 0);
-
         return count;
     }
 
@@ -313,7 +313,6 @@ public class FileInfo {
      * 
      */
     protected boolean tryToUpdateOSDWriteResponse(OSDWriteResponse response, XCap xcap) {
-
         assert (response != null);
 
         osdWriteResponseLock.lock();
@@ -339,7 +338,6 @@ public class FileInfo {
      * truncateEpoch from a stored OSDWriteResponse.
      */
     protected Stat mergeStatAndOSDWriteResponse(Stat stat) {
-
         osdWriteResponseLock.lock();
         try {
             if (osdWriteResponse != null) {
@@ -367,7 +365,6 @@ public class FileInfo {
      * Sends pending file size updates to the MRC asynchronously.
      */
     protected void writeBackFileSizeAsync() throws IOException {
-
         osdWriteResponseLock.lock();
         try {
 
@@ -389,7 +386,6 @@ public class FileInfo {
      * Renews xcap of all file handles of this file asynchronously.
      */
     protected void renewXCapsAsync() {
-
         Iterator<FileHandleImplementation> fhiIterator = openFileHandles.iterator();
         try {
             while (fhiIterator.hasNext()) {
@@ -400,7 +396,6 @@ public class FileInfo {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                         "renewXcapsSync: Failed to renew XCap for fileHandles. Reason: %s", ioe.getCause());
             }
-
         }
     }
 
@@ -428,7 +423,6 @@ public class FileInfo {
      * Uses file_handle to release all known local locks.
      */
     protected void releaseAllLocks(FileHandleImplementation fileHandle) {
-
         for (Lock lock : activeLocks.values()) {
             // FileHandleImplementation.releaseLock(lock) will delete the lock from activeLocks.
             try {
@@ -449,7 +443,7 @@ public class FileInfo {
     protected void waitForPendingFileSizeUpdates() {
         while (pendingFilesizeUpdates.size() > 0) {
             try {
-                osdWriteResponseCondition.wait();
+                osdWriteResponseCondition.await();
             } catch (Exception e) {
                 // TODO: handle exception and figure out what happens if thread gets interrupted.
             }
@@ -461,7 +455,6 @@ public class FileInfo {
      */
     protected void asyncFileSizeUpdateResponseHandler(OSDWriteResponse owr,
             FileHandleImplementation fileHandle, boolean success) {
-
         osdWriteResponseLock.lock();
         try {
             // Only change the status of the OSDWriteResponse has not changed meanwhile.
@@ -512,7 +505,6 @@ public class FileInfo {
      * @return A Tupel<Lock, boolean[]>.
      */
     protected Tupel<Lock, boolean[]> checkLock(Lock lock) {
-
         assert (lock.getClientUuid().equals(clientUuid));
 
         boolean conflictFound = false;
@@ -548,7 +540,6 @@ public class FileInfo {
      * Returns true if a lock for "processId" is known.
      */
     protected boolean checkIfProcessHasLocks(int processId) {
-
         return activeLocks.containsKey(processId);
     }
 
@@ -570,7 +561,6 @@ public class FileInfo {
      * Remove locks equal to "lock" from list of active locks.
      */
     protected void delLock(Lock lock) {
-
         assert (lock.getClientUuid().equals(clientUuid));
 
         // There is only up to one element per PID. Just find and delete it.
@@ -591,7 +581,6 @@ public class FileInfo {
         // We don't wait only for fileHandle's pending writes but for all writes of
         // this file.
         waitForPendingAsyncWrites();
-
         flushPendingFileSizeUpdate(fileHandle, closeFile);
     }
 
@@ -604,8 +593,6 @@ public class FileInfo {
 
     /**
      * Calls asyncWriteHandler.write().
-     * 
-     * @remark Ownership of write_buffer is transferred to caller.
      */
     void asyncWrite(AsyncWriteBuffer writeBuffer) {
         asyncWriteHandler.write(writeBuffer);
@@ -667,7 +654,6 @@ public class FileInfo {
         } finally {
             osdWriteResponseLock.unlock();
         }
-
     }
 
     /** See WaitForPendingFileSizeUpdates(). */

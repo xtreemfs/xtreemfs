@@ -6,19 +6,20 @@
  */
 package org.xtreemfs.common.libxtreemfs;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 
-import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SERVICES;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
+
+import com.google.protobuf.Message;
 
 /**
  * 
@@ -27,66 +28,67 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  */
 public class RPCCaller {
 
-    protected static <C, R, V> V makeCall(C client, Method m, UserCredentials userCredentials, Auth auth,
-            R request, UUIDIterator uuidIterator, UUIDResolver uuidResolver, int maxTries, Options options,
-            boolean uuidIteratorHasAddresses) throws Exception {
-        return RPCCaller.<C, R, V> makeCall(client, m, userCredentials, auth, request, uuidIterator,
-                uuidResolver, maxTries, options, uuidIteratorHasAddresses, false);
+    /**
+     * Interface for syncCall which generates the calls. Will be called for each retry.
+     */
+    protected interface CallGenerator<C, R extends Message> {
+        public RPCResponse<R> executeCall(InetSocketAddress server, Auth authHeader,
+                UserCredentials userCreds, C input) throws IOException;
     }
 
-    // TODO: use MaxTries and Options to repeat calls on failure.
-    @SuppressWarnings("unchecked")
-    protected static <C, R, V> V makeCall(C client, Method m, UserCredentials userCredentials, Auth auth,
-            R request, UUIDIterator uuidIterator, UUIDResolver uuidResolver, int maxTries, Options options,
-            boolean uuidIteratorHasAddresses, boolean delayRetryOnError) throws Exception {
+    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
+            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
+            boolean uuidIteratorHasAddresses, C callRequest, CallGenerator<C, R> callGen) {
+        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
+                callRequest, null, callGen);
+    }
 
-        assert (m.getDeclaringClass().isInstance(client));
-        assert (uuidIteratorHasAddresses || uuidResolver != null);
+    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
+            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
+            boolean uuidIteratorHasAddresses, boolean delayNextTry, C callRequest, CallGenerator<C, R> callGen) {
+        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses,
+                delayNextTry, callRequest, null, callGen);
+    }
 
-        // create an InetSocketAddresse depending on the uuidIterator and the kind of service
-        InetSocketAddress server;
-        if (uuidIteratorHasAddresses) {
-            server = getInetSocketAddressFromAddressAndServiceClient(uuidIterator.getUUID(), client);
-        } else { // UUIDIterator has really UUID, not just address Strings. :P
-            String address = uuidResolver.uuidToAddress(uuidIterator.getUUID());
-            server = getInetSocketAddressFromAddressAndServiceClient(address, client);
-        }
+    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
+            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
+            boolean uuidIteratorHasAddresses, C callRequest, ReusableBuffer buf, CallGenerator<C, R> callGen) {
+        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
+                callRequest, buf, callGen);
+    }
 
-        RPCResponse<?> response = null;
-        V returnValue = null;
+    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
+            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
+            boolean uuidIteratorHasAddresses, boolean delayNextTry, C callRequest, ReusableBuffer buffer,
+            CallGenerator<C, R> callGen) {
+        R response = null;
+        RPCResponse<R> r = null;
         try {
-            Object obj = m.invoke(client, new Object[] { server, auth, userCredentials, request });
-            if (obj instanceof RPCResponse<?>) {
-                response = (RPCResponse<?>) obj;
+            // create an InetSocketAddresse depending on the uuidIterator and the kind of service
+            InetSocketAddress server;
+            if (uuidIteratorHasAddresses) {
+                server = getInetSocketAddressFromAddressAndServiceClient(it.getUUID(), service);
+            } else { // UUIDIterator has really UUID, not just address Strings. :P
+                String address = uuidResolver.uuidToAddress(it.getUUID());
+                server = getInetSocketAddressFromAddressAndServiceClient(address, service);
             }
 
-            Method get = RPCResponse.class.getMethod("get", new Class<?>[0]);
-            obj = get.invoke(response, new Object[0]);
+            r = callGen.executeCall(server, auth, userCreds, callRequest);
+            response = r.get();
 
-            // TODO: Figure out how to make a safe cast to avoid the unchecked warning and get rid of
-            // the @SuppressWarnings("unchecked") annotation.
-            returnValue = (V) obj;
-        } catch (InvocationTargetException ite) {
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, client, "%s", ite.getCause()
-                        .getMessage());
+            // If the buffer is not null it should be filled with data piggybacked in the RPCResponse.
+            // This is used the read request.
+            if (buffer != null) {
+                buffer.put(r.getData());
             }
-            throw new Exception(ite.getCause());
-        } catch (IllegalAccessException accE) {
-            // Should never happen except there is an programming error on invocation of this
-            // method
-            accE.printStackTrace();
-        } catch (IllegalArgumentException argE) {
-            // Should never happen except there is an programming error on invocation of this
-            // method
-            argE.printStackTrace();
+        } catch (Exception e) {
+            // TODO: handle exception
         } finally {
-            if (response != null) {
-                response.freeBuffers();
+            if (r != null) {
+                r.freeBuffers();
             }
         }
-
-        return returnValue;
+        return response;
     }
 
     /**
@@ -100,9 +102,8 @@ public class RPCCaller {
      *            contain a port.
      * @return
      */
-    private static InetSocketAddress getInetSocketAddressFromAddressAndServiceClient(String address,
+    protected static InetSocketAddress getInetSocketAddressFromAddressAndServiceClient(String address,
             Object client) {
-
         if (client instanceof DIRServiceClient) {
             return Helper.stringToInetSocketAddress(address,
                     GlobalTypes.PORTS.DIR_PBRPC_PORT_DEFAULT.getNumber());
@@ -115,7 +116,21 @@ public class RPCCaller {
                     GlobalTypes.PORTS.OSD_PBRPC_PORT_DEFAULT.getNumber());
         }
         return null;
-
     }
 
+    private static InetSocketAddress getInetSocketAddressFromAddressAndServiceClient(String address,
+            SERVICES service) {
+        if (SERVICES.DIR.equals(service)) {
+            return Helper.stringToInetSocketAddress(address,
+                    GlobalTypes.PORTS.DIR_PBRPC_PORT_DEFAULT.getNumber());
+        }
+        if (SERVICES.MRC.equals(service))
+            return Helper.stringToInetSocketAddress(address,
+                    GlobalTypes.PORTS.MRC_PBRPC_PORT_DEFAULT.getNumber());
+        if (SERVICES.OSD.equals(service)) {
+            return Helper.stringToInetSocketAddress(address,
+                    GlobalTypes.PORTS.OSD_PBRPC_PORT_DEFAULT.getNumber());
+        }
+        return null;
+    }
 }

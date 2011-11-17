@@ -18,14 +18,14 @@ public class AsyncWriteBuffer {
     /**
      * @remark Ownership of "writeRequest" is transferred to this object.
      */
-    protected AsyncWriteBuffer(writeRequest writeRequest, char[] data, int dataLength,
+    protected AsyncWriteBuffer(writeRequest writeRequest, byte[] data, int dataLength,
             FileHandleImplementation fileHandle) {
     }
 
     /**
      * @remark Ownership of write_request is transferred to this object.
      */
-    protected AsyncWriteBuffer(writeRequest writeRequest, char[] data, int dataLengt,
+    protected AsyncWriteBuffer(writeRequest writeRequest, byte[] data, int dataLengt,
             FileHandleImplementation fileHandle, String osdUuid) {
 
         this.writeRequest = writeRequest;
@@ -44,7 +44,7 @@ public class AsyncWriteBuffer {
     /**
      * Actual payload of the write request.
      */
-    private char[]                   data;
+    private byte[]                   data;
 
     /**
      * Length of the payload.
@@ -72,7 +72,7 @@ public class AsyncWriteBuffer {
         return writeRequest;
     }
 
-    protected char[] getData() {
+    protected byte[] getData() {
         return data;
     }
 

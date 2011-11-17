@@ -2,6 +2,9 @@
 
 #define INTERNAL_SUPPRESS_PROTOBUF_FIELD_DEPRECATION
 #include "xtreemfs/MRC.pb.h"
+
+#include <algorithm>
+
 #include <google/protobuf/stubs/once.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/wire_format_lite_inl.h>
@@ -174,7 +177,6 @@ const ::google::protobuf::internal::GeneratedMessageReflection*
 const ::google::protobuf::EnumDescriptor* Setattrs_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* XATTR_FLAGS_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* ACCESS_FLAGS_descriptor_ = NULL;
-const ::google::protobuf::ServiceDescriptor* MRCService_descriptor_ = NULL;
 
 }  // namespace
 
@@ -1067,7 +1069,6 @@ void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto() {
   Setattrs_descriptor_ = file->enum_type(0);
   XATTR_FLAGS_descriptor_ = file->enum_type(1);
   ACCESS_FLAGS_descriptor_ = file->enum_type(2);
-  MRCService_descriptor_ = file->service(0);
 }
 
 namespace {
@@ -1320,7 +1321,7 @@ void protobuf_AddDesc_xtreemfs_2fMRC_2eproto() {
     "ryEntry\"$\n\005XAttr\022\014\n\004name\030\001 \002(\t\022\r\n\005value\030"
     "\002 \001(\t\"\225\002\n\006Volume\022F\n\025access_control_polic"
     "y\030\001 \002(\0162\'.xtreemfs.pbrpc.AccessControlPo"
-    "licyType\022?\n\027default_striping_policy\030\002 \002("
+    "licyType\022\?\n\027default_striping_policy\030\002 \002("
     "\0132\036.xtreemfs.pbrpc.StripingPolicy\022\n\n\002id\030"
     "\003 \002(\t\022\014\n\004mode\030\004 \002(\007\022\014\n\004name\030\005 \002(\t\022\026\n\016own"
     "er_group_id\030\006 \002(\t\022\025\n\rowner_user_id\030\007 \002(\t"
@@ -1330,7 +1331,7 @@ void protobuf_AddDesc_xtreemfs_2fMRC_2eproto() {
     " \002(\007\022\016\n\006bavail\030\002 \002(\006\022\016\n\006blocks\030\003 \002(\006\022\014\n\004"
     "fsid\030\004 \002(\t\022\017\n\007namemax\030\005 \002(\007\022F\n\025access_co"
     "ntrol_policy\030\006 \002(\0162\'.xtreemfs.pbrpc.Acce"
-    "ssControlPolicyType\022?\n\027default_striping_"
+    "ssControlPolicyType\022\?\n\027default_striping_"
     "policy\030\007 \002(\0132\036.xtreemfs.pbrpc.StripingPo"
     "licy\022\014\n\004etag\030\010 \002(\006\022\014\n\004mode\030\t \002(\007\022\014\n\004name"
     "\030\n \002(\t\022\026\n\016owner_group_id\030\013 \002(\t\022\025\n\rowner_"
@@ -1348,7 +1349,7 @@ void protobuf_AddDesc_xtreemfs_2fMRC_2eproto() {
     "rRequest\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004path\030\002 "
     "\002(\t\022\022\n\nnames_only\030\003 \002(\010\":\n\021listxattrResp"
     "onse\022%\n\006xattrs\030\001 \003(\0132\025.xtreemfs.pbrpc.XA"
-    "ttr\"?\n\014mkdirRequest\022\023\n\013volume_name\030\001 \002(\t"
+    "ttr\"\?\n\014mkdirRequest\022\023\n\013volume_name\030\001 \002(\t"
     "\022\014\n\004path\030\002 \002(\t\022\014\n\004mode\030\003 \002(\007\"\232\001\n\013openReq"
     "uest\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004path\030\002 \002(\t\022"
     "\r\n\005flags\030\003 \002(\007\022\014\n\004mode\030\004 \002(\007\022\022\n\nattribut"
@@ -1702,8 +1703,6 @@ bool ACCESS_FLAGS_IsValid(int value) {
 
 // ===================================================================
 
-const ::std::string Stat::_default_user_id_;
-const ::std::string Stat::_default_group_id_;
 #ifndef _MSC_VER
 const int Stat::kDevFieldNumber;
 const int Stat::kInoFieldNumber;
@@ -1741,8 +1740,8 @@ void Stat::SharedCtor() {
   ino_ = GOOGLE_ULONGLONG(0);
   mode_ = 0u;
   nlink_ = 0u;
-  user_id_ = const_cast< ::std::string*>(&_default_user_id_);
-  group_id_ = const_cast< ::std::string*>(&_default_group_id_);
+  user_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  group_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   size_ = GOOGLE_ULONGLONG(0);
   atime_ns_ = GOOGLE_ULONGLONG(0);
   mtime_ns_ = GOOGLE_ULONGLONG(0);
@@ -1759,10 +1758,10 @@ Stat::~Stat() {
 }
 
 void Stat::SharedDtor() {
-  if (user_id_ != &_default_user_id_) {
+  if (user_id_ != &::google::protobuf::internal::kEmptyString) {
     delete user_id_;
   }
-  if (group_id_ != &_default_group_id_) {
+  if (group_id_ != &::google::protobuf::internal::kEmptyString) {
     delete group_id_;
   }
   if (this != default_instance_) {
@@ -1795,13 +1794,13 @@ void Stat::Clear() {
     ino_ = GOOGLE_ULONGLONG(0);
     mode_ = 0u;
     nlink_ = 0u;
-    if (_has_bit(4)) {
-      if (user_id_ != &_default_user_id_) {
+    if (has_user_id()) {
+      if (user_id_ != &::google::protobuf::internal::kEmptyString) {
         user_id_->clear();
       }
     }
-    if (_has_bit(5)) {
-      if (group_id_ != &_default_group_id_) {
+    if (has_group_id()) {
+      if (group_id_ != &::google::protobuf::internal::kEmptyString) {
         group_id_->clear();
       }
     }
@@ -1833,7 +1832,7 @@ bool Stat::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &dev_)));
-          _set_bit(0);
+          set_has_dev();
         } else {
           goto handle_uninterpreted;
         }
@@ -1849,7 +1848,7 @@ bool Stat::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &ino_)));
-          _set_bit(1);
+          set_has_ino();
         } else {
           goto handle_uninterpreted;
         }
@@ -1865,7 +1864,7 @@ bool Stat::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &mode_)));
-          _set_bit(2);
+          set_has_mode();
         } else {
           goto handle_uninterpreted;
         }
@@ -1881,7 +1880,7 @@ bool Stat::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &nlink_)));
-          _set_bit(3);
+          set_has_nlink();
         } else {
           goto handle_uninterpreted;
         }
@@ -1931,7 +1930,7 @@ bool Stat::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &size_)));
-          _set_bit(6);
+          set_has_size();
         } else {
           goto handle_uninterpreted;
         }
@@ -1947,7 +1946,7 @@ bool Stat::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &atime_ns_)));
-          _set_bit(7);
+          set_has_atime_ns();
         } else {
           goto handle_uninterpreted;
         }
@@ -1963,7 +1962,7 @@ bool Stat::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &mtime_ns_)));
-          _set_bit(8);
+          set_has_mtime_ns();
         } else {
           goto handle_uninterpreted;
         }
@@ -1979,7 +1978,7 @@ bool Stat::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &ctime_ns_)));
-          _set_bit(9);
+          set_has_ctime_ns();
         } else {
           goto handle_uninterpreted;
         }
@@ -1995,7 +1994,7 @@ bool Stat::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &blksize_)));
-          _set_bit(10);
+          set_has_blksize();
         } else {
           goto handle_uninterpreted;
         }
@@ -2011,7 +2010,7 @@ bool Stat::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &etag_)));
-          _set_bit(11);
+          set_has_etag();
         } else {
           goto handle_uninterpreted;
         }
@@ -2027,7 +2026,7 @@ bool Stat::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &truncate_epoch_)));
-          _set_bit(12);
+          set_has_truncate_epoch();
         } else {
           goto handle_uninterpreted;
         }
@@ -2043,7 +2042,7 @@ bool Stat::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &attributes_)));
-          _set_bit(13);
+          set_has_attributes();
         } else {
           goto handle_uninterpreted;
         }
@@ -2070,27 +2069,27 @@ bool Stat::MergePartialFromCodedStream(
 void Stat::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required fixed64 dev = 1;
-  if (_has_bit(0)) {
+  if (has_dev()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(1, this->dev(), output);
   }
   
   // required fixed64 ino = 2;
-  if (_has_bit(1)) {
+  if (has_ino()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(2, this->ino(), output);
   }
   
   // required fixed32 mode = 3;
-  if (_has_bit(2)) {
+  if (has_mode()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(3, this->mode(), output);
   }
   
   // required fixed32 nlink = 4;
-  if (_has_bit(3)) {
+  if (has_nlink()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(4, this->nlink(), output);
   }
   
   // required string user_id = 5;
-  if (_has_bit(4)) {
+  if (has_user_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->user_id().data(), this->user_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2099,7 +2098,7 @@ void Stat::SerializeWithCachedSizes(
   }
   
   // required string group_id = 6;
-  if (_has_bit(5)) {
+  if (has_group_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->group_id().data(), this->group_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2108,42 +2107,42 @@ void Stat::SerializeWithCachedSizes(
   }
   
   // required fixed64 size = 7;
-  if (_has_bit(6)) {
+  if (has_size()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(7, this->size(), output);
   }
   
   // required fixed64 atime_ns = 8;
-  if (_has_bit(7)) {
+  if (has_atime_ns()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(8, this->atime_ns(), output);
   }
   
   // required fixed64 mtime_ns = 9;
-  if (_has_bit(8)) {
+  if (has_mtime_ns()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(9, this->mtime_ns(), output);
   }
   
   // required fixed64 ctime_ns = 10;
-  if (_has_bit(9)) {
+  if (has_ctime_ns()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(10, this->ctime_ns(), output);
   }
   
   // required fixed32 blksize = 11;
-  if (_has_bit(10)) {
+  if (has_blksize()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(11, this->blksize(), output);
   }
   
   // optional fixed64 etag = 12;
-  if (_has_bit(11)) {
+  if (has_etag()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(12, this->etag(), output);
   }
   
   // required fixed32 truncate_epoch = 13;
-  if (_has_bit(12)) {
+  if (has_truncate_epoch()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(13, this->truncate_epoch(), output);
   }
   
   // optional fixed32 attributes = 14;
-  if (_has_bit(13)) {
+  if (has_attributes()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(14, this->attributes(), output);
   }
   
@@ -2156,27 +2155,27 @@ void Stat::SerializeWithCachedSizes(
 ::google::protobuf::uint8* Stat::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required fixed64 dev = 1;
-  if (_has_bit(0)) {
+  if (has_dev()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(1, this->dev(), target);
   }
   
   // required fixed64 ino = 2;
-  if (_has_bit(1)) {
+  if (has_ino()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(2, this->ino(), target);
   }
   
   // required fixed32 mode = 3;
-  if (_has_bit(2)) {
+  if (has_mode()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(3, this->mode(), target);
   }
   
   // required fixed32 nlink = 4;
-  if (_has_bit(3)) {
+  if (has_nlink()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(4, this->nlink(), target);
   }
   
   // required string user_id = 5;
-  if (_has_bit(4)) {
+  if (has_user_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->user_id().data(), this->user_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2186,7 +2185,7 @@ void Stat::SerializeWithCachedSizes(
   }
   
   // required string group_id = 6;
-  if (_has_bit(5)) {
+  if (has_group_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->group_id().data(), this->group_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2196,42 +2195,42 @@ void Stat::SerializeWithCachedSizes(
   }
   
   // required fixed64 size = 7;
-  if (_has_bit(6)) {
+  if (has_size()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(7, this->size(), target);
   }
   
   // required fixed64 atime_ns = 8;
-  if (_has_bit(7)) {
+  if (has_atime_ns()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(8, this->atime_ns(), target);
   }
   
   // required fixed64 mtime_ns = 9;
-  if (_has_bit(8)) {
+  if (has_mtime_ns()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(9, this->mtime_ns(), target);
   }
   
   // required fixed64 ctime_ns = 10;
-  if (_has_bit(9)) {
+  if (has_ctime_ns()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(10, this->ctime_ns(), target);
   }
   
   // required fixed32 blksize = 11;
-  if (_has_bit(10)) {
+  if (has_blksize()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(11, this->blksize(), target);
   }
   
   // optional fixed64 etag = 12;
-  if (_has_bit(11)) {
+  if (has_etag()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(12, this->etag(), target);
   }
   
   // required fixed32 truncate_epoch = 13;
-  if (_has_bit(12)) {
+  if (has_truncate_epoch()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(13, this->truncate_epoch(), target);
   }
   
   // optional fixed32 attributes = 14;
-  if (_has_bit(13)) {
+  if (has_attributes()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(14, this->attributes(), target);
   }
   
@@ -2349,48 +2348,48 @@ void Stat::MergeFrom(const ::google::protobuf::Message& from) {
 void Stat::MergeFrom(const Stat& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_dev()) {
       set_dev(from.dev());
     }
-    if (from._has_bit(1)) {
+    if (from.has_ino()) {
       set_ino(from.ino());
     }
-    if (from._has_bit(2)) {
+    if (from.has_mode()) {
       set_mode(from.mode());
     }
-    if (from._has_bit(3)) {
+    if (from.has_nlink()) {
       set_nlink(from.nlink());
     }
-    if (from._has_bit(4)) {
+    if (from.has_user_id()) {
       set_user_id(from.user_id());
     }
-    if (from._has_bit(5)) {
+    if (from.has_group_id()) {
       set_group_id(from.group_id());
     }
-    if (from._has_bit(6)) {
+    if (from.has_size()) {
       set_size(from.size());
     }
-    if (from._has_bit(7)) {
+    if (from.has_atime_ns()) {
       set_atime_ns(from.atime_ns());
     }
   }
   if (from._has_bits_[8 / 32] & (0xffu << (8 % 32))) {
-    if (from._has_bit(8)) {
+    if (from.has_mtime_ns()) {
       set_mtime_ns(from.mtime_ns());
     }
-    if (from._has_bit(9)) {
+    if (from.has_ctime_ns()) {
       set_ctime_ns(from.ctime_ns());
     }
-    if (from._has_bit(10)) {
+    if (from.has_blksize()) {
       set_blksize(from.blksize());
     }
-    if (from._has_bit(11)) {
+    if (from.has_etag()) {
       set_etag(from.etag());
     }
-    if (from._has_bit(12)) {
+    if (from.has_truncate_epoch()) {
       set_truncate_epoch(from.truncate_epoch());
     }
-    if (from._has_bit(13)) {
+    if (from.has_attributes()) {
       set_attributes(from.attributes());
     }
   }
@@ -2448,7 +2447,6 @@ void Stat::Swap(Stat* other) {
 
 // ===================================================================
 
-const ::std::string DirectoryEntry::_default_name_;
 #ifndef _MSC_VER
 const int DirectoryEntry::kNameFieldNumber;
 const int DirectoryEntry::kStbufFieldNumber;
@@ -2471,7 +2469,7 @@ DirectoryEntry::DirectoryEntry(const DirectoryEntry& from)
 
 void DirectoryEntry::SharedCtor() {
   _cached_size_ = 0;
-  name_ = const_cast< ::std::string*>(&_default_name_);
+  name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   stbuf_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -2481,7 +2479,7 @@ DirectoryEntry::~DirectoryEntry() {
 }
 
 void DirectoryEntry::SharedDtor() {
-  if (name_ != &_default_name_) {
+  if (name_ != &::google::protobuf::internal::kEmptyString) {
     delete name_;
   }
   if (this != default_instance_) {
@@ -2511,12 +2509,12 @@ DirectoryEntry* DirectoryEntry::New() const {
 
 void DirectoryEntry::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (name_ != &_default_name_) {
+    if (has_name()) {
+      if (name_ != &::google::protobuf::internal::kEmptyString) {
         name_->clear();
       }
     }
-    if (_has_bit(1)) {
+    if (has_stbuf()) {
       if (stbuf_ != NULL) stbuf_->::xtreemfs::pbrpc::Stat::Clear();
     }
   }
@@ -2579,7 +2577,7 @@ bool DirectoryEntry::MergePartialFromCodedStream(
 void DirectoryEntry::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string name = 1;
-  if (_has_bit(0)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2588,7 +2586,7 @@ void DirectoryEntry::SerializeWithCachedSizes(
   }
   
   // optional .xtreemfs.pbrpc.Stat stbuf = 2;
-  if (_has_bit(1)) {
+  if (has_stbuf()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       2, this->stbuf(), output);
   }
@@ -2602,7 +2600,7 @@ void DirectoryEntry::SerializeWithCachedSizes(
 ::google::protobuf::uint8* DirectoryEntry::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string name = 1;
-  if (_has_bit(0)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -2612,7 +2610,7 @@ void DirectoryEntry::SerializeWithCachedSizes(
   }
   
   // optional .xtreemfs.pbrpc.Stat stbuf = 2;
-  if (_has_bit(1)) {
+  if (has_stbuf()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         2, this->stbuf(), target);
@@ -2670,10 +2668,10 @@ void DirectoryEntry::MergeFrom(const ::google::protobuf::Message& from) {
 void DirectoryEntry::MergeFrom(const DirectoryEntry& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_name()) {
       set_name(from.name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_stbuf()) {
       mutable_stbuf()->::xtreemfs::pbrpc::Stat::MergeFrom(from.stbuf());
     }
   }
@@ -2927,8 +2925,6 @@ void DirectoryEntries::Swap(DirectoryEntries* other) {
 
 // ===================================================================
 
-const ::std::string XAttr::_default_name_;
-const ::std::string XAttr::_default_value_;
 #ifndef _MSC_VER
 const int XAttr::kNameFieldNumber;
 const int XAttr::kValueFieldNumber;
@@ -2950,8 +2946,8 @@ XAttr::XAttr(const XAttr& from)
 
 void XAttr::SharedCtor() {
   _cached_size_ = 0;
-  name_ = const_cast< ::std::string*>(&_default_name_);
-  value_ = const_cast< ::std::string*>(&_default_value_);
+  name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  value_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -2960,10 +2956,10 @@ XAttr::~XAttr() {
 }
 
 void XAttr::SharedDtor() {
-  if (name_ != &_default_name_) {
+  if (name_ != &::google::protobuf::internal::kEmptyString) {
     delete name_;
   }
-  if (value_ != &_default_value_) {
+  if (value_ != &::google::protobuf::internal::kEmptyString) {
     delete value_;
   }
   if (this != default_instance_) {
@@ -2992,13 +2988,13 @@ XAttr* XAttr::New() const {
 
 void XAttr::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (name_ != &_default_name_) {
+    if (has_name()) {
+      if (name_ != &::google::protobuf::internal::kEmptyString) {
         name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (value_ != &_default_value_) {
+    if (has_value()) {
+      if (value_ != &::google::protobuf::internal::kEmptyString) {
         value_->clear();
       }
     }
@@ -3065,7 +3061,7 @@ bool XAttr::MergePartialFromCodedStream(
 void XAttr::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string name = 1;
-  if (_has_bit(0)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3074,7 +3070,7 @@ void XAttr::SerializeWithCachedSizes(
   }
   
   // optional string value = 2;
-  if (_has_bit(1)) {
+  if (has_value()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->value().data(), this->value().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3091,7 +3087,7 @@ void XAttr::SerializeWithCachedSizes(
 ::google::protobuf::uint8* XAttr::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string name = 1;
-  if (_has_bit(0)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3101,7 +3097,7 @@ void XAttr::SerializeWithCachedSizes(
   }
   
   // optional string value = 2;
-  if (_has_bit(1)) {
+  if (has_value()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->value().data(), this->value().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3162,10 +3158,10 @@ void XAttr::MergeFrom(const ::google::protobuf::Message& from) {
 void XAttr::MergeFrom(const XAttr& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_name()) {
       set_name(from.name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_value()) {
       set_value(from.value());
     }
   }
@@ -3211,10 +3207,6 @@ void XAttr::Swap(XAttr* other) {
 
 // ===================================================================
 
-const ::std::string Volume::_default_id_;
-const ::std::string Volume::_default_name_;
-const ::std::string Volume::_default_owner_group_id_;
-const ::std::string Volume::_default_owner_user_id_;
 #ifndef _MSC_VER
 const int Volume::kAccessControlPolicyFieldNumber;
 const int Volume::kDefaultStripingPolicyFieldNumber;
@@ -3245,11 +3237,11 @@ void Volume::SharedCtor() {
   _cached_size_ = 0;
   access_control_policy_ = 1;
   default_striping_policy_ = NULL;
-  id_ = const_cast< ::std::string*>(&_default_id_);
+  id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   mode_ = 0u;
-  name_ = const_cast< ::std::string*>(&_default_name_);
-  owner_group_id_ = const_cast< ::std::string*>(&_default_owner_group_id_);
-  owner_user_id_ = const_cast< ::std::string*>(&_default_owner_user_id_);
+  name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  owner_group_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  owner_user_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -3258,16 +3250,16 @@ Volume::~Volume() {
 }
 
 void Volume::SharedDtor() {
-  if (id_ != &_default_id_) {
+  if (id_ != &::google::protobuf::internal::kEmptyString) {
     delete id_;
   }
-  if (name_ != &_default_name_) {
+  if (name_ != &::google::protobuf::internal::kEmptyString) {
     delete name_;
   }
-  if (owner_group_id_ != &_default_owner_group_id_) {
+  if (owner_group_id_ != &::google::protobuf::internal::kEmptyString) {
     delete owner_group_id_;
   }
-  if (owner_user_id_ != &_default_owner_user_id_) {
+  if (owner_user_id_ != &::google::protobuf::internal::kEmptyString) {
     delete owner_user_id_;
   }
   if (this != default_instance_) {
@@ -3298,27 +3290,27 @@ Volume* Volume::New() const {
 void Volume::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     access_control_policy_ = 1;
-    if (_has_bit(1)) {
+    if (has_default_striping_policy()) {
       if (default_striping_policy_ != NULL) default_striping_policy_->::xtreemfs::pbrpc::StripingPolicy::Clear();
     }
-    if (_has_bit(2)) {
-      if (id_ != &_default_id_) {
+    if (has_id()) {
+      if (id_ != &::google::protobuf::internal::kEmptyString) {
         id_->clear();
       }
     }
     mode_ = 0u;
-    if (_has_bit(4)) {
-      if (name_ != &_default_name_) {
+    if (has_name()) {
+      if (name_ != &::google::protobuf::internal::kEmptyString) {
         name_->clear();
       }
     }
-    if (_has_bit(5)) {
-      if (owner_group_id_ != &_default_owner_group_id_) {
+    if (has_owner_group_id()) {
+      if (owner_group_id_ != &::google::protobuf::internal::kEmptyString) {
         owner_group_id_->clear();
       }
     }
-    if (_has_bit(6)) {
-      if (owner_user_id_ != &_default_owner_user_id_) {
+    if (has_owner_user_id()) {
+      if (owner_user_id_ != &::google::protobuf::internal::kEmptyString) {
         owner_user_id_->clear();
       }
     }
@@ -3393,7 +3385,7 @@ bool Volume::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &mode_)));
-          _set_bit(3);
+          set_has_mode();
         } else {
           goto handle_uninterpreted;
         }
@@ -3486,19 +3478,19 @@ bool Volume::MergePartialFromCodedStream(
 void Volume::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required .xtreemfs.pbrpc.AccessControlPolicyType access_control_policy = 1;
-  if (_has_bit(0)) {
+  if (has_access_control_policy()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       1, this->access_control_policy(), output);
   }
   
   // required .xtreemfs.pbrpc.StripingPolicy default_striping_policy = 2;
-  if (_has_bit(1)) {
+  if (has_default_striping_policy()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       2, this->default_striping_policy(), output);
   }
   
   // required string id = 3;
-  if (_has_bit(2)) {
+  if (has_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->id().data(), this->id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3507,12 +3499,12 @@ void Volume::SerializeWithCachedSizes(
   }
   
   // required fixed32 mode = 4;
-  if (_has_bit(3)) {
+  if (has_mode()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(4, this->mode(), output);
   }
   
   // required string name = 5;
-  if (_has_bit(4)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3521,7 +3513,7 @@ void Volume::SerializeWithCachedSizes(
   }
   
   // required string owner_group_id = 6;
-  if (_has_bit(5)) {
+  if (has_owner_group_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->owner_group_id().data(), this->owner_group_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3530,7 +3522,7 @@ void Volume::SerializeWithCachedSizes(
   }
   
   // required string owner_user_id = 7;
-  if (_has_bit(6)) {
+  if (has_owner_user_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->owner_user_id().data(), this->owner_user_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3553,20 +3545,20 @@ void Volume::SerializeWithCachedSizes(
 ::google::protobuf::uint8* Volume::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required .xtreemfs.pbrpc.AccessControlPolicyType access_control_policy = 1;
-  if (_has_bit(0)) {
+  if (has_access_control_policy()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       1, this->access_control_policy(), target);
   }
   
   // required .xtreemfs.pbrpc.StripingPolicy default_striping_policy = 2;
-  if (_has_bit(1)) {
+  if (has_default_striping_policy()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         2, this->default_striping_policy(), target);
   }
   
   // required string id = 3;
-  if (_has_bit(2)) {
+  if (has_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->id().data(), this->id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3576,12 +3568,12 @@ void Volume::SerializeWithCachedSizes(
   }
   
   // required fixed32 mode = 4;
-  if (_has_bit(3)) {
+  if (has_mode()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(4, this->mode(), target);
   }
   
   // required string name = 5;
-  if (_has_bit(4)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3591,7 +3583,7 @@ void Volume::SerializeWithCachedSizes(
   }
   
   // required string owner_group_id = 6;
-  if (_has_bit(5)) {
+  if (has_owner_group_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->owner_group_id().data(), this->owner_group_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3601,7 +3593,7 @@ void Volume::SerializeWithCachedSizes(
   }
   
   // required string owner_user_id = 7;
-  if (_has_bit(6)) {
+  if (has_owner_user_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->owner_user_id().data(), this->owner_user_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -3710,25 +3702,25 @@ void Volume::MergeFrom(const Volume& from) {
   GOOGLE_CHECK_NE(&from, this);
   attrs_.MergeFrom(from.attrs_);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_access_control_policy()) {
       set_access_control_policy(from.access_control_policy());
     }
-    if (from._has_bit(1)) {
+    if (from.has_default_striping_policy()) {
       mutable_default_striping_policy()->::xtreemfs::pbrpc::StripingPolicy::MergeFrom(from.default_striping_policy());
     }
-    if (from._has_bit(2)) {
+    if (from.has_id()) {
       set_id(from.id());
     }
-    if (from._has_bit(3)) {
+    if (from.has_mode()) {
       set_mode(from.mode());
     }
-    if (from._has_bit(4)) {
+    if (from.has_name()) {
       set_name(from.name());
     }
-    if (from._has_bit(5)) {
+    if (from.has_owner_group_id()) {
       set_owner_group_id(from.owner_group_id());
     }
-    if (from._has_bit(6)) {
+    if (from.has_owner_user_id()) {
       set_owner_user_id(from.owner_user_id());
     }
   }
@@ -3991,10 +3983,6 @@ void Volumes::Swap(Volumes* other) {
 
 // ===================================================================
 
-const ::std::string StatVFS::_default_fsid_;
-const ::std::string StatVFS::_default_name_;
-const ::std::string StatVFS::_default_owner_group_id_;
-const ::std::string StatVFS::_default_owner_user_id_;
 #ifndef _MSC_VER
 const int StatVFS::kBsizeFieldNumber;
 const int StatVFS::kBavailFieldNumber;
@@ -4030,15 +4018,15 @@ void StatVFS::SharedCtor() {
   bsize_ = 0u;
   bavail_ = GOOGLE_ULONGLONG(0);
   blocks_ = GOOGLE_ULONGLONG(0);
-  fsid_ = const_cast< ::std::string*>(&_default_fsid_);
+  fsid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   namemax_ = 0u;
   access_control_policy_ = 1;
   default_striping_policy_ = NULL;
   etag_ = GOOGLE_ULONGLONG(0);
   mode_ = 0u;
-  name_ = const_cast< ::std::string*>(&_default_name_);
-  owner_group_id_ = const_cast< ::std::string*>(&_default_owner_group_id_);
-  owner_user_id_ = const_cast< ::std::string*>(&_default_owner_user_id_);
+  name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  owner_group_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  owner_user_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -4047,16 +4035,16 @@ StatVFS::~StatVFS() {
 }
 
 void StatVFS::SharedDtor() {
-  if (fsid_ != &_default_fsid_) {
+  if (fsid_ != &::google::protobuf::internal::kEmptyString) {
     delete fsid_;
   }
-  if (name_ != &_default_name_) {
+  if (name_ != &::google::protobuf::internal::kEmptyString) {
     delete name_;
   }
-  if (owner_group_id_ != &_default_owner_group_id_) {
+  if (owner_group_id_ != &::google::protobuf::internal::kEmptyString) {
     delete owner_group_id_;
   }
-  if (owner_user_id_ != &_default_owner_user_id_) {
+  if (owner_user_id_ != &::google::protobuf::internal::kEmptyString) {
     delete owner_user_id_;
   }
   if (this != default_instance_) {
@@ -4089,32 +4077,32 @@ void StatVFS::Clear() {
     bsize_ = 0u;
     bavail_ = GOOGLE_ULONGLONG(0);
     blocks_ = GOOGLE_ULONGLONG(0);
-    if (_has_bit(3)) {
-      if (fsid_ != &_default_fsid_) {
+    if (has_fsid()) {
+      if (fsid_ != &::google::protobuf::internal::kEmptyString) {
         fsid_->clear();
       }
     }
     namemax_ = 0u;
     access_control_policy_ = 1;
-    if (_has_bit(6)) {
+    if (has_default_striping_policy()) {
       if (default_striping_policy_ != NULL) default_striping_policy_->::xtreemfs::pbrpc::StripingPolicy::Clear();
     }
     etag_ = GOOGLE_ULONGLONG(0);
   }
   if (_has_bits_[8 / 32] & (0xffu << (8 % 32))) {
     mode_ = 0u;
-    if (_has_bit(9)) {
-      if (name_ != &_default_name_) {
+    if (has_name()) {
+      if (name_ != &::google::protobuf::internal::kEmptyString) {
         name_->clear();
       }
     }
-    if (_has_bit(10)) {
-      if (owner_group_id_ != &_default_owner_group_id_) {
+    if (has_owner_group_id()) {
+      if (owner_group_id_ != &::google::protobuf::internal::kEmptyString) {
         owner_group_id_->clear();
       }
     }
-    if (_has_bit(11)) {
-      if (owner_user_id_ != &_default_owner_user_id_) {
+    if (has_owner_user_id()) {
+      if (owner_user_id_ != &::google::protobuf::internal::kEmptyString) {
         owner_user_id_->clear();
       }
     }
@@ -4136,7 +4124,7 @@ bool StatVFS::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &bsize_)));
-          _set_bit(0);
+          set_has_bsize();
         } else {
           goto handle_uninterpreted;
         }
@@ -4152,7 +4140,7 @@ bool StatVFS::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &bavail_)));
-          _set_bit(1);
+          set_has_bavail();
         } else {
           goto handle_uninterpreted;
         }
@@ -4168,7 +4156,7 @@ bool StatVFS::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &blocks_)));
-          _set_bit(2);
+          set_has_blocks();
         } else {
           goto handle_uninterpreted;
         }
@@ -4201,7 +4189,7 @@ bool StatVFS::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &namemax_)));
-          _set_bit(4);
+          set_has_namemax();
         } else {
           goto handle_uninterpreted;
         }
@@ -4252,7 +4240,7 @@ bool StatVFS::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &etag_)));
-          _set_bit(7);
+          set_has_etag();
         } else {
           goto handle_uninterpreted;
         }
@@ -4268,7 +4256,7 @@ bool StatVFS::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &mode_)));
-          _set_bit(8);
+          set_has_mode();
         } else {
           goto handle_uninterpreted;
         }
@@ -4346,22 +4334,22 @@ bool StatVFS::MergePartialFromCodedStream(
 void StatVFS::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required fixed32 bsize = 1;
-  if (_has_bit(0)) {
+  if (has_bsize()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(1, this->bsize(), output);
   }
   
   // required fixed64 bavail = 2;
-  if (_has_bit(1)) {
+  if (has_bavail()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(2, this->bavail(), output);
   }
   
   // required fixed64 blocks = 3;
-  if (_has_bit(2)) {
+  if (has_blocks()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(3, this->blocks(), output);
   }
   
   // required string fsid = 4;
-  if (_has_bit(3)) {
+  if (has_fsid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->fsid().data(), this->fsid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -4370,34 +4358,34 @@ void StatVFS::SerializeWithCachedSizes(
   }
   
   // required fixed32 namemax = 5;
-  if (_has_bit(4)) {
+  if (has_namemax()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(5, this->namemax(), output);
   }
   
   // required .xtreemfs.pbrpc.AccessControlPolicyType access_control_policy = 6;
-  if (_has_bit(5)) {
+  if (has_access_control_policy()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       6, this->access_control_policy(), output);
   }
   
   // required .xtreemfs.pbrpc.StripingPolicy default_striping_policy = 7;
-  if (_has_bit(6)) {
+  if (has_default_striping_policy()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       7, this->default_striping_policy(), output);
   }
   
   // required fixed64 etag = 8;
-  if (_has_bit(7)) {
+  if (has_etag()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(8, this->etag(), output);
   }
   
   // required fixed32 mode = 9;
-  if (_has_bit(8)) {
+  if (has_mode()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(9, this->mode(), output);
   }
   
   // required string name = 10;
-  if (_has_bit(9)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -4406,7 +4394,7 @@ void StatVFS::SerializeWithCachedSizes(
   }
   
   // required string owner_group_id = 11;
-  if (_has_bit(10)) {
+  if (has_owner_group_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->owner_group_id().data(), this->owner_group_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -4415,7 +4403,7 @@ void StatVFS::SerializeWithCachedSizes(
   }
   
   // required string owner_user_id = 12;
-  if (_has_bit(11)) {
+  if (has_owner_user_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->owner_user_id().data(), this->owner_user_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -4432,22 +4420,22 @@ void StatVFS::SerializeWithCachedSizes(
 ::google::protobuf::uint8* StatVFS::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required fixed32 bsize = 1;
-  if (_has_bit(0)) {
+  if (has_bsize()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(1, this->bsize(), target);
   }
   
   // required fixed64 bavail = 2;
-  if (_has_bit(1)) {
+  if (has_bavail()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(2, this->bavail(), target);
   }
   
   // required fixed64 blocks = 3;
-  if (_has_bit(2)) {
+  if (has_blocks()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(3, this->blocks(), target);
   }
   
   // required string fsid = 4;
-  if (_has_bit(3)) {
+  if (has_fsid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->fsid().data(), this->fsid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -4457,35 +4445,35 @@ void StatVFS::SerializeWithCachedSizes(
   }
   
   // required fixed32 namemax = 5;
-  if (_has_bit(4)) {
+  if (has_namemax()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(5, this->namemax(), target);
   }
   
   // required .xtreemfs.pbrpc.AccessControlPolicyType access_control_policy = 6;
-  if (_has_bit(5)) {
+  if (has_access_control_policy()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       6, this->access_control_policy(), target);
   }
   
   // required .xtreemfs.pbrpc.StripingPolicy default_striping_policy = 7;
-  if (_has_bit(6)) {
+  if (has_default_striping_policy()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         7, this->default_striping_policy(), target);
   }
   
   // required fixed64 etag = 8;
-  if (_has_bit(7)) {
+  if (has_etag()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(8, this->etag(), target);
   }
   
   // required fixed32 mode = 9;
-  if (_has_bit(8)) {
+  if (has_mode()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(9, this->mode(), target);
   }
   
   // required string name = 10;
-  if (_has_bit(9)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -4495,7 +4483,7 @@ void StatVFS::SerializeWithCachedSizes(
   }
   
   // required string owner_group_id = 11;
-  if (_has_bit(10)) {
+  if (has_owner_group_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->owner_group_id().data(), this->owner_group_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -4505,7 +4493,7 @@ void StatVFS::SerializeWithCachedSizes(
   }
   
   // required string owner_user_id = 12;
-  if (_has_bit(11)) {
+  if (has_owner_user_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->owner_user_id().data(), this->owner_user_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -4625,42 +4613,42 @@ void StatVFS::MergeFrom(const ::google::protobuf::Message& from) {
 void StatVFS::MergeFrom(const StatVFS& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_bsize()) {
       set_bsize(from.bsize());
     }
-    if (from._has_bit(1)) {
+    if (from.has_bavail()) {
       set_bavail(from.bavail());
     }
-    if (from._has_bit(2)) {
+    if (from.has_blocks()) {
       set_blocks(from.blocks());
     }
-    if (from._has_bit(3)) {
+    if (from.has_fsid()) {
       set_fsid(from.fsid());
     }
-    if (from._has_bit(4)) {
+    if (from.has_namemax()) {
       set_namemax(from.namemax());
     }
-    if (from._has_bit(5)) {
+    if (from.has_access_control_policy()) {
       set_access_control_policy(from.access_control_policy());
     }
-    if (from._has_bit(6)) {
+    if (from.has_default_striping_policy()) {
       mutable_default_striping_policy()->::xtreemfs::pbrpc::StripingPolicy::MergeFrom(from.default_striping_policy());
     }
-    if (from._has_bit(7)) {
+    if (from.has_etag()) {
       set_etag(from.etag());
     }
   }
   if (from._has_bits_[8 / 32] & (0xffu << (8 % 32))) {
-    if (from._has_bit(8)) {
+    if (from.has_mode()) {
       set_mode(from.mode());
     }
-    if (from._has_bit(9)) {
+    if (from.has_name()) {
       set_name(from.name());
     }
-    if (from._has_bit(10)) {
+    if (from.has_owner_group_id()) {
       set_owner_group_id(from.owner_group_id());
     }
-    if (from._has_bit(11)) {
+    if (from.has_owner_user_id()) {
       set_owner_user_id(from.owner_user_id());
     }
   }
@@ -4782,11 +4770,11 @@ fsetattrRequest* fsetattrRequest::New() const {
 
 void fsetattrRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
+    if (has_stbuf()) {
       if (stbuf_ != NULL) stbuf_->::xtreemfs::pbrpc::Stat::Clear();
     }
     to_set_ = 0u;
-    if (_has_bit(2)) {
+    if (has_cap()) {
       if (cap_ != NULL) cap_->::xtreemfs::pbrpc::XCap::Clear();
     }
   }
@@ -4821,7 +4809,7 @@ bool fsetattrRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &to_set_)));
-          _set_bit(1);
+          set_has_to_set();
         } else {
           goto handle_uninterpreted;
         }
@@ -4862,18 +4850,18 @@ bool fsetattrRequest::MergePartialFromCodedStream(
 void fsetattrRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required .xtreemfs.pbrpc.Stat stbuf = 1;
-  if (_has_bit(0)) {
+  if (has_stbuf()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       1, this->stbuf(), output);
   }
   
   // required fixed32 to_set = 2;
-  if (_has_bit(1)) {
+  if (has_to_set()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(2, this->to_set(), output);
   }
   
   // required .xtreemfs.pbrpc.XCap cap = 3;
-  if (_has_bit(2)) {
+  if (has_cap()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       3, this->cap(), output);
   }
@@ -4887,19 +4875,19 @@ void fsetattrRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* fsetattrRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required .xtreemfs.pbrpc.Stat stbuf = 1;
-  if (_has_bit(0)) {
+  if (has_stbuf()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         1, this->stbuf(), target);
   }
   
   // required fixed32 to_set = 2;
-  if (_has_bit(1)) {
+  if (has_to_set()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(2, this->to_set(), target);
   }
   
   // required .xtreemfs.pbrpc.XCap cap = 3;
-  if (_has_bit(2)) {
+  if (has_cap()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         3, this->cap(), target);
@@ -4962,13 +4950,13 @@ void fsetattrRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void fsetattrRequest::MergeFrom(const fsetattrRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_stbuf()) {
       mutable_stbuf()->::xtreemfs::pbrpc::Stat::MergeFrom(from.stbuf());
     }
-    if (from._has_bit(1)) {
+    if (from.has_to_set()) {
       set_to_set(from.to_set());
     }
-    if (from._has_bit(2)) {
+    if (from.has_cap()) {
       mutable_cap()->::xtreemfs::pbrpc::XCap::MergeFrom(from.cap());
     }
   }
@@ -5021,8 +5009,6 @@ void fsetattrRequest::Swap(fsetattrRequest* other) {
 
 // ===================================================================
 
-const ::std::string getattrRequest::_default_volume_name_;
-const ::std::string getattrRequest::_default_path_;
 #ifndef _MSC_VER
 const int getattrRequest::kVolumeNameFieldNumber;
 const int getattrRequest::kPathFieldNumber;
@@ -5045,8 +5031,8 @@ getattrRequest::getattrRequest(const getattrRequest& from)
 
 void getattrRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   known_etag_ = GOOGLE_ULONGLONG(0);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -5056,10 +5042,10 @@ getattrRequest::~getattrRequest() {
 }
 
 void getattrRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
   if (this != default_instance_) {
@@ -5088,13 +5074,13 @@ getattrRequest* getattrRequest::New() const {
 
 void getattrRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
@@ -5151,7 +5137,7 @@ bool getattrRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &known_etag_)));
-          _set_bit(2);
+          set_has_known_etag();
         } else {
           goto handle_uninterpreted;
         }
@@ -5178,7 +5164,7 @@ bool getattrRequest::MergePartialFromCodedStream(
 void getattrRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -5187,7 +5173,7 @@ void getattrRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -5196,7 +5182,7 @@ void getattrRequest::SerializeWithCachedSizes(
   }
   
   // required fixed64 known_etag = 3;
-  if (_has_bit(2)) {
+  if (has_known_etag()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(3, this->known_etag(), output);
   }
   
@@ -5209,7 +5195,7 @@ void getattrRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* getattrRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -5219,7 +5205,7 @@ void getattrRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -5229,7 +5215,7 @@ void getattrRequest::SerializeWithCachedSizes(
   }
   
   // required fixed64 known_etag = 3;
-  if (_has_bit(2)) {
+  if (has_known_etag()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(3, this->known_etag(), target);
   }
   
@@ -5290,13 +5276,13 @@ void getattrRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void getattrRequest::MergeFrom(const getattrRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_known_etag()) {
       set_known_etag(from.known_etag());
     }
   }
@@ -5400,7 +5386,7 @@ getattrResponse* getattrResponse::New() const {
 
 void getattrResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
+    if (has_stbuf()) {
       if (stbuf_ != NULL) stbuf_->::xtreemfs::pbrpc::Stat::Clear();
     }
   }
@@ -5446,7 +5432,7 @@ bool getattrResponse::MergePartialFromCodedStream(
 void getattrResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // optional .xtreemfs.pbrpc.Stat stbuf = 1;
-  if (_has_bit(0)) {
+  if (has_stbuf()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       1, this->stbuf(), output);
   }
@@ -5460,7 +5446,7 @@ void getattrResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* getattrResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // optional .xtreemfs.pbrpc.Stat stbuf = 1;
-  if (_has_bit(0)) {
+  if (has_stbuf()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         1, this->stbuf(), target);
@@ -5511,7 +5497,7 @@ void getattrResponse::MergeFrom(const ::google::protobuf::Message& from) {
 void getattrResponse::MergeFrom(const getattrResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_stbuf()) {
       mutable_stbuf()->::xtreemfs::pbrpc::Stat::MergeFrom(from.stbuf());
     }
   }
@@ -5558,9 +5544,6 @@ void getattrResponse::Swap(getattrResponse* other) {
 
 // ===================================================================
 
-const ::std::string getxattrRequest::_default_volume_name_;
-const ::std::string getxattrRequest::_default_path_;
-const ::std::string getxattrRequest::_default_name_;
 #ifndef _MSC_VER
 const int getxattrRequest::kVolumeNameFieldNumber;
 const int getxattrRequest::kPathFieldNumber;
@@ -5583,9 +5566,9 @@ getxattrRequest::getxattrRequest(const getxattrRequest& from)
 
 void getxattrRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
-  name_ = const_cast< ::std::string*>(&_default_name_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -5594,13 +5577,13 @@ getxattrRequest::~getxattrRequest() {
 }
 
 void getxattrRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
-  if (name_ != &_default_name_) {
+  if (name_ != &::google::protobuf::internal::kEmptyString) {
     delete name_;
   }
   if (this != default_instance_) {
@@ -5629,18 +5612,18 @@ getxattrRequest* getxattrRequest::New() const {
 
 void getxattrRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
-    if (_has_bit(2)) {
-      if (name_ != &_default_name_) {
+    if (has_name()) {
+      if (name_ != &::google::protobuf::internal::kEmptyString) {
         name_->clear();
       }
     }
@@ -5724,7 +5707,7 @@ bool getxattrRequest::MergePartialFromCodedStream(
 void getxattrRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -5733,7 +5716,7 @@ void getxattrRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -5742,7 +5725,7 @@ void getxattrRequest::SerializeWithCachedSizes(
   }
   
   // required string name = 3;
-  if (_has_bit(2)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -5759,7 +5742,7 @@ void getxattrRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* getxattrRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -5769,7 +5752,7 @@ void getxattrRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -5779,7 +5762,7 @@ void getxattrRequest::SerializeWithCachedSizes(
   }
   
   // required string name = 3;
-  if (_has_bit(2)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -5847,13 +5830,13 @@ void getxattrRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void getxattrRequest::MergeFrom(const getxattrRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_name()) {
       set_name(from.name());
     }
   }
@@ -5900,7 +5883,6 @@ void getxattrRequest::Swap(getxattrRequest* other) {
 
 // ===================================================================
 
-const ::std::string getxattrResponse::_default_value_;
 #ifndef _MSC_VER
 const int getxattrResponse::kValueFieldNumber;
 #endif  // !_MSC_VER
@@ -5921,7 +5903,7 @@ getxattrResponse::getxattrResponse(const getxattrResponse& from)
 
 void getxattrResponse::SharedCtor() {
   _cached_size_ = 0;
-  value_ = const_cast< ::std::string*>(&_default_value_);
+  value_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -5930,7 +5912,7 @@ getxattrResponse::~getxattrResponse() {
 }
 
 void getxattrResponse::SharedDtor() {
-  if (value_ != &_default_value_) {
+  if (value_ != &::google::protobuf::internal::kEmptyString) {
     delete value_;
   }
   if (this != default_instance_) {
@@ -5959,8 +5941,8 @@ getxattrResponse* getxattrResponse::New() const {
 
 void getxattrResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (value_ != &_default_value_) {
+    if (has_value()) {
+      if (value_ != &::google::protobuf::internal::kEmptyString) {
         value_->clear();
       }
     }
@@ -6010,7 +5992,7 @@ bool getxattrResponse::MergePartialFromCodedStream(
 void getxattrResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string value = 1;
-  if (_has_bit(0)) {
+  if (has_value()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->value().data(), this->value().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -6027,7 +6009,7 @@ void getxattrResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* getxattrResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string value = 1;
-  if (_has_bit(0)) {
+  if (has_value()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->value().data(), this->value().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -6081,7 +6063,7 @@ void getxattrResponse::MergeFrom(const ::google::protobuf::Message& from) {
 void getxattrResponse::MergeFrom(const getxattrResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_value()) {
       set_value(from.value());
     }
   }
@@ -6126,9 +6108,6 @@ void getxattrResponse::Swap(getxattrResponse* other) {
 
 // ===================================================================
 
-const ::std::string linkRequest::_default_volume_name_;
-const ::std::string linkRequest::_default_target_path_;
-const ::std::string linkRequest::_default_link_path_;
 #ifndef _MSC_VER
 const int linkRequest::kVolumeNameFieldNumber;
 const int linkRequest::kTargetPathFieldNumber;
@@ -6151,9 +6130,9 @@ linkRequest::linkRequest(const linkRequest& from)
 
 void linkRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  target_path_ = const_cast< ::std::string*>(&_default_target_path_);
-  link_path_ = const_cast< ::std::string*>(&_default_link_path_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  target_path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  link_path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -6162,13 +6141,13 @@ linkRequest::~linkRequest() {
 }
 
 void linkRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (target_path_ != &_default_target_path_) {
+  if (target_path_ != &::google::protobuf::internal::kEmptyString) {
     delete target_path_;
   }
-  if (link_path_ != &_default_link_path_) {
+  if (link_path_ != &::google::protobuf::internal::kEmptyString) {
     delete link_path_;
   }
   if (this != default_instance_) {
@@ -6197,18 +6176,18 @@ linkRequest* linkRequest::New() const {
 
 void linkRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (target_path_ != &_default_target_path_) {
+    if (has_target_path()) {
+      if (target_path_ != &::google::protobuf::internal::kEmptyString) {
         target_path_->clear();
       }
     }
-    if (_has_bit(2)) {
-      if (link_path_ != &_default_link_path_) {
+    if (has_link_path()) {
+      if (link_path_ != &::google::protobuf::internal::kEmptyString) {
         link_path_->clear();
       }
     }
@@ -6292,7 +6271,7 @@ bool linkRequest::MergePartialFromCodedStream(
 void linkRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -6301,7 +6280,7 @@ void linkRequest::SerializeWithCachedSizes(
   }
   
   // required string target_path = 2;
-  if (_has_bit(1)) {
+  if (has_target_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->target_path().data(), this->target_path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -6310,7 +6289,7 @@ void linkRequest::SerializeWithCachedSizes(
   }
   
   // required string link_path = 3;
-  if (_has_bit(2)) {
+  if (has_link_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->link_path().data(), this->link_path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -6327,7 +6306,7 @@ void linkRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* linkRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -6337,7 +6316,7 @@ void linkRequest::SerializeWithCachedSizes(
   }
   
   // required string target_path = 2;
-  if (_has_bit(1)) {
+  if (has_target_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->target_path().data(), this->target_path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -6347,7 +6326,7 @@ void linkRequest::SerializeWithCachedSizes(
   }
   
   // required string link_path = 3;
-  if (_has_bit(2)) {
+  if (has_link_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->link_path().data(), this->link_path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -6415,13 +6394,13 @@ void linkRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void linkRequest::MergeFrom(const linkRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_target_path()) {
       set_target_path(from.target_path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_link_path()) {
       set_link_path(from.link_path());
     }
   }
@@ -6468,8 +6447,6 @@ void linkRequest::Swap(linkRequest* other) {
 
 // ===================================================================
 
-const ::std::string listxattrRequest::_default_volume_name_;
-const ::std::string listxattrRequest::_default_path_;
 #ifndef _MSC_VER
 const int listxattrRequest::kVolumeNameFieldNumber;
 const int listxattrRequest::kPathFieldNumber;
@@ -6492,8 +6469,8 @@ listxattrRequest::listxattrRequest(const listxattrRequest& from)
 
 void listxattrRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   names_only_ = false;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -6503,10 +6480,10 @@ listxattrRequest::~listxattrRequest() {
 }
 
 void listxattrRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
   if (this != default_instance_) {
@@ -6535,13 +6512,13 @@ listxattrRequest* listxattrRequest::New() const {
 
 void listxattrRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
@@ -6598,7 +6575,7 @@ bool listxattrRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
                  input, &names_only_)));
-          _set_bit(2);
+          set_has_names_only();
         } else {
           goto handle_uninterpreted;
         }
@@ -6625,7 +6602,7 @@ bool listxattrRequest::MergePartialFromCodedStream(
 void listxattrRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -6634,7 +6611,7 @@ void listxattrRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -6643,7 +6620,7 @@ void listxattrRequest::SerializeWithCachedSizes(
   }
   
   // required bool names_only = 3;
-  if (_has_bit(2)) {
+  if (has_names_only()) {
     ::google::protobuf::internal::WireFormatLite::WriteBool(3, this->names_only(), output);
   }
   
@@ -6656,7 +6633,7 @@ void listxattrRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* listxattrRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -6666,7 +6643,7 @@ void listxattrRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -6676,7 +6653,7 @@ void listxattrRequest::SerializeWithCachedSizes(
   }
   
   // required bool names_only = 3;
-  if (_has_bit(2)) {
+  if (has_names_only()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(3, this->names_only(), target);
   }
   
@@ -6737,13 +6714,13 @@ void listxattrRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void listxattrRequest::MergeFrom(const listxattrRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_names_only()) {
       set_names_only(from.names_only());
     }
   }
@@ -6995,8 +6972,6 @@ void listxattrResponse::Swap(listxattrResponse* other) {
 
 // ===================================================================
 
-const ::std::string mkdirRequest::_default_volume_name_;
-const ::std::string mkdirRequest::_default_path_;
 #ifndef _MSC_VER
 const int mkdirRequest::kVolumeNameFieldNumber;
 const int mkdirRequest::kPathFieldNumber;
@@ -7019,8 +6994,8 @@ mkdirRequest::mkdirRequest(const mkdirRequest& from)
 
 void mkdirRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   mode_ = 0u;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -7030,10 +7005,10 @@ mkdirRequest::~mkdirRequest() {
 }
 
 void mkdirRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
   if (this != default_instance_) {
@@ -7062,13 +7037,13 @@ mkdirRequest* mkdirRequest::New() const {
 
 void mkdirRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
@@ -7125,7 +7100,7 @@ bool mkdirRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &mode_)));
-          _set_bit(2);
+          set_has_mode();
         } else {
           goto handle_uninterpreted;
         }
@@ -7152,7 +7127,7 @@ bool mkdirRequest::MergePartialFromCodedStream(
 void mkdirRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -7161,7 +7136,7 @@ void mkdirRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -7170,7 +7145,7 @@ void mkdirRequest::SerializeWithCachedSizes(
   }
   
   // required fixed32 mode = 3;
-  if (_has_bit(2)) {
+  if (has_mode()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(3, this->mode(), output);
   }
   
@@ -7183,7 +7158,7 @@ void mkdirRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* mkdirRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -7193,7 +7168,7 @@ void mkdirRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -7203,7 +7178,7 @@ void mkdirRequest::SerializeWithCachedSizes(
   }
   
   // required fixed32 mode = 3;
-  if (_has_bit(2)) {
+  if (has_mode()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(3, this->mode(), target);
   }
   
@@ -7264,13 +7239,13 @@ void mkdirRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void mkdirRequest::MergeFrom(const mkdirRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_mode()) {
       set_mode(from.mode());
     }
   }
@@ -7317,8 +7292,6 @@ void mkdirRequest::Swap(mkdirRequest* other) {
 
 // ===================================================================
 
-const ::std::string openRequest::_default_volume_name_;
-const ::std::string openRequest::_default_path_;
 #ifndef _MSC_VER
 const int openRequest::kVolumeNameFieldNumber;
 const int openRequest::kPathFieldNumber;
@@ -7345,8 +7318,8 @@ openRequest::openRequest(const openRequest& from)
 
 void openRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   flags_ = 0u;
   mode_ = 0u;
   attributes_ = 0u;
@@ -7359,10 +7332,10 @@ openRequest::~openRequest() {
 }
 
 void openRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
   if (this != default_instance_) {
@@ -7392,20 +7365,20 @@ openRequest* openRequest::New() const {
 
 void openRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
     flags_ = 0u;
     mode_ = 0u;
     attributes_ = 0u;
-    if (_has_bit(5)) {
+    if (has_coordinates()) {
       if (coordinates_ != NULL) coordinates_->::xtreemfs::pbrpc::VivaldiCoordinates::Clear();
     }
   }
@@ -7460,7 +7433,7 @@ bool openRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &flags_)));
-          _set_bit(2);
+          set_has_flags();
         } else {
           goto handle_uninterpreted;
         }
@@ -7476,7 +7449,7 @@ bool openRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &mode_)));
-          _set_bit(3);
+          set_has_mode();
         } else {
           goto handle_uninterpreted;
         }
@@ -7492,7 +7465,7 @@ bool openRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &attributes_)));
-          _set_bit(4);
+          set_has_attributes();
         } else {
           goto handle_uninterpreted;
         }
@@ -7533,7 +7506,7 @@ bool openRequest::MergePartialFromCodedStream(
 void openRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -7542,7 +7515,7 @@ void openRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -7551,22 +7524,22 @@ void openRequest::SerializeWithCachedSizes(
   }
   
   // required fixed32 flags = 3;
-  if (_has_bit(2)) {
+  if (has_flags()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(3, this->flags(), output);
   }
   
   // required fixed32 mode = 4;
-  if (_has_bit(3)) {
+  if (has_mode()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(4, this->mode(), output);
   }
   
   // required fixed32 attributes = 5;
-  if (_has_bit(4)) {
+  if (has_attributes()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(5, this->attributes(), output);
   }
   
   // optional .xtreemfs.pbrpc.VivaldiCoordinates coordinates = 6;
-  if (_has_bit(5)) {
+  if (has_coordinates()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       6, this->coordinates(), output);
   }
@@ -7580,7 +7553,7 @@ void openRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* openRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -7590,7 +7563,7 @@ void openRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -7600,22 +7573,22 @@ void openRequest::SerializeWithCachedSizes(
   }
   
   // required fixed32 flags = 3;
-  if (_has_bit(2)) {
+  if (has_flags()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(3, this->flags(), target);
   }
   
   // required fixed32 mode = 4;
-  if (_has_bit(3)) {
+  if (has_mode()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(4, this->mode(), target);
   }
   
   // required fixed32 attributes = 5;
-  if (_has_bit(4)) {
+  if (has_attributes()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(5, this->attributes(), target);
   }
   
   // optional .xtreemfs.pbrpc.VivaldiCoordinates coordinates = 6;
-  if (_has_bit(5)) {
+  if (has_coordinates()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         6, this->coordinates(), target);
@@ -7695,22 +7668,22 @@ void openRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void openRequest::MergeFrom(const openRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_flags()) {
       set_flags(from.flags());
     }
-    if (from._has_bit(3)) {
+    if (from.has_mode()) {
       set_mode(from.mode());
     }
-    if (from._has_bit(4)) {
+    if (from.has_attributes()) {
       set_attributes(from.attributes());
     }
-    if (from._has_bit(5)) {
+    if (from.has_coordinates()) {
       mutable_coordinates()->::xtreemfs::pbrpc::VivaldiCoordinates::MergeFrom(from.coordinates());
     }
   }
@@ -7822,7 +7795,7 @@ openResponse* openResponse::New() const {
 
 void openResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
+    if (has_creds()) {
       if (creds_ != NULL) creds_->::xtreemfs::pbrpc::FileCredentials::Clear();
     }
     timestamp_s_ = 0u;
@@ -7858,7 +7831,7 @@ bool openResponse::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &timestamp_s_)));
-          _set_bit(1);
+          set_has_timestamp_s();
         } else {
           goto handle_uninterpreted;
         }
@@ -7885,13 +7858,13 @@ bool openResponse::MergePartialFromCodedStream(
 void openResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required .xtreemfs.pbrpc.FileCredentials creds = 1;
-  if (_has_bit(0)) {
+  if (has_creds()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       1, this->creds(), output);
   }
   
   // required fixed32 timestamp_s = 2;
-  if (_has_bit(1)) {
+  if (has_timestamp_s()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(2, this->timestamp_s(), output);
   }
   
@@ -7904,14 +7877,14 @@ void openResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* openResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required .xtreemfs.pbrpc.FileCredentials creds = 1;
-  if (_has_bit(0)) {
+  if (has_creds()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         1, this->creds(), target);
   }
   
   // required fixed32 timestamp_s = 2;
-  if (_has_bit(1)) {
+  if (has_timestamp_s()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(2, this->timestamp_s(), target);
   }
   
@@ -7965,10 +7938,10 @@ void openResponse::MergeFrom(const ::google::protobuf::Message& from) {
 void openResponse::MergeFrom(const openResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_creds()) {
       mutable_creds()->::xtreemfs::pbrpc::FileCredentials::MergeFrom(from.creds());
     }
-    if (from._has_bit(1)) {
+    if (from.has_timestamp_s()) {
       set_timestamp_s(from.timestamp_s());
     }
   }
@@ -8017,8 +7990,6 @@ void openResponse::Swap(openResponse* other) {
 
 // ===================================================================
 
-const ::std::string readdirRequest::_default_volume_name_;
-const ::std::string readdirRequest::_default_path_;
 #ifndef _MSC_VER
 const int readdirRequest::kVolumeNameFieldNumber;
 const int readdirRequest::kPathFieldNumber;
@@ -8044,8 +8015,8 @@ readdirRequest::readdirRequest(const readdirRequest& from)
 
 void readdirRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   known_etag_ = GOOGLE_ULONGLONG(0);
   limit_directory_entries_count_ = 0u;
   names_only_ = false;
@@ -8058,10 +8029,10 @@ readdirRequest::~readdirRequest() {
 }
 
 void readdirRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
   if (this != default_instance_) {
@@ -8090,13 +8061,13 @@ readdirRequest* readdirRequest::New() const {
 
 void readdirRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
@@ -8156,7 +8127,7 @@ bool readdirRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &known_etag_)));
-          _set_bit(2);
+          set_has_known_etag();
         } else {
           goto handle_uninterpreted;
         }
@@ -8172,7 +8143,7 @@ bool readdirRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &limit_directory_entries_count_)));
-          _set_bit(3);
+          set_has_limit_directory_entries_count();
         } else {
           goto handle_uninterpreted;
         }
@@ -8188,7 +8159,7 @@ bool readdirRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
                  input, &names_only_)));
-          _set_bit(4);
+          set_has_names_only();
         } else {
           goto handle_uninterpreted;
         }
@@ -8204,7 +8175,7 @@ bool readdirRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &seen_directory_entries_count_)));
-          _set_bit(5);
+          set_has_seen_directory_entries_count();
         } else {
           goto handle_uninterpreted;
         }
@@ -8231,7 +8202,7 @@ bool readdirRequest::MergePartialFromCodedStream(
 void readdirRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -8240,7 +8211,7 @@ void readdirRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -8249,22 +8220,22 @@ void readdirRequest::SerializeWithCachedSizes(
   }
   
   // required fixed64 known_etag = 3;
-  if (_has_bit(2)) {
+  if (has_known_etag()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(3, this->known_etag(), output);
   }
   
   // required fixed32 limit_directory_entries_count = 4;
-  if (_has_bit(3)) {
+  if (has_limit_directory_entries_count()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(4, this->limit_directory_entries_count(), output);
   }
   
   // required bool names_only = 5;
-  if (_has_bit(4)) {
+  if (has_names_only()) {
     ::google::protobuf::internal::WireFormatLite::WriteBool(5, this->names_only(), output);
   }
   
   // required fixed64 seen_directory_entries_count = 6;
-  if (_has_bit(5)) {
+  if (has_seen_directory_entries_count()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(6, this->seen_directory_entries_count(), output);
   }
   
@@ -8277,7 +8248,7 @@ void readdirRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* readdirRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -8287,7 +8258,7 @@ void readdirRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -8297,22 +8268,22 @@ void readdirRequest::SerializeWithCachedSizes(
   }
   
   // required fixed64 known_etag = 3;
-  if (_has_bit(2)) {
+  if (has_known_etag()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(3, this->known_etag(), target);
   }
   
   // required fixed32 limit_directory_entries_count = 4;
-  if (_has_bit(3)) {
+  if (has_limit_directory_entries_count()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(4, this->limit_directory_entries_count(), target);
   }
   
   // required bool names_only = 5;
-  if (_has_bit(4)) {
+  if (has_names_only()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(5, this->names_only(), target);
   }
   
   // required fixed64 seen_directory_entries_count = 6;
-  if (_has_bit(5)) {
+  if (has_seen_directory_entries_count()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(6, this->seen_directory_entries_count(), target);
   }
   
@@ -8388,22 +8359,22 @@ void readdirRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void readdirRequest::MergeFrom(const readdirRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_known_etag()) {
       set_known_etag(from.known_etag());
     }
-    if (from._has_bit(3)) {
+    if (from.has_limit_directory_entries_count()) {
       set_limit_directory_entries_count(from.limit_directory_entries_count());
     }
-    if (from._has_bit(4)) {
+    if (from.has_names_only()) {
       set_names_only(from.names_only());
     }
-    if (from._has_bit(5)) {
+    if (from.has_seen_directory_entries_count()) {
       set_seen_directory_entries_count(from.seen_directory_entries_count());
     }
   }
@@ -8453,8 +8424,6 @@ void readdirRequest::Swap(readdirRequest* other) {
 
 // ===================================================================
 
-const ::std::string readlinkRequest::_default_volume_name_;
-const ::std::string readlinkRequest::_default_path_;
 #ifndef _MSC_VER
 const int readlinkRequest::kVolumeNameFieldNumber;
 const int readlinkRequest::kPathFieldNumber;
@@ -8476,8 +8445,8 @@ readlinkRequest::readlinkRequest(const readlinkRequest& from)
 
 void readlinkRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -8486,10 +8455,10 @@ readlinkRequest::~readlinkRequest() {
 }
 
 void readlinkRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
   if (this != default_instance_) {
@@ -8518,13 +8487,13 @@ readlinkRequest* readlinkRequest::New() const {
 
 void readlinkRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
@@ -8591,7 +8560,7 @@ bool readlinkRequest::MergePartialFromCodedStream(
 void readlinkRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -8600,7 +8569,7 @@ void readlinkRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -8617,7 +8586,7 @@ void readlinkRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* readlinkRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -8627,7 +8596,7 @@ void readlinkRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -8688,10 +8657,10 @@ void readlinkRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void readlinkRequest::MergeFrom(const readlinkRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
   }
@@ -8946,9 +8915,6 @@ void readlinkResponse::Swap(readlinkResponse* other) {
 
 // ===================================================================
 
-const ::std::string removexattrRequest::_default_volume_name_;
-const ::std::string removexattrRequest::_default_path_;
-const ::std::string removexattrRequest::_default_name_;
 #ifndef _MSC_VER
 const int removexattrRequest::kVolumeNameFieldNumber;
 const int removexattrRequest::kPathFieldNumber;
@@ -8971,9 +8937,9 @@ removexattrRequest::removexattrRequest(const removexattrRequest& from)
 
 void removexattrRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
-  name_ = const_cast< ::std::string*>(&_default_name_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -8982,13 +8948,13 @@ removexattrRequest::~removexattrRequest() {
 }
 
 void removexattrRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
-  if (name_ != &_default_name_) {
+  if (name_ != &::google::protobuf::internal::kEmptyString) {
     delete name_;
   }
   if (this != default_instance_) {
@@ -9017,18 +8983,18 @@ removexattrRequest* removexattrRequest::New() const {
 
 void removexattrRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
-    if (_has_bit(2)) {
-      if (name_ != &_default_name_) {
+    if (has_name()) {
+      if (name_ != &::google::protobuf::internal::kEmptyString) {
         name_->clear();
       }
     }
@@ -9112,7 +9078,7 @@ bool removexattrRequest::MergePartialFromCodedStream(
 void removexattrRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -9121,7 +9087,7 @@ void removexattrRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -9130,7 +9096,7 @@ void removexattrRequest::SerializeWithCachedSizes(
   }
   
   // required string name = 3;
-  if (_has_bit(2)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -9147,7 +9113,7 @@ void removexattrRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* removexattrRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -9157,7 +9123,7 @@ void removexattrRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -9167,7 +9133,7 @@ void removexattrRequest::SerializeWithCachedSizes(
   }
   
   // required string name = 3;
-  if (_has_bit(2)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -9235,13 +9201,13 @@ void removexattrRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void removexattrRequest::MergeFrom(const removexattrRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_name()) {
       set_name(from.name());
     }
   }
@@ -9288,9 +9254,6 @@ void removexattrRequest::Swap(removexattrRequest* other) {
 
 // ===================================================================
 
-const ::std::string renameRequest::_default_volume_name_;
-const ::std::string renameRequest::_default_source_path_;
-const ::std::string renameRequest::_default_target_path_;
 #ifndef _MSC_VER
 const int renameRequest::kVolumeNameFieldNumber;
 const int renameRequest::kSourcePathFieldNumber;
@@ -9313,9 +9276,9 @@ renameRequest::renameRequest(const renameRequest& from)
 
 void renameRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  source_path_ = const_cast< ::std::string*>(&_default_source_path_);
-  target_path_ = const_cast< ::std::string*>(&_default_target_path_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  source_path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  target_path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -9324,13 +9287,13 @@ renameRequest::~renameRequest() {
 }
 
 void renameRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (source_path_ != &_default_source_path_) {
+  if (source_path_ != &::google::protobuf::internal::kEmptyString) {
     delete source_path_;
   }
-  if (target_path_ != &_default_target_path_) {
+  if (target_path_ != &::google::protobuf::internal::kEmptyString) {
     delete target_path_;
   }
   if (this != default_instance_) {
@@ -9359,18 +9322,18 @@ renameRequest* renameRequest::New() const {
 
 void renameRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (source_path_ != &_default_source_path_) {
+    if (has_source_path()) {
+      if (source_path_ != &::google::protobuf::internal::kEmptyString) {
         source_path_->clear();
       }
     }
-    if (_has_bit(2)) {
-      if (target_path_ != &_default_target_path_) {
+    if (has_target_path()) {
+      if (target_path_ != &::google::protobuf::internal::kEmptyString) {
         target_path_->clear();
       }
     }
@@ -9454,7 +9417,7 @@ bool renameRequest::MergePartialFromCodedStream(
 void renameRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -9463,7 +9426,7 @@ void renameRequest::SerializeWithCachedSizes(
   }
   
   // required string source_path = 2;
-  if (_has_bit(1)) {
+  if (has_source_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->source_path().data(), this->source_path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -9472,7 +9435,7 @@ void renameRequest::SerializeWithCachedSizes(
   }
   
   // required string target_path = 3;
-  if (_has_bit(2)) {
+  if (has_target_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->target_path().data(), this->target_path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -9489,7 +9452,7 @@ void renameRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* renameRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -9499,7 +9462,7 @@ void renameRequest::SerializeWithCachedSizes(
   }
   
   // required string source_path = 2;
-  if (_has_bit(1)) {
+  if (has_source_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->source_path().data(), this->source_path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -9509,7 +9472,7 @@ void renameRequest::SerializeWithCachedSizes(
   }
   
   // required string target_path = 3;
-  if (_has_bit(2)) {
+  if (has_target_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->target_path().data(), this->target_path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -9577,13 +9540,13 @@ void renameRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void renameRequest::MergeFrom(const renameRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_source_path()) {
       set_source_path(from.source_path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_target_path()) {
       set_target_path(from.target_path());
     }
   }
@@ -9690,7 +9653,7 @@ renameResponse* renameResponse::New() const {
 void renameResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     timestamp_s_ = 0u;
-    if (_has_bit(1)) {
+    if (has_creds()) {
       if (creds_ != NULL) creds_->::xtreemfs::pbrpc::FileCredentials::Clear();
     }
   }
@@ -9711,7 +9674,7 @@ bool renameResponse::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &timestamp_s_)));
-          _set_bit(0);
+          set_has_timestamp_s();
         } else {
           goto handle_uninterpreted;
         }
@@ -9752,12 +9715,12 @@ bool renameResponse::MergePartialFromCodedStream(
 void renameResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required fixed32 timestamp_s = 1;
-  if (_has_bit(0)) {
+  if (has_timestamp_s()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(1, this->timestamp_s(), output);
   }
   
   // optional .xtreemfs.pbrpc.FileCredentials creds = 2;
-  if (_has_bit(1)) {
+  if (has_creds()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       2, this->creds(), output);
   }
@@ -9771,12 +9734,12 @@ void renameResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* renameResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required fixed32 timestamp_s = 1;
-  if (_has_bit(0)) {
+  if (has_timestamp_s()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(1, this->timestamp_s(), target);
   }
   
   // optional .xtreemfs.pbrpc.FileCredentials creds = 2;
-  if (_has_bit(1)) {
+  if (has_creds()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         2, this->creds(), target);
@@ -9832,10 +9795,10 @@ void renameResponse::MergeFrom(const ::google::protobuf::Message& from) {
 void renameResponse::MergeFrom(const renameResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_timestamp_s()) {
       set_timestamp_s(from.timestamp_s());
     }
-    if (from._has_bit(1)) {
+    if (from.has_creds()) {
       mutable_creds()->::xtreemfs::pbrpc::FileCredentials::MergeFrom(from.creds());
     }
   }
@@ -9884,8 +9847,6 @@ void renameResponse::Swap(renameResponse* other) {
 
 // ===================================================================
 
-const ::std::string rmdirRequest::_default_volume_name_;
-const ::std::string rmdirRequest::_default_path_;
 #ifndef _MSC_VER
 const int rmdirRequest::kVolumeNameFieldNumber;
 const int rmdirRequest::kPathFieldNumber;
@@ -9907,8 +9868,8 @@ rmdirRequest::rmdirRequest(const rmdirRequest& from)
 
 void rmdirRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -9917,10 +9878,10 @@ rmdirRequest::~rmdirRequest() {
 }
 
 void rmdirRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
   if (this != default_instance_) {
@@ -9949,13 +9910,13 @@ rmdirRequest* rmdirRequest::New() const {
 
 void rmdirRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
@@ -10022,7 +9983,7 @@ bool rmdirRequest::MergePartialFromCodedStream(
 void rmdirRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10031,7 +9992,7 @@ void rmdirRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10048,7 +10009,7 @@ void rmdirRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* rmdirRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10058,7 +10019,7 @@ void rmdirRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10119,10 +10080,10 @@ void rmdirRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void rmdirRequest::MergeFrom(const rmdirRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
   }
@@ -10168,8 +10129,6 @@ void rmdirRequest::Swap(rmdirRequest* other) {
 
 // ===================================================================
 
-const ::std::string setattrRequest::_default_volume_name_;
-const ::std::string setattrRequest::_default_path_;
 #ifndef _MSC_VER
 const int setattrRequest::kVolumeNameFieldNumber;
 const int setattrRequest::kPathFieldNumber;
@@ -10194,8 +10153,8 @@ setattrRequest::setattrRequest(const setattrRequest& from)
 
 void setattrRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   stbuf_ = NULL;
   to_set_ = 0u;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -10206,10 +10165,10 @@ setattrRequest::~setattrRequest() {
 }
 
 void setattrRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
   if (this != default_instance_) {
@@ -10239,17 +10198,17 @@ setattrRequest* setattrRequest::New() const {
 
 void setattrRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
-    if (_has_bit(2)) {
+    if (has_stbuf()) {
       if (stbuf_ != NULL) stbuf_->::xtreemfs::pbrpc::Stat::Clear();
     }
     to_set_ = 0u;
@@ -10319,7 +10278,7 @@ bool setattrRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &to_set_)));
-          _set_bit(3);
+          set_has_to_set();
         } else {
           goto handle_uninterpreted;
         }
@@ -10346,7 +10305,7 @@ bool setattrRequest::MergePartialFromCodedStream(
 void setattrRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10355,7 +10314,7 @@ void setattrRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10364,13 +10323,13 @@ void setattrRequest::SerializeWithCachedSizes(
   }
   
   // required .xtreemfs.pbrpc.Stat stbuf = 3;
-  if (_has_bit(2)) {
+  if (has_stbuf()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       3, this->stbuf(), output);
   }
   
   // required fixed32 to_set = 4;
-  if (_has_bit(3)) {
+  if (has_to_set()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(4, this->to_set(), output);
   }
   
@@ -10383,7 +10342,7 @@ void setattrRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* setattrRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10393,7 +10352,7 @@ void setattrRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10403,14 +10362,14 @@ void setattrRequest::SerializeWithCachedSizes(
   }
   
   // required .xtreemfs.pbrpc.Stat stbuf = 3;
-  if (_has_bit(2)) {
+  if (has_stbuf()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         3, this->stbuf(), target);
   }
   
   // required fixed32 to_set = 4;
-  if (_has_bit(3)) {
+  if (has_to_set()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(4, this->to_set(), target);
   }
   
@@ -10478,16 +10437,16 @@ void setattrRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void setattrRequest::MergeFrom(const setattrRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_stbuf()) {
       mutable_stbuf()->::xtreemfs::pbrpc::Stat::MergeFrom(from.stbuf());
     }
-    if (from._has_bit(3)) {
+    if (from.has_to_set()) {
       set_to_set(from.to_set());
     }
   }
@@ -10538,10 +10497,6 @@ void setattrRequest::Swap(setattrRequest* other) {
 
 // ===================================================================
 
-const ::std::string setxattrRequest::_default_volume_name_;
-const ::std::string setxattrRequest::_default_path_;
-const ::std::string setxattrRequest::_default_name_;
-const ::std::string setxattrRequest::_default_value_;
 #ifndef _MSC_VER
 const int setxattrRequest::kVolumeNameFieldNumber;
 const int setxattrRequest::kPathFieldNumber;
@@ -10566,10 +10521,10 @@ setxattrRequest::setxattrRequest(const setxattrRequest& from)
 
 void setxattrRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
-  name_ = const_cast< ::std::string*>(&_default_name_);
-  value_ = const_cast< ::std::string*>(&_default_value_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  value_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   flags_ = 0u;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -10579,16 +10534,16 @@ setxattrRequest::~setxattrRequest() {
 }
 
 void setxattrRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
-  if (name_ != &_default_name_) {
+  if (name_ != &::google::protobuf::internal::kEmptyString) {
     delete name_;
   }
-  if (value_ != &_default_value_) {
+  if (value_ != &::google::protobuf::internal::kEmptyString) {
     delete value_;
   }
   if (this != default_instance_) {
@@ -10617,23 +10572,23 @@ setxattrRequest* setxattrRequest::New() const {
 
 void setxattrRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
-    if (_has_bit(2)) {
-      if (name_ != &_default_name_) {
+    if (has_name()) {
+      if (name_ != &::google::protobuf::internal::kEmptyString) {
         name_->clear();
       }
     }
-    if (_has_bit(3)) {
-      if (value_ != &_default_value_) {
+    if (has_value()) {
+      if (value_ != &::google::protobuf::internal::kEmptyString) {
         value_->clear();
       }
     }
@@ -10724,7 +10679,7 @@ bool setxattrRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &flags_)));
-          _set_bit(4);
+          set_has_flags();
         } else {
           goto handle_uninterpreted;
         }
@@ -10751,7 +10706,7 @@ bool setxattrRequest::MergePartialFromCodedStream(
 void setxattrRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10760,7 +10715,7 @@ void setxattrRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10769,7 +10724,7 @@ void setxattrRequest::SerializeWithCachedSizes(
   }
   
   // required string name = 3;
-  if (_has_bit(2)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10778,7 +10733,7 @@ void setxattrRequest::SerializeWithCachedSizes(
   }
   
   // required string value = 4;
-  if (_has_bit(3)) {
+  if (has_value()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->value().data(), this->value().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10787,7 +10742,7 @@ void setxattrRequest::SerializeWithCachedSizes(
   }
   
   // required fixed32 flags = 5;
-  if (_has_bit(4)) {
+  if (has_flags()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(5, this->flags(), output);
   }
   
@@ -10800,7 +10755,7 @@ void setxattrRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* setxattrRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10810,7 +10765,7 @@ void setxattrRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10820,7 +10775,7 @@ void setxattrRequest::SerializeWithCachedSizes(
   }
   
   // required string name = 3;
-  if (_has_bit(2)) {
+  if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10830,7 +10785,7 @@ void setxattrRequest::SerializeWithCachedSizes(
   }
   
   // required string value = 4;
-  if (_has_bit(3)) {
+  if (has_value()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->value().data(), this->value().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -10840,7 +10795,7 @@ void setxattrRequest::SerializeWithCachedSizes(
   }
   
   // required fixed32 flags = 5;
-  if (_has_bit(4)) {
+  if (has_flags()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(5, this->flags(), target);
   }
   
@@ -10915,19 +10870,19 @@ void setxattrRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void setxattrRequest::MergeFrom(const setxattrRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_name()) {
       set_name(from.name());
     }
-    if (from._has_bit(3)) {
+    if (from.has_value()) {
       set_value(from.value());
     }
-    if (from._has_bit(4)) {
+    if (from.has_flags()) {
       set_flags(from.flags());
     }
   }
@@ -10976,7 +10931,6 @@ void setxattrRequest::Swap(setxattrRequest* other) {
 
 // ===================================================================
 
-const ::std::string statvfsRequest::_default_volume_name_;
 #ifndef _MSC_VER
 const int statvfsRequest::kVolumeNameFieldNumber;
 const int statvfsRequest::kKnownEtagFieldNumber;
@@ -10998,7 +10952,7 @@ statvfsRequest::statvfsRequest(const statvfsRequest& from)
 
 void statvfsRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   known_etag_ = GOOGLE_ULONGLONG(0);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -11008,7 +10962,7 @@ statvfsRequest::~statvfsRequest() {
 }
 
 void statvfsRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
   if (this != default_instance_) {
@@ -11037,8 +10991,8 @@ statvfsRequest* statvfsRequest::New() const {
 
 void statvfsRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
@@ -11078,7 +11032,7 @@ bool statvfsRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &known_etag_)));
-          _set_bit(1);
+          set_has_known_etag();
         } else {
           goto handle_uninterpreted;
         }
@@ -11105,7 +11059,7 @@ bool statvfsRequest::MergePartialFromCodedStream(
 void statvfsRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -11114,7 +11068,7 @@ void statvfsRequest::SerializeWithCachedSizes(
   }
   
   // required fixed64 known_etag = 5;
-  if (_has_bit(1)) {
+  if (has_known_etag()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(5, this->known_etag(), output);
   }
   
@@ -11127,7 +11081,7 @@ void statvfsRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* statvfsRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -11137,7 +11091,7 @@ void statvfsRequest::SerializeWithCachedSizes(
   }
   
   // required fixed64 known_etag = 5;
-  if (_has_bit(1)) {
+  if (has_known_etag()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(5, this->known_etag(), target);
   }
   
@@ -11191,10 +11145,10 @@ void statvfsRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void statvfsRequest::MergeFrom(const statvfsRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_known_etag()) {
       set_known_etag(from.known_etag());
     }
   }
@@ -11240,9 +11194,6 @@ void statvfsRequest::Swap(statvfsRequest* other) {
 
 // ===================================================================
 
-const ::std::string symlinkRequest::_default_volume_name_;
-const ::std::string symlinkRequest::_default_target_path_;
-const ::std::string symlinkRequest::_default_link_path_;
 #ifndef _MSC_VER
 const int symlinkRequest::kVolumeNameFieldNumber;
 const int symlinkRequest::kTargetPathFieldNumber;
@@ -11265,9 +11216,9 @@ symlinkRequest::symlinkRequest(const symlinkRequest& from)
 
 void symlinkRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  target_path_ = const_cast< ::std::string*>(&_default_target_path_);
-  link_path_ = const_cast< ::std::string*>(&_default_link_path_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  target_path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  link_path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -11276,13 +11227,13 @@ symlinkRequest::~symlinkRequest() {
 }
 
 void symlinkRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (target_path_ != &_default_target_path_) {
+  if (target_path_ != &::google::protobuf::internal::kEmptyString) {
     delete target_path_;
   }
-  if (link_path_ != &_default_link_path_) {
+  if (link_path_ != &::google::protobuf::internal::kEmptyString) {
     delete link_path_;
   }
   if (this != default_instance_) {
@@ -11311,18 +11262,18 @@ symlinkRequest* symlinkRequest::New() const {
 
 void symlinkRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (target_path_ != &_default_target_path_) {
+    if (has_target_path()) {
+      if (target_path_ != &::google::protobuf::internal::kEmptyString) {
         target_path_->clear();
       }
     }
-    if (_has_bit(2)) {
-      if (link_path_ != &_default_link_path_) {
+    if (has_link_path()) {
+      if (link_path_ != &::google::protobuf::internal::kEmptyString) {
         link_path_->clear();
       }
     }
@@ -11406,7 +11357,7 @@ bool symlinkRequest::MergePartialFromCodedStream(
 void symlinkRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -11415,7 +11366,7 @@ void symlinkRequest::SerializeWithCachedSizes(
   }
   
   // required string target_path = 2;
-  if (_has_bit(1)) {
+  if (has_target_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->target_path().data(), this->target_path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -11424,7 +11375,7 @@ void symlinkRequest::SerializeWithCachedSizes(
   }
   
   // required string link_path = 3;
-  if (_has_bit(2)) {
+  if (has_link_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->link_path().data(), this->link_path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -11441,7 +11392,7 @@ void symlinkRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* symlinkRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -11451,7 +11402,7 @@ void symlinkRequest::SerializeWithCachedSizes(
   }
   
   // required string target_path = 2;
-  if (_has_bit(1)) {
+  if (has_target_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->target_path().data(), this->target_path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -11461,7 +11412,7 @@ void symlinkRequest::SerializeWithCachedSizes(
   }
   
   // required string link_path = 3;
-  if (_has_bit(2)) {
+  if (has_link_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->link_path().data(), this->link_path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -11529,13 +11480,13 @@ void symlinkRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void symlinkRequest::MergeFrom(const symlinkRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_target_path()) {
       set_target_path(from.target_path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_link_path()) {
       set_link_path(from.link_path());
     }
   }
@@ -11582,8 +11533,6 @@ void symlinkRequest::Swap(symlinkRequest* other) {
 
 // ===================================================================
 
-const ::std::string unlinkRequest::_default_volume_name_;
-const ::std::string unlinkRequest::_default_path_;
 #ifndef _MSC_VER
 const int unlinkRequest::kVolumeNameFieldNumber;
 const int unlinkRequest::kPathFieldNumber;
@@ -11605,8 +11554,8 @@ unlinkRequest::unlinkRequest(const unlinkRequest& from)
 
 void unlinkRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -11615,10 +11564,10 @@ unlinkRequest::~unlinkRequest() {
 }
 
 void unlinkRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
   if (this != default_instance_) {
@@ -11647,13 +11596,13 @@ unlinkRequest* unlinkRequest::New() const {
 
 void unlinkRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
@@ -11720,7 +11669,7 @@ bool unlinkRequest::MergePartialFromCodedStream(
 void unlinkRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -11729,7 +11678,7 @@ void unlinkRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -11746,7 +11695,7 @@ void unlinkRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* unlinkRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -11756,7 +11705,7 @@ void unlinkRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -11817,10 +11766,10 @@ void unlinkRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void unlinkRequest::MergeFrom(const unlinkRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
   }
@@ -11926,7 +11875,7 @@ unlinkResponse* unlinkResponse::New() const {
 void unlinkResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     timestamp_s_ = 0u;
-    if (_has_bit(1)) {
+    if (has_creds()) {
       if (creds_ != NULL) creds_->::xtreemfs::pbrpc::FileCredentials::Clear();
     }
   }
@@ -11947,7 +11896,7 @@ bool unlinkResponse::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &timestamp_s_)));
-          _set_bit(0);
+          set_has_timestamp_s();
         } else {
           goto handle_uninterpreted;
         }
@@ -11988,12 +11937,12 @@ bool unlinkResponse::MergePartialFromCodedStream(
 void unlinkResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required fixed32 timestamp_s = 1;
-  if (_has_bit(0)) {
+  if (has_timestamp_s()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(1, this->timestamp_s(), output);
   }
   
   // optional .xtreemfs.pbrpc.FileCredentials creds = 2;
-  if (_has_bit(1)) {
+  if (has_creds()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       2, this->creds(), output);
   }
@@ -12007,12 +11956,12 @@ void unlinkResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* unlinkResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required fixed32 timestamp_s = 1;
-  if (_has_bit(0)) {
+  if (has_timestamp_s()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(1, this->timestamp_s(), target);
   }
   
   // optional .xtreemfs.pbrpc.FileCredentials creds = 2;
-  if (_has_bit(1)) {
+  if (has_creds()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         2, this->creds(), target);
@@ -12068,10 +12017,10 @@ void unlinkResponse::MergeFrom(const ::google::protobuf::Message& from) {
 void unlinkResponse::MergeFrom(const unlinkResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_timestamp_s()) {
       set_timestamp_s(from.timestamp_s());
     }
-    if (from._has_bit(1)) {
+    if (from.has_creds()) {
       mutable_creds()->::xtreemfs::pbrpc::FileCredentials::MergeFrom(from.creds());
     }
   }
@@ -12120,8 +12069,6 @@ void unlinkResponse::Swap(unlinkResponse* other) {
 
 // ===================================================================
 
-const ::std::string accessRequest::_default_volume_name_;
-const ::std::string accessRequest::_default_path_;
 #ifndef _MSC_VER
 const int accessRequest::kVolumeNameFieldNumber;
 const int accessRequest::kPathFieldNumber;
@@ -12144,8 +12091,8 @@ accessRequest::accessRequest(const accessRequest& from)
 
 void accessRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   flags_ = 0u;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -12155,10 +12102,10 @@ accessRequest::~accessRequest() {
 }
 
 void accessRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
   if (this != default_instance_) {
@@ -12187,13 +12134,13 @@ accessRequest* accessRequest::New() const {
 
 void accessRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
@@ -12250,7 +12197,7 @@ bool accessRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &flags_)));
-          _set_bit(2);
+          set_has_flags();
         } else {
           goto handle_uninterpreted;
         }
@@ -12277,7 +12224,7 @@ bool accessRequest::MergePartialFromCodedStream(
 void accessRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -12286,7 +12233,7 @@ void accessRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -12295,7 +12242,7 @@ void accessRequest::SerializeWithCachedSizes(
   }
   
   // required fixed32 flags = 3;
-  if (_has_bit(2)) {
+  if (has_flags()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(3, this->flags(), output);
   }
   
@@ -12308,7 +12255,7 @@ void accessRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* accessRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -12318,7 +12265,7 @@ void accessRequest::SerializeWithCachedSizes(
   }
   
   // required string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -12328,7 +12275,7 @@ void accessRequest::SerializeWithCachedSizes(
   }
   
   // required fixed32 flags = 3;
-  if (_has_bit(2)) {
+  if (has_flags()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(3, this->flags(), target);
   }
   
@@ -12389,13 +12336,13 @@ void accessRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void accessRequest::MergeFrom(const accessRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_flags()) {
       set_flags(from.flags());
     }
   }
@@ -12442,8 +12389,6 @@ void accessRequest::Swap(accessRequest* other) {
 
 // ===================================================================
 
-const ::std::string xtreemfs_check_file_existsRequest::_default_volume_id_;
-const ::std::string xtreemfs_check_file_existsRequest::_default_osd_uuid_;
 #ifndef _MSC_VER
 const int xtreemfs_check_file_existsRequest::kVolumeIdFieldNumber;
 const int xtreemfs_check_file_existsRequest::kFileIdsFieldNumber;
@@ -12466,8 +12411,8 @@ xtreemfs_check_file_existsRequest::xtreemfs_check_file_existsRequest(const xtree
 
 void xtreemfs_check_file_existsRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_id_ = const_cast< ::std::string*>(&_default_volume_id_);
-  osd_uuid_ = const_cast< ::std::string*>(&_default_osd_uuid_);
+  volume_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  osd_uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -12476,10 +12421,10 @@ xtreemfs_check_file_existsRequest::~xtreemfs_check_file_existsRequest() {
 }
 
 void xtreemfs_check_file_existsRequest::SharedDtor() {
-  if (volume_id_ != &_default_volume_id_) {
+  if (volume_id_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_id_;
   }
-  if (osd_uuid_ != &_default_osd_uuid_) {
+  if (osd_uuid_ != &::google::protobuf::internal::kEmptyString) {
     delete osd_uuid_;
   }
   if (this != default_instance_) {
@@ -12508,13 +12453,13 @@ xtreemfs_check_file_existsRequest* xtreemfs_check_file_existsRequest::New() cons
 
 void xtreemfs_check_file_existsRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_id_ != &_default_volume_id_) {
+    if (has_volume_id()) {
+      if (volume_id_ != &::google::protobuf::internal::kEmptyString) {
         volume_id_->clear();
       }
     }
-    if (_has_bit(2)) {
-      if (osd_uuid_ != &_default_osd_uuid_) {
+    if (has_osd_uuid()) {
+      if (osd_uuid_ != &::google::protobuf::internal::kEmptyString) {
         osd_uuid_->clear();
       }
     }
@@ -12600,7 +12545,7 @@ bool xtreemfs_check_file_existsRequest::MergePartialFromCodedStream(
 void xtreemfs_check_file_existsRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_id = 1;
-  if (_has_bit(0)) {
+  if (has_volume_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_id().data(), this->volume_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -12618,7 +12563,7 @@ void xtreemfs_check_file_existsRequest::SerializeWithCachedSizes(
   }
   
   // required string osd_uuid = 3;
-  if (_has_bit(2)) {
+  if (has_osd_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->osd_uuid().data(), this->osd_uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -12635,7 +12580,7 @@ void xtreemfs_check_file_existsRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_check_file_existsRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_id = 1;
-  if (_has_bit(0)) {
+  if (has_volume_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_id().data(), this->volume_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -12654,7 +12599,7 @@ void xtreemfs_check_file_existsRequest::SerializeWithCachedSizes(
   }
   
   // required string osd_uuid = 3;
-  if (_has_bit(2)) {
+  if (has_osd_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->osd_uuid().data(), this->osd_uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -12723,10 +12668,10 @@ void xtreemfs_check_file_existsRequest::MergeFrom(const xtreemfs_check_file_exis
   GOOGLE_CHECK_NE(&from, this);
   file_ids_.MergeFrom(from.file_ids_);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_id()) {
       set_volume_id(from.volume_id());
     }
-    if (from._has_bit(2)) {
+    if (from.has_osd_uuid()) {
       set_osd_uuid(from.osd_uuid());
     }
   }
@@ -12773,7 +12718,6 @@ void xtreemfs_check_file_existsRequest::Swap(xtreemfs_check_file_existsRequest* 
 
 // ===================================================================
 
-const ::std::string xtreemfs_dump_restore_databaseRequest::_default_dump_file_;
 #ifndef _MSC_VER
 const int xtreemfs_dump_restore_databaseRequest::kDumpFileFieldNumber;
 #endif  // !_MSC_VER
@@ -12794,7 +12738,7 @@ xtreemfs_dump_restore_databaseRequest::xtreemfs_dump_restore_databaseRequest(con
 
 void xtreemfs_dump_restore_databaseRequest::SharedCtor() {
   _cached_size_ = 0;
-  dump_file_ = const_cast< ::std::string*>(&_default_dump_file_);
+  dump_file_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -12803,7 +12747,7 @@ xtreemfs_dump_restore_databaseRequest::~xtreemfs_dump_restore_databaseRequest() 
 }
 
 void xtreemfs_dump_restore_databaseRequest::SharedDtor() {
-  if (dump_file_ != &_default_dump_file_) {
+  if (dump_file_ != &::google::protobuf::internal::kEmptyString) {
     delete dump_file_;
   }
   if (this != default_instance_) {
@@ -12832,8 +12776,8 @@ xtreemfs_dump_restore_databaseRequest* xtreemfs_dump_restore_databaseRequest::Ne
 
 void xtreemfs_dump_restore_databaseRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (dump_file_ != &_default_dump_file_) {
+    if (has_dump_file()) {
+      if (dump_file_ != &::google::protobuf::internal::kEmptyString) {
         dump_file_->clear();
       }
     }
@@ -12883,7 +12827,7 @@ bool xtreemfs_dump_restore_databaseRequest::MergePartialFromCodedStream(
 void xtreemfs_dump_restore_databaseRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string dump_file = 1;
-  if (_has_bit(0)) {
+  if (has_dump_file()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->dump_file().data(), this->dump_file().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -12900,7 +12844,7 @@ void xtreemfs_dump_restore_databaseRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_dump_restore_databaseRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string dump_file = 1;
-  if (_has_bit(0)) {
+  if (has_dump_file()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->dump_file().data(), this->dump_file().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -12954,7 +12898,7 @@ void xtreemfs_dump_restore_databaseRequest::MergeFrom(const ::google::protobuf::
 void xtreemfs_dump_restore_databaseRequest::MergeFrom(const xtreemfs_dump_restore_databaseRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_dump_file()) {
       set_dump_file(from.dump_file());
     }
   }
@@ -12999,9 +12943,6 @@ void xtreemfs_dump_restore_databaseRequest::Swap(xtreemfs_dump_restore_databaseR
 
 // ===================================================================
 
-const ::std::string xtreemfs_get_suitable_osdsRequest::_default_file_id_;
-const ::std::string xtreemfs_get_suitable_osdsRequest::_default_path_;
-const ::std::string xtreemfs_get_suitable_osdsRequest::_default_volume_name_;
 #ifndef _MSC_VER
 const int xtreemfs_get_suitable_osdsRequest::kFileIdFieldNumber;
 const int xtreemfs_get_suitable_osdsRequest::kPathFieldNumber;
@@ -13025,9 +12966,9 @@ xtreemfs_get_suitable_osdsRequest::xtreemfs_get_suitable_osdsRequest(const xtree
 
 void xtreemfs_get_suitable_osdsRequest::SharedCtor() {
   _cached_size_ = 0;
-  file_id_ = const_cast< ::std::string*>(&_default_file_id_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
+  file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   num_osds_ = 0u;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -13037,13 +12978,13 @@ xtreemfs_get_suitable_osdsRequest::~xtreemfs_get_suitable_osdsRequest() {
 }
 
 void xtreemfs_get_suitable_osdsRequest::SharedDtor() {
-  if (file_id_ != &_default_file_id_) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
     delete file_id_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
   if (this != default_instance_) {
@@ -13072,18 +13013,18 @@ xtreemfs_get_suitable_osdsRequest* xtreemfs_get_suitable_osdsRequest::New() cons
 
 void xtreemfs_get_suitable_osdsRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (file_id_ != &_default_file_id_) {
+    if (has_file_id()) {
+      if (file_id_ != &::google::protobuf::internal::kEmptyString) {
         file_id_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
-    if (_has_bit(2)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
@@ -13123,7 +13064,7 @@ bool xtreemfs_get_suitable_osdsRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &num_osds_)));
-          _set_bit(3);
+          set_has_num_osds();
         } else {
           goto handle_uninterpreted;
         }
@@ -13184,7 +13125,7 @@ bool xtreemfs_get_suitable_osdsRequest::MergePartialFromCodedStream(
 void xtreemfs_get_suitable_osdsRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // optional string file_id = 1;
-  if (_has_bit(0)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -13193,12 +13134,12 @@ void xtreemfs_get_suitable_osdsRequest::SerializeWithCachedSizes(
   }
   
   // required fixed32 num_osds = 2;
-  if (_has_bit(3)) {
+  if (has_num_osds()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(2, this->num_osds(), output);
   }
   
   // optional string path = 3;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -13207,7 +13148,7 @@ void xtreemfs_get_suitable_osdsRequest::SerializeWithCachedSizes(
   }
   
   // optional string volume_name = 4;
-  if (_has_bit(2)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -13224,7 +13165,7 @@ void xtreemfs_get_suitable_osdsRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_get_suitable_osdsRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // optional string file_id = 1;
-  if (_has_bit(0)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -13234,12 +13175,12 @@ void xtreemfs_get_suitable_osdsRequest::SerializeWithCachedSizes(
   }
   
   // required fixed32 num_osds = 2;
-  if (_has_bit(3)) {
+  if (has_num_osds()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(2, this->num_osds(), target);
   }
   
   // optional string path = 3;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -13249,7 +13190,7 @@ void xtreemfs_get_suitable_osdsRequest::SerializeWithCachedSizes(
   }
   
   // optional string volume_name = 4;
-  if (_has_bit(2)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -13322,16 +13263,16 @@ void xtreemfs_get_suitable_osdsRequest::MergeFrom(const ::google::protobuf::Mess
 void xtreemfs_get_suitable_osdsRequest::MergeFrom(const xtreemfs_get_suitable_osdsRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_file_id()) {
       set_file_id(from.file_id());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(3)) {
+    if (from.has_num_osds()) {
       set_num_osds(from.num_osds());
     }
   }
@@ -13588,7 +13529,6 @@ void xtreemfs_get_suitable_osdsResponse::Swap(xtreemfs_get_suitable_osdsResponse
 
 // ===================================================================
 
-const ::std::string xtreemfs_check_file_existsResponse::_default_bitmap_;
 #ifndef _MSC_VER
 const int xtreemfs_check_file_existsResponse::kBitmapFieldNumber;
 #endif  // !_MSC_VER
@@ -13609,7 +13549,7 @@ xtreemfs_check_file_existsResponse::xtreemfs_check_file_existsResponse(const xtr
 
 void xtreemfs_check_file_existsResponse::SharedCtor() {
   _cached_size_ = 0;
-  bitmap_ = const_cast< ::std::string*>(&_default_bitmap_);
+  bitmap_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -13618,7 +13558,7 @@ xtreemfs_check_file_existsResponse::~xtreemfs_check_file_existsResponse() {
 }
 
 void xtreemfs_check_file_existsResponse::SharedDtor() {
-  if (bitmap_ != &_default_bitmap_) {
+  if (bitmap_ != &::google::protobuf::internal::kEmptyString) {
     delete bitmap_;
   }
   if (this != default_instance_) {
@@ -13647,8 +13587,8 @@ xtreemfs_check_file_existsResponse* xtreemfs_check_file_existsResponse::New() co
 
 void xtreemfs_check_file_existsResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (bitmap_ != &_default_bitmap_) {
+    if (has_bitmap()) {
+      if (bitmap_ != &::google::protobuf::internal::kEmptyString) {
         bitmap_->clear();
       }
     }
@@ -13698,7 +13638,7 @@ bool xtreemfs_check_file_existsResponse::MergePartialFromCodedStream(
 void xtreemfs_check_file_existsResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string bitmap = 1;
-  if (_has_bit(0)) {
+  if (has_bitmap()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->bitmap().data(), this->bitmap().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -13715,7 +13655,7 @@ void xtreemfs_check_file_existsResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_check_file_existsResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string bitmap = 1;
-  if (_has_bit(0)) {
+  if (has_bitmap()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->bitmap().data(), this->bitmap().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -13769,7 +13709,7 @@ void xtreemfs_check_file_existsResponse::MergeFrom(const ::google::protobuf::Mes
 void xtreemfs_check_file_existsResponse::MergeFrom(const xtreemfs_check_file_existsResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_bitmap()) {
       set_bitmap(from.bitmap());
     }
   }
@@ -13888,7 +13828,7 @@ bool timestampResponse::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &timestamp_s_)));
-          _set_bit(0);
+          set_has_timestamp_s();
         } else {
           goto handle_uninterpreted;
         }
@@ -13915,7 +13855,7 @@ bool timestampResponse::MergePartialFromCodedStream(
 void timestampResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required fixed32 timestamp_s = 1;
-  if (_has_bit(0)) {
+  if (has_timestamp_s()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(1, this->timestamp_s(), output);
   }
   
@@ -13928,7 +13868,7 @@ void timestampResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* timestampResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required fixed32 timestamp_s = 1;
-  if (_has_bit(0)) {
+  if (has_timestamp_s()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(1, this->timestamp_s(), target);
   }
   
@@ -13975,7 +13915,7 @@ void timestampResponse::MergeFrom(const ::google::protobuf::Message& from) {
 void timestampResponse::MergeFrom(const timestampResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_timestamp_s()) {
       set_timestamp_s(from.timestamp_s());
     }
   }
@@ -14020,7 +13960,6 @@ void timestampResponse::Swap(timestampResponse* other) {
 
 // ===================================================================
 
-const ::std::string stringMessage::_default_a_string_;
 #ifndef _MSC_VER
 const int stringMessage::kAStringFieldNumber;
 #endif  // !_MSC_VER
@@ -14041,7 +13980,7 @@ stringMessage::stringMessage(const stringMessage& from)
 
 void stringMessage::SharedCtor() {
   _cached_size_ = 0;
-  a_string_ = const_cast< ::std::string*>(&_default_a_string_);
+  a_string_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -14050,7 +13989,7 @@ stringMessage::~stringMessage() {
 }
 
 void stringMessage::SharedDtor() {
-  if (a_string_ != &_default_a_string_) {
+  if (a_string_ != &::google::protobuf::internal::kEmptyString) {
     delete a_string_;
   }
   if (this != default_instance_) {
@@ -14079,8 +14018,8 @@ stringMessage* stringMessage::New() const {
 
 void stringMessage::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (a_string_ != &_default_a_string_) {
+    if (has_a_string()) {
+      if (a_string_ != &::google::protobuf::internal::kEmptyString) {
         a_string_->clear();
       }
     }
@@ -14130,7 +14069,7 @@ bool stringMessage::MergePartialFromCodedStream(
 void stringMessage::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string a_string = 1;
-  if (_has_bit(0)) {
+  if (has_a_string()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->a_string().data(), this->a_string().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -14147,7 +14086,7 @@ void stringMessage::SerializeWithCachedSizes(
 ::google::protobuf::uint8* stringMessage::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string a_string = 1;
-  if (_has_bit(0)) {
+  if (has_a_string()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->a_string().data(), this->a_string().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -14201,7 +14140,7 @@ void stringMessage::MergeFrom(const ::google::protobuf::Message& from) {
 void stringMessage::MergeFrom(const stringMessage& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_a_string()) {
       set_a_string(from.a_string());
     }
   }
@@ -14246,7 +14185,6 @@ void stringMessage::Swap(stringMessage* other) {
 
 // ===================================================================
 
-const ::std::string xtreemfs_listdirRequest::_default_path_;
 #ifndef _MSC_VER
 const int xtreemfs_listdirRequest::kPathFieldNumber;
 #endif  // !_MSC_VER
@@ -14267,7 +14205,7 @@ xtreemfs_listdirRequest::xtreemfs_listdirRequest(const xtreemfs_listdirRequest& 
 
 void xtreemfs_listdirRequest::SharedCtor() {
   _cached_size_ = 0;
-  path_ = const_cast< ::std::string*>(&_default_path_);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -14276,7 +14214,7 @@ xtreemfs_listdirRequest::~xtreemfs_listdirRequest() {
 }
 
 void xtreemfs_listdirRequest::SharedDtor() {
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
   if (this != default_instance_) {
@@ -14305,8 +14243,8 @@ xtreemfs_listdirRequest* xtreemfs_listdirRequest::New() const {
 
 void xtreemfs_listdirRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
@@ -14356,7 +14294,7 @@ bool xtreemfs_listdirRequest::MergePartialFromCodedStream(
 void xtreemfs_listdirRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string path = 1;
-  if (_has_bit(0)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -14373,7 +14311,7 @@ void xtreemfs_listdirRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_listdirRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string path = 1;
-  if (_has_bit(0)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -14427,7 +14365,7 @@ void xtreemfs_listdirRequest::MergeFrom(const ::google::protobuf::Message& from)
 void xtreemfs_listdirRequest::MergeFrom(const xtreemfs_listdirRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
   }
@@ -14681,9 +14619,6 @@ void xtreemfs_listdirResponse::Swap(xtreemfs_listdirResponse* other) {
 
 // ===================================================================
 
-const ::std::string xtreemfs_replica_addRequest::_default_file_id_;
-const ::std::string xtreemfs_replica_addRequest::_default_path_;
-const ::std::string xtreemfs_replica_addRequest::_default_volume_name_;
 #ifndef _MSC_VER
 const int xtreemfs_replica_addRequest::kFileIdFieldNumber;
 const int xtreemfs_replica_addRequest::kPathFieldNumber;
@@ -14708,9 +14643,9 @@ xtreemfs_replica_addRequest::xtreemfs_replica_addRequest(const xtreemfs_replica_
 
 void xtreemfs_replica_addRequest::SharedCtor() {
   _cached_size_ = 0;
-  file_id_ = const_cast< ::std::string*>(&_default_file_id_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
+  file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   new_replica_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -14720,13 +14655,13 @@ xtreemfs_replica_addRequest::~xtreemfs_replica_addRequest() {
 }
 
 void xtreemfs_replica_addRequest::SharedDtor() {
-  if (file_id_ != &_default_file_id_) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
     delete file_id_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
   if (this != default_instance_) {
@@ -14756,22 +14691,22 @@ xtreemfs_replica_addRequest* xtreemfs_replica_addRequest::New() const {
 
 void xtreemfs_replica_addRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (file_id_ != &_default_file_id_) {
+    if (has_file_id()) {
+      if (file_id_ != &::google::protobuf::internal::kEmptyString) {
         file_id_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
-    if (_has_bit(2)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(3)) {
+    if (has_new_replica()) {
       if (new_replica_ != NULL) new_replica_->::xtreemfs::pbrpc::Replica::Clear();
     }
   }
@@ -14868,7 +14803,7 @@ bool xtreemfs_replica_addRequest::MergePartialFromCodedStream(
 void xtreemfs_replica_addRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // optional string file_id = 1;
-  if (_has_bit(0)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -14877,13 +14812,13 @@ void xtreemfs_replica_addRequest::SerializeWithCachedSizes(
   }
   
   // required .xtreemfs.pbrpc.Replica new_replica = 2;
-  if (_has_bit(3)) {
+  if (has_new_replica()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       2, this->new_replica(), output);
   }
   
   // optional string path = 3;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -14892,7 +14827,7 @@ void xtreemfs_replica_addRequest::SerializeWithCachedSizes(
   }
   
   // optional string volume_name = 4;
-  if (_has_bit(2)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -14909,7 +14844,7 @@ void xtreemfs_replica_addRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_replica_addRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // optional string file_id = 1;
-  if (_has_bit(0)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -14919,14 +14854,14 @@ void xtreemfs_replica_addRequest::SerializeWithCachedSizes(
   }
   
   // required .xtreemfs.pbrpc.Replica new_replica = 2;
-  if (_has_bit(3)) {
+  if (has_new_replica()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         2, this->new_replica(), target);
   }
   
   // optional string path = 3;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -14936,7 +14871,7 @@ void xtreemfs_replica_addRequest::SerializeWithCachedSizes(
   }
   
   // optional string volume_name = 4;
-  if (_has_bit(2)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15011,16 +14946,16 @@ void xtreemfs_replica_addRequest::MergeFrom(const ::google::protobuf::Message& f
 void xtreemfs_replica_addRequest::MergeFrom(const xtreemfs_replica_addRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_file_id()) {
       set_file_id(from.file_id());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(3)) {
+    if (from.has_new_replica()) {
       mutable_new_replica()->::xtreemfs::pbrpc::Replica::MergeFrom(from.new_replica());
     }
   }
@@ -15071,9 +15006,6 @@ void xtreemfs_replica_addRequest::Swap(xtreemfs_replica_addRequest* other) {
 
 // ===================================================================
 
-const ::std::string xtreemfs_replica_listRequest::_default_file_id_;
-const ::std::string xtreemfs_replica_listRequest::_default_path_;
-const ::std::string xtreemfs_replica_listRequest::_default_volume_name_;
 #ifndef _MSC_VER
 const int xtreemfs_replica_listRequest::kFileIdFieldNumber;
 const int xtreemfs_replica_listRequest::kPathFieldNumber;
@@ -15096,9 +15028,9 @@ xtreemfs_replica_listRequest::xtreemfs_replica_listRequest(const xtreemfs_replic
 
 void xtreemfs_replica_listRequest::SharedCtor() {
   _cached_size_ = 0;
-  file_id_ = const_cast< ::std::string*>(&_default_file_id_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
+  file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -15107,13 +15039,13 @@ xtreemfs_replica_listRequest::~xtreemfs_replica_listRequest() {
 }
 
 void xtreemfs_replica_listRequest::SharedDtor() {
-  if (file_id_ != &_default_file_id_) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
     delete file_id_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
   if (this != default_instance_) {
@@ -15142,18 +15074,18 @@ xtreemfs_replica_listRequest* xtreemfs_replica_listRequest::New() const {
 
 void xtreemfs_replica_listRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (file_id_ != &_default_file_id_) {
+    if (has_file_id()) {
+      if (file_id_ != &::google::protobuf::internal::kEmptyString) {
         file_id_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
-    if (_has_bit(2)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
@@ -15237,7 +15169,7 @@ bool xtreemfs_replica_listRequest::MergePartialFromCodedStream(
 void xtreemfs_replica_listRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // optional string file_id = 1;
-  if (_has_bit(0)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15246,7 +15178,7 @@ void xtreemfs_replica_listRequest::SerializeWithCachedSizes(
   }
   
   // optional string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15255,7 +15187,7 @@ void xtreemfs_replica_listRequest::SerializeWithCachedSizes(
   }
   
   // optional string volume_name = 3;
-  if (_has_bit(2)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15272,7 +15204,7 @@ void xtreemfs_replica_listRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_replica_listRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // optional string file_id = 1;
-  if (_has_bit(0)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15282,7 +15214,7 @@ void xtreemfs_replica_listRequest::SerializeWithCachedSizes(
   }
   
   // optional string path = 2;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15292,7 +15224,7 @@ void xtreemfs_replica_listRequest::SerializeWithCachedSizes(
   }
   
   // optional string volume_name = 3;
-  if (_has_bit(2)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15360,13 +15292,13 @@ void xtreemfs_replica_listRequest::MergeFrom(const ::google::protobuf::Message& 
 void xtreemfs_replica_listRequest::MergeFrom(const xtreemfs_replica_listRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_file_id()) {
       set_file_id(from.file_id());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
   }
@@ -15412,10 +15344,6 @@ void xtreemfs_replica_listRequest::Swap(xtreemfs_replica_listRequest* other) {
 
 // ===================================================================
 
-const ::std::string xtreemfs_replica_removeRequest::_default_file_id_;
-const ::std::string xtreemfs_replica_removeRequest::_default_path_;
-const ::std::string xtreemfs_replica_removeRequest::_default_volume_name_;
-const ::std::string xtreemfs_replica_removeRequest::_default_osd_uuid_;
 #ifndef _MSC_VER
 const int xtreemfs_replica_removeRequest::kFileIdFieldNumber;
 const int xtreemfs_replica_removeRequest::kPathFieldNumber;
@@ -15439,10 +15367,10 @@ xtreemfs_replica_removeRequest::xtreemfs_replica_removeRequest(const xtreemfs_re
 
 void xtreemfs_replica_removeRequest::SharedCtor() {
   _cached_size_ = 0;
-  file_id_ = const_cast< ::std::string*>(&_default_file_id_);
-  path_ = const_cast< ::std::string*>(&_default_path_);
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
-  osd_uuid_ = const_cast< ::std::string*>(&_default_osd_uuid_);
+  file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  osd_uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -15451,16 +15379,16 @@ xtreemfs_replica_removeRequest::~xtreemfs_replica_removeRequest() {
 }
 
 void xtreemfs_replica_removeRequest::SharedDtor() {
-  if (file_id_ != &_default_file_id_) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
     delete file_id_;
   }
-  if (path_ != &_default_path_) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
     delete path_;
   }
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
-  if (osd_uuid_ != &_default_osd_uuid_) {
+  if (osd_uuid_ != &::google::protobuf::internal::kEmptyString) {
     delete osd_uuid_;
   }
   if (this != default_instance_) {
@@ -15489,23 +15417,23 @@ xtreemfs_replica_removeRequest* xtreemfs_replica_removeRequest::New() const {
 
 void xtreemfs_replica_removeRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (file_id_ != &_default_file_id_) {
+    if (has_file_id()) {
+      if (file_id_ != &::google::protobuf::internal::kEmptyString) {
         file_id_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (path_ != &_default_path_) {
+    if (has_path()) {
+      if (path_ != &::google::protobuf::internal::kEmptyString) {
         path_->clear();
       }
     }
-    if (_has_bit(2)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
-    if (_has_bit(3)) {
-      if (osd_uuid_ != &_default_osd_uuid_) {
+    if (has_osd_uuid()) {
+      if (osd_uuid_ != &::google::protobuf::internal::kEmptyString) {
         osd_uuid_->clear();
       }
     }
@@ -15606,7 +15534,7 @@ bool xtreemfs_replica_removeRequest::MergePartialFromCodedStream(
 void xtreemfs_replica_removeRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // optional string file_id = 1;
-  if (_has_bit(0)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15615,7 +15543,7 @@ void xtreemfs_replica_removeRequest::SerializeWithCachedSizes(
   }
   
   // required string osd_uuid = 2;
-  if (_has_bit(3)) {
+  if (has_osd_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->osd_uuid().data(), this->osd_uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15624,7 +15552,7 @@ void xtreemfs_replica_removeRequest::SerializeWithCachedSizes(
   }
   
   // optional string path = 3;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15633,7 +15561,7 @@ void xtreemfs_replica_removeRequest::SerializeWithCachedSizes(
   }
   
   // optional string volume_name = 4;
-  if (_has_bit(2)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15650,7 +15578,7 @@ void xtreemfs_replica_removeRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_replica_removeRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // optional string file_id = 1;
-  if (_has_bit(0)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15660,7 +15588,7 @@ void xtreemfs_replica_removeRequest::SerializeWithCachedSizes(
   }
   
   // required string osd_uuid = 2;
-  if (_has_bit(3)) {
+  if (has_osd_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->osd_uuid().data(), this->osd_uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15670,7 +15598,7 @@ void xtreemfs_replica_removeRequest::SerializeWithCachedSizes(
   }
   
   // optional string path = 3;
-  if (_has_bit(1)) {
+  if (has_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->path().data(), this->path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15680,7 +15608,7 @@ void xtreemfs_replica_removeRequest::SerializeWithCachedSizes(
   }
   
   // optional string volume_name = 4;
-  if (_has_bit(2)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -15755,16 +15683,16 @@ void xtreemfs_replica_removeRequest::MergeFrom(const ::google::protobuf::Message
 void xtreemfs_replica_removeRequest::MergeFrom(const xtreemfs_replica_removeRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_file_id()) {
       set_file_id(from.file_id());
     }
-    if (from._has_bit(1)) {
+    if (from.has_path()) {
       set_path(from.path());
     }
-    if (from._has_bit(2)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
-    if (from._has_bit(3)) {
+    if (from.has_osd_uuid()) {
       set_osd_uuid(from.osd_uuid());
     }
   }
@@ -15812,9 +15740,6 @@ void xtreemfs_replica_removeRequest::Swap(xtreemfs_replica_removeRequest* other)
 
 // ===================================================================
 
-const ::std::string xtreemfs_restore_fileRequest::_default_file_path_;
-const ::std::string xtreemfs_restore_fileRequest::_default_file_id_;
-const ::std::string xtreemfs_restore_fileRequest::_default_osd_uuid_;
 #ifndef _MSC_VER
 const int xtreemfs_restore_fileRequest::kFilePathFieldNumber;
 const int xtreemfs_restore_fileRequest::kFileIdFieldNumber;
@@ -15839,10 +15764,10 @@ xtreemfs_restore_fileRequest::xtreemfs_restore_fileRequest(const xtreemfs_restor
 
 void xtreemfs_restore_fileRequest::SharedCtor() {
   _cached_size_ = 0;
-  file_path_ = const_cast< ::std::string*>(&_default_file_path_);
-  file_id_ = const_cast< ::std::string*>(&_default_file_id_);
+  file_path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   file_size_ = GOOGLE_ULONGLONG(0);
-  osd_uuid_ = const_cast< ::std::string*>(&_default_osd_uuid_);
+  osd_uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   stripe_size_ = 0u;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -15852,13 +15777,13 @@ xtreemfs_restore_fileRequest::~xtreemfs_restore_fileRequest() {
 }
 
 void xtreemfs_restore_fileRequest::SharedDtor() {
-  if (file_path_ != &_default_file_path_) {
+  if (file_path_ != &::google::protobuf::internal::kEmptyString) {
     delete file_path_;
   }
-  if (file_id_ != &_default_file_id_) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
     delete file_id_;
   }
-  if (osd_uuid_ != &_default_osd_uuid_) {
+  if (osd_uuid_ != &::google::protobuf::internal::kEmptyString) {
     delete osd_uuid_;
   }
   if (this != default_instance_) {
@@ -15887,19 +15812,19 @@ xtreemfs_restore_fileRequest* xtreemfs_restore_fileRequest::New() const {
 
 void xtreemfs_restore_fileRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (file_path_ != &_default_file_path_) {
+    if (has_file_path()) {
+      if (file_path_ != &::google::protobuf::internal::kEmptyString) {
         file_path_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (file_id_ != &_default_file_id_) {
+    if (has_file_id()) {
+      if (file_id_ != &::google::protobuf::internal::kEmptyString) {
         file_id_->clear();
       }
     }
     file_size_ = GOOGLE_ULONGLONG(0);
-    if (_has_bit(3)) {
-      if (osd_uuid_ != &_default_osd_uuid_) {
+    if (has_osd_uuid()) {
+      if (osd_uuid_ != &::google::protobuf::internal::kEmptyString) {
         osd_uuid_->clear();
       }
     }
@@ -15956,7 +15881,7 @@ bool xtreemfs_restore_fileRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
                  input, &file_size_)));
-          _set_bit(2);
+          set_has_file_size();
         } else {
           goto handle_uninterpreted;
         }
@@ -15989,7 +15914,7 @@ bool xtreemfs_restore_fileRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &stripe_size_)));
-          _set_bit(4);
+          set_has_stripe_size();
         } else {
           goto handle_uninterpreted;
         }
@@ -16016,7 +15941,7 @@ bool xtreemfs_restore_fileRequest::MergePartialFromCodedStream(
 void xtreemfs_restore_fileRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string file_path = 1;
-  if (_has_bit(0)) {
+  if (has_file_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_path().data(), this->file_path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -16025,7 +15950,7 @@ void xtreemfs_restore_fileRequest::SerializeWithCachedSizes(
   }
   
   // required string file_id = 2;
-  if (_has_bit(1)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -16034,12 +15959,12 @@ void xtreemfs_restore_fileRequest::SerializeWithCachedSizes(
   }
   
   // required fixed64 file_size = 3;
-  if (_has_bit(2)) {
+  if (has_file_size()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(3, this->file_size(), output);
   }
   
   // required string osd_uuid = 4;
-  if (_has_bit(3)) {
+  if (has_osd_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->osd_uuid().data(), this->osd_uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -16048,7 +15973,7 @@ void xtreemfs_restore_fileRequest::SerializeWithCachedSizes(
   }
   
   // required fixed32 stripe_size = 5;
-  if (_has_bit(4)) {
+  if (has_stripe_size()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(5, this->stripe_size(), output);
   }
   
@@ -16061,7 +15986,7 @@ void xtreemfs_restore_fileRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_restore_fileRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string file_path = 1;
-  if (_has_bit(0)) {
+  if (has_file_path()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_path().data(), this->file_path().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -16071,7 +15996,7 @@ void xtreemfs_restore_fileRequest::SerializeWithCachedSizes(
   }
   
   // required string file_id = 2;
-  if (_has_bit(1)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -16081,12 +16006,12 @@ void xtreemfs_restore_fileRequest::SerializeWithCachedSizes(
   }
   
   // required fixed64 file_size = 3;
-  if (_has_bit(2)) {
+  if (has_file_size()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(3, this->file_size(), target);
   }
   
   // required string osd_uuid = 4;
-  if (_has_bit(3)) {
+  if (has_osd_uuid()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->osd_uuid().data(), this->osd_uuid().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -16096,7 +16021,7 @@ void xtreemfs_restore_fileRequest::SerializeWithCachedSizes(
   }
   
   // required fixed32 stripe_size = 5;
-  if (_has_bit(4)) {
+  if (has_stripe_size()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(5, this->stripe_size(), target);
   }
   
@@ -16169,19 +16094,19 @@ void xtreemfs_restore_fileRequest::MergeFrom(const ::google::protobuf::Message& 
 void xtreemfs_restore_fileRequest::MergeFrom(const xtreemfs_restore_fileRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_file_path()) {
       set_file_path(from.file_path());
     }
-    if (from._has_bit(1)) {
+    if (from.has_file_id()) {
       set_file_id(from.file_id());
     }
-    if (from._has_bit(2)) {
+    if (from.has_file_size()) {
       set_file_size(from.file_size());
     }
-    if (from._has_bit(3)) {
+    if (from.has_osd_uuid()) {
       set_osd_uuid(from.osd_uuid());
     }
-    if (from._has_bit(4)) {
+    if (from.has_stripe_size()) {
       set_stripe_size(from.stripe_size());
     }
   }
@@ -16230,7 +16155,6 @@ void xtreemfs_restore_fileRequest::Swap(xtreemfs_restore_fileRequest* other) {
 
 // ===================================================================
 
-const ::std::string xtreemfs_rmvolRequest::_default_volume_name_;
 #ifndef _MSC_VER
 const int xtreemfs_rmvolRequest::kVolumeNameFieldNumber;
 #endif  // !_MSC_VER
@@ -16251,7 +16175,7 @@ xtreemfs_rmvolRequest::xtreemfs_rmvolRequest(const xtreemfs_rmvolRequest& from)
 
 void xtreemfs_rmvolRequest::SharedCtor() {
   _cached_size_ = 0;
-  volume_name_ = const_cast< ::std::string*>(&_default_volume_name_);
+  volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -16260,7 +16184,7 @@ xtreemfs_rmvolRequest::~xtreemfs_rmvolRequest() {
 }
 
 void xtreemfs_rmvolRequest::SharedDtor() {
-  if (volume_name_ != &_default_volume_name_) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
     delete volume_name_;
   }
   if (this != default_instance_) {
@@ -16289,8 +16213,8 @@ xtreemfs_rmvolRequest* xtreemfs_rmvolRequest::New() const {
 
 void xtreemfs_rmvolRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (volume_name_ != &_default_volume_name_) {
+    if (has_volume_name()) {
+      if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
         volume_name_->clear();
       }
     }
@@ -16340,7 +16264,7 @@ bool xtreemfs_rmvolRequest::MergePartialFromCodedStream(
 void xtreemfs_rmvolRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -16357,7 +16281,7 @@ void xtreemfs_rmvolRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_rmvolRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string volume_name = 1;
-  if (_has_bit(0)) {
+  if (has_volume_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->volume_name().data(), this->volume_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -16411,7 +16335,7 @@ void xtreemfs_rmvolRequest::MergeFrom(const ::google::protobuf::Message& from) {
 void xtreemfs_rmvolRequest::MergeFrom(const xtreemfs_rmvolRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_volume_name()) {
       set_volume_name(from.volume_name());
     }
   }
@@ -16523,14 +16447,14 @@ xtreemfs_update_file_sizeRequest* xtreemfs_update_file_sizeRequest::New() const 
 
 void xtreemfs_update_file_sizeRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
+    if (has_xcap()) {
       if (xcap_ != NULL) xcap_->::xtreemfs::pbrpc::XCap::Clear();
     }
-    if (_has_bit(1)) {
+    if (has_osd_write_response()) {
       if (osd_write_response_ != NULL) osd_write_response_->::xtreemfs::pbrpc::OSDWriteResponse::Clear();
     }
     close_file_ = false;
-    if (_has_bit(3)) {
+    if (has_coordinates()) {
       if (coordinates_ != NULL) coordinates_->::xtreemfs::pbrpc::VivaldiCoordinates::Clear();
     }
   }
@@ -16579,7 +16503,7 @@ bool xtreemfs_update_file_sizeRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
                  input, &close_file_)));
-          _set_bit(2);
+          set_has_close_file();
         } else {
           goto handle_uninterpreted;
         }
@@ -16620,24 +16544,24 @@ bool xtreemfs_update_file_sizeRequest::MergePartialFromCodedStream(
 void xtreemfs_update_file_sizeRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required .xtreemfs.pbrpc.XCap xcap = 1;
-  if (_has_bit(0)) {
+  if (has_xcap()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       1, this->xcap(), output);
   }
   
   // required .xtreemfs.pbrpc.OSDWriteResponse osd_write_response = 2;
-  if (_has_bit(1)) {
+  if (has_osd_write_response()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       2, this->osd_write_response(), output);
   }
   
   // optional bool close_file = 3;
-  if (_has_bit(2)) {
+  if (has_close_file()) {
     ::google::protobuf::internal::WireFormatLite::WriteBool(3, this->close_file(), output);
   }
   
   // optional .xtreemfs.pbrpc.VivaldiCoordinates coordinates = 4;
-  if (_has_bit(3)) {
+  if (has_coordinates()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       4, this->coordinates(), output);
   }
@@ -16651,26 +16575,26 @@ void xtreemfs_update_file_sizeRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_update_file_sizeRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required .xtreemfs.pbrpc.XCap xcap = 1;
-  if (_has_bit(0)) {
+  if (has_xcap()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         1, this->xcap(), target);
   }
   
   // required .xtreemfs.pbrpc.OSDWriteResponse osd_write_response = 2;
-  if (_has_bit(1)) {
+  if (has_osd_write_response()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         2, this->osd_write_response(), target);
   }
   
   // optional bool close_file = 3;
-  if (_has_bit(2)) {
+  if (has_close_file()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(3, this->close_file(), target);
   }
   
   // optional .xtreemfs.pbrpc.VivaldiCoordinates coordinates = 4;
-  if (_has_bit(3)) {
+  if (has_coordinates()) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         4, this->coordinates(), target);
@@ -16740,16 +16664,16 @@ void xtreemfs_update_file_sizeRequest::MergeFrom(const ::google::protobuf::Messa
 void xtreemfs_update_file_sizeRequest::MergeFrom(const xtreemfs_update_file_sizeRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_xcap()) {
       mutable_xcap()->::xtreemfs::pbrpc::XCap::MergeFrom(from.xcap());
     }
-    if (from._has_bit(1)) {
+    if (from.has_osd_write_response()) {
       mutable_osd_write_response()->::xtreemfs::pbrpc::OSDWriteResponse::MergeFrom(from.osd_write_response());
     }
-    if (from._has_bit(2)) {
+    if (from.has_close_file()) {
       set_close_file(from.close_file());
     }
-    if (from._has_bit(3)) {
+    if (from.has_coordinates()) {
       mutable_coordinates()->::xtreemfs::pbrpc::VivaldiCoordinates::MergeFrom(from.coordinates());
     }
   }
@@ -16803,8 +16727,6 @@ void xtreemfs_update_file_sizeRequest::Swap(xtreemfs_update_file_sizeRequest* ot
 
 // ===================================================================
 
-const ::std::string xtreemfs_set_replica_update_policyRequest::_default_file_id_;
-const ::std::string xtreemfs_set_replica_update_policyRequest::_default_update_policy_;
 #ifndef _MSC_VER
 const int xtreemfs_set_replica_update_policyRequest::kFileIdFieldNumber;
 const int xtreemfs_set_replica_update_policyRequest::kUpdatePolicyFieldNumber;
@@ -16826,8 +16748,8 @@ xtreemfs_set_replica_update_policyRequest::xtreemfs_set_replica_update_policyReq
 
 void xtreemfs_set_replica_update_policyRequest::SharedCtor() {
   _cached_size_ = 0;
-  file_id_ = const_cast< ::std::string*>(&_default_file_id_);
-  update_policy_ = const_cast< ::std::string*>(&_default_update_policy_);
+  file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  update_policy_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -16836,10 +16758,10 @@ xtreemfs_set_replica_update_policyRequest::~xtreemfs_set_replica_update_policyRe
 }
 
 void xtreemfs_set_replica_update_policyRequest::SharedDtor() {
-  if (file_id_ != &_default_file_id_) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
     delete file_id_;
   }
-  if (update_policy_ != &_default_update_policy_) {
+  if (update_policy_ != &::google::protobuf::internal::kEmptyString) {
     delete update_policy_;
   }
   if (this != default_instance_) {
@@ -16868,13 +16790,13 @@ xtreemfs_set_replica_update_policyRequest* xtreemfs_set_replica_update_policyReq
 
 void xtreemfs_set_replica_update_policyRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (file_id_ != &_default_file_id_) {
+    if (has_file_id()) {
+      if (file_id_ != &::google::protobuf::internal::kEmptyString) {
         file_id_->clear();
       }
     }
-    if (_has_bit(1)) {
-      if (update_policy_ != &_default_update_policy_) {
+    if (has_update_policy()) {
+      if (update_policy_ != &::google::protobuf::internal::kEmptyString) {
         update_policy_->clear();
       }
     }
@@ -16941,7 +16863,7 @@ bool xtreemfs_set_replica_update_policyRequest::MergePartialFromCodedStream(
 void xtreemfs_set_replica_update_policyRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string file_id = 1;
-  if (_has_bit(0)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -16950,7 +16872,7 @@ void xtreemfs_set_replica_update_policyRequest::SerializeWithCachedSizes(
   }
   
   // required string update_policy = 2;
-  if (_has_bit(1)) {
+  if (has_update_policy()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->update_policy().data(), this->update_policy().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -16967,7 +16889,7 @@ void xtreemfs_set_replica_update_policyRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_set_replica_update_policyRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string file_id = 1;
-  if (_has_bit(0)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -16977,7 +16899,7 @@ void xtreemfs_set_replica_update_policyRequest::SerializeWithCachedSizes(
   }
   
   // required string update_policy = 2;
-  if (_has_bit(1)) {
+  if (has_update_policy()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->update_policy().data(), this->update_policy().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -17038,10 +16960,10 @@ void xtreemfs_set_replica_update_policyRequest::MergeFrom(const ::google::protob
 void xtreemfs_set_replica_update_policyRequest::MergeFrom(const xtreemfs_set_replica_update_policyRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_file_id()) {
       set_file_id(from.file_id());
     }
-    if (from._has_bit(1)) {
+    if (from.has_update_policy()) {
       set_update_policy(from.update_policy());
     }
   }
@@ -17087,7 +17009,6 @@ void xtreemfs_set_replica_update_policyRequest::Swap(xtreemfs_set_replica_update
 
 // ===================================================================
 
-const ::std::string xtreemfs_set_replica_update_policyResponse::_default_old_update_policy_;
 #ifndef _MSC_VER
 const int xtreemfs_set_replica_update_policyResponse::kOldUpdatePolicyFieldNumber;
 #endif  // !_MSC_VER
@@ -17108,7 +17029,7 @@ xtreemfs_set_replica_update_policyResponse::xtreemfs_set_replica_update_policyRe
 
 void xtreemfs_set_replica_update_policyResponse::SharedCtor() {
   _cached_size_ = 0;
-  old_update_policy_ = const_cast< ::std::string*>(&_default_old_update_policy_);
+  old_update_policy_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -17117,7 +17038,7 @@ xtreemfs_set_replica_update_policyResponse::~xtreemfs_set_replica_update_policyR
 }
 
 void xtreemfs_set_replica_update_policyResponse::SharedDtor() {
-  if (old_update_policy_ != &_default_old_update_policy_) {
+  if (old_update_policy_ != &::google::protobuf::internal::kEmptyString) {
     delete old_update_policy_;
   }
   if (this != default_instance_) {
@@ -17146,8 +17067,8 @@ xtreemfs_set_replica_update_policyResponse* xtreemfs_set_replica_update_policyRe
 
 void xtreemfs_set_replica_update_policyResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (old_update_policy_ != &_default_old_update_policy_) {
+    if (has_old_update_policy()) {
+      if (old_update_policy_ != &::google::protobuf::internal::kEmptyString) {
         old_update_policy_->clear();
       }
     }
@@ -17197,7 +17118,7 @@ bool xtreemfs_set_replica_update_policyResponse::MergePartialFromCodedStream(
 void xtreemfs_set_replica_update_policyResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string old_update_policy = 1;
-  if (_has_bit(0)) {
+  if (has_old_update_policy()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->old_update_policy().data(), this->old_update_policy().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -17214,7 +17135,7 @@ void xtreemfs_set_replica_update_policyResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_set_replica_update_policyResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string old_update_policy = 1;
-  if (_has_bit(0)) {
+  if (has_old_update_policy()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->old_update_policy().data(), this->old_update_policy().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -17268,7 +17189,7 @@ void xtreemfs_set_replica_update_policyResponse::MergeFrom(const ::google::proto
 void xtreemfs_set_replica_update_policyResponse::MergeFrom(const xtreemfs_set_replica_update_policyResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_old_update_policy()) {
       set_old_update_policy(from.old_update_policy());
     }
   }
@@ -17313,7 +17234,6 @@ void xtreemfs_set_replica_update_policyResponse::Swap(xtreemfs_set_replica_updat
 
 // ===================================================================
 
-const ::std::string xtreemfs_set_read_only_xattrRequest::_default_file_id_;
 #ifndef _MSC_VER
 const int xtreemfs_set_read_only_xattrRequest::kFileIdFieldNumber;
 const int xtreemfs_set_read_only_xattrRequest::kValueFieldNumber;
@@ -17335,7 +17255,7 @@ xtreemfs_set_read_only_xattrRequest::xtreemfs_set_read_only_xattrRequest(const x
 
 void xtreemfs_set_read_only_xattrRequest::SharedCtor() {
   _cached_size_ = 0;
-  file_id_ = const_cast< ::std::string*>(&_default_file_id_);
+  file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   value_ = false;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -17345,7 +17265,7 @@ xtreemfs_set_read_only_xattrRequest::~xtreemfs_set_read_only_xattrRequest() {
 }
 
 void xtreemfs_set_read_only_xattrRequest::SharedDtor() {
-  if (file_id_ != &_default_file_id_) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
     delete file_id_;
   }
   if (this != default_instance_) {
@@ -17374,8 +17294,8 @@ xtreemfs_set_read_only_xattrRequest* xtreemfs_set_read_only_xattrRequest::New() 
 
 void xtreemfs_set_read_only_xattrRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (file_id_ != &_default_file_id_) {
+    if (has_file_id()) {
+      if (file_id_ != &::google::protobuf::internal::kEmptyString) {
         file_id_->clear();
       }
     }
@@ -17415,7 +17335,7 @@ bool xtreemfs_set_read_only_xattrRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
                  input, &value_)));
-          _set_bit(1);
+          set_has_value();
         } else {
           goto handle_uninterpreted;
         }
@@ -17442,7 +17362,7 @@ bool xtreemfs_set_read_only_xattrRequest::MergePartialFromCodedStream(
 void xtreemfs_set_read_only_xattrRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string file_id = 1;
-  if (_has_bit(0)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -17451,7 +17371,7 @@ void xtreemfs_set_read_only_xattrRequest::SerializeWithCachedSizes(
   }
   
   // required bool value = 2;
-  if (_has_bit(1)) {
+  if (has_value()) {
     ::google::protobuf::internal::WireFormatLite::WriteBool(2, this->value(), output);
   }
   
@@ -17464,7 +17384,7 @@ void xtreemfs_set_read_only_xattrRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_set_read_only_xattrRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string file_id = 1;
-  if (_has_bit(0)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -17474,7 +17394,7 @@ void xtreemfs_set_read_only_xattrRequest::SerializeWithCachedSizes(
   }
   
   // required bool value = 2;
-  if (_has_bit(1)) {
+  if (has_value()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(2, this->value(), target);
   }
   
@@ -17528,10 +17448,10 @@ void xtreemfs_set_read_only_xattrRequest::MergeFrom(const ::google::protobuf::Me
 void xtreemfs_set_read_only_xattrRequest::MergeFrom(const xtreemfs_set_read_only_xattrRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_file_id()) {
       set_file_id(from.file_id());
     }
-    if (from._has_bit(1)) {
+    if (from.has_value()) {
       set_value(from.value());
     }
   }
@@ -17651,7 +17571,7 @@ bool xtreemfs_set_read_only_xattrResponse::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
                  input, &was_set_)));
-          _set_bit(0);
+          set_has_was_set();
         } else {
           goto handle_uninterpreted;
         }
@@ -17678,7 +17598,7 @@ bool xtreemfs_set_read_only_xattrResponse::MergePartialFromCodedStream(
 void xtreemfs_set_read_only_xattrResponse::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required bool was_set = 1;
-  if (_has_bit(0)) {
+  if (has_was_set()) {
     ::google::protobuf::internal::WireFormatLite::WriteBool(1, this->was_set(), output);
   }
   
@@ -17691,7 +17611,7 @@ void xtreemfs_set_read_only_xattrResponse::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_set_read_only_xattrResponse::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required bool was_set = 1;
-  if (_has_bit(0)) {
+  if (has_was_set()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(1, this->was_set(), target);
   }
   
@@ -17738,7 +17658,7 @@ void xtreemfs_set_read_only_xattrResponse::MergeFrom(const ::google::protobuf::M
 void xtreemfs_set_read_only_xattrResponse::MergeFrom(const xtreemfs_set_read_only_xattrResponse& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_was_set()) {
       set_was_set(from.was_set());
     }
   }
@@ -17783,7 +17703,6 @@ void xtreemfs_set_read_only_xattrResponse::Swap(xtreemfs_set_read_only_xattrResp
 
 // ===================================================================
 
-const ::std::string xtreemfs_get_file_credentialsRequest::_default_file_id_;
 #ifndef _MSC_VER
 const int xtreemfs_get_file_credentialsRequest::kFileIdFieldNumber;
 #endif  // !_MSC_VER
@@ -17804,7 +17723,7 @@ xtreemfs_get_file_credentialsRequest::xtreemfs_get_file_credentialsRequest(const
 
 void xtreemfs_get_file_credentialsRequest::SharedCtor() {
   _cached_size_ = 0;
-  file_id_ = const_cast< ::std::string*>(&_default_file_id_);
+  file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -17813,7 +17732,7 @@ xtreemfs_get_file_credentialsRequest::~xtreemfs_get_file_credentialsRequest() {
 }
 
 void xtreemfs_get_file_credentialsRequest::SharedDtor() {
-  if (file_id_ != &_default_file_id_) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
     delete file_id_;
   }
   if (this != default_instance_) {
@@ -17842,8 +17761,8 @@ xtreemfs_get_file_credentialsRequest* xtreemfs_get_file_credentialsRequest::New(
 
 void xtreemfs_get_file_credentialsRequest::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (_has_bit(0)) {
-      if (file_id_ != &_default_file_id_) {
+    if (has_file_id()) {
+      if (file_id_ != &::google::protobuf::internal::kEmptyString) {
         file_id_->clear();
       }
     }
@@ -17893,7 +17812,7 @@ bool xtreemfs_get_file_credentialsRequest::MergePartialFromCodedStream(
 void xtreemfs_get_file_credentialsRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required string file_id = 1;
-  if (_has_bit(0)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -17910,7 +17829,7 @@ void xtreemfs_get_file_credentialsRequest::SerializeWithCachedSizes(
 ::google::protobuf::uint8* xtreemfs_get_file_credentialsRequest::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required string file_id = 1;
-  if (_has_bit(0)) {
+  if (has_file_id()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->file_id().data(), this->file_id().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
@@ -17964,7 +17883,7 @@ void xtreemfs_get_file_credentialsRequest::MergeFrom(const ::google::protobuf::M
 void xtreemfs_get_file_credentialsRequest::MergeFrom(const xtreemfs_get_file_credentialsRequest& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from._has_bit(0)) {
+    if (from.has_file_id()) {
       set_file_id(from.file_id());
     }
   }
@@ -18006,1065 +17925,6 @@ void xtreemfs_get_file_credentialsRequest::Swap(xtreemfs_get_file_credentialsReq
   return metadata;
 }
 
-
-// ===================================================================
-
-MRCService::~MRCService() {}
-
-const ::google::protobuf::ServiceDescriptor* MRCService::descriptor() {
-  protobuf_AssignDescriptorsOnce();
-  return MRCService_descriptor_;
-}
-
-const ::google::protobuf::ServiceDescriptor* MRCService::GetDescriptor() {
-  protobuf_AssignDescriptorsOnce();
-  return MRCService_descriptor_;
-}
-
-void MRCService::fsetattr(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::fsetattrRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method fsetattr() not implemented.");
-  done->Run();
-}
-
-void MRCService::ftruncate(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::XCap*,
-                         ::xtreemfs::pbrpc::XCap*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method ftruncate() not implemented.");
-  done->Run();
-}
-
-void MRCService::getattr(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::getattrRequest*,
-                         ::xtreemfs::pbrpc::getattrResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method getattr() not implemented.");
-  done->Run();
-}
-
-void MRCService::getxattr(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::getxattrRequest*,
-                         ::xtreemfs::pbrpc::getxattrResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method getxattr() not implemented.");
-  done->Run();
-}
-
-void MRCService::link(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::linkRequest*,
-                         ::xtreemfs::pbrpc::timestampResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method link() not implemented.");
-  done->Run();
-}
-
-void MRCService::listxattr(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::listxattrRequest*,
-                         ::xtreemfs::pbrpc::listxattrResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method listxattr() not implemented.");
-  done->Run();
-}
-
-void MRCService::mkdir(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::mkdirRequest*,
-                         ::xtreemfs::pbrpc::timestampResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method mkdir() not implemented.");
-  done->Run();
-}
-
-void MRCService::open(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::openRequest*,
-                         ::xtreemfs::pbrpc::openResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method open() not implemented.");
-  done->Run();
-}
-
-void MRCService::readdir(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::readdirRequest*,
-                         ::xtreemfs::pbrpc::DirectoryEntries*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method readdir() not implemented.");
-  done->Run();
-}
-
-void MRCService::readlink(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::readlinkRequest*,
-                         ::xtreemfs::pbrpc::readlinkResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method readlink() not implemented.");
-  done->Run();
-}
-
-void MRCService::removexattr(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::removexattrRequest*,
-                         ::xtreemfs::pbrpc::timestampResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method removexattr() not implemented.");
-  done->Run();
-}
-
-void MRCService::rename(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::renameRequest*,
-                         ::xtreemfs::pbrpc::renameResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method rename() not implemented.");
-  done->Run();
-}
-
-void MRCService::rmdir(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::rmdirRequest*,
-                         ::xtreemfs::pbrpc::timestampResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method rmdir() not implemented.");
-  done->Run();
-}
-
-void MRCService::setattr(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::setattrRequest*,
-                         ::xtreemfs::pbrpc::timestampResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method setattr() not implemented.");
-  done->Run();
-}
-
-void MRCService::setxattr(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::setxattrRequest*,
-                         ::xtreemfs::pbrpc::timestampResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method setxattr() not implemented.");
-  done->Run();
-}
-
-void MRCService::statvfs(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::statvfsRequest*,
-                         ::xtreemfs::pbrpc::StatVFS*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method statvfs() not implemented.");
-  done->Run();
-}
-
-void MRCService::symlink(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::symlinkRequest*,
-                         ::xtreemfs::pbrpc::timestampResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method symlink() not implemented.");
-  done->Run();
-}
-
-void MRCService::unlink(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::unlinkRequest*,
-                         ::xtreemfs::pbrpc::unlinkResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method unlink() not implemented.");
-  done->Run();
-}
-
-void MRCService::access(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::accessRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method access() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_checkpoint(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::emptyRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_checkpoint() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_check_file_exists(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::xtreemfs_check_file_existsRequest*,
-                         ::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_check_file_exists() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_dump_database(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::xtreemfs_dump_restore_databaseRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_dump_database() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_get_suitable_osds(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::xtreemfs_get_suitable_osdsRequest*,
-                         ::xtreemfs::pbrpc::xtreemfs_get_suitable_osdsResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_get_suitable_osds() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_internal_debug(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::stringMessage*,
-                         ::xtreemfs::pbrpc::stringMessage*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_internal_debug() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_listdir(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::xtreemfs_listdirRequest*,
-                         ::xtreemfs::pbrpc::xtreemfs_listdirResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_listdir() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_lsvol(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::emptyRequest*,
-                         ::xtreemfs::pbrpc::Volumes*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_lsvol() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_mkvol(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::Volume*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_mkvol() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_renew_capability(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::XCap*,
-                         ::xtreemfs::pbrpc::XCap*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_renew_capability() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_replication_to_master(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::emptyRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_replication_to_master() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_replica_add(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::xtreemfs_replica_addRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_replica_add() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_replica_list(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::xtreemfs_replica_listRequest*,
-                         ::xtreemfs::pbrpc::Replicas*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_replica_list() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_replica_remove(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::xtreemfs_replica_removeRequest*,
-                         ::xtreemfs::pbrpc::FileCredentials*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_replica_remove() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_restore_database(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::xtreemfs_dump_restore_databaseRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_restore_database() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_restore_file(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::xtreemfs_restore_fileRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_restore_file() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_rmvol(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::xtreemfs_rmvolRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_rmvol() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_shutdown(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::emptyRequest*,
-                         ::xtreemfs::pbrpc::emptyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_shutdown() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_update_file_size(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::xtreemfs_update_file_sizeRequest*,
-                         ::xtreemfs::pbrpc::timestampResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_update_file_size() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_set_replica_update_policy(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::xtreemfs_set_replica_update_policyRequest*,
-                         ::xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_set_replica_update_policy() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_set_read_only_xattr(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::xtreemfs_set_read_only_xattrRequest*,
-                         ::xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_set_read_only_xattr() not implemented.");
-  done->Run();
-}
-
-void MRCService::xtreemfs_get_file_credentials(::google::protobuf::RpcController* controller,
-                         const ::xtreemfs::pbrpc::xtreemfs_get_file_credentialsRequest*,
-                         ::xtreemfs::pbrpc::FileCredentials*,
-                         ::google::protobuf::Closure* done) {
-  controller->SetFailed("Method xtreemfs_get_file_credentials() not implemented.");
-  done->Run();
-}
-
-void MRCService::CallMethod(const ::google::protobuf::MethodDescriptor* method,
-                             ::google::protobuf::RpcController* controller,
-                             const ::google::protobuf::Message* request,
-                             ::google::protobuf::Message* response,
-                             ::google::protobuf::Closure* done) {
-  GOOGLE_DCHECK_EQ(method->service(), MRCService_descriptor_);
-  switch(method->index()) {
-    case 0:
-      fsetattr(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::fsetattrRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 1:
-      ftruncate(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::XCap*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::XCap*>(response),
-             done);
-      break;
-    case 2:
-      getattr(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::getattrRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::getattrResponse*>(response),
-             done);
-      break;
-    case 3:
-      getxattr(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::getxattrRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::getxattrResponse*>(response),
-             done);
-      break;
-    case 4:
-      link(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::linkRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::timestampResponse*>(response),
-             done);
-      break;
-    case 5:
-      listxattr(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::listxattrRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::listxattrResponse*>(response),
-             done);
-      break;
-    case 6:
-      mkdir(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::mkdirRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::timestampResponse*>(response),
-             done);
-      break;
-    case 7:
-      open(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::openRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::openResponse*>(response),
-             done);
-      break;
-    case 8:
-      readdir(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::readdirRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::DirectoryEntries*>(response),
-             done);
-      break;
-    case 9:
-      readlink(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::readlinkRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::readlinkResponse*>(response),
-             done);
-      break;
-    case 10:
-      removexattr(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::removexattrRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::timestampResponse*>(response),
-             done);
-      break;
-    case 11:
-      rename(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::renameRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::renameResponse*>(response),
-             done);
-      break;
-    case 12:
-      rmdir(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::rmdirRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::timestampResponse*>(response),
-             done);
-      break;
-    case 13:
-      setattr(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::setattrRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::timestampResponse*>(response),
-             done);
-      break;
-    case 14:
-      setxattr(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::setxattrRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::timestampResponse*>(response),
-             done);
-      break;
-    case 15:
-      statvfs(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::statvfsRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::StatVFS*>(response),
-             done);
-      break;
-    case 16:
-      symlink(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::symlinkRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::timestampResponse*>(response),
-             done);
-      break;
-    case 17:
-      unlink(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::unlinkRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::unlinkResponse*>(response),
-             done);
-      break;
-    case 18:
-      access(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::accessRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 19:
-      xtreemfs_checkpoint(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::emptyRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 20:
-      xtreemfs_check_file_exists(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::xtreemfs_check_file_existsRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse*>(response),
-             done);
-      break;
-    case 21:
-      xtreemfs_dump_database(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::xtreemfs_dump_restore_databaseRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 22:
-      xtreemfs_get_suitable_osds(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::xtreemfs_get_suitable_osdsRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::xtreemfs_get_suitable_osdsResponse*>(response),
-             done);
-      break;
-    case 23:
-      xtreemfs_internal_debug(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::stringMessage*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::stringMessage*>(response),
-             done);
-      break;
-    case 24:
-      xtreemfs_listdir(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::xtreemfs_listdirRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::xtreemfs_listdirResponse*>(response),
-             done);
-      break;
-    case 25:
-      xtreemfs_lsvol(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::emptyRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::Volumes*>(response),
-             done);
-      break;
-    case 26:
-      xtreemfs_mkvol(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::Volume*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 27:
-      xtreemfs_renew_capability(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::XCap*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::XCap*>(response),
-             done);
-      break;
-    case 28:
-      xtreemfs_replication_to_master(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::emptyRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 29:
-      xtreemfs_replica_add(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::xtreemfs_replica_addRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 30:
-      xtreemfs_replica_list(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::xtreemfs_replica_listRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::Replicas*>(response),
-             done);
-      break;
-    case 31:
-      xtreemfs_replica_remove(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::xtreemfs_replica_removeRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::FileCredentials*>(response),
-             done);
-      break;
-    case 32:
-      xtreemfs_restore_database(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::xtreemfs_dump_restore_databaseRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 33:
-      xtreemfs_restore_file(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::xtreemfs_restore_fileRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 34:
-      xtreemfs_rmvol(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::xtreemfs_rmvolRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 35:
-      xtreemfs_shutdown(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::emptyRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
-             done);
-      break;
-    case 36:
-      xtreemfs_update_file_size(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::xtreemfs_update_file_sizeRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::timestampResponse*>(response),
-             done);
-      break;
-    case 37:
-      xtreemfs_set_replica_update_policy(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::xtreemfs_set_replica_update_policyRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse*>(response),
-             done);
-      break;
-    case 38:
-      xtreemfs_set_read_only_xattr(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::xtreemfs_set_read_only_xattrRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse*>(response),
-             done);
-      break;
-    case 39:
-      xtreemfs_get_file_credentials(controller,
-             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::xtreemfs_get_file_credentialsRequest*>(request),
-             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::FileCredentials*>(response),
-             done);
-      break;
-    default:
-      GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
-      break;
-  }
-}
-
-const ::google::protobuf::Message& MRCService::GetRequestPrototype(
-    const ::google::protobuf::MethodDescriptor* method) const {
-  GOOGLE_DCHECK_EQ(method->service(), descriptor());
-  switch(method->index()) {
-    case 0:
-      return ::xtreemfs::pbrpc::fsetattrRequest::default_instance();
-    case 1:
-      return ::xtreemfs::pbrpc::XCap::default_instance();
-    case 2:
-      return ::xtreemfs::pbrpc::getattrRequest::default_instance();
-    case 3:
-      return ::xtreemfs::pbrpc::getxattrRequest::default_instance();
-    case 4:
-      return ::xtreemfs::pbrpc::linkRequest::default_instance();
-    case 5:
-      return ::xtreemfs::pbrpc::listxattrRequest::default_instance();
-    case 6:
-      return ::xtreemfs::pbrpc::mkdirRequest::default_instance();
-    case 7:
-      return ::xtreemfs::pbrpc::openRequest::default_instance();
-    case 8:
-      return ::xtreemfs::pbrpc::readdirRequest::default_instance();
-    case 9:
-      return ::xtreemfs::pbrpc::readlinkRequest::default_instance();
-    case 10:
-      return ::xtreemfs::pbrpc::removexattrRequest::default_instance();
-    case 11:
-      return ::xtreemfs::pbrpc::renameRequest::default_instance();
-    case 12:
-      return ::xtreemfs::pbrpc::rmdirRequest::default_instance();
-    case 13:
-      return ::xtreemfs::pbrpc::setattrRequest::default_instance();
-    case 14:
-      return ::xtreemfs::pbrpc::setxattrRequest::default_instance();
-    case 15:
-      return ::xtreemfs::pbrpc::statvfsRequest::default_instance();
-    case 16:
-      return ::xtreemfs::pbrpc::symlinkRequest::default_instance();
-    case 17:
-      return ::xtreemfs::pbrpc::unlinkRequest::default_instance();
-    case 18:
-      return ::xtreemfs::pbrpc::accessRequest::default_instance();
-    case 19:
-      return ::xtreemfs::pbrpc::emptyRequest::default_instance();
-    case 20:
-      return ::xtreemfs::pbrpc::xtreemfs_check_file_existsRequest::default_instance();
-    case 21:
-      return ::xtreemfs::pbrpc::xtreemfs_dump_restore_databaseRequest::default_instance();
-    case 22:
-      return ::xtreemfs::pbrpc::xtreemfs_get_suitable_osdsRequest::default_instance();
-    case 23:
-      return ::xtreemfs::pbrpc::stringMessage::default_instance();
-    case 24:
-      return ::xtreemfs::pbrpc::xtreemfs_listdirRequest::default_instance();
-    case 25:
-      return ::xtreemfs::pbrpc::emptyRequest::default_instance();
-    case 26:
-      return ::xtreemfs::pbrpc::Volume::default_instance();
-    case 27:
-      return ::xtreemfs::pbrpc::XCap::default_instance();
-    case 28:
-      return ::xtreemfs::pbrpc::emptyRequest::default_instance();
-    case 29:
-      return ::xtreemfs::pbrpc::xtreemfs_replica_addRequest::default_instance();
-    case 30:
-      return ::xtreemfs::pbrpc::xtreemfs_replica_listRequest::default_instance();
-    case 31:
-      return ::xtreemfs::pbrpc::xtreemfs_replica_removeRequest::default_instance();
-    case 32:
-      return ::xtreemfs::pbrpc::xtreemfs_dump_restore_databaseRequest::default_instance();
-    case 33:
-      return ::xtreemfs::pbrpc::xtreemfs_restore_fileRequest::default_instance();
-    case 34:
-      return ::xtreemfs::pbrpc::xtreemfs_rmvolRequest::default_instance();
-    case 35:
-      return ::xtreemfs::pbrpc::emptyRequest::default_instance();
-    case 36:
-      return ::xtreemfs::pbrpc::xtreemfs_update_file_sizeRequest::default_instance();
-    case 37:
-      return ::xtreemfs::pbrpc::xtreemfs_set_replica_update_policyRequest::default_instance();
-    case 38:
-      return ::xtreemfs::pbrpc::xtreemfs_set_read_only_xattrRequest::default_instance();
-    case 39:
-      return ::xtreemfs::pbrpc::xtreemfs_get_file_credentialsRequest::default_instance();
-    default:
-      GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
-      return *reinterpret_cast< ::google::protobuf::Message*>(NULL);
-  }
-}
-
-const ::google::protobuf::Message& MRCService::GetResponsePrototype(
-    const ::google::protobuf::MethodDescriptor* method) const {
-  GOOGLE_DCHECK_EQ(method->service(), descriptor());
-  switch(method->index()) {
-    case 0:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 1:
-      return ::xtreemfs::pbrpc::XCap::default_instance();
-    case 2:
-      return ::xtreemfs::pbrpc::getattrResponse::default_instance();
-    case 3:
-      return ::xtreemfs::pbrpc::getxattrResponse::default_instance();
-    case 4:
-      return ::xtreemfs::pbrpc::timestampResponse::default_instance();
-    case 5:
-      return ::xtreemfs::pbrpc::listxattrResponse::default_instance();
-    case 6:
-      return ::xtreemfs::pbrpc::timestampResponse::default_instance();
-    case 7:
-      return ::xtreemfs::pbrpc::openResponse::default_instance();
-    case 8:
-      return ::xtreemfs::pbrpc::DirectoryEntries::default_instance();
-    case 9:
-      return ::xtreemfs::pbrpc::readlinkResponse::default_instance();
-    case 10:
-      return ::xtreemfs::pbrpc::timestampResponse::default_instance();
-    case 11:
-      return ::xtreemfs::pbrpc::renameResponse::default_instance();
-    case 12:
-      return ::xtreemfs::pbrpc::timestampResponse::default_instance();
-    case 13:
-      return ::xtreemfs::pbrpc::timestampResponse::default_instance();
-    case 14:
-      return ::xtreemfs::pbrpc::timestampResponse::default_instance();
-    case 15:
-      return ::xtreemfs::pbrpc::StatVFS::default_instance();
-    case 16:
-      return ::xtreemfs::pbrpc::timestampResponse::default_instance();
-    case 17:
-      return ::xtreemfs::pbrpc::unlinkResponse::default_instance();
-    case 18:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 19:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 20:
-      return ::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse::default_instance();
-    case 21:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 22:
-      return ::xtreemfs::pbrpc::xtreemfs_get_suitable_osdsResponse::default_instance();
-    case 23:
-      return ::xtreemfs::pbrpc::stringMessage::default_instance();
-    case 24:
-      return ::xtreemfs::pbrpc::xtreemfs_listdirResponse::default_instance();
-    case 25:
-      return ::xtreemfs::pbrpc::Volumes::default_instance();
-    case 26:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 27:
-      return ::xtreemfs::pbrpc::XCap::default_instance();
-    case 28:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 29:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 30:
-      return ::xtreemfs::pbrpc::Replicas::default_instance();
-    case 31:
-      return ::xtreemfs::pbrpc::FileCredentials::default_instance();
-    case 32:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 33:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 34:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 35:
-      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
-    case 36:
-      return ::xtreemfs::pbrpc::timestampResponse::default_instance();
-    case 37:
-      return ::xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse::default_instance();
-    case 38:
-      return ::xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse::default_instance();
-    case 39:
-      return ::xtreemfs::pbrpc::FileCredentials::default_instance();
-    default:
-      GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
-      return *reinterpret_cast< ::google::protobuf::Message*>(NULL);
-  }
-}
-
-MRCService_Stub::MRCService_Stub(::google::protobuf::RpcChannel* channel)
-  : channel_(channel), owns_channel_(false) {}
-MRCService_Stub::MRCService_Stub(
-    ::google::protobuf::RpcChannel* channel,
-    ::google::protobuf::Service::ChannelOwnership ownership)
-  : channel_(channel),
-    owns_channel_(ownership == ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
-MRCService_Stub::~MRCService_Stub() {
-  if (owns_channel_) delete channel_;
-}
-
-void MRCService_Stub::fsetattr(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::fsetattrRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(0),
-                       controller, request, response, done);
-}
-void MRCService_Stub::ftruncate(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::XCap* request,
-                              ::xtreemfs::pbrpc::XCap* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(1),
-                       controller, request, response, done);
-}
-void MRCService_Stub::getattr(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::getattrRequest* request,
-                              ::xtreemfs::pbrpc::getattrResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(2),
-                       controller, request, response, done);
-}
-void MRCService_Stub::getxattr(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::getxattrRequest* request,
-                              ::xtreemfs::pbrpc::getxattrResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(3),
-                       controller, request, response, done);
-}
-void MRCService_Stub::link(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::linkRequest* request,
-                              ::xtreemfs::pbrpc::timestampResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(4),
-                       controller, request, response, done);
-}
-void MRCService_Stub::listxattr(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::listxattrRequest* request,
-                              ::xtreemfs::pbrpc::listxattrResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(5),
-                       controller, request, response, done);
-}
-void MRCService_Stub::mkdir(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::mkdirRequest* request,
-                              ::xtreemfs::pbrpc::timestampResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(6),
-                       controller, request, response, done);
-}
-void MRCService_Stub::open(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::openRequest* request,
-                              ::xtreemfs::pbrpc::openResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(7),
-                       controller, request, response, done);
-}
-void MRCService_Stub::readdir(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::readdirRequest* request,
-                              ::xtreemfs::pbrpc::DirectoryEntries* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(8),
-                       controller, request, response, done);
-}
-void MRCService_Stub::readlink(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::readlinkRequest* request,
-                              ::xtreemfs::pbrpc::readlinkResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(9),
-                       controller, request, response, done);
-}
-void MRCService_Stub::removexattr(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::removexattrRequest* request,
-                              ::xtreemfs::pbrpc::timestampResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(10),
-                       controller, request, response, done);
-}
-void MRCService_Stub::rename(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::renameRequest* request,
-                              ::xtreemfs::pbrpc::renameResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(11),
-                       controller, request, response, done);
-}
-void MRCService_Stub::rmdir(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::rmdirRequest* request,
-                              ::xtreemfs::pbrpc::timestampResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(12),
-                       controller, request, response, done);
-}
-void MRCService_Stub::setattr(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::setattrRequest* request,
-                              ::xtreemfs::pbrpc::timestampResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(13),
-                       controller, request, response, done);
-}
-void MRCService_Stub::setxattr(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::setxattrRequest* request,
-                              ::xtreemfs::pbrpc::timestampResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(14),
-                       controller, request, response, done);
-}
-void MRCService_Stub::statvfs(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::statvfsRequest* request,
-                              ::xtreemfs::pbrpc::StatVFS* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(15),
-                       controller, request, response, done);
-}
-void MRCService_Stub::symlink(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::symlinkRequest* request,
-                              ::xtreemfs::pbrpc::timestampResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(16),
-                       controller, request, response, done);
-}
-void MRCService_Stub::unlink(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::unlinkRequest* request,
-                              ::xtreemfs::pbrpc::unlinkResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(17),
-                       controller, request, response, done);
-}
-void MRCService_Stub::access(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::accessRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(18),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_checkpoint(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::emptyRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(19),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_check_file_exists(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::xtreemfs_check_file_existsRequest* request,
-                              ::xtreemfs::pbrpc::xtreemfs_check_file_existsResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(20),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_dump_database(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::xtreemfs_dump_restore_databaseRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(21),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_get_suitable_osds(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::xtreemfs_get_suitable_osdsRequest* request,
-                              ::xtreemfs::pbrpc::xtreemfs_get_suitable_osdsResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(22),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_internal_debug(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::stringMessage* request,
-                              ::xtreemfs::pbrpc::stringMessage* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(23),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_listdir(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::xtreemfs_listdirRequest* request,
-                              ::xtreemfs::pbrpc::xtreemfs_listdirResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(24),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_lsvol(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::emptyRequest* request,
-                              ::xtreemfs::pbrpc::Volumes* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(25),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_mkvol(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::Volume* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(26),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_renew_capability(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::XCap* request,
-                              ::xtreemfs::pbrpc::XCap* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(27),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_replication_to_master(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::emptyRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(28),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_replica_add(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::xtreemfs_replica_addRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(29),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_replica_list(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::xtreemfs_replica_listRequest* request,
-                              ::xtreemfs::pbrpc::Replicas* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(30),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_replica_remove(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::xtreemfs_replica_removeRequest* request,
-                              ::xtreemfs::pbrpc::FileCredentials* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(31),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_restore_database(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::xtreemfs_dump_restore_databaseRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(32),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_restore_file(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::xtreemfs_restore_fileRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(33),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_rmvol(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::xtreemfs_rmvolRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(34),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_shutdown(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::emptyRequest* request,
-                              ::xtreemfs::pbrpc::emptyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(35),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_update_file_size(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::xtreemfs_update_file_sizeRequest* request,
-                              ::xtreemfs::pbrpc::timestampResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(36),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_set_replica_update_policy(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::xtreemfs_set_replica_update_policyRequest* request,
-                              ::xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(37),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_set_read_only_xattr(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::xtreemfs_set_read_only_xattrRequest* request,
-                              ::xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(38),
-                       controller, request, response, done);
-}
-void MRCService_Stub::xtreemfs_get_file_credentials(::google::protobuf::RpcController* controller,
-                              const ::xtreemfs::pbrpc::xtreemfs_get_file_credentialsRequest* request,
-                              ::xtreemfs::pbrpc::FileCredentials* response,
-                              ::google::protobuf::Closure* done) {
-  channel_->CallMethod(descriptor()->method(39),
-                       controller, request, response, done);
-}
 
 // @@protoc_insertion_point(namespace_scope)
 

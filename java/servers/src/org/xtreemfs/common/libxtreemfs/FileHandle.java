@@ -48,7 +48,7 @@ public abstract class FileHandle {
      * @return Number of bytes read.
      */
     public abstract int read(UserCredentials userCredentials, ReusableBuffer buf, int count, int offset)
-            throws IOException;
+            throws IOException, PosixErrorException;
 
     /**
      * Write to a file 'count' bytes at file offset 'offset' from 'buf'.
@@ -76,7 +76,7 @@ public abstract class FileHandle {
      * @return Number of bytes written (see @attention above).
      */
     public abstract int write(UserCredentials userCredentials, ReusableBuffer buf, int count, int offset)
-            throws IOException;
+            throws IOException, PosixErrorException;
 
     /**
      * Flushes pending writes and file size updates (corresponds to a fsync() system call).
