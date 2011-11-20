@@ -148,10 +148,9 @@ public class AsyncWriteHandler {
         this.maxWriteaheadRequests = maxWriteaheadRequests;
         this.maxWriteTries = maxWriteTries;
         
-        
         asyncWriteHandlerLock = new ReentrantLock();
         allPendingWritesDidComplete = asyncWriteHandlerLock.newCondition();
-
+        state = State.IDLE;
     }
 
     /**
@@ -180,6 +179,7 @@ public class AsyncWriteHandler {
                         allPendingWritesDidComplete.await();    
                     } catch (InterruptedException e) {
                         // TODO: REALLY handle exception.
+                    	e.printStackTrace();
                     }            
                 }
                 waitingBlockingThreadsCount--;

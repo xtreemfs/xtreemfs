@@ -8,7 +8,9 @@ package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,6 +32,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SERVICES;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Setattrs;
@@ -156,6 +159,12 @@ public class VolumeImplementation extends Volume {
      * FileSize update thread to update file size periodically.
      */
     private PeriodicFileSizeUpdateThread      fileSizeUpdateThread;
+    
+    /**
+     * Maps a StripingPolicyType to a StripeTranslator. Should be filled with all possible 
+     * StripingPolicys.
+     */
+    private Map<StripingPolicyType, StripeTranslator> stripeTranslators;
 
     /**
      * 
@@ -175,6 +184,9 @@ public class VolumeImplementation extends Volume {
         this.authBogus = RPCAuthentication.authNone;
 
         this.metadataCache = new MetadataCache(options.getMetadataCacheSize(), options.getMetadataCacheTTLs());
+        // register all stripe translators
+        this.stripeTranslators = new HashMap<StripingPolicyType, StripeTranslator>();
+        stripeTranslators.put(StripingPolicyType.STRIPING_POLICY_RAID0, new StripeTranslatorRaid0());
     }
 
     /*
@@ -215,6 +227,7 @@ public class VolumeImplementation extends Volume {
             fileSizeUpdateThread.join();
             xcapRenewalThread.join();
         } catch (InterruptedException e) {
+        	e.printStackTrace();
         }
 
         // There must no FileInfo left in "openFileTable".
@@ -243,7 +256,6 @@ public class VolumeImplementation extends Volume {
         internalShutdown();
 
         client.closeVolume(this);
-
     }
 
     /*
@@ -1335,6 +1347,10 @@ public class VolumeImplementation extends Volume {
 
     protected UserCredentials getUserCredentialsBogus() {
         return this.userCredentialsBogus;
+    }
+    
+    protected Map<StripingPolicyType, StripeTranslator> getStripeTranslators() {
+    	return this.stripeTranslators;
     }
 
 }

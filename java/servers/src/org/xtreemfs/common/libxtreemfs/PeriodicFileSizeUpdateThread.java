@@ -60,7 +60,6 @@ public class PeriodicFileSizeUpdateThread extends Thread {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                                 "PeriodicFileSizeUpdateThread: failed to update filesize. Reason: ",
                                 e.getMessage());
-
                     }
                 }
             }

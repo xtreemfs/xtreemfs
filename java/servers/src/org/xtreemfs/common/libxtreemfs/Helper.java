@@ -66,8 +66,7 @@ public class Helper {
      * @param defaultPort
      *            Port that is used if address String is just a hostname.
      */
-    static public InetSocketAddress stringToInetSocketAddress(String address, int defaultPort) {
-
+    static protected InetSocketAddress stringToInetSocketAddress(String address, int defaultPort) {
         InetSocketAddress isa;
         int pos = 0;
 

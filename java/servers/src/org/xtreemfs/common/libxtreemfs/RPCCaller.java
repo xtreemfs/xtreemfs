@@ -28,109 +28,110 @@ import com.google.protobuf.Message;
  */
 public class RPCCaller {
 
-    /**
-     * Interface for syncCall which generates the calls. Will be called for each retry.
-     */
-    protected interface CallGenerator<C, R extends Message> {
-        public RPCResponse<R> executeCall(InetSocketAddress server, Auth authHeader,
-                UserCredentials userCreds, C input) throws IOException;
-    }
+	/**
+	 * Interface for syncCall which generates the calls. Will be called for each
+	 * retry.
+	 */
+	protected interface CallGenerator<C, R extends Message> {
+		public RPCResponse<R> executeCall(InetSocketAddress server,
+				Auth authHeader, UserCredentials userCreds, C input)
+				throws IOException;
+	}
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
-            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
-            boolean uuidIteratorHasAddresses, C callRequest, CallGenerator<C, R> callGen) {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
-                callRequest, null, callGen);
-    }
+	protected static <C, R extends Message> R syncCall(SERVICES service,
+			UserCredentials userCreds, Auth auth, Options options,
+			UUIDResolver uuidResolver, UUIDIterator it,
+			boolean uuidIteratorHasAddresses, C callRequest,
+			CallGenerator<C, R> callGen) {
+		return syncCall(service, userCreds, auth, options, uuidResolver, it,
+				uuidIteratorHasAddresses, false, callRequest, null, callGen);
+	}
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
-            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
-            boolean uuidIteratorHasAddresses, boolean delayNextTry, C callRequest, CallGenerator<C, R> callGen) {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses,
-                delayNextTry, callRequest, null, callGen);
-    }
+	protected static <C, R extends Message> R syncCall(SERVICES service,
+			UserCredentials userCreds, Auth auth, Options options,
+			UUIDResolver uuidResolver, UUIDIterator it,
+			boolean uuidIteratorHasAddresses, boolean delayNextTry,
+			C callRequest, CallGenerator<C, R> callGen) {
+		return syncCall(service, userCreds, auth, options, uuidResolver, it,
+				uuidIteratorHasAddresses, delayNextTry, callRequest, null,
+				callGen);
+	}
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
-            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
-            boolean uuidIteratorHasAddresses, C callRequest, ReusableBuffer buf, CallGenerator<C, R> callGen) {
-        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
-                callRequest, buf, callGen);
-    }
+	protected static <C, R extends Message> R syncCall(SERVICES service,
+			UserCredentials userCreds, Auth auth, Options options,
+			UUIDResolver uuidResolver, UUIDIterator it,
+			boolean uuidIteratorHasAddresses, C callRequest,
+			ReusableBuffer buf, CallGenerator<C, R> callGen) {
+		return syncCall(service, userCreds, auth, options, uuidResolver, it,
+				uuidIteratorHasAddresses, false, callRequest, buf, callGen);
+	}
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
-            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
-            boolean uuidIteratorHasAddresses, boolean delayNextTry, C callRequest, ReusableBuffer buffer,
-            CallGenerator<C, R> callGen) {
-        R response = null;
-        RPCResponse<R> r = null;
-        try {
-            // create an InetSocketAddresse depending on the uuidIterator and the kind of service
-            InetSocketAddress server;
-            if (uuidIteratorHasAddresses) {
-                server = getInetSocketAddressFromAddressAndServiceClient(it.getUUID(), service);
-            } else { // UUIDIterator has really UUID, not just address Strings. :P
-                String address = uuidResolver.uuidToAddress(it.getUUID());
-                server = getInetSocketAddressFromAddressAndServiceClient(address, service);
-            }
+	protected static <C, R extends Message> R syncCall(SERVICES service,
+			UserCredentials userCreds, Auth auth, Options options,
+			UUIDResolver uuidResolver, UUIDIterator it,
+			boolean uuidIteratorHasAddresses, boolean delayNextTry,
+			C callRequest, ReusableBuffer buffer, CallGenerator<C, R> callGen) {
+		R response = null;
+		RPCResponse<R> r = null;
+		try {
+			// create an InetSocketAddresse depending on the uuidIterator and
+			// the kind of service
+			InetSocketAddress server;
+			if (uuidIteratorHasAddresses) {
+				server = getInetSocketAddressFromAddress(
+						it.getUUID(), service);
+			} else { // UUIDIterator has really UUID, not just address Strings.
+						// :P
+				String address = uuidResolver.uuidToAddress(it.getUUID());
+				server = getInetSocketAddressFromAddress(
+						address, service);
+			}
 
-            r = callGen.executeCall(server, auth, userCreds, callRequest);
-            response = r.get();
+			r = callGen.executeCall(server, auth, userCreds, callRequest);
+			response = r.get();
 
-            // If the buffer is not null it should be filled with data piggybacked in the RPCResponse.
-            // This is used the read request.
-            if (buffer != null) {
-                buffer.put(r.getData());
-            }
-        } catch (Exception e) {
-            // TODO: handle exception
-        } finally {
-            if (r != null) {
-                r.freeBuffers();
-            }
-        }
-        return response;
-    }
+			// If the buffer is not null it should be filled with data
+			// piggybacked in the RPCResponse.
+			// This is used the read request.
+			if (buffer != null) {
+				buffer.put(r.getData());
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (r != null) {
+				r.freeBuffers();
+			}
+		}
+		return response;
+	}
 
-    /**
-     * Create an InetSocketAddress depending on the address and the type of service object is. If address does
-     * not contain a port a default port depending on the client object is used.
-     * 
-     * @param address
-     *            The address.
-     * @param client
-     *            The service object used to determine which default port should used when address does not
-     *            contain a port.
-     * @return
-     */
-    protected static InetSocketAddress getInetSocketAddressFromAddressAndServiceClient(String address,
-            Object client) {
-        if (client instanceof DIRServiceClient) {
-            return Helper.stringToInetSocketAddress(address,
-                    GlobalTypes.PORTS.DIR_PBRPC_PORT_DEFAULT.getNumber());
-        }
-        if (client instanceof MRCServiceClient)
-            return Helper.stringToInetSocketAddress(address,
-                    GlobalTypes.PORTS.MRC_PBRPC_PORT_DEFAULT.getNumber());
-        if (client instanceof OSDServiceClient) {
-            return Helper.stringToInetSocketAddress(address,
-                    GlobalTypes.PORTS.OSD_PBRPC_PORT_DEFAULT.getNumber());
-        }
-        return null;
-    }
-
-    private static InetSocketAddress getInetSocketAddressFromAddressAndServiceClient(String address,
-            SERVICES service) {
-        if (SERVICES.DIR.equals(service)) {
-            return Helper.stringToInetSocketAddress(address,
-                    GlobalTypes.PORTS.DIR_PBRPC_PORT_DEFAULT.getNumber());
-        }
-        if (SERVICES.MRC.equals(service))
-            return Helper.stringToInetSocketAddress(address,
-                    GlobalTypes.PORTS.MRC_PBRPC_PORT_DEFAULT.getNumber());
-        if (SERVICES.OSD.equals(service)) {
-            return Helper.stringToInetSocketAddress(address,
-                    GlobalTypes.PORTS.OSD_PBRPC_PORT_DEFAULT.getNumber());
-        }
-        return null;
-    }
+	/**
+	 * Create an InetSocketAddress depending on the address and the type of
+	 * service object is. If address does not contain a port a default port
+	 * depending on the client object is used.
+	 * 
+	 * @param address
+	 *            The address.
+	 * @param service
+	 *            The service used to determine which default port should
+	 *            used when address does not contain a port.
+	 * @return
+	 */
+	protected static InetSocketAddress getInetSocketAddressFromAddress(
+			String address, SERVICES service) {
+		if (SERVICES.DIR.equals(service)) {
+			return Helper.stringToInetSocketAddress(address,
+					GlobalTypes.PORTS.DIR_PBRPC_PORT_DEFAULT.getNumber());
+		}
+		if (SERVICES.MRC.equals(service)) {
+			return Helper.stringToInetSocketAddress(address,
+					GlobalTypes.PORTS.MRC_PBRPC_PORT_DEFAULT.getNumber());
+		}
+		if (SERVICES.OSD.equals(service)) {
+			return Helper.stringToInetSocketAddress(address,
+					GlobalTypes.PORTS.OSD_PBRPC_PORT_DEFAULT.getNumber());
+		}
+		return null;
+	}
 }

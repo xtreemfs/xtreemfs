@@ -38,7 +38,7 @@ public class PeriodicXcapRenewalThread extends Thread {
         while (true) {
             // send thread to sleep (default 1minute)
             try {
-                Thread.sleep(volume.getOptions().getPeriodicXcapRenewalIntervalS());
+                Thread.sleep(volume.getOptions().getPeriodicXcapRenewalIntervalS()*1000);
             } catch (Exception e) {
             }
 

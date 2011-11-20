@@ -154,6 +154,7 @@ public class ClientImplementation extends Client {
                 networkClient.waitForShutdown();
             } catch (Exception e) {
                 // TODO: handle exception
+            	e.printStackTrace();
             }
         }
     }

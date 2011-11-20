@@ -8,15 +8,11 @@ public final class Common {
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistry registry) {
   }
-  public interface emptyRequestOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-  }
   public static final class emptyRequest extends
-      com.google.protobuf.GeneratedMessage
-      implements emptyRequestOrBuilder {
+      com.google.protobuf.GeneratedMessage {
     // Use emptyRequest.newBuilder() to construct.
-    private emptyRequest(Builder builder) {
-      super(builder);
+    private emptyRequest() {
+      initFields();
     }
     private emptyRequest(boolean noInit) {}
     
@@ -41,12 +37,7 @@ public final class Common {
     
     private void initFields() {
     }
-    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-      
-      memoizedIsInitialized = 1;
       return true;
     }
     
@@ -65,11 +56,6 @@ public final class Common {
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
-    }
-    
-    @java.lang.Override
-    protected Object writeReplace() throws java.io.ObjectStreamException {
-      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest parseFrom(
@@ -146,49 +132,34 @@ public final class Common {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequestOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return org.xtreemfs.pbrpc.generatedinterfaces.Common.internal_static_xtreemfs_pbrpc_emptyRequest_descriptor;
-      }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return org.xtreemfs.pbrpc.generatedinterfaces.Common.internal_static_xtreemfs_pbrpc_emptyRequest_fieldAccessorTable;
-      }
+        com.google.protobuf.GeneratedMessage.Builder<Builder> {
+      private org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest result;
       
       // Construct using org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
+      private Builder() {}
+      
+      private static Builder create() {
+        Builder builder = new Builder();
+        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest();
+        return builder;
       }
       
-      private Builder(BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-        }
-      }
-      private static Builder create() {
-        return new Builder();
+      protected org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest internalGetResult() {
+        return result;
       }
       
       public Builder clear() {
-        super.clear();
+        if (result == null) {
+          throw new IllegalStateException(
+            "Cannot call clear() after build().");
+        }
+        result = new org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest();
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(buildPartial());
+        return create().mergeFrom(result);
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -200,28 +171,33 @@ public final class Common {
         return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest.getDefaultInstance();
       }
       
+      public boolean isInitialized() {
+        return result.isInitialized();
+      }
       public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest build() {
-        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest result = buildPartial();
-        if (!result.isInitialized()) {
+        if (result != null && !isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return result;
+        return buildPartial();
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest result = buildPartial();
-        if (!result.isInitialized()) {
+        if (!isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return result;
+        return buildPartial();
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest buildPartial() {
-        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest(this);
-        onBuilt();
-        return result;
+        if (result == null) {
+          throw new IllegalStateException(
+            "build() has already been called on this Builder.");
+        }
+        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest returnMe = result;
+        result = null;
+        return returnMe;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -239,10 +215,6 @@ public final class Common {
         return this;
       }
       
-      public final boolean isInitialized() {
-        return true;
-      }
-      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -255,13 +227,11 @@ public final class Common {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
-              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
-                onChanged();
                 return this;
               }
               break;
@@ -276,21 +246,18 @@ public final class Common {
     
     static {
       defaultInstance = new emptyRequest(true);
+      org.xtreemfs.pbrpc.generatedinterfaces.Common.internalForceInit();
       defaultInstance.initFields();
     }
     
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.emptyRequest)
   }
   
-  public interface emptyResponseOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-  }
   public static final class emptyResponse extends
-      com.google.protobuf.GeneratedMessage
-      implements emptyResponseOrBuilder {
+      com.google.protobuf.GeneratedMessage {
     // Use emptyResponse.newBuilder() to construct.
-    private emptyResponse(Builder builder) {
-      super(builder);
+    private emptyResponse() {
+      initFields();
     }
     private emptyResponse(boolean noInit) {}
     
@@ -315,12 +282,7 @@ public final class Common {
     
     private void initFields() {
     }
-    private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-      
-      memoizedIsInitialized = 1;
       return true;
     }
     
@@ -339,11 +301,6 @@ public final class Common {
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
-    }
-    
-    @java.lang.Override
-    protected Object writeReplace() throws java.io.ObjectStreamException {
-      return super.writeReplace();
     }
     
     public static org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse parseFrom(
@@ -420,49 +377,34 @@ public final class Common {
     }
     public Builder toBuilder() { return newBuilder(this); }
     
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponseOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return org.xtreemfs.pbrpc.generatedinterfaces.Common.internal_static_xtreemfs_pbrpc_emptyResponse_descriptor;
-      }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return org.xtreemfs.pbrpc.generatedinterfaces.Common.internal_static_xtreemfs_pbrpc_emptyResponse_fieldAccessorTable;
-      }
+        com.google.protobuf.GeneratedMessage.Builder<Builder> {
+      private org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse result;
       
       // Construct using org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
+      private Builder() {}
+      
+      private static Builder create() {
+        Builder builder = new Builder();
+        builder.result = new org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse();
+        return builder;
       }
       
-      private Builder(BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-        }
-      }
-      private static Builder create() {
-        return new Builder();
+      protected org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse internalGetResult() {
+        return result;
       }
       
       public Builder clear() {
-        super.clear();
+        if (result == null) {
+          throw new IllegalStateException(
+            "Cannot call clear() after build().");
+        }
+        result = new org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse();
         return this;
       }
       
       public Builder clone() {
-        return create().mergeFrom(buildPartial());
+        return create().mergeFrom(result);
       }
       
       public com.google.protobuf.Descriptors.Descriptor
@@ -474,28 +416,33 @@ public final class Common {
         return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
       }
       
+      public boolean isInitialized() {
+        return result.isInitialized();
+      }
       public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse build() {
-        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse result = buildPartial();
-        if (!result.isInitialized()) {
+        if (result != null && !isInitialized()) {
           throw newUninitializedMessageException(result);
         }
-        return result;
+        return buildPartial();
       }
       
       private org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
-        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse result = buildPartial();
-        if (!result.isInitialized()) {
+        if (!isInitialized()) {
           throw newUninitializedMessageException(
             result).asInvalidProtocolBufferException();
         }
-        return result;
+        return buildPartial();
       }
       
       public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse buildPartial() {
-        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse result = new org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse(this);
-        onBuilt();
-        return result;
+        if (result == null) {
+          throw new IllegalStateException(
+            "build() has already been called on this Builder.");
+        }
+        org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse returnMe = result;
+        result = null;
+        return returnMe;
       }
       
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -513,10 +460,6 @@ public final class Common {
         return this;
       }
       
-      public final boolean isInitialized() {
-        return true;
-      }
-      
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -529,13 +472,11 @@ public final class Common {
           switch (tag) {
             case 0:
               this.setUnknownFields(unknownFields.build());
-              onChanged();
               return this;
             default: {
               if (!parseUnknownField(input, unknownFields,
                                      extensionRegistry, tag)) {
                 this.setUnknownFields(unknownFields.build());
-                onChanged();
                 return this;
               }
               break;
@@ -550,6 +491,7 @@ public final class Common {
     
     static {
       defaultInstance = new emptyResponse(true);
+      org.xtreemfs.pbrpc.generatedinterfaces.Common.internalForceInit();
       defaultInstance.initFields();
     }
     
@@ -608,6 +550,8 @@ public final class Common {
         new com.google.protobuf.Descriptors.FileDescriptor[] {
         }, assigner);
   }
+  
+  public static void internalForceInit() {}
   
   // @@protoc_insertion_point(outer_class_scope)
 }

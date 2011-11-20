@@ -171,13 +171,14 @@ public class Options {
     
     /**
      * Interval for periodic file size updates in seconds.
+     * TODO: Find out default values
      */
-    int     periodicFileSizeUpdatesIntervalS;
+    int     periodicFileSizeUpdatesIntervalS = 60;
 
     /**
      * Interval for periodic xcap renewal in seconds.
      */
-    int     periodicXcapRenewalIntervalS;
+    int     periodicXcapRenewalIntervalS = 60;
 
     protected int getPeriodicXcapRenewalIntervalS() {
         return periodicXcapRenewalIntervalS;
