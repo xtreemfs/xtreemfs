@@ -11,7 +11,7 @@ package org.xtreemfs.common.libxtreemfs.exceptions;
  * <br>Sep 3, 2011
  */
 @SuppressWarnings("serial")
-public class UUIDIteratorListIsEmpyException extends Exception {
+public class UUIDIteratorListIsEmpyException extends RuntimeException {
 
     public UUIDIteratorListIsEmpyException(String message) {
         super(message);

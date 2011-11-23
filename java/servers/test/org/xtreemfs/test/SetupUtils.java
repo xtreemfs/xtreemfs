@@ -14,6 +14,7 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.Random;
+import java.util.logging.Level;
 
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
@@ -47,7 +48,7 @@ public class SetupUtils {
     
     public static boolean          CHECKSUMS_ON     = false;
     
-    public static final int        DEBUG_LEVEL      = Logging.LEVEL_DEBUG;
+    public static final int        DEBUG_LEVEL      = Logging.LEVEL_ERROR;
     
     public static final Category[] DEBUG_CATEGORIES = new Category[] { Category.all };
     
@@ -153,7 +154,7 @@ public class SetupUtils {
     
     public static BabuDBConfig createDIRdbsConfig() throws IOException {
         Properties props = new Properties();
-        props.setProperty("babudb.debug.level", "" + DEBUG_LEVEL);
+        props.setProperty("babudb.debug.level", "" + Logging.LEVEL_CRIT);
         props.setProperty("babudb.debug.categories", ""
                 + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("babudb.cfgFile", "config.db");
@@ -205,7 +206,7 @@ public class SetupUtils {
     
     public static BabuDBConfig createMRC1dbsConfig() throws IOException {
         Properties props = new Properties();
-        props.setProperty("babudb.debug.level", "" + DEBUG_LEVEL);
+        props.setProperty("babudb.debug.level", "" + Logging.LEVEL_CRIT);
         props.setProperty("debug.categories", ""
                 + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("babudb.cfgFile", "config.db");
@@ -256,7 +257,7 @@ public class SetupUtils {
     
     public static BabuDBConfig createMRC2dbsConfig() throws IOException {
         Properties props = new Properties();
-        props.setProperty("babudb.debug.level", "" + DEBUG_LEVEL);
+        props.setProperty("babudb.debug.level", "" + Logging.LEVEL_CRIT);
         props.setProperty("babudb.debug.categories", ""
                 + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("babudb.cfgFile", "config.db");

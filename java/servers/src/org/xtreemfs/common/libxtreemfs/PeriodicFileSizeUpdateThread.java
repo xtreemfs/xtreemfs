@@ -9,6 +9,7 @@ package org.xtreemfs.common.libxtreemfs;
 import java.io.IOException;
 import java.util.Map.Entry;
 
+import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 
@@ -37,12 +38,12 @@ public class PeriodicFileSizeUpdateThread extends Thread {
     @Override
     public void run() {
 
-        while (true) {
-
+        while (!isInterrupted()) {
             // send thread to sleep (default 1minute)
             try {
                 Thread.sleep(volume.getOptions().getPeriodicFileSizeUpdatesIntervalS() * 1000);
             } catch (InterruptedException e) {
+                break;
             }
 
             if (Logging.isDebug()) {
@@ -61,6 +62,13 @@ public class PeriodicFileSizeUpdateThread extends Thread {
                                 "PeriodicFileSizeUpdateThread: failed to update filesize. Reason: ",
                                 e.getMessage());
                     }
+                } catch (PosixErrorException e) {
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                                "PeriodicFileSizeUpdateThread: failed to update filesize due to an" +
+                                " Posix Error. ErrorType: %, ErrorMessage: %s",
+                                e.getPosixError().name(), e.getMessage());
+                    }                    
                 }
             }
 

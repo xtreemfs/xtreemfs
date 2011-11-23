@@ -19,14 +19,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
  * <br>
  * Sep 5, 2011
  */
-public abstract class FileHandle {
-
-    /**
-     * 
-     */
-    public FileHandle() {
-        // TODO Auto-generated constructor stub
-    }
+public interface FileHandle {
 
     /**
      * Read from a file 'count' bytes starting at 'offset' into 'buf'.
@@ -117,7 +110,7 @@ public abstract class FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract Stat getAttr(UserCredentials userCredentials) throws IOException;
+    public abstract Stat getAttr(UserCredentials userCredentials) throws IOException, PosixErrorException;
 
     /**
      * Sets a lock on the specified file region and returns the resulting Lock object.
@@ -172,7 +165,7 @@ public abstract class FileHandle {
      * @remark Ownership is transferred to the caller.
      */
     public abstract Lock checkLock(UserCredentials userCredentials, int processId, long offset, long length,
-            boolean exclusive) throws IOException;
+            boolean exclusive) throws IOException, PosixErrorException;
 
     /**
      * Releases "lock".
@@ -194,7 +187,7 @@ public abstract class FileHandle {
      * @throws UnknownAddressSchemeException
      */
     public abstract void releaseLock(UserCredentials userCredentials, int processId, long offset,
-            long length, boolean exclusive) throws IOException;
+            long length, boolean exclusive) throws IOException, PosixErrorException;
 
     /**
      * Releases "lock" (parameters given in Lock object).
@@ -209,7 +202,8 @@ public abstract class FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void releaseLock(UserCredentials userCredentials, Lock lock) throws IOException;
+    public abstract void releaseLock(UserCredentials userCredentials, Lock lock) throws IOException,
+            PosixErrorException;
 
     /**
      * Releases the lock possibly hold by "processId". Use this before closing a file to ensure POSIX
@@ -228,7 +222,7 @@ public abstract class FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void releaseLockOfProcess(int processId) throws IOException;
+    public abstract void releaseLockOfProcess(int processId) throws IOException, PosixErrorException;
 
     /**
      * Triggers the replication of the replica on the OSD with the UUID "osd_uuid" if the replica is a full

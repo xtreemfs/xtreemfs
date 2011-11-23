@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
+import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -44,7 +45,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
  * <br>
  * Sep 2, 2011
  */
-public class ClientImplementation extends Client {
+public class ClientImplementation extends Client implements UUIDResolver {
 
     /**
      * Contains all addresses of the DIR Service
@@ -154,7 +155,7 @@ public class ClientImplementation extends Client {
                 networkClient.waitForShutdown();
             } catch (Exception e) {
                 // TODO: handle exception
-            	e.printStackTrace();
+                e.printStackTrace();
             }
         }
     }
@@ -199,7 +200,7 @@ public class ClientImplementation extends Client {
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
             AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
             int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes)
-            throws IOException {
+            throws IOException, PosixErrorException {
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUID(mrcAddress);
 
@@ -222,19 +223,19 @@ public class ClientImplementation extends Client {
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
             AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
             int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes)
-            throws IOException {
+            throws IOException, PosixErrorException {
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUIDs(mrcAddresses);
-        createVolume(iteratorWithAddresses, auth, userCredentials, volumeName, mode, ownerUsername, ownerGroupname,
-                accessPolicyType, defaultStripingPolicyType, defaultStripeSize, defaultStripeWidth,
-                volumeAttributes);
+        createVolume(iteratorWithAddresses, auth, userCredentials, volumeName, mode, ownerUsername,
+                ownerGroupname, accessPolicyType, defaultStripingPolicyType, defaultStripeSize,
+                defaultStripeWidth, volumeAttributes);
     }
 
     private void createVolume(UUIDIterator mrcAddresses, Auth auth, UserCredentials userCredentials,
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
             AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
             int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes)
-            throws IOException {
+            throws IOException, PosixErrorException {
         final MRCServiceClient mrcClient = new MRCServiceClient(networkClient, null);
 
         StripingPolicy sp = StripingPolicy.newBuilder().setType(defaultStripingPolicyType)
@@ -267,7 +268,7 @@ public class ClientImplementation extends Client {
      */
     @Override
     public void deleteVolume(String mrcAddress, Auth auth, UserCredentials userCredentials, String volumeName)
-            throws IOException {
+            throws IOException, PosixErrorException {
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUID(mrcAddress);
 
@@ -283,7 +284,7 @@ public class ClientImplementation extends Client {
      */
     @Override
     public void deleteVolume(List<String> mrcAddresses, Auth auth, UserCredentials userCredentials,
-            String volumeName) throws IOException {
+            String volumeName) throws IOException, PosixErrorException {
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUIDs(mrcAddresses);
 
@@ -291,7 +292,7 @@ public class ClientImplementation extends Client {
     }
 
     private void deleteVolume(UUIDIterator mrcAddresses, Auth auth, UserCredentials userCredentials,
-            String volumeName) throws IOException {
+            String volumeName) throws IOException, PosixErrorException {
         final MRCServiceClient mrcServiceClient = new MRCServiceClient(networkClient, null);
 
         RPCCaller.<String, emptyResponse> syncCall(SERVICES.MRC, userCredentials, auth, options, this,
@@ -311,7 +312,7 @@ public class ClientImplementation extends Client {
      * @see org.xtreemfs.common.libxtreemfs.Client#listVolumes(java.lang.String)
      */
     @Override
-    public Volumes listVolumes(String mrcAddress) throws IOException {
+    public Volumes listVolumes(String mrcAddress) throws IOException, PosixErrorException {
 
         final MRCServiceClient mrcServiceClient = new MRCServiceClient(networkClient, null);
 
@@ -333,12 +334,11 @@ public class ClientImplementation extends Client {
         return volumes;
     }
 
-    /*
-     * (non-Javadoc)
+    /**
+     * Returns a pointer to a UUIDResolver object, which provides functions to resolve UUIDs to IP-Addresses
+     * and Ports.
      * 
-     * @see org.xtreemfs.common.libxtreemfs.Client#getUUIDResolver()
      */
-    @Override
     public UUIDResolver getUUIDResolver() {
         return this;
     }
@@ -361,6 +361,7 @@ public class ClientImplementation extends Client {
             serviceUuid.resolve();
             address = serviceUuid.getAddress().getHostName() + ":" + serviceUuid.getAddress().getPort();
         } catch (UnknownUUIDException e) {
+            System.out.println("ERRRORORORORR: " + e.toString());
             // TODO: Throw new Exception with same name like in CPP implementation.
         }
 
@@ -385,18 +386,31 @@ public class ClientImplementation extends Client {
         // Check if there is an '@' in the volume. Everything behind the '@' is the snapshot,
         // cut if off.
         String parsedVolumeName = parseVolumeName(volumeName);
+        ServiceSet sSet = null;
+        try {
+            sSet = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, dirServiceUserCredentials,
+                    dirServiceAuth, options, this, dirServiceAddresses, true, parsedVolumeName,
+                    new CallGenerator<String, ServiceSet>() {
 
-        ServiceSet sSet = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, dirServiceUserCredentials,
-                dirServiceAuth, options, this, dirServiceAddresses, true, parsedVolumeName,
-                new CallGenerator<String, ServiceSet>() {
-
-                    @Override
-                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, String input) throws IOException {
-                        return dirServiceClient.xtreemfs_service_get_by_name(server, authHeader, userCreds,
-                                input);
-                    }
-                });
+                        @Override
+                        public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
+                                UserCredentials userCreds, String input) throws IOException {
+                            return dirServiceClient.xtreemfs_service_get_by_name(server, authHeader,
+                                    userCreds, input);
+                        }
+                    });
+        } catch (IOException e) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "volumeNameToMRCUUID: "
+                        + "couldn't resolve mrc UUID for volumeName %s Reason: %s", volumeName,
+                        e.getMessage());
+                throw new VolumeNotFoundException(parsedVolumeName);
+            }
+        } catch (PosixErrorException e) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "volumeNameToMRCUUID: "
+                    + "couldn't resolve mrc UUID for volumeName %s Reason: PosixException with "
+                    + "error type: %s and message: %s", volumeName, e.getPosixError().name(), e.getMessage());
+        }
 
         // check if there is an service which is a VOLUME and then filter the MRC of this volume
         // from its ServiceDataMap.
@@ -450,17 +464,31 @@ public class ClientImplementation extends Client {
         // Check if there is a @ in the volume_name.
         // Everything behind the @ has to be removed as it identifies the snapshot.
         String parsedVolumeName = parseVolumeName(volumeName);
-
-        ServiceSet sSet = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, dirServiceUserCredentials,
-                dirServiceAuth, options, this, dirServiceAddresses, true, parsedVolumeName,
-                new CallGenerator<String, ServiceSet>() {
-                    @Override
-                    public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, String input) throws IOException {
-                        return dirServiceClient.xtreemfs_service_get_by_name(server, authHeader, userCreds,
-                                input);
-                    }
-                });
+        ServiceSet sSet = null;
+        try {
+            sSet = RPCCaller.<String, ServiceSet> syncCall(SERVICES.DIR, dirServiceUserCredentials,
+                    dirServiceAuth, options, this, dirServiceAddresses, true, parsedVolumeName,
+                    new CallGenerator<String, ServiceSet>() {
+                        @Override
+                        public RPCResponse<ServiceSet> executeCall(InetSocketAddress server, Auth authHeader,
+                                UserCredentials userCreds, String input) throws IOException {
+                            return dirServiceClient.xtreemfs_service_get_by_name(server, authHeader,
+                                    userCreds, input);
+                        }
+                    });
+        } catch (IOException e) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "volumeNameToMRCUUID: "
+                        + "couldn't resolve mrc UUID for volumeName %s Reason: %s", volumeName,
+                        e.getMessage());
+                throw new VolumeNotFoundException(parsedVolumeName);
+            }
+        } catch (PosixErrorException e) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "volumeNameToMRCUUID: "
+                    + "couldn't resolve mrc UUID for volumeName %s Reason: PosixException with " +
+                    		"error type: %s and message: %s", volumeName,
+                    e.getPosixError().name(), e.getMessage());
+        }
 
         // Iterate over ServiceSet to find an appropriate MRC
         boolean mrcFound = false;

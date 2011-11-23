@@ -7,6 +7,7 @@
 package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
+import java.lang.ref.PhantomReference;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
+import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
@@ -83,95 +85,95 @@ public class VolumeImplementation extends Volume {
     /**
      * UUID String of the client.
      */
-    private String                            clientUuid;
+    private String                                    clientUuid;
 
     /**
      * Client who opened this volume.
      */
-    private ClientImplementation              client;
+    private ClientImplementation                      client;
 
     /**
      * UUIDResolver used by this volume.
      */
-    private UUIDResolver                      uuidResolver;
+    private UUIDResolver                              uuidResolver;
 
     /**
      * Name of this volume.
      */
-    private String                            volumeName;
+    private String                                    volumeName;
 
     /**
      * The options of the client that should be used for this volume.
      */
-    private Options                           volumeOptions;
+    private Options                                   volumeOptions;
 
     /**
      * Bogus object of UserCredentials. Used when no real UserCredentials are needed.
      */
-    private UserCredentials                   userCredentialsBogus;
+    private UserCredentials                           userCredentialsBogus;
 
     /**
      * The RPC Client.
      * */
-    private RPCNIOSocketClient                networkClient;
+    private RPCNIOSocketClient                        networkClient;
 
     /**
      * An MRCServiceClient is a wrapper for an RPC Client.
      * */
-    private MRCServiceClient                  mrcServiceClient;
+    private MRCServiceClient                          mrcServiceClient;
 
     /**
      * A OSDServiceClient is a wrapper for an RPC Client.
      */
-    private OSDServiceClient                  osdServiceClient;
+    private OSDServiceClient                          osdServiceClient;
 
     /**
      * SSLOptions required for connections to the services.
      */
-    private SSLOptions                        sslOptions;
+    private SSLOptions                                sslOptions;
 
     /**
      * Bogus auth used for calls where no valid Auth is required.
      */
-    private Auth                              authBogus;
+    private Auth                                      authBogus;
 
     /**
      * UUIDIterator for all MRCs which know this volume.
      */
-    private UUIDIterator                      mrcUUIDIterator;
+    private UUIDIterator                              mrcUUIDIterator;
 
     /**
      * Concurrent map that stores all open files
      */
-    private ConcurrentHashMap<Long, FileInfo> openFileTable;
+    private ConcurrentHashMap<Long, FileInfo>         openFileTable;
 
     /**
      * MetadataCache to cache already fetches Metadata.
      */
-    private MetadataCache                     metadataCache;
+    private MetadataCache                             metadataCache;
 
     /**
      * XCap renewal thread to renew Xcap periodically.
      */
-    private PeriodicXcapRenewalThread         xcapRenewalThread;
+    private PeriodicXcapRenewalThread                 xcapRenewalThread;
 
     /**
      * FileSize update thread to update file size periodically.
      */
-    private PeriodicFileSizeUpdateThread      fileSizeUpdateThread;
-    
+    private PeriodicFileSizeUpdateThread              fileSizeUpdateThread;
+
     /**
-     * Maps a StripingPolicyType to a StripeTranslator. Should be filled with all possible 
-     * StripingPolicys.
+     * Maps a StripingPolicyType to a StripeTranslator. Should be filled with all possible StripingPolicys.
      */
     private Map<StripingPolicyType, StripeTranslator> stripeTranslators;
 
     /**
      * 
      */
-    public VolumeImplementation(Client client, String clientUUID, UUIDIterator mrcUuidIterator,
+    public VolumeImplementation(ClientImplementation client, String clientUUID, UUIDIterator mrcUuidIterator,
             String volumeName, SSLOptions sslOptions, Options options) {
 
+        this.client = client;
         this.clientUuid = clientUUID;
         this.uuidResolver = client;
         this.volumeName = volumeName;
@@ -224,10 +226,13 @@ public class VolumeImplementation extends Volume {
     public void internalShutdown() {
         // Stop periodic threads
         try {
+            fileSizeUpdateThread.interrupt();
+            xcapRenewalThread.interrupt();
             fileSizeUpdateThread.join();
             xcapRenewalThread.join();
         } catch (InterruptedException e) {
-        	e.printStackTrace();
+            // TODO: Handle exception
+            e.printStackTrace();
         }
 
         // There must no FileInfo left in "openFileTable".
@@ -266,7 +271,7 @@ public class VolumeImplementation extends Volume {
      * .UserCredentials)
      */
     @Override
-    public StatVFS statFS(UserCredentials userCredentials) throws IOException {
+    public StatVFS statFS(UserCredentials userCredentials) throws IOException, PosixErrorException {
         statvfsRequest request = statvfsRequest.newBuilder().setKnownEtag(0).setVolumeName(volumeName)
                 .build();
 
@@ -290,7 +295,8 @@ public class VolumeImplementation extends Volume {
      * .UserCredentials, java.lang.String, java.lang.String)
      */
     @Override
-    public String readLink(UserCredentials userCredentials, String path) throws IOException {
+    public String readLink(UserCredentials userCredentials, String path) throws IOException,
+            PosixErrorException {
         readlinkRequest request = readlinkRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .build();
 
@@ -319,7 +325,7 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public void symlink(UserCredentials userCredentials, String targetPath, String linkPath)
-            throws IOException {
+            throws IOException, PosixErrorException {
         symlinkRequest request = symlinkRequest.newBuilder().setLinkPath(linkPath).setTargetPath(targetPath)
                 .setVolumeName(volumeName).build();
 
@@ -351,7 +357,8 @@ public class VolumeImplementation extends Volume {
      * UserCredentials, java.lang.String, java.lang.String)
      */
     @Override
-    public void link(UserCredentials userCredentials, String targetPath, String linkPath) throws IOException {
+    public void link(UserCredentials userCredentials, String targetPath, String linkPath) throws IOException,
+            PosixErrorException {
         linkRequest request = linkRequest.newBuilder().setLinkPath(linkPath).setTargetPath(targetPath)
                 .setVolumeName(volumeName).build();
 
@@ -445,7 +452,6 @@ public class VolumeImplementation extends Volume {
      */
     public FileHandle openFile(UserCredentials userCredentials, String path, int flags, int mode,
             int truncateNewFileSize) throws IOException, PosixErrorException {
-
         boolean asyncWritesEnabled = (volumeOptions.getMaxWriteahead() > 0);
 
         if ((SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_SYNC.getNumber() & flags) > 0) {
@@ -481,7 +487,7 @@ public class VolumeImplementation extends Volume {
             throw new PosixErrorException(POSIXErrno.POSIX_ERROR_EIO, errorMessage);
         }
 
-        FileHandle fileHandle = null;
+        FileHandleImplementation fileHandle = null;
 
         // Create a FileInfo object if it does not exist yet.
         FileInfo fileInfo = getOrCreateFileInfo(Helper.extractFileIdFromXcap(response.getCreds().getXcap()),
@@ -513,18 +519,15 @@ public class VolumeImplementation extends Volume {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "open called with O_TRUNK.");
             }
 
-            // TODO: Do this stuff
-            //
-            // try {
-            // file_handle->TruncatePhaseTwoAndThree(user_credentials,
-            // truncate_new_file_size);
-            // } catch(const XtreemFSException& e) {
-            // // Truncate did fail, close file again.
-            // file_handle->Close();
-            // throw; // Rethrow error.
-            // }
+            try {
+                fileHandle.truncatePhaseTwoAndThree(userCredentials, truncateNewFileSize);
+            } catch (XtreemFSException e) {
+                // Truncate did fail, close file again
+                //TODO: Ask what should happen if other exception is thrown.
+                fileHandle.close();
+                throw e;
+            } 
         }
-
         return fileHandle;
     }
 
@@ -537,7 +540,7 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public void truncate(UserCredentials userCredentials, String path, int newFileSize) throws IOException,
-            PosixErrorException {
+            PosixErrorException, PosixErrorException {
         // Open file with O_TRUNC
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber();
@@ -556,7 +559,7 @@ public class VolumeImplementation extends Volume {
      * .UserCredentials, java.lang.String, org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat)
      */
     @Override
-    public Stat getAttr(UserCredentials userCredentials, String path) throws IOException {
+    public Stat getAttr(UserCredentials userCredentials, String path) throws IOException, PosixErrorException {
 
         // Retrive stat object from cache or MRC
         Stat stat = getAttrHelper(userCredentials, path);
@@ -567,7 +570,8 @@ public class VolumeImplementation extends Volume {
         return stat;
     }
 
-    private Stat getAttrHelper(UserCredentials userCredentials, String path) throws IOException {
+    private Stat getAttrHelper(UserCredentials userCredentials, String path) throws IOException,
+            PosixErrorException {
         // Check if Stat object is cached.
         Stat stat = metadataCache.getStat(path);
 
@@ -616,7 +620,7 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public void setAttr(UserCredentials userCredentials, String path, Stat stat, int toSet)
-            throws IOException {
+            throws IOException, PosixErrorException {
         setattrRequest request = setattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setStbuf(stat).setToSet(toSet).build();
 
@@ -660,7 +664,7 @@ public class VolumeImplementation extends Volume {
      * .UserCredentials, java.lang.String)
      */
     @Override
-    public void unlink(UserCredentials userCredentials, String path) throws IOException {
+    public void unlink(UserCredentials userCredentials, String path) throws IOException, PosixErrorException {
         // 1. Delete file at MRC.
         unlinkRequest request = unlinkRequest.newBuilder().setPath(path).setVolumeName(volumeName).build();
 
@@ -689,7 +693,7 @@ public class VolumeImplementation extends Volume {
         }
     }
 
-    private void unlinkAtOsd(FileCredentials fc, String path) throws IOException {
+    private void unlinkAtOsd(FileCredentials fc, String path) throws IOException, PosixErrorException {
         unlink_osd_Request request = unlink_osd_Request.newBuilder().setFileCredentials(fc)
                 .setFileId(fc.getXcap().getFileId()).build();
 
@@ -721,7 +725,8 @@ public class VolumeImplementation extends Volume {
      * .UserCredentials, java.lang.String, java.lang.String)
      */
     @Override
-    public void rename(UserCredentials userCredentials, String path, String newPath) throws IOException {
+    public void rename(UserCredentials userCredentials, String path, String newPath) throws IOException,
+            PosixErrorException {
         if (path.equals(newPath)) {
             return; // Do nothing.
         }
@@ -788,7 +793,8 @@ public class VolumeImplementation extends Volume {
      * .RPC.UserCredentials, java.lang.String, int)
      */
     @Override
-    public void createDirectory(UserCredentials userCredentials, String path, int mode) throws IOException {
+    public void createDirectory(UserCredentials userCredentials, String path, int mode) throws IOException,
+            PosixErrorException {
         mkdirRequest request = mkdirRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setMode(mode).build();
 
@@ -822,7 +828,8 @@ public class VolumeImplementation extends Volume {
      * .RPC.UserCredentials, java.lang.String)
      */
     @Override
-    public void removeDirectory(UserCredentials userCredentials, String path) throws IOException {
+    public void removeDirectory(UserCredentials userCredentials, String path) throws IOException,
+            PosixErrorException {
         rmdirRequest request = rmdirRequest.newBuilder().setVolumeName(volumeName).setPath(path).build();
 
         timestampResponse response = RPCCaller.<rmdirRequest, timestampResponse> syncCall(SERVICES.MRC,
@@ -856,7 +863,7 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public DirectoryEntries readDir(UserCredentials userCredentials, String path, int offset, int count,
-            boolean namesOnly) throws IOException {
+            boolean namesOnly) throws IOException, PosixErrorException {
         DirectoryEntries result = null;
 
         // Try to get DirectoryEntries from cache
@@ -936,7 +943,8 @@ public class VolumeImplementation extends Volume {
      * .RPC.UserCredentials, java.lang.String)
      */
     @Override
-    public listxattrResponse listXAttrs(UserCredentials userCredentials, String path) throws IOException {
+    public listxattrResponse listXAttrs(UserCredentials userCredentials, String path) throws IOException,
+            PosixErrorException {
         return listXAttrs(userCredentials, path, true);
     }
 
@@ -949,7 +957,7 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public listxattrResponse listXAttrs(UserCredentials userCredentials, String path, boolean useCache)
-            throws IOException {
+            throws IOException, PosixErrorException {
         // Check if information was cached.
         if (useCache) {
             // TODO: retrieve information from metadatacache if available.
@@ -986,7 +994,7 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public void setXAttr(UserCredentials userCredentials, String path, String name, String value, int flags)
-            throws IOException {
+            throws IOException, PosixErrorException {
         setxattrRequest request = setxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setName(name).setValue(value).setFlags(flags).build();
 
@@ -1014,7 +1022,8 @@ public class VolumeImplementation extends Volume {
      * .UserCredentials, java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
-    public String getXAttr(UserCredentials userCredentials, String path, String name) throws IOException {
+    public String getXAttr(UserCredentials userCredentials, String path, String name) throws IOException,
+            PosixErrorException {
         boolean xtreemfsAttrRequest = name.substring(0, 9).equals("xtreemfs.");
 
         if (xtreemfsAttrRequest) {
@@ -1074,7 +1083,8 @@ public class VolumeImplementation extends Volume {
      * .RPC.UserCredentials, java.lang.String, java.lang.String, int)
      */
     @Override
-    public int getXAttrSize(UserCredentials userCredentials, String path, String name) throws IOException {
+    public int getXAttrSize(UserCredentials userCredentials, String path, String name) throws IOException,
+            PosixErrorException {
 
         // Try to get it from cache first.
         // We also return the size of cached "xtreemfs." attributes. However, the
@@ -1127,7 +1137,8 @@ public class VolumeImplementation extends Volume {
      * .RPC.UserCredentials, java.lang.String, java.lang.String)
      */
     @Override
-    public void removeXAttr(UserCredentials userCredentials, String path, String name) throws IOException {
+    public void removeXAttr(UserCredentials userCredentials, String path, String name) throws IOException,
+            PosixErrorException {
         removexattrRequest request = removexattrRequest.newBuilder().setVolumeName(volumeName).setPath(path)
                 .setName(name).build();
 
@@ -1183,7 +1194,8 @@ public class VolumeImplementation extends Volume {
      * .RPC.UserCredentials, java.lang.String)
      */
     @Override
-    public Replicas listReplicas(UserCredentials userCredentials, String path) throws IOException {
+    public Replicas listReplicas(UserCredentials userCredentials, String path) throws IOException,
+            PosixErrorException {
         xtreemfs_replica_listRequest request = xtreemfs_replica_listRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).build();
 
@@ -1211,7 +1223,7 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public void removeReplica(UserCredentials userCredentials, String path, String osdUuid)
-            throws IOException {
+            throws IOException, PosixErrorException {
         // remove the replica
         xtreemfs_replica_removeRequest request = xtreemfs_replica_removeRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).setOsdUuid(osdUuid).build();
@@ -1257,7 +1269,7 @@ public class VolumeImplementation extends Volume {
      */
     @Override
     public List<String> getSuitableOSDs(UserCredentials userCredentials, String path, int numberOfOsds)
-            throws IOException {
+            throws IOException, PosixErrorException {
         xtreemfs_get_suitable_osdsRequest request = xtreemfs_get_suitable_osdsRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).setNumOsds(numberOfOsds).build();
 
@@ -1348,9 +1360,9 @@ public class VolumeImplementation extends Volume {
     protected UserCredentials getUserCredentialsBogus() {
         return this.userCredentialsBogus;
     }
-    
+
     protected Map<StripingPolicyType, StripeTranslator> getStripeTranslators() {
-    	return this.stripeTranslators;
+        return this.stripeTranslators;
     }
 
 }

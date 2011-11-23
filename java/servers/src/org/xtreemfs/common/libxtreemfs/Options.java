@@ -6,16 +6,17 @@
  */
 package org.xtreemfs.common.libxtreemfs;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.net.MalformedURLException;
 import java.util.Vector;
 
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.VersionManagement;
+import org.xtreemfs.foundation.pbrpc.Schemes;
 
 /**
- * 
- * <br>
- * Sep 2, 2011
+ * Represents all possible options for libxtreemfs.
  */
 public class Options {
 
@@ -31,92 +32,111 @@ public class Options {
      * volume) or the MRC (create/delete/list volumes). Depending on this type, the default port differs (DIR:
      * 32638; MRC: 32636).
      */
-    String      xtreemfsUrl;
+    private String  xtreemfsUrl;
 
-    /** Usually extracted from xtreemfs_url (Form: ip-address:port). */
-    String      serviceAddress;
-    /** Usually extracted from xtreemfs_url. */
-    String      volumeName;
-    /** Usually extracted from xtreemfs_url. */
-    String      protocol;
-    /** Mount point on local system (set by ParseCommandLine()). */
-    String      mountPoint;
+    /**
+     * Usually extracted from xtreemfs_url (Form: ip-address:port).
+     */
+    private String  serviceAddress;
+    /**
+     * Usually extracted from xtreemfs_url.
+     */
+    private String  volumeName;
+    /**
+     * Usually extracted from xtreemfs_url.
+     */
+    private String  protocol;
+    /**
+     * Mount point on local system (set by parseCommandLine()).
+     */
+    private String  mountPoint;
 
     // General options.
-    /** Log level as string (EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG). */
-    String      logLevelString;
-    /** If not empty, the output will be logged to a file. */
-    String      logFilePath;
-    /** True, if "-h" was specified. */
-    boolean     showHelp;
-    /** True, if argc == 1 was at ParseCommandLine(). */
-    boolean     emptyArgumentsList;
-    /** True, if -V/--version was specified and the version will be shown only . */
-    boolean     showVersion;
+    /**
+     * Log level as string (EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG).
+     */
+    private String  logLevelString;
+    /**
+     * If not empty, the output will be logged to a file.
+     */
+    private String  logFilePath;
+    /**
+     * True, if "-h" was specified.
+     * */
+    private boolean showHelp;
+    /**
+     * True, if argc == 1 was at parseCommandLine().
+     * */
+    private boolean emptyArgumentsList;
+    /**
+     * True, if -V/--version was specified and the version will be shown only .
+     * */
+    private boolean showVersion;
 
     // Optimizations.
     /**
-     * Maximum number of entries of the StatCache
+     * Maximum number of entries of the StatCache. Default: 100000
      */
-    long        metadataCacheSize;
+    private long    metadataCacheSize     = 100000;
 
     /**
-     * Time to live for MetadataCache entries.
+     * Time to live for MetadataCache entries. Default: 120
      */
-    long        metadataCacheTTLs;
+    private long    metadataCacheTTLs     = 120;
 
     /**
-     * Maximum number of pending bytes (of async writes) per file.
+     * Maximum number of pending bytes (of async writes) per file. TODO: Reenable async writes when retry
+     * support is completed.
      */
-    int         maxWriteahead;
+    private int     maxWriteahead         = 0;
 
     /**
-     * Maximum number of pending async write requests per file.
+     * Maximum number of pending async write requests per file. Default: 10
      */
-    int         maxWriteaheadRequests;
+    private int     maxWriteaheadRequests = 10;
 
     /**
-     * Number of retrieved entries per readdir request.
+     * Number of retrieved entries per readdir request. Default: 1024
      */
-    int         readdirChunkSize;
+    private int     readdirChunkSize      = 1024;
 
     // Error Handling options.
     /**
-     * How often shall a failed operation get retried?
+     * How often shall a failed operation get retried? Default: 40
      */
-    int         maxTries;
+    private int     maxTries              = 40;
     /**
-     * How often shall a failed read operation get retried?
+     * How often shall a failed read operation get retried? Default: 40
      */
-    int         maxReadTries;
+    private int     maxReadTries          = 40;
     /**
-     * How often shall a failed write operation get retried?
+     * How often shall a failed write operation get retried? Default: 40
      */
-    int         maxWriteTries;
+    private int     maxWriteTries         = 40;
     /**
-     * How long to wait after a failed request?
+     * How long to wait after a failed request? Default: 15
      */
-    int         retryDelay_s;
+    private int     retryDelay_s          = 15;
 
     /**
      * Stops retrying to execute a synchronous request if this signal was send to the thread responsible for
-     * the execution of the request.
+     * the execution of the request. Default: 0
      */
-    int         interruptSignal;
+    private int     interruptSignal       = 0;
 
     /**
-     * Maximum time until a connection attempt will be aborted.
+     * Maximum time until a connection attempt will be aborted. Default: 60
      */
-    private int connectTimeout_s;
+    private int     connectTimeout_s      = 60;
     /**
-     * Maximum time until a request will be aborted and the response returned.
+     * Maximum time until a request will be aborted and the response returned. Default:
      */
-    private int requestTimeout_s;
+    private int     requestTimeout_s      = 60;
 
     /**
-     * The RPC Client closes connections after "linger_timeout_s" time of inactivity.
+     * The RPC Client closes connections after "linger_timeout_s" time of inactivity. Default: 600
      */
-    private int lingerTimeout_s;
+    private int     lingerTimeout_s       = 600;
 
     public long getMetadataCacheSize() {
         return metadataCacheSize;
@@ -143,42 +163,54 @@ public class Options {
     }
 
     // SSL options.
-    String  sslPemCertPath;
-    String  sslPemPath;
-    String  sslPemKeyPass;
-    String  sslPKCS2Path;
-    String  sslPKCS12Pass;
+    private String  sslPemCertPath                    = "";
+    private String  sslPemPath                        = "";
+    private String  sslPemKeyPass                     = "";
+    private String  sslPKCS2Path                      = "";
+    private String  sslPKCS12Pass                     = "";
 
     // Grid Support options.
     /**
      * True, if the XtreemFS Grid-SSL Mode (only SSL handshake, no encryption of data itself) shall be used.
+     * Default: false
      */
-    boolean gridSSL;
-    /** True if the Globus user mapping shall be used. */
-    boolean gridAuthModeGlobus;
-    /** True if the Unicore user mapping shall be used. */
-    boolean gridAuthModeUnicore;
-    /** Location of the gridmap file. */
-    String  gridGridmapLocation;
-    /** Default Location of the Globus gridmap file. */
-    String  gridGridmapLocationDefaultGlobus;
-    /** Default Location of the Unicore gridmap file. */
-    String  gridGridmapLocationDefaultUnicore;
-    /** Periodic interval after which the gridmap file will be reloaded. */
-    int     gridGridmapReloadInterval_m;
+    private boolean gridSSL                           = false;
+    /**
+     * True if the Globus user mapping shall be used. Default: false
+     * */
+    private boolean gridAuthModeGlobus                = false;
+    /**
+     * True if the Unicore user mapping shall be used. Default: false
+     * */
+    private boolean gridAuthModeUnicore               = false;
+    /**
+     * Location of the gridmap file. Default: ""
+     */
+    private String  gridGridmapLocation               = "";
+    /**
+     * Default Location of the Globus gridmap file. Default: "/etc/grid-security/grid-mapfile"
+     */
+    private String  gridGridmapLocationDefaultGlobus  = "/etc/grid-security/grid-mapfile";
+    /**
+     * Default Location of the Unicore gridmap file. Default: "/etc/grid-security/d-grid_uudb"
+     */
+    private String  gridGridmapLocationDefaultUnicore = "/etc/grid-security/d-grid_uudb";
+    /**
+     * Periodic interval after which the gridmap file will be reloaded. Default: 60
+     */
+    private int     gridGridmapReloadInterval_m       = 60;                               // 60 minutes = 1
+                                                                                           // hour
 
     // Advanced XtreemFS options
-    
     /**
-     * Interval for periodic file size updates in seconds.
-     * TODO: Find out default values
+     * Interval for periodic file size updates in seconds. Default: 60
      */
-    int     periodicFileSizeUpdatesIntervalS = 60;
+    private int     periodicFileSizeUpdatesIntervalS  = 60;
 
     /**
-     * Interval for periodic xcap renewal in seconds.
+     * Interval for periodic xcap renewal in seconds. Default: 60
      */
-    int     periodicXcapRenewalIntervalS = 60;
+    private int     periodicXcapRenewalIntervalS      = 60;
 
     protected int getPeriodicXcapRenewalIntervalS() {
         return periodicXcapRenewalIntervalS;
@@ -187,7 +219,7 @@ public class Options {
     protected int getPeriodicFileSizeUpdatesIntervalS() {
         return periodicFileSizeUpdatesIntervalS;
     }
-    
+
     // User mapping.
     /** Type of the UserMapping used to resolve user and group IDs to names. */
     // TODO: Find out what this is.
@@ -203,8 +235,10 @@ public class Options {
     /** Contains descriptions of advanced options. */
     // boost::program_options::options_description hidden_descriptions_;
 
-    /** Set to true if GenerateProgramOptionsDescriptions() was executed. */
-    boolean all_descriptions_initialized_;
+    /**
+     * Set to true if GenerateProgramOptionsDescriptions() was executed.
+     * */
+    private boolean allDescriptionsInitialized = false;
 
     // Options itself.
     /** Description of general options (Logging, help). */
@@ -298,12 +332,19 @@ public class Options {
     }
 
     /**
-     * Creates a new SSLOptions object based on the value of the members: - ssl_pem_path - ssl_pem_cert_path -
-     * ssl_pem_key_pass - ssl_pkcs12_path - ssl_pkcs12_pass - grid_ssl || protocol.
+     * Creates a new SSLOptions object based on the value of the members: - sslPem_path - sslPemCertPath -
+     * sslPemKeyPass - sslPkcs12Path - sslPkcs12Pass - gridSsl || protocol.
      * 
      */
     public SSLOptions generateSSLOptions() {
-        // TODO: Implement
+        SSLOptions sslOptions = null;
+        if (sslEnabled()) {
+            // TODO: Find out how to create SSLOptions object.
+            // sslOptions = new SSLOptions(new FileInputStream(new File(sslPemPath)),
+            // sslPemKeyPass, sslPemCertPath,
+            // new FileInputStream(new File(sslPKCS2Path)),
+            // sslPKCS12Pass, new String(), gridSSL || protocol == Schemes.SCHEME_PBRPCG );
+        }
         return null;
     }
 
@@ -312,20 +353,18 @@ public class Options {
         // TODO: Implement!
     }
 
-    /**
-     * Return maxTries.
-     */
+    public boolean sslEnabled() {
+        return !sslPemCertPath.isEmpty() || !sslPKCS2Path.isEmpty();
+    }
+
     public int getMaxTries() {
         return maxTries;
     }
-    
+
     protected int getMaxWriteTries() {
         return maxWriteTries;
     }
 
-    /**
-     * Return retryDelay_s.
-     */
     public int getRetryDelay_s() {
         return retryDelay_s;
     }
@@ -333,7 +372,7 @@ public class Options {
     public int getMaxWriteahead() {
         return maxWriteahead;
     }
-    
+
     protected int getMaxWriteaheadRequests() {
         return maxWriteaheadRequests;
     }
@@ -342,5 +381,7 @@ public class Options {
         return readdirChunkSize;
     }
     
-    
+    public void setPeriodicFileSizeUpdatesIntervalS(int periodicFileSizeUpdatesIntervalS) {
+        this.periodicFileSizeUpdatesIntervalS = periodicFileSizeUpdatesIntervalS;
+    }
 }

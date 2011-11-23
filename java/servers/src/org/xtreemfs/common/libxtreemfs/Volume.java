@@ -49,7 +49,7 @@ public abstract class Volume {
      * @throws UnknownAddressSchemeException
      */
     // TODO: Create other Exceptions.
-    public abstract StatVFS statFS(UserCredentials userCredentials) throws IOException;
+    public abstract StatVFS statFS(UserCredentials userCredentials) throws IOException, PosixErrorException;
 
     /**
      * 
@@ -67,7 +67,7 @@ public abstract class Volume {
      * @throws UnknownAddressSchemeException
      */
     // TODO: Create other Exceptions.
-    public abstract String readLink(UserCredentials userCredentials, String path) throws IOException;
+    public abstract String readLink(UserCredentials userCredentials, String path) throws IOException, PosixErrorException;
 
     /**
      * 
@@ -87,7 +87,7 @@ public abstract class Volume {
      */
     // TODO: Create other Exceptions.
     public abstract void symlink(UserCredentials userCredentials, String targetPath, String linkPath)
-            throws IOException;
+            throws IOException, PosixErrorException;
 
     /**
      * Creates a hard link pointing to "targetPath" at "linkPath".
@@ -105,7 +105,7 @@ public abstract class Volume {
      * @throws UnknownAddressSchemeException
      */
     public abstract void link(UserCredentials userCredentials, String targetPath, String linkPath)
-            throws IOException;
+            throws IOException, PosixErrorException, PosixErrorException;
 
     /**
      * Tests if the subject described by "userCredentials" is allowed to access "path" as specified by
@@ -195,7 +195,7 @@ public abstract class Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract Stat getAttr(UserCredentials userCredentials, String path) throws IOException;
+    public abstract Stat getAttr(UserCredentials userCredentials, String path) throws IOException, PosixErrorException;
 
     /**
      * Sets the attributes given by "stat" and specified in "toSet".
@@ -218,7 +218,7 @@ public abstract class Volume {
      * @throws UnknownAddressSchemeException
      */
     public abstract void setAttr(UserCredentials userCredentials, String path, Stat stat, int toSet)
-            throws IOException;
+            throws IOException, PosixErrorException;
 
     /**
      * Remove the file at "path" (deletes the entry at the MRC and all objects on one OSD).
@@ -233,7 +233,7 @@ public abstract class Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void unlink(UserCredentials userCredentials, String path) throws IOException;
+    public abstract void unlink(UserCredentials userCredentials, String path) throws IOException, PosixErrorException;
 
     /**
      * Rename a file or directory "path" to "newPath".
@@ -251,7 +251,7 @@ public abstract class Volume {
      * @throws UnknownAddressSchemeException
      * */
     public abstract void rename(UserCredentials userCredentials, String path, String newPath)
-            throws IOException;
+            throws IOException, PosixErrorException;
 
     /**
      * Creates a directory with the modes "mode".
@@ -269,7 +269,7 @@ public abstract class Volume {
      * @throws UnknownAddressSchemeException
      */
     public abstract void createDirectory(UserCredentials userCredentials, String path, int mode)
-            throws IOException;
+            throws IOException, PosixErrorException;
 
     /**
      * Removes the directory at "path" which has to be empty.
@@ -284,7 +284,7 @@ public abstract class Volume {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void removeDirectory(UserCredentials userCredentials, String path) throws IOException;
+    public abstract void removeDirectory(UserCredentials userCredentials, String path) throws IOException, PosixErrorException;
 
     /**
      * Appends the list of requested directory entries to "dirEntries".
@@ -314,7 +314,7 @@ public abstract class Volume {
      * @remark Ownership is transferred to the caller.
      */
     public abstract DirectoryEntries readDir(UserCredentials userCredentials, String path, int offset,
-            int count, boolean namesOnly) throws IOException;
+            int count, boolean namesOnly) throws IOException, PosixErrorException;
 
     /**
      * Returns the list of extended attributes stored for "path" (Entries may be cached).
@@ -334,7 +334,7 @@ public abstract class Volume {
      * @remark Ownership is transferred to the caller.
      */
     public abstract listxattrResponse listXAttrs(UserCredentials userCredentials, String path)
-            throws IOException;
+            throws IOException, PosixErrorException;
 
     /**
      * Returns the list of extended attributes stored for "path" (Set "useCache" to false to make sure no
@@ -355,7 +355,7 @@ public abstract class Volume {
      * @remark Ownership is transferred to the caller.
      */
     public abstract listxattrResponse listXAttrs(UserCredentials userCredentials, String path,
-            boolean useCache) throws IOException;
+            boolean useCache) throws IOException, PosixErrorException;
 
     /**
      * Sets the extended attribute "name" of "path" to "value".
@@ -377,7 +377,7 @@ public abstract class Volume {
      * @throws UnknownAddressSchemeException
      */
     public abstract void setXAttr(UserCredentials userCredentials, String path, String name, String value,
-            int flags) throws IOException;
+            int flags) throws IOException, PosixErrorException;
 
     /**
      * Writes value for an XAttribute with "name" stored for "path" in "value".
@@ -397,7 +397,7 @@ public abstract class Volume {
      * 
      */
     public abstract String getXAttr(UserCredentials userCredentials, String path, String name)
-            throws IOException;
+            throws IOException, PosixErrorException;
 
     /**
      * Writes the size of a value (string size without null-termination) of an XAttribute "name" stored for
@@ -419,7 +419,7 @@ public abstract class Volume {
      * @return true if the attribute was found.
      */
     public abstract int getXAttrSize(UserCredentials userCredentials, String path, String name)
-            throws IOException;
+            throws IOException, PosixErrorException;
 
     /**
      * Removes the extended attribute "name", stored for "path".
@@ -437,7 +437,7 @@ public abstract class Volume {
      * @throws UnknownAddressSchemeException
      */
     public abstract void removeXAttr(UserCredentials userCredentials, String path, String name)
-            throws IOException;
+            throws IOException, PosixErrorException;
 
     /**
      * Adds a new replica for the file at "path" and triggers the replication of this replica if it's a full
@@ -471,7 +471,7 @@ public abstract class Volume {
      * 
      * @remark Ownership is transferred to the caller.
      */
-    public abstract Replicas listReplicas(UserCredentials userCredentials, String path) throws IOException;
+    public abstract Replicas listReplicas(UserCredentials userCredentials, String path) throws IOException, PosixErrorException;
 
     /**
      * Removes the replica of file at "path" located on the OSD with the UUID "osdUuid" (which has to be the
@@ -490,7 +490,7 @@ public abstract class Volume {
      * @throws UnknownAddressSchemeException
      */
     public abstract void removeReplica(UserCredentials userCredentials, String path, String osdUuid)
-            throws IOException;
+            throws IOException, PosixErrorException;
 
     /**
      * Adds to "listOfOsdUuids" up to "numberOfOsds" UUIDs of all available OSDs where the file (described by
@@ -510,5 +510,5 @@ public abstract class Volume {
      * @throws PosixErrorException
      */
     public abstract List<String> getSuitableOSDs(UserCredentials userCredentials, String path,
-            int numberOfOsds) throws IOException;
+            int numberOfOsds) throws IOException, PosixErrorException;
 }

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
@@ -36,7 +37,7 @@ enum ClientImplementationType {
  * <br>
  * Sep 2, 2011
  */
-public abstract class Client implements UUIDResolver {
+public abstract class Client {
 
     /**
      * Returns an instance of the default Client implementation.
@@ -106,7 +107,7 @@ public abstract class Client implements UUIDResolver {
      * @throws PosixErrorException
      */
     public void createVolume(String mrcAddress, Auth auth, UserCredentials userCredentials, String volumeName)
-            throws IOException {
+            throws IOException, PosixErrorException {
 
         List<KeyValuePair> volumeAttributes = new ArrayList<KeyValuePair>();
         createVolume(mrcAddress, auth, userCredentials, volumeName, 511, "", "",
@@ -134,7 +135,7 @@ public abstract class Client implements UUIDResolver {
      * @throws PosixErrorException
      */
     public void createVolume(List<String> mrcAddresses, Auth auth, UserCredentials userCredentials,
-            String volumeName) throws IOException {
+            String volumeName) throws IOException, PosixErrorException {
         List<KeyValuePair> volumeAttributes = new ArrayList<KeyValuePair>();
         createVolume(mrcAddresses, auth, userCredentials, volumeName, 511, "", "",
                 AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX,
@@ -177,7 +178,7 @@ public abstract class Client implements UUIDResolver {
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
             AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
             int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes)
-            throws IOException;
+            throws IOException, PosixErrorException;
 
     // TODO(mberlin): Also provide a method which accepts a list of MRC addresses
     // or an UUID Iterator object which contains all addresses.
@@ -217,7 +218,7 @@ public abstract class Client implements UUIDResolver {
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
             AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
             int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes)
-            throws IOException;
+            throws IOException, PosixErrorException;
 
     /**
      * Deletes the volume "volume_name" at the MRC "mrc_address".
@@ -235,7 +236,7 @@ public abstract class Client implements UUIDResolver {
      * @throws PosixErrorException
      */
     public abstract void deleteVolume(String mrcAddress, Auth auth, UserCredentials userCredentials,
-            String volumeName) throws IOException;
+            String volumeName) throws IOException, PosixErrorException;
 
     // TODO(mberlin): Also provide a method which accepts a list of MRC addresses
     // or an UUID Iterator object which contains all addresses.
@@ -255,7 +256,7 @@ public abstract class Client implements UUIDResolver {
      * @throws PosixErrorException
      */
     public abstract void deleteVolume(List<String> mrcAddresses, Auth auth, UserCredentials userCredentials,
-            String volumeName) throws IOException;
+            String volumeName) throws IOException, PosixErrorException;
 
     /**
      * Returns the available volumes on a MRC.
@@ -268,7 +269,7 @@ public abstract class Client implements UUIDResolver {
      * @throws PosixErrorException
      * 
      */
-    public abstract Volumes listVolumes(String mrcAddress) throws IOException;
+    public abstract Volumes listVolumes(String mrcAddress) throws IOException, PosixErrorException;
 
     /**
      * Returns the available volumes on a MRC.
@@ -286,12 +287,7 @@ public abstract class Client implements UUIDResolver {
     // //TODO: IMplement!
     // }
 
-    /**
-     * Returns a pointer to a UUIDResolver object, which provides functions to resolve UUIDs to IP-Addresses
-     * and Ports.
-     * 
-     * @remark Ownership is NOT transferred to the caller.
-     */
+
     public abstract UUIDResolver getUUIDResolver();
 
 }
