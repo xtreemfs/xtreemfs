@@ -628,7 +628,8 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
             
             if (fi.getTruncateEpoch() >= epochNumber) {
                 
-                return callback.success(OSDWriteResponse.newBuilder().build(), stageRequest);
+                return callback.success(OSDWriteResponse.newBuilder().setSizeInBytes(
+                        fi.getFilesize()).setTruncateEpoch((int) fi.getTruncateEpoch()).build(), stageRequest);
                 /*
                  * XXX dead code
                  * cback.truncateComplete(null, new
