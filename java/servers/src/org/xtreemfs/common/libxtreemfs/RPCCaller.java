@@ -8,11 +8,10 @@ package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.logging.Level;
 
+import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.InternalServerErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
-import org.xtreemfs.common.libxtreemfs.exceptions.UUIDIteratorListIsEmpyException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
@@ -23,11 +22,8 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SERVICES;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 import com.google.protobuf.Message;
 
@@ -49,7 +45,7 @@ public class RPCCaller {
     protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
             Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
             boolean uuidIteratorHasAddresses, C callRequest, CallGenerator<C, R> callGen) throws IOException,
-            PosixErrorException, InternalServerErrorException {
+            PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
         return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
                 callRequest, null, callGen);
     }
@@ -57,7 +53,7 @@ public class RPCCaller {
     protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
             Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
             boolean uuidIteratorHasAddresses, boolean delayNextTry, C callRequest, CallGenerator<C, R> callGen)
-            throws IOException, PosixErrorException, InternalServerErrorException {
+            throws IOException, PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
         return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses,
                 delayNextTry, callRequest, null, callGen);
     }
@@ -65,7 +61,7 @@ public class RPCCaller {
     protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
             Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
             boolean uuidIteratorHasAddresses, C callRequest, ReusableBuffer buf, CallGenerator<C, R> callGen)
-            throws IOException, PosixErrorException, InternalServerErrorException {
+            throws IOException, PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
         return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
                 callRequest, buf, callGen);
     }
@@ -74,7 +70,7 @@ public class RPCCaller {
             Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
             boolean uuidIteratorHasAddresses, boolean delayNextTry, C callRequest, ReusableBuffer buffer,
             CallGenerator<C, R> callGen) throws PosixErrorException, IOException,
-            InternalServerErrorException {
+            InternalServerErrorException, AddressToUUIDNotFoundException {
         int maxTries = options.getMaxTries();
         int attempt = 0;
 
@@ -151,7 +147,29 @@ public class RPCCaller {
                     } else {
                         throw pbe;
                     }
-                } catch (InterruptedException ie) {
+                } catch (IOException ioe) {
+                    // Retry (and delay) only if at least one retry is left
+                    if (((attempt < maxTries || maxTries == 0) ||
+                    // or this last retry should be delayed
+                            (attempt == maxTries && delayNextTry))) {
+                        // Log only the first retry.
+                        if (attempt == 1 && maxTries != 1) {
+                            String retriesLeft = (maxTries == 0) ? ("infinite") : (String.valueOf(maxTries
+                                    - attempt));
+                            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, ioe,
+                                    "Got no response from %s,"
+                                            + "retrying (%s attemps left, waiting at least %s seconds"
+                                            + " between two attemps)", it.getUUID(), retriesLeft,
+                                    options.getRetryDelay_s());
+                        }
+                        // Mark the current UUID as failed and get the next one.
+                        it.markUUIDAsFailed(it.getUUID());
+                        continue;
+                    } else {
+                    	throw ioe;
+                    }
+				}
+                catch (InterruptedException ie) {
                     // TODO: Ask what that is.
                     if (options.getInterruptSignal() == 0) {
                         if (Logging.isDebug()) {

@@ -6,6 +6,8 @@
  */
 package org.xtreemfs.common.libxtreemfs.exceptions;
 
+import java.io.IOException;
+
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 
 /**
@@ -13,7 +15,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
  * <br>
  * Sep 9, 2011
  */
-public class PosixErrorException extends Exception {
+public class PosixErrorException extends IOException {
     /**
      * 
      */

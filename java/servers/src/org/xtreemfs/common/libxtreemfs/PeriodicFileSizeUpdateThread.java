@@ -9,7 +9,7 @@ package org.xtreemfs.common.libxtreemfs;
 import java.io.IOException;
 import java.util.Map.Entry;
 
-import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
+import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 
@@ -62,14 +62,13 @@ public class PeriodicFileSizeUpdateThread extends Thread {
                                 "PeriodicFileSizeUpdateThread: failed to update filesize. Reason: ",
                                 e.getMessage());
                     }
-                } catch (PosixErrorException e) {
+                } catch (AddressToUUIDNotFoundException e) {
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
-                                "PeriodicFileSizeUpdateThread: failed to update filesize due to an" +
-                                " Posix Error. ErrorType: %, ErrorMessage: %s",
-                                e.getPosixError().name(), e.getMessage());
-                    }                    
-                }
+                                "PeriodicFileSizeUpdateThread: failed to update filesize. Reason: ",
+                                e.getMessage());
+                    }
+                } 
             }
 
             if (Logging.isDebug()) {

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
+import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -200,7 +201,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
             AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
             int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes)
-            throws IOException, PosixErrorException {
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUID(mrcAddress);
 
@@ -223,7 +224,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
             AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
             int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes)
-            throws IOException, PosixErrorException {
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUIDs(mrcAddresses);
         createVolume(iteratorWithAddresses, auth, userCredentials, volumeName, mode, ownerUsername,
@@ -235,7 +236,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
             String volumeName, int mode, String ownerUsername, String ownerGroupname,
             AccessControlPolicyType accessPolicyType, StripingPolicyType defaultStripingPolicyType,
             int defaultStripeSize, int defaultStripeWidth, List<KeyValuePair> volumeAttributes)
-            throws IOException, PosixErrorException {
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         final MRCServiceClient mrcClient = new MRCServiceClient(networkClient, null);
 
         StripingPolicy sp = StripingPolicy.newBuilder().setType(defaultStripingPolicyType)
@@ -268,7 +269,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
      */
     @Override
     public void deleteVolume(String mrcAddress, Auth auth, UserCredentials userCredentials, String volumeName)
-            throws IOException, PosixErrorException {
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUID(mrcAddress);
 
@@ -284,7 +285,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
      */
     @Override
     public void deleteVolume(List<String> mrcAddresses, Auth auth, UserCredentials userCredentials,
-            String volumeName) throws IOException, PosixErrorException {
+            String volumeName) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUIDs(mrcAddresses);
 
@@ -292,7 +293,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
     }
 
     private void deleteVolume(UUIDIterator mrcAddresses, Auth auth, UserCredentials userCredentials,
-            String volumeName) throws IOException, PosixErrorException {
+            String volumeName) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         final MRCServiceClient mrcServiceClient = new MRCServiceClient(networkClient, null);
 
         RPCCaller.<String, emptyResponse> syncCall(SERVICES.MRC, userCredentials, auth, options, this,
@@ -312,18 +313,28 @@ public class ClientImplementation extends Client implements UUIDResolver {
      * @see org.xtreemfs.common.libxtreemfs.Client#listVolumes(java.lang.String)
      */
     @Override
-    public Volumes listVolumes(String mrcAddress) throws IOException, PosixErrorException {
-
-        final MRCServiceClient mrcServiceClient = new MRCServiceClient(networkClient, null);
-
+    public Volumes listVolumes(String mrcAddress) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         UUIDIterator iteratorWithAddresses = new UUIDIterator();
         iteratorWithAddresses.addUUID(mrcAddress);
+        return this.listVolumes(iteratorWithAddresses);
+    }
 
+    
+    @Override
+    public Volumes listVolumes(List<String> mrcAddresses) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+        UUIDIterator iteratorWithAddresses = new UUIDIterator();
+        iteratorWithAddresses.addUUIDs(mrcAddresses);
+        return this.listVolumes(iteratorWithAddresses);
+    }
+    
+    private Volumes listVolumes(UUIDIterator uuidIteratorWithAddresses) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+        final MRCServiceClient mrcServiceClient = new MRCServiceClient(networkClient, null);
+        
         // use bogus user credentials
         UserCredentials userCredentials = UserCredentials.newBuilder().setUsername("xtreemfs").build();
 
         Volumes volumes = RPCCaller.<emptyRequest, Volumes> syncCall(SERVICES.MRC, userCredentials,
-                authBogus, options, this, iteratorWithAddresses, true, emptyRequest.getDefaultInstance(),
+                authBogus, options, this, uuidIteratorWithAddresses, true, emptyRequest.getDefaultInstance(),
                 new CallGenerator<emptyRequest, Volumes>() {
                     @Override
                     public RPCResponse<Volumes> executeCall(InetSocketAddress server, Auth authHeader,
@@ -334,22 +345,13 @@ public class ClientImplementation extends Client implements UUIDResolver {
         return volumes;
     }
 
-    /**
-     * Returns a pointer to a UUIDResolver object, which provides functions to resolve UUIDs to IP-Addresses
-     * and Ports.
-     * 
-     */
-    public UUIDResolver getUUIDResolver() {
-        return this;
-    }
-
     /*
      * (non-Javadoc)
      * 
      * @see org.xtreemfs.common.libxtreemfs.UUIDResolver#uuidToAddress(java.lang.String, java.lang.String)
      */
     @Override
-    public String uuidToAddress(String uuid) {
+    public String uuidToAddress(String uuid) throws AddressToUUIDNotFoundException {
 
         // The uuid must never be empty.
         assert (!uuid.isEmpty());
@@ -361,8 +363,10 @@ public class ClientImplementation extends Client implements UUIDResolver {
             serviceUuid.resolve();
             address = serviceUuid.getAddress().getHostName() + ":" + serviceUuid.getAddress().getPort();
         } catch (UnknownUUIDException e) {
-            System.out.println("ERRRORORORORR: " + e.toString());
-            // TODO: Throw new Exception with same name like in CPP implementation.
+        	if (Logging.isDebug()) {
+        		Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "UUID: SERVICE NOT FOUND FOR UUID %S", uuid);
+        	}
+        	throw new AddressToUUIDNotFoundException(uuid);
         }
 
         return address;
@@ -375,7 +379,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
      * java.lang.String)
      */
     @Override
-    public String volumeNameToMRCUUID(String volumeName) throws VolumeNotFoundException {
+    public String volumeNameToMRCUUID(String volumeName) throws VolumeNotFoundException, AddressToUUIDNotFoundException {
         assert (!volumeName.isEmpty());
 
         if (Logging.isDebug()) {
@@ -406,11 +410,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
                         e.getMessage());
                 throw new VolumeNotFoundException(parsedVolumeName);
             }
-        } catch (PosixErrorException e) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "volumeNameToMRCUUID: "
-                    + "couldn't resolve mrc UUID for volumeName %s Reason: PosixException with "
-                    + "error type: %s and message: %s", volumeName, e.getPosixError().name(), e.getMessage());
-        }
+        } 
 
         // check if there is an service which is a VOLUME and then filter the MRC of this volume
         // from its ServiceDataMap.
@@ -451,7 +451,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
      */
     @Override
     public void volumeNameToMRCUUID(String volumeName, UUIDIterator uuidIterator)
-            throws VolumeNotFoundException {
+            throws VolumeNotFoundException, AddressToUUIDNotFoundException {
 
         assert (uuidIterator != null);
         assert (!volumeName.isEmpty());
@@ -483,12 +483,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
                         e.getMessage());
                 throw new VolumeNotFoundException(parsedVolumeName);
             }
-        } catch (PosixErrorException e) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "volumeNameToMRCUUID: "
-                    + "couldn't resolve mrc UUID for volumeName %s Reason: PosixException with " +
-                    		"error type: %s and message: %s", volumeName,
-                    e.getPosixError().name(), e.getMessage());
-        }
+        } 
 
         // Iterate over ServiceSet to find an appropriate MRC
         boolean mrcFound = false;

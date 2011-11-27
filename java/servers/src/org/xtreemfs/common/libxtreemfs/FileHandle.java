@@ -8,6 +8,7 @@ package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
 
+import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -41,7 +42,7 @@ public interface FileHandle {
      * @return Number of bytes read.
      */
     public abstract int read(UserCredentials userCredentials, ReusableBuffer buf, int count, int offset)
-            throws IOException, PosixErrorException;
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Write to a file 'count' bytes at file offset 'offset' from 'buf'.
@@ -69,7 +70,7 @@ public interface FileHandle {
      * @return Number of bytes written (see @attention above).
      */
     public abstract int write(UserCredentials userCredentials, ReusableBuffer buf, int count, int offset)
-            throws IOException, PosixErrorException;
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Flushes pending writes and file size updates (corresponds to a fsync() system call).
@@ -79,7 +80,7 @@ public interface FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void flush() throws IOException, PosixErrorException;
+    public abstract void flush() throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Truncates the file to "newFileSize_ bytes".
@@ -95,7 +96,7 @@ public interface FileHandle {
      * @throws UnknownAddressSchemeException
      **/
     public abstract void truncate(UserCredentials userCredentials, long newFileSize) throws IOException,
-            PosixErrorException;
+            PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Retrieve the attributes of this file and writes the result in "stat".
@@ -110,7 +111,7 @@ public interface FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract Stat getAttr(UserCredentials userCredentials) throws IOException, PosixErrorException;
+    public abstract Stat getAttr(UserCredentials userCredentials) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Sets a lock on the specified file region and returns the resulting Lock object.
@@ -139,7 +140,7 @@ public interface FileHandle {
      * @remark Ownership is transferred to the caller.
      */
     public abstract Lock acquireLock(UserCredentials userCredentials, int processId, long offset,
-            long length, boolean exclusive, boolean waitForLock) throws IOException, PosixErrorException;
+            long length, boolean exclusive, boolean waitForLock) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Checks if the requested lock does not result in conflicts. If true, the returned Lock object contains
@@ -165,7 +166,7 @@ public interface FileHandle {
      * @remark Ownership is transferred to the caller.
      */
     public abstract Lock checkLock(UserCredentials userCredentials, int processId, long offset, long length,
-            boolean exclusive) throws IOException, PosixErrorException;
+            boolean exclusive) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Releases "lock".
@@ -187,7 +188,7 @@ public interface FileHandle {
      * @throws UnknownAddressSchemeException
      */
     public abstract void releaseLock(UserCredentials userCredentials, int processId, long offset,
-            long length, boolean exclusive) throws IOException, PosixErrorException;
+            long length, boolean exclusive) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Releases "lock" (parameters given in Lock object).
@@ -203,7 +204,7 @@ public interface FileHandle {
      * @throws UnknownAddressSchemeException
      */
     public abstract void releaseLock(UserCredentials userCredentials, Lock lock) throws IOException,
-            PosixErrorException;
+            PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Releases the lock possibly hold by "processId". Use this before closing a file to ensure POSIX
@@ -222,7 +223,7 @@ public interface FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void releaseLockOfProcess(int processId) throws IOException, PosixErrorException;
+    public abstract void releaseLockOfProcess(int processId) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Triggers the replication of the replica on the OSD with the UUID "osd_uuid" if the replica is a full

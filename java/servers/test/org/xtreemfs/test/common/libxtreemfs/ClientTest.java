@@ -8,6 +8,8 @@ package org.xtreemfs.test.common.libxtreemfs;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -15,10 +17,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.xtreemfs.common.libxtreemfs.Client;
-import org.xtreemfs.common.libxtreemfs.ClientImplementation;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Options;
-import org.xtreemfs.common.libxtreemfs.UUIDIterator;
 import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.dir.DIRConfig;
@@ -30,10 +30,10 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -76,7 +76,7 @@ public class ClientTest extends TestCase {
 
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
                 TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
-                TestEnvironment.Services.MRC, TestEnvironment.Services.OSD });
+                TestEnvironment.Services.MRC, TestEnvironment.Services.MRC2, TestEnvironment.Services.OSD });
         testEnv.start();
 
         userCredentials = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
@@ -141,45 +141,54 @@ public class ClientTest extends TestCase {
         // shutdown the client
         client.shutdown();
     }
+    
+    public void testCreateOpenRemoveListVolumeMultipleMRCs() throws Exception {
 
-    public void testUUIDResolver() throws Exception {
         final String VOLUME_NAME_1 = "foobar";
-        final String VOLUME_NAME_2 = "barfoo";
 
         // TODO: Create pseudo commandline and parse it.
         Options options = new Options(5000, 10000, 4, 2);
 
         String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
 
-        ClientImplementation client = (ClientImplementation) Client.createClient(dirAddress, userCredentials, null, options);
+        Client client = Client.createClient(dirAddress, userCredentials, null, options);
         client.start();
 
+        // Create MRC Address List
+        String invalidMrcAddress = "ThereIsNoMRC.org:36592";
         String mrcAddress = testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort();
+        String mrc2Address = testEnv.getMRC2Address().getHostName() + ":" + testEnv.getMRC2Address().getPort();
+        List<String> mrcAddressList = new ArrayList<String>();
+        mrcAddressList.add(invalidMrcAddress);
+        mrcAddressList.add(mrcAddress);
+        mrcAddressList.add(mrc2Address);
 
-        // Create volumes
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME_1);
-        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME_2);
+        // Create volume
+        client.createVolume(mrcAddressList, auth, userCredentials, VOLUME_NAME_1);
 
-        // get and MRC UUID for the volume. Should be that from the only MRC.
-        String uuidString = client.volumeNameToMRCUUID(VOLUME_NAME_1);
-        assertEquals(SetupUtils.getMRC1UUID().toString(), uuidString);
+        ServiceSet sSet = null;
+        sSet = dirClient.xtreemfs_service_get_by_name(testEnv.getDIRAddress(), auth, userCredentials,
+                VOLUME_NAME_1);
 
-        // same for the second volume
-        uuidString = client.volumeNameToMRCUUID(VOLUME_NAME_2);
-        assertEquals(SetupUtils.getMRC1UUID().toString(), uuidString);
+        assertEquals(1, sSet.getServicesCount());
+        assertEquals(VOLUME_NAME_1, sSet.getServices(0).getName());
 
-        // this should work if we use UUIDIterator, too.
-        UUIDIterator uuidIterator = new UUIDIterator();
-        client.volumeNameToMRCUUID(VOLUME_NAME_1, uuidIterator);
-        assertEquals(SetupUtils.getMRC1UUID().toString(), uuidIterator.getUUID());
+        // List volumes
+        Volumes volumes = client.listVolumes(mrcAddressList);
+        assertEquals(1, volumes.getVolumesCount());
+        assertEquals(VOLUME_NAME_1, volumes.getVolumes(0).getName());
 
-        // resolve MRC UUID
-        String address = client.uuidToAddress(SetupUtils.getMRC1UUID().toString());
-        assertEquals(testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort(), address);
+        // Delete volume
+        client.deleteVolume(mrcAddressList, auth, userCredentials, VOLUME_NAME_1);
 
-        // resolve OSD UUID
-        address = client.uuidToAddress(SetupUtils.createMultipleOSDConfigs(1)[0].getUUID().toString());
-        assertEquals(testEnv.getOSDAddress().getHostName() + ":" + testEnv.getOSDAddress().getPort(), address);
+        sSet = null;
+        sSet = dirClient.xtreemfs_service_get_by_name(testEnv.getDIRAddress(), auth, userCredentials,
+                VOLUME_NAME_1);
+        assertEquals(0, sSet.getServicesCount());
+
+        // List volumes
+        volumes = client.listVolumes(mrcAddressList);
+        assertEquals(0, volumes.getVolumesCount());
 
         // shutdown the client
         client.shutdown();
@@ -197,7 +206,7 @@ public class ClientTest extends TestCase {
 
         Client client = Client.createClient(dirAddress, userCredentials, null, options);
         client.start();
-
+        
         // Open a volume named "foobar".
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME_1);
         Volume volume = client.openVolume(VOLUME_NAME_1, null, options);
@@ -218,16 +227,9 @@ public class ClientTest extends TestCase {
         String data = "Need a testfile? Why not (\\|)(+,,,+)(|/)?";
         ReusableBuffer buf = ReusableBuffer.wrap(data.getBytes());
         fileHandle.write(userCredentials, buf, buf.capacity(), 0);
-        
-//        // Wait 60 seconds, the default delay for the fileSizeUpdateThread
-//        for (int i = 0; i < 10; i++) {
-//            Thread.sleep(1000);
-//            System.out.println("Sleeping " + i + "seconds!");
-//        }
-        
-        // TODO: Check how to get fileSize 
+         
         stat = volume.getAttr(userCredentials, "/bla.tzt");
-//        assertEquals(data.length(), stat.getSize());
+        assertEquals(data.length(), stat.getSize());
 
         // Read from file.
         byte[] readData = new byte[data.length()];

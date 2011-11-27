@@ -49,6 +49,10 @@ public class TestEnvironment {
     public InetSocketAddress getMRCAddress() throws UnknownUUIDException {
         return mrc.getConfig().getUUID().getAddress();
     }
+    
+    public InetSocketAddress getMRC2Address() throws UnknownUUIDException {
+        return mrc2.getConfig().getUUID().getAddress();
+    }
 
     public InetSocketAddress getDIRAddress() throws IOException {
         return new InetSocketAddress("localhost", SetupUtils.createDIRConfig().getPort());
@@ -105,6 +109,7 @@ public class TestEnvironment {
             OSD_CLIENT, // OSD client
             DIR_SERVICE, // Directory Service
             MRC, // MRC
+            MRC2, // starts an second MRC
             MOCKUP_OSD, // mock-up OSD: registers a non-existing OSD at the DIR
             MOCKUP_OSD2, // mock-up OSD: registers a non-existing OSD at the DIR
             MOCKUP_OSD3, // mock-up OSD: registers a non-existing OSD at the DIR
@@ -125,6 +130,8 @@ public class TestEnvironment {
     private DIRRequestDispatcher   dirService;
     
     private MRCRequestDispatcher   mrc;
+    
+    private MRCRequestDispatcher   mrc2;
     
     private OSDRequestDispatcher[] osds;
     
@@ -239,6 +246,12 @@ public class TestEnvironment {
                 mrc.startup();
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "MRC running");
             }
+            
+            if (enabledServs.contains(Services.MRC2)) {
+                mrc2 = new MRCRequestDispatcher(SetupUtils.createMRC2Config(), SetupUtils.createMRC2dbsConfig());
+                mrc2.startup();
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "MRC2 running");
+            }
 
             if (enabledServs.contains(Services.MRC_CLIENT)) {
                 mrcClient = new MRCServiceClient(rpcClient, null);
@@ -260,6 +273,15 @@ public class TestEnvironment {
             try {
                 if (mrc != null)
                     mrc.shutdown();
+            } catch (Throwable th) {
+                th.printStackTrace();
+            }
+        }
+        
+        if (enabledServs.contains(Services.MRC2)) {
+            try {
+                if (mrc2 != null)
+                    mrc2.shutdown();
             } catch (Throwable th) {
                 th.printStackTrace();
             }

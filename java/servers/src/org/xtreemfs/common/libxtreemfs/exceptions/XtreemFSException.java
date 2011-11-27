@@ -13,6 +13,11 @@ package org.xtreemfs.common.libxtreemfs.exceptions;
  */
 public class XtreemFSException extends RuntimeException {
     /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	/**
  * 
  */
     public XtreemFSException(String errorMsg) {

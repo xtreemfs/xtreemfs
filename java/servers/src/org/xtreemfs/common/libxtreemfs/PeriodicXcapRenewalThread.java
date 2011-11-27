@@ -8,6 +8,7 @@ package org.xtreemfs.common.libxtreemfs;
 
 import java.util.Map.Entry;
 
+import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 
@@ -51,7 +52,16 @@ public class PeriodicXcapRenewalThread extends Thread {
 
             // iterate over the openFileTable.
             for (Entry<Long, FileInfo> entry : volume.getOpenFileTable().entrySet()) {
-                entry.getValue().renewXCapsAsync();
+            	try {
+            		entry.getValue().renewXCapsAsync();	
+            	} catch (AddressToUUIDNotFoundException e) {
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                                "PeriodicXCapThread: failed to renew XCap. Reason: ",
+                                e.getMessage());
+                    }
+				}
+                
             }
 
             if (Logging.isDebug()) {

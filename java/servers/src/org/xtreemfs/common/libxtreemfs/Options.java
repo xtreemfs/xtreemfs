@@ -77,7 +77,7 @@ public class Options {
     /**
      * Maximum number of entries of the StatCache. Default: 100000
      */
-    private long    metadataCacheSize     = 100000;
+    private int    metadataCacheSize     = 100000;
 
     /**
      * Time to live for MetadataCache entries. Default: 120
@@ -138,7 +138,7 @@ public class Options {
      */
     private int     lingerTimeout_s       = 600;
 
-    public long getMetadataCacheSize() {
+    public int getMetadataCacheSize() {
         return metadataCacheSize;
     }
 

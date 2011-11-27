@@ -14,8 +14,6 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.Random;
-import java.util.logging.Level;
-
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -247,7 +245,7 @@ public class SetupUtils {
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getMRC2UUID().toString());
         props.setProperty("snmp.enabled", "true");
-        props.setProperty("snmp.port", "34639");
+        props.setProperty("snmp.port", "34649");
         props.setProperty("snmp.address", "localhost");
         
         MRCConfig config = new MRCConfig(props);
@@ -261,7 +259,7 @@ public class SetupUtils {
         props.setProperty("babudb.debug.categories", ""
                 + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("babudb.cfgFile", "config.db");
-        props.setProperty("babudb.baseDir", TEST_DIR + "/mrc1");
+        props.setProperty("babudb.baseDir", TEST_DIR + "/mrc2");
         props.setProperty("babudb.logDir", TEST_DIR + "/test-brain1.log");
         props.setProperty("babudb.sync", "" + SyncMode.ASYNC);
         props.setProperty("babudb.worker.maxQueueLength", "500");
