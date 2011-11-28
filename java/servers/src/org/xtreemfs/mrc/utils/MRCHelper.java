@@ -779,6 +779,10 @@ public class MRCHelper {
                 ReplicationPolicy rp = null;
                 rp = Converter.jsonStringToReplicationPolicy(value);
                 
+                if (rp.getFactor() == 1)
+                    throw new UserException(POSIXErrno.POSIX_ERROR_EPERM,
+                            "a default replication policy requires a replication factor >= 2");
+                
                 sMan.setDefaultReplicationPolicy(file.getId(), rp, update);
                 
             } catch (JSONException exc) {
