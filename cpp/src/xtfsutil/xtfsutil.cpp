@@ -346,6 +346,12 @@ bool SetDefaultRP(const string& xctl_file,
     factor = vm["replication-factor"].as<int>();
   }
 
+  if (factor <= 1 && policy != "NONE") {
+    cerr << "The minimal replication-factor must be 2 (was set to: "
+         << factor << ")." << endl;
+    return false;
+  }
+
   const bool is_full = vm.count("full") > 0;
 
   Json::Value request(Json::objectValue);
