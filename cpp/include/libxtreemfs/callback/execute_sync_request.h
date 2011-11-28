@@ -187,8 +187,8 @@ template<class ReturnMessageType, class F>
           uuid_iterator->GetUUID(&service_uuid);
         }
 
-        // Log only the first retry.
-        if (attempt == 1 && max_tries != 1) {
+        // Log only the first retry or every 10th to see the progress.
+        if ((attempt == 1 && max_tries != 1) || attempt % 10 == 0) {
           std::string retries_left = max_tries == 0 ? "infinite"
               : boost::lexical_cast<std::string>(max_tries - attempt);
           xtreemfs::util::Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
