@@ -396,7 +396,7 @@ public class File {
     }
     
     public void setDefaultReplication(String policy, int numReplicas, UserCredentials userCreds) throws IOException {
-        String JSON = "{ \"name\" : \""+policy+"\", \"numRepls\" : "+numReplicas+" }";
+        String JSON = "{ \"update-policy\" : \""+policy+"\", \"replication-factor\" : "+numReplicas+" }";
         if (!isDirectory())
             throw new IOException("only diretories (including root) have a default replication policy");
         volume.setxattr(path, XTREEMFS_DEFAULT_RP, JSON, userCreds);
