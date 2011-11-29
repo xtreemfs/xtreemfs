@@ -447,42 +447,42 @@ Users can easily set up their own CA (certificate authority)\index{Certificate A
 
  \end{enumerate}
  \item Set up the certificates for the services and the XtreemFS Client.\\
-	Replace \texttt{\textit{service}} with \texttt{dir}, \texttt{mrc}, \texttt{osd} and \texttt{client}.
+	Replace \texttt{\textit{SERVICE}} with \texttt{dir}, \texttt{mrc}, \texttt{osd} and \texttt{client}.
 	\begin{enumerate}
 	\item Create a private key for the service.\\
-	      Use \texttt{XtreemFS-DEMO-\textit{service}} as the common name for the certificate.
-		\begin{Verbatim}[commandchars=\\\{\}]
-$> openssl req -new -newkey rsa:1024 -nodes \ \\
-   -out \textit{service}.req \ \\
-   -keyout \textit{service}.key
-		\end{Verbatim}
+	      Use \texttt{XtreemFS-DEMO-\textit{SERVICE}} as the common name for the certificate.
+		\begin{verbatim}
+$> openssl req -new -newkey rsa:1024 -nodes \
+   -out SERVICE.req \
+   -keyout SERVICE.key
+		\end{verbatim}
 
 	\item Sign the certificate with your demo CA.\\
 		The certificate is valid for one year.
-		\begin{Verbatim}[commandchars=\\\{\}]
-$> openssl x509 -CA ca/ca.pem -CAkey ca/ca.key \ \\
-   -CAserial ca/ca.srl -req \ \\
-   -in \textit{service}.req \ \\
-   -out \textit{service}.pem -days 365
-		\end{Verbatim}
+		\begin{verbatim}
+$> openssl x509 -CA ca/ca.pem -CAkey ca/ca.key \
+   -CAserial ca/ca.srl -req \
+   -in SERVICE.req \
+   -out SERVICE.pem -days 365
+		\end{verbatim}
 
 	\item Export the service credentials (certificate and private key) as a PKCS\#12 file.\\
 		Use ``passphrase'' as export password. You can leave the export password empty for the XtreemFS Client to avoid being asked for the password on mount.
-		\begin{Verbatim}[commandchars=\\\{\}]
-$> openssl pkcs12 -export -in \textit{service}.pem -inkey \textit{service}.key \ \\
-   -out \textit{service}.p12 -name "\textit{service}"
-		\end{Verbatim}
+		\begin{verbatim}
+$> openssl pkcs12 -export -in SERVICE.pem -inkey SERVICE.key \
+   -out SERVICE.p12 -name "SERVICE"
+		\end{verbatim}
 
 	\item Copy the PKCS\#12 file to the certificates directory.
-		\begin{Verbatim}[commandchars=\\\{\}]
-$> mkdir -p /etc/xos/xtreemfs/truststore/certs \\
-$> cp \textit{service}.p12 /etc/xos/xtreemfs/truststore/certs
-		\end{Verbatim}
+		\begin{verbatim}
+$> mkdir -p /etc/xos/xtreemfs/truststore/certs
+$> cp SERVICE.p12 /etc/xos/xtreemfs/truststore/certs
+		\end{verbatim}
 
 	\end{enumerate}
  \item Export your CA's certificate to the trust store and copy it to the certificate dir.\\
 	You should answer ``yes'' when asked ``Trust this certificate''.\\
-	Use ``passphrase'' as passphrase for the keystore.
+	Use ``jks\_passphrase'' as passphrase for the keystore.
 	\begin{verbatim}
 	$> keytool -import -alias ca -keystore trusted.jks \
 	   -trustcacerts -file ca/ca.pem
@@ -496,7 +496,7 @@ $> cp \textit{service}.p12 /etc/xos/xtreemfs/truststore/certs
 	\texttt{ssl.service\_creds.container = pkcs12}\\
 	\texttt{ssl.service\_creds = /etc/xos/xtreemfs/truststore/certs/\textit{service}.p12}\\
 	\texttt{ssl.trusted\_certs = /etc/xos/xtreemfs/truststore/certs/trusted.jks}\\
-	\texttt{ssl.trusted\_certs.pw = passphrase}\\
+	\texttt{ssl.trusted\_certs.pw = jks\_passphrase}\\
 	\texttt{ssl.trusted\_certs.container = jks}
  \item Start up the XtreemFS services (see Sec. \ref{sec:startstopservice}).
  \item Create a new volume (see Sec. \ref{sec:create_volume} for details).
