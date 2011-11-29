@@ -528,14 +528,15 @@ public class StorageThread extends OverloadProtectedStage<AugmentedRequest> {
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "new filesize: %d",
                             newFS);
-                    response.setSizeInBytes(newFS);
-                    response.setTruncateEpoch((int) fi.getTruncateEpoch());
                 } else {
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
                             "no new filesize: %d/%d, %d/%d", newFS, fi.getFilesize(), fi
                                     .getLastObjectNumber(), objNo);
                 }
+                
+                response.setSizeInBytes(newFS);
+                response.setTruncateEpoch((int) fi.getTruncateEpoch());
                 
                 // update file size and last object number
                 fi.setFilesize(newFS);
