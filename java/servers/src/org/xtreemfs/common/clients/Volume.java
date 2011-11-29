@@ -269,14 +269,6 @@ public class Volume {
         return getDefaultReplicationFactor(userCreds);
     }
 
-    public void setDefaultReplicationFactor(int replicationFactor, UserCredentials userCreds) throws IOException {
-        setxattr(fixPath(volumeName), "xtreemfs.repl_factor", Integer.toString(replicationFactor), userCreds);
-    }
-
-    public void setDefaultReplicationFactor(int replicationFactor) throws IOException {
-        setDefaultReplicationFactor(replicationFactor, userCreds);
-    }
-
     public long getUsedSpace(UserCredentials userCreds) throws IOException {
         RPCResponse<StatVFS> response = null;
         try {
