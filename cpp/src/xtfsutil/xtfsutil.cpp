@@ -51,14 +51,10 @@ bool executeOperation(const string& xctl_file,
     return false;
   }
 
-  // Close and re-open file to avoid cache problems on APPLE.
-  close(fd);
-  fd = open(xctl_file.c_str(), O_RDWR);
-  if (fd == -1) {
-    cerr << "Cannot open xctl file: " << strerror(errno) << endl;
-    unlink(xctl_file.c_str());
-    return false;
-  }
+  // Let Fuse refresh its cached file size - otherwise the read is incomplete.
+  // See Issue 234: http://code.google.com/p/xtreemfs/issues/detail?id=234
+  struct stat stat_temp;
+  stat(xctl_file.c_str(), &stat_temp);
 
   char result[1 << 20];
   int bytes_read = pread(fd, result, (1 << 20) - 1, 0);
