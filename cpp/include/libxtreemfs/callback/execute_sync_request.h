@@ -31,6 +31,7 @@
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/uuid_resolver.h"
+#include "libxtreemfs/xcap_handler.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "pbrpc/RPC.pb.h"
 #include "rpc/sync_callback.h"
@@ -64,6 +65,9 @@ void InterruptSyncRequest(int signal);
  *  own (for instance in FileHandleImplementation::AcquireLock). If set to false
  *  this method would return immediately after the _last_ try and the caller would
  *  have to ensure the delay of options.retry_delay_s on its own.
+ *
+ *  Ownership of arguments is NOT transferred.
+ *
  */
 template<class ReturnMessageType, class F>
     ReturnMessageType ExecuteSyncRequest(F sync_function,
@@ -72,8 +76,11 @@ template<class ReturnMessageType, class F>
                                          int max_tries,
                                          const Options& options,
                                          bool uuid_iterator_has_addresses,
-                                         bool delay_last_attempt) {
+                                         bool delay_last_attempt,
+                                         XCapHandler* xcap_handler,
+                                         xtreemfs::pbrpc::XCap* xcap_in_req) {
   assert(uuid_iterator_has_addresses || uuid_resolver);
+  assert((!xcap_handler && !xcap_in_req) || (xcap_handler && xcap_in_req));
 
 #ifdef __linux
   // Ignore the signal if no previous signal was found.
@@ -121,8 +128,9 @@ template<class ReturnMessageType, class F>
     timeval request_sent, current_time;
     gettimeofday(&request_sent, 0);
 #endif  // WIN32
-    // TODO(mberlin): Check if it is necessary to copy the latest XCap from
-    //                a known file before executing the request.
+    if (attempt > 1 && xcap_handler && xcap_in_req) {
+      xcap_handler->GetXCap(xcap_in_req);
+    }
     response = sync_function(service_address);
 
     // Check response.
@@ -396,7 +404,7 @@ template<class ReturnMessageType, class F>
   }
 }
 
-/** Executes the request without delaying the last try. */
+/** Executes the request without delaying the last try and no xcap handler. */
 template<class ReturnMessageType, class F>
     ReturnMessageType ExecuteSyncRequest(F sync_function,
                                          UUIDIterator* uuid_iterator,
@@ -409,7 +417,29 @@ template<class ReturnMessageType, class F>
                                                max_tries,
                                                options,
                                                false,
-                                               false);
+                                               false,
+                                               NULL,
+                                               NULL);
+}
+
+/** Executes the request without a xcap handler. */
+template<class ReturnMessageType, class F>
+    ReturnMessageType ExecuteSyncRequest(F sync_function,
+                                         UUIDIterator* uuid_iterator,
+                                         UUIDResolver* uuid_resolver,
+                                         int max_tries,
+                                         const Options& options,
+                                         bool uuid_iterator_has_addresses,
+                                         bool delay_last_attempt) {
+  return ExecuteSyncRequest<ReturnMessageType>(sync_function,
+                                               uuid_iterator,
+                                               uuid_resolver,
+                                               max_tries,
+                                               options,
+                                               uuid_iterator_has_addresses,
+                                               delay_last_attempt,
+                                               NULL,
+                                               NULL);
 }
 
 }  // namespace xtreemfs

@@ -89,8 +89,6 @@ int FileHandleImplementation::Read(
       throw PosixErrorException(POSIX_ERROR_EIO, "A previous asynchronous write"
           " did fail. No more actions on this file handle are allowed.");
     }
-    // TODO(mberlin): XCap might expire while retrying a request. Provide a
-    //                mechanism to renew the xcap in the request.
     rq.mutable_file_credentials()->mutable_xcap()->CopyFrom(xcap_);
     rq.set_file_id(xcap_.file_id());
   }
@@ -156,7 +154,11 @@ int FileHandleImplementation::Read(
             uuid_iterator,
             uuid_resolver_,
             volume_options_.max_read_tries,
-            volume_options_));
+            volume_options_,
+            false,
+            false,
+            this,
+            rq.mutable_file_credentials()->mutable_xcap()));
 
     // Insert data into read-buffer
     int data_length = response->data_length();
@@ -257,6 +259,8 @@ int FileHandleImplementation::Write(
 
       // TODO(mberlin): Currently the UserCredentials are ignored by the OSD and
       //                therefore we avoid copying them into write_buffer.
+      // TODO(mberlin): Once the retry support for async writes is available,
+      //                modify the implementation to support the new XCapHandler
       file_info_->AsyncWrite(write_buffer);
 
       // Processing of file size updates is handled by the FileInfo's
@@ -309,7 +313,11 @@ int FileHandleImplementation::Write(
               uuid_iterator,
               uuid_resolver_,
               volume_options_.max_write_tries,
-              volume_options_));
+              volume_options_,
+              false,
+              false,
+              this,
+              write_request.mutable_file_credentials()->mutable_xcap()));
 
       // If the filesize has changed, remember OSDWriteResponse for later file
       // size update towards the MRC (executed by
@@ -381,7 +389,11 @@ void FileHandleImplementation::Truncate(
         mrc_uuid_iterator_,
         uuid_resolver_,
         volume_options_.max_tries,
-        volume_options_));
+        volume_options_,
+        false,
+        false,
+        this,
+        &xcap_copy));
   {
     boost::mutex::scoped_lock lock(mutex_);
     xcap_.CopyFrom(*(response->response()));
@@ -417,7 +429,11 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
           osd_uuid_iterator_,
           uuid_resolver_,
           volume_options_.max_tries,
-          volume_options_));
+          volume_options_,
+          false,
+          false,
+          this,
+          truncate_rq.mutable_file_credentials()->mutable_xcap()));
 
   assert(response->response()->has_size_in_bytes());
   // Free the rest of the msg.
@@ -496,7 +512,11 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
         osd_uuid_iterator_,
         uuid_resolver_,
         volume_options_.max_tries,
-        volume_options_));
+        volume_options_,
+        false,
+        false,
+        this,
+        lock_request.mutable_file_credentials()->mutable_xcap()));
   } else {
     // Retry to obtain the lock in case of EAGAIN responses.
     int retries_left = volume_options_.max_tries;
@@ -515,7 +535,9 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::AcquireLock(
             1,
             volume_options_,
             false,  // UUIDIterator contains UUIDs and not addresses.
-            true));  // true means to delay this attempt in case of errors.
+            true,  // true means to delay this attempt in case of errors.
+            this,
+            lock_request.mutable_file_credentials()->mutable_xcap()));
         break;  // If successful, do not retry again.
       } catch(const PosixErrorException& e) {
         if (e.posix_errno() != POSIX_ERROR_EAGAIN) {
@@ -591,7 +613,11 @@ xtreemfs::pbrpc::Lock* FileHandleImplementation::CheckLock(
         osd_uuid_iterator_,
         uuid_resolver_,
         volume_options_.max_tries,
-        volume_options_));
+        volume_options_,
+        false,
+        false,
+        this,
+        lock_request.mutable_file_credentials()->mutable_xcap()));
   // Delete everything except the response.
   delete[] response->data();
   delete response->error();
@@ -655,7 +681,11 @@ void FileHandleImplementation::ReleaseLock(
         osd_uuid_iterator_,
         uuid_resolver_,
         volume_options_.max_tries,
-        volume_options_));
+        volume_options_,
+        false,
+        false,
+        this,
+        unlock_request.mutable_file_credentials()->mutable_xcap()));
   response->DeleteBuffers();
 
   file_info_->DelLock(lock);
@@ -672,8 +702,6 @@ void FileHandleImplementation::PingReplica(
   readRequest read_request;
   {
     boost::mutex::scoped_lock lock(mutex_);
-    // TODO(mberlin): XCap might expire while retrying a request. Provide a
-    //                mechanism to renew the xcap in the request.
     read_request.mutable_file_credentials()->mutable_xcap()->CopyFrom(xcap_);
     read_request.set_file_id(xcap_.file_id());
   }
@@ -725,7 +753,11 @@ void FileHandleImplementation::PingReplica(
           &temp_uuid_iterator,
           uuid_resolver_,
           volume_options_.max_tries,
-          volume_options_));
+          volume_options_,
+          false,
+          false,
+          this,
+          read_request.mutable_file_credentials()->mutable_xcap()));
   // We don't care about the result.
   response->DeleteBuffers();
 }
@@ -826,7 +858,11 @@ void FileHandleImplementation::WriteBackFileSize(
           mrc_uuid_iterator_,
           uuid_resolver_,
           volume_options_.max_tries,
-          volume_options_));
+          volume_options_,
+          false,
+          false,
+          this,
+          rq.mutable_xcap()));
   response->DeleteBuffers();
 }
 
