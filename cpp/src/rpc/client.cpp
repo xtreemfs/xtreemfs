@@ -117,7 +117,9 @@ Client::Client(int32_t connect_timeout_s,
                         &cert,
                         &ca)) {
         Logging::log->getLog(LEVEL_ERROR) << "Error parsing pkcs12 file:"
-            << options->pkcs12_file_name() << endl;
+            << options->pkcs12_file_name()
+            << " Please check if the supplied certificate password is correct."
+            << endl;
         ERR_print_errors_fp(stderr);
         //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
