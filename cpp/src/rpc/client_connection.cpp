@@ -402,6 +402,10 @@ void ClientConnection::PostReadMessage(const boost::system::error_code& err) {
       }
       DeleteInternalBuffers();
       delete respHdr;
+
+      // Receive next request.
+      ReceiveRequest();
+
       return;
     }
 
