@@ -76,7 +76,7 @@ public class RPCCaller {
 
         R response = null;
         try {
-            while (++attempt <= maxTries | maxTries == 0) {
+            while (++attempt <= maxTries || maxTries == 0) {
                 RPCResponse<R> r = null;
                 try {
                     // create an InetSocketAddresse depending on the uuidIterator and
@@ -121,6 +121,7 @@ public class RPCCaller {
                             maxTries++;
                         }
                         // Do a fast retry and do not delay until next attempt.
+                        it.markUUIDAsFailed(it.getUUID());
                         continue;
                     }
                     // Retry (and delay) only if at least one retry is left

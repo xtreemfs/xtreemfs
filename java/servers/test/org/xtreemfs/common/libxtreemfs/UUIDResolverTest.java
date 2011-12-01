@@ -1,4 +1,4 @@
-package org.xtreemfs.test.common.libxtreemfs;
+package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
 

@@ -206,8 +206,8 @@ public class VolumeImplementation extends Volume {
 	@Override
 	public void start() throws Exception {
 		networkClient = new RPCNIOSocketClient(sslOptions,
-				volumeOptions.getRequestTimeout_s(),
-				volumeOptions.getConnectTimeout_s());
+				volumeOptions.getRequestTimeout_s()*1000,
+				volumeOptions.getConnectTimeout_s()*1000);
 		networkClient.start();
 		networkClient.waitForStartup();
 

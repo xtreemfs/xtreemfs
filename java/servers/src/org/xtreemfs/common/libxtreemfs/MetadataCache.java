@@ -225,12 +225,7 @@ public class MetadataCache {
 
                 long currentTimeS = System.currentTimeMillis() / 1000;
                 if (entry.getStatTimeoutS() >= currentTimeS) { // Stat object is still valid
-
-                    if (entry.getStat() != null) {
                         return entry.getStat();
-                    } else {
-                        return null;
-                    }
                 } else { // Stat object is expired => delete it from cache
 
                     if (Logging.isDebug()) {
@@ -522,11 +517,7 @@ public class MetadataCache {
         writeLock.lock();
         try {
             MetadataCacheEntry entry = cache.get(path);
-            if (entry != null) {
-                if (entry.getDirectoryEntries() == null) {
-                    return null;
-                }
-
+            if (entry != null && entry.getDirectoryEntries() != null) {
                 long currentTimeS = System.currentTimeMillis() / 1000;
                 if (entry.getDirectoryEntriesTimeoutS() >= currentTimeS) { // entry is valid => use it
 
@@ -597,6 +588,7 @@ public class MetadataCache {
             MetadataCacheEntry entry = cache.get(path);
             if (entry != null) {
                 entry.setStat(null);
+                entry.setStatTimeoutS(0);
             }
         } finally {
             writeLock.unlock();
@@ -701,7 +693,6 @@ public class MetadataCache {
      *            Path of the cached object.
      */
     protected void invalidateDirEntries(String path) {
-
         if (path.isEmpty() || !enabled) {
             return;
         }
@@ -711,6 +702,7 @@ public class MetadataCache {
             MetadataCacheEntry entry = cache.get(path);
             if (entry != null) {
                 entry.setDirectoryEntries(null);
+                entry.setDirectoryEntriesTimeoutS(0);
             }
         } finally {
             writeLock.unlock();
@@ -1083,6 +1075,7 @@ public class MetadataCache {
             MetadataCacheEntry entry = cache.get(path);
             if (entry != null) {
                 entry.setXattrs(null);
+                entry.setXattrTimeoutS(0);
             }
 
         } finally {

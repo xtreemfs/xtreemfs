@@ -6,7 +6,6 @@
  */
 package org.xtreemfs.common.libxtreemfs;
 
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
 
 /**
  * 

@@ -412,7 +412,7 @@ public abstract class Volume {
 			PosixErrorException, AddressToUUIDNotFoundException;
 
 	/**
-	 * Writes value for an XAttribute with "name" stored for "path" in "value".
+	 * Returns value for an XAttribute with "name" stored for "path" in "value".
 	 * 
 	 * @param userCredentials
 	 *            Name and Groups of the user.

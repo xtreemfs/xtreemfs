@@ -118,8 +118,8 @@ public class ClientImplementation extends Client implements UUIDResolver {
     }
 
     public void start() throws Exception {
-        networkClient = new RPCNIOSocketClient(dirServiceSSLOptions, options.getRequestTimeout_s(),
-                options.getConnectTimeout_s());
+        networkClient = new RPCNIOSocketClient(dirServiceSSLOptions, options.getRequestTimeout_s()*1000,
+                options.getConnectTimeout_s()*1000);
         networkClient.start();
         networkClient.waitForStartup();
 

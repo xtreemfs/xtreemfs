@@ -4,7 +4,7 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-package org.xtreemfs.test.common.libxtreemfs;
+package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
 import java.util.LinkedList;

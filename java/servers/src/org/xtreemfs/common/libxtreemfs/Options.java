@@ -131,7 +131,7 @@ public class Options {
     /**
      * Maximum time until a request will be aborted and the response returned. Default:
      */
-    private int     requestTimeout_s      = 60;
+    private int     requestTimeout_s      = 30;
 
     /**
      * The RPC Client closes connections after "linger_timeout_s" time of inactivity. Default: 600
