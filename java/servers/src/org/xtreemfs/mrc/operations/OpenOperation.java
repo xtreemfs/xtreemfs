@@ -166,7 +166,7 @@ public class OpenOperation extends MRCOperation {
         XLocList xLocList = file.getXLocList();
         
         // retrieve the default replication policy
-        ReplicationPolicy defaultReplPolicy = sMan.getDefaultReplicationPolicy(file.getId());
+        ReplicationPolicy defaultReplPolicy = sMan.getDefaultReplicationPolicy(res.getParentDirId());
         if (defaultReplPolicy == null)
             defaultReplPolicy = sMan.getDefaultReplicationPolicy(1);
         

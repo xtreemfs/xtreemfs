@@ -150,6 +150,7 @@ public class UpdateFileSizeOperation extends MRCOperation {
             XLocList xLocList = file.getXLocList();
             
             // retrieve the default replication policy
+            // FIXME: use the parent directory's default replication policy
             ReplicationPolicy defaultReplPolicy = sMan.getDefaultReplicationPolicy(file.getId());
             if (defaultReplPolicy == null)
                 defaultReplPolicy = sMan.getDefaultReplicationPolicy(1);
@@ -234,8 +235,8 @@ public class UpdateFileSizeOperation extends MRCOperation {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "added %d replicas",
                     requiredReplicaCount - xLocList.getReplicaCount());
             
-            // trigger the replication
-            if (file.getSize() > 0) {
+            // if the file has data and 'full' replicas are enabled, trigger the replication
+            if (file.getSize() > 0 && ReplicationFlags.isFullReplica(defaultReplPolicy.getFlags())) {
                 
                 XLocSet.Builder xLocSet = Converter.xLocListToXLocSet(xLocList);
                 xLocSet.setReadOnlyFileSize(file.getSize());
