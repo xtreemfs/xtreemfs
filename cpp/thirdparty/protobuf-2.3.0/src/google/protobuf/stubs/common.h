@@ -38,6 +38,10 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <cstddef>
+// NOTE(michael.berlin.xtreemfs@gmail.com): Added to avoid compiler error
+// due to ambiguous 'struct map', see:
+// http://code.google.com/p/protobuf/issues/detail?id=195#c10
+#include <map>
 #include <string>
 #include <string.h>
 #if defined(__osf__)
@@ -54,6 +58,10 @@ namespace google {
 namespace protobuf {
 
 using namespace std;  // Don't do this at home, kids.
+// NOTE(michael.berlin.xtreemfs@gmail.com): Added to avoid compiler error
+// due to ambiguous 'struct map', see:
+// http://code.google.com/p/protobuf/issues/detail?id=195#c10
+using std::map;
 
 #undef GOOGLE_DISALLOW_EVIL_CONSTRUCTORS
 #define GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(TypeName)    \

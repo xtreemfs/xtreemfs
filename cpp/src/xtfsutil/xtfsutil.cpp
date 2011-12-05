@@ -5,22 +5,27 @@
  *
  */
 
-#include <boost/algorithm/string/case_conv.hpp>
-#include <boost/program_options.hpp>
-#include <boost/regex.hpp>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <string>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifndef __sun
 #include <sys/xattr.h>
+#endif  // !__sun
 #include <unistd.h>
+
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/program_options.hpp>
+#include <boost/regex.hpp>
+#include <fstream>
+#include <string>
 #include <vector>
 
 #include "json/json.h"
 #include "libxtreemfs/version_management.h"
+#include "libxtreemfs/xtreemfs_exception.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 
 using namespace std;
@@ -84,7 +89,17 @@ bool executeOperation(const string& xctl_file,
     return false;
   }
   if (!response->isMember("result")) {
-    cerr << "Read invalid JSON from xctl file: " << result << endl;
+    if (string(result) == json_out) {
+      cerr << "Read the same text which was written into the pseudo control"
+              " file: " << result << endl
+           << "This means a file content cache prevents xtfsutil from working"
+              " correctly." << endl;
+#ifdef __sun
+      cerr << "This is a known issue on Solaris." << endl;
+#endif  // __sun
+    } else {
+      cerr << "Read invalid JSON from xctl file: " << result << endl;
+    }
     return false;
   }
   return true;
@@ -708,14 +723,15 @@ bool SetRemoveACL(const string& full_path,
   } else {
     return false;
   }
+  int result = -1;
 #ifdef __linux
-  int result = setxattr(full_path.c_str(),
+  result = setxattr(full_path.c_str(),
                         "xtreemfs.acl",
                         contents.c_str(),
                         contents.size(),
                         0);
 #elif __APPLE__
-  int result = setxattr(full_path.c_str(),
+  result = setxattr(full_path.c_str(),
                         "xtreemfs.acl",
                         contents.c_str(),
                         contents.size(),
@@ -728,6 +744,72 @@ bool SetRemoveACL(const string& full_path,
   }
   cout << "Success." << endl;
   return true;
+}
+
+string GetPathOnVolume(const char* real_path_cstr) {
+  string path_on_volume;
+#ifdef __sun
+  // Solaris' Fuse seems to have no working xattr support. Parse /etc/mnttab.
+  const char mtab_file[] = "/etc/mnttab";
+  ifstream in(mtab_file);
+  if (!in.is_open()) {
+    throw xtreemfs::XtreemFSException(
+        "Could not determine the path on the volume."
+        " Failed to open the file: " + string(mtab_file));
+  }
+
+  string real_path = string(real_path_cstr);
+  std::string line;
+  const boost::regex mtab_mount_point_re("^xtreemfs@[^\\t]+\\t([^\\t]+)\\tfuse\\t");
+  bool entry_found = false;
+  while (getline(in, line)) {
+    boost::smatch matcher;
+    if (boost::regex_search(line, matcher, mtab_mount_point_re)) {
+      string mount_point = matcher[1];
+      if (real_path.substr(0, mount_point.length()) == mount_point) {
+        path_on_volume = real_path.substr(mount_point.length());
+        entry_found = true;
+        break;
+      }
+    }
+  }
+  if (!entry_found) {
+    throw xtreemfs::XtreemFSException("No matching mounted XtreemFS volume"
+        " found in " + string(mtab_file) +
+        " for path: " + string(real_path_cstr));
+  }
+#else
+  // get xtreemfs.url xattr.
+  char xtfs_url[2048];
+  int length = -1;
+#ifdef __linux
+  length = getxattr(real_path_cstr, "xtreemfs.url", xtfs_url, 2048);
+#elif __APPLE__
+  length = getxattr(real_path_cstr, "xtreemfs.url", xtfs_url, 2048, 0, 0);
+#endif
+
+  if (length <= 0) {
+      struct stat sb;
+      if (stat(real_path_cstr, &sb)) {
+          // Show more meaningful error message if path does not exist at all.
+          throw xtreemfs::XtreemFSException("File/Directory does not exist: "
+              + string(real_path_cstr));
+      } else {
+          throw xtreemfs::XtreemFSException("Path doesn't point to an entity on"
+              " an XtreemFS volume!\nxattr xtreemfs.url is missing.");
+      }
+  }
+
+  string url(xtfs_url, length);
+  const boost::regex pure_path_re("pbrpc.?://[^/]+/[^/]+(.*)");
+  boost::smatch matcher;
+  if (!boost::regex_match(url, matcher, pure_path_re)) {
+    throw xtreemfs::XtreemFSException("Invalid XtreemFS url!");
+  }
+  path_on_volume = matcher[1];
+#endif
+
+  return path_on_volume;
 }
 
 int main(int argc, char **argv) {
@@ -874,35 +956,13 @@ int main(int argc, char **argv) {
   }
 
   char* real_path_cstr = realpath(option_path.c_str(), NULL);
-  
-  // get xtreemfs.url xattr.
-  char xtfs_url[2048];
-#ifdef __linux
-  int length = getxattr(real_path_cstr, "xtreemfs.url", xtfs_url, 2048);
-#elif __APPLE__
-  int length = getxattr(real_path_cstr, "xtreemfs.url", xtfs_url, 2048, 0, 0);
-#endif
-  if (length <= 0) {
-    struct stat sb;
-    if (stat(real_path_cstr, &sb)) {
-      // Show more meaningful error message if path does not exist at all.
-      cerr << "File/Directory does not exist: " << option_path << endl << endl;
-      return 1;
-    } else {
-      cerr << "Path doesn't point to an entity on an XtreemFS volume!" << endl;
-      cerr << "xattr xtreemfs.url is missing." << endl << endl;
-      return 1;
-    }
-  }
-
-  string url(xtfs_url, length);
-  const boost::regex pure_path_re("pbrpc.?://[^/]+/[^/]+(.*)");
-  boost::smatch matcher;
-  if (!boost::regex_match(url, matcher, pure_path_re)) {
-    cerr << "Invalid XtreemFS url!" << endl;
+  string path_on_volume;
+  try {
+    path_on_volume = GetPathOnVolume(real_path_cstr);
+  } catch (const xtreemfs::XtreemFSException &e) {
+    cerr << "xtfsutil failed: " << e.what() << endl;
     return 1;
   }
-  string path_on_volume = matcher[1];
 
   string mount_point = real_path_cstr;
   mount_point = mount_point.substr(0,
@@ -910,7 +970,6 @@ int main(int argc, char **argv) {
   if (mount_point[mount_point.size() - 1] != '/') {
     mount_point.append("/");
   }
-
   if (path_on_volume.empty()) {
     path_on_volume = "/";
   }

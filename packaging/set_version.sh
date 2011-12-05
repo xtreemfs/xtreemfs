@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# No grep -oE support on Solaris
+if [ "$(uname)" = "SunOS" ]
+then
+  exit 0
+fi
+
 # Path is relative to the directory path of this script, usually /packaging/
 xtreemfs_version_management_files="../java/foundation/src/org/xtreemfs/foundation/VersionManagement.java:RELEASE_VERSION ../cpp/include/libxtreemfs/version_management.h:XTREEMFS_VERSION_STRING"
 

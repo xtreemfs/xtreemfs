@@ -31,6 +31,10 @@ using namespace std;
 using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 
+// Fix ambigiuous map error on Solaris (see
+// http://groups.google.com/group/xtreemfs/msg/b44605dbbd7b6d0f)
+using std::map;
+
 namespace xtreemfs {
 
 /** Constructor called by FileInfo.CreateFileHandle().

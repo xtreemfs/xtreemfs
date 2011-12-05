@@ -8,6 +8,8 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_FILE_HANDLE_H_
 #define CPP_INCLUDE_LIBXTREEMFS_FILE_HANDLE_H_
 
+#include <boost/cstdint.hpp>
+
 namespace xtreemfs {
 
 namespace pbrpc {

@@ -268,7 +268,7 @@ void Client::sendRequest(const string& address,
                                         context,
                                         callback);
 
-  mutex::scoped_lock lock(this->requests_lock_);
+  boost::mutex::scoped_lock lock(this->requests_lock_);
   bool wasEmpty = requests_.empty();
   requests_.push(rq);
   if (wasEmpty) {
@@ -281,7 +281,7 @@ void Client::sendInternalRequest() {
   do {
     ClientRequest *rq = NULL;
     {
-      mutex::scoped_lock lock(this->requests_lock_);
+      boost::mutex::scoped_lock lock(this->requests_lock_);
       if (requests_.empty())
         break;
       rq = requests_.front();

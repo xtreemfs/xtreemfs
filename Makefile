@@ -18,6 +18,10 @@ endif
 
 WHICH_GPP = $(shell which g++)
 
+ifeq "$(shell uname)" "SunOS"
+  PROTOBUF_DISABLE_64_BIT_SOLARIS = "--disable-64bit-solaris"
+endif
+
 SHELL=/bin/bash
 
 XTREEMFS_JAR_DIR=$(DESTDIR)/usr/share/java
@@ -71,7 +75,7 @@ install-client:
 	@cp LICENSE $(DOC_DIR_CLIENT)
 
 	@mkdir -p $(BIN_DIR)
-	@cp   -a  bin/*.xtreemfs bin/xtfsutil $(BIN_DIR)
+	@cp   -p  bin/*.xtreemfs bin/xtfsutil $(BIN_DIR)
 	          #bin/xtfs_vivaldi
 	          
 	@mkdir -p $(SBIN_DIR)
@@ -136,7 +140,7 @@ install-tools:
 	@cp java/lib/*.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(BIN_DIR)
-	@cp   -a  `ls bin/xtfs_* | grep -v xtfs_.*mount` $(BIN_DIR)
+	@cp   -p  `ls bin/xtfs_* | grep -v xtfs_.*mount` $(BIN_DIR)
 
 	@mkdir -p $(MAN_DIR)
 	@cp -R man/man1/xtfs_* $(MAN_DIR)
@@ -204,7 +208,7 @@ client_thirdparty: $(CLIENT_THIRDPARTY_REQUIREMENTS)
 
 $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY): $(CLIENT_GOOGLE_PROTOBUF_CPP)/src/**
 	@echo "client_thirdparty: Configuring and building required Google protobuf library..."
-	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && ./configure >/dev/null
+	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && ./configure $(PROTOBUF_DISABLE_64_BIT_SOLARIS) >/dev/null
 	@$(MAKE) -C $(CLIENT_GOOGLE_PROTOBUF_CPP) >/dev/null
 	@echo "client_thirdparty: ...completed building required Google protobuf library."
 	@touch $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
@@ -243,8 +247,8 @@ client_debug: client
 client: check_client client_thirdparty set_version
 	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG)
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)	
-	@cp   -a $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTFS_BINDIR)
-	@cp   -a $(XTREEMFS_CLIENT_BUILD_DIR)/xtfsutil $(XTFS_BINDIR)
+	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTFS_BINDIR)
+	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/xtfsutil $(XTFS_BINDIR)
 client_clean: check_client client_thirdparty_clean
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
 client_distclean: check_client client_thirdparty_distclean

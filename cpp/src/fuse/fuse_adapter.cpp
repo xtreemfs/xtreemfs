@@ -37,6 +37,16 @@
 #include "xtreemfs/MRC.pb.h"
 #include "xtreemfs/OSD.pb.h"
 
+// NetBSD has neither NOATTR nor ENODATA
+#if !defined(ENOATTR) && !defined(ENODATA)
+#define ENOATTR EAGAIN
+#endif
+
+// Linux and Solaris have no ENOATTR
+#ifndef ENOATTR
+#define ENOATTR ENODATA
+#endif
+
 using namespace std;
 using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
@@ -314,7 +324,10 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   // In consequence, we have to disable the Fuse stat cache at all.
   required_fuse_options->push_back(strdup("-oattr_timeout=0"));
   required_fuse_options->push_back(
-      strdup("-ouse_ino,readdir_ino,noatime"));
+      strdup("-ouse_ino,readdir_ino"));
+  #ifndef __sun
+    required_fuse_options->push_back(strdup("-onoatime"));
+  #endif
   required_fuse_options->push_back(strdup(
       (string("-ofsname=xtreemfs@") + options_->xtreemfs_url).c_str()));
 }
@@ -516,11 +529,7 @@ int FuseAdapter::getxattr(
 
   // No getxattr for xtfsutil control files.
   if (xctl_.checkXctlFile(path_str)) {
-#ifdef __linux
-      return -1 * ENODATA;  // Linux has no ENOATTR.
-#else
       return -1 * ENOATTR;
-#endif
   }
 
   bool xtreemfs_attribute_requested = !strncmp(name, "xtreemfs.", 9);
@@ -538,11 +547,7 @@ int FuseAdapter::getxattr(
           string(name), &result)) {
         return result;
       } else {
-#ifdef __linux
-        return -1 * ENODATA;  // Linux has no ENOATTR.
-#else
         return -1 * ENOATTR;
-#endif
       }
     } else {
       string value_string;
@@ -557,11 +562,7 @@ int FuseAdapter::getxattr(
           return -1 * ERANGE;
         }
       } else {
-#ifdef __linux
-        return -1 * ENODATA;  // Linux has no ENOATTR.
-#else
         return -1 * ENOATTR;
-#endif
       }
     }
   } catch(const PosixErrorException& e) {

@@ -12,10 +12,13 @@
 #include <string>
 
 #include "pbrpc/RPC.pb.h"
-#include "rpc/ssl_options.h"
 #include "xtreemfs/MRC.pb.h"
 
 namespace xtreemfs {
+
+namespace rpc {
+class SSLOptions;
+}  // namespace rpc
 
 class Options;
 class UUIDIterator;

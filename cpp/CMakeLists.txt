@@ -9,7 +9,7 @@ add_definitions(-D_FILE_OFFSET_BITS=64)
 # Set variables and required libraries.
 ##########################################
 if (CMAKE_COMPILER_IS_GNUCXX)
-  set(CMAKE_CXX_FLAGS "-Wall -Wno-unused-function -Wno-sign-compare")
+  set(CMAKE_CXX_FLAGS "-Wall -Wno-unused-function -Wno-sign-compare -pthread")
 endif(CMAKE_COMPILER_IS_GNUCXX)
 if (MSVC)
   # Windows uses Unicode internally, so we also use Unicode instead of the default multi-byte character set.
@@ -20,6 +20,9 @@ if (MSVC)
   # See: http://www.boost.org/doc/libs/1_46_1/doc/html/boost_asio/using.html
   add_definitions(-DBOOST_DATE_TIME_NO_LIB -DBOOST_REGEX_NO_LIB)
 endif(MSVC)
+if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+  set (SOLARIS true)
+endif(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 
 # Set paths for required thirdparty libraries.
 set(CLIENT_GOOGLE_PROTOBUF_CPP "${CMAKE_SOURCE_DIR}/thirdparty/protobuf-2.3.0")
@@ -40,6 +43,15 @@ if (NOT WIN32)
   SET(LIBATTR "attr")
   SET(LIBPTHREAD "pthread")
 endif(NOT WIN32)
+if (SOLARIS)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthreads") 
+  SET(LIBSOCKET_SOLARIS "socket")
+  SET(LIBNSL_SOLARIS "nsl")
+  # No libattr on Solaris.
+  SET(LIBATTR "")
+  # On Solaris we use the environment variable BOOST_ROOT to point to a local boost installation and we link the built boost libraries statically.
+  SET(Boost_USE_STATIC_LIBS true)
+endif(SOLARIS)
 IF(APPLE)
   # No libattr on mac.
   SET(LIBATTR "")
@@ -138,7 +150,7 @@ add_library(xtreemfs ${SRCS_RPC} ${SRCS_UTIL} ${SRCS_GENERATED} ${SRCS_XTREEMFS}
 #          If you want to use a static libxtreemfs, you have to use a CMake file like this which does automatically add the static libxtreemfs and libprotobuf to the executable.
 #          An alternative would be to change this file in such a way that the static libxtreemfs and libprotobuf are merged together into a static libxtreemfs.
 #          But this would require additional CMake macros as presented here: http://www.mail-archive.com/cmake@cmake.org/msg28670.html
-TARGET_LINK_LIBRARIES(xtreemfs optimized protobuf debug protobuf_debug ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${LIBPTHREAD} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${OPENSSL_LIBRARIES})
+TARGET_LINK_LIBRARIES(xtreemfs optimized protobuf debug protobuf_debug ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${LIBPTHREAD} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${OPENSSL_LIBRARIES} ${LIBSOCKET_SOLARIS} ${LIBNSL_SOLARIS})
 
 ADD_EXECUTABLE(example_libxtreemfs src/example_libxtreemfs/example_libxtreemfs.cpp)
 TARGET_LINK_LIBRARIES(example_libxtreemfs xtreemfs)

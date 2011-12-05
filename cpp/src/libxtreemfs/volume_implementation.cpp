@@ -32,6 +32,10 @@ using namespace std;
 using namespace xtreemfs::util;
 using namespace xtreemfs::pbrpc;
 
+// Fix ambigiuous map error on Solaris (see
+// http://groups.google.com/group/xtreemfs/msg/b44605dbbd7b6d0f)
+using std::map;
+
 namespace xtreemfs {
 
 VolumeImplementation::VolumeImplementation(
