@@ -138,13 +138,6 @@ template<class ReturnMessageType, class F>
       // An error has happened. Differ between communication problems (retry
       // allowed) and application errors (need to pass to the caller).
 
-      // Increase number of retries by one if this last attempt got a redirect.
-      if (response->error()->error_type() == xtreemfs::pbrpc::REDIRECT) {
-        if (max_tries != 0 && attempt == max_tries) {
-          max_tries++;
-        }
-      }
-
       // Retry (and delay) only if at least one retry is left
       if (((attempt < max_tries || max_tries == 0) ||
            //                      or this last retry should be delayed
@@ -182,6 +175,10 @@ template<class ReturnMessageType, class F>
             }
             xtreemfs::util::ErrorLog::error_log->AppendError(error);
             redirected = true;
+            // Do not count the first redirect as a try.
+            if (max_tries != 0) {
+              --attempt;
+            }
             continue;
           }
         } else {
