@@ -37,6 +37,8 @@ import org.xtreemfs.osd.OpenFileTable.OpenFileTableEntry;
 import org.xtreemfs.osd.operations.EventCloseFile;
 import org.xtreemfs.osd.operations.EventCreateFileVersion;
 import org.xtreemfs.osd.operations.OSDOperation;
+import org.xtreemfs.osd.operations.ReadOperation;
+import org.xtreemfs.osd.operations.WriteOperation;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.CowPolicy.cowMode;
@@ -502,7 +504,7 @@ public class PreprocStage extends Stage {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "capability: %s", rqCap.getXCap().toString().replace('\n', '/'));
         }
         
-        // check capability args
+        // check if the capability has valid arguments
         if (rqCap.getFileId().length() == 0) {
             return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "invalid capability. file_id must not be empty");
         }
@@ -514,10 +516,7 @@ public class PreprocStage extends Stage {
         if (ignoreCaps)
             return null;
         
-        if (!rqCap.getFileId().equals(rq.getFileId())) {
-            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, "capability was issued for another file than the one requested");
-        }
-        
+        // check if the capability is valid
         boolean isValid = false;
         // look in capCache
         LRUCache<String, Capability> cachedCaps = capCache.get(rqCap.getFileId());
@@ -531,9 +530,7 @@ public class PreprocStage extends Stage {
                 isValid = !cap.hasExpired();
             }
         }
-        
-        // TODO: check access mode (read, write, ...)
-        
+                
         if (!isValid) {
             isValid = rqCap.isValid();
             if (isValid) {
@@ -556,6 +553,43 @@ public class PreprocStage extends Stage {
 
             return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, "capability is not valid (unknown cause)");
         }
+        
+        // check if the capability was issued for the requested file
+        if (!rqCap.getFileId().equals(rq.getFileId())) {
+            return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, "capability was issued for another file than the one requested");
+        }
+        
+        // check if the capability provides sufficient access rights for
+        // requested operation
+        if (rq.getOperation().getProcedureId() == OSDServiceConstants.PROC_ID_READ) {
+            
+            if ((rqCap.getAccessMode() & (SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber())) != 0)
+                return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES,
+                        "capability does not allow read access to file " + rqCap.getFileId());
+            
+        } else if (rq.getOperation().getProcedureId() == OSDServiceConstants.PROC_ID_WRITE) {
+            
+            if ((rqCap.getAccessMode() & (SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+                    | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR
+                        .getNumber())) == 0)
+                return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES,
+                        "capability does not allow write access to file " + rqCap.getFileId());
+            
+        } else if (rq.getOperation().getProcedureId() == OSDServiceConstants.PROC_ID_TRUNCATE) {
+            
+            if ((rqCap.getAccessMode() & SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()) == 0)
+                return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES,
+                        "capability does not allow truncate access to file " + rqCap.getFileId());
+            
+        } else if (rq.getOperation().getProcedureId() == OSDServiceConstants.PROC_ID_UNLINK) {
+            
+            // TODO: replace numeric flag with constant
+            if ((rqCap.getAccessMode() & 010000000) == 0)
+                return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES,
+                        "capability does not allow delete access to file " + rqCap.getFileId());
+            
+        }
+
         return null;
     }
     

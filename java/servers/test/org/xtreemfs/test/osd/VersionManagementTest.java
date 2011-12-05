@@ -17,7 +17,6 @@ import junit.textui.TestRunner;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
@@ -54,10 +53,8 @@ public class VersionManagementTest extends TestCase {
     
     private ServiceUUID         osdId;
     
-    private OSDServiceClient           client;
-    
-    private StripingPolicyImpl  sp;
-    
+    private OSDServiceClient    client;
+        
     private XLocSet             xloc;
     
     /** Creates a new instance of StripingTest */
@@ -90,7 +87,7 @@ public class VersionManagementTest extends TestCase {
         client = testEnv.getOSDClient();
 
 
-        List<String> osdset = new ArrayList(1);
+        List<String> osdset = new ArrayList<String>(1);
         osdset.add(SetupUtils.getOSD1UUID().toString());
         Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(1, KB)).setReplicationFlags(0).addAllOsdUuids(osdset).build();
         xloc = XLocSet.newBuilder().setReadOnlyFileSize(0).setVersion(1).addReplicas(r).setReplicaUpdatePolicy("").build();
@@ -98,14 +95,17 @@ public class VersionManagementTest extends TestCase {
     }
     
     private FileCredentials getFileCredentials(int truncateEpoch, boolean write) {
-        return FileCredentials.newBuilder().setXcap(new Capability(FILE_ID, write ? SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber()
-            : SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber(), 60, System.currentTimeMillis(), "", truncateEpoch, false,
-            SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, 0, capSecret).getXCap()).setXlocs(xloc).build();
+        return FileCredentials.newBuilder().setXcap(new Capability(FILE_ID,
+                write ? (SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR
+                        .getNumber()) : SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber(), 60,
+                System.currentTimeMillis(), "", truncateEpoch, false,
+                SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, 0, capSecret).getXCap()).setXlocs(xloc).build();
     }
     
     private FileCredentials getFileCredentials(int truncateEpoch, long snapTimestamp) {
-        return FileCredentials.newBuilder().setXcap(new Capability(FILE_ID, 0, 60, System.currentTimeMillis(), "",
-            truncateEpoch, false, SnapConfig.SNAP_CONFIG_ACCESS_SNAP, snapTimestamp, capSecret).getXCap()).setXlocs(xloc).build();
+        return FileCredentials.newBuilder().setXcap(new Capability(FILE_ID, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber(), 60,
+                System.currentTimeMillis(), "", truncateEpoch, false, SnapConfig.SNAP_CONFIG_ACCESS_SNAP,
+                snapTimestamp, capSecret).getXCap()).setXlocs(xloc).build();
     }
     
     protected void tearDown() throws Exception {

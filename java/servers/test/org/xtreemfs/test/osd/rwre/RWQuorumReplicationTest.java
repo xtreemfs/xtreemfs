@@ -31,6 +31,7 @@ import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
@@ -101,7 +102,7 @@ public class RWQuorumReplicationTest extends TestCase {
 
     @Test
     public void testReplicatedWrite() throws Exception {
-        Capability cap = new Capability(fileId, 0, 60, System.currentTimeMillis()+10000, "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
+        Capability cap = new Capability(fileId, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60, System.currentTimeMillis()+10000, "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
         List<Replica> rlist = new LinkedList();
         for (OSDConfig osd : this.configs) {
             Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(1, 128)).setReplicationFlags(0).addOsdUuids(osd.getUUID().toString()).build();
@@ -201,7 +202,7 @@ public class RWQuorumReplicationTest extends TestCase {
 
     @Test
     public void testTwoReplicas() throws Exception {
-        Capability cap = new Capability(fileId, 0, 60, System.currentTimeMillis()+10000, "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
+        Capability cap = new Capability(fileId, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60, System.currentTimeMillis()+10000, "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
         List<Replica> rlist = new LinkedList();
         for (OSDConfig osd : this.configs) {
             Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(1, 128)).setReplicationFlags(0).addOsdUuids(osd.getUUID().toString()).build();

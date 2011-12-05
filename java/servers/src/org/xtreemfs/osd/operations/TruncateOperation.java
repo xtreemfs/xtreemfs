@@ -66,6 +66,7 @@ public final class TruncateOperation extends OSDOperation {
         if (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
             // file is read only
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EPERM, "Cannot write on read-only files.");
+            return;
         }
 
         if ((rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
