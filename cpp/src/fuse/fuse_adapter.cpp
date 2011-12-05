@@ -403,6 +403,7 @@ xtreemfs::pbrpc::SYSTEM_V_FCNTL FuseAdapter::ConvertFlagsUnixToXtreemFS(
   CHECK(result, flags, O_CREAT    , SYSTEM_V_FCNTL_H_O_CREAT);
   CHECK(result, flags, O_TRUNC    , SYSTEM_V_FCNTL_H_O_TRUNC);
   CHECK(result, flags, O_EXCL     , SYSTEM_V_FCNTL_H_O_EXCL);
+  CHECK(result, flags, O_SYNC     , SYSTEM_V_FCNTL_H_O_SYNC);
 #ifdef __linux
   CHECK(result, flags, O_DSYNC    , SYSTEM_V_FCNTL_H_O_SYNC);
 #endif
