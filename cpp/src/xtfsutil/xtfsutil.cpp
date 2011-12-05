@@ -90,8 +90,8 @@ bool executeOperation(const string& xctl_file,
   }
   if (!response->isMember("result")) {
     if (string(result) == json_out) {
-      cerr << "Read the same text which was written into the pseudo control"
-              " file: " << result << endl
+      cerr << "xtfsutil read back the same text which was written into the"
+              " pseudo control file: " << result << endl
            << "This means a file content cache prevents xtfsutil from working"
               " correctly." << endl;
 #ifdef __sun
@@ -956,6 +956,11 @@ int main(int argc, char **argv) {
   }
 
   char* real_path_cstr = realpath(option_path.c_str(), NULL);
+  if (!real_path_cstr) {
+    cerr << "xtfsutil failed to find the absolute path of: "
+         << option_path << endl;
+    return 1;
+  }
   string path_on_volume;
   try {
     path_on_volume = GetPathOnVolume(real_path_cstr);
