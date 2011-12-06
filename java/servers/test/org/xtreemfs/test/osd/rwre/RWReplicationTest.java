@@ -154,7 +154,7 @@ public class RWReplicationTest extends TestCase {
             rlist.add(r);
         }
 
-        XLocSet locSet = XLocSet.newBuilder().setReadOnlyFileSize(0).setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE).setVersion(1).addAllReplicas(rlist).build();
+        XLocSet locSet = XLocSet.newBuilder().setReadOnlyFileSize(0).setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ).setVersion(1).addAllReplicas(rlist).build();
         // set the first replica as current replica
         FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(locSet).build();
 

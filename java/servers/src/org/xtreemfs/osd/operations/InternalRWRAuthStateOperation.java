@@ -23,6 +23,7 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetReplicaStateCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
+import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_fetchRequest;
@@ -63,6 +64,7 @@ public final class InternalRWRAuthStateOperation extends OSDOperation {
             public void getReplicaStateComplete(ReplicaStatus localState, ErrorResponse error) {
                 if (error == null) {
                     master.getRWReplicationStage().eventBackupReplicaReset(rq.getFileId(), args.getState(), localState, args.getFileCredentials(), rq.getLocationList());
+                    rq.sendSuccess(emptyResponse.getDefaultInstance(), null);
                 } else {
                     sendResult(rq, null, error);
                 }
