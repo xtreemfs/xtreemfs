@@ -68,7 +68,7 @@ public class DIR {
                         rq.shutdown();
                         if (Logging.isInfo())
                             Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
-                                "DIR shotdown complete");
+                                "DIR shutdown complete");
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
