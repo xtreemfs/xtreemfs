@@ -79,6 +79,14 @@ class AdvancedMonitor extends Monitor {
             if (avgS == 0.0 && historicalVariableProcessingTimes[type] == 0.0) {
                 
                 avgT = slowStart(avgT, type);
+                
+            // we have to reset to the initial sample amount to prevent overreaction on the first encounter of variable
+            // processing time
+            } else if (historicalVariableProcessingTimes[type] == 0.0 && 
+                       samplesToMeasure[type] < INITIAL_SAMPLE_AMOUNT) {
+                
+                samplesToMeasure[type] = INITIAL_SAMPLE_AMOUNT;
+                return;
             }
             
             final double[] result = estimateLeastSquares(type, avgT, avgS);
@@ -108,6 +116,7 @@ class AdvancedMonitor extends Monitor {
         
         // incomplete historical data - nothing to compare to
         if (fixedTimeAverages[type] == 0.0) {
+            
             return current;
         }
         
