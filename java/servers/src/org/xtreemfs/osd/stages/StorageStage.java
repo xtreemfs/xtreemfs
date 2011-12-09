@@ -83,9 +83,9 @@ public class StorageStage extends Stage {
     
     public void writeObject(String fileId, long objNo, StripingPolicyImpl sp, int offset,
         ReusableBuffer data, CowPolicy cow, XLocations xloc, boolean sync, Long newVersion,
-        OSDRequest request, WriteObjectCallback listener) {
+        OSDRequest request, ReusableBuffer createdViewBuffer, WriteObjectCallback listener) {
         this.enqueueOperation(fileId, StorageThread.STAGEOP_WRITE_OBJECT, new Object[] { fileId, objNo, sp,
-            offset, data, cow, xloc, false, sync, newVersion }, request, listener);
+            offset, data, cow, xloc, false, sync, newVersion }, request, createdViewBuffer, listener);
     }
     
     public void insertPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, int size,
@@ -209,19 +209,24 @@ public class StorageStage extends Stage {
     
     public void enqueueOperation(String fileId, int stageOp, Object[] args, OSDRequest request,
         Object callback) {
-        
-        // rq.setEnqueueNanos(System.nanoTime());
-        
-        // choose the thread the new request has to be
-        // assigned to, for its execution
-        int taskId = getTaskId(fileId);
-        
-        // add the new request to the storageTask,
-        // in order to start/schedule its execution
-        // concurrently with other threads assigned to other
-        // storageTasks
-        storageThreads[taskId].enqueueOperation(stageOp, args, request, callback);
+        enqueueOperation(stageOp, args, request, null, callback);
     }
+    
+    public void enqueueOperation(String fileId, int stageOp, Object[] args, OSDRequest request,
+            ReusableBuffer createdViewBuffer, Object callback) {
+            
+            // rq.setEnqueueNanos(System.nanoTime());
+            
+            // choose the thread the new request has to be
+            // assigned to, for its execution
+            int taskId = getTaskId(fileId);
+            
+            // add the new request to the storageTask,
+            // in order to start/schedule its execution
+            // concurrently with other threads assigned to other
+            // storageTasks
+            storageThreads[taskId].enqueueOperation(stageOp, args, request, createdViewBuffer, callback);
+        }
     
     public void run() {
         // start all storage threads

@@ -322,6 +322,12 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
      *            a readable key
      */
     private void readConnection(SelectionKey key) {
+        
+        if (key == null) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "attempted to read on 'null' selection key");
+            return;
+        }
+        
         final RPCNIOSocketServerConnection con = (RPCNIOSocketServerConnection) key.attachment();
         final ChannelIO channel = con.getChannel();
         
@@ -493,6 +499,12 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
      *            the writable key
      */
     private void writeConnection(SelectionKey key) {
+        
+        if (key == null) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "attempted to write on 'null' selection key");
+            return;
+        }
+        
         final RPCNIOSocketServerConnection con = (RPCNIOSocketServerConnection) key.attachment();
         final ChannelIO channel = con.getChannel();
 

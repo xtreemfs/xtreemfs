@@ -14,6 +14,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.xtreemfs.foundation.LifeCycleThread;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -57,16 +59,53 @@ public abstract class Stage extends LifeCycleThread {
     /**
      * send an request for a stage operation
      * 
-     * @param rq
-     *            the request
-     * @param the
-     *            method in the stage to execute
+     * @param stageOp
+     * @param args
+     * @param request
+     * @param callback
      */
     protected void enqueueOperation(int stageOp, Object[] args, OSDRequest request, Object callback) {
+        enqueueOperation(stageOp, args, request, null, callback);
+    }
+    
+    /**
+     * 
+     * send an request for a stage operation
+     * 
+     * @param stageOp
+     *            stage op number
+     * @param args
+     *            arguments
+     * @param request
+     *            request
+     * @param callback
+     *            callback
+     * @param createdViewBuffer
+     *            an optional additional view buffer to the data, which will be
+     *            freed if the request needs to be dropped due to overload
+     */
+    protected void enqueueOperation(int stageOp, Object[] args, OSDRequest request, ReusableBuffer createdViewBuffer,
+            Object callback) {
         // rq.setEnqueueNanos(System.nanoTime());
-        if (!q.offer(new StageRequest(stageOp, args, request, callback))) {
-            if (request != null) {
-                Logging.logMessage(Logging.LEVEL_WARN, this, "stage is overloaded, request %d for %s dropped", request.getRequestId(), request.getFileId());
+        
+        if (request == null) {
+            try {
+                q.put(new StageRequest(stageOp, args, request, callback));
+            } catch (InterruptedException e) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, OutputUtils.stackTraceToString(e));
+            }
+        } else {
+            if (!q.offer(new StageRequest(stageOp, args, request, callback))) {
+                // Make sure that the data buffer is returned to the pool if
+                // necessary, as some operations create view buffers on the
+                // data. Otherwise, a 'finalized but not freed before' warning
+                // may occur.
+                if (createdViewBuffer != null) {
+                    assert (createdViewBuffer.getRefCount() >= 2);
+                    BufferPool.free(createdViewBuffer);
+                }
+                Logging.logMessage(Logging.LEVEL_WARN, this, "stage is overloaded, request %d for %s dropped",
+                        request.getRequestId(), request.getFileId());
                 request.sendInternalServerError(new IllegalStateException("server overloaded, request dropped"));
             }
         }

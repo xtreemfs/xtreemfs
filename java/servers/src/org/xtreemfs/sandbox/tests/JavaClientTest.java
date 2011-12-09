@@ -13,6 +13,11 @@ public class JavaClientTest {
     
     private static final byte[] buf        = new byte[131072];
     
+    static {
+        for(int i = 0; i < buf.length; i++)
+            buf[i] = -1;
+    }
+    
     private static final int    numThreads = 40;
     
     private static final int    numFiles   = 3000;
@@ -27,7 +32,7 @@ public class JavaClientTest {
         
         UserCredentials uc = UserCredentials.newBuilder().setUsername("stender").addGroups("users").build();
         
-        c = new Client(new InetSocketAddress[] { new InetSocketAddress(32638) }, 5000, 60000, null);
+        c = new Client(new InetSocketAddress[] { new InetSocketAddress(32638) }, 60000, 120000, null);
         c.start();
         
         v = c.getVolume("test", uc);

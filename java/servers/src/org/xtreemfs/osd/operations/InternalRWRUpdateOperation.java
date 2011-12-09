@@ -57,8 +57,8 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
          master.replicatedDataReceived(rq.getRPCRequest().getData().capacity());
          master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(),
                 rq.getLocationList().getLocalReplica().getStripingPolicy(), args.getOffset(),
-                rq.getRPCRequest().getData().createViewBuffer(), CowPolicy.PolicyNoCow, rq.getLocationList(),
-                false, args.getObjectVersion(), rq, new WriteObjectCallback() {
+                rq.getRPCRequest().getData(), CowPolicy.PolicyNoCow, rq.getLocationList(),
+                false, args.getObjectVersion(), rq, null, new WriteObjectCallback() {
 
             @Override
             public void writeComplete(OSDWriteResponse result, ErrorResponse error) {

@@ -142,13 +142,10 @@ public final class ReusableBuffer {
                 this.refCount.incrementAndGet();
                 
                 if (BufferPool.recordStackTraces) {
-                    try {
-                        throw new Exception("allocate stack trace");
-                    } catch (Exception e) {
-                        view.allocStack = "\n";
-                        for (StackTraceElement elem : e.getStackTrace())
-                            view.allocStack += elem.toString() + "\n";
-                    }
+                    view.allocStack = "\n";
+                    StackTraceElement[] stackTrace = new Exception().getStackTrace();
+                    for (int i = 0; i < stackTrace.length; i++)
+                        view.allocStack += stackTrace[i].toString() + (i < stackTrace.length - 1 ? "\n" : "");
                 }
                 
                 return view;
@@ -170,13 +167,10 @@ public final class ReusableBuffer {
                 this.viewParent.refCount.incrementAndGet();
                 
                 if (BufferPool.recordStackTraces) {
-                    try {
-                        throw new Exception("allocate stack trace");
-                    } catch (Exception e) {
-                        view.allocStack = "\n";
-                        for (StackTraceElement elem : e.getStackTrace())
-                            view.allocStack += elem.toString() + "\n";
-                    }
+                    view.allocStack = "\n";
+                    StackTraceElement[] stackTrace = new Exception().getStackTrace();
+                    for (int i = 0; i < stackTrace.length; i++)
+                        view.allocStack += stackTrace[i].toString() + (i < stackTrace.length - 1 ? "\n" : "");
                 }
                 
                 return view;
@@ -638,8 +632,21 @@ public final class ReusableBuffer {
         if (!returned && reusable) {
             
             Logging.logMessage(Logging.LEVEL_WARN, Category.buffer, this,
-                "buffer was finalized but not freed before! buffer = %s", this.toString());
-            Logging.logMessage(Logging.LEVEL_WARN, Category.buffer, this, "stacktrace: %s", allocStack);
+                "buffer was finalized but not freed before! buffer = %s, refCount=%d", this.toString(), getRefCount());
+            
+            if (allocStack != null) {
+                
+                Logging.logMessage(Logging.LEVEL_WARN, Category.buffer, this, "stacktrace: %s", allocStack);
+                if (this.viewParent != null)
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.buffer, this, "parent stacktrace: %s",
+                            viewParent.allocStack);
+            }
+            
+            if (freeStack != null) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.buffer, this, "freed at: %s", freeStack);
+            } else if (viewParent != null && viewParent.freeStack != null) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.buffer, this, "freed at: %s", viewParent.freeStack);
+            }
             
             if (Logging.isDebug()) {
                 
@@ -650,13 +657,10 @@ public final class ReusableBuffer {
                 String content = new String(data);
                 
                 Logging.logMessage(Logging.LEVEL_WARN, Category.buffer, this, "content: %s", content);
-                Logging.logMessage(Logging.LEVEL_WARN, Category.buffer, this, "stacktrace: %s", allocStack);
                 
                 if (this.viewParent != null) {
                     Logging.logMessage(Logging.LEVEL_WARN, Category.buffer, this, "view parent: %s",
                         this.viewParent.toString());
-                    Logging.logMessage(Logging.LEVEL_WARN, Category.buffer, this,
-                        "view parent stacktrace: %s", this.viewParent.allocStack);
                     Logging.logMessage(Logging.LEVEL_WARN, Category.buffer, this, "ref count: %d",
                         this.viewParent.refCount.get());
                 } else {

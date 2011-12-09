@@ -96,15 +96,12 @@ public final class BufferPool {
      */
     public static ReusableBuffer allocate(int size) {
         ReusableBuffer tmp = instance.getNewBuffer(size);
+        assert (tmp.refCount.get() == 1): "newly allocated buffer has invalid reference count: " + tmp.refCount.get();
         
         if (recordStackTraces) {
-            try {
-                throw new Exception("allocate stack trace");
-            } catch (Exception e) {
-                tmp.allocStack = "\n";
-                for (StackTraceElement elem : e.getStackTrace())
-                    tmp.allocStack += elem.toString() + "\n";
-            }
+            tmp.allocStack = "\n";
+            for (StackTraceElement elem : new Exception().getStackTrace())
+                tmp.allocStack += elem.toString() + "\n";
         }
         return tmp;
     }
@@ -180,10 +177,14 @@ public final class BufferPool {
         }
     }
     
+    private void returnBuffer(ReusableBuffer buffer) {
+        returnBuffer(buffer, false);
+    }
+    
     /**
      * return a buffer to the pool
      */
-    private void returnBuffer(ReusableBuffer buffer) {
+    private void returnBuffer(ReusableBuffer buffer, boolean callFromView) {
         
         if (!buffer.isReusable())
             return;
@@ -192,28 +193,43 @@ public final class BufferPool {
             
             // view buffer
             if (recordStackTraces) {
-                for (StackTraceElement elem : new Exception().getStackTrace())
-                    buffer.freeStack += elem.toString() + "\n";
+                
+                if (buffer.freeStack == null)
+                    buffer.freeStack = "";
+                buffer.freeStack += "\n";
+                
+                StackTraceElement[] stackTrace = new Exception().getStackTrace();
+                for (int i = 0; i < stackTrace.length; i++)
+                    buffer.freeStack += stackTrace[i].toString() + "\n";
             }
             
             assert (!buffer.returned) : "buffer was already released: " + buffer.freeStack;
             buffer.returned = true;
-            returnBuffer(buffer.viewParent);
+            returnBuffer(buffer.viewParent, true);
             
         } else {
+            
+            assert (!buffer.returned || callFromView) : "buffer was already released: " + buffer.freeStack;
+            
+            if (recordStackTraces) {
+                
+                if (buffer.freeStack == null)
+                    buffer.freeStack = "";
+                buffer.freeStack += "\n";
+                
+                StackTraceElement[] stackTrace = new Exception().getStackTrace();
+                for (int i = 0; i < stackTrace.length; i++)
+                    buffer.freeStack += stackTrace[i].toString() + "\n";
+            }
+            
+            if (!callFromView) {
+                buffer.returned = true;
+            }
             
             if (buffer.refCount.getAndDecrement() > 1) {
                 return;
             }
-            
-            assert (!buffer.returned) : "buffer was already released: " + buffer.freeStack;
-            buffer.returned = true;
-            
-            if (recordStackTraces) {
-                for (StackTraceElement elem : new Exception().getStackTrace())
-                    buffer.freeStack += elem.toString() + "\n";
-            }
-            
+                                    
             ByteBuffer buf = buffer.getParent();
             buf.clear();
             

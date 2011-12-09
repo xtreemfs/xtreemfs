@@ -14,6 +14,7 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -81,9 +82,10 @@ public final class WriteOperation extends OSDOperation {
             if ( (rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
                || (rq.getLocationList().getNumReplicas() == 1) ){
 
+                ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
                 master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(), sp,
-                        args.getOffset(), rq.getRPCRequest().getData().createViewBuffer(), rq.getCowPolicy(),
-                        rq.getLocationList(), syncWrite, null, rq, new WriteObjectCallback() {
+                        args.getOffset(), viewBuffer, rq.getCowPolicy(),
+                        rq.getLocationList(), syncWrite, null, rq, viewBuffer, new WriteObjectCallback() {
 
                             @Override
                             public void writeComplete(OSDWriteResponse result, ErrorResponse error) {
@@ -108,10 +110,11 @@ public final class WriteOperation extends OSDOperation {
                 assert(newObjectVersion > 0);
 
                 //FIXME: ignore canExecOperation for now...
+                ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
                 master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(),
                         rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                        args.getOffset(), rq.getRPCRequest().getData().createViewBuffer(), rq.getCowPolicy(),
-                        rq.getLocationList(), syncWrite, newObjectVersion, rq, new WriteObjectCallback() {
+                        args.getOffset(), viewBuffer, rq.getCowPolicy(),
+                        rq.getLocationList(), syncWrite, newObjectVersion, rq, viewBuffer, new WriteObjectCallback() {
 
                             @Override
                             public void writeComplete(OSDWriteResponse result, ErrorResponse error) {
@@ -140,7 +143,9 @@ public final class WriteOperation extends OSDOperation {
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
         if (rq.getRPCRequest().getData().remaining() == sp.getStripeSizeForObject(args.getObjectNumber())) {
 
-            sendUpdates2(rq, args, result, newObjVersion, new InternalObjectData(args.getObjectData(), rq.getRPCRequest().getData().createViewBuffer()));
+            ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
+            
+            sendUpdates2(rq, args, result, newObjVersion, new InternalObjectData(args.getObjectData(), viewBuffer), viewBuffer);
         } else {
 
             master.getStorageStage().readObject(args.getFileId(), args.getObjectNumber(), sp, 0, -1, 0l, rq, new ReadObjectCallback() {
@@ -151,16 +156,16 @@ public final class WriteOperation extends OSDOperation {
                         sendResult(rq, null, error);
                     else {
                         InternalObjectData od = result2.getObjectData(false, 0, sp.getStripeSizeForObject(args.getObjectNumber()));
-                        sendUpdates2(rq, args, result, newObjVersion, od);
+                        sendUpdates2(rq, args, result, newObjVersion, od, null);
                     }
                 }
             });
         }
     }
     public void sendUpdates2(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result, final long newObjVersion,
-            final InternalObjectData data) {
+            final InternalObjectData data, final ReusableBuffer createdViewBuffer) {
         master.getRWReplicationStage().replicatedWrite(args.getFileCredentials(),rq.getLocationList(),
-                    args.getObjectNumber(), newObjVersion, data,
+                    args.getObjectNumber(), newObjVersion, data, createdViewBuffer,
                     new RWReplicationStage.RWReplicationCallback() {
 
             @Override

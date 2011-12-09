@@ -731,29 +731,39 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         this.enqueueOperation(STAGEOP_OPEN, new Object[]{credentials,locations,forceReset}, request, callback);
     }*/
 
-    protected void enqueueExternalOperation(int stageOp, Object[] arguments, OSDRequest request, Object callback) {
+    protected void enqueueExternalOperation(int stageOp, Object[] arguments, OSDRequest request, ReusableBuffer createdViewBuffer, Object callback) {
         if (externalRequestsInQueue.get() >= MAX_EXTERNAL_REQUESTS_IN_Q) {
             Logging.logMessage(Logging.LEVEL_WARN, this, "RW replication stage is overloaded, request %d for %s dropped", request.getRequestId(), request.getFileId());
             request.sendInternalServerError(new IllegalStateException("RW replication stage is overloaded, request dropped"));
+            
+            // Make sure that the data buffer is returned to the pool if
+            // necessary, as some operations create view buffers on the
+            // data. Otherwise, a 'finalized but not freed before' warning
+            // may occur.
+            if (createdViewBuffer != null) {
+                assert (createdViewBuffer.getRefCount() >= 2);
+                BufferPool.free(createdViewBuffer);
+            }
+            
         } else {
             externalRequestsInQueue.incrementAndGet();
-            this.enqueueOperation(stageOp, arguments, request, callback);
+            this.enqueueOperation(stageOp, arguments, request, createdViewBuffer, callback);
         }
     }
 
     public void prepareOperation(FileCredentials credentials, XLocations xloc, long objNo, long objVersion, Operation op, RWReplicationCallback callback,
             OSDRequest request) {
-        this.enqueueExternalOperation(STAGEOP_PREPAREOP, new Object[]{credentials,xloc,objNo,objVersion,op}, request, callback);
+        this.enqueueExternalOperation(STAGEOP_PREPAREOP, new Object[]{credentials,xloc,objNo,objVersion,op}, request, null, callback);
     }
     
-    public void replicatedWrite(FileCredentials credentials, XLocations xloc, long objNo, long objVersion, InternalObjectData data,
+    public void replicatedWrite(FileCredentials credentials, XLocations xloc, long objNo, long objVersion, InternalObjectData data, ReusableBuffer createdViewBuffer,
             RWReplicationCallback callback, OSDRequest request) {
-        this.enqueueExternalOperation(STAGEOP_REPLICATED_WRITE, new Object[]{credentials,xloc,objNo,objVersion,data}, request, callback);
+        this.enqueueExternalOperation(STAGEOP_REPLICATED_WRITE, new Object[]{credentials,xloc,objNo,objVersion,data}, request, createdViewBuffer, callback);
     }
 
     public void replicateTruncate(FileCredentials credentials, XLocations xloc, long newFileSize, long newObjectVersion,
             RWReplicationCallback callback, OSDRequest request) {
-        this.enqueueExternalOperation(STAGEOP_TRUNCATE, new Object[]{credentials,xloc,newFileSize,newObjectVersion}, request, callback);
+        this.enqueueExternalOperation(STAGEOP_TRUNCATE, new Object[]{credentials,xloc,newFileSize,newObjectVersion}, request, null, callback);
     }
 
     public void fileClosed(String fileId) {

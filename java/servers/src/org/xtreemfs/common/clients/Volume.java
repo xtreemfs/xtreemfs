@@ -18,6 +18,7 @@ import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.clients.internal.OpenFileList;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
@@ -560,7 +561,8 @@ public class Volume {
                         OSDWriteResponse.newBuilder().build(), true, emptyCoordinates);
                 response.get();
             } catch (Exception ex) {
-                throw new IOException("cannot mark file as read-only for automatic replication", ex);
+                Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                throw new IOException("file could not be closed due to exception");
             } finally {
                 if (response != null)
                     response.freeBuffers();
