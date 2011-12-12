@@ -207,9 +207,14 @@ public class StorageStage extends Stage {
         public void createGetFileIDListComplete(ArrayList<String> fileIDList, ErrorResponse Error);
     }
     
+    public void enqueueOperation(int stageOp, Object[] args, OSDRequest request, Object callback) {
+        notifyCrashed(new Exception(
+                "wrong method call: use enqueueOperation(String fileId, int stageOp, Object[] args, OSDRequest request, Object callback) instead!"));
+    }
+    
     public void enqueueOperation(String fileId, int stageOp, Object[] args, OSDRequest request,
         Object callback) {
-        enqueueOperation(stageOp, args, request, null, callback);
+        enqueueOperation(fileId, stageOp, args, request, null, callback);
     }
     
     public void enqueueOperation(String fileId, int stageOp, Object[] args, OSDRequest request,
