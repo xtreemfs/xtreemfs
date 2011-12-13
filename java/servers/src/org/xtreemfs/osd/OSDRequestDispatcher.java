@@ -129,6 +129,10 @@ import org.xtreemfs.osd.operations.InternalRWRAuthStateOperation;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener {
     
+    private static final int                            RPC_TIMEOUT        = 15000;
+    
+    private static final int                            CONNECTION_TIMEOUT = 5 * 60 * 1000;
+    
     protected final Map<Integer, OSDOperation>          operations;
     
     protected final Map<Class<?>, OSDOperation>         internalEvents;
@@ -275,8 +279,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
                 .isGRIDSSLmode(), tm2) : null;
         
-        rpcClient = new RPCNIOSocketClient(clientSSLopts, 5000, 5 * 60 * 1000, config
-                .getSocketSendBufferSize(), config.getSocketReceiveBufferSize());
+        rpcClient = new RPCNIOSocketClient(clientSSLopts, RPC_TIMEOUT, CONNECTION_TIMEOUT,
+                config.getSocketSendBufferSize(), config.getSocketReceiveBufferSize());
         rpcClient.setLifeCycleListener(this);
         
         // replication uses its own RPCClient with a much higher timeout

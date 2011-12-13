@@ -38,6 +38,13 @@ public final class TimeSync extends LifeCycleThread {
     };
 
     /**
+     * The maximum round trip time for a clock synchronization message between
+     * the <code>TimeSync</code> and the DIR. If the round trip time of a
+     * synchronization message exceeds this value, the message will be ignored.
+     */
+    private static final int MAX_RTT = 1000;
+    
+    /**
      * A client used to synchronize clocks
      */
     private TimeServerClient       timeServerClient;
@@ -319,6 +326,15 @@ public final class TimeSync extends LifeCycleThread {
                     long tEnd = System.currentTimeMillis();
                     // add half a roundtrip to estimate the delay
                     syncRTT = (int)(tEnd - tStart);
+                    
+                    if (syncRTT > MAX_RTT) {
+                        Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                                "Ignored time synchronization message because DIR took too long to respond (%d ms)",
+                                syncRTT);
+                        syncSuccess = false;
+                        return;
+                    }
+                    
                     globalTime += syncRTT / 2;
                     syncSuccess = true;
 

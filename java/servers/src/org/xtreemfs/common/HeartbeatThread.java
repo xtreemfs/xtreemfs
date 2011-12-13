@@ -291,7 +291,9 @@ public class HeartbeatThread extends LifeCycleThread {
                         } else
                             Logging.logError(Logging.LEVEL_ERROR, this, ex);
                     } catch (IOException ex) {
-                        Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                        Logging.logMessage(Logging.LEVEL_ERROR, this, ex.toString());
+                        if (Logging.isDebug())
+                            Logging.logError(Logging.LEVEL_DEBUG, this, ex);
                     } catch (InterruptedException ex) {
                         quit = true;
                         break;

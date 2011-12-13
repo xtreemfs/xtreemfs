@@ -92,7 +92,7 @@ import com.sun.net.httpserver.HttpServer;
 public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
         DBAccessResultListener<Object> {
     
-    private static final int               RPC_TIMEOUT        = 10000;
+    private static final int               RPC_TIMEOUT        = 15000;
     
     private static final int               CONNECTION_TIMEOUT = 5 * 60 * 1000;
     
