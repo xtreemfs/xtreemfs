@@ -5,7 +5,7 @@ usage() {
 # deploys pacakges
 cat <<EOF
 Usage:
-  $0 <dist-dir> test|release
+  $0 <dist-dir> unstable|stable
 EOF
 	exit 0
 }
@@ -27,23 +27,23 @@ if [ ! -f "/usr/bin/osc" ]; then
 fi
 
 cd $DIR
-if [ $CMD == "test" ]; then
+if [ $CMD == "unstable" ]; then
 
   # create a tmp dir, check out current build files, delete all files
   mkdir -p $TMP_DIR
   cd $TMP_DIR
-  osc co home:xtreemfs xtreemfs-testing
-  rm $TMP_DIR/home:xtreemfs/xtreemfs-testing/*
+  osc co home:xtreemfs:unstable xtreemfs-testing
+  rm $TMP_DIR/home:xtreemfs:unstable/xtreemfs-testing/*
   cd -
   
   # copy all new files, add new and delete old files, check in project
-  cp xtreemfs-testing/* $TMP_DIR/home:xtreemfs/xtreemfs-testing
-  osc addremove $TMP_DIR/home:xtreemfs/xtreemfs-testing/
-  osc ci -m "update" $TMP_DIR/home:xtreemfs/xtreemfs-testing/
+  cp xtreemfs-testing/* $TMP_DIR/home:xtreemfs:unstable/xtreemfs-testing
+  osc addremove $TMP_DIR/home:xtreemfs:unstable/xtreemfs-testing/
+  osc ci -m "update" $TMP_DIR/home:xtreemfs:unstable/xtreemfs-testing/
   
   rm -rf $TMP_DIR
   
-elif [ $CMD == "release" ]; then
+elif [ $CMD == "stable" ]; then
     
   # create release packages on the server
   osc meta pkg home:xtreemfs xtreemfs-$VERSION --file meta.xml

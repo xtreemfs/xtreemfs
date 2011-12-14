@@ -109,9 +109,9 @@ function prepare_build_files() {
     mv $TARGET_DIR/xtreemfs/xtreemfs-SLE_10.spec $TARGET_DIR/xtreemfs/xtreemfs-$VERSION-SLE_10.spec
     mv $TARGET_DIR/xtreemfs/xtreemfs.dsc $TARGET_DIR/xtreemfs/xtreemfs-$VERSION.dsc
     cp -r $BUILD_FILES_DIR/xtreemfs $TARGET_DIR/xtreemfs-testing
-    mv $TARGET_DIR/xtreemfs-testing/xtreemfs.spec $TARGET_DIR/xtreemfs-testing/xtreemfs-$VERSION.spec
-    mv $TARGET_DIR/xtreemfs-testing/xtreemfs-SLE_10.spec $TARGET_DIR/xtreemfs-testing/xtreemfs-$VERSION-SLE_10.spec
-    mv $TARGET_DIR/xtreemfs-testing/xtreemfs.dsc $TARGET_DIR/xtreemfs-testing/xtreemfs-$VERSION.dsc
+    mv $TARGET_DIR/xtreemfs-testing/xtreemfs.spec $TARGET_DIR/xtreemfs-testing/xtreemfs-testing.spec
+    mv $TARGET_DIR/xtreemfs-testing/xtreemfs-SLE_10.spec $TARGET_DIR/xtreemfs-testing/xtreemfs-testing-SLE_10.spec
+    mv $TARGET_DIR/xtreemfs-testing/xtreemfs.dsc $TARGET_DIR/xtreemfs-testing/xtreemfs-testing.dsc
     find $TARGET_DIR -type f -exec sed -i "s/_VERSION_/$VERSION/g" {} \;
     # write contents of postinstall_setup.sh into the packages' spec files:
     find $TARGET_DIR -type f -exec sed -i -e "/_POSTINSTALL_/r $BUILD_FILES_DIR/../postinstall_setup.sh" -e '/_POSTINSTALL_/d' {} \;
