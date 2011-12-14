@@ -228,9 +228,5 @@ public final class OutputUtils {
         sb.append("</PRE></BODY></HTML>");
         return sb.toString();
     }
-    
-    public static String addressMappingToString(AddressMapping.Builder builder) {
-        return builder.getUuid() + " --> " + builder.getUri();
-    }
 
 }

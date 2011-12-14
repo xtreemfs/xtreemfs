@@ -232,7 +232,8 @@ public class HeartbeatThread extends LifeCycleThread {
                 Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
                         "registering the following address mapping for the service:");
                 for (AddressMapping.Builder mapping : endpoints) {
-                    Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, OutputUtils.addressMappingToString(mapping));
+                    Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "%s --> %s", mapping.getUuid(),
+                            mapping.getUri());
                 }
             }
             
