@@ -13,8 +13,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Map;
 
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
-
 /**
  * 
  * @author bjko
