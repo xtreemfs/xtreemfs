@@ -512,13 +512,12 @@ public class FileHandleImplementation implements FileHandle {
 								+ "write did fail.No further action on this file handle are allowed.");
 			}
 			xcapCopy = xcap.toBuilder().build();
-
 		} finally {
 			fileHandleLock.unlock();
 		}
 
 		// 1. Call truncate at the MRC (in order to increase the trunc epoch).
-		RPCCaller.<XCap, XCap> syncCall(SERVICES.MRC, userCredentials,
+		XCap truncateXCap = RPCCaller.<XCap, XCap> syncCall(SERVICES.MRC, userCredentials,
 				authBogus, volumeOptions, uuidResolver, mrcUuidIterator, false,
 				xcapCopy, new CallGenerator<XCap, XCap>() {
 					@Override
@@ -530,7 +529,10 @@ public class FileHandleImplementation implements FileHandle {
 								userCreds, input);
 					}
 				});
-
+		// set new XCap received from MRC. Neccessary to invoke truncate at OSD.
+		synchronized (xcap) {
+                    xcap = truncateXCap;
+                }
 		truncatePhaseTwoAndThree(userCredentials, newFileSize);
 	}
 
@@ -550,9 +552,7 @@ public class FileHandleImplementation implements FileHandle {
 		truncateRequest.Builder requestBuilder = truncateRequest.newBuilder();
 		FileCredentials.Builder fileCredentialsBuilder = FileCredentials
 				.newBuilder();
-		// TODO: Must toBuilder.build() be called???
-		fileCredentialsBuilder.setXlocs(fileInfo.getXLocSet().toBuilder()
-				.build());
+		fileCredentialsBuilder.setXlocs(fileInfo.getXLocSet());
 
 		fileHandleLock.lock();
 		try {
@@ -585,7 +585,6 @@ public class FileHandleImplementation implements FileHandle {
 		assert (response.hasSizeInBytes());
 
 		// register the new OSDWriteResponse to this file's FileInfo.
-		// TODO: This must not be locked?! oO In cpp implementation it isn't.
 		fileInfo.tryToUpdateOSDWriteResponse(response, xcap);
 
 		// 3. Update the file size at the MRC.

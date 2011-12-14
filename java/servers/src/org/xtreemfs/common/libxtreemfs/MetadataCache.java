@@ -77,7 +77,6 @@ public class MetadataCache {
 
         writeLock = readWriteLock.writeLock();
         readLock = readWriteLock.readLock();
-
     }
 
     /**
@@ -87,7 +86,6 @@ public class MetadataCache {
      *            The path for the entry which should be invalidated.
      */
     protected void invalidate(String path) {
-
         if (path.isEmpty() || !enabled) {
             return;
         }
@@ -208,7 +206,6 @@ public class MetadataCache {
      * @return {@link Stat} object or null.
      */
     protected Stat getStat(String path) {
-
         if (path.isEmpty() || !enabled) {
             return null;
         }
@@ -251,7 +248,6 @@ public class MetadataCache {
         } finally {
             writeLock.unlock();
         }
-
         return null;
     }
 
@@ -315,7 +311,6 @@ public class MetadataCache {
      * 
      */
     protected void updateStatTime(String path, long timestampS, int toSet) {
-
         if (path.isEmpty() || !enabled) {
             return;
         }
@@ -371,7 +366,6 @@ public class MetadataCache {
      *            Bitmap describing which values should be updated. See {@link Setattrs}.
      */
     protected void updateStatAttributes(String path, Stat stat, int toSet) {
-
         if (path.isEmpty() || !enabled) {
             return;
         }
@@ -466,7 +460,6 @@ public class MetadataCache {
      *            {@link OSDWriteResponse} with new file size and truncate epoch.
      */
     protected void updateStatFromOSDWriteResponse(String path, OSDWriteResponse response) {
-
         if (path.isEmpty() || !enabled || !response.hasSizeInBytes() || !response.hasTruncateEpoch()) {
             return;
         }
@@ -509,7 +502,6 @@ public class MetadataCache {
      * @return {@link DirectoryEntries}
      */
     protected DirectoryEntries getDirEntries(String path, int offset, int count) {
-
         if (path.isEmpty() || !enabled) {
             return null;
         }
@@ -536,13 +528,11 @@ public class MetadataCache {
                                     "MetadataCache getDirectoryEntries() hit (partial copy): "
                                             + "%s [%s] offset: %s", path, cache.size(), offset);
                         }
-
                         result = DirectoryEntries.newBuilder();
                         for (int i = offset; i < offset + count; i++) {
                             result.addEntries(entry.getDirectoryEntries().getEntries(i));
                         }
                     }
-
                     return result.build();
                 } else { // Expired! => remove from cache
                     if (Logging.isDebug()) {
@@ -555,11 +545,9 @@ public class MetadataCache {
                         cache.remove(path);
                         pathIndex.remove(path);
                     }
-
                     return null;
                 }
             }
-
         } finally {
             writeLock.unlock();
         }
@@ -578,7 +566,6 @@ public class MetadataCache {
      *            Path of the cache object.
      */
     protected void invalidateStat(String path) {
-
         if (path.isEmpty() || !enabled) {
             return;
         }
@@ -640,11 +627,9 @@ public class MetadataCache {
                 cache.remove(path);
                 cache.put(path, entry);
             }
-
         } finally {
             writeLock.unlock();
         }
-
     }
 
     /**
@@ -656,7 +641,6 @@ public class MetadataCache {
      *            Name from the entry that should be removed from the cache {@link DirectoryEntries}.
      */
     protected void invalidateDirEntry(String pathToDirectory, String entryName) {
-
         if (pathToDirectory.isEmpty() || entryName.isEmpty() || !enabled) {
             return;
         }
@@ -723,7 +707,6 @@ public class MetadataCache {
      * @return {@link Tupel} with Xattr value or null as first value and boolean as second.
      */
     protected Tupel<String, Boolean> getXAttr(String path, String name) {
-
         boolean xattrsCached = false;
 
         if (path.isEmpty() || !enabled) {
@@ -777,7 +760,6 @@ public class MetadataCache {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                     "MetadataCache getXattr() miss: %s [%s]", path, cache.size());
         }
-
         return new Tupel<String, Boolean>(null, xattrsCached);
     }
 
@@ -795,7 +777,6 @@ public class MetadataCache {
      * @return A {@link Tupel} with size of the value of the Xattr or 0 as first and Boolean as second item.
      */
     protected Tupel<Integer, Boolean> getXAttrSize(String path, String name) {
-
         boolean xattrCached = false;
         
         writeLock.lock();
@@ -842,8 +823,7 @@ public class MetadataCache {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                     "MetadataCache getXattrSize() miss: %s [%s]", path, cache.size());
         }
-
-        return new Tupel<Integer, Boolean>(0, false);
+        return new Tupel<Integer, Boolean>(0, xattrCached);
     }
 
     /**
@@ -854,7 +834,6 @@ public class MetadataCache {
      * @return {@link listxattrResponse} or null.
      */
     protected listxattrResponse getXAttrs(String path) {
-
         writeLock.lock();
         try {
             MetadataCacheEntry entry = cache.get(path);
@@ -870,7 +849,6 @@ public class MetadataCache {
                     return entry.getXattrs();
 
                 } else { // entry is expired => remove it
-
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                                 "MetadataCache getXattrs() expired: %s", path, cache.size());
@@ -882,19 +860,16 @@ public class MetadataCache {
                         pathIndex.remove(path);
                     }
                     return null;
-
                 }
             }
         } finally {
             writeLock.unlock();
         }
-
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                     "MetadataCache getXattrs() miss %s [%s]", path, cache.size());
         }
         return null;
-
     }
 
     /**
@@ -909,14 +884,12 @@ public class MetadataCache {
      *            New value that should be set.
      */
     protected void updateXAttr(String path, String name, String value) {
-
         if (path.isEmpty() || !enabled) {
             return;
         }
 
         writeLock.lock();
         try {
-
             // check if there is already an entry for "path"
             MetadataCacheEntry entry = cache.get(path);
 
@@ -937,7 +910,6 @@ public class MetadataCache {
             }
 
             listxattrResponse.Builder newXattrs = entry.getXattrs().toBuilder();
-
             boolean nameFound = false;
             for (int i = 0; i < newXattrs.getXattrsList().size(); i++) {
 
@@ -951,7 +923,6 @@ public class MetadataCache {
                 }
 
             }
-
             // if Xattr with "name" don't exists, add it to teh Xattr list.
             if (!nameFound) {
                 newXattrs.addXattrs(XAttr.newBuilder().setName(name).setValue(value).build());
@@ -959,7 +930,6 @@ public class MetadataCache {
 
             // Replace the existing entry in cache - do not update TTL
             entry.setXattrs(newXattrs.build());
-
         } finally {
             writeLock.unlock();
         }
@@ -976,7 +946,6 @@ public class MetadataCache {
      *            New {@link listxattrResponse} that should be cached.
      */
     protected void updateXAttrs(String path, listxattrResponse xattrs) {
-
         if (path.isEmpty() || !enabled) {
             return;
         }
@@ -1005,11 +974,9 @@ public class MetadataCache {
                 pathIndex.add(path);
             }
             cache.put(path, entry);
-
         } finally {
             writeLock.unlock();
         }
-
     }
 
     /**
@@ -1089,7 +1056,6 @@ public class MetadataCache {
      * @return long
      */
     protected long size() {
-
         readLock.lock();
         try {
             return cache.size();

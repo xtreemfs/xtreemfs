@@ -365,7 +365,7 @@ public class FileInfo {
 		try {
 			if (osdWriteResponse != null) {
 				// Check if information in Stat is newer than
-				// osd_write_response_.
+				// osdWriteResponse_.
 				if (stat.getTruncateEpoch() < osdWriteResponse
 						.getTruncateEpoch()
 						|| stat.getTruncateEpoch() == osdWriteResponse

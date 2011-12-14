@@ -30,9 +30,9 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.REPL_FLAG;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SERVICES;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.openRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.openResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
@@ -112,12 +112,8 @@ public class RPCCallerTest {
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
 
         // set default replication policy for root dir
-        String JSON =
-                "{ " + "\"replication-factor\": " + String.valueOf(NUMBER_OF_REPLICAS) + ","
-                        + "\"update-policy\": " + "\"" + ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE + "\","
-                        + "\"replication-flags\": 0 }";
-        volume.setXAttr(userCredentials, "/", "xtreemfs.default_rp", JSON,
-                XATTR_FLAGS.XATTR_FLAGS_CREATE.getNumber());
+       volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE,
+                NUMBER_OF_REPLICAS, REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber());
 
         String replPolString = volume.getXAttr(userCredentials, "/", "xtreemfs.default_rp");
         JSONString policy = new JSONString(replPolString);
