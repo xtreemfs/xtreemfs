@@ -12,6 +12,7 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
@@ -54,17 +55,19 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
     }
     
     public void localWrite(final OSDRequest rq, final xtreemfs_rwr_updateRequest args) {
-         master.replicatedDataReceived(rq.getRPCRequest().getData().capacity());
-         master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(),
-                rq.getLocationList().getLocalReplica().getStripingPolicy(), args.getOffset(),
-                rq.getRPCRequest().getData(), CowPolicy.PolicyNoCow, rq.getLocationList(),
-                false, args.getObjectVersion(), rq, null, new WriteObjectCallback() {
+        master.replicatedDataReceived(rq.getRPCRequest().getData().capacity());
 
-            @Override
-            public void writeComplete(OSDWriteResponse result, ErrorResponse error) {
-                sendResult(rq,error);
-            }
-        });
+        ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
+        master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(),
+                rq.getLocationList().getLocalReplica().getStripingPolicy(), args.getOffset(), viewBuffer,
+                CowPolicy.PolicyNoCow, rq.getLocationList(), false, args.getObjectVersion(), rq, viewBuffer,
+                new WriteObjectCallback() {
+                    
+                    @Override
+                    public void writeComplete(OSDWriteResponse result, ErrorResponse error) {
+                        sendResult(rq, error);
+                    }
+                });
     }
 
     public void prepareLocalWrite(final OSDRequest rq, final xtreemfs_rwr_updateRequest args) {
