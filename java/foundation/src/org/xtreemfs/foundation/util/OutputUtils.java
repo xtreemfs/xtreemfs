@@ -13,6 +13,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Map;
 
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
+
 /**
  * 
  * @author bjko
@@ -225,6 +227,10 @@ public final class OutputUtils {
         }
         sb.append("</PRE></BODY></HTML>");
         return sb.toString();
+    }
+    
+    public static String addressMappingToString(AddressMapping.Builder builder) {
+        return builder.getUuid() + " --> " + builder.getUri();
     }
 
 }

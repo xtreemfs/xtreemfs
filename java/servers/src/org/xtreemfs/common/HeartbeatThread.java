@@ -26,12 +26,11 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
+import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
@@ -233,7 +232,7 @@ public class HeartbeatThread extends LifeCycleThread {
                 Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
                         "registering the following address mapping for the service:");
                 for (AddressMapping.Builder mapping : endpoints) {
-                    Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, mapping.toString());
+                    Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, OutputUtils.addressMappingToString(mapping));
                 }
             }
             
