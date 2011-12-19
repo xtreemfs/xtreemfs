@@ -112,8 +112,7 @@ public abstract class DIROperation {
             // handle errors caused by ServerExceptions
         } else if (error != null && error instanceof ONCRPCException) {
             Logging.logError(Logging.LEVEL_ERROR, this, error);
-            rq.sendException((ONCRPCException) error);> Na dann mal schöne Grüße!
-> Christian
+            rq.sendException((ONCRPCException) error);
 
             // handle user errors
         } else if (error != null
