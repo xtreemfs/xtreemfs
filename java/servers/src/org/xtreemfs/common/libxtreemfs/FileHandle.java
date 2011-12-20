@@ -111,7 +111,8 @@ public interface FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract Stat getAttr(UserCredentials userCredentials) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+    public abstract Stat getAttr(UserCredentials userCredentials) throws IOException, PosixErrorException,
+            AddressToUUIDNotFoundException;
 
     /**
      * Sets a lock on the specified file region and returns the resulting Lock object.
@@ -140,7 +141,8 @@ public interface FileHandle {
      * @remark Ownership is transferred to the caller.
      */
     public abstract Lock acquireLock(UserCredentials userCredentials, int processId, long offset,
-            long length, boolean exclusive, boolean waitForLock) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+            long length, boolean exclusive, boolean waitForLock) throws IOException, PosixErrorException,
+            AddressToUUIDNotFoundException;
 
     /**
      * Checks if the requested lock does not result in conflicts. If true, the returned Lock object contains
@@ -188,7 +190,8 @@ public interface FileHandle {
      * @throws UnknownAddressSchemeException
      */
     public abstract void releaseLock(UserCredentials userCredentials, int processId, long offset,
-            long length, boolean exclusive) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+            long length, boolean exclusive) throws IOException, PosixErrorException,
+            AddressToUUIDNotFoundException;
 
     /**
      * Releases "lock" (parameters given in Lock object).
@@ -223,7 +226,8 @@ public interface FileHandle {
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
      */
-    public abstract void releaseLockOfProcess(int processId) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+    public abstract void releaseLockOfProcess(int processId) throws IOException, PosixErrorException,
+            AddressToUUIDNotFoundException;
 
     /**
      * Triggers the replication of the replica on the OSD with the UUID "osd_uuid" if the replica is a full
@@ -242,7 +246,8 @@ public interface FileHandle {
      * @throws UnknownAddressSchemeException
      * @throws UUIDNotInXlocSetException
      */
-    public abstract void pingReplica(UserCredentials userCredentials, String osdUuid) throws IOException;
+    public abstract void pingReplica(UserCredentials userCredentials, String osdUuid) throws IOException,
+            AddressToUUIDNotFoundException;
 
     /**
      * Closes the open file handle (flushing any pending data).

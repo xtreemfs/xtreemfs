@@ -47,31 +47,33 @@ public class RPCCaller {
             boolean uuidIteratorHasAddresses, C callRequest, CallGenerator<C, R> callGen) throws IOException,
             PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
         return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
-                callRequest, null, callGen);
+                options.getMaxTries(), callRequest, null, callGen);
     }
 
-    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
-            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
-            boolean uuidIteratorHasAddresses, boolean delayNextTry, C callRequest, CallGenerator<C, R> callGen)
-            throws IOException, PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
+    protected static <C, R extends Message> R
+            syncCall(SERVICES service, UserCredentials userCreds, Auth auth, Options options,
+                    UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
+                    boolean delayNextTry, int maxRetries, C callRequest, CallGenerator<C, R> callGen) throws IOException,
+                    PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
         return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses,
-                delayNextTry, callRequest, null, callGen);
+                delayNextTry, options.getMaxTries(), callRequest, null, callGen);
     }
 
     protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
             Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
             boolean uuidIteratorHasAddresses, C callRequest, ReusableBuffer buf, CallGenerator<C, R> callGen)
-            throws IOException, PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
+            throws IOException, PosixErrorException, InternalServerErrorException,
+            AddressToUUIDNotFoundException {
         return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
-                callRequest, buf, callGen);
+                options.getMaxTries(), callRequest, buf, callGen);
     }
 
     protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
             Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
-            boolean uuidIteratorHasAddresses, boolean delayNextTry, C callRequest, ReusableBuffer buffer,
-            CallGenerator<C, R> callGen) throws PosixErrorException, IOException,
+            boolean uuidIteratorHasAddresses, boolean delayNextTry, int maxRetries, C callRequest,
+            ReusableBuffer buffer, CallGenerator<C, R> callGen) throws PosixErrorException, IOException,
             InternalServerErrorException, AddressToUUIDNotFoundException {
-        int maxTries = options.getMaxTries();
+        int maxTries = maxRetries;
         int attempt = 0;
 
         R response = null;
@@ -106,12 +108,14 @@ public class RPCCaller {
                         if (Logging.isInfo()) {
                             String error;
                             if (uuidIteratorHasAddresses) {
-                                error = "The server " + it.getUUID() + " redirected to the current master: "
-                                        + pbe.getRedirectToServerUUID() + " at attempt: " + attempt;
+                                error =
+                                        "The server " + it.getUUID() + " redirected to the current master: "
+                                                + pbe.getRedirectToServerUUID() + " at attempt: " + attempt;
                             } else {
-                                error = "The server with UUID " + it.getUUID()
-                                        + " redirected to the current master: "
-                                        + pbe.getRedirectToServerUUID() + " at attempt: " + attempt;
+                                error =
+                                        "The server with UUID " + it.getUUID()
+                                                + " redirected to the current master: "
+                                                + pbe.getRedirectToServerUUID() + " at attempt: " + attempt;
                             }
                             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, pbe, error);
                         }
@@ -135,8 +139,8 @@ public class RPCCaller {
 
                         // Log only the first retry.
                         if (attempt == 1 && maxTries != 1) {
-                            String retriesLeft = (maxTries == 0) ? ("infinite") : (String.valueOf(maxTries
-                                    - attempt));
+                            String retriesLeft =
+                                    (maxTries == 0) ? ("infinite") : (String.valueOf(maxTries - attempt));
                             Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, pbe,
                                     "Got no response from %s,"
                                             + "retrying (%s attemps left, waiting at least %s seconds"
@@ -152,11 +156,11 @@ public class RPCCaller {
                     // Retry (and delay) only if at least one retry is left
                     if (((attempt < maxTries || maxTries == 0) ||
                     // or this last retry should be delayed
-                            (attempt == maxTries && delayNextTry))) {
+                    (attempt == maxTries && delayNextTry))) {
                         // Log only the first retry.
                         if (attempt == 1 && maxTries != 1) {
-                            String retriesLeft = (maxTries == 0) ? ("infinite") : (String.valueOf(maxTries
-                                    - attempt));
+                            String retriesLeft =
+                                    (maxTries == 0) ? ("infinite") : (String.valueOf(maxTries - attempt));
                             Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, ioe,
                                     "Got no response from %s,"
                                             + "retrying (%s attemps left, waiting at least %s seconds"
@@ -167,10 +171,9 @@ public class RPCCaller {
                         it.markUUIDAsFailed(it.getUUID());
                         continue;
                     } else {
-                    	throw ioe;
+                        throw ioe;
                     }
-				}
-                catch (InterruptedException ie) {
+                } catch (InterruptedException ie) {
                     // TODO: Ask what that is.
                     if (options.getInterruptSignal() == 0) {
                         if (Logging.isDebug()) {
@@ -213,8 +216,9 @@ public class RPCCaller {
             if (e.getPOSIXErrno().equals(POSIXErrno.POSIX_ERROR_ENOENT)) {
                 logLevel = Logging.LEVEL_DEBUG;
             }
-            errorMsg = "The server " + it.getUUID() + " denied the requested operation. " + "Error value: "
-                    + e.getErrorType().name() + " Error message: " + e.getErrorMessage();
+            errorMsg =
+                    "The server " + it.getUUID() + " denied the requested operation. " + "Error value: "
+                            + e.getErrorType().name() + " Error message: " + e.getErrorMessage();
 
             Logging.logMessage(logLevel, Category.misc, e, errorMsg);
             throw new PosixErrorException(e.getPOSIXErrno(), errorMsg);
@@ -230,8 +234,9 @@ public class RPCCaller {
             throw new XtreemFSException("This error (A REDIRECT error was not handled "
                     + "and retried but thrown instead) should never happen. Report this");
         default:
-            errorMsg = "The server " + it.getUUID() + "returned an error: " + e.getErrorType().name()
-                    + " Error: " + e.getErrorMessage();
+            errorMsg =
+                    "The server " + it.getUUID() + "returned an error: " + e.getErrorType().name()
+                            + " Error: " + e.getErrorMessage();
             Logging.logMessage(logLevel, Category.misc, e, errorMsg);
             throw new XtreemFSException(errorMsg);
         } // end of switch
