@@ -13,7 +13,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.Before;
@@ -138,32 +138,32 @@ public class ClientTest {
         assertEquals("somegroup", stat.getGroupId());
         assertEquals(0777, stat.getMode() & 0777);
 
-        List<String> acl = f.getACL();
+        Map<String, Object> acl = f.getACL();
         assertEquals(0, acl.size());
 
-        acl.add("u::rwx");
-        acl.add("g::rwx");
+        acl.put("u:", "rwx");
+        acl.put("g:", "rwx");
         f.setACL(acl);
         
         acl = f.getACL();
-        assertTrue(acl.contains("u::7"));
-        assertTrue(acl.contains("g::7"));
+        assertEquals("7", acl.get("u:"));
+        assertEquals("7", acl.get("g:"));
                 
         acl.clear();
-        acl.add("u:test:r");
-        acl.add("g:test:r");
+        acl.put("u:test", "r");
+        acl.put("g:test", "r");
         f.setACL(acl);
         
         acl = f.getACL();
-        assertTrue(acl.contains("u:test:1"));
-        assertTrue(acl.contains("u:test:1"));
+        assertEquals("1", acl.get("u:test"));
+        assertEquals("1", acl.get("g:test"));
         
         acl.clear();
         f.setACL(acl);
         
         acl = f.getACL();
-        assertFalse(acl.contains("u:test:1"));
-        assertFalse(acl.contains("u:test:1"));
+        assertFalse(acl.containsKey("u:test"));
+        assertFalse(acl.containsKey("g:test"));
     }
 
     @Test

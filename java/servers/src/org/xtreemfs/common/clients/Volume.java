@@ -10,14 +10,20 @@ package org.xtreemfs.common.clients;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.clients.internal.OpenFileList;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
@@ -703,37 +709,29 @@ public class Volume {
         }
     }
     
-    void setACL(String path, List<String> aclEntries, UserCredentials userCreds) throws IOException {
-
+    void setACL(String path, Map<String, Object> aclEntries, UserCredentials userCreds) throws IOException {
+        
         // remove all existing entries first
-        List<String> existingACL = getACL(path, userCreds);
-        for (String entry : existingACL) {
-
-            int index = entry.lastIndexOf(':');
-            if (index == -1)
-                throw new IOException("existing ACL contains invalid entry: " + entry);
-            String entity = entry.substring(0, index);
-
+        Map<String, Object> existingACL = getACL(path, userCreds);
+        for (Entry<String, Object> entry : existingACL.entrySet()) {
+            String entity = entry.getKey();
             if (!entity.equals("u:") && !entity.equals("g:") && !entity.equals("o:") && !entity.equals("m:"))
                 setxattr(path, "xtreemfs.acl", "x " + entity, userCreds);
         }
-
+        
         // add all entries from the given list
-        for (String entry : aclEntries)
-            setxattr(path, "xtreemfs.acl", "m " + entry, userCreds);
+        for (Entry<String, Object> entry : aclEntries.entrySet())
+            setxattr(path, "xtreemfs.acl", "m " + entry.getKey() + ":" + entry.getValue(), userCreds);
     }
     
-    List<String> getACL(String path, UserCredentials userCreds) throws IOException {
-
-        String aclAsCSV = getxattr(path, "xtreemfs.acl", userCreds);
-        StringTokenizer st = new StringTokenizer(aclAsCSV, ", ");
-
-        List<String> list = new LinkedList<String>();
-        while (st.hasMoreTokens())
-            list.add(st.nextToken());
-
-        return list;
-
+    Map<String, Object> getACL(String path, UserCredentials userCreds) throws IOException {
+        
+        String aclAsJSON = getxattr(path, "xtreemfs.acl", userCreds);
+        try {
+            return (Map<String, Object>) JSONParser.parseJSON(new JSONString(aclAsJSON));
+        } catch (JSONException e) {
+            throw new IOException(e);
+        }
     }
 
     static IOException wrapException(PBRPCException ex) {
@@ -883,5 +881,5 @@ public class Volume {
     public int getMaxRetries() {
         return maxRetries;
     }
-
+    
 }

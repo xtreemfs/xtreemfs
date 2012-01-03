@@ -291,19 +291,19 @@ public class File {
         chgrp(group, userCreds);
     }
     
-    public void setACL(List<String> aclEntries, UserCredentials userCreds) throws IOException {
+    public void setACL(Map<String, Object> aclEntries, UserCredentials userCreds) throws IOException {
         volume.setACL(path, aclEntries, userCreds);
     }
     
-    public void setACL(List<String> aclEntries) throws IOException {
+    public void setACL(Map<String, Object> aclEntries) throws IOException {
         setACL(aclEntries, userCreds);
     }
     
-    public List<String> getACL(UserCredentials userCreds) throws IOException {
+    public Map<String, Object> getACL(UserCredentials userCreds) throws IOException {
         return volume.getACL(path, userCreds);
     }
     
-    public List<String> getACL() throws IOException {
+    public Map<String, Object> getACL() throws IOException {
         return getACL(userCreds);
     }
     

@@ -435,22 +435,11 @@ public class MRCHelper {
                 
                 if (acl != null) {
                     
-                    StringBuilder sb = new StringBuilder();
+                    Map<String, Object> map = new HashMap<String, Object>();
+                    for (Entry<String, Object> entry : acl.entrySet())
+                        map.put(entry.getKey(), "" + entry.getValue());
                     
-                    int i = 0;
-                    for (Entry<String, Object> entry : acl.entrySet()) {
-                        
-                        sb.append(entry.getKey());
-                        sb.append(":");
-                        sb.append(entry.getValue());
-                        
-                        if (i < acl.size() - 1)
-                            sb.append(", ");
-                        
-                        i++;
-                    }
-                    
-                    return sb.toString();
+                    return JSONParser.writeJSON(map);
                 }
                 
             case default_rp:
