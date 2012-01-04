@@ -11,6 +11,7 @@ package org.xtreemfs.foundation.pbrpc.client;
 import com.google.protobuf.Message;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
@@ -83,6 +84,8 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     private final int                                         sendBufferSize;
     
     private final int                                         receiveBufferSize;
+    
+    private final SocketAddress                               localBindPoint;
 
 
     /**
@@ -97,11 +100,11 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout)
         throws IOException {
-        this(sslOptions, requestTimeout, connectionTimeout, -1, -1);
+        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null);
     }
     
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
-        int sendBufferSize, int receiveBufferSize) throws IOException {
+        int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint) throws IOException {
         super("RPC Client");
         if (requestTimeout >= connectionTimeout - TIMEOUT_GRANULARITY * 2) {
             throw new IllegalArgumentException(
@@ -112,6 +115,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         this.connectionTimeout = connectionTimeout;
         this.sendBufferSize = sendBufferSize;
         this.receiveBufferSize = receiveBufferSize;
+        this.localBindPoint = localBindPoint;
         connections = new HashMap<InetSocketAddress, RPCClientConnection>();
         selector = Selector.open();
         this.sslOptions = sslOptions;
@@ -317,6 +321,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 }
                 channel.configureBlocking(false);
                 channel.socket().setTcpNoDelay(true);
+                channel.socket().bind(localBindPoint);
                 
                 if (sendBufferSize != -1) {
                     channel.socket().setSendBufferSize(sendBufferSize);
@@ -348,7 +353,10 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                         channel.socket().getSendBufferSize());
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "socket receive buffer size: %d",
                         channel.socket().getReceiveBufferSize());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "local bind point: %s", channel
+                                .socket().getLocalAddress());
                 }
+                
             } catch (Exception ex) {
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "cannot contact server %s",

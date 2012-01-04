@@ -279,8 +279,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
                 .isGRIDSSLmode(), tm2) : null;
         
+        InetSocketAddress bindPoint = config.getAddress() != null ? new InetSocketAddress(config.getAddress(), 0)
+                : null;
+        if (Logging.isInfo() && bindPoint != null)
+            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this,
+                    "outgoing server connections will be bound to '%s'", config.getAddress());
+        
         rpcClient = new RPCNIOSocketClient(clientSSLopts, RPC_TIMEOUT, CONNECTION_TIMEOUT,
-                config.getSocketSendBufferSize(), config.getSocketReceiveBufferSize());
+                config.getSocketSendBufferSize(), config.getSocketReceiveBufferSize(), bindPoint);
         rpcClient.setLifeCycleListener(this);
         
         // replication uses its own RPCClient with a much higher timeout

@@ -167,7 +167,13 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 config.getTrustedCertsContainer(), false, config.isGRIDSSLmode(), policyContainer.getTrustManager())
                 : null;
         
-        clientStage = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT);
+        InetSocketAddress bindPoint = config.getAddress() != null ? new InetSocketAddress(config.getAddress(), 0)
+                : null;
+        if (Logging.isInfo() && bindPoint != null)
+            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this, "outgoing server connections will be bound to '%s'",
+                    config.getAddress());
+        
+        clientStage = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT, -1, -1, bindPoint);
         clientStage.setLifeCycleListener(this);
         
         serverStage = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
