@@ -31,39 +31,22 @@ public class WriteOperation {
         this.osdOffset = osdOffset;
         this.reqSize = reqSize;
         this.reqOffset = reqOffset;
+        this.buf = buf;
     }
 
     protected int getObjNumber() {
         return objNumber;
     }
 
-    protected void setObjNumber(int objNumber) {
-        this.objNumber = objNumber;
-    }
 
     public int getOsdOffset() {
         return osdOffset;
-    }
-
-    public void setOsdOffset(int osdOffset) {
-        this.osdOffset = osdOffset;
     }
 
     protected int getReqSize() {
         return reqSize;
     }
 
-    protected void setReqSize(int reqSize) {
-        this.reqSize = reqSize;
-    }
-
-    protected int getReqOffset() {
-        return reqOffset;
-    }
-
-    protected void setReqOffset(int reqOffset) {
-        this.reqOffset = reqOffset;
-    }
     
     protected byte[] getReqData() {
         byte[] data = new byte[reqSize];

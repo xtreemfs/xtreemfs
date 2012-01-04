@@ -10,30 +10,37 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest;
 
 /**
  * 
- * <br>
- * Oct 27, 2011
+ * Stores all information needed for an asynchronous write.
  */
 public class AsyncWriteBuffer {
 
     /**
-     * @remark Ownership of "writeRequest" is transferred to this object.
+     * Creates a new {@link AsyncWriteBuffer} which is using the osdUuidIterator from  {@link AsyncWriteHandler}
+     * 
      */
     protected AsyncWriteBuffer(writeRequest writeRequest, byte[] data, int dataLength,
             FileHandleImplementation fileHandle) {
+        this.writeRequest = writeRequest;
+        this.data = data;
+        this.dataLength = dataLength;
+        this.fileHandle = fileHandle;
+        
+        this.osdUuid = null;
+        this.useUuidIterator = true;
     }
 
     /**
-     * @remark Ownership of write_request is transferred to this object.
+     * Creates a new {@link AsyncWriteBuffer} with a own osdUuid
      */
-    protected AsyncWriteBuffer(writeRequest writeRequest, byte[] data, int dataLengt,
+    protected AsyncWriteBuffer(writeRequest writeRequest, byte[] data, int dataLength,
             FileHandleImplementation fileHandle, String osdUuid) {
-
         this.writeRequest = writeRequest;
         this.data = data;
-        this.dataLength = dataLengt;
+        this.dataLength = dataLength;
         this.fileHandle = fileHandle;
         this.osdUuid = osdUuid;
-
+        
+        this.useUuidIterator = false;
     }
 
     /**
@@ -84,11 +91,18 @@ public class AsyncWriteBuffer {
         return fileHandle;
     }
 
-    protected boolean isUseUuidIterator() {
+    protected boolean isUsingUuidIterator() {
         return useUuidIterator;
     }
 
     protected String getOsdUuid() {
         return osdUuid;
+    }
+
+    /**
+     * @param osdUuid2
+     */
+    protected void setOsdUuid(String osdUuid) {
+        this.osdUuid = osdUuid;
     }
 };

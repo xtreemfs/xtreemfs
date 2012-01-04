@@ -40,39 +40,20 @@ public class ReadOperation {
         return objNumber;
     }
 
-    protected void setObjNumber(int objNumber) {
-        this.objNumber = objNumber;
-    }
-
     public int getOsdOffset() {
         return osdOffset;
-    }
-
-    public void setOsdOffset(int osdOffset) {
-        this.osdOffset = osdOffset;
     }
 
     protected int getReqSize() {
         return reqSize;
     }
 
-    protected void setReqSize(int reqSize) {
-        this.reqSize = reqSize;
-    }
-
     protected int getReqOffset() {
         return reqOffset;
-    }
-
-    protected void setReqOffset(int reqOffset) {
-        this.reqOffset = reqOffset;
     }
 
     protected int getBufferStart() {
         return bufferStart;
     }
 
-    protected void setData(int bufferStart) {
-        this.bufferStart  = bufferStart;
-    }
 }

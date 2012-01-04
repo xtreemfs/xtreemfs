@@ -29,6 +29,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SERVICES;
@@ -597,32 +598,9 @@ public class VolumeImplementation extends Volume {
                 // File at "path" is opened.
 
                 // Wait for pending asynchronous writes which haven't finished
-                // yet and
-                // whose new file size is not considered yet by the stat object.
-
-                // To avoid longer locking periods of the open file table, we
-                // will
-                // register an observer at the file and get notified later.
-
+                // yet and whose new file size is not considered yet by the stat object.
                 fileInfoFromOpenFileTable.waitForPendingAsyncWrites();
-
-                // TODO Ask michael about this part. He used another approach.
-                // Since we waited for asyncWrites, the previously
-                // found FileInfo object may be removed and deleted
-                // from the open file table meanwhile, i.e.
-                // search again for it.
-
-                FileInfo fileInfoFromOpenFileTableAgain = openFileTable.get(stat.getIno()); // ino == fileID
-                if (fileInfoFromOpenFileTableAgain != null) {
-                    stat = fileInfoFromOpenFileTableAgain.mergeStatAndOSDWriteResponse(stat);
-                } else {
-                    // We dont find the previous FileInfo object anymore. This
-                    // means we
-                    // have to retrieve the file size once again from the MRC or
-                    // stat cache.
-                    // Return lock on openFileTable.
-                    stat = getAttrHelper(userCredentials, path);
-                }
+                stat = fileInfoFromOpenFileTable.mergeStatAndOSDWriteResponse(stat);
             }
         } else {
             fileInfo.waitForPendingAsyncWrites();
@@ -1420,7 +1398,28 @@ public class VolumeImplementation extends Volume {
      * Called by FileHandle.Cclose() to remove fileHandle from the list.
      */
     protected void closeFile(long fileId, FileInfo fileInfo, FileHandleImplementation fileHandle) {
-        // TODO: Implement this method correctly.
+     // Remove file_info if it has no more open file handles.
+        if (fileInfo.decreaseReferenceCount() == 0) {
+            // The last file handle of this file was closed: Release all locks.
+            // All locks for the process of this file handle have to be released.
+            try {
+              fileInfo.releaseAllLocks(fileHandle);
+            } catch(XtreemFSException e) {
+              // Ignore errors.
+            } catch (Exception e) {
+                // TODO: change Type of AddressToUUIDNotFoundException, PosixErrorException to XTreemfsE 
+            }
+            
+            fileInfo.waitForPendingFileSizeUpdates();
+            openFileTable.remove(fileId);
+            
+            // Write back the OSDWriteResponse to the stat cache if there is one.
+            OSDWriteResponse response = fileInfo.getOSDWriteResponse();
+            if (response != null) {
+                String path = fileInfo.getPath();
+                metadataCache.updateStatFromOSDWriteResponse(path, response);   
+            }
+        }
     }
 
     /**

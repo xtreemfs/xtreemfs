@@ -24,34 +24,6 @@ public class Options {
         kDIR, kMRC
     };
 
-    // XtreemFS URL Options.
-    /**
-     * URL to the Volume, Form: [pbrpc://]service-hostname[:port]/volume_name.
-     * 
-     * Depending on the type of operation the service-hostname has to point to the DIR (to open/"mount" a
-     * volume) or the MRC (create/delete/list volumes). Depending on this type, the default port differs (DIR:
-     * 32638; MRC: 32636).
-     */
-    private String  xtreemfsUrl;
-
-    /**
-     * Usually extracted from xtreemfs_url (Form: ip-address:port).
-     */
-    private String  serviceAddress;
-    /**
-     * Usually extracted from xtreemfs_url.
-     */
-    private String  volumeName;
-    /**
-     * Usually extracted from xtreemfs_url.
-     */
-    private String  protocol;
-    /**
-     * Mount point on local system (set by parseCommandLine()).
-     */
-    private String  mountPoint;
-
-    // General options.
     /**
      * Log level as string (EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG).
      */
@@ -279,42 +251,6 @@ public class Options {
         readdirChunkSize = 1024;
     }
 
-    /**
-     * Set options parsed from command line.
-     * 
-     * However, it does not set dir_volume_url and does not call ParseVolumeAndDir().
-     * 
-     * @throws InvalidCommandLineParametersException
-     * @throws {@link MalformedURLException}
-     */
-    public Vector<String> parseCommandLine(String[] args) throws MalformedURLException {
-        // TODO: Implement! Find equvivalent of InvalidCommmanLineParameterException
-        return new Vector<String>();
-    }
-
-    /**
-     * Outputs usage of the command line parameters of all options.
-     */
-    public String showCommandLineHelp() {
-        // TODO: Implement!
-        return "";
-    }
-
-    /**
-     * Outputs usage of the command line parameters of volume creation relevant options.
-     */
-    public String showCommandLineHelpVolumeCreation() {
-        // TODO: Implement!
-        return "";
-    }
-
-    /**
-     * Outputs usage of the command line parameters of volume deletion/listing relevant options.
-     */
-    public String showCommandLineHelpVolumeDeletionAndListing() {
-        // TODO: Implement!
-        return "";
-    }
 
     /**
      * Returns the version string and prepends "component".
@@ -383,5 +319,9 @@ public class Options {
     
     public void setPeriodicFileSizeUpdatesIntervalS(int periodicFileSizeUpdatesIntervalS) {
         this.periodicFileSizeUpdatesIntervalS = periodicFileSizeUpdatesIntervalS;
+    }
+    
+    public void setMaxWriteAhead(int maxWriteAhead) {
+        this.maxWriteahead = maxWriteAhead; 
     }
 }

@@ -175,21 +175,19 @@ public class FileInfo {
         openFileHandles = new ConcurrentLinkedQueue<FileHandleImplementation>();
         activeLocks = new ConcurrentHashMap<Integer, Lock>();
 
+        // Add the UUIDs of all replicas to the UUID Iterator.
+        osdUuidIterator = new UUIDIterator();
+        for (int i = 0; i < xlocset.getReplicasCount(); i++) {
+            osdUuidIterator.addUUID(xlocset.getReplicas(i).getOsdUuids(0));
+        }
+        
         asyncWriteHandler =
-                new AsyncWriteHandler(this, volume.getMrcUuidIterator(), volume.getUUIDResolver(),
+                new AsyncWriteHandler(this, osdUuidIterator, volume.getUUIDResolver(),
                         volume.getOsdServiceClient(), volume.getAuthBogus(),
                         volume.getUserCredentialsBogus(), volume.getOptions().getMaxWriteahead(), volume
                                 .getOptions().getMaxWriteaheadRequests(), volume.getOptions()
                                 .getMaxWriteTries());
 
-        // Add the UUIDs of all replicas to the UUID Iterator.
-        osdUuidIterator = new UUIDIterator();
-        for (int i = 0; i < xlocset.getReplicasCount(); i++) {
-            // UUID in xlocSet is in form "UUID:foobar", but we just need
-            // "foobar"
-            osdUuidIterator.addUUID(xlocset.getReplicas(i).getOsdUuids(0));
-        }
-        // TODO: Ask what is useful for initial capcity.
         pendingFilesizeUpdates = new ArrayList<FileHandle>(volume.getOptions().getMaxWriteahead());
     }
 
@@ -251,14 +249,13 @@ public class FileInfo {
      */
     protected void closeFileHandle(FileHandleImplementation fileHandle) {
         // Pending async writes and file size updates have already been flushed
-        // by file_handle.
+        // by fileHandle.
 
         // remove file handle.
         openFileHandles.remove(fileHandle);
 
         // Decreasing reference count is handle by Volume.closeFile().
         volume.closeFile(fileId, this, fileHandle);
-
     }
 
     /**
@@ -418,7 +415,7 @@ public class FileInfo {
     }
 
     /**
-     * Uses file_handle to release all known local locks.
+     * Uses fileHandle to release all known local locks.
      */
     protected void releaseAllLocks(FileHandleImplementation fileHandle) throws PosixErrorException,
             AddressToUUIDNotFoundException {
@@ -527,9 +524,7 @@ public class FileInfo {
             if (Helper.checkIfLocksDoConflict(lock, entry.getValue())) {
                 conflictFound = true;
                 conflictionLock = entry.getValue();
-                // A conflicting lock has a higher priority than a cached lock
-                // with the
-                // same PID.
+                // A conflicting lock has a higher priority than a cached lock with the same PID.
                 break;
             }
         }
@@ -582,9 +577,7 @@ public class FileInfo {
      */
     protected void flush(FileHandleImplementation fileHandle, boolean closeFile) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
-        // We don't wait only for fileHandle's pending writes but for all writes
-        // of
-        // this file.
+        // We don't wait only for fileHandle's pending writes but for all writes of this file.
         waitForPendingAsyncWrites();
         flushPendingFileSizeUpdate(fileHandle, closeFile);
     }
@@ -600,7 +593,7 @@ public class FileInfo {
     /**
      * Calls asyncWriteHandler.write().
      */
-    void asyncWrite(AsyncWriteBuffer writeBuffer) {
+    void asyncWrite(AsyncWriteBuffer writeBuffer) throws AddressToUUIDNotFoundException{
         asyncWriteHandler.write(writeBuffer);
     }
 
@@ -658,10 +651,6 @@ public class FileInfo {
             }
         }
     }
-
-    /** See WaitForPendingFileSizeUpdates(). */
-    // private void
-    // waitForPendingFileSizeUpdatesHelper(boost::mutex::scoped_lock* lock);
 
     /**
      * Returns a new copy of xlocSet.

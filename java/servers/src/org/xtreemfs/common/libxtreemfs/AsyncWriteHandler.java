@@ -7,19 +7,30 @@ package org.xtreemfs.common.libxtreemfs;
  *
  */
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
+import net.jcip.annotations.GuardedBy;
+
+import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
+import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
+
+import com.google.protobuf.Descriptors.EnumValueDescriptor;
 
 /**
  * 
@@ -36,103 +47,86 @@ public class AsyncWriteHandler {
     }
 
     /**
-     * Use this when modifying the object.
-     */
-    private java.util.concurrent.locks.Lock asyncWriteHandlerLock;
-
-    /**
      * State of this object.
      */
-    private State                           state;
+    private State                   state;
 
     /**
      * List of pending writes.
      */
     // TODO(mberlin): Limit the size of writes in flight to avoid flooding.
-    private List<AsyncWriteBuffer>          writesInFlight;
+    @GuardedBy("this")
+    private List<AsyncWriteBuffer>  writesInFlight;
 
     /**
      * Number of pending bytes.
      */
-    private int                             pendingBytes;
+    @GuardedBy("this")
+    private int                     pendingBytes;
 
     /**
-     * Set by WaitForPendingWrites{NonBlocking}() to true if there are temporarily no new async writes allowed
+     * Set by WaitForPendingWrites() to true if there are temporarily no new async writes allowed
      * and will be set to false again once the state IDLE is reached.
      */
-    private boolean                         writingPaused;
+    @GuardedBy("this")
+    private boolean                 writingPaused;
 
     /**
      * Used to notify blocked WaitForPendingWrites() callers for the state change back to IDLE.
      */
-    private Condition                       allPendingWritesDidComplete;
+    private Object                  allPendingWritesDidComplete;
 
     /**
-     * Number of threads blocked by WaitForPendingWrites() waiting on all_pending_writes_did_complete_ for a
+     * Number of threads blocked by WaitForPendingWrites() waiting on allPendingWritesDidComplete for a
      * state change back to IDLE.
-     * 
-     * This does not include the number of waiting threads which did call WaitForPendingWritesNonBlocking().
-     * Therefore, see "waiting_observers_". The total number of all waiting threads is:
-     * waiting_blocking_threads_count_ + waiting_observers_.size()
      */
-    private int                             waitingBlockingThreadsCount;
-
-    /**
-     * Used to notify blocked write() callers that the number of pending bytes has decreased.
-     */
-    private Condition                       pendingBytesWereDecreased;
-
-    /**
-     * List of waitForPendingWritesNonBlocking() observers (specified by their boost::condition variable and
-     * their bool value which will be set to true if the state changed back to IDLE).
-     */
-    // TODO: DO IT.
-    // List<WaitForCompletionObserver> waitingObservers;
+    @GuardedBy("this")
+    private int                     waitingBlockingThreadsCount;
 
     /**
      * FileInfo object to which this AsyncWriteHandler does belong. Accessed for file size updates.
      */
-    private FileInfo                        fileInfo;
+    private FileInfo                fileInfo;
 
     /**
      * Pointer to the UUIDIterator of the FileInfo object.
      */
-    private UUIDIterator                    uuidIterator;
+    private UUIDIterator            uuidIterator;
 
     /**
      * Required for resolving UUIDs to addresses.
      */
-    private UUIDResolver                    uuidResolver;
+    private UUIDResolver            uuidResolver;
 
     /**
      * Client which is used to send out the writes.
      */
-    OSDServiceClient                        osdServiceClient;
+    OSDServiceClient                osdServiceClient;
 
     /**
      * Auth needed for ServiceClients. Always set to AUTH_NONE by Volume.
      */
-    private Auth                            authBogus;
+    private Auth                    authBogus;
 
     /**
      * For same reason needed as authBogus. Always set to user "xtreemfs".
      */
-    private UserCredentials                 userCredentialsBogus;
+    private UserCredentials         userCredentialsBogus;
 
     /**
      * Maximum number in bytes which may be pending.
      */
-    private int                             maxWriteahead;
+    private int                     maxWriteahead;
 
     /**
      * Maximum number of pending write requests.
      */
-    private int                             maxWriteaheadRequests;
+    private int                     maxWriteaheadRequests;
 
     /**
      * Maximum number of attempts a write will be tried.
      */
-    private int                             maxWriteTries;
+    private int                     maxWriteTries;
 
     protected AsyncWriteHandler(FileInfo fileInfo, UUIDIterator uuidIterator, UUIDResolver uuidResolver,
             OSDServiceClient osdServiceClient, Auth authBogus, UserCredentials userCredentialsBogus,
@@ -147,21 +141,103 @@ public class AsyncWriteHandler {
         this.maxWriteahead = maxWriteahead;
         this.maxWriteaheadRequests = maxWriteaheadRequests;
         this.maxWriteTries = maxWriteTries;
-        
-        asyncWriteHandlerLock = new ReentrantLock();
-        allPendingWritesDidComplete = asyncWriteHandlerLock.newCondition();
+
+        writesInFlight = new ArrayList<AsyncWriteBuffer>();
+        allPendingWritesDidComplete = new Object();
         state = State.IDLE;
     }
 
     /**
-     * Adds write_buffer to the list of pending writes and sends it to the OSD specified by
+     * Adds writeBuffer to the list of pending writes and sends it to the OSD specified by
      * writeBuffer.uuidIterator (or write_buffer.osdUuid if writeBuffer.useUuidIterator is false).
      * 
      * Blocks if the number of pending bytes exceeds the maximum write-ahead or
-     * waitForPendingWrites{NonBlocking}() was called beforehand.
+     * waitForPendingWrites() was called beforehand.
      */
-    protected void write(AsyncWriteBuffer writeBuffer) {
-        // TODO: Implement.
+    protected void write(AsyncWriteBuffer writeBuffer) throws AddressToUUIDNotFoundException {
+        assert (writeBuffer != null);
+
+        if (writeBuffer.getDataLength() > maxWriteahead) {
+            throw new XtreemFSException("The maximum allowed writeahead size: " + maxWriteahead
+                    + " is smaller than the size of this write request: " + writeBuffer.getDataLength());
+        }
+
+        // append to the list of write in flight
+        synchronized (this) {
+            while (writingPaused || (pendingBytes + writeBuffer.getDataLength()) > maxWriteahead
+                    || writesInFlight.size() == maxWriteaheadRequests) {
+                // TODO: Allow interruption and set the write status of the FileHandle of the
+                // interrupted write to an error state.
+                try {
+                    this.wait();
+                } catch (InterruptedException e) {
+                    // TODO: handle exception
+                }
+            }
+            increasePendingBytesHelper(writeBuffer);
+        }
+
+        String osdUuid = retrieveOSDUuidAndSetItInWriteBuffer(writeBuffer);
+        String osdAddress = uuidResolver.uuidToAddress(osdUuid);
+        InetSocketAddress osdInetSocketAddress =
+                Helper.stringToInetSocketAddress(osdAddress,
+                        GlobalTypes.PORTS.OSD_PBRPC_PORT_DEFAULT.getNumber());
+
+        // Sending request
+        final AsyncWriteBuffer finalWriteBufferForCallback = writeBuffer;
+        RPCResponse<OSDWriteResponse> response;
+        try {
+            response =
+                    osdServiceClient.write(osdInetSocketAddress, authBogus, userCredentialsBogus,
+                            writeBuffer.getWriteRequest(), ReusableBuffer.wrap(writeBuffer.getData()));
+
+            response.registerListener(new RPCResponseAvailableListener<OSDWriteResponse>() {
+                @Override
+                public void responseAvailable(RPCResponse<OSDWriteResponse> r) {
+                    try {
+                        OSDWriteResponse osdWriteResponse = r.get();
+                        writeFinished(osdWriteResponse, r.getData(), finalWriteBufferForCallback);
+                    } catch (PBRPCException e) {
+                        String errorTypeName = e.getErrorType().toString();
+                        EnumValueDescriptor enumDescriptor =
+                                ErrorType.getDescriptor().findValueByNumber(e.getErrorType().getNumber());
+                        if (enumDescriptor != null) {
+                            errorTypeName = enumDescriptor.getName();
+                        }
+                        Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this,
+                                "An async write sent to the server %s failed."
+                                        + " Error type:  %s Error message: %s Complete error header: %s",
+                                finalWriteBufferForCallback.getOsdUuid(), errorTypeName, e.getErrorMessage(),
+                                e.getDebugInfo());
+                        System.out.println("CLASSNAME: " + this.toString());
+                        decreasePendingBytesHelper(finalWriteBufferForCallback);
+                    } catch (Exception e) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "asyncWrite:"
+                                + " failed due to the following reasons ", e.getMessage());
+                        decreasePendingBytesHelper(finalWriteBufferForCallback);
+
+                    } finally {
+                        r.freeBuffers();
+                    }
+                }
+            });
+        } catch (IOException e1) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "asyncWrite:"
+                    + " failed due to the following reasons ", e1.getMessage());
+                decreasePendingBytesHelper(finalWriteBufferForCallback);
+        }
+    }
+
+    private String retrieveOSDUuidAndSetItInWriteBuffer(AsyncWriteBuffer writeBuffer) {
+        String osdUuid;
+        if (writeBuffer.isUsingUuidIterator()) {
+            osdUuid = uuidIterator.getUUID();
+            // Store used OSD in writeBuffer for the callback.
+            writeBuffer.setOsdUuid(osdUuid);
+        } else {
+            osdUuid = writeBuffer.getOsdUuid();
+        }
+        return osdUuid;
     }
 
     /**
@@ -169,69 +245,49 @@ public class AsyncWriteHandler {
      * calls.
      */
     protected void waitForPendingWrites() {
-        asyncWriteHandlerLock.lock();
-        try {
+        synchronized (this) {
             if (state != State.IDLE) {
                 writingPaused = false;
                 waitingBlockingThreadsCount++;
-                while (state != State.IDLE) {
-                    try {
-                        allPendingWritesDidComplete.await();    
-                    } catch (InterruptedException e) {
-                        // TODO: REALLY handle exception.
-                    	e.printStackTrace();
-                    }            
-                }
-                waitingBlockingThreadsCount--;
+            } else {
+                return;
             }
-        } finally {
-            asyncWriteHandlerLock.unlock();
+        }
+
+        while (state != State.IDLE) {
+            synchronized (allPendingWritesDidComplete) {
+                try {
+                    allPendingWritesDidComplete.wait();
+                } catch (InterruptedException e) {
+                    // TODO: REALLY handle exception.
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        synchronized (this) {
+            waitingBlockingThreadsCount--;
+        }
+    }
+
+
+    /**
+     * Implements callback for an async write request.
+     */
+    private void writeFinished(OSDWriteResponse response, ReusableBuffer data, AsyncWriteBuffer writeBuffer) {
+        // Tell FileInfo about the OSDWriteResponse.
+        if (response.hasSizeInBytes()) {
+            XCap xcap = writeBuffer.getFileHandle().getXcap();
+            fileInfo.tryToUpdateOSDWriteResponse(response, xcap);
+            decreasePendingBytesHelper(writeBuffer);
         }
     }
 
     /**
-     * If waiting for pending writes would block, it returns true and adds the parameters to the list
-     * waitingObservers and calls notifyOne() on "conditionVariable" once "state" changed back to IDLE.
-     */
-    protected boolean waitForPendingWritesNonBlocking(Condition conditionVariable, boolean waitCompleted,
-            Lock waitCompletedMutex) {
-        // TODO: Implement.
-
-        return false;
-    }
-
-    // TODO: DO i need this? oO
-    // /** Contains information about observer who has to be notified once all
-    // * currently pending writes have finished. */
-    // struct WaitForCompletionObserver {
-    // WaitForCompletionObserver(boost::condition* condition_variable,
-    // bool* wait_completed,
-    // boost::mutex* wait_completed_mutex)
-    // : condition_variable(condition_variable),
-    // wait_completed(wait_completed),
-    // wait_completed_mutex(wait_completed_mutex) {
-    // assert(condition_variable && wait_completed && wait_completed_mutex);
-    // }
-    // boost::condition* condition_variable;
-    // bool* wait_completed;
-    // boost::mutex* wait_completed_mutex;
-    // };
-    //
-    // /** Implements callback for an async write request. */
-    // virtual void CallFinished(xtreemfs::pbrpc::OSDWriteResponse* response_message,
-    // char* data, boost::uint32_t data_length,
-    // xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
-    // void* context);
-
-    /**
      * Helper function which adds "writeBuffer" to the list "writesInFlight", increases the number of pending
      * bytes and takes care of state changes.
-     * 
-     * @remark Ownership is not transferred to the caller.
-     * @remark Requires a lock on "lock".
      */
     protected void increasePendingBytesHelper(AsyncWriteBuffer writeBuffer) {
-
         assert (writeBuffer != null);
 
         pendingBytes += writeBuffer.getDataLength();
@@ -249,7 +305,7 @@ public class AsyncWriteHandler {
      * @remark Ownership of "writeBuffer" is transferred to the caller.
      * @remark Requires a lock on "asyncWriteHandlerLock".
      */
-    private void decreasePendingBytesHelper(AsyncWriteBuffer writeBuffer) {
+    private synchronized void decreasePendingBytesHelper(AsyncWriteBuffer writeBuffer) {
         assert (writeBuffer != null);
 
         writesInFlight.remove(writeBuffer);
@@ -259,7 +315,6 @@ public class AsyncWriteHandler {
             state = State.IDLE;
             if (writingPaused) {
                 writingPaused = false;
-                notifyWaitingObserversAndClearAll();
             }
             // Issue notifyAll() as long as there are remaining blocked threads.
             //
@@ -281,66 +336,12 @@ public class AsyncWriteHandler {
             // is undefined and we don't enforce any order as it's up to the user to
             // synchronize his threads himself when working on the same file.
             if (waitingBlockingThreadsCount > 0) {
-                allPendingWritesDidComplete.notifyAll();
+                synchronized (allPendingWritesDidComplete) {
+                    allPendingWritesDidComplete.notifyAll();
+                }
             }
         }
         // Tell blocked writers there may be enough space/writing was unpaused now.
-        pendingBytesWereDecreased.notifyAll();
-    }
-
-    /**
-     * Calls notify_one() on all observers in waiting_observers_, frees each element in the list and clears
-     * the list afterwards.
-     * 
-     * @remark Requires a lock on "lock".
-     */
-    private void notifyWaitingObserversAndClearAll() {
-
-        // TODO: Implement.
-        // Tell waiting observers, that the write did finish.
-
-    }
-
-    protected void callFinished(OSDWriteResponse responseMessage, char[] data, int dataLengt,
-            ErrorResponse error, AsyncWriteBuffer context) {
-
-        AsyncWriteBuffer writeBuffer = context;
-
-        if (error != null) {
-            // An error occured.
-            // No retry supported yet, just acknowledge the write as failed.
-
-            // Tell fileHandle that its async write status is broken from now on.
-            writeBuffer.getFileHandle().markAsyncWritesAsFailed();
-
-            // Log error
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this,
-                    "An async write sent to the server %s failed. Error type: %s  "
-                            + "Error message %s   Complete error header: %s", writeBuffer.getOsdUuid(), error
-                            .getErrorType().toString(), error.getErrorMessage(), error.getDebugInfo());
-            
-            asyncWriteHandlerLock.lock();
-            try {
-                decreasePendingBytesHelper(writeBuffer);
-            } finally {
-                asyncWriteHandlerLock.unlock();
-            }
-        } else {
-            // Write was successful 
-            
-            // Tell FileInfo about the OSDWriteResponse.
-            if (responseMessage.hasSizeInBytes()) {
-                XCap xcap = writeBuffer.getFileHandle().getXcap();
-                
-                fileInfo.tryToUpdateOSDWriteResponse(responseMessage, xcap);
-            }
-            
-            asyncWriteHandlerLock.lock();
-            try {
-                decreasePendingBytesHelper(writeBuffer);
-            } finally {
-                asyncWriteHandlerLock.unlock();
-            }
-        }
+        this.notifyAll();
     }
 }

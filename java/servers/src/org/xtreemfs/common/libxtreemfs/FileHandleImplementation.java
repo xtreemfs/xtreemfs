@@ -243,7 +243,7 @@ public class FileHandleImplementation implements FileHandle {
             UUIDIterator uuidIterator;
             if (readRqBuilder.getFileCredentials().getXlocs().getReplicas(0).getOsdUuidsCount() > 1) {
                 // Replica is striped. Pick UUID from xlocset.
-                osdUuid = Helper.getOSDUUIDFromXlocSet(fcBuilder.getXlocs(), 0, // Use
+                osdUuid = Helper.getOSDUUIDFromXlocSet(fc.getXlocs(), 0, // Use
                                                                                 // first
                                                                                 // and
                                                                                 // only
@@ -293,7 +293,6 @@ public class FileHandleImplementation implements FileHandle {
     public synchronized int write(UserCredentials userCredentials, ReusableBuffer buf, int count, int offset)
             throws IOException, PosixErrorException, InternalServerErrorException,
             AddressToUUIDNotFoundException {
-        // TODO Auto-generated method stub
         FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
         fileHandleLock.lock();
         try {
@@ -365,9 +364,8 @@ public class FileHandleImplementation implements FileHandle {
                                     .get(j).getReqSize(), this);
                 }
 
-                // TODO(mberlin): Currently the UserCredentials are ignored by
-                // the OSD and
-                // therefore we avoid copying them into write_buffer.
+                // TODO(mberlin): Currently the UserCredentials are ignored by the OSD and
+                // therefore we avoid copying them into writeBuffer.
                 fileInfo.asyncWrite(writeBuffer);
 
                 // Processing of file size updates is handled by the FileInfo's
@@ -1096,7 +1094,7 @@ public class FileHandleImplementation implements FileHandle {
         StripeTranslator st = stripeTranslators.get(type);
 
         if (st == null) {
-            throw new XtreemFSException("No StripingPolicy foudn for type:" + type);
+            throw new XtreemFSException("No StripingPolicy found for type:" + type);
         }
         return st;
     }
