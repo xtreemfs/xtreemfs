@@ -39,16 +39,12 @@ class SimpleMonitor extends Monitor {
     public void record(int type, long size, double processingTime) {
                 
         // record measurement
-        processingTimeMeasurements[type].add(processingTime);
-        sizeMeasurements[type].add((double) size);
+        processingTimeMeasurements[type].put(processingTime);
+        sizeMeasurements[type].put((double) size);
         
         // summarize samples if necessary
-        if(processingTimeMeasurements[type].size() == INITIAL_SAMPLE_AMOUNT) {
-            
+        if (processingTimeMeasurements[type].isCharged() && sizeMeasurements[type].isCharged()) {
             publishCollectedData(type, estimateLeastSquares(type));
-            
-            processingTimeMeasurements[type].clear();
-            sizeMeasurements[type].clear();
         }
     }
 }

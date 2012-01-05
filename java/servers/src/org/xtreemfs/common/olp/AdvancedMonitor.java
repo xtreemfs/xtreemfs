@@ -25,12 +25,7 @@ class AdvancedMonitor extends Monitor {
      * <p>Factor of the difference between two measurement averages.</p>
      */
     private final static double  AVERAGE_QUOTIEN_THRESHOLD = 2.0;
-    
-    /**
-     * <p>Contains the current counts of samples to measure before aggregation for different types of requests.</p>
-     */
-    private final int[]          samplesToMeasure;
-    
+        
     /**
      * <p>Contains historical fixed time averages of the last summary for comparison.</p>
      */
@@ -49,14 +44,7 @@ class AdvancedMonitor extends Monitor {
     AdvancedMonitor(PerformanceMeasurementListener listener, int numTypes, boolean isForInternalRequests) {
         super(listener, numTypes, isForInternalRequests);
         
-        samplesToMeasure = new int[numTypes];
-        
         fixedTimeAverages = new double[numTypes];
-        
-        for (int i = 0; i < numTypes; i++) {
-            
-            samplesToMeasure[i] = INITIAL_SAMPLE_AMOUNT;
-        }
     }
     
     /* (non-Javadoc)
@@ -66,27 +54,27 @@ class AdvancedMonitor extends Monitor {
     void record(int type, long size, double processingTime) {
 
         // record measurement
-        processingTimeMeasurements[type].add(processingTime);
-        sizeMeasurements[type].add((double) size);
-        
-        // summarize samples if necessary
-        if(processingTimeMeasurements[type].size() == samplesToMeasure[type]) {
+        processingTimeMeasurements[type].put(processingTime);
+        sizeMeasurements[type].put((double) size);
             
-            double avgT = avg(processingTimeMeasurements[type]);
-            final double avgS = avg(sizeMeasurements[type]);
+        if (processingTimeMeasurements[type].isCharged() && sizeMeasurements[type].isCharged()) {
+        
+            double avgT = processingTimeMeasurements[type].avg();
+            final double avgS = sizeMeasurements[type].avg();
             
             // if we can assume this request-type has no variable processing time component
             if (avgS == 0.0 && historicalVariableProcessingTimes[type] == 0.0) {
                 
-                avgT = slowStart(avgT, type);
+                slowStart(avgT, type);
                 
             // we have to reset to the initial sample amount to prevent overreaction on the first encounter of variable
             // processing time
-            } else if (historicalVariableProcessingTimes[type] == 0.0 && 
-                       samplesToMeasure[type] < INITIAL_SAMPLE_AMOUNT) {
+            } else if (historicalVariableProcessingTimes[type] == 0.0) {
                 
-                samplesToMeasure[type] = INITIAL_SAMPLE_AMOUNT;
-                return;
+                boolean resetAvg = processingTimeMeasurements[type].resetCapacity() ||
+                                   sizeMeasurements[type].resetCapacity();
+                
+                if (resetAvg) return;
             }
             
             final double[] result = estimateLeastSquares(type, avgT, avgS);
@@ -94,11 +82,8 @@ class AdvancedMonitor extends Monitor {
             slowStart(result, type);
             
             publishCollectedData(type, result);
-
-            // clear measurements
-            processingTimeMeasurements[type].clear();
-            sizeMeasurements[type].clear();
-        }        
+    
+        }
     }
     
 /*
@@ -112,15 +97,12 @@ class AdvancedMonitor extends Monitor {
      * @param type
      * @return the average value to use after the evaluation of the slow-start criterion.
      */
-    private final double slowStart(double current, int type) {
+    private final void slowStart(final double current, final int type) {
         
         // incomplete historical data - nothing to compare to
-        if (fixedTimeAverages[type] == 0.0) {
-            
-            return current;
+        if (fixedTimeAverages[type] == 0.0) { 
+            return; 
         }
-        
-        double result = current;
      
         // processing time decreased
         if (current < fixedTimeAverages[type]) {
@@ -128,29 +110,29 @@ class AdvancedMonitor extends Monitor {
             // difference becomes inconclusive -> decrease sample amount to measure to increase sensitivity
             if ((fixedTimeAverages[type] - current) < AVERAGE_DIFFERENCE_THRESHOLD) {
                 
-                samplesToMeasure[type] = (samplesToMeasure[type] > 1) ? (samplesToMeasure[type] - 1) : 1;
+                processingTimeMeasurements[type].shrinkCapacity();
+                sizeMeasurements[type].shrinkCapacity();
             // difference is big -> increase sample amount to decrease jitter
             } else if ((fixedTimeAverages[type] / current) > AVERAGE_QUOTIEN_THRESHOLD) {
                 
-                samplesToMeasure[type] *= 2;
-                result = (current + fixedTimeAverages[type]) / 2.0;
+                processingTimeMeasurements[type].doubleCapacity();
+                sizeMeasurements[type].doubleCapacity();
             }
-        
         // processing time increased or remained unchanged
         } else {
             
             // difference becomes inconclusive -> decrease sample amount to measure to increase sensitivity
             if ((current - fixedTimeAverages[type]) < AVERAGE_DIFFERENCE_THRESHOLD) {
                 
-                samplesToMeasure[type] = (samplesToMeasure[type] > 1) ? (samplesToMeasure[type] / 2) : 1;
+                processingTimeMeasurements[type].halveCapacity();
+                sizeMeasurements[type].halveCapacity();
             // difference is big -> increase sample amount to decrease jitter
             } else if ((current / fixedTimeAverages[type]) > AVERAGE_QUOTIEN_THRESHOLD) {
                 
-                samplesToMeasure[type]++;
+                processingTimeMeasurements[type].enlargeCapacity();
+                sizeMeasurements[type].enlargeCapacity();
             }
         }
-        
-        return result;
     }
     
     /**
@@ -160,16 +142,15 @@ class AdvancedMonitor extends Monitor {
      * @param type
      * @return the average value to use after the evaluation of the slow-start criterion.
      */
-    private final double[] slowStart(double[] current, int type) {
+    private final void slowStart(final double[] current, final int type) {
                 
         // incomplete historical data - nothing to compare to
         if (historicalFixedProcessingTimes[type] == 0.0 || historicalVariableProcessingTimes[type] == 0.0) {
-            return current;
+            return;
         }
         
         final double fixedDiff = current[0] - historicalFixedProcessingTimes[type];
         final double variableDiff = current[1] - historicalVariableProcessingTimes[type];
-        double[] result = current;
         
         // processing time decreased -> check deviation difference
         if (fixedDiff < 0 && variableDiff < 0) {
@@ -178,35 +159,35 @@ class AdvancedMonitor extends Monitor {
             if (Math.abs(fixedDiff) < AVERAGE_DIFFERENCE_THRESHOLD && 
                 Math.abs(variableDiff) < AVERAGE_DIFFERENCE_THRESHOLD) {
                 
-                samplesToMeasure[type] = (samplesToMeasure[type] > 1) ? (samplesToMeasure[type] - 1) : 1;
+                processingTimeMeasurements[type].shrinkCapacity();
+                sizeMeasurements[type].shrinkCapacity();
             // difference is big -> increase sample amount to decrease jitter
             } else if ((historicalFixedProcessingTimes[type] / current[0]) > AVERAGE_QUOTIEN_THRESHOLD &&
                     (historicalVariableProcessingTimes[type] / current[1]) > AVERAGE_QUOTIEN_THRESHOLD) {
                 
-                samplesToMeasure[type] *= 2;
-                result[0] = (current[0] + historicalFixedProcessingTimes[type]) / 2.0;
-                result[1] = (current[1] + historicalVariableProcessingTimes[type]) / 2.0;
+                processingTimeMeasurements[type].doubleCapacity();
+                sizeMeasurements[type].doubleCapacity();
             }
-            
         // processing time deviation is inconclusive -> increase amount of samples to measure   
         } else if ((fixedDiff < 0 && variableDiff > 0) || (fixedDiff > 0 && variableDiff < 0)) {
             
-            samplesToMeasure[type]++;
+            processingTimeMeasurements[type].enlargeCapacity();
+            sizeMeasurements[type].enlargeCapacity();
         // processing time increased -> check deviation difference
         } else if (fixedDiff > 0 && variableDiff > 0){
             
             // difference becomes inconclusive -> decrease sample amount to measure to increase sensitivity
             if (fixedDiff < AVERAGE_DIFFERENCE_THRESHOLD && variableDiff < AVERAGE_DIFFERENCE_THRESHOLD) {
                 
-                samplesToMeasure[type] = (samplesToMeasure[type] > 1) ? (samplesToMeasure[type] / 2) : 1;
+                processingTimeMeasurements[type].halveCapacity();
+                sizeMeasurements[type].halveCapacity();
             // difference is big -> increase sample amount to decrease jitter
             } else if ((current[0] / historicalFixedProcessingTimes[type]) > AVERAGE_QUOTIEN_THRESHOLD &&
                     (current[1] / historicalVariableProcessingTimes[type]) > AVERAGE_QUOTIEN_THRESHOLD) {
                 
-                samplesToMeasure[type]++;
+                processingTimeMeasurements[type].enlargeCapacity();
+                sizeMeasurements[type].enlargeCapacity();
             }
         }
-        
-        return result;
     }
 }

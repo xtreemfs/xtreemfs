@@ -7,9 +7,6 @@
  */
 package org.xtreemfs.common.olp;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * <p>Interface for monitors that record request performance information. Implementations may differ in the amount of 
  * samples recorded and the metric used to summarize these samples.</p>
@@ -20,9 +17,9 @@ import java.util.List;
 abstract class Monitor {
     
     /**
-     * <p>Number of samples to collect before calculating there average.</p>
+     * <p>Number of samples to collect there averages from.</p>
      */
-    protected final static int                   INITIAL_SAMPLE_AMOUNT = 10;
+    private final static int                     INITIAL_SAMPLE_AMOUNT = 10;
     
     /**
      * <p>Listener to notify about new summaries of collected samples.</p>
@@ -37,12 +34,12 @@ abstract class Monitor {
     /**
      * <p>Contains samples of fixed time measurements in ms of different types of requests.</p>
      */
-    protected final List<Double>[]               processingTimeMeasurements;
+    protected final RingBuffer[]                 processingTimeMeasurements;
     
     /**
      * <p>Contains samples of variable time measurements in ms/byte of different types of requests.</p>
      */
-    protected final List<Double>[]               sizeMeasurements;
+    protected final RingBuffer[]                 sizeMeasurements;
     
     /**
      * <p>Previously calculated fixed processing times for different types of requests.</p>
@@ -63,22 +60,21 @@ abstract class Monitor {
      *                                otherwise.
      * @param numTypes - amount of different request types expected.
      */
-    @SuppressWarnings("unchecked")
     Monitor(PerformanceMeasurementListener listener, int numTypes, boolean isForInternalRequests) {
         
         this.listener = listener;
         this.isForInternalRequests = isForInternalRequests;
         
-        processingTimeMeasurements = new List[numTypes];
-        sizeMeasurements = new List[numTypes];
+        processingTimeMeasurements = new RingBuffer[numTypes];
+        sizeMeasurements = new RingBuffer[numTypes];
         
         // historical data
         historicalFixedProcessingTimes = new double[numTypes];
         historicalVariableProcessingTimes = new double[numTypes];
         
         for (int i = 0; i < numTypes; i++) {
-            processingTimeMeasurements[i] = new ArrayList<Double>(INITIAL_SAMPLE_AMOUNT);
-            sizeMeasurements[i] = new ArrayList<Double>(INITIAL_SAMPLE_AMOUNT);
+            processingTimeMeasurements[i] = new RingBuffer(INITIAL_SAMPLE_AMOUNT);
+            sizeMeasurements[i] = new RingBuffer(INITIAL_SAMPLE_AMOUNT);
         }
     }
     
@@ -149,7 +145,7 @@ abstract class Monitor {
      */
     protected final double[] estimateLeastSquares(int type) {
         
-        return estimateLeastSquares(type, avg(processingTimeMeasurements[type]), avg(sizeMeasurements[type]));
+        return estimateLeastSquares(type, processingTimeMeasurements[type].avg(), sizeMeasurements[type].avg());
     }
     
     /**
@@ -167,10 +163,7 @@ abstract class Monitor {
         final int length = processingTimeMeasurements[type].size();
         
         assert (sizeMeasurements[type].size() == length);
-        
-        //String debug = "Processing avg " + String.format("%.2f", avgT) + "ms ";
-        //debug += "Space avg " + String.format("%.2f", avgS) + "bytes "; XXX remove debug code
-        
+                
         // simplification to avoid costively measurements whether there is no size and therefore a plain simple linear
         // approximation
         if (avgS > 0.0) {
@@ -210,14 +203,21 @@ abstract class Monitor {
         }
     }
     
-    protected final static double avg(List<Double> elements) {
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public final String toString() {
         
-        double result = 0.0;
+        StringBuilder builder = new StringBuilder();
         
-        for (Double elem : elements) {
-            result += elem;
+        builder.append("Monitor capacity:\n" +
+        	       "type\tprocessingTime\tsize\n");
+        for (int i = 0; i < processingTimeMeasurements.length; i++) {
+            builder.append(i + "\t" + processingTimeMeasurements[i].toString() + "\t" + sizeMeasurements[i].toString() +
+                    "\n");
         }
-                
-        return result / elements.size();
+        builder.append("\n");
+        return builder.toString();
     }
 }
