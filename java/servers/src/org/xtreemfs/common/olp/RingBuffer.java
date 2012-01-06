@@ -34,8 +34,20 @@ class RingBuffer extends ArrayList<Double> {
         
         position %= capacity;
         
-        if (position >= size()) add(value);
-        else add(position, value);
+        if (position >= size()) {
+            
+            add(value);
+        } else {
+            
+            // slowly shrink the buffer, if to large, to save main memory
+            if (capacity < size()) {
+                
+                remove(size()-1);
+            }
+            
+            remove(position);
+            add(position, value);
+        }
         
         position++;
     }
