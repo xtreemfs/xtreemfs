@@ -97,7 +97,7 @@ public class ProcessingStage extends OverloadProtectedStage<MRCRequest> {
     public final Map<Integer, Integer>       requestTypeMap = new HashMap<Integer, Integer>(NUM_RQ_TYPES);
     
     public ProcessingStage(MRCRequestDispatcher master) {
-        super("ProcSt", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, NUM_SUB_SEQ_STAGES);
+        super("ProcSt", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, NUM_SUB_SEQ_STAGES, 0L, true);
         this.master = master;
         
         operations = new HashMap<Integer, MRCOperation>();

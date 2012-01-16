@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Felix Langner,
+ * Copyright (c) 2012 by Felix Langner,
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
@@ -15,7 +15,7 @@ import org.xtreemfs.foundation.logging.Logging;
  * </p>
  * 
  * @author fx.langner
- * @version 1.00, 09/15/2011
+ * @version 1.01, 09/15/2011
  */
 final class ProtectionAlgorithmCore {
     
@@ -119,8 +119,29 @@ final class ProtectionAlgorithmCore {
             if(!actuator.hasAdmission(remainingProcessingTime, estimatedProcessingTime)) {
                 
                 throw new AdmissionRefusedException(request, remainingProcessingTime, estimatedProcessingTime);
+            
+            // update request meta-data
+            } else {
+                
+                request.setEstimatedRemainingProcessingTime(estimatedProcessingTime);
+                request.setSlackTime(remainingProcessingTime - estimatedProcessingTime);
             }
         }
+    }
+    
+    /**
+     * <p>Method to be executed to determine whether the request represented by its metadata may be processed or 
+     * not.</p>
+     * 
+     * @param type
+     * @param size
+     * @param isInternal
+     * @throws AdmissionRefusedException if requests has already expired or will expire before processing has finished.
+     */
+    <R extends AugmentedRequest> void obtainAdmission(int type, long size, boolean isInternal) 
+            throws AdmissionRefusedException {
+        
+        obtainAdmission(type, size, false, isInternal);
     }
     
     /**
@@ -148,6 +169,7 @@ final class ProtectionAlgorithmCore {
      * @param stageRequest - {@link OLPStageRequest} containing monitoring information for one processing step.
      */
     <R extends AugmentedRequest> void depart(OLPStageRequest<R> stageRequest) {
+        
         depart(stageRequest, false);
     }
     

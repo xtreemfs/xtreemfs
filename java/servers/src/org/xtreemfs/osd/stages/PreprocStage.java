@@ -82,7 +82,7 @@ public class PreprocStage extends OverloadProtectedStage<AugmentedRequest> {
         
     public PreprocStage(OSDRequestDispatcher master, MetadataCache metadataCache, int numStorageThreads) {
         super("OSD PreProcSt", STAGE_ID + numStorageThreads, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, 
-                NUM_SUB_SEQ_STAGES + numStorageThreads, OFT_CLEAN_INTERVAL);
+                NUM_SUB_SEQ_STAGES + numStorageThreads, OFT_CLEAN_INTERVAL, true);
         
         capCache = new HashMap<String, LRUCache<String, Capability>>();
         oft = new OpenFileTable();

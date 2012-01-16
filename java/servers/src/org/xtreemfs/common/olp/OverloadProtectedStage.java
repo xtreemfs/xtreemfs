@@ -36,6 +36,25 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
     
     /**
      * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 
+     * unrefusable and no subsequent stages following. Default constructor for root nodes in the processing tree.</p>
+     * 
+     * @param stageName - human-readable identifier for this stage.
+     * @param stageId - a identifier that is unique among parallel stages that follow the same predecessor.
+     * @param numTypes - amount of different types of requests.
+     * @param numInternalTypes - amount of different internal types of requests.
+     * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
+     * @param period - delay in ms between two cron-Jobs.
+     * @param enablePriorityRequests - determines whether priority shall be regarded or not.
+     */
+    public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numInternalTypes, 
+            int numSubsequentStages, long period, boolean enablePriorityRequests) {
+        
+        this(stageName, stageId, numTypes, numInternalTypes, numSubsequentStages, new boolean[numTypes], period, 
+                enablePriorityRequests);
+    }
+    
+    /**
+     * <p>Constructor for initializing the OLP algorithm for a single stage. Is is used, if no request-type is 
      * unrefusable and no subsequent stages following. Default constructor for inner nodes in the processing tree.</p>
      * 
      * @param stageName - human-readable identifier for this stage.
@@ -48,7 +67,7 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
     public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numInternalTypes, 
             int numSubsequentStages, long period) {
         
-        this(stageName, stageId, numTypes, numInternalTypes, numSubsequentStages, new boolean[numTypes], period);
+        this(stageName, stageId, numTypes, numInternalTypes, numSubsequentStages, new boolean[numTypes], period, false);
     }
     
     /**
@@ -64,7 +83,7 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
     public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numInternalTypes, 
             int numSubsequentStages) {
         
-        this(stageName, stageId, numTypes, numInternalTypes, numSubsequentStages, new boolean[numTypes], 0L);
+        this(stageName, stageId, numTypes, numInternalTypes, numSubsequentStages, new boolean[numTypes], 0L, false);
     }
 
     /**
@@ -79,7 +98,7 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
      */
     public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numInternalTypes, long period) {
         
-        this(stageName, stageId, numTypes, numInternalTypes, 0, new boolean[numTypes], period);
+        this(stageName, stageId, numTypes, numInternalTypes, 0, new boolean[numTypes], period, false);
     }
     
     /**
@@ -93,7 +112,7 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
      */
     public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numInternalTypes) {
         
-        this(stageName, stageId, numTypes, numInternalTypes, 0, new boolean[numTypes], 0L);
+        this(stageName, stageId, numTypes, numInternalTypes, 0, new boolean[numTypes], 0L, false);
     }
     
     /**
@@ -106,12 +125,13 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
      * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
      * @param unrefusableTypes - array that decides which types of requests are treated unrefusable and which not.
      * @param period - delay in ms between two cron-Jobs.
+     * @param enablePriorityRequests - determines whether priority shall be regarded or not.
      */
     public OverloadProtectedStage(String stageName, int stageId, int numTypes, int numInternalTypes, 
-            int numSubsequentStages, boolean[] unrefusableTypes, long period) {
+            int numSubsequentStages, boolean[] unrefusableTypes, long period, boolean enablePriorityRequests) {
         
         this(stageName, new ProtectionAlgorithmCore(stageId, numTypes, numInternalTypes, numSubsequentStages, 
-                unrefusableTypes), period);
+                unrefusableTypes), period, false);
     }
     
     /**
@@ -121,9 +141,12 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
      * @param name - of the stage.
      * @param olp - the initialized algorithm.
      * @param period - delay in ms between two cron-Jobs.
+     * @param enablePriorityRequests - determines whether priority shall be regarded or not.
      */
-    private OverloadProtectedStage(String name, ProtectionAlgorithmCore olp, long period) {
-        super(name, new SimpleProtectedQueue<R>(olp), period);
+    private OverloadProtectedStage(String name, ProtectionAlgorithmCore olp, long period, 
+                                   boolean enablePriorityRequests) {
+        super(name, (enablePriorityRequests) ? new ProtectedPriorityQueue<R>(olp) : 
+                                               new SimpleProtectedQueue<R>(olp), period);
         
         this.olp = olp;
     }

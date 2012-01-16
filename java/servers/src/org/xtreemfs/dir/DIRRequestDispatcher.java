@@ -129,7 +129,7 @@ public class DIRRequestDispatcher extends OverloadProtectedStage<DIRRequest> imp
     
     public DIRRequestDispatcher(final DIRConfig config, final BabuDBConfig dbsConfig) throws IOException,
         BabuDBException {
-        super("DIR RqDisp", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, NUM_SUB_SEQ_STAGES);
+        super("DIR RqDisp", STAGE_ID, NUM_RQ_TYPES, NUM_INTERNAL_RQ_TYPES, NUM_SUB_SEQ_STAGES, 0L, true);
         
         this.config = config;
         

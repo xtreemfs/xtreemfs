@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Felix Langner,
+ * Copyright (c) 2012 by Felix Langner,
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
@@ -15,7 +15,7 @@ import org.xtreemfs.common.olp.ProtectionAlgorithmCore.RequestExpiredException;
  * application using control information gathered by this field.</p> 
  * 
  * @author fx.langner
- * @version 1.00, 08/18/11
+ * @version 1.01, 08/18/11
  */
 public abstract class AugmentedRequest {
     
@@ -25,7 +25,7 @@ public abstract class AugmentedRequest {
     private final int           type;
     
     /**
-     * <p>Maximal response time delta for this request.</p>
+     * <p>Maximal response time delta for this request in ms.</p>
      */
     private final long          deltaMaxTime;
     
@@ -33,6 +33,16 @@ public abstract class AugmentedRequest {
      * <p>The Unix time stamp this request was initially received.</p>
      */
     private final long          startTime;
+    
+    /**
+     * <p>Estimated processing time this request will need before being finished in ms.</p>
+     */
+    private double              estimatedRemainingProcessingTime;
+    
+    /**
+     * <p>Estimated slack time, between premature finishing a request and missing the timeout restriction in ms</p>
+     */
+    private double              slackTime;
     
     /**
      * <p>Flag to determine whether this request has high priority or not.</p>
@@ -149,7 +159,55 @@ public abstract class AugmentedRequest {
         
         return startTime + deltaMaxTime;
     }
+    
+    /**
+     * <p>Sets the remaining processing time to time. Old estimation gets lost.</p>
+     * 
+     * @param time
+     */
+    final void setEstimatedRemainingProcessingTime(double time) {
+        
+        this.estimatedRemainingProcessingTime = time;
+    }
+    
+    /**
+     * @return the last estimation of needed processing time made for this request.
+     */
+    final double getEstimatedRemainingProcessingTime() {
+        
+        return estimatedRemainingProcessingTime;
+    }
 
+    /**
+     * <p>Sets slack time to time in ms.</p>
+     * 
+     * @param time
+     */
+    final void setSlackTime(double time) {
+        
+        this.slackTime = time;
+    }
+    
+    /**
+     * <p>Decreases slack time by time in ms.</p>
+     * 
+     * @param time
+     */
+    final void decreaseSlackTime(double time) {
+        
+        assert (slackTime > time);
+        
+        this.slackTime -= time;
+    }
+    
+    /**
+     * @return slack time in ms.
+     */
+    final double getSlackTime() {
+        
+        return this.slackTime;
+    }
+    
     /**
      * @return true, if this request is an internal request, false if not.
      */

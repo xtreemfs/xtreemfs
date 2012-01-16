@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Felix Langner,
+ * Copyright (c) 2012 by Felix Langner,
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
