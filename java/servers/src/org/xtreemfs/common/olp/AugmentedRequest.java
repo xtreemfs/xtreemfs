@@ -47,7 +47,7 @@ public abstract class AugmentedRequest {
     /**
      * <p>Flag to determine whether this request has high priority or not.</p>
      */
-    private final boolean       highPriority;
+    private boolean             highPriority;
     
     /**
      * <p>Constructor for requests that do not require a certain amount of bandwidth for being
@@ -128,6 +128,13 @@ public abstract class AugmentedRequest {
         return highPriority;
     }
         
+    void setPriority() {
+        
+        assert (!highPriority);
+        
+        highPriority = true;
+    }
+    
     /**
      * <p>Calculates the remaining processing time for this request. If the request has already been expired an 
      * Exception is thrown.</p>

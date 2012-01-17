@@ -143,10 +143,8 @@ final class ProtectionAlgorithmCore {
      * @param type
      * @param size
      * @param isInternal
-     * @throws AdmissionRefusedException if requests has already expired or will expire before processing has finished.
      */
-    <R extends AugmentedRequest> void obtainAdmission(int type, long size, boolean isInternal) 
-            throws AdmissionRefusedException {
+    <R extends AugmentedRequest> void obtainAdmission(int type, long size, boolean isInternal)  {
         
         obtainAdmission(type, size, false, isInternal);
     }
@@ -159,10 +157,8 @@ final class ProtectionAlgorithmCore {
      * @param size
      * @param hasPriority
      * @param isInternal
-     * @throws AdmissionRefusedException if requests has already expired or will expire before processing has finished.
      */
-    <R extends AugmentedRequest> void obtainAdmission(int type, long size, boolean hasPriority, boolean isInternal) 
-            throws AdmissionRefusedException {
+    <R extends AugmentedRequest> void obtainAdmission(int type, long size, boolean hasPriority, boolean isInternal) {
         
         controller.enterRequest(type, size, hasPriority, isInternal);
     }

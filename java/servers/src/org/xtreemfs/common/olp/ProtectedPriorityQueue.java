@@ -131,14 +131,21 @@ class ProtectedPriorityQueue<R extends AugmentedRequest> implements StageQueue<R
             final double lowProcessingEstimation = low.peek().getRequest().getEstimatedRemainingProcessingTime();
             boolean favorLowPriority = true;
             Iterator<OLPStageRequest<R>> iter = high.iterator();
+            String slackTimes = "";
             while (iter.hasNext() && favorLowPriority) {
                 
-                favorLowPriority &= iter.next().getRequest().getSlackTime() > lowProcessingEstimation;
+                double st = iter.next().getRequest().getSlackTime();
+                slackTimes += st + ", ";
+                favorLowPriority &= st > lowProcessingEstimation;
             }
             
             if (favorLowPriority) {
                 
                 result = low.poll();
+                olp.depart(result, true);
+                R rq = result.getRequest();
+                rq.setPriority();
+                olp.obtainAdmission(rq.getType(), result.getSize(), true, rq.isNativeInternalRequest());
                 for (OLPStageRequest<R> stageRequest : high) {
                     
                     stageRequest.getRequest().decreaseSlackTime(lowProcessingEstimation);
@@ -147,7 +154,6 @@ class ProtectedPriorityQueue<R extends AugmentedRequest> implements StageQueue<R
                 
                 result = high.poll();
             }
-
         } else {
             
             result = (high.size() > 0) ? high.poll() : low.poll();
