@@ -209,12 +209,15 @@ final class ProtectionAlgorithmCore {
      */
     void sendPiggybackPerformanceInformation(PerformanceInformationReceiver[] predecessors) {
         
-        final PerformanceInformation pI = composePerformanceInformation();
-        
-        for (PerformanceInformationReceiver predecessor : predecessors) {
+        if (predecessors.length > 0) {
             
-            predecessor.processPerformanceInformation(pI);
-            sender.performanceInformationUpdatedPiggyback(predecessor);
+            final PerformanceInformation pI = composePerformanceInformation();
+            
+            for (PerformanceInformationReceiver predecessor : predecessors) {
+                
+                predecessor.processPerformanceInformation(pI);
+                sender.performanceInformationUpdatedPiggyback(predecessor);
+            }
         }
     }
     
