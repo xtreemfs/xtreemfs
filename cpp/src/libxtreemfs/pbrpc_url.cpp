@@ -6,10 +6,13 @@
  */
 #include "libxtreemfs/pbrpc_url.h"
 
+#include <boost/algorithm/string.hpp>
 #include <string>
 #include <utility>
 
 #include "libxtreemfs/xtreemfs_exception.h"
+
+using namespace std;
 
 namespace xtreemfs {
 
@@ -36,9 +39,12 @@ bool PBRPCURL::protocolContains(std::string url, std::string scheme) {
 }
 
 void PBRPCURL::parseURL(
-    const std::string& url,
+    const std::string& original_url,
     const std::string& default_scheme,
     const uint16_t default_port) {
+  string url(original_url);
+  boost::trim(url);
+
   scheme_ = default_scheme;
   size_t scheme_pos = url.find("://");
   size_t address_pos = 0;
