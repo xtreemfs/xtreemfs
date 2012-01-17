@@ -80,7 +80,7 @@ public abstract class OverloadProtectedComponent<R extends AugmentedRequest>
             boolean[] unrefusableTypes) {
                 
         this.olp = new ProtectionAlgorithmCore(stageId, numTypes, numInternalTypes, numSubsequentStages, 
-                unrefusableTypes, false);
+                unrefusableTypes);
     }
     
     /**

@@ -64,19 +64,16 @@ final class ProtectionAlgorithmCore {
      * @param numInternalTypes - amount of different internal types of requests.
      * @param numSubsequentStages - amount of parallel stages following directly behind this stage.
      * @param unrefusableTypes - array that decides which types of requests are treated unrefusable and which not.
-     * @param enablePriorityRequests - determines whether priority shall be regarded or not.
      */
     ProtectionAlgorithmCore(int stageId, int numTypes, int numInternalTypes, int numSubsequentStages, 
-            boolean[] unrefusableTypes, boolean enablePriorityRequests) {
+            boolean[] unrefusableTypes) {
         
         assert (unrefusableTypes.length == numTypes);
         
         this.unrefusableTypes = unrefusableTypes;
         this.id = stageId;
         this.actuator = new Actuator();
-        this.controller = (enablePriorityRequests) ? 
-                new PriorityController(numTypes, numInternalTypes, numSubsequentStages) : 
-                new SimpleController(numTypes, numInternalTypes, numSubsequentStages);
+        this.controller = new Controller(numTypes, numInternalTypes, numSubsequentStages);
         this.monitor = new AdvancedMonitor(controller, numTypes, false);
         this.internalRequestMonitor = new AdvancedMonitor(controller, numInternalTypes, true);
         this.sender = new PerformanceInformationSender(this);

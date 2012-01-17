@@ -15,7 +15,7 @@ import org.xtreemfs.foundation.buffer.ReusableBuffer;
  * provides methods to serialize and dezerialize these informations to be able to share them via RPCs.</p>
  * 
  * @author flangner
- * @version 1.01, 09/01/11
+ * @version 1.00, 09/01/11
  */
 public class PerformanceInformation {
 
@@ -41,6 +41,12 @@ public class PerformanceInformation {
     double      waitingTime;
     
     /**
+     * <p>Waiting time for high priority requests in ms retrieved from size and composition of this and subsequent 
+     * queues for the remaining queuing network.</p>
+     */
+    double      priorityWaitingTime;
+
+    /**
      * <p>Constructor to bundle important performance information to be ready for forwarding to the preceding stage.</p>
      * 
      * @param id - unique identifier for this stage.
@@ -52,7 +58,7 @@ public class PerformanceInformation {
      *                      composition of this and subsequent queues for the remaining queuing network.
      */
     PerformanceInformation(int id, double[] fixedProcessingTimeAverages, double[] variableProcessingTimeAverages, 
-            double waitingTime) {
+            double waitingTime, double priorityWaitingTime) {
                 
         assert(fixedProcessingTimeAverages.length == variableProcessingTimeAverages.length);
         
@@ -60,6 +66,7 @@ public class PerformanceInformation {
         this.fixedProcessingTimeAverages = fixedProcessingTimeAverages;
         this.variableProcessingTimeAverages = variableProcessingTimeAverages;
         this.waitingTime = waitingTime;
+        this.priorityWaitingTime = priorityWaitingTime;
     }
     
     /**
@@ -86,6 +93,7 @@ public class PerformanceInformation {
             result.putDouble(variableProcessingTimeAverages[i]);
         }
         result.putDouble(waitingTime);
+        result.putDouble(priorityWaitingTime);
         result.flip();
         return result;
     }
@@ -112,6 +120,7 @@ public class PerformanceInformation {
             target.variableProcessingTimeAverages[i] = serialized.getDouble();
         }
         target.waitingTime = serialized.getDouble();
+        target.priorityWaitingTime = serialized.getDouble();
         serialized.flip();
     }
 }

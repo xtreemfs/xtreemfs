@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicLongArray;
  * updates on the maintained information.</p>
  * 
  * @author flangner
- * @version 1.01, 09/01/11
+ * @version 1.00, 09/01/11
  */
 class SuccessorPerformanceInformation {
     
@@ -38,7 +38,13 @@ class SuccessorPerformanceInformation {
      * (worst-case assessment).</p>
      */
     private final AtomicLongArray       waitingTimes;
-        
+    
+    /**
+     * <p>Structure to maintain the waiting times for priority requests of straight following successors of this stage 
+     * and their maximum (worst-case assessment).</p>
+     */
+    private final AtomicLongArray       priorityWaitingTimes;
+    
     /**
      * <p>Pointer for the index of maximal values of all collected performance information of the successors.</p>
      */
@@ -63,6 +69,7 @@ class SuccessorPerformanceInformation {
         fixedProcessingTimeAverages = new AtomicLongArray[numTypes];
         variableProcessingTimeAverages = new AtomicLongArray[numTypes];
         waitingTimes = new AtomicLongArray(numSubsequentStages+1);
+        priorityWaitingTimes = new AtomicLongArray(numSubsequentStages+1);
         resultIndex = numSubsequentStages;
         
         for (int i = 0; i < numTypes; i++) {
@@ -85,6 +92,17 @@ class SuccessorPerformanceInformation {
     double getWaitingTime() {
         
         return Double.longBitsToDouble(waitingTimes.get(resultIndex));
+    }
+    
+    /**
+     * <p>Method to get the worst case waiting time for requests of high priority, that would now approach the 
+     * subsequent stages.</p>
+     * 
+     * @return the longest waiting time for a high priority request that would leave this stage right now.
+     */
+    double getPriorityWaitingTime() {
+        
+        return Double.longBitsToDouble(priorityWaitingTimes.get(resultIndex));
     }
     
     /**
@@ -133,6 +151,7 @@ class SuccessorPerformanceInformation {
         		"outranged '" + resultIndex + "' at SuccessorPerformanceInformation: \n\n" + toString();
         
         updateArray(id, performanceInformation.waitingTime, waitingTimes);
+        updateArray(id, performanceInformation.priorityWaitingTime, priorityWaitingTimes);
         updateProcessingTime(id, performanceInformation.fixedProcessingTimeAverages, fixedProcessingTimeAverages);
         updateProcessingTime(id, performanceInformation.variableProcessingTimeAverages, variableProcessingTimeAverages);
     }
@@ -251,6 +270,12 @@ class SuccessorPerformanceInformation {
         builder.append("Waiting times:\n");
         for (int i = 0; i < waitingTimes.length(); i++) {
             builder.append(String.format("%.2f", Double.longBitsToDouble(waitingTimes.get(i))) + "\n");
+        }
+        builder.append("\n\n");
+        
+        builder.append("Priority waiting times:\n");
+        for (int i = 0; i < priorityWaitingTimes.length(); i++) {
+            builder.append(String.format("%.2f", Double.longBitsToDouble(priorityWaitingTimes.get(i))) + "\n");
         }
         builder.append("\n\n");
         

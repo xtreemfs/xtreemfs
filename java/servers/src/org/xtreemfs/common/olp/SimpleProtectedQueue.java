@@ -7,6 +7,7 @@
  */
 package org.xtreemfs.common.olp;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -16,7 +17,8 @@ import org.xtreemfs.common.stage.AutonomousComponent.AdmissionRefusedException;
 import org.xtreemfs.foundation.logging.Logging;
 
 /**
- * <p>Basically this queue implementation follows a FIFO-ordering.</p>
+ * <p>Basically this queue implementation follows a FIFO-ordering considering high priority requests
+ * to be processed before low priority requests.</p>
  *  
  * @author flangner
  * @version 1.01, 09/01/11
@@ -24,11 +26,16 @@ import org.xtreemfs.foundation.logging.Logging;
  * <R> - type for the queued requests. Has to extend {@link AugmentedRequest}.
  */
 class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> {
-        
+    
+    /**
+     * <p>The queue to buffer the high priority requests before their processing.</p>
+     */
+    private final Queue<OLPStageRequest<R>> high = new LinkedList<OLPStageRequest<R>>();
+    
     /**
      * <p>The queue to buffer the low priority requests before their processing.</p>
      */
-    private final Queue<OLPStageRequest<R>> queue = new LinkedList<OLPStageRequest<R>>();
+    private final Queue<OLPStageRequest<R>> low = new LinkedList<OLPStageRequest<R>>();
     
     /**
      * <p>The interface to the Overload-Protection algorithm.</p>
@@ -53,17 +60,44 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
         
         final OLPStageRequest<R> rq = (OLPStageRequest<R>) stageRequest;
         final R request = rq.getRequest();
+        final boolean hasPriority = request.hasHighPriority() || rq.hasHighPriority();
         
         try {
             
             if (!rq.isRecycled()) {
                 olp.hasAdmission(request, rq.getSize());
             }
-            olp.obtainAdmission(request.getType(), rq.getSize(), request.isNativeInternalRequest());
-            queue.add(rq);
+            olp.obtainAdmission(request.getType(), rq.getSize(), hasPriority, request.isNativeInternalRequest());
+            if (hasPriority) {
+                
+                high.add(rq);
+                
+                // check the outdistanced low priority requests 
+                Iterator<OLPStageRequest<R>> iter = low.iterator();
+                while (iter.hasNext()) {
+                    
+                    OLPStageRequest<R> next = iter.next();
+                    try {
+                        
+                        olp.hasAdmission(next.getRequest(), next.getSize());
+                    } catch (AdmissionRefusedException error) {
+                        
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "%s Overruled by %s.", 
+                                error.getMessage(), String.valueOf(request));
+                        
+                        iter.remove();
+                        next.voidMeasurments();
+                        next.getCallback().failed(error);
+                        olp.depart(next);
+                    }
+                }
+            } else {
+                
+                low.add(rq);
+            }
             
             // wake up the stage if necessary
-            if (queue.size() == 1) {
+            if ((high.size() == 0 && low.size() == 1) || (high.size() == 1 && low.size() == 0)) {
                 
                 notify();
             }
@@ -86,11 +120,12 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
     public synchronized <S extends StageRequest<R>> S take(long timeout)
             throws InterruptedException {
 
-        if (queue.size() == 0) {
+        if (high.size() == 0 && low.size() == 0) {
             wait(timeout);
         }
         
-        return (S) queue.poll();
+        OLPStageRequest<R> result = high.poll();
+        return (S) ((result == null) ? low.poll() : result);
     }
     
     /* (non-Javadoc)
@@ -99,7 +134,7 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
     @Override
     public synchronized int getLength() {
         
-        return queue.size();
+        return high.size() + low.size();
     }
     
     /* (non-Javadoc)
@@ -109,9 +144,15 @@ class SimpleProtectedQueue<R extends AugmentedRequest> implements StageQueue<R> 
     public synchronized String toString() {
         
         final StringBuilder builder = new StringBuilder();
-                
+        
+        builder.append("High priority requests:\n");
+        for (OLPStageRequest<R> rq : high) {
+            builder.append(rq.toString() + "\n");
+        }
+        builder.append("\n");
+        
         builder.append("Low priority requests:\n");
-        for (OLPStageRequest<R> rq : queue) {
+        for (OLPStageRequest<R> rq : low) {
             builder.append(rq.toString() + "\n");
         }
         builder.append("\n");
