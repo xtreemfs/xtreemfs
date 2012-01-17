@@ -113,18 +113,25 @@ final class ProtectionAlgorithmCore {
         final int type = request.getType();
         if (!request.isNativeInternalRequest() && !request.isUnrefusable() && !unrefusableTypes[type]) {
             
+            final boolean hasPriority = request.hasHighPriority();
             final double remainingProcessingTime = request.getRemainingProcessingTime();
-            final double estimatedProcessingTime = controller.estimateResponseTime(type, size, 
-                                                                                   request.hasHighPriority());
-            if(!actuator.hasAdmission(remainingProcessingTime, estimatedProcessingTime)) {
+            final double estProcessingTime = controller.estimateProcessingTime(type, size);
+            final double estWaitingTime = controller.estimateWaitingTime(request.hasHighPriority());
+            final double estTime = estProcessingTime + estWaitingTime;
+            
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Estimated response time for type (%d) @size %d with %s " +
+                    "priority: %.4f processing + %.4f waiting = %.4f", type, size, 
+                    String.valueOf(hasPriority), estProcessingTime, estWaitingTime, estTime);
+            
+            if(!actuator.hasAdmission(remainingProcessingTime, estTime)) {
                 
-                throw new AdmissionRefusedException(request, remainingProcessingTime, estimatedProcessingTime);
+                throw new AdmissionRefusedException(request, remainingProcessingTime, estTime);
             
             // update request meta-data
             } else {
                 
-                request.setEstimatedRemainingProcessingTime(estimatedProcessingTime);
-                request.setSlackTime(remainingProcessingTime - estimatedProcessingTime);
+                request.setEstimatedRemainingProcessingTime(estProcessingTime);
+                request.setSlackTime(remainingProcessingTime - estTime);
             }
         }
     }

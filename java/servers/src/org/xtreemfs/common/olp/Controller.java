@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Felix Langner,
+ * Copyright (c) 2012 by Felix Langner,
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 import org.xtreemfs.common.olp.Monitor.PerformanceMeasurementListener;
-import org.xtreemfs.foundation.logging.Logging;
 
 /**
  * 
@@ -19,7 +18,7 @@ import org.xtreemfs.foundation.logging.Logging;
  * be single threaded.</p>
  * 
  * @author fx.langner
- * @version 1.00, 08/25/11
+ * @version 1.01, 08/25/11
  */
 class Controller implements PerformanceMeasurementListener {
     
@@ -100,43 +99,36 @@ class Controller implements PerformanceMeasurementListener {
     }
       
     /**
-     * <p>Calculates response time for a request regarding its type, size, priority and utilization of the service 
-     * obtained from the composition and average processing times of requests currently responded by the service.</p> 
+     * <p>Calculates the pure processing time of a request given by its size and type.
      * 
      * @param type
      * @param size
+     * @return the estimated processing time for the given request.
+     */
+    double estimateProcessingTime(int type, long size) {
+                
+        return Double.longBitsToDouble(fixedProcessingTimeAverages.get(type)) + 
+               ((size > 0L) ? Double.longBitsToDouble(variableProcessingTimeAverages.get(type)) * size : 0L);
+    }
+    
+    /**
+     * <p>Calculates response time for a request regarding its priority and utilization of the service 
+     * obtained from the composition and average processing times of requests currently responded by the service.</p> 
+     * 
+     * @param processingTime
      * @param hasPriority
      * 
      * @return the estimated response time for the given request.
      */
-    double estimateResponseTime(int type, long size, boolean hasPriority) {
-        
-        final double fixed = Double.longBitsToDouble(fixedProcessingTimeAverages.get(type));
-        final double variable;
-        if (size > 0L) {
-            
-            variable = Double.longBitsToDouble(variableProcessingTimeAverages.get(type)) * size;
-        } else {
-            
-            variable = 0L;
-        }
-        
-        final double waiting;
+    double estimateWaitingTime(final boolean hasPriority) {
+                
         if (hasPriority) {
             
-            waiting = estimatePriorityWaitingTime();
+            return estimatePriorityWaitingTime();
         } else {
             
-            waiting = estimateWaitingTime();
+            return estimateWaitingTime();
         }
-        
-        final double result = fixed + variable + waiting;
-        
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "Estimated response time for type (%d) @size %d with %s " +
-        		"priority: %.4f fixed + %.4f variable + %.4f waiting = %.4f", type, size, 
-        		String.valueOf(hasPriority), fixed, variable, waiting, result);
-        
-        return result;
     }
     
     void enterRequest(int type, long size, boolean hasPriority, boolean isInternalRequest) {
