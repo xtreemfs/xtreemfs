@@ -267,7 +267,7 @@ final class ProtectionAlgorithmCore {
     @Override
     public String toString() {
         
-        final StringBuilder builder = new StringBuilder();
+        final StringBuilder builder = new StringBuilder("StageID: " + id + "\n");
         
         builder.append("Monitor state:\n");
         builder.append(monitor.toString() + "\n");
