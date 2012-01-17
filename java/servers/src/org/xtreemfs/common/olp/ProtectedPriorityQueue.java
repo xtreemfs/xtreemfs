@@ -131,12 +131,9 @@ class ProtectedPriorityQueue<R extends AugmentedRequest> implements StageQueue<R
             final double lowProcessingEstimation = low.peek().getRequest().getEstimatedRemainingProcessingTime();
             boolean favorLowPriority = true;
             Iterator<OLPStageRequest<R>> iter = high.iterator();
-            String slackTimes = "";
             while (iter.hasNext() && favorLowPriority) {
                 
-                double st = iter.next().getRequest().getSlackTime();
-                slackTimes += st + ", ";
-                favorLowPriority &= st > lowProcessingEstimation;
+                favorLowPriority &= iter.next().getRequest().getSlackTime() > lowProcessingEstimation;
             }
             
             if (favorLowPriority) {

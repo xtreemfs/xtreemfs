@@ -145,8 +145,7 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
      */
     private OverloadProtectedStage(String name, ProtectionAlgorithmCore olp, long period, 
                                    boolean enablePriorityRequests) {
-        super(name, (enablePriorityRequests) ? new ProtectedPriorityQueue<R>(olp) : 
-                                               new SimpleProtectedQueue<R>(olp), period);
+        super(name, new ProtectedPriorityQueue<R>(olp));
         
         this.olp = olp;
     }
