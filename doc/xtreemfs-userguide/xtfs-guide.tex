@@ -1567,44 +1567,44 @@ Like many other file systems, XtreemFS supports the concept of volumes. A volume
 \subsection{Creating Volumes}
 \label{sec:create_volume}
 
-Volumes can be created with the \texttt{mkfs.xtreemfs} command line utility. Please see \texttt{man mkfs.xtreemfs} for a full list of options and usage\index{Create Volume}\index{Volume!Create}\index{mkfs.xtreemfs}\index{mkfs.xtreemfs}.
+Volumes can be created with the \texttt{mkfs.xtreemfs} command line utility. Please see \texttt{mkfs.xtreemfs ----help} or \texttt{man mkfs.xtreemfs} for a full list of options and usage\index{Create Volume}\index{Volume!Create}\index{mkfs.xtreemfs}.
 
-When creating a volume, it is recommended to specify the authorization policy (see Sec. \ref{sec:access_policies}). If not specified, POSIX permissions/ACLs will be chosen by default. Unlike most other policies, authorization policies cannot be changed afterwards.
+When creating a volume, you can specify the authorization policy (see Sec. \ref{sec:access_policies}) with the option \texttt{----access-control-policy} (respectively \texttt{--a}). If not specified, POSIX permissions/ACLs will be chosen by default. Unlike most other policies, authorization policies cannot be changed afterwards.
 
-In addition, it is recommended to set a default striping policy (see Sec. \ref{sec:striping_policies}). If no per-file or per-directory default striping policy overrides the volume's default striping policy, the volume's policy is assigned to all newly created files. If no volume policy is explicitly defined when creating a volume, a RAID0 policy with a stripe size of 128kB and a width of 1 will be used as the default policy.
+In addition, it is possible to set a default striping policy (see Sec. \ref{sec:striping_policies}). If no per-file or per-directory default striping policy overrides the volume's default striping policy, the volume's policy is assigned to all newly created files. If no volume policy is explicitly defined when creating a volume, a RAID0 policy with a stripe size of 128kB and a width of 1 will be used as the default policy.
 
-A volume with a POSIX permission model, a stripe size of 256kB and a stripe width of 1 (i.e.\ all stripes will reside on the same OSD) can be created as follows:
+A volume with the default options (POSIX permission model, a stripe size of 128 kB and a stripe width of 1 (i.e.\ all stripes will reside on the same OSD)) can be created as follows:
 
 
 \begin{verbatim}
-$> mkfs.xtreemfs -a POSIX -p RAID0 -s 256 -w 1 \
-   my-mrc-host.com:32636/myVolume
+$> mkfs.xtreemfs my-mrc-host.com/myVolume
 \end{verbatim}
 
 Creating a volume may require privileged access, which depends on whether an administrator password is required by the MRC. To pass an administrator password, add \texttt{----admin\_password <password>} to the \texttt{mkfs.xtreemfs} command.
 
-For a complete list of parameters, please refer to the \texttt{mkfs.xtreemfs} man page.
+For a complete list of parameters, please refer to \texttt{mkfs.xtreemfs ----help} or the \texttt{man mkfs.xtreemfs} man page.
 
 \subsection{Deleting Volumes}
 
-Volumes can be deleted with the \texttt{rmfs.xtreemfs} tool. Deleting a volume implies that \emph{any data, i.e.\ all files and directories on the volume are irrecoverably lost}! Please see \texttt{man rmfs.xtreemfs} for a full list of options and usage\index{Delete Volume}\index{Volume!Delete}\index{rmfs.xtreemfs}\index{rmfs.xtreemfs}. Please also note that \texttt{rmfs.xtreemfs} does not dispose of file contents on the OSD. To reclaim storage space occupied by the volume, it is therefore necessary to either remove all files from the volume before deleting it, or to run the cleanup tool (see Section \ref{sec:scrubber_cleanup}).
+Volumes can be deleted with the \texttt{rmfs.xtreemfs} tool. Deleting a volume implies that \emph{any data, i.e.\ all files and directories on the volume are irrecoverably lost}! Please see \texttt{rmfs.xtreemfs ----help} or \texttt{man rmfs.xtreemfs} for a full list of options and usage\index{Delete Volume}\index{Volume!Delete}\index{rmfs.xtreemfs}. Please also note that \texttt{rmfs.xtreemfs} does not dispose of file contents on the OSD. To reclaim storage space occupied by the volume, it is therefore necessary to either remove all files from the volume before deleting it, or to run the cleanup tool (see Section \ref{sec:scrubber_cleanup}).
 
-The volume \texttt{myVolume} residing on the MRC \texttt{my-mrc-host.com:32636} can e.g.\ be deleted as follows:
+The volume \texttt{myVolume} residing on the MRC \texttt{my-mrc-host.com} (listening at the default port) can e.g.\ be deleted as follows:
 
 \begin{verbatim}
-$> rmfs.xtreemfs my-mrc-host.com:32636/myVolume
+$> rmfs.xtreemfs my-mrc-host.com/myVolume
 \end{verbatim}
 
 Volume deletion is restricted to volume owners and privileged users. Similar to \texttt{mkfs.xtreemfs}, an administrator password can be specified if required.
 
 \subsection{Listing all Volumes}
 
-A list of all volumes can be displayed with the \texttt{lsfs.xtreemfs} tool. All volumes hosted by the MRC \texttt{my-mrc-host.com:32636} can be listed as follows:
+A list of all volumes can be displayed with the \texttt{lsfs.xtreemfs} tool. All volumes hosted by the MRC \texttt{my-mrc-host.com} (listening at the default port) can be listed as follows:
 
 \begin{verbatim}
-$> lsfs.xtreemfs my-mrc-host.com:32636
+$> lsfs.xtreemfs my-mrc-host.com
 \end{verbatim}
 
+The listing of available volumes is restricted to volume owners and privileged users. Similar to \texttt{mkfs.xtreemfs}, an administrator password can be specified if required.
 
 \section{Accessing Volumes}
 \label{sec:mount_vol}
@@ -1613,7 +1613,7 @@ Once a volume has been created, it needs to be mounted in order to be accessed.
 
 \subsection{Mounting and Un-mounting}
 
-Before mounting XtreemFS volumes on a Linux machine, please ensure that the FUSE kernel module is loaded.\index{Volume!Mount}\index{Mount}\index{mount.xtreemfs}\index{mount.xtreemfs} Please check your distribution's manual to see if users must be in a special group (e.g. \texttt{trusted} in openSuSE) to be allowed to mount FUSE file systems.
+Before mounting XtreemFS volumes on a Linux machine, please ensure that the FUSE kernel module is loaded.\index{Volume!Mount}\index{Mount}\index{mount.xtreemfs} Please check your distribution's manual to see if users must be in a special group (e.g. \texttt{trusted} in openSuSE) to be allowed to mount FUSE file systems.
 
 
 \begin{verbatim}
@@ -1632,19 +1632,19 @@ $> mount.xtreemfs remote.dir.machine/myVolume /xtreemfs
 \end{verbatim}
 
 
-\texttt{remote.dir.machine} describes the host with the Directory Service at which the volume is registered; \texttt{myVolume} is the name of the volume to be mounted. \texttt{/xtreemfs} is the directory on the local file system to which the XtreemFS volume will be mounted. For more options, please refer to \texttt{man mount.xtreemfs}.
+\texttt{remote.dir.machine} describes the host with the Directory Service at which the volume is registered; \texttt{myVolume} is the name of the volume to be mounted. \texttt{/xtreemfs} is the directory on the local file system to which the XtreemFS volume will be mounted. For more options, please refer to \texttt{mount.xtreemfs ----help} or \texttt{man mount.xtreemfs}.
 
 Please be aware that the Directory Service URL needs to be provided when mounting a volume, while MRC URLs are used to create volumes.
 
-When mounting a volume, the client will immediately go into background and won't display any error messages. Use the \texttt{-f} option to prevent the mount process from going into background and get all error messages printed to the console. Alternatively, you can use the \texttt{xtfsutil} to print the last 20 errors for a mounted volume.
+When mounting a volume, the client will immediately go into background and won't display any error messages. Use the \texttt{-f} option to prevent the mount process from going into background and get all error messages printed to the console. Alternatively, you can execute \texttt{xtfsutil ----errors <mount point>} to print the last 20 errors for a mounted volume.
 
 To check that a volume is mounted, use the \texttt{mount} command. It outputs a list of all mounts in the system. XtreemFS volumes are listed as \texttt{type fuse}:
 
 \begin{verbatim}
-xtreemfs@localhost:32638/xtreemfs on /xtreemfs type fuse (...)
+xtreemfs@localhost/xtreemfs on /xtreemfs type fuse (...)
 \end{verbatim}
 
-Volumes are unmounted with the \texttt{umount.xtreemfs} tool\index{Volume!Un-mount}\index{Unmount}\index{umount.xtreemfs}\index{umount.xtreemfs}:
+Volumes are unmounted with the \texttt{umount.xtreemfs} tool\index{Volume!Un-mount}\index{Unmount}\index{umount.xtreemfs}:
 
 \begin{verbatim}
 $> umount.xtreemfs /xtreemfs
@@ -1659,12 +1659,14 @@ $> umount /xtreemfs
 
 Access to a FUSE mount is usually restricted to the user who mounted the volume. To allow the root user or any other user on the system to access the mounted volume, the FUSE options \texttt{-o allow\_root} and \texttt{-o allow\_other} can be used with \texttt{mount.xtreemfs}. They are, however, mutually exclusive. In order to use these options, the system administrator must create a FUSE configuration file \texttt{/etc/fuse.conf} and add a line\index{allow\_others option}\index{allow\_root option}\index{user\_allow\_other option} \texttt{user\_allow\_other}.
 
-By default, the local system cache on the client machine will be used to speed up read access to XtreemFS. In particular, using the cache as a local buffer is necessary to support the \texttt{mmap} system call, which - amongst others - is required to execute applications on Linux. On the other hand, using buffered I/O may adversely affect throughput when writing large files, as FUSE $\leq$ 2.7 splits up large writes into multiple individual 4k (page size) writes. In addition, it limits the consistency model of client caches to ``close-to-open'', which is similar to the model provided by NFS. Buffered I/O can be switched off by adding the \texttt{-o direct\_io} parameter. The parameter effects that all read and write operations are directed to their OSDs instead of being served from local caches.
+By default, the local system cache on the client machine will be used to speed up read access to XtreemFS. In particular, using the cache as a local buffer is necessary to support the \texttt{mmap} system call, which - amongst others - is required to execute applications on Linux. Additionally, it enables the read-ahead functionality of Fuse and does speed up sequential reads, especially in presence of high latencies. If the local system cache is not disabled, the consistency model of client caches is limited to ``close-to-open'', which is similar to the model provided by NFS. Buffered I/O can be switched off by adding the \texttt{-o direct\_io} parameter. The parameter effects that all read and write operations are directed to their OSDs instead of being served from local caches. Enabling \texttt{-o direct\_io} might be also necessary if you rely on interruption support of read requests in Linux. Please see \href{http://code.google.com/p/xtreemfs/issues/detail?id=229}{issue 229} for more details.
 
 
 \section{Troubleshooting}
 
-Different kinds of problems may occur when trying to create, mount or access files in a volume. If no log file was specified, the client will create a logfile called \texttt{mount.xtreemfs.log} in the current working directory. This logfile is only created in case of an error message. In case no useful error message is printed on the console or in the logfile, it may help to enable client-side log output. This can be done as follows:
+Different kinds of problems may occur when trying to create, mount or access files in a volume. By default errors are logged to the console. Once \texttt{mount.xtreemfs} moved into background, use \texttt{xtfsutil ----errors <mount point>} to print the last 20 errors for a mounted volume. Additionally, the tools \texttt{mkfs.xtreemfs}, \texttt{rmfs.xtreemfs}, \texttt{lsfs.xtreemfs} and \texttt{mount.xtreemfs} allow to log error messages to a logfile which has to be specified by the \texttt{--l} option. Use the \texttt{--d} option to specify the minimum severity of to be logged events.
+
+For quickly identifying problems and testing, we recommend to run the client \texttt{mount.xtreemfs} in the foreground (option \texttt{--f}) and increase the debugging level (option \texttt{--d}). This can be done as follows:
 
 \begin{verbatim}
 $> mount.xtreemfs -f -d DEBUG remote.dir.machine/myVolume /xtreemfs
@@ -1686,10 +1688,10 @@ The following list contains the most common problems and their solutions.
 
 \begin{tabular}{lp{10cm}}
  \textbf{Problem}  & \textbf{An I/O error occurs when trying to create new files.} \\
- \textbf{Solution} & In general, you can check the contents of the client log file to see the error which caused the I/O error. A common reason for this problem is that no OSD could be assigned to the new file. Please check if suitable OSDs are available for the volume. There are two alternative ways to do this:
+ \textbf{Solution} & In general, you can check the output of \texttt{xtfsutil ----errors <mount point>} to see the error which caused the I/O error. A common reason for this problem is that no OSD could be assigned to the new file. Please check if suitable OSDs are available for the volume. There are two alternative ways to do this:
    \begin{itemize}
+     \item Execute \texttt{xtfsutil <mountpoint>}.
      \item Open the MRC status page. It can be accessed via \texttt{http://<MRC-host>:30636} in the default case. For each volume, a list of suitable OSDs is shown there.
-     \item Execute \texttt{getfattr -n xtreemfs.usable\_osds ----only-values <mountpoint>}.
    \end{itemize}
  There may be different reasons for missing suitable OSDs:
    \begin{itemize}
@@ -1703,7 +1705,7 @@ The following list contains the most common problems and their solutions.
  \textbf{Problem}  & \textbf{An I/O error occurs when trying to access an existing file.}\\
  \textbf{Solution} & Please check whether all OSDs assigned to the file are running and reachable. This can be done as follows:
     \begin{enumerate}
-     \item Get the list of all OSDs for the file: \texttt{getfattr -n xtreemfs.locations ----only-values <file>}.
+     \item Get the list of all OSDs for the file: \texttt{xtfsutil <file>}.
      \item Check whether the OSDs in (one of) all replicas in the list are running and reachable, e.g.\ by opening the status pages or via \texttt{telnet <host> <port>}.
     \end{enumerate}
 \end{tabular}
