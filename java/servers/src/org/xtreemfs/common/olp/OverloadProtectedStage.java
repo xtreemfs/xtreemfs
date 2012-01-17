@@ -145,8 +145,9 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
      */
     private OverloadProtectedStage(String name, ProtectionAlgorithmCore olp, long period, 
                                    boolean enablePriorityRequests) {
-        super(name, (enablePriorityRequests) ? new ProtectedPriorityQueue<R>(olp) : 
-                                               new SimpleProtectedQueue<R>(olp), period);
+        super(name, new ProtectedPriorityQueue<R>(olp));
+                //(enablePriorityRequests) ? new ProtectedPriorityQueue<R>(olp) : 
+                //                               new SimpleProtectedQueue<R>(olp), period);
         
         this.olp = olp;
     }
@@ -161,22 +162,6 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
         
         this.olp.addPerformanceInformationReceiver(performanceInformationReceiver);
         this.initialPredecessors = performanceInformationReceiver;
-    }
-    
-    /**
-     * <p>Hidden constructor initializing a stage with the given name and the already initialized Overload-protection 
-     * algorithm.</p>
-     * 
-     * @param name - of the stage.
-     * @param olp - the initialized algorithm.
-     * @param performanceInformationReceiver - receiver of performance information concerning this component.
-     */
-    private OverloadProtectedStage(String name, ProtectionAlgorithmCore olp, 
-            PerformanceInformationReceiver[] performanceInformationReceiver) {
-        super(name, new SimpleProtectedQueue<R>(olp));
-        
-        this.initialPredecessors = performanceInformationReceiver;
-        this.olp = olp;
     }
     
     /* (non-Javadoc)

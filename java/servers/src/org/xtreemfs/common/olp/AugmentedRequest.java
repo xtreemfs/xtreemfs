@@ -47,7 +47,7 @@ public abstract class AugmentedRequest {
     /**
      * <p>Flag to determine whether this request has high priority or not.</p>
      */
-    private boolean             highPriority;
+    private final boolean       highPriority;
     
     /**
      * <p>Constructor for requests that do not require a certain amount of bandwidth for being
@@ -126,13 +126,6 @@ public abstract class AugmentedRequest {
     public boolean hasHighPriority() {
         
         return highPriority;
-    }
-        
-    void setPriority() {
-        
-        assert (!highPriority);
-        
-        highPriority = true;
     }
     
     /**

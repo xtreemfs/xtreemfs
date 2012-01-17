@@ -142,10 +142,6 @@ class ProtectedPriorityQueue<R extends AugmentedRequest> implements StageQueue<R
             if (favorLowPriority) {
                 
                 result = low.poll();
-                olp.depart(result, true);
-                R rq = result.getRequest();
-                rq.setPriority();
-                olp.obtainAdmission(rq.getType(), result.getSize(), true, rq.isNativeInternalRequest());
                 for (OLPStageRequest<R> stageRequest : high) {
                     
                     stageRequest.getRequest().decreaseSlackTime(lowProcessingEstimation);
