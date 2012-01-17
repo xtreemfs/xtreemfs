@@ -124,7 +124,7 @@ class ProtectedPriorityQueue<R extends AugmentedRequest> implements StageQueue<R
             wait(timeout);
         }
         
-        OLPStageRequest<R> result;
+        final OLPStageRequest<R> result;
         if (low.size() > 0 && high.size() > 0) {
             
             // check the potentially outdistanced high priority requests 
@@ -150,7 +150,7 @@ class ProtectedPriorityQueue<R extends AugmentedRequest> implements StageQueue<R
 
         } else {
             
-            result = (low.size() > 0) ? low.poll() : high.poll();
+            result = (high.size() > 0) ? high.poll() : low.poll();
         }
         
         return (S) result;

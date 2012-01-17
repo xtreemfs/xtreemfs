@@ -13,65 +13,55 @@ import java.util.concurrent.atomic.AtomicLongArray;
 import org.xtreemfs.common.olp.Monitor.PerformanceMeasurementListener;
 
 /**
- * 
  * <p>Methods of this class are not thread safe, because processing of a request is assumed to 
  * be single threaded.</p>
  * 
  * @author fx.langner
- * @version 1.01, 08/25/11
+ * @version 1.00, 01/17/12
  */
-class Controller implements PerformanceMeasurementListener {
-    
-    /**
-     * <p>Composition of external requests queued at the controlled stage (including high priority requests).</p>
-     */
-    private final AtomicIntegerArray              queueComposition;
-    /**
-     * <p>Processing volume according to the composition of external requests (including high priority requests).</p>
-     */
-    private final AtomicLongArray                 queueBandwidthComposition;
+abstract class Controller implements PerformanceMeasurementListener{
 
-    /**
-     * <p>Composition of external high-priority requests queued at the controlled stage only.</p>
-     */
-    private final AtomicIntegerArray              priorityQueueComposition;
-    /**
-     * <p>Processing volume according to the composition of external high-priority requests.</p>
-     */
-    private final AtomicLongArray                 priorityQueueBandwidthComposition;
-    
     /**
      * <p>Stage-specific processing time averages for external requests at the stage.</p>
      */
-    private final AtomicLongArray                 fixedProcessingTimeAverages;
+    protected final AtomicLongArray                 fixedProcessingTimeAverages;
     /**
      * <p>Stage-specific processing time averages for external requests at the stage depending on their data volume.
      * </p>
      */
-    private final AtomicLongArray                 variableProcessingTimeAverages;
+    protected final AtomicLongArray                 variableProcessingTimeAverages;
     
+    /**
+     * <p>Composition of external requests queued at the controlled stage (including high priority requests).</p>
+     */
+    private final AtomicIntegerArray                queueComposition;
+    /**
+     * <p>Processing volume according to the composition of external requests (including high priority requests).</p>
+     */
+    private final AtomicLongArray                   queueBandwidthComposition;
+
     /**
      * <p>Composition of internal requests queued at the controlled stage.</p>
      */
-    private final AtomicIntegerArray              internalQueueComposition;
+    private final AtomicIntegerArray                internalQueueComposition;
     /**
      * <p>Processing volume according to the composition of internal requests.</p>
      */
-    private final AtomicLongArray                 internalQueueBandwidthComposition;
+    private final AtomicLongArray                   internalQueueBandwidthComposition;
     
     /**
      * <p>Stage-specific processing time averages for internal requests at the stage.</p>
      */
-    private final AtomicLongArray                 internalFixedProcessingTimeAverages;
+    private final AtomicLongArray                   internalFixedProcessingTimeAverages;
     /**
      * <p>Stage-specific processing time averages for internal requests at the stage depending on their data volume.</p>
      */
-    private final AtomicLongArray                 internalVariableProcessingTimeAverages;
+    private final AtomicLongArray                   internalVariableProcessingTimeAverages;
     
     /**
      * <p>{@link PerformanceInformation} of external requests that will pass subsequent stages.</p>
      */
-    private final SuccessorPerformanceInformation successorPerformanceInformation;
+    protected final SuccessorPerformanceInformation successorPerformanceInformation;
     
     /**
      * 
@@ -83,8 +73,6 @@ class Controller implements PerformanceMeasurementListener {
         
         queueComposition = new AtomicIntegerArray(numTypes);
         queueBandwidthComposition = new AtomicLongArray(numTypes);
-        priorityQueueComposition = new AtomicIntegerArray(numTypes);
-        priorityQueueBandwidthComposition = new AtomicLongArray(numTypes);
         
         fixedProcessingTimeAverages = new AtomicLongArray(numTypes);
         variableProcessingTimeAverages = new AtomicLongArray(numTypes);
@@ -97,39 +85,6 @@ class Controller implements PerformanceMeasurementListener {
         
         successorPerformanceInformation = new SuccessorPerformanceInformation(numTypes, numSubsequentStages);
     }
-      
-    /**
-     * <p>Calculates the pure processing time of a request given by its size and type.
-     * 
-     * @param type
-     * @param size
-     * @return the estimated processing time for the given request.
-     */
-    double estimateProcessingTime(int type, long size) {
-                
-        return Double.longBitsToDouble(fixedProcessingTimeAverages.get(type)) + 
-               ((size > 0L) ? Double.longBitsToDouble(variableProcessingTimeAverages.get(type)) * size : 0L);
-    }
-    
-    /**
-     * <p>Calculates response time for a request regarding its priority and utilization of the service 
-     * obtained from the composition and average processing times of requests currently responded by the service.</p> 
-     * 
-     * @param processingTime
-     * @param hasPriority
-     * 
-     * @return the estimated response time for the given request.
-     */
-    double estimateWaitingTime(final boolean hasPriority) {
-                
-        if (hasPriority) {
-            
-            return estimatePriorityWaitingTime();
-        } else {
-            
-            return estimateWaitingTime();
-        }
-    }
     
     void enterRequest(int type, long size, boolean hasPriority, boolean isInternalRequest) {
         
@@ -141,12 +96,6 @@ class Controller implements PerformanceMeasurementListener {
             
             queueComposition.incrementAndGet(type);
             queueBandwidthComposition.addAndGet(type, size);
-            
-            if (hasPriority) {
-                
-                priorityQueueComposition.incrementAndGet(type);
-                priorityQueueBandwidthComposition.addAndGet(type, size);
-            }
         }
     }
     
@@ -165,20 +114,7 @@ class Controller implements PerformanceMeasurementListener {
             assert(check >= 0);
             check = queueBandwidthComposition.addAndGet(type, -size);
             assert(check >= 0);
-            
-            if (hasPriority) {
-                
-                check = priorityQueueComposition.decrementAndGet(type);
-                assert(check >= 0);
-                check = priorityQueueBandwidthComposition.addAndGet(type, -size);
-                assert(check >= 0);
-            }
         }
-    }
-    
-    void updateSuccessorInformation(PerformanceInformation performanceInformation) {
-        
-        successorPerformanceInformation.updatePerformanceInformation(performanceInformation);
     }
     
     /**
@@ -201,10 +137,41 @@ class Controller implements PerformanceMeasurementListener {
         return new PerformanceInformation(id, 
                                           fixedProcessingTime, 
                                           variableProcessingTime, 
-                                          estimateWaitingTime(fixedProcessingTime, variableProcessingTime),
-                                          estimatePriorityWaitingTime(fixedProcessingTime, variableProcessingTime));
+                                          estimateWaitingTime(fixedProcessingTime, variableProcessingTime));
     }
-
+    
+    final void updateSuccessorInformation(PerformanceInformation performanceInformation) {
+        
+        successorPerformanceInformation.updatePerformanceInformation(performanceInformation);
+    }
+    
+    /**
+     * <p>Calculates response time for a request regarding its priority and utilization of the service 
+     * obtained from the composition and average processing times of requests currently responded by the service.</p> 
+     * 
+     * @param processingTime
+     * @param hasPriority
+     * 
+     * @return the estimated response time for the given request.
+     */
+    double estimateWaitingTime(final boolean hasPriority) {
+        
+        return estimateWaitingTime();
+    }
+    
+    /**
+     * <p>Calculates the pure processing time of a request given by its size and type.
+     * 
+     * @param type
+     * @param size
+     * @return the estimated processing time for the given request.
+     */
+    final double estimateProcessingTime(int type, long size) {
+        
+        return Double.longBitsToDouble(fixedProcessingTimeAverages.get(type)) + 
+        ((size > 0L) ? Double.longBitsToDouble(variableProcessingTimeAverages.get(type)) * size : 0L);
+    }
+    
 /*
  * methods to be accessed by the Monitor
  */
@@ -241,10 +208,10 @@ class Controller implements PerformanceMeasurementListener {
             variableProcessingTimeAverages.set(type, 
                     Double.doubleToLongBits(value + successorPerformanceInformation.getVariableProcessingTime(type)));
         }
-    }
+    }    
     
 /*
- * private methods
+ * private
  */
     
     /**
@@ -260,15 +227,13 @@ class Controller implements PerformanceMeasurementListener {
             
             double avg = Double.longBitsToDouble(fixedProcessingTimeAverages.get(i));
             long rqs = queueComposition.get(i);
-            long pRqs = priorityQueueComposition.get(i);
             
-            result += avg * (rqs + pRqs);
+            result += avg * rqs;
             
             avg = Double.longBitsToDouble(variableProcessingTimeAverages.get(i));
             rqs = queueBandwidthComposition.get(i);
-            pRqs = priorityQueueBandwidthComposition.get(i);
             
-            result += avg * (rqs + pRqs);
+            result += avg * rqs;
         }
         
         final int numInternalTypes = internalFixedProcessingTimeAverages.length();
@@ -289,30 +254,6 @@ class Controller implements PerformanceMeasurementListener {
     }
     
     /**
-     * @return the estimated waiting time for a high-priority request approaching the stage.
-     */
-    private double estimatePriorityWaitingTime() {
-        
-        double result = successorPerformanceInformation.getPriorityWaitingTime();
-        
-        final int numTypes = fixedProcessingTimeAverages.length();
-        for (int i = 0; i < numTypes; i++) {
-            
-            double avg = Double.longBitsToDouble(fixedProcessingTimeAverages.get(i));
-            long rqs = priorityQueueComposition.get(i);
-            
-            result += avg * rqs;
-            
-            avg = Double.longBitsToDouble(variableProcessingTimeAverages.get(i));
-            rqs = priorityQueueBandwidthComposition.get(i);
-            
-            result += avg * rqs;
-        }
-        
-        return result;
-    }
-    
-    /**
      * @param fixedProcessingTime
      * @param variableProcessingTime
      * @return estimated waiting time for the given state (includes estimations for priority and internal requests).
@@ -324,9 +265,8 @@ class Controller implements PerformanceMeasurementListener {
         final int numTypes = fixedProcessingTime.length;
         for (int i = 0; i < numTypes; i++) {
             
-            result += fixedProcessingTime[i] * (queueComposition.get(i) + priorityQueueComposition.get(i));
-            result += variableProcessingTime[i] * 
-                      (queueBandwidthComposition.get(i) + priorityQueueBandwidthComposition.get(i));
+            result += fixedProcessingTime[i] * queueComposition.get(i);
+            result += variableProcessingTime[i] * queueBandwidthComposition.get(i);
         }
         
         final int numInternalTypes = internalFixedProcessingTimeAverages.length();
@@ -341,26 +281,8 @@ class Controller implements PerformanceMeasurementListener {
         return result;
     }
     
-    /**
-     * @param fixedProcessingTime
-     * @param variableProcessingTime
-     * @return estimated waiting time for the given state
-     */
-    private double estimatePriorityWaitingTime(double[] fixedProcessingTime, double[] variableProcessingTime) {
-        
-        double result = successorPerformanceInformation.getPriorityWaitingTime();
-        
-        final int numTypes = fixedProcessingTime.length;
-        for (int i = 0; i < numTypes; i++) {
-            
-            result += fixedProcessingTime[i] * priorityQueueComposition.get(i);
-            result += variableProcessingTime[i] * priorityQueueBandwidthComposition.get(i);
-        }
-        
-        return result;
-    }
-    
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
      * @see java.lang.Object#toString()
      */
     @Override
@@ -435,26 +357,6 @@ class Controller implements PerformanceMeasurementListener {
         }
         for (int i = 0; i < numInternalTypes; i++) {
             builder.append(internalQueueBandwidthComposition.get(i) + "\t");
-        }
-        builder.append("\n\n");
-        
-        builder.append("Priority queue composition (external/internal):\n");
-        for (int i = 0; i < numTypes; i++) {
-            builder.append(i + "\t");
-        }
-        builder.append("\n");
-        for (int i = 0; i < numTypes; i++) {
-            builder.append(priorityQueueComposition.get(i) + "\t");
-        }
-        builder.append("\n\n");
-        
-        builder.append("Queue bandwidth composition (external/internal):\n");
-        for (int i = 0; i < numTypes; i++) {
-            builder.append(i + "\t");
-        }
-        builder.append("\n");
-        for (int i = 0; i < numTypes; i++) {
-            builder.append(priorityQueueBandwidthComposition.get(i) + "\t");
         }
         builder.append("\n\n");
         

@@ -131,7 +131,7 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
             int numSubsequentStages, boolean[] unrefusableTypes, long period, boolean enablePriorityRequests) {
         
         this(stageName, new ProtectionAlgorithmCore(stageId, numTypes, numInternalTypes, numSubsequentStages, 
-                unrefusableTypes), period, false);
+                unrefusableTypes, enablePriorityRequests), period, enablePriorityRequests);
     }
     
     /**
