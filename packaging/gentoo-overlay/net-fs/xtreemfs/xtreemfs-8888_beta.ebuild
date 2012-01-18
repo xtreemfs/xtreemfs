@@ -48,6 +48,10 @@ src_install() {
 	insinto /etc/xtreemfs/
 	doins "${S}"/etc/xos/xtreemfs/*.properties
 
+	insinto /etc/xtreemfs/server-repl-plugin/
+	doins "${S}"contrib/server-repl-plugin/config/dir.properties
+	doins "${S}"contrib/server-repl-plugin/config/mrc.properties
+
 	keepdir /var/log/xtreemfs/ /var/run/xtreemfs/
 
 	into /usr/
@@ -67,6 +71,13 @@ src_install() {
 
 	java-pkg_jarinto /usr/share/${PN}/java/foundation/dist
 	java-pkg_dojar java/foundation/dist/Foundation.jar
+
+	java-pkg_jarinto /usr/share/${PN}/server-repl-plugin/lib
+	java-pkg_dojar contrib/server-repl-plugin/lib/Flease.jar contrib/server-repl-plugin/lib/PBRPC.jar contrib/server-repl-plugin/lib/protobuf-java-2.3.0.jar
+
+	java-pkg_jarinto /usr/share/${PN}/server-repl-plugin/
+	java-pkg_dojar contrib/server-repl-plugin/replication.jar
+
 
 	# Set the XTREEMFS environment variable
 	echo -n "XTREEMFS=/usr/share/${PN}" > "${T}/90xtreemfs"
