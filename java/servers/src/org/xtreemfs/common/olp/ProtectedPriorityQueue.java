@@ -41,7 +41,7 @@ class ProtectedPriorityQueue<R extends AugmentedRequest> implements StageQueue<R
      * <p>The interface to the Overload-Protection algorithm.</p>
      */
     private final ProtectionAlgorithmCore   olp;
-    
+        
     /**
      * <p>Initializes an empty queue with Overload-Protection enabled.</p>
      * 
@@ -65,6 +65,7 @@ class ProtectedPriorityQueue<R extends AugmentedRequest> implements StageQueue<R
         try {
             
             if (!rq.isRecycled()) {
+                
                 olp.hasAdmission(request, rq.getSize());
             }
             olp.obtainAdmission(request.getType(), rq.getSize(), hasPriority, request.isNativeInternalRequest());
@@ -128,21 +129,18 @@ class ProtectedPriorityQueue<R extends AugmentedRequest> implements StageQueue<R
         if (low.size() > 0 && high.size() > 0) {
             
             // check the potentially outdistanced high priority requests 
-            final double lowProcessingEstimation = low.peek().getRequest().getEstimatedRemainingProcessingTime();
+            final double lowProcessingEstimation = olp.estimateStageProcessingTime(low.peek());
             boolean favorLowPriority = true;
             Iterator<OLPStageRequest<R>> iter = high.iterator();
+            long time = System.currentTimeMillis();
             while (iter.hasNext() && favorLowPriority) {
                 
-                favorLowPriority &= iter.next().getRequest().getSlackTime() > lowProcessingEstimation;
+                favorLowPriority &= iter.next().getRequest().getSlackTime(time) > lowProcessingEstimation;
             }
             
             if (favorLowPriority) {
                 
                 result = low.poll();
-                for (OLPStageRequest<R> stageRequest : high) {
-                    
-                    stageRequest.getRequest().decreaseSlackTime(lowProcessingEstimation);
-                }
             } else {
                 
                 result = high.poll();
@@ -183,7 +181,7 @@ class ProtectedPriorityQueue<R extends AugmentedRequest> implements StageQueue<R
             builder.append(rq.toString() + "\n");
         }
         builder.append("\n");
-        
+               
         return builder.toString();
     }
 }

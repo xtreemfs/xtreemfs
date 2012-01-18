@@ -12,14 +12,14 @@ package org.xtreemfs.common.olp;
  * before average-calculation.</p>
  * 
  * @author fx.langner
- * @version 1.00, 09/08/11
+ * @version 1.01, 09/08/11
  */
 class AdvancedMonitor extends Monitor {
         
     /**
-     * <p>Time in ms for the difference between two measurement averages.</p>
+     * <p>Time in ms for the difference between two measurement averages. (1 µs)</p>
      */
-    private final static double  AVERAGE_DIFFERENCE_THRESHOLD = 1.0;
+    private final static double  AVERAGE_DIFFERENCE_THRESHOLD = 0.001;
     
     /**
      * <p>Factor of the difference between two measurement averages.</p>

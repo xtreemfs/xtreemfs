@@ -21,27 +21,27 @@ public abstract class StageRequest<R> {
     /**
      * <p>Identifier for the logic to use to process the request.</p>
      */
-    private int      stageMethodId;
+    private int       stageMethodId;
     
     /**
      * <p>A callback for the postprocessing of the request.</p>
      */
-    private Callback callback;
+    private Callback  callback;
     
     /**
      * <p>Additional arguments for the request.</p>
      */
-    private Object[] args;
+    private Object[]  args;
     
     /**
      * <p>The original request.</p>
      */
-    private final R  request;
+    protected final R request;
     
     /**
      * <p>Flag that determines if this stage request is being recycled, or not.
      */
-    private boolean  recycled = false;
+    private boolean   recycled = false;
     
     /**
      * <p>Constructor to initialize the wrapper with all necessary information.</p>

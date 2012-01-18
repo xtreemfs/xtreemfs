@@ -25,11 +25,21 @@ final class Controller implements PerformanceMeasurementListener{
      * <p>Stage-specific processing time averages for external requests at the stage.</p>
      */
     protected final AtomicLongArray                 fixedProcessingTimeAverages;
+    
+    /**
+     * <p>The monitored fixed processing time measured by this stage.</p>
+     */
+    protected final AtomicLongArray                 monitoredFixedProcessingTimeAverage;
     /**
      * <p>Stage-specific processing time averages for external requests at the stage depending on their data volume.
      * </p>
      */
     protected final AtomicLongArray                 variableProcessingTimeAverages;
+
+    /**
+     * <p>The monitored fixed processing time measured by this stage.</p>
+     */
+    protected final AtomicLongArray                 monitoredVariableProcessingTimeAverage;
     
     /**
      * <p>Composition of external requests queued at the controlled stage (including high priority requests).</p>
@@ -85,6 +95,9 @@ final class Controller implements PerformanceMeasurementListener{
         
         fixedProcessingTimeAverages = new AtomicLongArray(numTypes);
         variableProcessingTimeAverages = new AtomicLongArray(numTypes);
+        
+        monitoredFixedProcessingTimeAverage = new AtomicLongArray(numTypes);
+        monitoredVariableProcessingTimeAverage = new AtomicLongArray(numTypes);
         
         internalQueueComposition = new AtomicIntegerArray(numInternalTypes);
         internalQueueBandwidthComposition = new AtomicLongArray(numInternalTypes);
@@ -176,33 +189,36 @@ final class Controller implements PerformanceMeasurementListener{
      * <p>Calculates response time for a request regarding its priority and utilization of the service 
      * obtained from the composition and average processing times of requests currently responded by the service.</p> 
      * 
-     * @param processingTime
+     * @param type
+     * @param size
      * @param hasPriority
      * 
-     * @return the estimated response time for the given request.
+     * @return the estimated processing time for the given request.
      */
-    double estimateWaitingTime(final boolean hasPriority) {
+    final double estimateProcessingTime(int type, long size, boolean hasPriority) {
         
+        final double result;
         if (hasPriority) {
             
-            return estimatePriorityWaitingTime();
+            result = estimatePriorityWaitingTime();
         } else {
             
-            return estimateWaitingTime();
+            result = estimateWaitingTime();
         }
+        
+        return result + Double.longBitsToDouble(fixedProcessingTimeAverages.get(type)) + 
+               ((size > 0L) ? Double.longBitsToDouble(variableProcessingTimeAverages.get(type)) * size : 0L);
     }
     
     /**
-     * <p>Calculates the pure processing time of a request given by its size and type.
-     * 
      * @param type
      * @param size
-     * @return the estimated processing time for the given request.
+     * @return the estimated processing time for a request given by type and size for the local stage.
      */
-    final double estimateProcessingTime(int type, long size) {
+    final double estimateStageProcessingTime(int type, long size) {
         
-        return Double.longBitsToDouble(fixedProcessingTimeAverages.get(type)) + 
-        ((size > 0L) ? Double.longBitsToDouble(variableProcessingTimeAverages.get(type)) * size : 0L);
+        return Double.longBitsToDouble(monitoredFixedProcessingTimeAverage.get(type)) + 
+               ((size > 0L) ? Double.longBitsToDouble(monitoredVariableProcessingTimeAverage.get(type)) * size : 0L);
     }
     
 /*
@@ -221,6 +237,7 @@ final class Controller implements PerformanceMeasurementListener{
             internalFixedProcessingTimeAverages.set(type, Double.doubleToLongBits(value));
         } else {
             
+            monitoredFixedProcessingTimeAverage.set(type, Double.doubleToLongBits(value));
             fixedProcessingTimeAverages.set(type, 
                     Double.doubleToLongBits(value + successorPerformanceInformation.getFixedProcessingTime(type)));
         }
@@ -238,6 +255,7 @@ final class Controller implements PerformanceMeasurementListener{
             internalVariableProcessingTimeAverages.set(type, Double.doubleToLongBits(value));
         } else {
             
+            monitoredVariableProcessingTimeAverage.set(type, Double.doubleToLongBits(value));
             variableProcessingTimeAverages.set(type, 
                     Double.doubleToLongBits(value + successorPerformanceInformation.getVariableProcessingTime(type)));
         }

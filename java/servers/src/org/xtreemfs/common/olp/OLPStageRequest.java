@@ -55,7 +55,7 @@ public final class OLPStageRequest<R extends AugmentedRequest> extends StageRequ
      * request finishes the processing step.</p>
      */
     private final PerformanceInformationReceiver[] piggybackPerformanceReceiver;
-
+    
     /**
      * <p>Constructor without registering a predecessor for the processing step monitored by this.</p>
      * 

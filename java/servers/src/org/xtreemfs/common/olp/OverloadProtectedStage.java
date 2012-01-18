@@ -11,6 +11,7 @@ import org.xtreemfs.common.stage.AutonomousComponent;
 import org.xtreemfs.common.stage.Callback;
 import org.xtreemfs.common.stage.Stage;
 import org.xtreemfs.common.stage.StageRequest;
+import org.xtreemfs.foundation.logging.Logging;
 
 /**
  * <p>Stage that is protected by overload control.</p>
@@ -220,6 +221,7 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
      */
     public final void enter(int stageMethodId, Object[] args, R request, Callback callback, 
             PerformanceInformationReceiver[] piggybackPerformanceInformationReceiver) {
+        
         enter(0L, stageMethodId, args, request, callback, piggybackPerformanceInformationReceiver);
     }
     
@@ -366,5 +368,6 @@ public abstract class OverloadProtectedStage<R extends AugmentedRequest> extends
         
         olp.shutdown();
         super.shutdown();
+        Logging.logMessage(Logging.LEVEL_INFO, this, "Shutdown complete for: %s", super.toString());
     }
 }

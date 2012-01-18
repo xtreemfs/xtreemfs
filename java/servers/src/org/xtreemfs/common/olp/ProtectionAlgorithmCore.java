@@ -97,6 +97,7 @@ final class ProtectionAlgorithmCore {
      * <p>Method to stop daemons connected with the overload protection algorithm.</p>
      */
     void shutdown() {
+        
         sender.cancel();
         Logging.logMessage(Logging.LEVEL_INFO, this, "Final state of the Overload-Protection Core:\n %s", toString());
     }
@@ -113,25 +114,21 @@ final class ProtectionAlgorithmCore {
         final int type = request.getType();
         if (!request.isNativeInternalRequest() && !request.isUnrefusable() && !unrefusableTypes[type]) {
             
-            final boolean hasPriority = request.hasHighPriority();
             final double remainingProcessingTime = request.getRemainingProcessingTime();
-            final double estProcessingTime = controller.estimateProcessingTime(type, size);
-            final double estWaitingTime = controller.estimateWaitingTime(request.hasHighPriority());
-            final double estTime = estProcessingTime + estWaitingTime;
+            final double estProcessingTime = controller.estimateProcessingTime(type, size, request.hasHighPriority());
             
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Estimated response time for type (%d) @size %d with %s " +
-                    "priority: %.4f processing + %.4f waiting = %.4f", type, size, 
-                    String.valueOf(hasPriority), estProcessingTime, estWaitingTime, estTime);
+                    "priority: %.4f processing time", type, size, 
+                    String.valueOf(request.hasHighPriority()), estProcessingTime);
             
-            if(!actuator.hasAdmission(remainingProcessingTime, estTime)) {
+            if(!actuator.hasAdmission(remainingProcessingTime, estProcessingTime)) {
                 
-                throw new AdmissionRefusedException(request, remainingProcessingTime, estTime);
+                throw new AdmissionRefusedException(request, remainingProcessingTime, estProcessingTime);
             
             // update request meta-data
             } else {
                 
                 request.setEstimatedRemainingProcessingTime(estProcessingTime);
-                request.setSlackTime(remainingProcessingTime - estTime);
             }
         }
     }
@@ -193,6 +190,11 @@ final class ProtectionAlgorithmCore {
             monitor(stageRequest);
             sendPiggybackPerformanceInformation(stageRequest.getPiggybackPerformanceInformationReceiver());
         }
+    }
+    
+    <R extends AugmentedRequest> double estimateStageProcessingTime(OLPStageRequest<R> stageRequest) {
+        
+        return controller.estimateStageProcessingTime(stageRequest.getRequest().getType(), stageRequest.getSize());
     }
     
     /**
