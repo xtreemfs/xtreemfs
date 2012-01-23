@@ -5,26 +5,34 @@
  *
  */
 
-#include <boost/program_options.hpp>
-#include <boost/regex.hpp>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <string>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/types.h>
+#ifndef __sun
 #include <sys/xattr.h>
+#endif  // !__sun
 #include <unistd.h>
-#include <vector>
+
 #include <boost/algorithm/string/case_conv.hpp>
+#include <boost/program_options.hpp>
+#include <boost/regex.hpp>
+#include <fstream>
+#include <string>
+#include <vector>
 
 #include "json/json.h"
+#include "libxtreemfs/version_management.h"
+#include "libxtreemfs/xtreemfs_exception.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 
 using namespace std;
 using namespace boost::program_options;
+namespace style = boost::program_options::command_line_style;
 
-std::string kVersionString = "1.3.0 (RC1, Tasty Tartlet)";
+std::string kVersionString = XTREEMFS_VERSION_STRING;
 
 // Execute an operation via xctl file.
 bool executeOperation(const string& xctl_file,
@@ -48,14 +56,10 @@ bool executeOperation(const string& xctl_file,
     return false;
   }
 
-  // Close and re-open file to avoid cache problems on APPLE.
-  close(fd);
-  fd = open(xctl_file.c_str(), O_RDWR);
-  if (fd == -1) {
-    cerr << "Cannot open xctl file: " << strerror(errno) << endl;
-    unlink(xctl_file.c_str());
-    return false;
-  }
+  // Let Fuse refresh its cached file size - otherwise the read is incomplete.
+  // See Issue 234: http://code.google.com/p/xtreemfs/issues/detail?id=234
+  struct stat stat_temp;
+  stat(xctl_file.c_str(), &stat_temp);
 
   char result[1 << 20];
   int bytes_read = pread(fd, result, (1 << 20) - 1, 0);
@@ -85,7 +89,17 @@ bool executeOperation(const string& xctl_file,
     return false;
   }
   if (!response->isMember("result")) {
-    cerr << "Read invalid JSON from xctl file: " << result << endl;
+    if (string(result) == json_out) {
+      cerr << "xtfsutil read back the same text which was written into the"
+              " pseudo control file: " << result << endl
+           << "This means a file content cache prevents xtfsutil from working"
+              " correctly." << endl;
+#ifdef __sun
+      cerr << "This is a known issue on Solaris." << endl;
+#endif  // __sun
+    } else {
+      cerr << "Read invalid JSON from xctl file: " << result << endl;
+    }
     return false;
   }
   return true;
@@ -99,12 +113,12 @@ string formatBytes(uint64_t bytes) {
     return boost::lexical_cast<string>(bytes/1024) + " kB";
   } else if (bytes < (1 << 30)) {
     return boost::lexical_cast<string>(bytes/(1 << 20)) + " MB";
-  } else if (bytes < (1l << 40)) {
+  } else if (bytes < (1LL << 40)) {
     return boost::lexical_cast<string>(bytes/(1 << 30)) + " GB";
-  } else if (bytes < (1l << 50)) {
-    return boost::lexical_cast<string>(bytes/(1l << 40)) + " TB";
+  } else if (bytes < (1LL << 50)) {
+    return boost::lexical_cast<string>(bytes/(1LL << 40)) + " TB";
   } else {
-    return boost::lexical_cast<string>(bytes/(1l << 50)) + " EB";
+    return boost::lexical_cast<string>(bytes/(1LL << 50)) + " EB";
   }
 }
 
@@ -132,12 +146,10 @@ bool getattr(const string& xctl_file,
       case 1 : {
         cout << "file" << endl;
 
-        bool is_replicated = false;
         bool is_ronly =
             (stat["locations"]["update-policy"].asString() == "ronly");
         cout << "Replication policy   ";
         if (!stat["locations"]["update-policy"].asString().empty()) {
-          is_replicated = true;
           cout << stat["locations"]["update-policy"].asString() << endl;
         } else {
           cout << "none (not replicated)" << endl;
@@ -169,7 +181,8 @@ bool getattr(const string& xctl_file,
           for (int j = 0; j < replica["osds"].size(); ++j) {
             cout << "     OSD " << (j+1) << "               "
                 << replica["osds"][j]["uuid"].asString()
-                << "/" << replica["osds"][j]["address"].asString() << endl;
+                << " (" << replica["osds"][j]["address"].asString() << ")"
+                << endl;
           }
         }
         break;
@@ -242,6 +255,23 @@ bool getattr(const string& xctl_file,
           cout << "not set" << endl;
         }
 
+        cout << "Selectable OSDs      ";
+        if (stat.isMember("usable_osds") && stat["usable_osds"].size() > 0) {
+          Json::Value& usable_osds = stat["usable_osds"];
+          for(Json::ValueIterator it = usable_osds.begin();
+              it != usable_osds.end();
+              ++it) {
+            if (it != usable_osds.begin()) {
+              cout << endl << "                     ";
+            }
+            cout << it.key().asString() << " (" << (*it).asString() << ")";
+          }
+          cout << endl;
+
+        } else {
+          cout << "none available" << endl;
+        }
+
         break;
       }
       case 3 : {
@@ -265,13 +295,18 @@ bool SetDefaultSP(const string& xctl_file,
     cerr << "striping-policy-width must be set" << endl;
     return false;
   }
-
   if (vm.count("striping-policy-stripe-size") == 0) {
     cerr << "striping-policy-stripe-size must be set" << endl;
     return false;
   }
+  string policy;
+  if (vm.count("striping-policy") == 0) {
+    // If -p was left out, use the default policy "RAID0".
+    policy = "RAID0";
+  } else {
+    policy = vm["striping-policy"].as<string>();
+  }
 
-  const string policy = vm["striping-policy"].as<string>();
   const int width = vm["striping-policy-width"].as<int>();
   const int size = vm["striping-policy-stripe-size"].as<int>();
 
@@ -307,25 +342,38 @@ bool SetDefaultRP(const string& xctl_file,
     return false;
   }
 
+  const string policy =
+      boost::to_upper_copy(vm["replication-policy"].as<string>());
+
+  int factor;
   if (vm.count("replication-factor") == 0) {
-    cerr << "replication-factor must be set" << endl;
+    if (policy == "NONE") {
+      factor = 1;
+    } else {
+      cerr << "replication-factor must be set" << endl;
+      return false;
+    }
+  } else {
+    factor = vm["replication-factor"].as<int>();
+  }
+
+  if (factor <= 1 && policy != "NONE") {
+    cerr << "The minimal replication-factor must be 2 (was set to: "
+         << factor << ")." << endl;
     return false;
   }
 
-  const string policy =
-      boost::to_upper_copy(vm["replication-policy"].as<string>());
-  const int factor = vm["replication-factor"].as<int>();
   const bool is_full = vm.count("full") > 0;
 
   Json::Value request(Json::objectValue);
   request["operation"] = "setDefaultRP";
   request["path"] = path;
-  if (policy == "RONLY") {
+  if (policy == "RONLY" || policy == "READONLY") {
     request["update-policy"] = "ronly";
-  } else if (policy == "WQRQ") {
+  } else if (policy == "WQRQ" || policy == "QUORUM") {
     request["update-policy"] = "WqRq";
-  } else if (policy == "WARA") {
-    request["update-policy"] = "WaRa";
+  } else if (policy == "WAR1" || policy == "ALL") {
+    request["update-policy"] = "WaR1";
   } else if (policy == "NONE") {
     request["update-policy"] = "";
   } else {
@@ -359,7 +407,7 @@ bool SetReplicationPolicy(const string& xctl_file,
                           const variables_map& vm) {
 
 
-  const string policy =
+  const string policy_uppercase =
       boost::to_upper_copy(vm["set-replication-policy"].as<string>());
 
   // Check file.
@@ -376,21 +424,20 @@ bool SetReplicationPolicy(const string& xctl_file,
       getattr_response["result"]["locations"]["replicas"].size() > 1;
   string current_policy =
       getattr_response["result"]["locations"]["update-policy"].asString();
-  boost::to_upper(current_policy);
 
   Json::Value request(Json::objectValue);
   request["operation"] = "setReplicationPolicy";
   request["path"] = path;
-  if (policy == "RONLY") {
+  if (policy_uppercase == "RONLY" || policy_uppercase == "READONLY") {
     request["policy"] = "ronly";
-  } else if (policy == "WQRQ") {
+  } else if (policy_uppercase == "WQRQ" || policy_uppercase == "QUORUM") {
     request["policy"] = "WqRq";
-  } else if (policy == "WARA") {
-    request["policy"] = "WaRa";
-  } else if (policy == "NONE") {
+  } else if (policy_uppercase == "WAR1" || policy_uppercase == "ALL") {
+    request["policy"] = "WaR1";
+  } else if (policy_uppercase == "NONE") {
     request["policy"] = "";
   } else {
-    cerr << "Unknown replication policy: " << policy << endl;
+    cerr << "Unknown replication policy: " << policy_uppercase << endl;
     return false;
   }
 
@@ -415,7 +462,18 @@ bool SetReplicationPolicy(const string& xctl_file,
   
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
-    cout << "Changed replication policy to: " << policy << endl;
+    cout << "Changed replication policy to: "
+         << (request["policy"].asString().empty() ? "NONE"
+                 : request["policy"].asString())
+         << endl;
+    if (request["policy"].asString() == "WaR1") {
+      cout << "\n"
+           << "Please note that manually adding replicas does not work if the"
+               " 'all' (WaR1) replication policy is used.\n"
+               "See issue 226 for more details:"
+               " http://code.google.com/p/xtreemfs/issues/detail?id=226"
+           << endl;
+    }
     return true;
   } else {
     cerr << "FAILED" << endl;
@@ -426,8 +484,8 @@ bool SetReplicationPolicy(const string& xctl_file,
 // Adds a replica and selects an OSD.
 bool AddReplica(const string& xctl_file,
                 const string& path,
-                const variables_map& vm) {
-  string osd_uuid = vm["add-replica"].as<string>();
+                const variables_map& vm,
+                string osd_uuid) {
   if (boost::to_upper_copy(osd_uuid) == "AUTO") {
     osd_uuid = "AUTO";
   }
@@ -437,7 +495,11 @@ bool AddReplica(const string& xctl_file,
   request["osd"] = osd_uuid;
   request["replication-flags"] = 0;
   if (vm.count("full") > 0) {
-    request["replication-flags"] = xtreemfs::pbrpc::REPL_FLAG_FULL_REPLICA;
+    request["replication-flags"] = xtreemfs::pbrpc::REPL_FLAG_FULL_REPLICA
+        | xtreemfs::pbrpc::REPL_FLAG_STRATEGY_RAREST_FIRST;
+  } else {
+    request["replication-flags"] =
+        xtreemfs::pbrpc::REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING;
   }
 
   Json::Value response;
@@ -661,14 +723,15 @@ bool SetRemoveACL(const string& full_path,
   } else {
     return false;
   }
+  int result = -1;
 #ifdef __linux
-  int result = setxattr(full_path.c_str(),
+  result = setxattr(full_path.c_str(),
                         "xtreemfs.acl",
                         contents.c_str(),
                         contents.size(),
                         0);
 #elif __APPLE__
-  int result = setxattr(full_path.c_str(),
+  result = setxattr(full_path.c_str(),
                         "xtreemfs.acl",
                         contents.c_str(),
                         contents.size(),
@@ -683,35 +746,110 @@ bool SetRemoveACL(const string& full_path,
   return true;
 }
 
+string GetPathOnVolume(const char* real_path_cstr) {
+  string path_on_volume;
+#ifdef __sun
+  // Solaris' Fuse seems to have no working xattr support. Parse /etc/mnttab.
+  const char mtab_file[] = "/etc/mnttab";
+  ifstream in(mtab_file);
+  if (!in.is_open()) {
+    throw xtreemfs::XtreemFSException(
+        "Could not determine the path on the volume."
+        " Failed to open the file: " + string(mtab_file));
+  }
+
+  string real_path = string(real_path_cstr);
+  std::string line;
+  const boost::regex mtab_mount_point_re("^xtreemfs@[^\\t]+\\t([^\\t]+)\\tfuse\\t");
+  bool entry_found = false;
+  while (getline(in, line)) {
+    boost::smatch matcher;
+    if (boost::regex_search(line, matcher, mtab_mount_point_re)) {
+      string mount_point = matcher[1];
+      if (real_path.substr(0, mount_point.length()) == mount_point) {
+        path_on_volume = real_path.substr(mount_point.length());
+        entry_found = true;
+        break;
+      }
+    }
+  }
+  if (!entry_found) {
+    throw xtreemfs::XtreemFSException("No matching mounted XtreemFS volume"
+        " found in " + string(mtab_file) +
+        " for path: " + string(real_path_cstr));
+  }
+#else
+  // get xtreemfs.url xattr.
+  char xtfs_url[2048];
+  int length = -1;
+#ifdef __linux
+  length = getxattr(real_path_cstr, "xtreemfs.url", xtfs_url, 2048);
+#elif __APPLE__
+  length = getxattr(real_path_cstr, "xtreemfs.url", xtfs_url, 2048, 0, 0);
+#endif
+
+  if (length <= 0) {
+      struct stat sb;
+      if (stat(real_path_cstr, &sb)) {
+          // Show more meaningful error message if path does not exist at all.
+          throw xtreemfs::XtreemFSException("File/Directory does not exist: "
+              + string(real_path_cstr));
+      } else {
+          throw xtreemfs::XtreemFSException("Path doesn't point to an entity on"
+              " an XtreemFS volume!\nxattr xtreemfs.url is missing.");
+      }
+  }
+
+  string url(xtfs_url, length);
+  const boost::regex pure_path_re("pbrpc.?://[^/]+/[^/]+(.*)");
+  boost::smatch matcher;
+  if (!boost::regex_match(url, matcher, pure_path_re)) {
+    throw xtreemfs::XtreemFSException("Invalid XtreemFS url!");
+  }
+  path_on_volume = matcher[1];
+#endif
+
+  return path_on_volume;
+}
+
 int main(int argc, char **argv) {
+  string option_add_replica, option_path;
+
+  options_description hidden("Hidden positional option");
+  hidden.add_options()
+      ("path", value(&option_path), "path on mounted XtreemFS volume");
+
   options_description desc("Allowed options");
   desc.add_options()
       ("help,h", "produce help message")
       ("version,V", "Show the version number.")
-      ("path", value<string>(), "path on mounted XtreemFS volume")
       ("errors", "show client errors for a volume")
       ("set-dsp", "set (change) the default striping policy (volume)")
       ("striping-policy,p",
-       value<string>()->default_value("RAID0"),
+       value<string>()->implicit_value("RAID0"),
        "striping policy (always RAID0)")
       ("striping-policy-width,w", value<int>(),
        "striping width (number of OSDs)")
       ("striping-policy-stripe-size,s", value<int>(),
        "stripe size in kB (object size)")
-      ("set-drp", "set (change) the replication striping policy (volume)")
+      ("set-drp", "set (change) the default replication policy (volume)")
+      ("replication-policy", value<string>(),
+       "RONLY, WqRq, WaR1 or NONE to disable replication. The aliases"
+       " 'readonly', 'quorum' and 'all' are also allowed.")
+      ("replication-factor", value<int>(),
+       "number of replicas to create for a file")
+      ("full", "full replica (readonly replication only, only allowed if"
+               " --set-drp or --add-replica is set)")
       ("set-replication-policy,r", value<string>(),
-       "set (change) the replication policy for a file")
-      ("add-replica,a", value<string>()->implicit_value("AUTO"),
+       "set (change) the replication policy for a file: RONLY, WqRq, WaR1 or"
+       " NONE to disable replication. The aliases"
+       " 'readonly', 'quorum' and 'all' are also allowed.")
+      ("add-replica,a", value(&option_add_replica)->implicit_value("AUTO"),
        "adds a new replica on the osd with the given UUID or AUTO "
        "for automatics OSD selection")
       ("delete-replica,d", value<string>(),
        "deletes the replica on the OSD with the given UUID")
       ("list-osds,l", "list suitable OSDs for a file")
-      ("replication-policy", value<string>(),
-       "RONLY, WQRQ, WARA or NONE to disable replication")
-      ("replication-factor", value<int>(),
-       "number of replicas to create for a file")
-      ("full", "full replica (readonly replication only)")
       ("set-osp", value<string>(),
        "set (change) the OSD Selection Policy (volume)")
       ("set-rsp", value<string>(),
@@ -729,43 +867,107 @@ int main(int argc, char **argv) {
   positional_options_description pd;
   pd.add("path", 1);
   
+  options_description cmdline_options;
+  cmdline_options.add(desc).add(hidden);
   variables_map vm;
-  store(command_line_parser(argc, argv).options(desc).positional(pd).run(), vm);
-  notify(vm);
+  try {
+    store(command_line_parser(argc, argv)
+              .positional(pd)
+              .options(cmdline_options)
+              .run(),
+          vm);
+    notify(vm);
+  } catch(const std::exception& e) {
+    cerr << "Invalid command line options: " << e.what() << endl
+         << endl
+         << "Usage: xtfsutil <path>" << endl
+         << "See xtfsutil -h for the complete list of available options."
+         << endl;
+    return 1;
+  }
 
   if (vm.count("version")) {
     cout << "xtfsutil " << kVersionString << endl;
     return 1;
   }
-  if (vm.count("help") || !vm.count("path")) {
-    cerr << "usage: xtfsutil <path>" << endl;
+
+  // Work around problem of omitted -a AUTO argument in which case the path
+  // ends up in vm["add-replica"].
+  if (!option_add_replica.empty() &&
+      !vm.count("help") && option_path.empty()) {
+    // path not set - may be it is accidentally stored in add-replica.
+    struct stat sb;
+    if (!stat(option_add_replica.c_str(), &sb)) {
+      // File exists, move path from add-replica to variable path.
+      option_path = option_add_replica;
+      option_add_replica = "AUTO";
+    }
+  }
+
+  if (vm.count("help") || option_path.empty()) {
+    cerr << "Usage: xtfsutil <path>" << endl;
     cerr << desc << endl;
     return 1;
   }
 
-  char* real_path_cstr = realpath(vm["path"].as<string>().c_str(), NULL);
-  
-  // get xtreemfs.url xattr.
-  char xtfs_url[2048];
-#ifdef __linux
-  int length = getxattr(real_path_cstr, "xtreemfs.url", xtfs_url, 2048);
-#elif __APPLE__
-  int length = getxattr(real_path_cstr, "xtreemfs.url", xtfs_url, 2048, 0, 0);
-#endif
-  if (length <= 0) {
-    cerr << "Path doesn't point to an entity on an XtreemFS volume!" << endl;
-    cerr << "xattr xtreemfs.url is missing." << endl << endl;
-    return 1;
+  // Do some checks on the allowed parameter combinations.
+  if (vm.count("full") > 0) {
+    if (vm.count("add-replica") == 0 && vm.count("set-drp") == 0) {
+      cerr << "--full is only allowed in conjunction with --add-replica or"
+              " --set-drp" << endl
+           << endl
+           << "Usage: xtfsutil <path>" << endl
+           << desc << endl;
+      return 1;
+    }
+  }
+  if (vm.count("replication-policy") > 0 ||
+      vm.count("replication-factor") > 0) {
+    if (vm.count("set-drp") == 0) {
+      cerr << "--replication-policy or --replication-factor are only allowed in"
+              " conjunction with --set-drp" << endl
+           << endl
+           << "Usage: xtfsutil <path>" << endl
+           << desc << endl;
+      return 1;
+    }
+  }
+  if (vm.count("striping-policy") > 0 ||
+      vm.count("striping-policy-width") > 0 ||
+      vm.count("striping-policy-stripe-size") > 0) {
+    if (vm.count("set-dsp") == 0) {
+      cerr << "--striping-policy, --striping-policy-width or"
+              " --striping-policy-stripe-size are only allowed in"
+              " conjunction with --set-dsp" << endl
+           << endl
+           << "Usage: xtfsutil <path>" << endl
+           << desc << endl;
+      return 1;
+    }
+  }
+  if (vm.count("value") > 0) {
+    if (vm.count("set-pattr") == 0) {
+      cerr << "--value is only allowed in conjunction with --set-pattr" << endl
+           << endl
+           << "Usage: xtfsutil <path>" << endl
+           << desc << endl;
+      return 1;
+    }
   }
 
-  string url(xtfs_url, length);
-  const boost::regex pure_path_re("pbrpc.?://[^/]+/[^/]+(.*)");
-  boost::smatch matcher;
-  if (!boost::regex_match(url, matcher, pure_path_re)) {
-    cerr << "Invalid XtreemFS url!" << endl;
+  char* real_path_cstr = realpath(option_path.c_str(), NULL);
+  if (!real_path_cstr) {
+    cerr << "xtfsutil failed to find the absolute path of: "
+         << option_path << endl;
     return 1;
   }
-  string path_on_volume = matcher[1];
+  string path_on_volume;
+  try {
+    path_on_volume = GetPathOnVolume(real_path_cstr);
+  } catch (const xtreemfs::XtreemFSException &e) {
+    cerr << "xtfsutil failed: " << e.what() << endl;
+    return 1;
+  }
 
   string mount_point = real_path_cstr;
   mount_point = mount_point.substr(0,
@@ -773,7 +975,6 @@ int main(int argc, char **argv) {
   if (mount_point[mount_point.size() - 1] != '/') {
     mount_point.append("/");
   }
-
   if (path_on_volume.empty()) {
     path_on_volume = "/";
   }
@@ -799,7 +1000,8 @@ int main(int argc, char **argv) {
   } else if (vm.count("set-replication-policy") > 0) {
     return SetReplicationPolicy(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else if (vm.count("add-replica") > 0) {
-    return AddReplica(xctl_file, path_on_volume, vm) ? 0 : 1;
+    return AddReplica(xctl_file, path_on_volume, vm, option_add_replica) ? 0
+           : 1;
   } else if (vm.count("delete-replica") > 0) {
     return DeleteReplica(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else if (vm.count("list-osds") > 0) {

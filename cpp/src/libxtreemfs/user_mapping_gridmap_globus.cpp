@@ -8,6 +8,8 @@
 
 #include "libxtreemfs/user_mapping_gridmap_globus.h"
 
+#ifndef WIN32
+
 #include <boost/bimap.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/algorithm/string/trim.hpp>
@@ -106,3 +108,5 @@ void UserMappingGridmapGlobus::ReadGridmapFile() {
 }
 
 }  // namespace xtreemfs
+
+#endif // !WIN32

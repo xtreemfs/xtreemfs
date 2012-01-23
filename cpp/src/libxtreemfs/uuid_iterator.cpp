@@ -119,6 +119,9 @@ void UUIDIterator::MarkUUIDAsFailed(const std::string& uuid) {
         (*it)->marked_as_failed = false;
       }
       current_uuid_ = uuids_.begin();
+    } else {
+      // Reset the current UUID to make sure it is not marked as failed.
+      (*current_uuid_)->marked_as_failed = false;
     }
   }
 }

@@ -11,6 +11,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/program_options/cmdline.hpp>
+#include <boost/tokenizer.hpp>
 #include <iostream>
 #include <sstream>
 

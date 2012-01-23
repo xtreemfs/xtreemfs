@@ -8,6 +8,8 @@
 
 #include "libxtreemfs/user_mapping_gridmap.h"
 
+#ifndef WIN32
+
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/tokenizer.hpp>
 #include <iostream>
@@ -22,7 +24,6 @@ using namespace std;
 using namespace xtreemfs::util;
 
 namespace xtreemfs {
-
 UserMappingGridmap::UserMappingGridmap(UserMappingType user_mapping_type_system,
                                        const std::string& gridmap_file,
                                        int gridmap_reload_interval_m)
@@ -132,6 +133,12 @@ void UserMappingGridmap::DNToOUs(std::string dn, std::list<std::string>* ous) {
 }
 
 void UserMappingGridmap::Start() {
+  struct stat st;
+
+  if (stat(gridmap_file_.c_str(), &st) != 0) {
+    throw XtreemFSException("Failed to open gridmap file: " + gridmap_file_);
+  }
+
   // read the grid-map-file once
   ReadGridmapFile();
 
@@ -141,8 +148,10 @@ void UserMappingGridmap::Start() {
 }
 
 void UserMappingGridmap::Stop() {
-  monitor_thread_->interrupt();
-  monitor_thread_->join();
+  if (monitor_thread_) {
+    monitor_thread_->interrupt();
+    monitor_thread_->join();
+  }
 }
 
 void UserMappingGridmap::PeriodicGridmapFileReload() {
@@ -207,3 +216,4 @@ void UserMappingGridmap::Store(
 }
 
 }  // namespace xtreemfs
+#endif // !WIN32

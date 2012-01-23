@@ -38,6 +38,9 @@ class LsfsOptions : public Options {
   /** Outputs usage of the command line parameters. */
   virtual std::string ShowCommandLineHelp();
 
+  /** MRC admin_password as set in the MRC config. */
+  std::string admin_password;
+
  private:
   /** Contains all available lsfs options and its descriptions. */
   boost::program_options::options_description lsfs_descriptions_;

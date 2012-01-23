@@ -51,14 +51,17 @@ int main(int argc, char* argv[]) {
   }
 
   // Set user_credentials.
-  boost::scoped_ptr<UserMapping> user_mapping(UserMapping::CreateUserMapping(
-      options.user_mapping_type,
-      UserMapping::kUnix,
-      options));
-  // TODO(mberlin): Ask Jan/Bjoern if the user_credentials are needed here.
   UserCredentials user_credentials;
-  user_credentials.set_username(user_mapping->UIDToUsername(geteuid()));
-  user_credentials.add_groups(user_mapping->GIDToGroupname(getegid()));
+  user_credentials.set_username("xtreemfs");
+  user_credentials.add_groups("xtreemfs");
+
+  Auth auth;
+  if (options.admin_password.empty()) {
+    auth.set_auth_type(AUTH_NONE);
+  } else {
+    auth.set_auth_type(AUTH_PASSWORD);
+    auth.mutable_auth_passwd()->set_password(options.admin_password);
+  }
 
   // Create a new client and start it.
   boost::scoped_ptr<Client> client(Client::CreateClient(
@@ -74,7 +77,7 @@ int main(int argc, char* argv[]) {
   bool success = true;
   boost::scoped_ptr<xtreemfs::pbrpc::Volumes> volumes(NULL);
   try {
-    volumes.reset(client->ListVolumes(options.service_address));
+    volumes.reset(client->ListVolumes(options.service_address, auth));
   } catch (const XtreemFSException& e) {
     success = false;
     cout << "Failed to list the volumes, error:\n"

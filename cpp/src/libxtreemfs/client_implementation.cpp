@@ -69,6 +69,13 @@ ClientImplementation::ClientImplementation(
 }
 
 ClientImplementation::~ClientImplementation() {
+  if (!list_open_volumes_.empty()) {
+    string error = "Client::~Client(): Not all XtreemFS volumes were closed."
+        " Did you forget to call Client::Shutdown()? Memory leaks are the"
+        " consequence.";
+    Logging::log->getLog(LEVEL_ERROR) << error << endl;
+    ErrorLog::error_log->AppendError(error);
+  }
   network_client_->shutdown();
   network_client_thread_->join();
 
@@ -237,15 +244,17 @@ void ClientImplementation::DeleteVolume(
 
 
 xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
-    const std::string& mrc_address) {
+    const std::string& mrc_address,
+    const xtreemfs::pbrpc::Auth& auth) {
   UUIDIterator temp_uuid_iterator_with_addresses;
   temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
 
-  return ListVolumes(&temp_uuid_iterator_with_addresses);
+  return ListVolumes(&temp_uuid_iterator_with_addresses, auth);
 }
 
 xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
-    UUIDIterator* uuid_iterator_with_mrc_addresses) {
+    UUIDIterator* uuid_iterator_with_mrc_addresses,
+    const xtreemfs::pbrpc::Auth& auth) {
   // Create a MRCServiceClient
   MRCServiceClient mrc_service_client(network_client_.get());
   // Use bogus user_credentials;
@@ -259,7 +268,7 @@ xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
               &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_lsvol_sync,
               &mrc_service_client,
               _1,
-              boost::cref(auth_bogus_),
+              boost::cref(auth),
               boost::cref(user_credentials)),
           uuid_iterator_with_mrc_addresses,
           NULL,

@@ -14,8 +14,6 @@
 
 \title{XtreemFS Installation and User Guide}
 
-\date{Version 1.3.0}
-
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
 
@@ -34,7 +32,7 @@
 \begin{flushleft}
 \sffamily \begin{LARGE}The XtreemFS Installation and User Guide\end{LARGE}
 
-Version 1.3
+Version 1.3.x
 \end{flushleft}
 
 
@@ -449,42 +447,42 @@ Users can easily set up their own CA (certificate authority)\index{Certificate A
 
  \end{enumerate}
  \item Set up the certificates for the services and the XtreemFS Client.\\
-	Replace \texttt{\textit{service}} with \texttt{dir}, \texttt{mrc}, \texttt{osd} and \texttt{client}.
+	Replace \texttt{\textit{SERVICE}} with \texttt{dir}, \texttt{mrc}, \texttt{osd} and \texttt{client}.
 	\begin{enumerate}
 	\item Create a private key for the service.\\
-	      Use \texttt{XtreemFS-DEMO-\textit{service}} as the common name for the certificate.
-		\begin{Verbatim}[commandchars=\\\{\}]
-$> openssl req -new -newkey rsa:1024 -nodes \ \\
-   -out \textit{service}.req \ \\
-   -keyout \textit{service}.key
-		\end{Verbatim}
+	      Use \texttt{XtreemFS-DEMO-\textit{SERVICE}} as the common name for the certificate.
+		\begin{verbatim}
+$> openssl req -new -newkey rsa:1024 -nodes \
+   -out SERVICE.req \
+   -keyout SERVICE.key
+		\end{verbatim}
 
 	\item Sign the certificate with your demo CA.\\
 		The certificate is valid for one year.
-		\begin{Verbatim}[commandchars=\\\{\}]
-$> openssl x509 -CA ca/ca.pem -CAkey ca/ca.key \ \\
-   -CAserial ca/ca.srl -req \ \\
-   -in \textit{service}.req \ \\
-   -out \textit{service}.pem -days 365
-		\end{Verbatim}
+		\begin{verbatim}
+$> openssl x509 -CA ca/ca.pem -CAkey ca/ca.key \
+   -CAserial ca/ca.srl -req \
+   -in SERVICE.req \
+   -out SERVICE.pem -days 365
+		\end{verbatim}
 
 	\item Export the service credentials (certificate and private key) as a PKCS\#12 file.\\
 		Use ``passphrase'' as export password. You can leave the export password empty for the XtreemFS Client to avoid being asked for the password on mount.
-		\begin{Verbatim}[commandchars=\\\{\}]
-$> openssl pkcs12 -export -in \textit{service}.pem -inkey \textit{service}.key \ \\
-   -out \textit{service}.p12 -name "\textit{service}"
-		\end{Verbatim}
+		\begin{verbatim}
+$> openssl pkcs12 -export -in SERVICE.pem -inkey SERVICE.key \
+   -out SERVICE.p12 -name "SERVICE"
+		\end{verbatim}
 
 	\item Copy the PKCS\#12 file to the certificates directory.
-		\begin{Verbatim}[commandchars=\\\{\}]
-$> mkdir -p /etc/xos/xtreemfs/truststore/certs \\
-$> cp \textit{service}.p12 /etc/xos/xtreemfs/truststore/certs
-		\end{Verbatim}
+		\begin{verbatim}
+$> mkdir -p /etc/xos/xtreemfs/truststore/certs
+$> cp SERVICE.p12 /etc/xos/xtreemfs/truststore/certs
+		\end{verbatim}
 
 	\end{enumerate}
  \item Export your CA's certificate to the trust store and copy it to the certificate dir.\\
 	You should answer ``yes'' when asked ``Trust this certificate''.\\
-	Use ``passphrase'' as passphrase for the keystore.
+	Use ``jks\_passphrase'' as passphrase for the keystore.
 	\begin{verbatim}
 	$> keytool -import -alias ca -keystore trusted.jks \
 	   -trustcacerts -file ca/ca.pem
@@ -498,7 +496,7 @@ $> cp \textit{service}.p12 /etc/xos/xtreemfs/truststore/certs
 	\texttt{ssl.service\_creds.container = pkcs12}\\
 	\texttt{ssl.service\_creds = /etc/xos/xtreemfs/truststore/certs/\textit{service}.p12}\\
 	\texttt{ssl.trusted\_certs = /etc/xos/xtreemfs/truststore/certs/trusted.jks}\\
-	\texttt{ssl.trusted\_certs.pw = passphrase}\\
+	\texttt{ssl.trusted\_certs.pw = jks\_passphrase}\\
 	\texttt{ssl.trusted\_certs.container = jks}
  \item Start up the XtreemFS services (see Sec. \ref{sec:startstopservice}).
  \item Create a new volume (see Sec. \ref{sec:create_volume} for details).
@@ -1299,7 +1297,7 @@ acl = {
  }
 }
 \end{verbatim}
-\texttt{communites} is the SNMP community string your managers have to use and \texttt{managers} is a list of hostname, ip address or subnets in prefix notation (i.e. "xtreemfs-host", "192.168.0.54" or "192.168.0.3/24").
+\texttt{communites} is the SNMP community string your managers have to use and \texttt{managers} is a comma-separated list of hostnames, ip addresses or subnets in prefix notation (i.e. "xtreemfs-host", "192.168.0.54" or "192.168.0.3/24").
 
 Note: If you comment out the \texttt{snmp.aclfile} line every host on your network can access all information through the SNMP agent.
 
@@ -1569,7 +1567,7 @@ Like many other file systems, XtreemFS supports the concept of volumes. A volume
 \subsection{Creating Volumes}
 \label{sec:create_volume}
 
-Volumes can be created with the \texttt{mkfs.xtreemfs} command line utility. Please see \texttt{man mkfs.xtreemfs} for a full list of options and usage\index{Create Volume}\index{Volume!Create}\index{xtfs\_mkvol}\index{mkfs.xtreemfs}.
+Volumes can be created with the \texttt{mkfs.xtreemfs} command line utility. Please see \texttt{man mkfs.xtreemfs} for a full list of options and usage\index{Create Volume}\index{Volume!Create}\index{mkfs.xtreemfs}\index{mkfs.xtreemfs}.
 
 When creating a volume, it is recommended to specify the authorization policy (see Sec. \ref{sec:access_policies}). If not specified, POSIX permissions/ACLs will be chosen by default. Unlike most other policies, authorization policies cannot be changed afterwards.
 
@@ -1589,7 +1587,7 @@ For a complete list of parameters, please refer to the \texttt{mkfs.xtreemfs} ma
 
 \subsection{Deleting Volumes}
 
-Volumes can be deleted with the \texttt{rmfs.xtreemfs} tool. Deleting a volume implies that \emph{any data, i.e.\ all files and directories on the volume are irrecoverably lost}! Please see \texttt{man rmfs.xtreemfs} for a full list of options and usage\index{Delete Volume}\index{Volume!Delete}\index{xtfs\_rmvol}\index{rmfs.xtreemfs}. Please also note that \texttt{rmfs.xtreemfs} does not dispose of file contents on the OSD. To reclaim storage space occupied by the volume, it is therefore necessary to either remove all files from the volume before deleting it, or to run the cleanup tool (see Section \ref{sec:scrubber_cleanup}).
+Volumes can be deleted with the \texttt{rmfs.xtreemfs} tool. Deleting a volume implies that \emph{any data, i.e.\ all files and directories on the volume are irrecoverably lost}! Please see \texttt{man rmfs.xtreemfs} for a full list of options and usage\index{Delete Volume}\index{Volume!Delete}\index{rmfs.xtreemfs}\index{rmfs.xtreemfs}. Please also note that \texttt{rmfs.xtreemfs} does not dispose of file contents on the OSD. To reclaim storage space occupied by the volume, it is therefore necessary to either remove all files from the volume before deleting it, or to run the cleanup tool (see Section \ref{sec:scrubber_cleanup}).
 
 The volume \texttt{myVolume} residing on the MRC \texttt{my-mrc-host.com:32636} can e.g.\ be deleted as follows:
 
@@ -1615,7 +1613,7 @@ Once a volume has been created, it needs to be mounted in order to be accessed.
 
 \subsection{Mounting and Un-mounting}
 
-Before mounting XtreemFS volumes on a Linux machine, please ensure that the FUSE kernel module is loaded.\index{Volume!Mount}\index{Mount}\index{xtfs\_mount}\index{mount.xtreemfs} Please check your distribution's manual to see if users must be in a special group (e.g. \texttt{trusted} in openSuSE) to be allowed to mount FUSE file systems.
+Before mounting XtreemFS volumes on a Linux machine, please ensure that the FUSE kernel module is loaded.\index{Volume!Mount}\index{Mount}\index{mount.xtreemfs}\index{mount.xtreemfs} Please check your distribution's manual to see if users must be in a special group (e.g. \texttt{trusted} in openSuSE) to be allowed to mount FUSE file systems.
 
 
 \begin{verbatim}
@@ -1646,7 +1644,7 @@ To check that a volume is mounted, use the \texttt{mount} command. It outputs a 
 xtreemfs@localhost:32638/xtreemfs on /xtreemfs type fuse (...)
 \end{verbatim}
 
-Volumes are unmounted with the \texttt{umount.xtreemfs} tool\index{Volume!Un-mount}\index{Unmount}\index{xtfs\_umount}\index{umount.xtreemfs}:
+Volumes are unmounted with the \texttt{umount.xtreemfs} tool\index{Volume!Un-mount}\index{Unmount}\index{umount.xtreemfs}\index{umount.xtreemfs}:
 
 \begin{verbatim}
 $> umount.xtreemfs /xtreemfs
@@ -1930,6 +1928,35 @@ $> xtfs_cleanup -dir localhost:32638 -v \
 
 \textbf{Note:} A snapshot only captures a file in its current state if it is \emph{closed}. Files that are \emph{open} when taking a snapshot are captured in the last state in which they were before they were opened. Since files are implicitly closed on an OSD through a timeout rather than an explicit \texttt{close} call, it may happen that files are not included in a snapshot despite having been closed at application level before the snapshot was taken. To make sure a change to a specific file is included in a subsequent snapshot, it is necessary to wait for the close timeout on the OSD before taking the snapshot, which by default is set to 60 seconds.
 
+\subsection{Draining OSDs}
+
+In some cases, it may be necessary to remove an OSD from an XtreemFS installation. The OSD drain tool removes an OSD without losing the files stored on it. This is done by distributing the files across the remaining OSDs before performing the removal. The tool can be used as follows:
+
+\begin{verbatim}
+$> xtfs_remove_osd -dir localhost:32638 \
+   uuid:8bca70da-c963-43c7-b30b-d0d605d39fa7
+\end{verbatim}
+
+Executing the command will drain the OSD with the given UUID that was registered at the given DIR. A drained OSD will not be assigned to new files. By default, it will remain in the system until it is manually shut down by the administrator. To perform an automatic shutdown, use the \texttt{-s} switch. Please refer to the man page for further details.
+
+\subsubsection{How it Works}
+
+Draining an OSD works as follows:
+\begin{enumerate}
+ \item The OSD is marked as ``locked''. This restrains it from being assigned to newly created files.
+ \item A new replica is added to each file stored on the OSD. The OSD used for this replica is selected according to the volume's OSD selection policy (see Section \ref{sec:osd_policies}).
+ \item Once the new replica has become consistent, i.e. all content has been copied from the original replica, the original replica (which is stored on the OSD that is supposed to be drained) is removed.
+ \item As soon as all replicas have been removed, the draining procedure has finished. 
+\end{enumerate}
+
+\subsubsection{Limitations}
+
+While the draining is in progress, it is not possible to modify the to be moved files as they are temporarily set to read-only. Additionally, when the draining will be started, no files of the OSD should be hold open by any client.
+
+Draining an OSD that holds striped and replicated files involves certain limitations. A striped file is currently moved to a new OSD in its entirety rather than partially. Regardless of the original number of OSDs it was striped across, it is relocated to a single target OSD, which implies that the target file is not striped anymore. As a consequence, data may be moved from OSDs that are not directly affected by the draining process.
+
+Furthermore, at least one OSD has to exist for each file that does not hold any data of the file, i.e.\ is not included in any stripe or replica. If all OSDs that are eligible according to the OSD selection policy have already been assigned to a file, draining any of these OSDs will fail, as no additional replicas can be created.
+
 \section{User Tools}
 
 Since release 1.3, all user tools have been replaced by the \texttt{xtfsutil} tool. \texttt{xtfsutil} displays XtreemFS specific file and directory information, manages file replicas and volume policies.
@@ -1985,12 +2012,12 @@ To change the replication policy, execute \texttt{xtfsutil} with the following o
 $> xtfsutil --set-replication-policy ronly /xtreemfs/test.txt
 \end{verbatim}
 
-The following values can be passed to \verb|--set-replication-policy|:
+The following values (or its aliases stated in parentheses) can be passed to \verb|--set-replication-policy|:
 \begin{description}
   \item[none] File is not replicated.
-  \item[ronly] File is read-only replicated, the file cannot be modified.
-  \item[WqRq] File is read-write replicated and can be modified. Updates are sent to a majority, replicas can fail.
-  \item[WaRa] Like WqRq but updates are sent to all replicas and no replica may fail.
+  \item[ronly (readonly)] File is read-only replicated, the file cannot be modified.
+  \item[WqRq (quorum)] File is read-write replicated and can be modified. Updates have to be sent to a majority of replicas (\textit{write quorum}) and data has to be read from a majority (\textit{read quorum}), i.e. a minority of replicas can fail. For instance, in case of three replicas the WqRq policy requires at least two replicas (majority) to be online while one replica (minority) may be offline. If you have only two replicas, consider using the \textbf{WaR1} policy instead.
+  \item[WaR1 (all)] File is read-write replicated and can be modified. Unlike WqRq, this policy requires that updates have to be send to all replicas (\textit{write all}) and no replica may fail. In consequence all replicas are always synchronized and therefore it is sufficient to read from any replica (\textit{read 1}), i.e. the OSD can always use its local replica.
 \end{description}
 
 
@@ -2078,7 +2105,7 @@ The following values can be passed to \verb|--replication-policy|:
 \begin{description}
   \item[none] New files are not replicated.
   \item[ronly] Files are initially created without replicas and can be modified until they are closed. On close, the file is set to read-only and the replicas are created. Replicas are partial by default, full replicas will be created if the \verb|--full| flag is set.
-  \item[WqRq, WaRa] New files are read-write replicated and can be modified.
+  \item[WqRq, WaR1] New files are read-write replicated and can be modified.
 \end{description}
 
 
@@ -2151,7 +2178,7 @@ Please be aware that when files or directories are accessed, the actual evaluati
 
 \section{Vivaldi}
 \label{sec:vivaldi}
-\textbf{Attention:} Vivaldi is currently not included in Release 1.3.0 but will become available in one of the next minor releases.
+\textbf{Attention:} Vivaldi is currently not included in Release 1.3.x but will become available in one of the next major releases.
 Client machines that want to use vivaldi network coordinates for replica and OSD selection must calculate their own coordinates relative to the OSDs. This is done by the \texttt{xtfs\_vivaldi} utility which must be started on each client machine. Ideally, this process is started during boot with the \texttt{xtreemfs-vivaldi} init.d scripts provided. The utility must be started with the directory service address and the path to a file in which the coordinates are stored.
 
 \begin{verbatim}
@@ -2187,16 +2214,16 @@ Internally, the read/write replication is implemented using the primary/backup a
 Once a replica has acquired the lease to become primary, it checks with the other replicas to ensure all replicas are in a consistent state. After this so called replica reset phase, the primary processes client operations.
 Reads can be executed locally on the primary. However, operations that modify data such as write and truncate, are executed on the primary which passes these updates on to the other replicas (backups).
 
-The replication of files adds significant communication overhead to keep replicas in sync. When a file is opened, the OSD which the client contacts requires at least three message round-trips to acquires the lease and to execute the replica reset. Once a primary was elected, read operations can be executed locally without any communication. Truncate and write require a single round-trip between the primary and the backup OSDs.
+The replication of files adds significant communication overhead to keep replicas in sync. When a file is opened, the OSD which the client contacts requires at least three message round-trips to acquire the lease and to execute the replica reset. Once a primary was elected, read operations can be executed locally without any communication. Truncate and write require a single round-trip between the primary and the backup OSDs.
 
-Depending on the selected replication policy, the read/write replication can tolerate some replica failures. The \textbf{WqRq} policy employs majority voting and can tolerate replica failures as long as a majority of replicas is available. This is the most fault-tolerant strategy in XtreemFS. However, it guarantees only that data is stored on a majority of the replicas. If you lose more replicas permanently, data might be lost.
-The \textbf{WaRa} policy writes updates to all replicas which yields higher data safety. However, this policy cannot tolerate replica failures.
+Depending on the selected replication policy, the read/write replication can tolerate some replica failures. The \textbf{WqRq} (\textit{write quorum, read quorum}) policy employs majority voting and can tolerate replica failures as long as a majority of replicas is available. This is the most fault-tolerant strategy in XtreemFS. However, it guarantees only that data is stored on a majority of the replicas. If you lose more replicas permanently, data might be lost.
+The \textbf{WaR1} (\textit{write all, read 1}) policy writes updates to all replicas which yields higher data safety. However, if any replica is unavailable, modifications are not possible and the client will receive a write error. Local data can be still read from an OSD.
 
 \subsection{Limitations}
 Due to the communication overhead, the read/write replication should only be used for up to ten replicas. If you need more replicas or if you need replicas for caching, you should consider the read-only replication.
 
 \subsection{Setup}
-To enable read/write replication, it is necessary to specify a respective replication policy. Replication policies that enable read/write replication are \textbf{WqRq} and \textbf{WaRa}.
+To enable read/write replication, it is necessary to specify a respective replication policy. Replication policies that enable read/write replication are \textbf{WqRq} and \textbf{WaR1}.
 
 A replication policy can either be specified for an existing file or as a default policy for the entire volume. In the former case, replicas need to be added manually. In the latter case, a default replication factor needs to be specified that defines the number of replicas that are initially created. Please be aware that a default replication policy only affects newly created files, i.e.\ does not automatically add replicas to existing files!
 
@@ -2414,11 +2441,11 @@ This policy uses domain names of clients and OSDs to determine the distance betw
 
 \begin{itemize}
 
- \item \textbf{DNS based OSD Selection (policy ID 3000)}\\
- The FQDN of the client and all OSDs is compared and the maximum match (from the end of the FQDN) is used to sort the OSDs. The policy sorts the list of OSDs in descending order by the number of characters that match. This policy can be used to automatically select OSDs which are close to the client, if the length of the match between two DNS entries also indicate a low latency between two machines.
-
- \item \textbf{Data center map-based sorting (policy ID 3001)}\\
+ \item \textbf{Data center map-based sorting (policy ID 3000)}\\
  Sorts the list of OSDs in ascending order of their distance to the client, according to the data center map.
+
+ \item \textbf{DNS based OSD Selection (policy ID 3001)}\\
+ The FQDN of the client and all OSDs is compared and the maximum match (from the end of the FQDN) is used to sort the OSDs. The policy sorts the list of OSDs in descending order by the number of characters that match. This policy can be used to automatically select OSDs which are close to the client, if the length of the match between two DNS entries also indicate a low latency between two machines.
 
  \item \textbf{Shuffling (policy ID 3002)}\\
  Shuffles the given list of OSDs.
@@ -2434,7 +2461,7 @@ XtreemFS allows the content, i.e.\ the objects of a file to be distributed among
 
 A striping policy\index{Striping Policy}\index{Policy!Striping Policy}\index{RAID0} is a rule that defines how the objects are distributed on the available OSDs. Currently, XtreemFS implements only the \texttt{RAID0} policy which simply stores the objects in a round robin fashion on the OSDs. The \texttt{RAID0} policy has two parameters. The \emph{striping width}\index{Striping Width} defines to how many OSDs the file is distributed. If not enough OSDs are available when the file is created, the number of available OSDs will be used instead; if it is 0, an I/O error is reported to the client. The \emph{stripe size}\index{Striping!Stripe Size}\index{Stripe Size} defines the size of each object.
 
-Striping over several OSDs enhances the read and write throughput to a file. The maximum throughput depends on the striping width. However, using \texttt{RAID0} also increases the probability of data loss. If a single OSD fails, parts of the file are no longer accessible, which generally renders the entire file useless. Replication can mitigate the problem but has all the restrictions described in Sec.\ \ref{sec:roreplication}.
+Striping over several OSDs enhances the read and write throughput to a file. The maximum throughput depends on the striping width. However, using \texttt{RAID0} also increases the probability of data loss. If a single OSD fails, parts of the file are no longer accessible, which generally renders the entire file useless. Replication can mitigate the problem but has all the restrictions described in Sec.\ \ref{sec:ronly_replication}.
 
 
 \section{Plug-in Policies}
@@ -2597,8 +2624,10 @@ Congratulations! You successfully finished the quick start guide of the XtreemFS
  \item[xtestenv] Tool for automatic set-up of a test environment and for executing the autotests.
  \item[xtfsutil] XtreemFS's swiss army knife.
  \item[xtfs\_cleanup] Deletes orphaned objects on an OSD, restores orphaned files and removes obsolete file versions.
+ \item[xtfs\_chstatus] Changes the status of an service.
  \item[xtfs\_snap] Creates, lists and deletes snapshots.
  \item[xtfs\_mrcdbtool] Dumps and restores an XML representation of the MRC database.
+ \item[xtfs\_remove\_osd] Relocates all files stored on an OSD in order to remove the OSD from the system.
  \item[xtfs\_scrub] Examines all files in a volume for wrong file sizes and checksums and corrects wrong file sizes in the MRC.
  \item[xtfs\_vivaldi] client service to calculate vivaldi coordinates.
 \end{description}

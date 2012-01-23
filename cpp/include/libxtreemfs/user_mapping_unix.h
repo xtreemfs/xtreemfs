@@ -19,6 +19,7 @@ class UserMappingUnix : public UserMapping {
  public:
   UserMappingUnix() {}
 
+#ifndef WIN32
   /** Left unimplemented. */
   virtual void Start() {}
 
@@ -37,6 +38,7 @@ class UserMappingUnix : public UserMapping {
                                     gid_t gid,
                                     pid_t pid,
                                     std::list<std::string>* groupnames);
+#endif  // !WIN32
 };
 
 }  // namespace xtreemfs

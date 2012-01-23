@@ -8,6 +8,7 @@
 
 #include "libxtreemfs/user_mapping_unix.h"
 
+#ifndef WIN32
 #include <grp.h>
 #include <pwd.h>
 #include <sys/types.h>
@@ -264,3 +265,4 @@ void UserMappingUnix::GetGroupnames(uid_t uid,
 }
 
 }  // namespace xtreemfs
+#endif // !WIN32

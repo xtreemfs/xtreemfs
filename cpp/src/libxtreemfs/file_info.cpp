@@ -7,8 +7,6 @@
 
 #include "libxtreemfs/file_info.h"
 
-#include <unistd.h>
-
 #include "libxtreemfs/file_handle_implementation.h"
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"
@@ -258,7 +256,7 @@ void FileInfo::GetAttr(const xtreemfs::pbrpc::UserCredentials& user_credentials,
                        xtreemfs::pbrpc::Stat* stat) {
   string path;
   GetPath(&path);
-  volume_->GetAttr(user_credentials, path, stat, this);
+  volume_->GetAttr(user_credentials, path, false, stat, this);
 }
 
 void FileInfo::Flush(FileHandleImplementation* file_handle) {

@@ -32,6 +32,10 @@ using namespace std;
 using namespace xtreemfs::util;
 using namespace xtreemfs::pbrpc;
 
+// Fix ambigiuous map error on Solaris (see
+// http://groups.google.com/group/xtreemfs/msg/b44605dbbd7b6d0f)
+using std::map;
+
 namespace xtreemfs {
 
 VolumeImplementation::VolumeImplementation(
@@ -58,8 +62,13 @@ VolumeImplementation::VolumeImplementation(
 }
 
 VolumeImplementation::~VolumeImplementation() {
-  // Make sure we were shutdown properly and there are no open files.
-  assert(open_file_table_.size() == 0);
+  // Warn the user about open files.
+  if (open_file_table_.size() != 0) {
+    string error = "Volume::~Volume(): The volume object will be deleted while"
+        " there are open FileHandles left. This will result in memory leaks.";
+    Logging::log->getLog(LEVEL_ERROR) << error << endl;
+    ErrorLog::error_log->AppendError(error);
+  }
 
   // Remove StripingPolicy objects.
   for (map<StripingPolicyType, StripeTranslator*>::iterator it
@@ -107,7 +116,13 @@ void VolumeImplementation::CloseInternal() {
   boost::mutex::scoped_lock lock_oft(open_file_table_mutex_);
 
   // There must not be any FileInfo object left.
-  assert(open_file_table_.size() == 0);
+  if (open_file_table_.size() != 0) {
+    string error = "Volume::Close(): THERE ARE OPEN FILE HANDLES LEFT. MAKE IN"
+        " YOUR APPLICATION SURE THAT ALL FILE HANDLES ARE CLOSED BEFORE CLOSING"
+        " THE VOLUME!";
+    Logging::log->getLog(LEVEL_ERROR) << error << endl;
+    ErrorLog::error_log->AppendError(error);
+  }
 
   // Shutdown network client.
   network_client_->shutdown();
@@ -334,7 +349,7 @@ FileHandle* VolumeImplementation::OpenFile(
     string error = "MRC assigned no OSDs to file on open: " + path +
         ", xloc: " + open_response->creds().xlocs().DebugString();
     Logging::log->getLog(LEVEL_ERROR) << error << endl;
-    xtreemfs::util::ErrorLog::error_log->AppendError(error);
+    ErrorLog::error_log->AppendError(error);
     throw PosixErrorException(POSIX_ERROR_EIO, error);
   }
 
@@ -453,15 +468,24 @@ void VolumeImplementation::GetAttr(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
     xtreemfs::pbrpc::Stat* stat_buffer) {
-  GetAttr(user_credentials, path, stat_buffer, NULL);
+  GetAttr(user_credentials, path, false, stat_buffer, NULL);
+}
+
+void VolumeImplementation::GetAttr(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::string& path,
+    bool ignore_metadata_cache,
+    xtreemfs::pbrpc::Stat* stat_buffer) {
+  GetAttr(user_credentials, path, ignore_metadata_cache, stat_buffer, NULL);
 }
 
 void VolumeImplementation::GetAttrHelper(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
+    bool ignore_metadata_cache,
     xtreemfs::pbrpc::Stat* stat_buffer) {
   // Check if the information was cached.
-  if (metadata_cache_.GetStat(path, stat_buffer)) {
+  if (!ignore_metadata_cache && metadata_cache_.GetStat(path, stat_buffer)) {
     // Found in StatCache.
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
       Logging::log->getLog(LEVEL_DEBUG)
@@ -503,10 +527,11 @@ void VolumeImplementation::GetAttrHelper(
 void VolumeImplementation::GetAttr(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
+    bool ignore_metadata_cache,
     xtreemfs::pbrpc::Stat* stat_buffer,
     FileInfo* file_info) {
   // Retrieve stat object from cache or MRC.
-  GetAttrHelper(user_credentials, path, stat_buffer);
+  GetAttrHelper(user_credentials, path, ignore_metadata_cache, stat_buffer);
 
   // Wait until async writes have finished and merge StatCache object with
   // possibly newer information from FileInfo.
@@ -554,7 +579,10 @@ void VolumeImplementation::GetAttr(
           // have to retrieve the file size once again from the MRC or stat cache.
           // Return lock on open_file_table_.
           oft_lock.unlock();
-          GetAttrHelper(user_credentials, path, stat_buffer);
+          GetAttrHelper(user_credentials,
+                        path,
+                        ignore_metadata_cache,
+                        stat_buffer);
         }
       } else {
         // Open file table was never unlocked and it's still safe to access the
@@ -760,10 +788,10 @@ void VolumeImplementation::Rename(
   response->DeleteBuffers();
 }
 
-void VolumeImplementation::CreateDirectory(
+void VolumeImplementation::MakeDirectory(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
-    mode_t mode) {
+    unsigned int mode) {
   mkdirRequest rq;
   rq.set_volume_name(volume_name_);
   rq.set_path(path);
@@ -795,7 +823,7 @@ void VolumeImplementation::CreateDirectory(
   response->DeleteBuffers();
 }
 
-void VolumeImplementation::RemoveDirectory(
+void VolumeImplementation::DeleteDirectory(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path) {
   rmdirRequest rq;
@@ -924,12 +952,14 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
        i < min(volume_options_.metadata_cache_size,
                static_cast<boost::uint64_t>(result->entries_size()));
        i++) {
-    if (result->entries(i).stbuf().nlink() > 1) {  // Do not cache hard links.
-      metadata_cache_.Invalidate(path);
-    } else {
-      metadata_cache_.UpdateStat(
-          ConcatenatePath(path, result->entries(i).name()),
-          result->entries(i).stbuf());
+    if (result->entries(i).has_stbuf()) {
+      if (result->entries(i).stbuf().nlink() > 1) {  // Do not cache hard links.
+        metadata_cache_.Invalidate(path);
+      } else {
+        metadata_cache_.UpdateStat(
+            ConcatenatePath(path, result->entries(i).name()),
+            result->entries(i).stbuf());
+      }
     }
   }
 
@@ -1207,7 +1237,12 @@ void VolumeImplementation::AddReplica(
   FileHandle* file_handle = OpenFile(user_credentials,
                                      path,
                                      SYSTEM_V_FCNTL_H_O_RDONLY);
-  file_handle->PingReplica(user_credentials, new_replica.osd_uuids(0));
+  try {
+    file_handle->PingReplica(user_credentials, new_replica.osd_uuids(0));
+  } catch (const exception& e) {
+    file_handle->Close();  // Cleanup temporary file handle.
+    throw;  // Rethrow exception.
+  }
   file_handle->Close();
 }
 

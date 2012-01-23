@@ -17,6 +17,8 @@
 #include <sys/stat.h>
 
 #include "json/json.h"
+#include "libxtreemfs/uuid_resolver.h"
+#include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "util/error_log.h"
 #include "util/logging.h"
@@ -24,6 +26,7 @@
 
 using namespace std;
 using namespace xtreemfs::util;
+using namespace xtreemfs::pbrpc;
 
 namespace xtreemfs {
 
@@ -40,6 +43,10 @@ XtfsUtilServer::~XtfsUtilServer() {
 
 void XtfsUtilServer::set_volume(Volume* volume) {
   volume_ = volume;
+}
+
+void XtfsUtilServer::set_uuid_resolver(UUIDResolver* uuid_resolver) {
+  uuid_resolver_ = uuid_resolver;
 }
 
 void XtfsUtilServer::ParseAndExecute(const xtreemfs::pbrpc::UserCredentials& uc,
@@ -110,7 +117,7 @@ void XtfsUtilServer::OpGetErrors(const xtreemfs::pbrpc::UserCredentials& uc,
                                  const Json::Value& input,
                                  Json::Value* output) {
   Json::Value result = Json::Value(Json::arrayValue);
-  list<string> errors = xtreemfs::util::ErrorLog::error_log->error_messages();
+  list<string> errors = ErrorLog::error_log->error_messages();
   for (list<string>::iterator iter = errors.begin();
        iter != errors.end(); ++iter) {
     result.append(*iter);
@@ -175,7 +182,12 @@ void XtfsUtilServer::OpStat(const xtreemfs::pbrpc::UserCredentials& uc,
       result["rsel_policy"] = Json::Value(xtfs_attrs["xtreemfs.rsel_policy"]);
       result["num_dirs"] = Json::Value(xtfs_attrs["xtreemfs.num_dirs"]);
       result["num_files"] = Json::Value(xtfs_attrs["xtreemfs.num_files"]);
-      result["usable_osds"] = Json::Value(xtfs_attrs["xtreemfs.usable_osds"]);
+      Json::Value usable_osds_json;
+      if (reader.parse(xtfs_attrs["xtreemfs.usable_osds"],
+                       usable_osds_json,
+                       false)) {
+        result["usable_osds"] = usable_osds_json;
+      }
     }
   } else if (xtfs_attrs["xtreemfs.object_type"] == "3") {
     // Softlink.
@@ -356,10 +368,10 @@ void XtfsUtilServer::OpSetReplicationPolicy(
 
   if (policy_name != "ronly"
       && policy_name != "WqRq"
-      && policy_name != "WaRa"
+      && policy_name != "WaR1"
       && policy_name != "") {
     (*output)["error"] = Json::Value("Policy must be one of the following: "
-                                     "<empty string>, ronly, WaRa, WqRq");
+                                     "<empty string>, ronly, WaR1, WqRq");
     return;
   }
 
@@ -370,6 +382,16 @@ void XtfsUtilServer::OpSetReplicationPolicy(
                     policy_name,
                     xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
   (*output)["result"] = Json::Value(Json::objectValue);
+
+  if (policy_name == "ronly" || policy_name == "") {
+    // Actual permissions of the file probably changed, update cache.
+    try {
+      Stat stat;
+      volume_->GetAttr(uc, path, true, &stat);
+    } catch(const exception& e) {
+      // Ignore errors.
+    }
+  }
 }
 
 void XtfsUtilServer::OpAddReplica(
@@ -471,9 +493,21 @@ void XtfsUtilServer::OpGetSuitableOSDs(
 
   (*output)["result"] = Json::Value(Json::objectValue);
   (*output)["result"]["osds"] = Json::Value(Json::arrayValue);
+  string address;
   for (list<string>::iterator iter = osds.begin();
        iter != osds.end(); ++iter) {
-    (*output)["result"]["osds"].append(*iter);
+    address = "";
+    try {
+      // Try to resolve the UUID to hostname and port.
+      uuid_resolver_->UUIDToAddress(*iter, &address);
+    } catch(const XtreemFSException &e) {
+      // Ignore errors if the address could not be obtained successfully.
+    }
+    if (address.empty()) {
+      (*output)["result"]["osds"].append(*iter);
+    } else {
+      (*output)["result"]["osds"].append(*iter + " (" + address+ ")");
+    }
   }
 }
 

@@ -22,6 +22,7 @@
 #include "xtreemfs/MRC.pb.h"
 
 #include "libxtreemfs/file_handle.h"
+#include "libxtreemfs/xcap_handler.h"
 
 namespace xtreemfs {
 
@@ -43,7 +44,8 @@ class FileHandleImplementation
     : public FileHandle,
       public xtreemfs::rpc::CallbackInterface<
           xtreemfs::pbrpc::timestampResponse>,
-      public xtreemfs::rpc::CallbackInterface<xtreemfs::pbrpc::XCap> {
+      public xtreemfs::rpc::CallbackInterface<xtreemfs::pbrpc::XCap>,
+      public XCapHandler {
  public:
   FileHandleImplementation(
       const std::string& client_uuid,
@@ -142,7 +144,7 @@ class FileHandleImplementation
       xtreemfs::pbrpc::StripingPolicyType type);
 
   /** Copies xcap_ to xcap. */
-  void GetXCap(xtreemfs::pbrpc::XCap* xcap);
+  virtual void GetXCap(xtreemfs::pbrpc::XCap* xcap);
 
   /** Sets async_writes_failed_ to true. */
   void MarkAsyncWritesAsFailed();

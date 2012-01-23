@@ -196,6 +196,8 @@ int main(int argc, char **argv) {
 
   // Create Fuse channel (mount_point will be freed by fuse_teardown()).
   mount_point = strdup(options.mount_point.c_str());
+  // Fuse docu: "manually add arguments to the struct fuse_args list"
+  fuse_opt_parse(&fuse_args, NULL, NULL, NULL);
   fuse_channel = fuse_mount(mount_point, &fuse_args);
   if (fuse_channel == NULL) {
     fuse_opt_free_args(&fuse_args);
@@ -265,6 +267,8 @@ int main(int argc, char **argv) {
   // Stop FuseAdapter.
   fuse_adapter->Stop();
   delete fuse_adapter;
+
+
 
   return 0;
 }

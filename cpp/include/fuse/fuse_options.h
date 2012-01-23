@@ -39,9 +39,11 @@ class FuseOptions : public Options {
   // Fuse options.
   /** Execute extended attributes operations? */
   bool enable_xattrs;
-  /** If -odefault_permissions is passed to Fuse, there are no extra permission
+  /** If -o default_permissions is passed to Fuse, there are no extra permission
    *  checks needed. */
   bool use_fuse_permission_checks;
+  /** If requested by the user, do not pass -o default_permissions to Fuse. */
+  bool fuse_permission_checks_explicitly_disabled;
   /** Run the adapter program in foreground or send it to background? */
   bool foreground;
   /** Fuse options specified by -o. */

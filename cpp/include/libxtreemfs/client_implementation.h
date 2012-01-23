@@ -80,10 +80,12 @@ class ClientImplementation : public Client, public UUIDResolver {
       const std::string& volume_name);
 
   virtual xtreemfs::pbrpc::Volumes* ListVolumes(
-      const std::string& mrc_address);
+      const std::string& mrc_address,
+      const xtreemfs::pbrpc::Auth& auth);
 
   virtual xtreemfs::pbrpc::Volumes* ListVolumes(
-      UUIDIterator* uuid_iterator_with_mrc_addresses);
+      UUIDIterator* uuid_iterator_with_mrc_addresses,
+      const xtreemfs::pbrpc::Auth& auth);
 
   virtual UUIDResolver* GetUUIDResolver();
 

@@ -37,6 +37,16 @@
 #include "xtreemfs/MRC.pb.h"
 #include "xtreemfs/OSD.pb.h"
 
+// NetBSD has neither NOATTR nor ENODATA
+#if !defined(ENOATTR) && !defined(ENODATA)
+#define ENOATTR EAGAIN
+#endif
+
+// Linux and Solaris have no ENOATTR
+#ifndef ENOATTR
+#define ENOATTR ENODATA
+#endif
+
 using namespace std;
 using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
@@ -159,6 +169,7 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
                                 *options_);
 
   xctl_.set_volume(volume_);
+  xctl_.set_uuid_resolver(client_->GetUUIDResolver());
 
   // Try to access Volume. If it fails, an error will be thrown.
   Stat stat;
@@ -187,66 +198,61 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
     mrc_addresses.AddUUID(current_mrc_address);
   }
 
-  boost::scoped_ptr<Volumes> volumes(client_->ListVolumes(&mrc_addresses));
-  for (int i = 0; i < volumes->volumes_size(); i++) {
-    // Found volume?
-    if (volumes->volumes(i).name() == options_->volume_name) {
-      // Enable Fuse POSIX checks only if the POSIX policy is set.
-      if (volumes->volumes(i).access_control_policy() !=
-          ACCESS_CONTROL_POLICY_POSIX) {
-        options_->use_fuse_permission_checks = false;
-        // Tell the user.
-        Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
-            "not passing -odefault_permissions to Fuse) because the access "
-            "policy is not set to ACCESS_CONTROL_POLICY_POSIX" << endl;
-      }
+  // Get volume information as xattr.
+  // Check attributes.
+  UserMapping::UserMappingType current_user_mapping_type =
+      options_->user_mapping_type;
+  boost::scoped_ptr<listxattrResponse> xattrs(
+      volume_->ListXAttrs(client_user_credentials, "/", false));
+  for (int i = 0; i < xattrs->xattrs_size(); ++i) {
+    const xtreemfs::pbrpc::XAttr& xattr = xattrs->xattrs(i);
 
-      // Check attributes.
-      UserMapping::UserMappingType current_user_mapping_type =
-          options_->user_mapping_type;
-      for (int j = 0; j < volumes->volumes(i).attrs_size(); j++) {
-        // If type of gridmap file not explicitly specified, use information
-        // from volume attributes.
-        if (!options_->grid_auth_mode_globus &&
-            !options_->grid_auth_mode_unicore) {
-          if (volumes->volumes(i).attrs(j).key() == "globus_gridmap") {
-            options_->grid_auth_mode_globus = true;
-            options_->user_mapping_type = UserMapping::kGlobus;
-            if (options_->grid_gridmap_location.empty()) {
-              options_->grid_gridmap_location =
-                  options_->grid_gridmap_location_default_globus;
-            }
-            Logging::log->getLog(LEVEL_INFO) << "Using Globus gridmap file "
-                << options_->grid_gridmap_location << endl;
-            break;
-          }
-
-          if (volumes->volumes(i).attrs(j).key() == "unicore_uudb") {
-            options_->grid_auth_mode_unicore = true;
-            options_->user_mapping_type = UserMapping::kUnicore;
-            if (options_->grid_gridmap_location.empty()) {
-              options_->grid_gridmap_location =
-                  options_->grid_gridmap_location_default_unicore;
-            }
-            Logging::log->getLog(LEVEL_INFO) << "Using Unicore uudb file "
-                << options_->grid_gridmap_location << endl;
-            break;
-          }
-        }
-      }
-      // Reset user mapping if it has to be changed.
-      if (current_user_mapping_type != options_->user_mapping_type) {
-        user_mapping_->Stop();
-        user_mapping_.reset(UserMapping::CreateUserMapping(
-            options_->user_mapping_type,
-            UserMapping::GetUserMappingSystemType(),
-            *options_));
-        user_mapping_->Start();
-      }
-
-      // Skip remaining volumes.
-      break;
+    if (xattr.name() == "xtreemfs.ac_policy_id") {
+     // Enable Fuse POSIX checks only if the POSIX policy is set.
+     if (boost::lexical_cast<int>(xattr.value()) !=
+         ACCESS_CONTROL_POLICY_POSIX) {
+       options_->use_fuse_permission_checks = false;
+       // Tell the user.
+       Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
+           "not passing -o default_permissions to Fuse) because the access "
+           "policy is not set to ACCESS_CONTROL_POLICY_POSIX" << endl;
+     }
     }
+
+    // First grid user mapping wins.
+    if (!options_->grid_auth_mode_globus && !options_->grid_auth_mode_unicore) {
+      if (xattr.name() == "xtreemfs.volattr.globus_gridmap") {
+        options_->grid_auth_mode_globus = true;
+        options_->user_mapping_type = UserMapping::kGlobus;
+        if (options_->grid_gridmap_location.empty()) {
+          options_->grid_gridmap_location =
+              options_->grid_gridmap_location_default_globus;
+        }
+        Logging::log->getLog(LEVEL_INFO) << "Using Globus gridmap file "
+            << options_->grid_gridmap_location << endl;
+      }
+
+      if (xattr.name() == "xtreemfs.volattr.unicore_uudb") {
+        options_->grid_auth_mode_unicore = true;
+        options_->user_mapping_type = UserMapping::kUnicore;
+        if (options_->grid_gridmap_location.empty()) {
+          options_->grid_gridmap_location =
+              options_->grid_gridmap_location_default_unicore;
+        }
+        Logging::log->getLog(LEVEL_INFO) << "Using Unicore uudb file "
+            << options_->grid_gridmap_location << endl;
+      }
+    }
+  }
+
+  // Reset user mapping if it has to be changed.
+  if (current_user_mapping_type != options_->user_mapping_type) {
+    user_mapping_->Stop();
+    user_mapping_.reset(UserMapping::CreateUserMapping(
+        options_->user_mapping_type,
+        UserMapping::GetUserMappingSystemType(),
+        *options_));
+    user_mapping_->Start();
   }
 
   // Restore original signal.
@@ -259,10 +265,26 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   // In this case Fuse POSIX checks cannot get applied.
   if (options_->grid_auth_mode_globus || options_->grid_auth_mode_unicore) {
     options_->use_fuse_permission_checks = false;
-    // Tell the user.
+
     Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
-        "not passing -odefault_permissions to Fuse) because a Grid usermapping "
-        "is used." << endl;
+        " not passing -o default_permissions to Fuse) because a Grid"
+        " usermapping is used." << endl;
+  }
+  if (options_->use_fuse_permission_checks && options_->SSLEnabled()) {
+    options_->use_fuse_permission_checks = false;
+
+    Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
+        " not passing -o default_permissions to Fuse) as SSL is used. In rare"
+        " cases it may be safe to pass -o default_permissions manually (that is"
+        " if the NullAuthenticationProvider is used in the MRC or service"
+        " certificates (contrary to user certificates) are used in the client"
+        " to connect to the MRC)."
+        << endl;
+  }
+  if (options_->fuse_permission_checks_explicitly_disabled) {
+    Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
+        " not passing -o default_permissions to Fuse) as requested by the user."
+        << endl;
   }
 
   // Add Fuse default options.
@@ -302,7 +324,10 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   // In consequence, we have to disable the Fuse stat cache at all.
   required_fuse_options->push_back(strdup("-oattr_timeout=0"));
   required_fuse_options->push_back(
-      strdup("-ouse_ino,readdir_ino,noatime"));
+      strdup("-ouse_ino,readdir_ino"));
+  #ifndef __sun
+    required_fuse_options->push_back(strdup("-onoatime"));
+  #endif
   required_fuse_options->push_back(strdup(
       (string("-ofsname=xtreemfs@") + options_->xtreemfs_url).c_str()));
 }
@@ -391,6 +416,7 @@ xtreemfs::pbrpc::SYSTEM_V_FCNTL FuseAdapter::ConvertFlagsUnixToXtreemFS(
   CHECK(result, flags, O_CREAT    , SYSTEM_V_FCNTL_H_O_CREAT);
   CHECK(result, flags, O_TRUNC    , SYSTEM_V_FCNTL_H_O_TRUNC);
   CHECK(result, flags, O_EXCL     , SYSTEM_V_FCNTL_H_O_EXCL);
+  CHECK(result, flags, O_SYNC     , SYSTEM_V_FCNTL_H_O_SYNC);
 #ifdef __linux
   CHECK(result, flags, O_DSYNC    , SYSTEM_V_FCNTL_H_O_SYNC);
 #endif
@@ -499,6 +525,13 @@ int FuseAdapter::getattr(const char *path, struct stat *statbuf) {
  *  - 1 (due to null termination). */
 int FuseAdapter::getxattr(
     const char *path, const char *name, char *value, size_t size) {
+  const string path_str(path);
+
+  // No getxattr for xtfsutil control files.
+  if (xctl_.checkXctlFile(path_str)) {
+      return -1 * ENOATTR;
+  }
+
   bool xtreemfs_attribute_requested = !strncmp(name, "xtreemfs.", 9);
   if (!options_->enable_xattrs && !xtreemfs_attribute_requested) {
     return -1 * ENOTSUP;
@@ -510,19 +543,15 @@ int FuseAdapter::getxattr(
   try {
     if (size == 0) {
       int result = 0;
-      if (volume_->GetXAttrSize(user_credentials, string(path),
+      if (volume_->GetXAttrSize(user_credentials, path_str,
           string(name), &result)) {
         return result;
       } else {
-#ifdef __linux
-        return -1 * ENODATA;  // Linux has no ENOATTR.
-#else
         return -1 * ENOATTR;
-#endif
       }
     } else {
       string value_string;
-      if (volume_->GetXAttr(user_credentials, string(path),
+      if (volume_->GetXAttr(user_credentials, path_str,
                             string(name), &value_string)) {
         if (value_string.size() <= size) {
           // XAttrs are actually binary data and do not require a
@@ -533,11 +562,7 @@ int FuseAdapter::getxattr(
           return -1 * ERANGE;
         }
       } else {
-#ifdef __linux
-        return -1 * ENODATA;  // Linux has no ENOATTR.
-#else
         return -1 * ENOATTR;
-#endif
       }
     }
   } catch(const PosixErrorException& e) {
@@ -668,18 +693,26 @@ int FuseAdapter::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   int i;
   for (i = offset; i < dir_entries_offset + dir_entries->entries_size(); i++) {
     boost::uint64_t dir_entries_index = i -  dir_entries_offset;
-    assert(dir_entries->entries(dir_entries_index).has_stbuf());
-    // Only set here st_ino and st_mode for the struct dirent.
-    fuse_statbuf.st_ino
-        = dir_entries->entries(dir_entries_index).stbuf().ino();
-    fuse_statbuf.st_mode
-        = dir_entries->entries(dir_entries_index).stbuf().mode();
+    if (dir_entries->entries(dir_entries_index).has_stbuf()) {
+      // Only set here st_ino and st_mode for the struct dirent.
+      fuse_statbuf.st_ino
+          = dir_entries->entries(dir_entries_index).stbuf().ino();
+      fuse_statbuf.st_mode
+          = dir_entries->entries(dir_entries_index).stbuf().mode();
 
-    if (filler(buf,
-               dir_entries->entries(dir_entries_index).name().c_str(),
-               &fuse_statbuf,
-               i + 1)) {
-      break;
+      if (filler(buf,
+                 dir_entries->entries(dir_entries_index).name().c_str(),
+                 &fuse_statbuf,
+                 i + 1)) {
+        break;
+      }
+    } else {
+      if (filler(buf,
+                 dir_entries->entries(dir_entries_index).name().c_str(),
+                 NULL,
+                 i + 1)) {
+        break;
+      }
     }
   }
 
@@ -720,7 +753,7 @@ int FuseAdapter::releasedir(const char *path, struct fuse_file_info *fi) {
   assert(cached_direntries != NULL);
   delete cached_direntries->dir_entries;
   delete cached_direntries;
-  fi->fh = NULL;
+  fi->fh = 0;  // NULL.
 
   return 0;
 }
@@ -899,7 +932,7 @@ int FuseAdapter::mkdir(const char *path, mode_t mode) {
   GenerateUserCredentials(fuse_get_context(), &user_credentials);
 
   try {
-    volume_->CreateDirectory(user_credentials, string(path), mode);
+    volume_->MakeDirectory(user_credentials, string(path), mode);
   } catch(const PosixErrorException& e) {
     return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {
@@ -1188,7 +1221,7 @@ int FuseAdapter::rmdir(const char *path) {
   GenerateUserCredentials(fuse_get_context(), &user_credentials);
 
   try {
-    volume_->RemoveDirectory(user_credentials, string(path));
+    volume_->DeleteDirectory(user_credentials, string(path));
   } catch(const PosixErrorException& e) {
     return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
   } catch(const XtreemFSException& e) {

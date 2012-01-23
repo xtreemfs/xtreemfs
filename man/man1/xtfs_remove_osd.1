@@ -46,6 +46,14 @@ Shuts down the OSD per remote call after all object files are moved to other OSD
 The administrator password, if password protection is enabled. Used only if you want to shutdown the OSD automatically per remote call.
 
 
+.SH LIMITATIONS
+.TP
+While the draining is in progress, it is not possible to modify the to be moved files as they are temporarily set to read-only. Additionally, when the draining will be started, no files of the OSD should be hold open by any client.
+.TP
+Draining an OSD that holds striped and replicated files involves certain limitations. A striped file is currently moved to a new OSD in its entirety rather than partially. Regardless of the original number of OSDs it was striped across, it is relocated to a single target OSD, which implies that the target file is not striped anymore. As a consequence, data may be moved from OSDs that are not directly affected by the draining process.
+.TP
+Furthermore, at least one OSD has to exist for each file that does not hold any data of the file, i.e. is not included in any stripe or replica. If all OSDs that are eligible according to the OSD selection policy have already been assigned to a file, draining any of these OSDs will fail, as no additional replicas can be created.
+
 .SH "SEE ALSO"
 .BR xtfs_chstatus (1),
 .BR xtfs_mrcdbtool (1),

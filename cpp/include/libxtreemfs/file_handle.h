@@ -8,6 +8,8 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_FILE_HANDLE_H_
 #define CPP_INCLUDE_LIBXTREEMFS_FILE_HANDLE_H_
 
+#include <boost/cstdint.hpp>
+
 namespace xtreemfs {
 
 namespace pbrpc {
@@ -230,6 +232,10 @@ class FileHandle {
       const std::string& osd_uuid) = 0;
 
   /** Closes the open file handle (flushing any pending data).
+   *
+   * @attention The libxtreemfs implementation does NOT count the number of
+   *            pending operations. Make sure that there're no pending
+   *            operations on the FileHandle before you Close() it.
    *
    * @attention Please execute ReleaseLockOfProcess() first if there're multiple
    *            open file handles for the same file and you want to ensure the

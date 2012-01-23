@@ -5,16 +5,11 @@
 
 
 # Use XTREEMFS_ESVN_REPO_URI to track a different branch
-ESVN_REPO_URI=${XTREEMFS_ESVN_REPO_URI:-http://xtreemfs.googlecode.com/svn/trunk/}
+ESVN_REPO_URI=${XTREEMFS_ESVN_REPO_URI:-http://xtreemfs.googlecode.com/svn/tags/XtreemFS-unstable}
 ESVN_PROJECT=${ESVN_REPO_URI##*/svnroot/}
 ESVN_PROJECT=${ESVN_PROJECT%/*}
-if [[ ${PV} == "9999" ]] ; then
-	inherit java-pkg-2 java-ant-2 subversion
-else
-	inherit java-pkg-2 java-ant-2
-	SRC_URI="http://xtreemfs.googlecode.com/files/XtreemFS-${PV}.tar.gz"
-fi
 
+inherit java-pkg-2 java-ant-2 subversion
 
 DESCRIPTION="XTREEMFS is a distributed and replicated file system for the Internet"
 HOMEPAGE="http://www.xtreemfs.org"
@@ -82,4 +77,10 @@ src_install() {
 pkg_preinst() {
 	fowners xtreemfs:xtreemfs /var/log/xtreemfs
 	fperms 755 /var/log/xtreemfs
+}
+
+pkg_postinst() {
+	${S}/packaging/generate_uuid /etc/xtreemfs/dirconfig.properties
+	${S}/packaging/generate_uuid /etc/xtreemfs/mrcconfig.properties
+	${S}/packaging/generate_uuid /etc/xtreemfs/osdconfig.properties
 }

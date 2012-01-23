@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef CPP_INCLUDE_UTIL_ERROR_LOG_H
-#define	CPP_INCLUDE_UTIL_ERROR_LOG_H
+#ifndef CPP_INCLUDE_UTIL_ERROR_LOG_H_
+#define	CPP_INCLUDE_UTIL_ERROR_LOG_H_
 
 #include "boost/thread.hpp"
 #include <list>
@@ -53,5 +53,5 @@ void shutdown_error_log();
 }  // namespace xtreemfs
 
 
-#endif	// CPP_INCLUDE_UTIL_ERROR_LOG_H
+#endif	// CPP_INCLUDE_UTIL_ERROR_LOG_H_
 

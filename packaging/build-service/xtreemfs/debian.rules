@@ -72,6 +72,10 @@ install: build
 	         $(BUILD_DIR)/usr/bin/*.xtreemfs \
 	         $(BUILD_DIR)/usr/bin/xtfsutil 
 	         #$(BUILD_DIR)/usr/bin/xtfs_vivaldi
+	mkdir -p $(BUILD_DIR)-client/sbin
+	ln    -sf /usr/bin/mount.xtreemfs $(BUILD_DIR)-client/sbin/mount.xtreemfs
+	ln    -sf /usr/bin/umount.xtreemfs $(BUILD_DIR)-client/sbin/umount.xtreemfs
+	mkdir -p $(BUILD_DIR)-client/sbin
 	mkdir -p $(BUILD_DIR)-client/etc/init.d
 	#mv    -t $(BUILD_DIR)-client/etc/init.d \
 	#         $(BUILD_DIR)/etc/init.d/xtreemfs-vivaldi
@@ -93,7 +97,9 @@ install: build
 	         $(BUILD_DIR)/usr/share/java/Foundation.jar \
 	         $(BUILD_DIR)/usr/share/java/protobuf-java-2.3.0.jar \
 	         $(BUILD_DIR)/usr/share/java/Flease.jar \
-	         $(BUILD_DIR)/usr/share/java/BabuDB.jar
+	         $(BUILD_DIR)/usr/share/java/BabuDB.jar \
+	         $(BUILD_DIR)/usr/share/java/jdmkrt.jar \
+	         $(BUILD_DIR)/usr/share/java/jdmktk.jar
 	mkdir -p $(BUILD_DIR)-backend/usr/share/doc/xtreemfs-backend
 	cp    -t $(BUILD_DIR)-backend/usr/share/doc/xtreemfs-backend \
 	         $(CURDIR)/LICENSE

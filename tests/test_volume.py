@@ -13,12 +13,14 @@ class Volume:
                  xtreemfs_dir,
                  debug_level,
                  mount_options,
+                 mkfs_options,
                  mrc_uri,
                  dir_uri,
                  pkcs12_file_path,
                  pkcs12_passphrase,
                  stripe_width,
                  stripe_size,
+                 rwr_policy,
                  rwr_factor,
                  ronly_factor):
         self.__mount_point_dir_path = os.path.abspath(mount_point_dir_path)
@@ -26,6 +28,7 @@ class Volume:
         self.__debug_level = debug_level
         self.__xtreemfs_dir = xtreemfs_dir
         self.__mount_options = mount_options
+        self.__mkfs_options = mkfs_options
         self.__mrc_uri = mrc_uri
         if not mrc_uri.endswith("/"):
             self.__mrc_uri += "/"
@@ -35,6 +38,7 @@ class Volume:
         self.__pkcs12_passphrase = pkcs12_passphrase
         self.__stripe_width = stripe_width
         self.__stripe_size = stripe_size
+        self.__rwr_policy = rwr_policy
         self.__rwr_factor = rwr_factor
         self.__ronly_factor = ronly_factor
         
@@ -51,12 +55,15 @@ class Volume:
         if self.__pkcs12_passphrase is not None: mkfs_xtreemfs_args.extend(("--pkcs12-passphrase", self.__pkcs12_passphrase))
         mkfs_xtreemfs_args.extend(("-s", str(self.__stripe_size)))
         mkfs_xtreemfs_args.extend(("-w", str(self.__stripe_width)))
+        mkfs_xtreemfs_args.extend(self.__mkfs_options)
 
         mkfs_xtreemfs_args.append(self.__mrc_uri + self.__name)
         mkfs_xtreemfs_args = " ".join(mkfs_xtreemfs_args)
         print "xtestenv: creating volume", self.__name, "with", mkfs_xtreemfs_args
 
-        subprocess.call(mkfs_xtreemfs_args, shell=True)
+        retcode = subprocess.call(mkfs_xtreemfs_args, shell=True)
+        if retcode != 0:
+            raise RuntimeError("Failed to create volume: " + self.__name + " You can use the option --clean-test-dir to clean previous data from the test dir. mkfs.xtreemfs return value: " + str(retcode))
 
     def get_mount_point_dir_path(self):
         return self.__mount_point_dir_path
@@ -103,10 +110,13 @@ class Volume:
         if self.__rwr_factor > 0:
             command = (self.__xtreemfs_dir + "/bin/xtfsutil " +
                        "--set-drp " +
-                       "--replication-policy=WqRq " +
+                       "--replication-policy="+self.__rwr_policy + " " +
                        "--replication-factor="+str(self.__rwr_factor) + " " +
                        self.__mount_point_dir_path)
-            subprocess.call(command, shell=True)
+            retcode = subprocess.call(command, shell=True)
+            if retcode != 0:
+                raise RuntimeError("Failed to enable read-write replication on volume: " + self.__name + " xtfsutil return value: " + str(retcode))
+
 
         # enable replicate on close for ronly replication
         if self.__ronly_factor > 0:
@@ -116,7 +126,10 @@ class Volume:
                  "/usr/bin/setfattr -n xtreemfs.rsel_policy -v 3000 " +
                  self.get_mount_point_dir_path()):
                     print "xtestenv: calling setfattr to enable replication:", setfattr_command
-                    subprocess.call(setfattr_command, shell=True)
+                    retcode = subprocess.call(setfattr_command, shell=True)
+                    if retcode != 0:
+                        raise RuntimeError("Failed to enable read-only replicaton on volume: " + self.__name + " xtfsutil return value: " + str(retcode))
+
 
     def unmount(self):
         for mounts_line in open("/proc/mounts").readlines():
@@ -126,4 +139,7 @@ class Volume:
             if test_mount_point_dir_path.endswith(self.get_mount_point_dir_path()):
                 fusermount_args = " ".join(["fusermount", "-u", "-z", self.get_mount_point_dir_path()])
                 print "xtestenv: unmounting volume", self.get_name(), "with", fusermount_args
-                subprocess.call(fusermount_args, shell=True)
+                retcode = subprocess.call(fusermount_args, shell=True)
+                if retcode != 0:
+                    print("Failed to unmount volume: " + self.__name + " fusermount -u return value: " + str(retcode))
+

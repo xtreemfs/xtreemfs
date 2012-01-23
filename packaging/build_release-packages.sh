@@ -105,6 +105,9 @@ function delete_svn() {
 
 function prepare_build_files() {
     cp -r $BUILD_FILES_DIR/xtreemfs $TARGET_DIR/xtreemfs
+    mv $TARGET_DIR/xtreemfs/xtreemfs.spec $TARGET_DIR/xtreemfs/xtreemfs-$VERSION.spec
+    mv $TARGET_DIR/xtreemfs/xtreemfs-SLE_10.spec $TARGET_DIR/xtreemfs/xtreemfs-$VERSION-SLE_10.spec
+    mv $TARGET_DIR/xtreemfs/xtreemfs.dsc $TARGET_DIR/xtreemfs/xtreemfs-$VERSION.dsc
     cp -r $BUILD_FILES_DIR/xtreemfs $TARGET_DIR/xtreemfs-testing
     find $TARGET_DIR -type f -exec sed -i "s/_VERSION_/$VERSION/g" {} \;
     # write contents of postinstall_setup.sh into the packages' spec files:

@@ -36,6 +36,17 @@ LsfsOptions::LsfsOptions() : Options() {
       "\tlsfs.xtreemfs [options] [pbrpc[g|s]://]<mrc-host>[:port]\n"  // NOLINT
       "\n"
       "  Example: lsfs.xtreemfs localhost/myVolume\n";
+
+  // Password.
+  admin_password = "";
+
+  po::options_description password_descriptions("Admin Password");
+  password_descriptions.add_options()
+      ("admin_password",
+        po::value(&admin_password)->default_value(admin_password),
+        "MRC's admin_password (not required if not set at the MRC).");
+
+  lsfs_descriptions_.add(password_descriptions);
 }
 
 void LsfsOptions::ParseCommandLine(int argc, char** argv) {
@@ -93,7 +104,7 @@ std::string LsfsOptions::ShowCommandLineHelp() {
          << lsfs_descriptions_
          // Descriptions of the general options.
          << endl
-         << Options::ShowCommandLineHelpVolumeDeletionAndListing();
+         << Options::ShowCommandLineHelpVolumeListing();
   return stream.str();
 }
 

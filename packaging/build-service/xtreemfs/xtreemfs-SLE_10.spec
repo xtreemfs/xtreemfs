@@ -1,6 +1,6 @@
 # norootforbuild
 
-%define client_subpackage 1
+%define client_subpackage 0
 
 Name:           xtreemfs
 Version:        _VERSION_
@@ -175,9 +175,7 @@ _POSTINSTALL_
 %restart_on_update xtreemfs-dir xtreemfs-mrc xtreemfs-osd
 %endif
 %if 0%{?fedora_version}
-/sbin/chkconfig --add xtreemfs-dir
-/sbin/chkconfig --add xtreemfs-mrc
-/sbin/chkconfig --add xtreemfs-osd
+/sbin/chkconfig --add xtreemfs-dir xtreemfs-mrc xtreemfs-osd
 %endif
 %if 0%{?mandriva_version}
 %_post_service xtreemfs-dir xtreemfs-mrc xtreemfs-osd
@@ -193,9 +191,7 @@ _POSTINSTALL_
     /sbin/service xtreemfs-dir stop >/dev/null 2>&1
     /sbin/service xtreemfs-mrc stop >/dev/null 2>&1
     /sbin/service xtreemfs-osd stop >/dev/null 2>&1
-    /sbin/chkconfig --del xtreemfs-dir
-    /sbin/chkconfig --del xtreemfs-mrc
-    /sbin/chkconfig --del xtreemfs-osd
+    /sbin/chkconfig --del xtreemfs-dir xtreemfs-mrc xtreemfs-osd
   fi
 %endif
 %if 0%{?mandriva_version}
