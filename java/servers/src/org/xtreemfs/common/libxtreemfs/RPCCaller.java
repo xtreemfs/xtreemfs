@@ -1,0 +1,287 @@
+/*
+ * Copyright (c) 2011 by Paul Seiferth, Zuse Institute Berlin
+ *
+ * Licensed under the BSD License, see LICENSE file for details.
+ *
+ */
+package org.xtreemfs.common.libxtreemfs;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
+import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
+import org.xtreemfs.common.libxtreemfs.exceptions.InternalServerErrorException;
+import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
+import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SERVICES;
+
+import com.google.protobuf.Message;
+
+/**
+ * Helper class provides static methods for all kinds of RPC calls to the servers. Abstracts error
+ * handling and retrying of failure.
+ */
+public class RPCCaller {
+
+    /**
+     * Interface for syncCall which generates the calls. Will be called for each retry.
+     */
+    protected interface CallGenerator<C, R extends Message> {
+        public RPCResponse<R> executeCall(InetSocketAddress server, Auth authHeader,
+                UserCredentials userCreds, C input) throws IOException, PosixErrorException;
+    }
+
+    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
+            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
+            boolean uuidIteratorHasAddresses, C callRequest, CallGenerator<C, R> callGen) throws IOException,
+            PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
+        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
+                options.getMaxTries(), callRequest, null, callGen);
+    }
+
+    protected static <C, R extends Message> R
+            syncCall(SERVICES service, UserCredentials userCreds, Auth auth, Options options,
+                    UUIDResolver uuidResolver, UUIDIterator it, boolean uuidIteratorHasAddresses,
+                    boolean delayNextTry, int maxRetries, C callRequest, CallGenerator<C, R> callGen) throws IOException,
+                    PosixErrorException, InternalServerErrorException, AddressToUUIDNotFoundException {
+        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses,
+                delayNextTry, options.getMaxTries(), callRequest, null, callGen);
+    }
+
+    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
+            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
+            boolean uuidIteratorHasAddresses, C callRequest, ReusableBuffer buf, CallGenerator<C, R> callGen)
+            throws IOException, PosixErrorException, InternalServerErrorException,
+            AddressToUUIDNotFoundException {
+        return syncCall(service, userCreds, auth, options, uuidResolver, it, uuidIteratorHasAddresses, false,
+                options.getMaxTries(), callRequest, buf, callGen);
+    }
+
+    protected static <C, R extends Message> R syncCall(SERVICES service, UserCredentials userCreds,
+            Auth auth, Options options, UUIDResolver uuidResolver, UUIDIterator it,
+            boolean uuidIteratorHasAddresses, boolean delayNextTry, int maxRetries, C callRequest,
+            ReusableBuffer buffer, CallGenerator<C, R> callGen) throws PosixErrorException, IOException,
+            InternalServerErrorException, AddressToUUIDNotFoundException {
+        int maxTries = maxRetries;
+        int attempt = 0;
+
+        R response = null;
+        try {
+            while (++attempt <= maxTries || maxTries == 0) {
+                RPCResponse<R> r = null;
+                try {
+                    // create an InetSocketAddresse depending on the uuidIterator and
+                    // the kind of service
+                    InetSocketAddress server;
+                    if (uuidIteratorHasAddresses) {
+                        server = getInetSocketAddressFromAddress(it.getUUID(), service);
+                    } else { // UUIDIterator has really1 UUID, not just address Strings.
+                        String address = uuidResolver.uuidToAddress(it.getUUID());
+                        server = getInetSocketAddressFromAddress(address, service);
+                    }
+
+                    r = callGen.executeCall(server, auth, userCreds, callRequest);
+                    response = r.get();
+
+                    // If the buffer is not null it should be filled with data
+                    // piggybacked in the RPCResponse.
+                    // This is used by the read request.
+                    if (buffer != null) {
+                        buffer.put(r.getData());
+                    }
+                } catch (PBRPCException pbe) {
+                    // handle special redirect
+                    if (pbe.getErrorType().equals(ErrorType.REDIRECT)) {
+                        assert (pbe.getRedirectToServerUUID() != null);
+                        // Log redirect.
+                        if (Logging.isInfo()) {
+                            String error;
+                            if (uuidIteratorHasAddresses) {
+                                error =
+                                        "The server " + it.getUUID() + " redirected to the current master: "
+                                                + pbe.getRedirectToServerUUID() + " at attempt: " + attempt;
+                            } else {
+                                error =
+                                        "The server with UUID " + it.getUUID()
+                                                + " redirected to the current master: "
+                                                + pbe.getRedirectToServerUUID() + " at attempt: " + attempt;
+                            }
+                            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, pbe, error);
+                        }
+
+                        if (maxTries != 0 && attempt == maxTries) {
+                            // This was the last retry, but we give it another chance.
+                            maxTries++;
+                        }
+                        // Do a fast retry and do not delay until next attempt.
+                        it.markUUIDAsFailed(it.getUUID());
+                        continue;
+                    }
+                    // Retry (and delay) only if at least one retry is left
+                    if (((attempt < maxTries || maxTries == 0) ||
+                    // or this last retry should be delayed
+                            (attempt == maxTries && delayNextTry))
+                            &&
+                            // AND it is an recoverable error.
+                            (pbe.getErrorType().equals(ErrorType.IO_ERROR) || pbe.getErrorType().equals(
+                                    ErrorType.INTERNAL_SERVER_ERROR))) {
+
+                        // Log only the first retry.
+                        if (attempt == 1 && maxTries != 1) {
+                            String retriesLeft =
+                                    (maxTries == 0) ? ("infinite") : (String.valueOf(maxTries - attempt));
+                            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, pbe,
+                                    "Got no response from %s,"
+                                            + "retrying (%s attemps left, waiting at least %s seconds"
+                                            + " between two attemps)", it.getUUID(), retriesLeft,
+                                    options.getRetryDelay_s());
+                        }
+                        // Mark the current UUID as failed and get the next one.
+                        it.markUUIDAsFailed(it.getUUID());
+                    } else {
+                        throw pbe;
+                    }
+                } catch (IOException ioe) {
+                    // Retry (and delay) only if at least one retry is left
+                    if (((attempt < maxTries || maxTries == 0) ||
+                    // or this last retry should be delayed
+                    (attempt == maxTries && delayNextTry))) {
+                        // Log only the first retry.
+                        if (attempt == 1 && maxTries != 1) {
+                            String retriesLeft =
+                                    (maxTries == 0) ? ("infinite") : (String.valueOf(maxTries - attempt));
+                            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, ioe,
+                                    "Got no response from %s,"
+                                            + "retrying (%s attemps left, waiting at least %s seconds"
+                                            + " between two attemps)", it.getUUID(), retriesLeft,
+                                    options.getRetryDelay_s());
+                        }
+                        // Mark the current UUID as failed and get the next one.
+                        it.markUUIDAsFailed(it.getUUID());
+                        continue;
+                    } else {
+                        throw ioe;
+                    }
+                } catch (InterruptedException ie) {
+                    // TODO: Ask what that is.
+                    if (options.getInterruptSignal() == 0) {
+                        if (Logging.isDebug()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, ie,
+                                    "Caught interrupt, aborting sync request");
+                        }
+                        break;
+                    }
+                    throw new IOException();
+                } finally {
+                    if (r != null) {
+                        r.freeBuffers();
+                    }
+                }
+                return response;
+            }
+        } catch (PBRPCException e) {
+            // Max attempts reached or non-IO error seen. Throw an exception.
+            handleErrorAfterMaxTriesExceeded(e, it);
+        }
+        return null;
+    }
+
+    /**
+     * Determines what to throw when the maximum number of retries is reached and there is still no valid
+     * answer.
+     * 
+     * @param e
+     * @param it
+     */
+    private static void handleErrorAfterMaxTriesExceeded(PBRPCException e, UUIDIterator it)
+            throws PosixErrorException, IOException, InternalServerErrorException, XtreemFSException {
+        // By default all errors are logged as errors.
+        int logLevel = Logging.LEVEL_INFO;
+
+        String errorMsg = "";
+        switch (e.getErrorType()) {
+        case ERRNO:
+            // Posix error are usally not logged as errors.
+            if (e.getPOSIXErrno().equals(POSIXErrno.POSIX_ERROR_ENOENT)) {
+                logLevel = Logging.LEVEL_DEBUG;
+            }
+            errorMsg =
+                    "The server " + it.getUUID() + " denied the requested operation. " + "Error value: "
+                            + e.getErrorType().name() + " Error message: " + e.getErrorMessage();
+
+            Logging.logMessage(logLevel, Category.misc, e, errorMsg);
+            throw new PosixErrorException(e.getPOSIXErrno(), errorMsg);
+        case IO_ERROR:
+            Logging.logMessage(logLevel, Category.misc, e, "The client encountered a communication "
+                    + "error sending a request to the server %s Error: %s", it.getUUID(), e.getErrorMessage());
+            throw new IOException(e.getErrorMessage());
+        case INTERNAL_SERVER_ERROR:
+            Logging.logMessage(logLevel, Category.misc, e, "The server %s returned an internal server"
+                    + "error: %s", it.getUUID(), e.getErrorMessage());
+            throw new InternalServerErrorException(errorMsg);
+        case REDIRECT:
+            throw new XtreemFSException("This error (A REDIRECT error was not handled "
+                    + "and retried but thrown instead) should never happen. Report this");
+        default:
+            errorMsg =
+                    "The server " + it.getUUID() + "returned an error: " + e.getErrorType().name()
+                            + " Error: " + e.getErrorMessage();
+            Logging.logMessage(logLevel, Category.misc, e, errorMsg);
+            throw new XtreemFSException(errorMsg);
+        } // end of switch
+    }
+
+    // private static void handlePBException(PBRPCException e) throws IOException, PosixErrorException {
+    // int loglevel = Logging.LEVEL_INFO;
+    //
+    // switch (e.getErrorType()) {
+    //
+    // case ErrorType.ERRNO:
+    // // Posix errors are usually not logged as errors.
+    // if (e.getPOSIXErrno().equals(POSIXErrno.POSIX_ERROR_ENOENT)) {
+    // loglevel = Logging.LEVEL_DEBUG;
+    // }
+    // Logging.logMessage(loglevel, Category.misc, e, "The server %s (" + , args)
+    //
+    // default:
+    // return;
+    // }
+    // }
+
+    /**
+     * Create an InetSocketAddress depending on the address and the type of service object is. If address does
+     * not contain a port a default port depending on the client object is used.
+     * 
+     * @param address
+     *            The address.
+     * @param service
+     *            The service used to determine which default port should used when address does not contain a
+     *            port.
+     * @return
+     */
+    protected static InetSocketAddress getInetSocketAddressFromAddress(String address, SERVICES service) {
+        if (SERVICES.DIR.equals(service)) {
+            return Helper.stringToInetSocketAddress(address,
+                    GlobalTypes.PORTS.DIR_PBRPC_PORT_DEFAULT.getNumber());
+        }
+        if (SERVICES.MRC.equals(service)) {
+            return Helper.stringToInetSocketAddress(address,
+                    GlobalTypes.PORTS.MRC_PBRPC_PORT_DEFAULT.getNumber());
+        }
+        if (SERVICES.OSD.equals(service)) {
+            return Helper.stringToInetSocketAddress(address,
+                    GlobalTypes.PORTS.OSD_PBRPC_PORT_DEFAULT.getNumber());
+        }
+        return null;
+    }
+}

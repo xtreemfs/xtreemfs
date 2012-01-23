@@ -255,3 +255,9 @@ message KeyValuePair {
   required string key = 1;
   required string value = 2;
 }
+
+enum SERVICES {
+  DIR = 1;
+  MRC = 2;
+  OSD = 3;
+}

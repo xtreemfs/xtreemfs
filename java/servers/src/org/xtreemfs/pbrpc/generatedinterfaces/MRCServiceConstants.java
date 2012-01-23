@@ -1,5 +1,5 @@
-//automatically generated from MRC.proto at Mon Aug 01 16:12:49 CEST 2011
-//(c) 2011. See LICENSE file for details.
+//automatically generated from MRC.proto at Mon Jan 23 15:45:17 CET 2012
+//(c) 2012. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
 

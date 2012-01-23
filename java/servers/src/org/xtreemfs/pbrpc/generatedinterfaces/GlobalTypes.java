@@ -659,6 +659,75 @@ public final class GlobalTypes {
     // @@protoc_insertion_point(enum_scope:xtreemfs.pbrpc.REPL_FLAG)
   }
   
+  public enum SERVICES
+      implements com.google.protobuf.ProtocolMessageEnum {
+    DIR(0, 1),
+    MRC(1, 2),
+    OSD(2, 3),
+    ;
+    
+    
+    public final int getNumber() { return value; }
+    
+    public static SERVICES valueOf(int value) {
+      switch (value) {
+        case 1: return DIR;
+        case 2: return MRC;
+        case 3: return OSD;
+        default: return null;
+      }
+    }
+    
+    public static com.google.protobuf.Internal.EnumLiteMap<SERVICES>
+        internalGetValueMap() {
+      return internalValueMap;
+    }
+    private static com.google.protobuf.Internal.EnumLiteMap<SERVICES>
+        internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<SERVICES>() {
+            public SERVICES findValueByNumber(int number) {
+              return SERVICES.valueOf(number)
+    ;        }
+          };
+    
+    public final com.google.protobuf.Descriptors.EnumValueDescriptor
+        getValueDescriptor() {
+      return getDescriptor().getValues().get(index);
+    }
+    public final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptorForType() {
+      return getDescriptor();
+    }
+    public static final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptor() {
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(9);
+    }
+    
+    private static final SERVICES[] VALUES = {
+      DIR, MRC, OSD, 
+    };
+    public static SERVICES valueOf(
+        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+      if (desc.getType() != getDescriptor()) {
+        throw new java.lang.IllegalArgumentException(
+          "EnumValueDescriptor is not for this type.");
+      }
+      return VALUES[desc.getIndex()];
+    }
+    private final int index;
+    private final int value;
+    private SERVICES(int index, int value) {
+      this.index = index;
+      this.value = value;
+    }
+    
+    static {
+      org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor();
+    }
+    
+    // @@protoc_insertion_point(enum_scope:xtreemfs.pbrpc.SERVICES)
+  }
+  
   public static final class NewFileSize extends
       com.google.protobuf.GeneratedMessage {
     // Use NewFileSize.newBuilder() to construct.
@@ -5084,8 +5153,9 @@ public final class GlobalTypes {
       "RANDOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FI" +
       "RST\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020" +
       "\022-\n)REPL_FLAG_STRATEGY_SEQUENTIAL_PREFET" +
-      "CHING\020 B(\n&org.xtreemfs.pbrpc.generatedi",
-      "nterfaces"
+      "CHING\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n",
+      "\003OSD\020\003B(\n&org.xtreemfs.pbrpc.generatedin" +
+      "terfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
