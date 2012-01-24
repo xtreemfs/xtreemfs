@@ -10,12 +10,9 @@ package org.xtreemfs.common.clients;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.StringTokenizer;
 
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.clients.internal.OpenFileList;
@@ -31,9 +28,6 @@ import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Setattrs;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
@@ -41,6 +35,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntry;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Setattrs;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr;
@@ -54,6 +49,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsResp
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
+
+import com.google.protobuf.ByteString;
 
 /**
  * 
@@ -319,8 +318,9 @@ public class Volume {
     public void enableSnapshots(boolean enable, UserCredentials userCreds) throws IOException {
         RPCResponse r = null;
         try {
+            String value = enable + "";
             r = mrcClient.setxattr(null, RPCAuthentication.authNone, userCreds, volumeName.replace("/", ""), "",
-                    "xtreemfs.snapshots_enabled", enable + "", 0);
+                    "xtreemfs.snapshots_enabled", value, ByteString.copyFrom(value.getBytes()), 0);
             r.get();
         } catch (PBRPCException ex) {
             throw wrapException(ex);
@@ -339,8 +339,9 @@ public class Volume {
     public void snapshot(String name, boolean recursive, UserCredentials userCreds) throws IOException {
         RPCResponse r = null;
         try {
+            String cmd = "c" + (recursive ? "r" : "") + " " + name;
             r = mrcClient.setxattr(null, RPCAuthentication.authNone, userCreds, volumeName.replace("/", ""), "",
-                    "xtreemfs.snapshots", "c" + (recursive ? "r" : "") + " " + name, 0);
+                    "xtreemfs.snapshots", cmd, ByteString.copyFrom(cmd.getBytes()), 0);
             r.get();
         } catch (PBRPCException ex) {
             throw wrapException(ex);
@@ -426,7 +427,7 @@ public class Volume {
         RPCResponse response = null;
         try {
             response = mrcClient.setxattr(null, RPCAuthentication.authNone, userCreds, fixPath(volumeName),
-                    fixPath(path), name, value, 0);
+                    fixPath(path), name, value, ByteString.copyFrom(value.getBytes()), 0);
             response.get();
         } catch (PBRPCException ex) {
             throw wrapException(ex);

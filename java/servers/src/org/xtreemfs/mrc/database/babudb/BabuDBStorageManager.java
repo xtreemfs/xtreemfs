@@ -191,7 +191,7 @@ public class BabuDBStorageManager implements StorageManager {
         
         if (attrs != null)
             for (Entry<String, String> attr : attrs.entrySet())
-                setXAttr(1L, SYSTEM_UID, "xtreemfs.volattr." + attr.getKey(), attr.getValue(), true, update);
+                setXAttr(1L, SYSTEM_UID, "xtreemfs.volattr." + attr.getKey(), attr.getValue().getBytes(), true, update);
         
         update.execute();
         
@@ -261,7 +261,7 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public XAttr createXAttr(long fileId, String owner, String key, String value) {
+    public XAttr createXAttr(long fileId, String owner, String key, byte[] value) {
         return new BufferBackedXAttr(fileId, owner, key, value, (short) 0);
     }
     
@@ -359,7 +359,7 @@ public class BabuDBStorageManager implements StorageManager {
             groupId, fileId, atime, ctime, mtime, ref.length(), 0777, 0, (short) 1, 0, 0, false);
         
         // create link target (XAttr)
-        BufferBackedXAttr lt = new BufferBackedXAttr(fileId, SYSTEM_UID, LINK_TARGET_ATTR_NAME, ref,
+        BufferBackedXAttr lt = new BufferBackedXAttr(fileId, SYSTEM_UID, LINK_TARGET_ATTR_NAME, ref.getBytes(),
             (short) 0);
         update.addUpdate(XATTRS_INDEX, lt.getKeyBuf(), lt.getValBuf());
         
@@ -529,11 +529,11 @@ public class BabuDBStorageManager implements StorageManager {
     public StripingPolicy getDefaultStripingPolicy(long fileId) throws DatabaseException {
         
         try {
-            String spString = getXAttr(fileId, SYSTEM_UID, DEFAULT_SP_ATTR_NAME);
-            if (spString == null)
+            byte[] sp = getXAttr(fileId, SYSTEM_UID, DEFAULT_SP_ATTR_NAME);
+            if (sp == null)
                 return null;
             
-            return Converter.stringToStripingPolicy(this, spString);
+            return Converter.stringToStripingPolicy(this, new String(sp));
             
         } catch (DatabaseException exc) {
             throw exc;
@@ -546,11 +546,11 @@ public class BabuDBStorageManager implements StorageManager {
     public ReplicationPolicy getDefaultReplicationPolicy(long fileId) throws DatabaseException {
         
         try {
-            String rpString = getXAttr(fileId, SYSTEM_UID, DEFAULT_RP_ATTR_NAME);
-            if (rpString == null)
+            byte[] rp = getXAttr(fileId, SYSTEM_UID, DEFAULT_RP_ATTR_NAME);
+            if (rp == null)
                 return null;
             
-            return Converter.stringToReplicationPolicy(this, rpString);
+            return Converter.stringToReplicationPolicy(this, new String(rp));
             
         } catch (DatabaseException exc) {
             throw exc;
@@ -622,7 +622,8 @@ public class BabuDBStorageManager implements StorageManager {
     public String getSoftlinkTarget(long fileId) throws DatabaseException {
         
         try {
-            return getXAttr(fileId, SYSTEM_UID, LINK_TARGET_ATTR_NAME);
+            byte[] target = getXAttr(fileId, SYSTEM_UID, LINK_TARGET_ATTR_NAME);
+            return target == null? null: new String(target);
         } catch (DatabaseException exc) {
             throw exc;
         } catch (Exception exc) {
@@ -631,7 +632,7 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public String getXAttr(long fileId, String uid, String key) throws DatabaseException {
+    public byte[] getXAttr(long fileId, String uid, String key) throws DatabaseException {
         
         try {
             
@@ -771,7 +772,7 @@ public class BabuDBStorageManager implements StorageManager {
         org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy defaultSp, boolean init,
         AtomicDBUpdate update) throws DatabaseException {
         
-        setXAttr(fileId, SYSTEM_UID, DEFAULT_SP_ATTR_NAME, Converter.stripingPolicyToString(defaultSp), init,
+        setXAttr(fileId, SYSTEM_UID, DEFAULT_SP_ATTR_NAME, Converter.stripingPolicyToString(defaultSp).getBytes(), init,
             update);
     }
     
@@ -779,7 +780,7 @@ public class BabuDBStorageManager implements StorageManager {
     public void setDefaultReplicationPolicy(long fileId, ReplicationPolicy defaultRp, AtomicDBUpdate update)
         throws DatabaseException {
         
-        setXAttr(fileId, SYSTEM_UID, DEFAULT_RP_ATTR_NAME, Converter.replicationPolicyToString(defaultRp),
+        setXAttr(fileId, SYSTEM_UID, DEFAULT_RP_ATTR_NAME, Converter.replicationPolicyToString(defaultRp).getBytes(),
             update);
     }
     
@@ -807,13 +808,13 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public void setXAttr(long fileId, String uid, String key, String value, AtomicDBUpdate update)
+    public void setXAttr(long fileId, String uid, String key, byte[] value, AtomicDBUpdate update)
         throws DatabaseException {
         
         setXAttr(fileId, uid, key, value, false, update);
     }
     
-    public void setXAttr(long fileId, String uid, String key, String value, boolean init,
+    public void setXAttr(long fileId, String uid, String key, byte[] value, boolean init,
         AtomicDBUpdate update) throws DatabaseException {
         
         try {
@@ -824,7 +825,7 @@ public class BabuDBStorageManager implements StorageManager {
             update.addUpdate(XATTRS_INDEX, xattr.getKeyBuf(), value == null ? null : xattr.getValBuf());
             
             if (key.startsWith(SYS_ATTR_KEY_PREFIX + MRCHelper.POLICY_ATTR_PREFIX))
-                notifyAttributeSet(volume.getId(), key, value);
+                notifyAttributeSet(volume.getId(), key, new String(value));
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);

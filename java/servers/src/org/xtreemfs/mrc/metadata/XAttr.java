@@ -16,7 +16,7 @@ public interface XAttr {
     
     public String getKey();
     
-    public String getValue();
+    public byte[] getValue();
     
     public String getOwner();
 }

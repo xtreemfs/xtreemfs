@@ -51,15 +51,15 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         this.allowSnaps = allowSnaps;
         
         // set the policies
-        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME, id, true, update);
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME, id.getBytes(), true, update);
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.OSD_POL_ATTR_NAME, Converter
-                .shortArrayToString(osdPolicy), true, update);
+                .shortArrayToString(osdPolicy).getBytes(), true, update);
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.REPL_POL_ATTR_NAME, Converter
-                .shortArrayToString(replicaPolicy), true, update);
+                .shortArrayToString(replicaPolicy).getBytes(), true, update);
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.AC_POL_ATTR_NAME, String
-                .valueOf(acPolicy), true, update);
+                .valueOf(acPolicy).getBytes(), true, update);
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.ALLOW_SNAPS_ATTR_NAME, String
-                .valueOf(allowSnaps), true, update);
+                .valueOf(allowSnaps).getBytes(), true, update);
     }
     
     public void init(BabuDBStorageManager sMan) throws DatabaseException {
@@ -67,16 +67,16 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         this.sMan = sMan;
         
         try {
-            id = sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME);
+            id = new String(sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME));
             name = sMan.getMetadata(1).getFileName();
-            osdPolicy = Converter.stringToShortArray(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
-                BabuDBStorageManager.OSD_POL_ATTR_NAME));
-            replicaPolicy = Converter.stringToShortArray(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
-                BabuDBStorageManager.REPL_POL_ATTR_NAME));
-            acPolicy = Short.parseShort(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
-                BabuDBStorageManager.AC_POL_ATTR_NAME));
-            allowSnaps = "true".equalsIgnoreCase(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
-                BabuDBStorageManager.ALLOW_SNAPS_ATTR_NAME));
+            osdPolicy = Converter.stringToShortArray(new String(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
+                BabuDBStorageManager.OSD_POL_ATTR_NAME)));
+            replicaPolicy = Converter.stringToShortArray(new String(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
+                BabuDBStorageManager.REPL_POL_ATTR_NAME)));
+            acPolicy = Short.parseShort(new String(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
+                BabuDBStorageManager.AC_POL_ATTR_NAME)));
+            allowSnaps = "true".equalsIgnoreCase(new String(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
+                BabuDBStorageManager.ALLOW_SNAPS_ATTR_NAME)));
         } catch (NumberFormatException exc) {
             Logging.logError(Logging.LEVEL_ERROR, this, exc);
             throw new DatabaseException("currpted MRC database", ExceptionType.INTERNAL_DB_ERROR);
@@ -112,7 +112,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     public void setOsdPolicy(short[] osdPolicy, AtomicDBUpdate update) throws DatabaseException {
         this.osdPolicy = osdPolicy;
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.OSD_POL_ATTR_NAME, Converter
-                .shortArrayToString(osdPolicy), update);
+                .shortArrayToString(osdPolicy).getBytes(), update);
         sMan.notifyVolumeChange(this);
     }
     
@@ -120,7 +120,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     public void setReplicaPolicy(short[] replicaPolicy, AtomicDBUpdate update) throws DatabaseException {
         this.replicaPolicy = replicaPolicy;
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.REPL_POL_ATTR_NAME, Converter
-                .shortArrayToString(replicaPolicy), update);
+                .shortArrayToString(replicaPolicy).getBytes(), update);
         sMan.notifyVolumeChange(this);
     }
     
@@ -128,7 +128,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     public void setAllowSnaps(boolean allowSnaps, AtomicDBUpdate update) throws DatabaseException {
         this.allowSnaps = allowSnaps;
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.ALLOW_SNAPS_ATTR_NAME, String
-                .valueOf(allowSnaps), update);
+                .valueOf(allowSnaps).getBytes(), update);
         sMan.notifyVolumeChange(this);
     }
     

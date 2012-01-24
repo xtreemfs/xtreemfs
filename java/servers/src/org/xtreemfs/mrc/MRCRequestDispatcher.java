@@ -538,7 +538,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "sending response for request %d", request
                         .getRPCRequest().getHeader().getCallId());
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, request.getResponse().toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "%s", request.getResponse().toString());
             }
             
             try {

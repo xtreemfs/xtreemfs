@@ -9,6 +9,7 @@
 package org.xtreemfs.mrc.metadata;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class BufferBackedXAttr extends BufferBackedIndexMetadata implements XAttr {
     
@@ -29,13 +30,13 @@ public class BufferBackedXAttr extends BufferBackedIndexMetadata implements XAtt
         valOffset = tmp.getShort();
     }
     
-    public BufferBackedXAttr(long fileId, String owner, String key, String value, short collCount) {
+    public BufferBackedXAttr(long fileId, String owner, String key, byte[] value, short collCount) {
         
         super(null, 0, 0, null, 0, 0);
         
         byte[] ownerBytes = owner.getBytes();
         byte[] keyBytes = key.getBytes();
-        byte[] valBytes = value == null ? new byte[0] : value.getBytes();
+        byte[] valBytes = value == null ? new byte[0] : value;
         
         keyLen = 18;
         keyBuf = new byte[keyLen];
@@ -60,8 +61,8 @@ public class BufferBackedXAttr extends BufferBackedIndexMetadata implements XAtt
         return new String(valBuf, ownerOffset, keyOffset - ownerOffset);
     }
     
-    public String getValue() {
-        return new String(valBuf, valOffset, valBuf.length - valOffset);
+    public byte[] getValue() {
+        return Arrays.copyOfRange(valBuf, valOffset, valBuf.length);
     }
     
     public void setCollisionNumber(short collisionNumber) {

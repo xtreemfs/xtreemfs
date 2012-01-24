@@ -61,9 +61,11 @@ public class GetLocalVolumesOperation extends MRCOperation {
             DatabaseResultSet<XAttr> attrs = sMan.getXAttrs(1, StorageManager.SYSTEM_UID);
             while (attrs.hasNext()) {
                 XAttr attr = attrs.next();
-                if (attr.getKey().startsWith(prefix))
+                if (attr.getKey().startsWith(prefix)) {
+                    byte[] valBytes = attr.getValue();
                     vol.addAttrs(KeyValuePair.newBuilder().setKey(attr.getKey().substring(prefix.length()))
-                            .setValue(attr.getValue()));
+                            .setValue(valBytes == null ? null : new String(valBytes)));
+                }
             }
             attrs.destroy();
             

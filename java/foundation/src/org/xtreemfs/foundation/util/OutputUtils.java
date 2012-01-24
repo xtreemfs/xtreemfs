@@ -10,15 +10,22 @@
 package org.xtreemfs.foundation.util;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Map;
+
+import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
 
 /**
  * 
  * @author bjko
  */
 public final class OutputUtils {
-    
+
+    static BASE64Encoder base64enc = new BASE64Encoder();
+    static BASE64Decoder base64dec = new BASE64Decoder();
+        
     public static final char[] trHex = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C',
         'D', 'E', 'F'               };
     
@@ -141,6 +148,14 @@ public final class OutputUtils {
         st = st.replace("&gt;", ">");
         st = st.replace("&quot;", "\"");
         return st;
+    }
+    
+    public static String encodeBase64(byte[] bytes) {
+        return base64enc.encode(bytes);
+    }
+    
+    public static byte[] decodeBase64(String s) throws IOException {
+        return base64dec.decodeBuffer(s);
     }
     
     public static byte[] hexStringToByteArray(String hexString) {

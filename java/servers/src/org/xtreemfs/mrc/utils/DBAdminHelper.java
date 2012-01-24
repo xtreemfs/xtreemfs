@@ -11,7 +11,6 @@ package org.xtreemfs.mrc.utils;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +34,8 @@ import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
+
+import sun.misc.BASE64Encoder;
 
 public class DBAdminHelper {
     
@@ -288,31 +289,47 @@ public class DBAdminHelper {
         
         if (openTag) {
             
+            int encIndex = attrs.getIndex("enc");
+            boolean base64 = encIndex != -1 && "BASE64".equals(attrs.getValue(encIndex));
+            
             int oIndex = attrs.getIndex("owner");
             String owner = oIndex == -1 ? "" : attrs.getValue(oIndex);
+            
             String key = OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("key")));
-            String value = OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("value")));
+            String valueEncoded = attrs.getValue(attrs.getIndex("value"));
             
-            StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
-            
-            // if the value refers to a read-only flag, set it directly
-            if (key.equals("ro")) {
-                AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
-                state.currentEntity.setReadOnly(Boolean.getBoolean(value));
-                update.execute();
-            }
-
-            else {
+            try {
+                byte[] value = base64 ? OutputUtils.decodeBase64(valueEncoded) : OutputUtils.unescapeFromXML(
+                        valueEncoded).getBytes();
                 
-                if (owner.isEmpty() && key.equals("ref"))
-                    key = "lt";
+                StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
                 
-                if (owner.isEmpty() && key.equals("spol"))
-                    key = "sp";
+                // if the value refers to a read-only flag, set it directly
+                if (key.equals("ro")) {
+                    
+                    String valueString = new String(value);
+                    
+                    AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
+                    state.currentEntity.setReadOnly(Boolean.getBoolean(valueString));
+                    update.execute();
+                }
                 
-                AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
-                sMan.setXAttr(state.currentEntity.getId(), owner, key, value, update);
-                update.execute();
+                else {
+                    
+                    if (owner.isEmpty() && key.equals("ref"))
+                        key = "lt";
+                    
+                    if (owner.isEmpty() && key.equals("spol"))
+                        key = "sp";
+                    
+                    AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
+                    sMan.setXAttr(state.currentEntity.getId(), owner, key, value, update);
+                    update.execute();
+                }
+                
+            } catch (IOException exc) {
+                throw new DatabaseException(
+                        "BASE64 decoding of extended attribute value '" + valueEncoded + "' failed", exc);
             }
         }
     }
@@ -411,13 +428,18 @@ public class DBAdminHelper {
     }
     
     private static void dumpAttrs(BufferedWriter xmlWriter, DatabaseResultSet<XAttr> attrs) throws IOException {
-        
+                
         if (attrs.hasNext()) {
             xmlWriter.write("<attrs>\n");
+            
             while (attrs.hasNext()) {
+                
                 XAttr attr = attrs.next();
-                xmlWriter.write("<attr key=\"" + OutputUtils.escapeToXML(attr.getKey()) + "\" value=\""
-                    + OutputUtils.escapeToXML(attr.getValue()) + "\" owner=\"" + attr.getOwner() + "\"/>\n");
+                String key = attr.getKey();
+                byte[] value = attr.getValue();
+                
+                xmlWriter.write("<attr key=\"" + OutputUtils.escapeToXML(key) + "\" value=\""
+                        + OutputUtils.encodeBase64(value) + "\" enc=\"BASE64\" owner=\"" + attr.getOwner() + "\"/>\n");
             }
             xmlWriter.write("</attrs>\n");
         }

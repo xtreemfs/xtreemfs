@@ -29,6 +29,8 @@ import org.xtreemfs.mrc.utils.MRCHelper.SysAttrs;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
 
+import com.google.protobuf.ByteString;
+
 /**
  * 
  * @author stender
@@ -64,7 +66,7 @@ public class GetXAttrsOperation extends MRCOperation {
         // retrieve and prepare the metadata to return
         FileMetadata file = res.getFile();
         
-        Map<String, String> attrs = new HashMap<String, String>();
+        Map<String, byte[]> attrs = new HashMap<String, byte[]>();
         
         DatabaseResultSet<XAttr> myAttrs = sMan.getXAttrs(file.getId(), rq.getDetails().userId);
         DatabaseResultSet<XAttr> globalAttrs = sMan.getXAttrs(file.getId(), StorageManager.GLOBAL_ID);
@@ -89,29 +91,29 @@ public class GetXAttrsOperation extends MRCOperation {
             String value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(), faMan,
                     res.toString(), file, attr.toString());
             if (!value.equals(""))
-                attrs.put(key, value);
+                attrs.put(key, value.getBytes());
         }
         
         // include policy attributes
         List<String> policyAttrNames = MRCHelper.getSpecialAttrNames(sMan, file.getId(), MRCHelper.POLICY_ATTR_PREFIX);
         for (String attr : policyAttrNames)
-            attrs.put(attr, "");
+            attrs.put(attr, new byte[0]);
         
         // include volume attributes
         List<String> volAttrAttrNames = MRCHelper.getSpecialAttrNames(sMan, file.getId(), MRCHelper.VOL_ATTR_PREFIX);
         for (String attr : volAttrAttrNames)
-            attrs.put(attr, "");
+            attrs.put(attr, new byte[0]);
         
         listxattrResponse.Builder result = listxattrResponse.newBuilder();
-        Iterator<Entry<String, String>> it = attrs.entrySet().iterator();
+        Iterator<Entry<String, byte[]>> it = attrs.entrySet().iterator();
         while (it.hasNext()) {
             
-            Entry<String, String> attr = it.next();
+            Entry<String, byte[]> attr = it.next();
             org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr.Builder builder = org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr
                     .newBuilder().setName(attr.getKey());
             
             if (!rqArgs.getNamesOnly())
-                builder.setValue(attr.getValue());
+                builder.setValue(new String(attr.getValue())).setValueBytes(ByteString.copyFrom(attr.getValue()));
             
             result.addXattrs(builder.build());
         }

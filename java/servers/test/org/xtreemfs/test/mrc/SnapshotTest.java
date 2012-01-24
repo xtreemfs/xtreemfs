@@ -48,6 +48,7 @@ import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
 
 /**
@@ -147,7 +148,7 @@ public class SnapshotTest extends TestCase {
         
         // enable snapshots on the volume
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "",
-            "xtreemfs.snapshots_enabled", "true", 0));
+            "xtreemfs.snapshots_enabled", "", ByteString.copyFrom("true".getBytes()), 0));
         
         // create a random tree with some files and directories
         SortedSet<TreeEntry> tree = createRandomTree(numDirs, maxFilesPerDir);
@@ -223,8 +224,9 @@ public class SnapshotTest extends TestCase {
     
     private RPCResponse<timestampResponse> createSnapshot(String vol, String dir, String name,
         boolean recursive) throws Exception {
-        return client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, vol, dir, "xtreemfs.snapshots",
-            "c" + (recursive ? "r" : "") + " " + name, 0);
+        String cmd = "c" + (recursive ? "r" : "") + " " + name;
+        return client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, vol, dir, "xtreemfs.snapshots", "",
+                ByteString.copyFrom(cmd.getBytes()), 0);
     }
     
     private void assertTree(SortedSet<TreeEntry> tree, String volume, String path, boolean recursive)

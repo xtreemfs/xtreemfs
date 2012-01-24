@@ -22,6 +22,8 @@ import org.xtreemfs.mrc.utils.PathResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getxattrRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getxattrResponse;
 
+import com.google.protobuf.ByteString;
+
 /**
  * 
  * @author stender
@@ -57,10 +59,10 @@ public class GetXAttrOperation extends MRCOperation {
         // retrieve and prepare the metadata to return
         FileMetadata file = res.getFile();
         
-        String value = null;
+        byte[] value = null;
         if (rqArgs.getName().startsWith("xtreemfs."))
             value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(), faMan,
-                res.toString(), file, rqArgs.getName().substring(9));
+                res.toString(), file, rqArgs.getName().substring(9)).getBytes();
         else {
             
             // first, try to fetch an individual user attribute
@@ -75,7 +77,8 @@ public class GetXAttrOperation extends MRCOperation {
             throw new UserException(POSIXErrno.POSIX_ERROR_ENODATA);
         
         // set the response
-        rq.setResponse(getxattrResponse.newBuilder().setValue(value).build());
+        rq.setResponse(getxattrResponse.newBuilder().setValue(new String(value))
+                .setValueBytes(ByteString.copyFrom(value)).build());
         finishRequest(rq);
     }
     

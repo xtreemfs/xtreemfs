@@ -111,11 +111,11 @@ public class SetattrOperation extends MRCOperation {
                 
                 // if a UID is supposed to be set, check if the operation needs
                 // to be restricted to root users
-                String value = sMan.getXAttr(1, StorageManager.SYSTEM_UID, "xtreemfs."
+                byte[] value = sMan.getXAttr(1, StorageManager.SYSTEM_UID, "xtreemfs."
                     + MRCHelper.VOL_ATTR_PREFIX + ".chown_non_root");
                 
                 // check permission
-                if (value != null && value.equals("true")) {
+                if (value != null && new String(value).equals("true")) {
                     faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
                         rq.getDetails().superUser, rq.getDetails().groupIds);
                     

@@ -52,6 +52,7 @@ import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
 
 /**
@@ -273,13 +274,13 @@ public class MRCTest extends TestCase {
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
             FileAccessManager.O_CREAT, 0, 0, getDefaultCoordinates()));
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
-            "key1", "quark", 0));
+            "key1", "quark", ByteString.copyFrom("quark".getBytes()), 0));
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
-            "key2", "quatsch", 0));
+            "key2", "quatsch", ByteString.copyFrom("quatsch".getBytes()), 0));
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
-            "myAttr", "171", 0));
+            "myAttr", "171", ByteString.copyFrom("171".getBytes()), 0));
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
-            "key1", "blub", 0));
+            "key1", "blub", ByteString.copyFrom("blub".getBytes()), 0));
         
         List<XAttr> xattrs = invokeSync(
             client.listxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt", false))
@@ -311,11 +312,11 @@ public class MRCTest extends TestCase {
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test2.txt",
             FileAccessManager.O_CREAT, 0, 0, getDefaultCoordinates()));
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test2.txt",
-            "key1", "quark", 0));
+            "key1", "quark", ByteString.copyFrom("quark".getBytes()), 0));
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test2.txt",
-            "key2", "quatsch", 0));
+            "key2", "quatsch", ByteString.copyFrom("quatsch".getBytes()), 0));
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test2.txt",
-            "key3", "171", 0));
+            "key3", "171", ByteString.copyFrom("171".getBytes()), 0));
         
         invokeSync(client.removexattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test2.txt",
             "key1"));
@@ -368,7 +369,7 @@ public class MRCTest extends TestCase {
         assertEquals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE, xLoc.getReplicaUpdatePolicy());
         
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "repl",
-            "xtreemfs.read_only", "true", 0));
+            "xtreemfs.read_only", "true", ByteString.copyFrom("true".getBytes()), 0));
         val = invokeSync(
             client.getxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "repl",
                 "xtreemfs.read_only")).getValue();
@@ -394,14 +395,17 @@ public class MRCTest extends TestCase {
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
             FileAccessManager.O_CREAT, 0, 0, getDefaultCoordinates()));
         byte[] largeAttr = new byte[9000];
+        for(int i = 0; i < largeAttr.length; i++)
+            largeAttr[i] = (byte) ((Math.random() * 256) -128);
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",
-            "key1", new String(largeAttr), 0));
+            "key1", "", ByteString.copyFrom(largeAttr), 0));
         
-        String val = invokeSync(
-            client.getxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt", "key1"))
-                .getValue();
-        assertEquals(9000, val.length());
-        
+        byte[] val = invokeSync(
+                client.getxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt", "key1"))
+                .getValueBytes().toByteArray();
+        assertEquals(largeAttr.length, val.length);
+        for (int i = 0; i < largeAttr.length; i++)
+            assertEquals(largeAttr[i], val[i]);
     }
     
     public void testSymlink() throws Exception {
@@ -1171,7 +1175,7 @@ public class MRCTest extends TestCase {
             AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL, sp, "", 0, volumeName, "", "", getKVList()));
         
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "",
-            "xtreemfs.default_rp", Converter.replicationPolicyToJSONString(rp), 0));
+            "xtreemfs.default_rp", "", ByteString.copyFrom(Converter.replicationPolicyToJSONString(rp).getBytes()), 0));
         
         String val = invokeSync(
             client
@@ -1230,7 +1234,7 @@ public class MRCTest extends TestCase {
         };
         
         invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "",
-            "xtreemfs.default_rp", Converter.replicationPolicyToJSONString(rp), 0));
+            "xtreemfs.default_rp", "", ByteString.copyFrom(Converter.replicationPolicyToJSONString(rp).getBytes()), 0));
         
         // create a new file
         invokeSync(client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "test.txt",

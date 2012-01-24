@@ -134,6 +134,7 @@ public class RPCSourceGenerator {
                         codeBuilder.append("import java.util.List;\n");
                         codeBuilder.append("import java.net.InetSocketAddress;\n");
                         codeBuilder.append("import com.google.protobuf.Message;\n");
+                        codeBuilder.append("import com.google.protobuf.ByteString;\n");
                         codeBuilder.append("import org.xtreemfs.foundation.buffer.ReusableBuffer;\n");
                         codeBuilder.append("import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;\n");
                         codeBuilder.append("import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;\n");

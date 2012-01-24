@@ -107,11 +107,10 @@ public class VolumeOSDFilter {
             DatabaseResultSet<XAttr> xattrs = master.getVolumeManager().getStorageManager(volId)
                     .getXAttrs(1, StorageManager.SYSTEM_UID);
 
-            // set the
             while (xattrs.hasNext()) {
                 XAttr xattr = xattrs.next();
                 if (xattr.getKey().startsWith(ATTR_PREFIX))
-                    setAttribute(xattr.getKey(), xattr.getValue());
+                    setAttribute(xattr.getKey(), new String(xattr.getValue()));
             }
 
             xattrs.destroy();

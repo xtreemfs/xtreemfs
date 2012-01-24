@@ -25,6 +25,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.setxattrRequest;
 
+import com.google.protobuf.ByteString;
+
 /**
  * 
  * @author stender
@@ -65,7 +67,8 @@ public class SetXAttrOperation extends MRCOperation {
         // if the attribute is a system attribute, set it
         
         final String attrKey = rqArgs.getName();
-        final String attrVal = rqArgs.getValue();
+        final byte[] attrVal = rqArgs.hasValueBytes() ? rqArgs.getValueBytes().toByteArray()
+                : rqArgs.hasValue() ? rqArgs.getValue().getBytes() : null;
         
         // set a system attribute
         if (attrKey.startsWith(StorageManager.SYS_ATTR_KEY_PREFIX)) {
@@ -76,7 +79,7 @@ public class SetXAttrOperation extends MRCOperation {
                 rq.getDetails().groupIds);
             
             MRCHelper.setSysAttrValue(sMan, vMan, faMan, res.getParentDirId(), file, attrKey
-                    .substring(StorageManager.SYS_ATTR_KEY_PREFIX.length()), attrVal, update);
+                    .substring(StorageManager.SYS_ATTR_KEY_PREFIX.length()), new String(attrVal), update);
         }
 
         // set a user attribute
@@ -90,7 +93,7 @@ public class SetXAttrOperation extends MRCOperation {
             if (!exists && rqArgs.getFlags() == XATTR_FLAGS.XATTR_FLAGS_REPLACE.getNumber())
                 throw new UserException(POSIXErrno.POSIX_ERROR_ENODATA, "attribte does not exist");
             
-            sMan.setXAttr(file.getId(), rq.getDetails().userId, attrKey, attrVal.length() == 0 ? null
+            sMan.setXAttr(file.getId(), rq.getDetails().userId, attrKey, attrVal.length == 0 ? null
                 : attrVal, update);
         }
         

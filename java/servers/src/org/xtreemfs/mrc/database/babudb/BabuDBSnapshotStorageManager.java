@@ -175,11 +175,11 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     public StripingPolicy getDefaultStripingPolicy(long fileId) throws DatabaseException {
         
         try {
-            String spString = getXAttr(fileId, SYSTEM_UID, DEFAULT_SP_ATTR_NAME);
-            if (spString == null)
+            byte[] spBytes = getXAttr(fileId, SYSTEM_UID, DEFAULT_SP_ATTR_NAME);
+            if (spBytes == null)
                 return null;
             
-            return Converter.stringToStripingPolicy(this, spString);
+            return Converter.stringToStripingPolicy(this, new String(spBytes));
             
         } catch (DatabaseException exc) {
             throw exc;
@@ -192,11 +192,11 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     public ReplicationPolicy getDefaultReplicationPolicy(long fileId) throws DatabaseException {
         
         try {
-            String rpString = getXAttr(fileId, SYSTEM_UID, DEFAULT_RP_ATTR_NAME);
-            if (rpString == null)
+            byte[] rpBytes = getXAttr(fileId, SYSTEM_UID, DEFAULT_RP_ATTR_NAME);
+            if (rpBytes == null)
                 return null;
             
-            return Converter.stringToReplicationPolicy(this, rpString);
+            return Converter.stringToReplicationPolicy(this, new String(rpBytes));
             
         } catch (DatabaseException exc) {
             throw exc;
@@ -269,7 +269,9 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     public String getSoftlinkTarget(long fileId) throws DatabaseException {
         
         try {
-            return getXAttr(fileId, SYSTEM_UID, LINK_TARGET_ATTR_NAME);
+            byte[] target = getXAttr(fileId, SYSTEM_UID, LINK_TARGET_ATTR_NAME);
+            return target == null? null: new String(target);
+            
         } catch (DatabaseException exc) {
             throw exc;
         } catch (Exception exc) {
@@ -278,7 +280,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     }
     
     @Override
-    public String getXAttr(long fileId, String uid, String key) throws DatabaseException {
+    public byte[] getXAttr(long fileId, String uid, String key) throws DatabaseException {
         
         try {
             
@@ -445,7 +447,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     }
     
     @Override
-    public XAttr createXAttr(long fileId, String owner, String key, String value) {
+    public XAttr createXAttr(long fileId, String owner, String key, byte[] value) {
         return null;
     }
     
@@ -528,7 +530,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     }
     
     @Override
-    public void setXAttr(long fileId, String uid, String key, String value, AtomicDBUpdate update)
+    public void setXAttr(long fileId, String uid, String key, byte[] value, AtomicDBUpdate update)
         throws DatabaseException {
         throwException();
     }

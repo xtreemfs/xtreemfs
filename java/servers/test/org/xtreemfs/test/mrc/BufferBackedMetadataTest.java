@@ -107,7 +107,7 @@ public class BufferBackedMetadataTest extends TestCase {
         {
             final long fileId = 4389;
             final String key = "someAttr";
-            final String val = "fadsjkkj";
+            final byte[] val = "fadsjkkj".getBytes();
             final String uid = "myUID";
             
             // create XAttrs
@@ -122,7 +122,7 @@ public class BufferBackedMetadataTest extends TestCase {
         {
             final long fileId = 32;
             final String key = "fasd";
-            final String val = "";
+            final byte[] val = "".getBytes();
             final String uid = "gffg";
             
             // create XAttrs
@@ -137,7 +137,7 @@ public class BufferBackedMetadataTest extends TestCase {
         {
             final long fileId = 11;
             final String key = "";
-            final String val = "";
+            final byte[] val = "".getBytes();
             final String uid = "";
             
             // create XAttrs
@@ -283,9 +283,14 @@ public class BufferBackedMetadataTest extends TestCase {
         assertEquals(stripeSize, sp.getStripeSize());
     }
     
-    private void checkXAttr(String key, String val, String owner, BufferBackedXAttr xattr) {
+    private void checkXAttr(String key, byte[] val, String owner, BufferBackedXAttr xattr) {
+        
         assertEquals(key, xattr.getKey());
-        assertEquals(val, xattr.getValue());
+        
+        assertEquals(val.length, xattr.getValue().length);
+        for(int i = 0; i < val.length; i++)
+            assertEquals(val[i], xattr.getValue()[i]);
+        
         assertEquals(owner, xattr.getOwner());
     }
     

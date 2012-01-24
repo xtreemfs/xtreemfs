@@ -47,14 +47,14 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
         this.sMan = sMan;
         
         try {
-            id = sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME);
+            id = new String(sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME));
             name = sMan.getVolumeName();
-            osdPolicy = Converter.stringToShortArray(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
-                BabuDBStorageManager.OSD_POL_ATTR_NAME));
-            replicaPolicy = Converter.stringToShortArray(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
-                BabuDBStorageManager.REPL_POL_ATTR_NAME));
-            acPolicy = Short.parseShort(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
-                BabuDBStorageManager.AC_POL_ATTR_NAME));
+            osdPolicy = Converter.stringToShortArray(new String(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
+                    BabuDBStorageManager.OSD_POL_ATTR_NAME)));
+            replicaPolicy = Converter.stringToShortArray(new String(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
+                    BabuDBStorageManager.REPL_POL_ATTR_NAME)));
+            acPolicy = Short.parseShort(new String(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
+                    BabuDBStorageManager.AC_POL_ATTR_NAME)));
         } catch (NumberFormatException exc) {
             Logging.logError(Logging.LEVEL_ERROR, this, exc);
             throw new DatabaseException("currpted MRC database", ExceptionType.INTERNAL_DB_ERROR);

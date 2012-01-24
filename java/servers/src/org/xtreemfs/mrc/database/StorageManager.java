@@ -60,7 +60,7 @@ public interface StorageManager {
     
     public StripingPolicy createStripingPolicy(String pattern, int stripeSize, int width);
     
-    public XAttr createXAttr(long fileId, String owner, String key, String value);
+    public XAttr createXAttr(long fileId, String owner, String key, byte[] value);
     
     public void dumpDB(BufferedWriter xmlWriter) throws DatabaseException, IOException;
     
@@ -74,10 +74,10 @@ public interface StorageManager {
     
     // handling XAttrs
     
-    public void setXAttr(long fileId, String uid, String key, String value, AtomicDBUpdate update)
+    public void setXAttr(long fileId, String uid, String key, byte[] value, AtomicDBUpdate update)
         throws DatabaseException;
     
-    public String getXAttr(long fileId, String uid, String key) throws DatabaseException;
+    public byte[] getXAttr(long fileId, String uid, String key) throws DatabaseException;
     
     public DatabaseResultSet<XAttr> getXAttrs(long fileId) throws DatabaseException;
     

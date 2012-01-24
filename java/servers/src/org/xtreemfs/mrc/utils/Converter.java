@@ -372,7 +372,7 @@ public class Converter {
         List<XAttr> list = new LinkedList<XAttr>();
         for (Map<String, Object> attr : mappedData)
             list.add(sMan.createXAttr(fileId, (String) attr.get("userId"), (String) attr.get("key"),
-                (String) attr.get("value")));
+                (byte[]) attr.get("value")));
         
         return list;
     }

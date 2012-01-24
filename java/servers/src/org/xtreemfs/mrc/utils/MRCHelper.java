@@ -139,9 +139,10 @@ public class MRCHelper {
             while (attrIt.hasNext()) {
                 XAttr attr = attrIt.next();
                 if (attr.getKey().startsWith("xtreemfs.volattr.")) {
+                    byte[] value = attr.getValue();
                     dmap.addData(KeyValuePair.newBuilder()
                             .setKey("attr." + attr.getKey().substring("xtreemfs.volattr.".length()))
-                            .setValue(attr.getValue()));
+                            .setValue(value == null ? null : new String(value)));
                 }
             }
             attrIt.destroy();
@@ -825,17 +826,19 @@ public class MRCHelper {
     }
     
     private static String getPolicyValue(StorageManager sMan, String keyString) throws DatabaseException {
-        return sMan.getXAttr(1, StorageManager.SYSTEM_UID, "xtreemfs." + keyString);
+        byte[] value = sMan.getXAttr(1, StorageManager.SYSTEM_UID, "xtreemfs." + keyString);
+        return value == null ? null : new String(value);
     }
     
     private static String getVolAttrValue(StorageManager sMan, String keyString) throws DatabaseException {
-        return sMan.getXAttr(1, StorageManager.SYSTEM_UID, "xtreemfs." + keyString);
+        byte[] value = sMan.getXAttr(1, StorageManager.SYSTEM_UID, "xtreemfs." + keyString);
+        return value == null ? null : new String(value);
     }
     
     private static void setPolicyValue(StorageManager sMan, String keyString, String value, AtomicDBUpdate update)
             throws DatabaseException {
         
         // set the value in the database
-        sMan.setXAttr(1, StorageManager.SYSTEM_UID, "xtreemfs." + keyString, value, update);
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, "xtreemfs." + keyString, value.getBytes(), update);
     }
 }
