@@ -242,6 +242,26 @@ inline bool REPL_FLAG_Parse(
   return ::google::protobuf::internal::ParseNamedEnum<REPL_FLAG>(
     REPL_FLAG_descriptor(), name, value);
 }
+enum SERVICES {
+  DIR = 1,
+  MRC = 2,
+  OSD = 3
+};
+bool SERVICES_IsValid(int value);
+const SERVICES SERVICES_MIN = DIR;
+const SERVICES SERVICES_MAX = OSD;
+const int SERVICES_ARRAYSIZE = SERVICES_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* SERVICES_descriptor();
+inline const ::std::string& SERVICES_Name(SERVICES value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    SERVICES_descriptor(), value);
+}
+inline bool SERVICES_Parse(
+    const ::std::string& name, SERVICES* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<SERVICES>(
+    SERVICES_descriptor(), name, value);
+}
 // ===================================================================
 
 class NewFileSize : public ::google::protobuf::Message {
@@ -2268,6 +2288,10 @@ inline const EnumDescriptor* GetEnumDescriptor< xtreemfs::pbrpc::SYSTEM_V_FCNTL>
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< xtreemfs::pbrpc::REPL_FLAG>() {
   return xtreemfs::pbrpc::REPL_FLAG_descriptor();
+}
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< xtreemfs::pbrpc::SERVICES>() {
+  return xtreemfs::pbrpc::SERVICES_descriptor();
 }
 
 }  // namespace google

@@ -57,6 +57,7 @@ const ::google::protobuf::EnumDescriptor* PORTS_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* CONSTANTS_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* SYSTEM_V_FCNTL_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* REPL_FLAG_descriptor_ = NULL;
+const ::google::protobuf::EnumDescriptor* SERVICES_descriptor_ = NULL;
 
 }  // namespace
 
@@ -263,6 +264,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
   CONSTANTS_descriptor_ = file->enum_type(6);
   SYSTEM_V_FCNTL_descriptor_ = file->enum_type(7);
   REPL_FLAG_descriptor_ = file->enum_type(8);
+  SERVICES_descriptor_ = file->enum_type(9);
 }
 
 namespace {
@@ -404,8 +406,9 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
     "RANDOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FI"
     "RST\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020"
     "\022-\n)REPL_FLAG_STRATEGY_SEQUENTIAL_PREFET"
-    "CHING\020 B(\n&org.xtreemfs.pbrpc.generatedi"
-    "nterfaces", 2809);
+    "CHING\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n"
+    "\003OSD\020\003B(\n&org.xtreemfs.pbrpc.generatedin"
+    "terfaces", 2848);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/GlobalTypes.proto", &protobuf_RegisterTypes);
   NewFileSize::default_instance_ = new NewFileSize();
@@ -584,6 +587,21 @@ bool REPL_FLAG_IsValid(int value) {
     case 8:
     case 16:
     case 32:
+      return true;
+    default:
+      return false;
+  }
+}
+
+const ::google::protobuf::EnumDescriptor* SERVICES_descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return SERVICES_descriptor_;
+}
+bool SERVICES_IsValid(int value) {
+  switch(value) {
+    case 1:
+    case 2:
+    case 3:
       return true;
     default:
       return false;

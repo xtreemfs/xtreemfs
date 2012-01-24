@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Mon Jan 23 15:45:17 CET 2012
+//automatically generated from MRC.proto at Tue Jan 24 11:27:14 CET 2012
 //(c) 2012. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -213,8 +213,8 @@ public class MRCServiceClient {
          return response;
     }
 
-    public RPCResponse<MRC.timestampResponse> setxattr(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String volume_name, String path, String name, String value, int flags) throws IOException {
-         final MRC.setxattrRequest msg = MRC.setxattrRequest.newBuilder().setVolumeName(volume_name).setPath(path).setName(name).setValue(value).setFlags(flags).build();
+    public RPCResponse<MRC.timestampResponse> setxattr(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String volume_name, String path, String name, String value, ByteString value_bytes, int flags) throws IOException {
+         final MRC.setxattrRequest msg = MRC.setxattrRequest.newBuilder().setVolumeName(volume_name).setPath(path).setName(name).setValue(value).setValueBytes(value_bytes).setFlags(flags).build();
          return setxattr(server, authHeader, userCreds,msg);
     }
 

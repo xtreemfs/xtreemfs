@@ -627,6 +627,16 @@ class XAttr : public ::google::protobuf::Message {
   inline void set_value(const char* value, size_t size);
   inline ::std::string* mutable_value();
   
+  // optional bytes value_bytes = 3;
+  inline bool has_value_bytes() const;
+  inline void clear_value_bytes();
+  static const int kValueBytesFieldNumber = 3;
+  inline const ::std::string& value_bytes() const;
+  inline void set_value_bytes(const ::std::string& value);
+  inline void set_value_bytes(const char* value);
+  inline void set_value_bytes(const void* value, size_t size);
+  inline ::std::string* mutable_value_bytes();
+  
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.XAttr)
  private:
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
@@ -636,11 +646,13 @@ class XAttr : public ::google::protobuf::Message {
   static const ::std::string _default_name_;
   ::std::string* value_;
   static const ::std::string _default_value_;
+  ::std::string* value_bytes_;
+  static const ::std::string _default_value_bytes_;
   friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
   friend void protobuf_ShutdownFile_xtreemfs_2fMRC_2eproto();
   
-  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
   
   // WHY DOES & HAVE LOWER PRECEDENCE THAN != !?
   inline bool _has_bit(int index) const {
@@ -1599,6 +1611,16 @@ class getxattrResponse : public ::google::protobuf::Message {
   inline void set_value(const char* value, size_t size);
   inline ::std::string* mutable_value();
   
+  // optional bytes value_bytes = 2;
+  inline bool has_value_bytes() const;
+  inline void clear_value_bytes();
+  static const int kValueBytesFieldNumber = 2;
+  inline const ::std::string& value_bytes() const;
+  inline void set_value_bytes(const ::std::string& value);
+  inline void set_value_bytes(const char* value);
+  inline void set_value_bytes(const void* value, size_t size);
+  inline ::std::string* mutable_value_bytes();
+  
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.getxattrResponse)
  private:
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
@@ -1606,11 +1628,13 @@ class getxattrResponse : public ::google::protobuf::Message {
   
   ::std::string* value_;
   static const ::std::string _default_value_;
+  ::std::string* value_bytes_;
+  static const ::std::string _default_value_bytes_;
   friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
   friend void protobuf_ShutdownFile_xtreemfs_2fMRC_2eproto();
   
-  ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
   
   // WHY DOES & HAVE LOWER PRECEDENCE THAN != !?
   inline bool _has_bit(int index) const {
@@ -3290,6 +3314,16 @@ class setxattrRequest : public ::google::protobuf::Message {
   inline void set_value(const char* value, size_t size);
   inline ::std::string* mutable_value();
   
+  // optional bytes value_bytes = 6;
+  inline bool has_value_bytes() const;
+  inline void clear_value_bytes();
+  static const int kValueBytesFieldNumber = 6;
+  inline const ::std::string& value_bytes() const;
+  inline void set_value_bytes(const ::std::string& value);
+  inline void set_value_bytes(const char* value);
+  inline void set_value_bytes(const void* value, size_t size);
+  inline ::std::string* mutable_value_bytes();
+  
   // required fixed32 flags = 5;
   inline bool has_flags() const;
   inline void clear_flags();
@@ -3310,12 +3344,14 @@ class setxattrRequest : public ::google::protobuf::Message {
   static const ::std::string _default_name_;
   ::std::string* value_;
   static const ::std::string _default_value_;
+  ::std::string* value_bytes_;
+  static const ::std::string _default_value_bytes_;
   ::google::protobuf::uint32 flags_;
   friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
   friend void protobuf_ShutdownFile_xtreemfs_2fMRC_2eproto();
   
-  ::google::protobuf::uint32 _has_bits_[(5 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(6 + 31) / 32];
   
   // WHY DOES & HAVE LOWER PRECEDENCE THAN != !?
   inline bool _has_bit(int index) const {
@@ -6793,6 +6829,48 @@ inline ::std::string* XAttr::mutable_value() {
   return value_;
 }
 
+// optional bytes value_bytes = 3;
+inline bool XAttr::has_value_bytes() const {
+  return _has_bit(2);
+}
+inline void XAttr::clear_value_bytes() {
+  if (value_bytes_ != &_default_value_bytes_) {
+    value_bytes_->clear();
+  }
+  _clear_bit(2);
+}
+inline const ::std::string& XAttr::value_bytes() const {
+  return *value_bytes_;
+}
+inline void XAttr::set_value_bytes(const ::std::string& value) {
+  _set_bit(2);
+  if (value_bytes_ == &_default_value_bytes_) {
+    value_bytes_ = new ::std::string;
+  }
+  value_bytes_->assign(value);
+}
+inline void XAttr::set_value_bytes(const char* value) {
+  _set_bit(2);
+  if (value_bytes_ == &_default_value_bytes_) {
+    value_bytes_ = new ::std::string;
+  }
+  value_bytes_->assign(value);
+}
+inline void XAttr::set_value_bytes(const void* value, size_t size) {
+  _set_bit(2);
+  if (value_bytes_ == &_default_value_bytes_) {
+    value_bytes_ = new ::std::string;
+  }
+  value_bytes_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* XAttr::mutable_value_bytes() {
+  _set_bit(2);
+  if (value_bytes_ == &_default_value_bytes_) {
+    value_bytes_ = new ::std::string;
+  }
+  return value_bytes_;
+}
+
 // -------------------------------------------------------------------
 
 // Volume
@@ -7724,6 +7802,48 @@ inline ::std::string* getxattrResponse::mutable_value() {
     value_ = new ::std::string;
   }
   return value_;
+}
+
+// optional bytes value_bytes = 2;
+inline bool getxattrResponse::has_value_bytes() const {
+  return _has_bit(1);
+}
+inline void getxattrResponse::clear_value_bytes() {
+  if (value_bytes_ != &_default_value_bytes_) {
+    value_bytes_->clear();
+  }
+  _clear_bit(1);
+}
+inline const ::std::string& getxattrResponse::value_bytes() const {
+  return *value_bytes_;
+}
+inline void getxattrResponse::set_value_bytes(const ::std::string& value) {
+  _set_bit(1);
+  if (value_bytes_ == &_default_value_bytes_) {
+    value_bytes_ = new ::std::string;
+  }
+  value_bytes_->assign(value);
+}
+inline void getxattrResponse::set_value_bytes(const char* value) {
+  _set_bit(1);
+  if (value_bytes_ == &_default_value_bytes_) {
+    value_bytes_ = new ::std::string;
+  }
+  value_bytes_->assign(value);
+}
+inline void getxattrResponse::set_value_bytes(const void* value, size_t size) {
+  _set_bit(1);
+  if (value_bytes_ == &_default_value_bytes_) {
+    value_bytes_ = new ::std::string;
+  }
+  value_bytes_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* getxattrResponse::mutable_value_bytes() {
+  _set_bit(1);
+  if (value_bytes_ == &_default_value_bytes_) {
+    value_bytes_ = new ::std::string;
+  }
+  return value_bytes_;
 }
 
 // -------------------------------------------------------------------
@@ -9249,19 +9369,61 @@ inline ::std::string* setxattrRequest::mutable_value() {
   return value_;
 }
 
+// optional bytes value_bytes = 6;
+inline bool setxattrRequest::has_value_bytes() const {
+  return _has_bit(4);
+}
+inline void setxattrRequest::clear_value_bytes() {
+  if (value_bytes_ != &_default_value_bytes_) {
+    value_bytes_->clear();
+  }
+  _clear_bit(4);
+}
+inline const ::std::string& setxattrRequest::value_bytes() const {
+  return *value_bytes_;
+}
+inline void setxattrRequest::set_value_bytes(const ::std::string& value) {
+  _set_bit(4);
+  if (value_bytes_ == &_default_value_bytes_) {
+    value_bytes_ = new ::std::string;
+  }
+  value_bytes_->assign(value);
+}
+inline void setxattrRequest::set_value_bytes(const char* value) {
+  _set_bit(4);
+  if (value_bytes_ == &_default_value_bytes_) {
+    value_bytes_ = new ::std::string;
+  }
+  value_bytes_->assign(value);
+}
+inline void setxattrRequest::set_value_bytes(const void* value, size_t size) {
+  _set_bit(4);
+  if (value_bytes_ == &_default_value_bytes_) {
+    value_bytes_ = new ::std::string;
+  }
+  value_bytes_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* setxattrRequest::mutable_value_bytes() {
+  _set_bit(4);
+  if (value_bytes_ == &_default_value_bytes_) {
+    value_bytes_ = new ::std::string;
+  }
+  return value_bytes_;
+}
+
 // required fixed32 flags = 5;
 inline bool setxattrRequest::has_flags() const {
-  return _has_bit(4);
+  return _has_bit(5);
 }
 inline void setxattrRequest::clear_flags() {
   flags_ = 0u;
-  _clear_bit(4);
+  _clear_bit(5);
 }
 inline ::google::protobuf::uint32 setxattrRequest::flags() const {
   return flags_;
 }
 inline void setxattrRequest::set_flags(::google::protobuf::uint32 value) {
-  _set_bit(4);
+  _set_bit(5);
   flags_ = value;
 }
 

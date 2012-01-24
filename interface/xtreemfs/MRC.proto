@@ -94,6 +94,13 @@ message XAttr {
     required string name = 1;
     // attribute value; can be empty on a 'listxattr' call for names only
     optional string value = 2;
+    // redundant field of "value" which also accepts binary values (needed
+    // for storing the value of "system.posix_acl_access",
+    // added after version 1.3.1)
+    // If both value and value_bytes are present, value_bytes will always
+    // be preferred. For backward compability "value" always has to be set,
+    // even if "value_bytes" is available.
+    optional bytes value_bytes = 3;
 }
 
 // information about a volume; relevant for the 'xtfs_mkvol' call
@@ -208,6 +215,8 @@ message getxattrRequest {
 // returns an attribute value of a file or directory
 message getxattrResponse {
   required string value = 1;
+  // see XAttr message for explanation.
+  optional bytes value_bytes = 2;
 }
 
 // creates a new hardlink to an existing file 
@@ -371,6 +380,8 @@ message setxattrRequest {
   required string name = 3;
   // the (new) value for the extended attribute to set
   required string value = 4;
+  // (new) value in bytes, see XAttr for explanation.
+  optional bytes value_bytes = 6;
   // flags indicating whether the attribute is supposed to be created or
   // replaced (see XATTR_FLAGS)
   required fixed32 flags = 5;

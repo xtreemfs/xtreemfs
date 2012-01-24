@@ -245,9 +245,10 @@ void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(DirectoryEntries));
   XAttr_descriptor_ = file->message_type(3);
-  static const int XAttr_offsets_[2] = {
+  static const int XAttr_offsets_[3] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XAttr, name_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XAttr, value_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XAttr, value_bytes_),
   };
   XAttr_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -390,8 +391,9 @@ void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(getxattrRequest));
   getxattrResponse_descriptor_ = file->message_type(11);
-  static const int getxattrResponse_offsets_[1] = {
+  static const int getxattrResponse_offsets_[2] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(getxattrResponse, value_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(getxattrResponse, value_bytes_),
   };
   getxattrResponse_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -642,11 +644,12 @@ void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(setattrRequest));
   setxattrRequest_descriptor_ = file->message_type(26);
-  static const int setxattrRequest_offsets_[5] = {
+  static const int setxattrRequest_offsets_[6] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(setxattrRequest, volume_name_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(setxattrRequest, path_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(setxattrRequest, name_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(setxattrRequest, value_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(setxattrRequest, value_bytes_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(setxattrRequest, flags_),
   };
   setxattrRequest_reflection_ =
@@ -1317,222 +1320,223 @@ void protobuf_AddDesc_xtreemfs_2fMRC_2eproto() {
     "ryEntry\022\014\n\004name\030\001 \002(\t\022#\n\005stbuf\030\002 \001(\0132\024.x"
     "treemfs.pbrpc.Stat\"C\n\020DirectoryEntries\022/"
     "\n\007entries\030\001 \003(\0132\036.xtreemfs.pbrpc.Directo"
-    "ryEntry\"$\n\005XAttr\022\014\n\004name\030\001 \002(\t\022\r\n\005value\030"
-    "\002 \001(\t\"\225\002\n\006Volume\022F\n\025access_control_polic"
-    "y\030\001 \002(\0162\'.xtreemfs.pbrpc.AccessControlPo"
-    "licyType\022?\n\027default_striping_policy\030\002 \002("
-    "\0132\036.xtreemfs.pbrpc.StripingPolicy\022\n\n\002id\030"
-    "\003 \002(\t\022\014\n\004mode\030\004 \002(\007\022\014\n\004name\030\005 \002(\t\022\026\n\016own"
-    "er_group_id\030\006 \002(\t\022\025\n\rowner_user_id\030\007 \002(\t"
-    "\022+\n\005attrs\030\010 \003(\0132\034.xtreemfs.pbrpc.KeyValu"
-    "ePair\"2\n\007Volumes\022\'\n\007volumes\030\001 \003(\0132\026.xtre"
-    "emfs.pbrpc.Volume\"\271\002\n\007StatVFS\022\r\n\005bsize\030\001"
-    " \002(\007\022\016\n\006bavail\030\002 \002(\006\022\016\n\006blocks\030\003 \002(\006\022\014\n\004"
-    "fsid\030\004 \002(\t\022\017\n\007namemax\030\005 \002(\007\022F\n\025access_co"
-    "ntrol_policy\030\006 \002(\0162\'.xtreemfs.pbrpc.Acce"
-    "ssControlPolicyType\022?\n\027default_striping_"
-    "policy\030\007 \002(\0132\036.xtreemfs.pbrpc.StripingPo"
-    "licy\022\014\n\004etag\030\010 \002(\006\022\014\n\004mode\030\t \002(\007\022\014\n\004name"
-    "\030\n \002(\t\022\026\n\016owner_group_id\030\013 \002(\t\022\025\n\rowner_"
-    "user_id\030\014 \002(\t\"i\n\017fsetattrRequest\022#\n\005stbu"
-    "f\030\001 \002(\0132\024.xtreemfs.pbrpc.Stat\022\016\n\006to_set\030"
-    "\002 \002(\007\022!\n\003cap\030\003 \002(\0132\024.xtreemfs.pbrpc.XCap"
-    "\"G\n\016getattrRequest\022\023\n\013volume_name\030\001 \002(\t\022"
-    "\014\n\004path\030\002 \002(\t\022\022\n\nknown_etag\030\003 \002(\006\"6\n\017get"
-    "attrResponse\022#\n\005stbuf\030\001 \001(\0132\024.xtreemfs.p"
-    "brpc.Stat\"B\n\017getxattrRequest\022\023\n\013volume_n"
-    "ame\030\001 \002(\t\022\014\n\004path\030\002 \002(\t\022\014\n\004name\030\003 \002(\t\"!\n"
-    "\020getxattrResponse\022\r\n\005value\030\001 \002(\t\"J\n\013link"
-    "Request\022\023\n\013volume_name\030\001 \002(\t\022\023\n\013target_p"
-    "ath\030\002 \002(\t\022\021\n\tlink_path\030\003 \002(\t\"I\n\020listxatt"
-    "rRequest\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004path\030\002 "
-    "\002(\t\022\022\n\nnames_only\030\003 \002(\010\":\n\021listxattrResp"
-    "onse\022%\n\006xattrs\030\001 \003(\0132\025.xtreemfs.pbrpc.XA"
-    "ttr\"?\n\014mkdirRequest\022\023\n\013volume_name\030\001 \002(\t"
-    "\022\014\n\004path\030\002 \002(\t\022\014\n\004mode\030\003 \002(\007\"\232\001\n\013openReq"
-    "uest\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004path\030\002 \002(\t\022"
-    "\r\n\005flags\030\003 \002(\007\022\014\n\004mode\030\004 \002(\007\022\022\n\nattribut"
-    "es\030\005 \002(\007\0227\n\013coordinates\030\006 \001(\0132\".xtreemfs"
-    ".pbrpc.VivaldiCoordinates\"S\n\014openRespons"
-    "e\022.\n\005creds\030\001 \002(\0132\037.xtreemfs.pbrpc.FileCr"
-    "edentials\022\023\n\013timestamp_s\030\002 \002(\007\"\250\001\n\016readd"
-    "irRequest\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004path\030\002"
-    " \002(\t\022\022\n\nknown_etag\030\003 \002(\006\022%\n\035limit_direct"
-    "ory_entries_count\030\004 \002(\007\022\022\n\nnames_only\030\005 "
-    "\002(\010\022$\n\034seen_directory_entries_count\030\006 \002("
-    "\006\"4\n\017readlinkRequest\022\023\n\013volume_name\030\001 \002("
-    "\t\022\014\n\004path\030\002 \002(\t\",\n\020readlinkResponse\022\030\n\020l"
-    "ink_target_path\030\001 \003(\t\"E\n\022removexattrRequ"
-    "est\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004path\030\002 \002(\t\022\014"
-    "\n\004name\030\003 \002(\t\"N\n\rrenameRequest\022\023\n\013volume_"
-    "name\030\001 \002(\t\022\023\n\013source_path\030\002 \002(\t\022\023\n\013targe"
-    "t_path\030\003 \002(\t\"U\n\016renameResponse\022\023\n\013timest"
-    "amp_s\030\001 \002(\007\022.\n\005creds\030\002 \001(\0132\037.xtreemfs.pb"
-    "rpc.FileCredentials\"1\n\014rmdirRequest\022\023\n\013v"
-    "olume_name\030\001 \002(\t\022\014\n\004path\030\002 \002(\t\"h\n\016setatt"
-    "rRequest\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004path\030\002 "
-    "\002(\t\022#\n\005stbuf\030\003 \002(\0132\024.xtreemfs.pbrpc.Stat"
-    "\022\016\n\006to_set\030\004 \002(\007\"`\n\017setxattrRequest\022\023\n\013v"
-    "olume_name\030\001 \002(\t\022\014\n\004path\030\002 \002(\t\022\014\n\004name\030\003"
-    " \002(\t\022\r\n\005value\030\004 \002(\t\022\r\n\005flags\030\005 \002(\007\"9\n\016st"
-    "atvfsRequest\022\023\n\013volume_name\030\001 \002(\t\022\022\n\nkno"
-    "wn_etag\030\005 \002(\006\"M\n\016symlinkRequest\022\023\n\013volum"
-    "e_name\030\001 \002(\t\022\023\n\013target_path\030\002 \002(\t\022\021\n\tlin"
-    "k_path\030\003 \002(\t\"2\n\runlinkRequest\022\023\n\013volume_"
-    "name\030\001 \002(\t\022\014\n\004path\030\002 \002(\t\"U\n\016unlinkRespon"
-    "se\022\023\n\013timestamp_s\030\001 \002(\007\022.\n\005creds\030\002 \001(\0132\037"
-    ".xtreemfs.pbrpc.FileCredentials\"A\n\racces"
-    "sRequest\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004path\030\002 "
-    "\002(\t\022\r\n\005flags\030\003 \002(\007\"Z\n!xtreemfs_check_fil"
-    "e_existsRequest\022\021\n\tvolume_id\030\001 \002(\t\022\020\n\010fi"
-    "le_ids\030\002 \003(\t\022\020\n\010osd_uuid\030\003 \002(\t\":\n%xtreem"
-    "fs_dump_restore_databaseRequest\022\021\n\tdump_"
-    "file\030\001 \002(\t\"i\n!xtreemfs_get_suitable_osds"
-    "Request\022\017\n\007file_id\030\001 \001(\t\022\014\n\004path\030\003 \001(\t\022\023"
-    "\n\013volume_name\030\004 \001(\t\022\020\n\010num_osds\030\002 \002(\007\"7\n"
-    "\"xtreemfs_get_suitable_osdsResponse\022\021\n\to"
-    "sd_uuids\030\001 \003(\t\"4\n\"xtreemfs_check_file_ex"
-    "istsResponse\022\016\n\006bitmap\030\001 \002(\t\"(\n\021timestam"
-    "pResponse\022\023\n\013timestamp_s\030\001 \002(\007\"!\n\rstring"
-    "Message\022\020\n\010a_string\030\001 \002(\t\"\'\n\027xtreemfs_li"
-    "stdirRequest\022\014\n\004path\030\001 \002(\t\")\n\030xtreemfs_l"
-    "istdirResponse\022\r\n\005names\030\001 \003(\t\"\177\n\033xtreemf"
-    "s_replica_addRequest\022\017\n\007file_id\030\001 \001(\t\022\014\n"
-    "\004path\030\003 \001(\t\022\023\n\013volume_name\030\004 \001(\t\022,\n\013new_"
-    "replica\030\002 \002(\0132\027.xtreemfs.pbrpc.Replica\"R"
-    "\n\034xtreemfs_replica_listRequest\022\017\n\007file_i"
-    "d\030\001 \001(\t\022\014\n\004path\030\002 \001(\t\022\023\n\013volume_name\030\003 \001"
-    "(\t\"f\n\036xtreemfs_replica_removeRequest\022\017\n\007"
-    "file_id\030\001 \001(\t\022\014\n\004path\030\003 \001(\t\022\023\n\013volume_na"
-    "me\030\004 \001(\t\022\020\n\010osd_uuid\030\002 \002(\t\"|\n\034xtreemfs_r"
-    "estore_fileRequest\022\021\n\tfile_path\030\001 \002(\t\022\017\n"
-    "\007file_id\030\002 \002(\t\022\021\n\tfile_size\030\003 \002(\006\022\020\n\010osd"
-    "_uuid\030\004 \002(\t\022\023\n\013stripe_size\030\005 \002(\007\",\n\025xtre"
-    "emfs_rmvolRequest\022\023\n\013volume_name\030\001 \002(\t\"\321"
-    "\001\n xtreemfs_update_file_sizeRequest\022\"\n\004x"
-    "cap\030\001 \002(\0132\024.xtreemfs.pbrpc.XCap\022<\n\022osd_w"
-    "rite_response\030\002 \002(\0132 .xtreemfs.pbrpc.OSD"
-    "WriteResponse\022\022\n\nclose_file\030\003 \001(\010\0227\n\013coo"
-    "rdinates\030\004 \001(\0132\".xtreemfs.pbrpc.VivaldiC"
-    "oordinates\"S\n)xtreemfs_set_replica_updat"
-    "e_policyRequest\022\017\n\007file_id\030\001 \002(\t\022\025\n\rupda"
-    "te_policy\030\002 \002(\t\"G\n*xtreemfs_set_replica_"
-    "update_policyResponse\022\031\n\021old_update_poli"
-    "cy\030\001 \002(\t\"E\n#xtreemfs_set_read_only_xattr"
-    "Request\022\017\n\007file_id\030\001 \002(\t\022\r\n\005value\030\002 \002(\010\""
-    "7\n$xtreemfs_set_read_only_xattrResponse\022"
-    "\017\n\007was_set\030\001 \002(\010\"7\n$xtreemfs_get_file_cr"
-    "edentialsRequest\022\017\n\007file_id\030\001 \002(\t*\242\001\n\010Se"
-    "tattrs\022\020\n\014SETATTR_MODE\020\001\022\017\n\013SETATTR_UID\020"
-    "\002\022\017\n\013SETATTR_GID\020\004\022\020\n\014SETATTR_SIZE\020\010\022\021\n\r"
-    "SETATTR_ATIME\020\020\022\021\n\rSETATTR_MTIME\020 \022\021\n\rSE"
-    "TATTR_CTIME\020@\022\027\n\022SETATTR_ATTRIBUTES\020\200\001*>"
-    "\n\013XATTR_FLAGS\022\026\n\022XATTR_FLAGS_CREATE\020\001\022\027\n"
-    "\023XATTR_FLAGS_REPLACE\020\002*j\n\014ACCESS_FLAGS\022\025"
-    "\n\021ACCESS_FLAGS_F_OK\020\000\022\025\n\021ACCESS_FLAGS_X_"
-    "OK\020\001\022\025\n\021ACCESS_FLAGS_W_OK\020\002\022\025\n\021ACCESS_FL"
-    "AGS_R_OK\020\0042\234\037\n\nMRCService\022S\n\010fsetattr\022\037."
-    "xtreemfs.pbrpc.fsetattrRequest\032\035.xtreemf"
-    "s.pbrpc.emptyResponse\"\007\215\265\030\002\000\000\000\022@\n\tftrunc"
-    "ate\022\024.xtreemfs.pbrpc.XCap\032\024.xtreemfs.pbr"
-    "pc.XCap\"\007\215\265\030\003\000\000\000\022S\n\007getattr\022\036.xtreemfs.p"
-    "brpc.getattrRequest\032\037.xtreemfs.pbrpc.get"
-    "attrResponse\"\007\215\265\030\004\000\000\000\022V\n\010getxattr\022\037.xtre"
-    "emfs.pbrpc.getxattrRequest\032 .xtreemfs.pb"
-    "rpc.getxattrResponse\"\007\215\265\030\005\000\000\000\022O\n\004link\022\033."
-    "xtreemfs.pbrpc.linkRequest\032!.xtreemfs.pb"
-    "rpc.timestampResponse\"\007\215\265\030\006\000\000\000\022Y\n\tlistxa"
-    "ttr\022 .xtreemfs.pbrpc.listxattrRequest\032!."
-    "xtreemfs.pbrpc.listxattrResponse\"\007\215\265\030\007\000\000"
-    "\000\022Q\n\005mkdir\022\034.xtreemfs.pbrpc.mkdirRequest"
-    "\032!.xtreemfs.pbrpc.timestampResponse\"\007\215\265\030"
-    "\010\000\000\000\022J\n\004open\022\033.xtreemfs.pbrpc.openReques"
-    "t\032\034.xtreemfs.pbrpc.openResponse\"\007\215\265\030\t\000\000\000"
-    "\022T\n\007readdir\022\036.xtreemfs.pbrpc.readdirRequ"
-    "est\032 .xtreemfs.pbrpc.DirectoryEntries\"\007\215"
-    "\265\030\n\000\000\000\022V\n\010readlink\022\037.xtreemfs.pbrpc.read"
-    "linkRequest\032 .xtreemfs.pbrpc.readlinkRes"
-    "ponse\"\007\215\265\030\013\000\000\000\022]\n\013removexattr\022\".xtreemfs"
-    ".pbrpc.removexattrRequest\032!.xtreemfs.pbr"
-    "pc.timestampResponse\"\007\215\265\030\014\000\000\000\022P\n\006rename\022"
-    "\035.xtreemfs.pbrpc.renameRequest\032\036.xtreemf"
-    "s.pbrpc.renameResponse\"\007\215\265\030\r\000\000\000\022Q\n\005rmdir"
-    "\022\034.xtreemfs.pbrpc.rmdirRequest\032!.xtreemf"
-    "s.pbrpc.timestampResponse\"\007\215\265\030\016\000\000\000\022U\n\007se"
-    "tattr\022\036.xtreemfs.pbrpc.setattrRequest\032!."
-    "xtreemfs.pbrpc.timestampResponse\"\007\215\265\030\017\000\000"
-    "\000\022W\n\010setxattr\022\037.xtreemfs.pbrpc.setxattrR"
-    "equest\032!.xtreemfs.pbrpc.timestampRespons"
-    "e\"\007\215\265\030\020\000\000\000\022K\n\007statvfs\022\036.xtreemfs.pbrpc.s"
-    "tatvfsRequest\032\027.xtreemfs.pbrpc.StatVFS\"\007"
-    "\215\265\030\021\000\000\000\022U\n\007symlink\022\036.xtreemfs.pbrpc.syml"
-    "inkRequest\032!.xtreemfs.pbrpc.timestampRes"
-    "ponse\"\007\215\265\030\022\000\000\000\022P\n\006unlink\022\035.xtreemfs.pbrp"
-    "c.unlinkRequest\032\036.xtreemfs.pbrpc.unlinkR"
-    "esponse\"\007\215\265\030\023\000\000\000\022O\n\006access\022\035.xtreemfs.pb"
-    "rpc.accessRequest\032\035.xtreemfs.pbrpc.empty"
-    "Response\"\007\215\265\030\024\000\000\000\022[\n\023xtreemfs_checkpoint"
-    "\022\034.xtreemfs.pbrpc.emptyRequest\032\035.xtreemf"
-    "s.pbrpc.emptyResponse\"\007\215\265\030\036\000\000\000\022\214\001\n\032xtree"
-    "mfs_check_file_exists\0221.xtreemfs.pbrpc.x"
-    "treemfs_check_file_existsRequest\0322.xtree"
-    "mfs.pbrpc.xtreemfs_check_file_existsResp"
-    "onse\"\007\215\265\030\037\000\000\000\022w\n\026xtreemfs_dump_database\022"
-    "5.xtreemfs.pbrpc.xtreemfs_dump_restore_d"
-    "atabaseRequest\032\035.xtreemfs.pbrpc.emptyRes"
-    "ponse\"\007\215\265\030 \000\000\000\022\214\001\n\032xtreemfs_get_suitable"
-    "_osds\0221.xtreemfs.pbrpc.xtreemfs_get_suit"
-    "able_osdsRequest\0322.xtreemfs.pbrpc.xtreem"
-    "fs_get_suitable_osdsResponse\"\007\215\265\030!\000\000\000\022`\n"
-    "\027xtreemfs_internal_debug\022\035.xtreemfs.pbrp"
-    "c.stringMessage\032\035.xtreemfs.pbrpc.stringM"
-    "essage\"\007\215\265\030\"\000\000\000\022n\n\020xtreemfs_listdir\022\'.xt"
-    "reemfs.pbrpc.xtreemfs_listdirRequest\032(.x"
-    "treemfs.pbrpc.xtreemfs_listdirResponse\"\007"
-    "\215\265\030#\000\000\000\022P\n\016xtreemfs_lsvol\022\034.xtreemfs.pbr"
-    "pc.emptyRequest\032\027.xtreemfs.pbrpc.Volumes"
-    "\"\007\215\265\030$\000\000\000\022P\n\016xtreemfs_mkvol\022\026.xtreemfs.p"
-    "brpc.Volume\032\035.xtreemfs.pbrpc.emptyRespon"
-    "se\"\007\215\265\030/\000\000\000\022P\n\031xtreemfs_renew_capability"
-    "\022\024.xtreemfs.pbrpc.XCap\032\024.xtreemfs.pbrpc."
-    "XCap\"\007\215\265\030%\000\000\000\022f\n\036xtreemfs_replication_to"
-    "_master\022\034.xtreemfs.pbrpc.emptyRequest\032\035."
-    "xtreemfs.pbrpc.emptyResponse\"\007\215\265\030&\000\000\000\022k\n"
-    "\024xtreemfs_replica_add\022+.xtreemfs.pbrpc.x"
-    "treemfs_replica_addRequest\032\035.xtreemfs.pb"
-    "rpc.emptyResponse\"\007\215\265\030\'\000\000\000\022h\n\025xtreemfs_r"
-    "eplica_list\022,.xtreemfs.pbrpc.xtreemfs_re"
-    "plica_listRequest\032\030.xtreemfs.pbrpc.Repli"
-    "cas\"\007\215\265\030(\000\000\000\022s\n\027xtreemfs_replica_remove\022"
-    "..xtreemfs.pbrpc.xtreemfs_replica_remove"
-    "Request\032\037.xtreemfs.pbrpc.FileCredentials"
-    "\"\007\215\265\030)\000\000\000\022z\n\031xtreemfs_restore_database\0225"
-    ".xtreemfs.pbrpc.xtreemfs_dump_restore_da"
-    "tabaseRequest\032\035.xtreemfs.pbrpc.emptyResp"
-    "onse\"\007\215\265\030*\000\000\000\022m\n\025xtreemfs_restore_file\022,"
-    ".xtreemfs.pbrpc.xtreemfs_restore_fileReq"
+    "ryEntry\"9\n\005XAttr\022\014\n\004name\030\001 \002(\t\022\r\n\005value\030"
+    "\002 \001(\t\022\023\n\013value_bytes\030\003 \001(\014\"\225\002\n\006Volume\022F\n"
+    "\025access_control_policy\030\001 \002(\0162\'.xtreemfs."
+    "pbrpc.AccessControlPolicyType\022?\n\027default"
+    "_striping_policy\030\002 \002(\0132\036.xtreemfs.pbrpc."
+    "StripingPolicy\022\n\n\002id\030\003 \002(\t\022\014\n\004mode\030\004 \002(\007"
+    "\022\014\n\004name\030\005 \002(\t\022\026\n\016owner_group_id\030\006 \002(\t\022\025"
+    "\n\rowner_user_id\030\007 \002(\t\022+\n\005attrs\030\010 \003(\0132\034.x"
+    "treemfs.pbrpc.KeyValuePair\"2\n\007Volumes\022\'\n"
+    "\007volumes\030\001 \003(\0132\026.xtreemfs.pbrpc.Volume\"\271"
+    "\002\n\007StatVFS\022\r\n\005bsize\030\001 \002(\007\022\016\n\006bavail\030\002 \002("
+    "\006\022\016\n\006blocks\030\003 \002(\006\022\014\n\004fsid\030\004 \002(\t\022\017\n\007namem"
+    "ax\030\005 \002(\007\022F\n\025access_control_policy\030\006 \002(\0162"
+    "\'.xtreemfs.pbrpc.AccessControlPolicyType"
+    "\022?\n\027default_striping_policy\030\007 \002(\0132\036.xtre"
+    "emfs.pbrpc.StripingPolicy\022\014\n\004etag\030\010 \002(\006\022"
+    "\014\n\004mode\030\t \002(\007\022\014\n\004name\030\n \002(\t\022\026\n\016owner_gro"
+    "up_id\030\013 \002(\t\022\025\n\rowner_user_id\030\014 \002(\t\"i\n\017fs"
+    "etattrRequest\022#\n\005stbuf\030\001 \002(\0132\024.xtreemfs."
+    "pbrpc.Stat\022\016\n\006to_set\030\002 \002(\007\022!\n\003cap\030\003 \002(\0132"
+    "\024.xtreemfs.pbrpc.XCap\"G\n\016getattrRequest\022"
+    "\023\n\013volume_name\030\001 \002(\t\022\014\n\004path\030\002 \002(\t\022\022\n\nkn"
+    "own_etag\030\003 \002(\006\"6\n\017getattrResponse\022#\n\005stb"
+    "uf\030\001 \001(\0132\024.xtreemfs.pbrpc.Stat\"B\n\017getxat"
+    "trRequest\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004path\030\002"
+    " \002(\t\022\014\n\004name\030\003 \002(\t\"6\n\020getxattrResponse\022\r"
+    "\n\005value\030\001 \002(\t\022\023\n\013value_bytes\030\002 \001(\014\"J\n\013li"
+    "nkRequest\022\023\n\013volume_name\030\001 \002(\t\022\023\n\013target"
+    "_path\030\002 \002(\t\022\021\n\tlink_path\030\003 \002(\t\"I\n\020listxa"
+    "ttrRequest\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004path\030"
+    "\002 \002(\t\022\022\n\nnames_only\030\003 \002(\010\":\n\021listxattrRe"
+    "sponse\022%\n\006xattrs\030\001 \003(\0132\025.xtreemfs.pbrpc."
+    "XAttr\"?\n\014mkdirRequest\022\023\n\013volume_name\030\001 \002"
+    "(\t\022\014\n\004path\030\002 \002(\t\022\014\n\004mode\030\003 \002(\007\"\232\001\n\013openR"
+    "equest\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004path\030\002 \002("
+    "\t\022\r\n\005flags\030\003 \002(\007\022\014\n\004mode\030\004 \002(\007\022\022\n\nattrib"
+    "utes\030\005 \002(\007\0227\n\013coordinates\030\006 \001(\0132\".xtreem"
+    "fs.pbrpc.VivaldiCoordinates\"S\n\014openRespo"
+    "nse\022.\n\005creds\030\001 \002(\0132\037.xtreemfs.pbrpc.File"
+    "Credentials\022\023\n\013timestamp_s\030\002 \002(\007\"\250\001\n\016rea"
+    "ddirRequest\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004path"
+    "\030\002 \002(\t\022\022\n\nknown_etag\030\003 \002(\006\022%\n\035limit_dire"
+    "ctory_entries_count\030\004 \002(\007\022\022\n\nnames_only\030"
+    "\005 \002(\010\022$\n\034seen_directory_entries_count\030\006 "
+    "\002(\006\"4\n\017readlinkRequest\022\023\n\013volume_name\030\001 "
+    "\002(\t\022\014\n\004path\030\002 \002(\t\",\n\020readlinkResponse\022\030\n"
+    "\020link_target_path\030\001 \003(\t\"E\n\022removexattrRe"
+    "quest\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004path\030\002 \002(\t"
+    "\022\014\n\004name\030\003 \002(\t\"N\n\rrenameRequest\022\023\n\013volum"
+    "e_name\030\001 \002(\t\022\023\n\013source_path\030\002 \002(\t\022\023\n\013tar"
+    "get_path\030\003 \002(\t\"U\n\016renameResponse\022\023\n\013time"
+    "stamp_s\030\001 \002(\007\022.\n\005creds\030\002 \001(\0132\037.xtreemfs."
+    "pbrpc.FileCredentials\"1\n\014rmdirRequest\022\023\n"
+    "\013volume_name\030\001 \002(\t\022\014\n\004path\030\002 \002(\t\"h\n\016seta"
+    "ttrRequest\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004path\030"
+    "\002 \002(\t\022#\n\005stbuf\030\003 \002(\0132\024.xtreemfs.pbrpc.St"
+    "at\022\016\n\006to_set\030\004 \002(\007\"u\n\017setxattrRequest\022\023\n"
+    "\013volume_name\030\001 \002(\t\022\014\n\004path\030\002 \002(\t\022\014\n\004name"
+    "\030\003 \002(\t\022\r\n\005value\030\004 \002(\t\022\023\n\013value_bytes\030\006 \001"
+    "(\014\022\r\n\005flags\030\005 \002(\007\"9\n\016statvfsRequest\022\023\n\013v"
+    "olume_name\030\001 \002(\t\022\022\n\nknown_etag\030\005 \002(\006\"M\n\016"
+    "symlinkRequest\022\023\n\013volume_name\030\001 \002(\t\022\023\n\013t"
+    "arget_path\030\002 \002(\t\022\021\n\tlink_path\030\003 \002(\t\"2\n\ru"
+    "nlinkRequest\022\023\n\013volume_name\030\001 \002(\t\022\014\n\004pat"
+    "h\030\002 \002(\t\"U\n\016unlinkResponse\022\023\n\013timestamp_s"
+    "\030\001 \002(\007\022.\n\005creds\030\002 \001(\0132\037.xtreemfs.pbrpc.F"
+    "ileCredentials\"A\n\raccessRequest\022\023\n\013volum"
+    "e_name\030\001 \002(\t\022\014\n\004path\030\002 \002(\t\022\r\n\005flags\030\003 \002("
+    "\007\"Z\n!xtreemfs_check_file_existsRequest\022\021"
+    "\n\tvolume_id\030\001 \002(\t\022\020\n\010file_ids\030\002 \003(\t\022\020\n\010o"
+    "sd_uuid\030\003 \002(\t\":\n%xtreemfs_dump_restore_d"
+    "atabaseRequest\022\021\n\tdump_file\030\001 \002(\t\"i\n!xtr"
+    "eemfs_get_suitable_osdsRequest\022\017\n\007file_i"
+    "d\030\001 \001(\t\022\014\n\004path\030\003 \001(\t\022\023\n\013volume_name\030\004 \001"
+    "(\t\022\020\n\010num_osds\030\002 \002(\007\"7\n\"xtreemfs_get_sui"
+    "table_osdsResponse\022\021\n\tosd_uuids\030\001 \003(\t\"4\n"
+    "\"xtreemfs_check_file_existsResponse\022\016\n\006b"
+    "itmap\030\001 \002(\t\"(\n\021timestampResponse\022\023\n\013time"
+    "stamp_s\030\001 \002(\007\"!\n\rstringMessage\022\020\n\010a_stri"
+    "ng\030\001 \002(\t\"\'\n\027xtreemfs_listdirRequest\022\014\n\004p"
+    "ath\030\001 \002(\t\")\n\030xtreemfs_listdirResponse\022\r\n"
+    "\005names\030\001 \003(\t\"\177\n\033xtreemfs_replica_addRequ"
+    "est\022\017\n\007file_id\030\001 \001(\t\022\014\n\004path\030\003 \001(\t\022\023\n\013vo"
+    "lume_name\030\004 \001(\t\022,\n\013new_replica\030\002 \002(\0132\027.x"
+    "treemfs.pbrpc.Replica\"R\n\034xtreemfs_replic"
+    "a_listRequest\022\017\n\007file_id\030\001 \001(\t\022\014\n\004path\030\002"
+    " \001(\t\022\023\n\013volume_name\030\003 \001(\t\"f\n\036xtreemfs_re"
+    "plica_removeRequest\022\017\n\007file_id\030\001 \001(\t\022\014\n\004"
+    "path\030\003 \001(\t\022\023\n\013volume_name\030\004 \001(\t\022\020\n\010osd_u"
+    "uid\030\002 \002(\t\"|\n\034xtreemfs_restore_fileReques"
+    "t\022\021\n\tfile_path\030\001 \002(\t\022\017\n\007file_id\030\002 \002(\t\022\021\n"
+    "\tfile_size\030\003 \002(\006\022\020\n\010osd_uuid\030\004 \002(\t\022\023\n\013st"
+    "ripe_size\030\005 \002(\007\",\n\025xtreemfs_rmvolRequest"
+    "\022\023\n\013volume_name\030\001 \002(\t\"\321\001\n xtreemfs_updat"
+    "e_file_sizeRequest\022\"\n\004xcap\030\001 \002(\0132\024.xtree"
+    "mfs.pbrpc.XCap\022<\n\022osd_write_response\030\002 \002"
+    "(\0132 .xtreemfs.pbrpc.OSDWriteResponse\022\022\n\n"
+    "close_file\030\003 \001(\010\0227\n\013coordinates\030\004 \001(\0132\"."
+    "xtreemfs.pbrpc.VivaldiCoordinates\"S\n)xtr"
+    "eemfs_set_replica_update_policyRequest\022\017"
+    "\n\007file_id\030\001 \002(\t\022\025\n\rupdate_policy\030\002 \002(\t\"G"
+    "\n*xtreemfs_set_replica_update_policyResp"
+    "onse\022\031\n\021old_update_policy\030\001 \002(\t\"E\n#xtree"
+    "mfs_set_read_only_xattrRequest\022\017\n\007file_i"
+    "d\030\001 \002(\t\022\r\n\005value\030\002 \002(\010\"7\n$xtreemfs_set_r"
+    "ead_only_xattrResponse\022\017\n\007was_set\030\001 \002(\010\""
+    "7\n$xtreemfs_get_file_credentialsRequest\022"
+    "\017\n\007file_id\030\001 \002(\t*\242\001\n\010Setattrs\022\020\n\014SETATTR"
+    "_MODE\020\001\022\017\n\013SETATTR_UID\020\002\022\017\n\013SETATTR_GID\020"
+    "\004\022\020\n\014SETATTR_SIZE\020\010\022\021\n\rSETATTR_ATIME\020\020\022\021"
+    "\n\rSETATTR_MTIME\020 \022\021\n\rSETATTR_CTIME\020@\022\027\n\022"
+    "SETATTR_ATTRIBUTES\020\200\001*>\n\013XATTR_FLAGS\022\026\n\022"
+    "XATTR_FLAGS_CREATE\020\001\022\027\n\023XATTR_FLAGS_REPL"
+    "ACE\020\002*j\n\014ACCESS_FLAGS\022\025\n\021ACCESS_FLAGS_F_"
+    "OK\020\000\022\025\n\021ACCESS_FLAGS_X_OK\020\001\022\025\n\021ACCESS_FL"
+    "AGS_W_OK\020\002\022\025\n\021ACCESS_FLAGS_R_OK\020\0042\234\037\n\nMR"
+    "CService\022S\n\010fsetattr\022\037.xtreemfs.pbrpc.fs"
+    "etattrRequest\032\035.xtreemfs.pbrpc.emptyResp"
+    "onse\"\007\215\265\030\002\000\000\000\022@\n\tftruncate\022\024.xtreemfs.pb"
+    "rpc.XCap\032\024.xtreemfs.pbrpc.XCap\"\007\215\265\030\003\000\000\000\022"
+    "S\n\007getattr\022\036.xtreemfs.pbrpc.getattrReque"
+    "st\032\037.xtreemfs.pbrpc.getattrResponse\"\007\215\265\030"
+    "\004\000\000\000\022V\n\010getxattr\022\037.xtreemfs.pbrpc.getxat"
+    "trRequest\032 .xtreemfs.pbrpc.getxattrRespo"
+    "nse\"\007\215\265\030\005\000\000\000\022O\n\004link\022\033.xtreemfs.pbrpc.li"
+    "nkRequest\032!.xtreemfs.pbrpc.timestampResp"
+    "onse\"\007\215\265\030\006\000\000\000\022Y\n\tlistxattr\022 .xtreemfs.pb"
+    "rpc.listxattrRequest\032!.xtreemfs.pbrpc.li"
+    "stxattrResponse\"\007\215\265\030\007\000\000\000\022Q\n\005mkdir\022\034.xtre"
+    "emfs.pbrpc.mkdirRequest\032!.xtreemfs.pbrpc"
+    ".timestampResponse\"\007\215\265\030\010\000\000\000\022J\n\004open\022\033.xt"
+    "reemfs.pbrpc.openRequest\032\034.xtreemfs.pbrp"
+    "c.openResponse\"\007\215\265\030\t\000\000\000\022T\n\007readdir\022\036.xtr"
+    "eemfs.pbrpc.readdirRequest\032 .xtreemfs.pb"
+    "rpc.DirectoryEntries\"\007\215\265\030\n\000\000\000\022V\n\010readlin"
+    "k\022\037.xtreemfs.pbrpc.readlinkRequest\032 .xtr"
+    "eemfs.pbrpc.readlinkResponse\"\007\215\265\030\013\000\000\000\022]\n"
+    "\013removexattr\022\".xtreemfs.pbrpc.removexatt"
+    "rRequest\032!.xtreemfs.pbrpc.timestampRespo"
+    "nse\"\007\215\265\030\014\000\000\000\022P\n\006rename\022\035.xtreemfs.pbrpc."
+    "renameRequest\032\036.xtreemfs.pbrpc.renameRes"
+    "ponse\"\007\215\265\030\r\000\000\000\022Q\n\005rmdir\022\034.xtreemfs.pbrpc"
+    ".rmdirRequest\032!.xtreemfs.pbrpc.timestamp"
+    "Response\"\007\215\265\030\016\000\000\000\022U\n\007setattr\022\036.xtreemfs."
+    "pbrpc.setattrRequest\032!.xtreemfs.pbrpc.ti"
+    "mestampResponse\"\007\215\265\030\017\000\000\000\022W\n\010setxattr\022\037.x"
+    "treemfs.pbrpc.setxattrRequest\032!.xtreemfs"
+    ".pbrpc.timestampResponse\"\007\215\265\030\020\000\000\000\022K\n\007sta"
+    "tvfs\022\036.xtreemfs.pbrpc.statvfsRequest\032\027.x"
+    "treemfs.pbrpc.StatVFS\"\007\215\265\030\021\000\000\000\022U\n\007symlin"
+    "k\022\036.xtreemfs.pbrpc.symlinkRequest\032!.xtre"
+    "emfs.pbrpc.timestampResponse\"\007\215\265\030\022\000\000\000\022P\n"
+    "\006unlink\022\035.xtreemfs.pbrpc.unlinkRequest\032\036"
+    ".xtreemfs.pbrpc.unlinkResponse\"\007\215\265\030\023\000\000\000\022"
+    "O\n\006access\022\035.xtreemfs.pbrpc.accessRequest"
+    "\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\024\000\000\000"
+    "\022[\n\023xtreemfs_checkpoint\022\034.xtreemfs.pbrpc"
+    ".emptyRequest\032\035.xtreemfs.pbrpc.emptyResp"
+    "onse\"\007\215\265\030\036\000\000\000\022\214\001\n\032xtreemfs_check_file_ex"
+    "ists\0221.xtreemfs.pbrpc.xtreemfs_check_fil"
+    "e_existsRequest\0322.xtreemfs.pbrpc.xtreemf"
+    "s_check_file_existsResponse\"\007\215\265\030\037\000\000\000\022w\n\026"
+    "xtreemfs_dump_database\0225.xtreemfs.pbrpc."
+    "xtreemfs_dump_restore_databaseRequest\032\035."
+    "xtreemfs.pbrpc.emptyResponse\"\007\215\265\030 \000\000\000\022\214\001"
+    "\n\032xtreemfs_get_suitable_osds\0221.xtreemfs."
+    "pbrpc.xtreemfs_get_suitable_osdsRequest\032"
+    "2.xtreemfs.pbrpc.xtreemfs_get_suitable_o"
+    "sdsResponse\"\007\215\265\030!\000\000\000\022`\n\027xtreemfs_interna"
+    "l_debug\022\035.xtreemfs.pbrpc.stringMessage\032\035"
+    ".xtreemfs.pbrpc.stringMessage\"\007\215\265\030\"\000\000\000\022n"
+    "\n\020xtreemfs_listdir\022\'.xtreemfs.pbrpc.xtre"
+    "emfs_listdirRequest\032(.xtreemfs.pbrpc.xtr"
+    "eemfs_listdirResponse\"\007\215\265\030#\000\000\000\022P\n\016xtreem"
+    "fs_lsvol\022\034.xtreemfs.pbrpc.emptyRequest\032\027"
+    ".xtreemfs.pbrpc.Volumes\"\007\215\265\030$\000\000\000\022P\n\016xtre"
+    "emfs_mkvol\022\026.xtreemfs.pbrpc.Volume\032\035.xtr"
+    "eemfs.pbrpc.emptyResponse\"\007\215\265\030/\000\000\000\022P\n\031xt"
+    "reemfs_renew_capability\022\024.xtreemfs.pbrpc"
+    ".XCap\032\024.xtreemfs.pbrpc.XCap\"\007\215\265\030%\000\000\000\022f\n\036"
+    "xtreemfs_replication_to_master\022\034.xtreemf"
+    "s.pbrpc.emptyRequest\032\035.xtreemfs.pbrpc.em"
+    "ptyResponse\"\007\215\265\030&\000\000\000\022k\n\024xtreemfs_replica"
+    "_add\022+.xtreemfs.pbrpc.xtreemfs_replica_a"
+    "ddRequest\032\035.xtreemfs.pbrpc.emptyResponse"
+    "\"\007\215\265\030\'\000\000\000\022h\n\025xtreemfs_replica_list\022,.xtr"
+    "eemfs.pbrpc.xtreemfs_replica_listRequest"
+    "\032\030.xtreemfs.pbrpc.Replicas\"\007\215\265\030(\000\000\000\022s\n\027x"
+    "treemfs_replica_remove\022..xtreemfs.pbrpc."
+    "xtreemfs_replica_removeRequest\032\037.xtreemf"
+    "s.pbrpc.FileCredentials\"\007\215\265\030)\000\000\000\022z\n\031xtre"
+    "emfs_restore_database\0225.xtreemfs.pbrpc.x"
+    "treemfs_dump_restore_databaseRequest\032\035.x"
+    "treemfs.pbrpc.emptyResponse\"\007\215\265\030*\000\000\000\022m\n\025"
+    "xtreemfs_restore_file\022,.xtreemfs.pbrpc.x"
+    "treemfs_restore_fileRequest\032\035.xtreemfs.p"
+    "brpc.emptyResponse\"\007\215\265\030+\000\000\000\022_\n\016xtreemfs_"
+    "rmvol\022%.xtreemfs.pbrpc.xtreemfs_rmvolReq"
     "uest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030"
-    "+\000\000\000\022_\n\016xtreemfs_rmvol\022%.xtreemfs.pbrpc."
-    "xtreemfs_rmvolRequest\032\035.xtreemfs.pbrpc.e"
-    "mptyResponse\"\007\215\265\030,\000\000\000\022Y\n\021xtreemfs_shutdo"
-    "wn\022\034.xtreemfs.pbrpc.emptyRequest\032\035.xtree"
-    "mfs.pbrpc.emptyResponse\"\007\215\265\030-\000\000\000\022y\n\031xtre"
-    "emfs_update_file_size\0220.xtreemfs.pbrpc.x"
-    "treemfs_update_file_sizeRequest\032!.xtreem"
-    "fs.pbrpc.timestampResponse\"\007\215\265\030.\000\000\000\022\244\001\n\""
-    "xtreemfs_set_replica_update_policy\0229.xtr"
-    "eemfs.pbrpc.xtreemfs_set_replica_update_"
-    "policyRequest\032:.xtreemfs.pbrpc.xtreemfs_"
-    "set_replica_update_policyResponse\"\007\215\265\0300\000"
-    "\000\000\022\222\001\n\034xtreemfs_set_read_only_xattr\0223.xt"
-    "reemfs.pbrpc.xtreemfs_set_read_only_xatt"
-    "rRequest\0324.xtreemfs.pbrpc.xtreemfs_set_r"
-    "ead_only_xattrResponse\"\007\215\265\0301\000\000\000\022\177\n\035xtree"
-    "mfs_get_file_credentials\0224.xtreemfs.pbrp"
-    "c.xtreemfs_get_file_credentialsRequest\032\037"
-    ".xtreemfs.pbrpc.FileCredentials\"\007\215\265\0302\000\000\000"
-    "\032\007\225\265\030!N\000\000B(\n&org.xtreemfs.pbrpc.generate"
-    "dinterfaces", 9091);
+    ",\000\000\000\022Y\n\021xtreemfs_shutdown\022\034.xtreemfs.pbr"
+    "pc.emptyRequest\032\035.xtreemfs.pbrpc.emptyRe"
+    "sponse\"\007\215\265\030-\000\000\000\022y\n\031xtreemfs_update_file_"
+    "size\0220.xtreemfs.pbrpc.xtreemfs_update_fi"
+    "le_sizeRequest\032!.xtreemfs.pbrpc.timestam"
+    "pResponse\"\007\215\265\030.\000\000\000\022\244\001\n\"xtreemfs_set_repl"
+    "ica_update_policy\0229.xtreemfs.pbrpc.xtree"
+    "mfs_set_replica_update_policyRequest\032:.x"
+    "treemfs.pbrpc.xtreemfs_set_replica_updat"
+    "e_policyResponse\"\007\215\265\0300\000\000\000\022\222\001\n\034xtreemfs_s"
+    "et_read_only_xattr\0223.xtreemfs.pbrpc.xtre"
+    "emfs_set_read_only_xattrRequest\0324.xtreem"
+    "fs.pbrpc.xtreemfs_set_read_only_xattrRes"
+    "ponse\"\007\215\265\0301\000\000\000\022\177\n\035xtreemfs_get_file_cred"
+    "entials\0224.xtreemfs.pbrpc.xtreemfs_get_fi"
+    "le_credentialsRequest\032\037.xtreemfs.pbrpc.F"
+    "ileCredentials\"\007\215\265\0302\000\000\000\032\007\225\265\030!N\000\000B(\n&org."
+    "xtreemfs.pbrpc.generatedinterfaces", 9154);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/MRC.proto", &protobuf_RegisterTypes);
   Stat::default_instance_ = new Stat();
@@ -2929,9 +2933,11 @@ void DirectoryEntries::Swap(DirectoryEntries* other) {
 
 const ::std::string XAttr::_default_name_;
 const ::std::string XAttr::_default_value_;
+const ::std::string XAttr::_default_value_bytes_;
 #ifndef _MSC_VER
 const int XAttr::kNameFieldNumber;
 const int XAttr::kValueFieldNumber;
+const int XAttr::kValueBytesFieldNumber;
 #endif  // !_MSC_VER
 
 XAttr::XAttr()
@@ -2952,6 +2958,7 @@ void XAttr::SharedCtor() {
   _cached_size_ = 0;
   name_ = const_cast< ::std::string*>(&_default_name_);
   value_ = const_cast< ::std::string*>(&_default_value_);
+  value_bytes_ = const_cast< ::std::string*>(&_default_value_bytes_);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -2965,6 +2972,9 @@ void XAttr::SharedDtor() {
   }
   if (value_ != &_default_value_) {
     delete value_;
+  }
+  if (value_bytes_ != &_default_value_bytes_) {
+    delete value_bytes_;
   }
   if (this != default_instance_) {
   }
@@ -3000,6 +3010,11 @@ void XAttr::Clear() {
     if (_has_bit(1)) {
       if (value_ != &_default_value_) {
         value_->clear();
+      }
+    }
+    if (_has_bit(2)) {
+      if (value_bytes_ != &_default_value_bytes_) {
+        value_bytes_->clear();
       }
     }
   }
@@ -3039,6 +3054,20 @@ bool XAttr::MergePartialFromCodedStream(
           ::google::protobuf::internal::WireFormat::VerifyUTF8String(
             this->value().data(), this->value().length(),
             ::google::protobuf::internal::WireFormat::PARSE);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(26)) goto parse_value_bytes;
+        break;
+      }
+      
+      // optional bytes value_bytes = 3;
+      case 3: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_value_bytes:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
+                input, this->mutable_value_bytes()));
         } else {
           goto handle_uninterpreted;
         }
@@ -3082,6 +3111,12 @@ void XAttr::SerializeWithCachedSizes(
       2, this->value(), output);
   }
   
+  // optional bytes value_bytes = 3;
+  if (_has_bit(2)) {
+    ::google::protobuf::internal::WireFormatLite::WriteBytes(
+      3, this->value_bytes(), output);
+  }
+  
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -3110,6 +3145,13 @@ void XAttr::SerializeWithCachedSizes(
         2, this->value(), target);
   }
   
+  // optional bytes value_bytes = 3;
+  if (_has_bit(2)) {
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
+        3, this->value_bytes(), target);
+  }
+  
   if (!unknown_fields().empty()) {
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         unknown_fields(), target);
@@ -3133,6 +3175,13 @@ int XAttr::ByteSize() const {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::StringSize(
           this->value());
+    }
+    
+    // optional bytes value_bytes = 3;
+    if (has_value_bytes()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::BytesSize(
+          this->value_bytes());
     }
     
   }
@@ -3168,6 +3217,9 @@ void XAttr::MergeFrom(const XAttr& from) {
     if (from._has_bit(1)) {
       set_value(from.value());
     }
+    if (from._has_bit(2)) {
+      set_value_bytes(from.value_bytes());
+    }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
 }
@@ -3194,6 +3246,7 @@ void XAttr::Swap(XAttr* other) {
   if (other != this) {
     std::swap(name_, other->name_);
     std::swap(value_, other->value_);
+    std::swap(value_bytes_, other->value_bytes_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
@@ -5901,8 +5954,10 @@ void getxattrRequest::Swap(getxattrRequest* other) {
 // ===================================================================
 
 const ::std::string getxattrResponse::_default_value_;
+const ::std::string getxattrResponse::_default_value_bytes_;
 #ifndef _MSC_VER
 const int getxattrResponse::kValueFieldNumber;
+const int getxattrResponse::kValueBytesFieldNumber;
 #endif  // !_MSC_VER
 
 getxattrResponse::getxattrResponse()
@@ -5922,6 +5977,7 @@ getxattrResponse::getxattrResponse(const getxattrResponse& from)
 void getxattrResponse::SharedCtor() {
   _cached_size_ = 0;
   value_ = const_cast< ::std::string*>(&_default_value_);
+  value_bytes_ = const_cast< ::std::string*>(&_default_value_bytes_);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -5932,6 +5988,9 @@ getxattrResponse::~getxattrResponse() {
 void getxattrResponse::SharedDtor() {
   if (value_ != &_default_value_) {
     delete value_;
+  }
+  if (value_bytes_ != &_default_value_bytes_) {
+    delete value_bytes_;
   }
   if (this != default_instance_) {
   }
@@ -5964,6 +6023,11 @@ void getxattrResponse::Clear() {
         value_->clear();
       }
     }
+    if (_has_bit(1)) {
+      if (value_bytes_ != &_default_value_bytes_) {
+        value_bytes_->clear();
+      }
+    }
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
@@ -5984,6 +6048,20 @@ bool getxattrResponse::MergePartialFromCodedStream(
           ::google::protobuf::internal::WireFormat::VerifyUTF8String(
             this->value().data(), this->value().length(),
             ::google::protobuf::internal::WireFormat::PARSE);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(18)) goto parse_value_bytes;
+        break;
+      }
+      
+      // optional bytes value_bytes = 2;
+      case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_value_bytes:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
+                input, this->mutable_value_bytes()));
         } else {
           goto handle_uninterpreted;
         }
@@ -6018,6 +6096,12 @@ void getxattrResponse::SerializeWithCachedSizes(
       1, this->value(), output);
   }
   
+  // optional bytes value_bytes = 2;
+  if (_has_bit(1)) {
+    ::google::protobuf::internal::WireFormatLite::WriteBytes(
+      2, this->value_bytes(), output);
+  }
+  
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -6036,6 +6120,13 @@ void getxattrResponse::SerializeWithCachedSizes(
         1, this->value(), target);
   }
   
+  // optional bytes value_bytes = 2;
+  if (_has_bit(1)) {
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
+        2, this->value_bytes(), target);
+  }
+  
   if (!unknown_fields().empty()) {
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         unknown_fields(), target);
@@ -6052,6 +6143,13 @@ int getxattrResponse::ByteSize() const {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::StringSize(
           this->value());
+    }
+    
+    // optional bytes value_bytes = 2;
+    if (has_value_bytes()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::BytesSize(
+          this->value_bytes());
     }
     
   }
@@ -6084,6 +6182,9 @@ void getxattrResponse::MergeFrom(const getxattrResponse& from) {
     if (from._has_bit(0)) {
       set_value(from.value());
     }
+    if (from._has_bit(1)) {
+      set_value_bytes(from.value_bytes());
+    }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
 }
@@ -6109,6 +6210,7 @@ bool getxattrResponse::IsInitialized() const {
 void getxattrResponse::Swap(getxattrResponse* other) {
   if (other != this) {
     std::swap(value_, other->value_);
+    std::swap(value_bytes_, other->value_bytes_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
@@ -10542,11 +10644,13 @@ const ::std::string setxattrRequest::_default_volume_name_;
 const ::std::string setxattrRequest::_default_path_;
 const ::std::string setxattrRequest::_default_name_;
 const ::std::string setxattrRequest::_default_value_;
+const ::std::string setxattrRequest::_default_value_bytes_;
 #ifndef _MSC_VER
 const int setxattrRequest::kVolumeNameFieldNumber;
 const int setxattrRequest::kPathFieldNumber;
 const int setxattrRequest::kNameFieldNumber;
 const int setxattrRequest::kValueFieldNumber;
+const int setxattrRequest::kValueBytesFieldNumber;
 const int setxattrRequest::kFlagsFieldNumber;
 #endif  // !_MSC_VER
 
@@ -10570,6 +10674,7 @@ void setxattrRequest::SharedCtor() {
   path_ = const_cast< ::std::string*>(&_default_path_);
   name_ = const_cast< ::std::string*>(&_default_name_);
   value_ = const_cast< ::std::string*>(&_default_value_);
+  value_bytes_ = const_cast< ::std::string*>(&_default_value_bytes_);
   flags_ = 0u;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -10590,6 +10695,9 @@ void setxattrRequest::SharedDtor() {
   }
   if (value_ != &_default_value_) {
     delete value_;
+  }
+  if (value_bytes_ != &_default_value_bytes_) {
+    delete value_bytes_;
   }
   if (this != default_instance_) {
   }
@@ -10635,6 +10743,11 @@ void setxattrRequest::Clear() {
     if (_has_bit(3)) {
       if (value_ != &_default_value_) {
         value_->clear();
+      }
+    }
+    if (_has_bit(4)) {
+      if (value_bytes_ != &_default_value_bytes_) {
+        value_bytes_->clear();
       }
     }
     flags_ = 0u;
@@ -10724,7 +10837,21 @@ bool setxattrRequest::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
                  input, &flags_)));
-          _set_bit(4);
+          _set_bit(5);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(50)) goto parse_value_bytes;
+        break;
+      }
+      
+      // optional bytes value_bytes = 6;
+      case 6: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_value_bytes:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
+                input, this->mutable_value_bytes()));
         } else {
           goto handle_uninterpreted;
         }
@@ -10787,8 +10914,14 @@ void setxattrRequest::SerializeWithCachedSizes(
   }
   
   // required fixed32 flags = 5;
-  if (_has_bit(4)) {
+  if (_has_bit(5)) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(5, this->flags(), output);
+  }
+  
+  // optional bytes value_bytes = 6;
+  if (_has_bit(4)) {
+    ::google::protobuf::internal::WireFormatLite::WriteBytes(
+      6, this->value_bytes(), output);
   }
   
   if (!unknown_fields().empty()) {
@@ -10840,8 +10973,15 @@ void setxattrRequest::SerializeWithCachedSizes(
   }
   
   // required fixed32 flags = 5;
-  if (_has_bit(4)) {
+  if (_has_bit(5)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(5, this->flags(), target);
+  }
+  
+  // optional bytes value_bytes = 6;
+  if (_has_bit(4)) {
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
+        6, this->value_bytes(), target);
   }
   
   if (!unknown_fields().empty()) {
@@ -10881,6 +11021,13 @@ int setxattrRequest::ByteSize() const {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::StringSize(
           this->value());
+    }
+    
+    // optional bytes value_bytes = 6;
+    if (has_value_bytes()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::BytesSize(
+          this->value_bytes());
     }
     
     // required fixed32 flags = 5;
@@ -10928,6 +11075,9 @@ void setxattrRequest::MergeFrom(const setxattrRequest& from) {
       set_value(from.value());
     }
     if (from._has_bit(4)) {
+      set_value_bytes(from.value_bytes());
+    }
+    if (from._has_bit(5)) {
       set_flags(from.flags());
     }
   }
@@ -10947,7 +11097,7 @@ void setxattrRequest::CopyFrom(const setxattrRequest& from) {
 }
 
 bool setxattrRequest::IsInitialized() const {
-  if ((_has_bits_[0] & 0x0000001f) != 0x0000001f) return false;
+  if ((_has_bits_[0] & 0x0000002f) != 0x0000002f) return false;
   
   return true;
 }
@@ -10958,6 +11108,7 @@ void setxattrRequest::Swap(setxattrRequest* other) {
     std::swap(path_, other->path_);
     std::swap(name_, other->name_);
     std::swap(value_, other->value_);
+    std::swap(value_bytes_, other->value_bytes_);
     std::swap(flags_, other->flags_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
