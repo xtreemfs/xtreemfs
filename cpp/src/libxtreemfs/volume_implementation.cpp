@@ -1047,6 +1047,7 @@ void VolumeImplementation::SetXAttr(
   // For unknown reasons this fails if c_str() is not used, for instance if the
   // value is set to the character '\002'.
   rq.set_value(value.c_str());
+  rq.set_value_bytes(value.c_str(), value.size());
   rq.set_flags(flags);
 
   boost::scoped_ptr< SyncCallback<timestampResponse> > response(
@@ -1096,7 +1097,11 @@ bool VolumeImplementation::GetXAttr(
             uuid_resolver_,
             volume_options_.max_tries,
             volume_options_));
-    if (response->response()->has_value()) {
+    if (response->response()->has_value_bytes()) {
+      *value = response->response()->value_bytes();
+      response->DeleteBuffers();
+      return true;
+    } else if (response->response()->has_value()) {
       *value = response->response()->value();
       response->DeleteBuffers();
       return true;
@@ -1123,7 +1128,12 @@ bool VolumeImplementation::GetXAttr(
     if (xattrs.get() != NULL) {
       for (int i = 0; i < xattrs->xattrs_size(); i++) {
         if (xattrs->xattrs(i).name() == name) {
-          *value = xattrs->xattrs(i).value();
+          assert(xattrs->xattrs(i).has_value());
+          if (xattrs->xattrs(i).has_value_bytes()) {
+            *value = xattrs->xattrs(i).value_bytes();
+          } else {
+            *value = xattrs->xattrs(i).value();
+          }
           return true;
         }
       }
@@ -1171,7 +1181,12 @@ bool VolumeImplementation::GetXAttrSize(
     if (xattrs.get() != NULL) {
       for (int i = 0; i < xattrs->xattrs_size(); i++) {
         if (xattrs->xattrs(i).name() == name) {
-          *size = xattrs->xattrs(i).value().size();
+          assert(xattrs->xattrs(i).has_value());
+          if (xattrs->xattrs(i).has_value_bytes()) {
+            *size = xattrs->xattrs(i).value_bytes().size();
+          } else {
+            *size = xattrs->xattrs(i).value().size();
+          }
           return true;
         }
       }
