@@ -9,7 +9,6 @@
 package org.xtreemfs.mrc.operations;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -23,9 +22,9 @@ import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.utils.MRCHelper;
+import org.xtreemfs.mrc.utils.MRCHelper.SysAttrs;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.mrc.utils.MRCHelper.SysAttrs;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
 
@@ -94,21 +93,23 @@ public class GetXAttrsOperation extends MRCOperation {
                 attrs.put(key, value.getBytes());
         }
         
-        // include policy attributes
-        List<String> policyAttrNames = MRCHelper.getSpecialAttrNames(sMan, file.getId(), MRCHelper.POLICY_ATTR_PREFIX);
-        for (String attr : policyAttrNames)
-            attrs.put(attr, new byte[0]);
-        
-        // include volume attributes
-        List<String> volAttrAttrNames = MRCHelper.getSpecialAttrNames(sMan, file.getId(), MRCHelper.VOL_ATTR_PREFIX);
-        for (String attr : volAttrAttrNames)
-            attrs.put(attr, new byte[0]);
+        // if file ID is root volume
+        if (file.getId() == 1) {
+            
+            // include policy attributes
+            List<String> policyAttrNames = MRCHelper.getSpecialAttrNames(sMan, MRCHelper.POLICY_ATTR_PREFIX);
+            for (String attr : policyAttrNames)
+                attrs.put(attr, sMan.getXAttr(1, StorageManager.SYSTEM_UID, attr));
+            
+            // include volume attributes
+            List<String> volAttrAttrNames = MRCHelper.getSpecialAttrNames(sMan, MRCHelper.VOL_ATTR_PREFIX);
+            for (String attr : volAttrAttrNames)
+                attrs.put(attr, sMan.getXAttr(1, StorageManager.SYSTEM_UID, attr));
+        }
         
         listxattrResponse.Builder result = listxattrResponse.newBuilder();
-        Iterator<Entry<String, byte[]>> it = attrs.entrySet().iterator();
-        while (it.hasNext()) {
+        for (Entry<String, byte[]> attr : attrs.entrySet()) {
             
-            Entry<String, byte[]> attr = it.next();
             org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr.Builder builder = org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr
                     .newBuilder().setName(attr.getKey());
             

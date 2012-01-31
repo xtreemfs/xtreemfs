@@ -792,12 +792,10 @@ public class MRCHelper {
         }
     }
     
-    public static List<String> getSpecialAttrNames(StorageManager sMan, long fileId, String namePrefix) throws DatabaseException {
+    public static List<String> getSpecialAttrNames(StorageManager sMan, String namePrefix) throws DatabaseException {
         
         final String prefix = "xtreemfs." + namePrefix;
         final List<String> result = new LinkedList<String>();
-        if (fileId != 1)
-            return result;
         
         DatabaseResultSet<XAttr> it = sMan.getXAttrs(1, StorageManager.SYSTEM_UID);
         while (it.hasNext()) {
