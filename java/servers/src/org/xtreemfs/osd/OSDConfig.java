@@ -14,18 +14,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 
-
 import org.xtreemfs.common.config.ServiceConfig;
-import org.xtreemfs.common.config.ServiceConfig.Parameter;
 
 /**
  * 
  * @author bjko
  */
 public class OSDConfig extends ServiceConfig {
-
+    
     private final Parameter[] osdParameter = {            
             Parameter.DEBUG_LEVEL,
             Parameter.DEBUG_CATEGORIES,
@@ -92,28 +91,37 @@ public class OSDConfig extends ServiceConfig {
 
     public static final int     CHECKSUM_CRC32   = 2;
 
-    private Map<String, String> customParams;
+    private final Map<String, String> customParams;
 
     /** Creates a new instance of OSDConfig */
     public OSDConfig(String filename) throws IOException {
         super(filename);
+        
+        this.customParams = new HashMap<String, String>();
         read();
     }
 
     public OSDConfig(Properties prop) throws IOException {
         super(prop);
+        
+        this.customParams = new HashMap<String, String>();
         read();
     }
     
     public OSDConfig(HashMap<String, String> hm) {
         super(hm);
+        
+        this.customParams = new HashMap<String, String>();
+        for (Entry<String, String> entry : hm.entrySet())
+            if (entry.getKey().startsWith(OSD_CUSTOM_RROPERTY_PREFIX))
+                customParams.put(entry.getKey(), entry.getValue());
+        
     }
 
     public void read() throws IOException {
-
-        this.customParams = new HashMap();
+        
         for (String propName : this.props.stringPropertyNames()) {
-            if (propName.startsWith("config.")) {
+            if (propName.startsWith(ServiceConfig.OSD_CUSTOM_RROPERTY_PREFIX)) {
                 customParams.put(propName, this.props.getProperty(propName));
             }
         }
@@ -121,6 +129,7 @@ public class OSDConfig extends ServiceConfig {
         for (Parameter param: osdParameter) {
             parameter.put(param, readParameter(param));
         }
+        
     }
 
     public InetSocketAddress getDirectoryService() {
@@ -289,6 +298,12 @@ public class OSDConfig extends ServiceConfig {
 
     public int getMaxClientQ() {
         return (Integer) parameter.get(Parameter.MAX_CLIENT_Q);
+    }
+    
+    public HashMap<String, String> toHashMap() {
+        HashMap<String, String> hm = super.toHashMap();
+        hm.putAll(customParams);
+        return hm;
     }
 }
     

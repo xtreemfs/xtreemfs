@@ -825,7 +825,7 @@ public class BabuDBStorageManager implements StorageManager {
             update.addUpdate(XATTRS_INDEX, xattr.getKeyBuf(), value == null ? null : xattr.getValBuf());
             
             if (key.startsWith(SYS_ATTR_KEY_PREFIX + MRCHelper.POLICY_ATTR_PREFIX))
-                notifyAttributeSet(volume.getId(), key, new String(value));
+                notifyAttributeSet(volume.getId(), key, value == null? null: new String(value));
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);

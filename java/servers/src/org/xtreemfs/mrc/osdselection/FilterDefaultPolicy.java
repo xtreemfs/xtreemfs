@@ -9,9 +9,13 @@
 package org.xtreemfs.mrc.osdselection;
 
 import java.net.InetAddress;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.StringTokenizer;
 
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.KeyValuePairs;
+import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
@@ -28,22 +32,24 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
  */
 public class FilterDefaultPolicy implements OSDSelectionPolicy {
     
-    public static final short   POLICY_ID           = (short) OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT
-                                                            .getNumber();
+    public static final short       POLICY_ID           = (short) OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT
+                                                                .getNumber();
     
-    private static final String OFFLINE_TIME_SECS   = "offline_time_secs";
+    private static final String     OFFLINE_TIME_SECS   = "offline_time_secs";
     
-    private static final String FREE_CAPACITY_BYTES = "free_capacity_bytes";
+    private static final String     FREE_CAPACITY_BYTES = "free_capacity_bytes";
     
     // default: 2GB
-    private long                minFreeCapacity     = 2 * 1024 * 1024 * 1024;
+    private long                    minFreeCapacity     = 2 * 1024 * 1024 * 1024;
     
     // default: 5 min
-    private long                maxOfflineTime      = 300;
+    private long                    maxOfflineTime      = 300;
+    
+    private HashMap<String, String> customFilter        = new HashMap<String, String>();
     
     @Override
-    public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs, InetAddress clientIP, VivaldiCoordinates clientCoords,
-        XLocList currentXLoc, int numOSDs) {
+    public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs, InetAddress clientIP,
+            VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs) {
         
         if (allOSDs == null)
             return null;
@@ -62,9 +68,27 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
             return null;
         
         ServiceSet.Builder filteredOSDs = ServiceSet.newBuilder();
-        for (Service osd : allOSDs.getServicesList())
-            if (!hasTimedOut(osd) && hasFreeCapacity(osd) && isAvailable(osd))
-                filteredOSDs.addServices(osd);
+        for (Service osd : allOSDs.getServicesList()) {
+            
+            if (!hasTimedOut(osd) && hasFreeCapacity(osd) && isAvailable(osd)) {
+                
+                // if no custom filters have been assigned, add the OSD to the
+                // list
+                if (customFilter.isEmpty())
+                    filteredOSDs.addServices(osd);
+                
+                // otherwise, check if the filters allow the OSD to be added to
+                // the list
+                else
+                    for (Entry<String, String> entry : customFilter.entrySet()) {
+                        String osdParameterValue = KeyValuePairs.getValue(osd.getData().getDataList(),
+                                ServiceConfig.OSD_CUSTOM_RROPERTY_PREFIX + entry.getKey());
+                        if (matches(entry.getValue(), osdParameterValue))
+                            filteredOSDs.addServices(osd);
+                    }
+                
+            }
+        }
         
         return filteredOSDs;
     }
@@ -75,11 +99,17 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
             maxOfflineTime = Long.parseLong(value);
         else if (FREE_CAPACITY_BYTES.equals(key))
             minFreeCapacity = Long.parseLong(value);
+        else {
+            if (value == null)
+                customFilter.remove(key);
+            else
+                customFilter.put(key, value);
+        }
     }
     
     private boolean hasTimedOut(Service osd) {
         long lastUpdate = Long.parseLong(KeyValuePairs.getValue(osd.getData().getDataList(),
-            "seconds_since_last_update"));
+                "seconds_since_last_update"));
         return lastUpdate > maxOfflineTime;
     }
     
@@ -87,7 +117,8 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
         String freeStr = KeyValuePairs.getValue(osd.getData().getDataList(), "free");
         if (freeStr == null) {
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "invalid OSD registry (free is null!): %s", osd.toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "invalid OSD registry (free is null!): %s",
+                        osd.toString());
             }
             return false;
         }
@@ -104,6 +135,17 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
         } else {
             return false;
         }
+    }
+    
+    private static boolean matches(String filterString, String customProperty) {
+        
+        StringTokenizer st = new StringTokenizer(filterString);
+        while (st.hasMoreTokens()) {
+            if (st.nextToken().equals(customProperty))
+                return true;
+        }
+        
+        return false;
     }
     
 }

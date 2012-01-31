@@ -16,9 +16,9 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import java.util.Map.Entry;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.logging.Logging;
@@ -178,6 +178,8 @@ public class ServiceConfig extends Config {
     
     protected EnumMap<Parameter, Object> parameter = new EnumMap<Parameter, Object>(Parameter.class);
     
+    public static final String OSD_CUSTOM_RROPERTY_PREFIX = "config.";
+    
     public ServiceConfig() {
         super();
     }
@@ -197,6 +199,10 @@ public class ServiceConfig extends Config {
          * Create a configuration from String Key-Values of a HashMap
          */
         for (Entry<String, String> entry : hm.entrySet()) {
+            
+            // ignore custom configuration properties for OSDs here
+            if(entry.getKey().startsWith(OSD_CUSTOM_RROPERTY_PREFIX))
+                continue;
             
             Parameter param = null;
             try {
@@ -270,6 +276,7 @@ public class ServiceConfig extends Config {
             }
         }
     }
+    
     /**
      * Merges a second configuration in this one. Only required parameters which aren't set 
      * will be used from the new configuration.

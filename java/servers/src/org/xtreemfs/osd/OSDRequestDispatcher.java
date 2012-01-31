@@ -385,8 +385,6 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                         .build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("usedRAM").setValue(Long.toString(usedRAM))
                         .build());
-                dmap.addData(KeyValuePair.newBuilder().setKey("geoCoordinates").setValue(
-                    config.getGeoCoordinates()).build());
                 dmap.addData(KeyValuePair.newBuilder().setKey("proto_version").setValue(
                     Integer.toString(OSDServiceConstants.INTERFACE_ID)).build());
                 VivaldiCoordinates coord = myCoordinates.get();
@@ -407,6 +405,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 } catch (UnknownUUIDException ex) {
                     // should never happen
                 }
+                
                 Service.Builder me = Service.newBuilder();
                 me.setType(ServiceType.SERVICE_TYPE_OSD);
                 me.setUuid(config.getUUID().toString());

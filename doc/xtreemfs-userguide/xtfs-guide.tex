@@ -533,7 +533,9 @@ $> cp SERVICE.p12 /etc/xos/xtreemfs/truststore/certs
 \subsection{List of Configuration Options}
 \label{sec:config}
 
-All configuration parameters that may be used to define the behavior of the different services are listed in this section. Unless marked as optional, a parameter has to occur (exactly once) in a configuration file. Parameters marked as experimental belong to the DIR and MRC replication feature, which is currently under development. It is not recommended to mess about with these options if you want to use XtreemFS in production. 
+All configuration parameters that may be used to define the behavior of the different services are listed in this section. Unless marked as optional, a parameter has to occur (exactly once) in a configuration file. Parameters marked as experimental belong to the DIR and MRC replication feature, which is currently under development. It is not recommended to mess about with these options if you want to use XtreemFS in production.
+
+Aside from using the following predefined parameters to configure services, OSDs also allow to specify \emph{custom configuration parameters}. Such parameters may have arbitrary names that start with the prefix ``\texttt{config.}''. They can be used to enable a fine-grained individual assignment of OSDs to new files and replicas. For further details, please refer to Section \ref{sec:customOSDSelection}.
 
 %\makeatletter
 %\renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
@@ -2146,12 +2148,26 @@ In addition, custom policies can be set by passing a list of basic policy IDs to
 
 
 \subsection{Setting and Listing Policy Attributes}
+\label{sec:policyAttributes}
 
-OSD and replica selection policy behavior can be further specified by means of policy attributes. For a list of predefined attributes, see Section~\ref{sec:osd_policies}. Policy attributes can be set as follows:
+OSD and replica selection policy behavior can be further specified by means of policy attributes. For a list of predefined attributes, see Section~\ref{sec:osd_policies}. Attributes for \emph{all} policies can be set as follows:
 
 \begin{verbatim}
  $> xtfsutil --set-pattr domains --value "*.xtreemfs.org bla.com" \
     /xtreemfs
+\end{verbatim}
+
+To specify an individual attribute for \emph{a certain} policy (see Section \ref{sec:predefinedPolicies}), it is possible to prepend the policy ID to the attriubte name:
+
+\begin{verbatim}
+ $> xtfsutil --set-pattr 1001.domains --value "*.xtreemfs.org bla.com" \
+    /xtreemfs
+\end{verbatim}
+
+Policy attributes can be removed by adjusting an empty value, e.g.:
+
+\begin{verbatim}
+ $> xtfsutil --set-pattr domains --value "" /xtreemfs
 \end{verbatim}
 
 A list of all policy attributes that have been set can be shown as follows:
@@ -2359,6 +2375,7 @@ OSD and replica selection policies are assigned at volume granularity. For furth
 The behavior of basic policies can be further refined by means of policy attributes. Policy attributes are extended attributes with a name starting with \texttt{xtreemfs.policies.}, such as \texttt{xtreemfs.policies.minFreeCapacity}. Each time a policy attribute is set, all policies will be notified about the change. How an attribute change affects the policy behavior depends on the policy implementation.
 
 \subsection{Predefined Policies}
+\label{sec:predefinedPolicies}
 
 Each basic policy can be assigned to one of the three different categories called \emph{filtering}, \emph{grouping} and \emph{sorting}. \emph{Filtering policies} generate a sub-list from a list of OSDs. The sub-list only contains those OSDs from the original list that have a certain property. \emph{Grouping policies} are used to select a subgroup from a given list of OSDs. They basically work in a similar manner as filtering policies, but unlike filtering policies, they always return a list of a fixed size. \emph{Sorting policies} generate and return a reordered list from the input OSD list, without removing any OSDs.
 
@@ -2374,6 +2391,7 @@ The following predefined policies exist:
  \begin{itemize}
  \item \emph{free\_capacity\_bytes}: the lower space limit in bytes
  \item \emph{offline\_time\_secs}: the upper response time limit in seconds
+ \item custom attributes (see Section \ref{sec:customOSDSelection})
  \end{itemize}
 
  \item \textbf{FQDN-based filter (policy ID 1001)}\\
@@ -2456,6 +2474,35 @@ This policy uses domain names of clients and OSDs to determine the distance betw
  Sorts the list of OSDs in ascending order of their distance to the client, according to the vivaldi coordinates of the client and OSDs. This policy requires the clients to run the \texttt{xtfs\_vivaldi} service.
 
 \end{itemize}
+
+\subsection{OSD Selection based on Custom Attributes}
+\label{sec:customOSDSelection}
+The default filtering policy (policy ID 1000) supports the use of policy attributes to further refine the filtering of OSDs. Given that different OSDs have individual \emph{custom configuration parameters}, it is possible to restrict the selection based on these attributes and parameters.
+
+To select a subset of all OSDs that has a certain \emph{custom configuration parameter}, it is necessary to define a policy attribute on the volume with the same name as the custom parameter and a value consisting of a space-separated list of matching OSDs.
+
+\vspace{0.5cm}
+\emph{Example:} Two OSDs exist with the following configurations:
+
+  \begin{verbatim}
+  uuid = OSD1
+  ...
+  config.country = DE\end{verbatim}
+
+and
+
+  \begin{verbatim}
+  uuid = OSD2
+  ...
+  config.country = UK\end{verbatim}
+
+. Executing
+
+  \begin{verbatim}
+  %> xtfsutil --set-pattr 1000.country --value US DE <mountpoint>
+  \end{verbatim}
+
+will only cause the former OSD to be regarded as eligible for new files and replicas. For further details on how to define \emph{custom configuration parameters}, please refer to Section \ref{sec:config}. For further details on how to specify policy attributes, please refer to Section \ref{sec:policyAttributes}.
 
 \section{Striping Policies} \label{sec:striping_policies}
 

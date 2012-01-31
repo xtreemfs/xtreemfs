@@ -839,6 +839,8 @@ public class MRCHelper {
             throws DatabaseException {
         
         // set the value in the database
-        sMan.setXAttr(1, StorageManager.SYSTEM_UID, "xtreemfs." + keyString, value.getBytes(), update);
+        byte[] bytes = value.getBytes();
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, "xtreemfs." + keyString, bytes == null || bytes.length == 0 ? null
+                : bytes, update);
     }
 }
