@@ -701,9 +701,9 @@ bool ListPolicyAttrs(const string& xctl_file,
 
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
-    for (int i = 0; i < response["result"].getMemberNames().size(); ++i) {
-      const string& key = response["result"].getMemberNames()[i];
-      cout << key << " = " << response["result"][key] << endl;
+    const Json::Value::Members& keys = response["result"].getMemberNames();
+    for (int i = 0; i < keys.size(); ++i) {
+      cout << keys[i] << " = " << response["result"][keys[i]] << endl;
     }
     return true;
   } else {

@@ -30,7 +30,8 @@ using namespace xtreemfs::pbrpc;
 
 namespace xtreemfs {
 
-XtfsUtilServer::XtfsUtilServer(const string& prefix) : prefix_(prefix) {
+XtfsUtilServer::XtfsUtilServer(const string& prefix)
+    : prefix_(prefix), xtreemfs_policies_prefix_("xtreemfs.policies.") {
 }
 
 XtfsUtilServer::~XtfsUtilServer() {
@@ -324,7 +325,7 @@ void XtfsUtilServer::OpSetPolicyAttr(const xtreemfs::pbrpc::UserCredentials& uc,
 
   volume_->SetXAttr(uc,
                     path,
-                    "xtreemfs.policies." + input["attribute"].asString(),
+                    xtreemfs_policies_prefix_ + input["attribute"].asString(),
                     input["value"].asString(),
                     xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
   (*output)["result"] = Json::Value(Json::objectValue);
@@ -346,8 +347,12 @@ void XtfsUtilServer::OpListPolicyAttr(
       xattrs(volume_->ListXAttrs(uc, path, false));
   (*output)["result"] = Json::Value(Json::objectValue);
   for (int i = 0; i < xattrs->xattrs_size(); ++i) {
-    if (boost::starts_with(xattrs->xattrs(i).name(),"xtreemfs.policy.")) {
-      (*output)["result"][xattrs->xattrs(i).name()] = xattrs->xattrs(i).value();
+    if (boost::starts_with(xattrs->xattrs(i).name(),
+        xtreemfs_policies_prefix_)) {
+      // Remove "xtreemfs.policies." from the XAttr key.
+      std::string policy_attr_name =
+          xattrs->xattrs(i).name().substr(xtreemfs_policies_prefix_.length());
+      (*output)["result"][policy_attr_name] = xattrs->xattrs(i).value();
     }
   }
 }
