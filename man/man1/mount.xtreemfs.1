@@ -10,6 +10,9 @@ mount.xtreemfs \- mounts an XtreemFS volume
 mounts the volume \fIvolume\fR registered at the Directory Service \fIdir-host\fR:\fIport\fR to the local directory \fImountpoint\fR. \fImount.xtreemfs\fR is implemented as a FUSE user-level file system driver.
 
 .SH EXAMPLE USAGE
+.TP
+Mount the volume "MyVolume" (which is registered at the DIR server "remote.dirservice.machine") to the mount point "/mnt":
+.TP
 .B "mount.xtreemfs remote.dirservice.machine/MyVolume /mnt"
 
 .SH OPTIONS

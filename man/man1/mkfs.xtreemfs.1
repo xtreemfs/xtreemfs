@@ -10,9 +10,15 @@ mkfs.xtreemfs - create a new XtreemFS volume
 Creates a new volume named \fIvolume\fR at the MRC \fImrc-host\fR:\fIport\fR.
 
 .SH EXAMPLE USAGE
-.B "mkfs.xtreemfs remote.mrc.machine/myVolume"
+.TP
+Create the volume "MyVolume" on the MRC server "remote.mrc.machine":
+.TP
+.B "mkfs.xtreemfs remote.mrc.machine/MyVolume"
 .br
-.B "mkfs.xtreemfs -p RAID0 -w 2 -s 256 remote.mrc.machine/myVolume"
+.TP
+Create a volume with a default striping width of 2 meaning files will be always striped across 2 OSDs.
+.TP
+.B "mkfs.xtreemfs -p RAID0 -w 2 remote.mrc.machine/MyVolume"
 
 .SH OPTIONS
 

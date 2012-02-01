@@ -12,10 +12,21 @@ xtfsutil \- shows and modifies XtreemFS specific file, directory and volume attr
 when no options are provided, xtfsutl shows information about a file or directory \fIpath\fP. 
 
 .SH EXAMPLE USAGE
+
+.TP
+.TP
+Display information about the file "/somedir/myfile":
+.TP
 .B "xtfsutil xtfs-mount/somedir/myfile"
 .br
-.B "xtfsutil --add-replica auto xtfs-mount/somedir/myfile"
+.TP
+Add another replica to the replicated file "/somedir/myfile" which will be created on an automatically chosen OSD. If the file is not replicated yet, set a replication policy for the file first (see option -r / \-\-set-replication-policy). Or set a default replication policy for future files.
+.TP
+.B "xtfsutil --add-replica AUTO xtfs-mount/somedir/myfile"
 .br
+.TP
+Set the default replication policy to "WqRq" and a default replication factor of 3 for the mounted volume:
+.TP
 .B "xtfsutil --set-drp --update-policy WqRq --replication-factor 3 xtfs-mount/"
 
 .SH OPTIONS
@@ -57,17 +68,21 @@ Requires the following options: \-\-replication-policy, \-\-replication-factor
 Additional options: \-\-full
 
 .TP
-\fB\-\-replication-policy ronly|WqRq|WaRa|none
-Sets the replication policy. If ronly (readonly) is selected, files will be replicated on close.
+\fB\-\-replication-policy ronly|WqRq|WaRa|none (the aliases readonly|quorum|all are also allowed)
+Sets the replication policy.
 
 .br
-\fBronly  Read-only replication, files are immutable.
+.B ronly
+Read-only replication, files are immutable.  Files will be replicated after closing them.
 .br
-\fBWqRq   Quorum-based replication, files are mutable and provide regular POSIX semantics. Up to n-1 replicas can fail.
+.B WqRq
+Quorum-based replication. Files are mutable and provide regular POSIX semantics. A WqRq-replicated file is available for reading and writing as long as the majority of its replicas are available. Please read more about the technical details of the WqRq replication policy in the XtreemFS user guide (Section "Read/Write File Replication").
 .br
-\fBWaRa   Write/read all, files are mutable and provide regular POSIX semantics. No fault tolerance.
+.B WaR1
+Files are mutable and provide regular POSIX semantics. Writes have to be acknowledged by all replicas. Data can be read from any replica.
 .br
-\fBnone   Disables replication.
+.B none
+Disables replication.
 
 .TP
 \fB\-\-replication-factor num
@@ -141,7 +156,7 @@ Prints a list of up to ten OSDs that can be used for new replicas for the specif
 Removes the replica on the OSD with the specified UUID.
 
 .TP
-\fB\-r, \-\-set-replication-policy ronly|WqRq|WaRa|none
+\fB\-r, \-\-set-replication-policy ronly|WqRq|WaRa|none (the aliases readonly|quorum|all are also allowed)
 Sets the replication policy for a file. Mode cane only be changed when a file has no replicas. See --replication-policy for values.
 
 .SH "SEE ALSO"

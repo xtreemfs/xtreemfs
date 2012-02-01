@@ -2008,7 +2008,7 @@ The fileID\index{fileID} is the unique identifier within XtreemFS, e.g. used by 
 
 \subsubsection{Changing the Replication Policy}
 
-The replication policy defines how a file is replicated. The policy can only be changed for a file that has no replicas. If you wish to change the policy for a replicated files, you have to remove all replicas first.
+The replication policy defines how a file is replicated. The policy can only be changed for a file that has no replicas. If you wish to change the policy for a replicated file, you have to remove all replicas first.
 
 To change the replication policy, execute \texttt{xtfsutil} with the following options:
 
@@ -2019,20 +2019,19 @@ $> xtfsutil --set-replication-policy ronly /xtreemfs/test.txt
 The following values (or its aliases stated in parentheses) can be passed to \verb|--set-replication-policy|:
 \begin{description}
   \item[none] File is not replicated.
-  \item[ronly (readonly)] File is read-only replicated, the file cannot be modified.
-  \item[WqRq (quorum)] File is read-write replicated and can be modified. Updates have to be sent to a majority of replicas (\textit{write quorum}) and data has to be read from a majority (\textit{read quorum}), i.e. a minority of replicas can fail. For instance, in case of three replicas the WqRq policy requires at least two replicas (majority) to be online while one replica (minority) may be offline. If you have only two replicas, consider using the \textbf{WaR1} policy instead.
-  \item[WaR1 (all)] File is read-write replicated and can be modified. Unlike WqRq, this policy requires that updates have to be send to all replicas (\textit{write all}) and no replica may fail. In consequence all replicas are always synchronized and therefore it is sufficient to read from any replica (\textit{read 1}), i.e. the OSD can always use its local replica.
+  \item[ronly (readonly)] File is read-only replicated and will be marked as read-only, i.e. the file cannot be modified as long as the replication policy is set to \textbf{ronly}.
+  \item[WqRq (quorum), WaR1 (all)] The file will be read-write replicated and can be modified. Please refer to the Section \ref{sec:readwrite_replication} for more information on both policies and their properties.
 \end{description}
 
 
 \subsubsection{Adding and Removing Replicas}
 
-Replicas can be added for files that have a replication policy defined, i.e. not \texttt{none}. When adding a replica, you need to specify on which OSD to create the new replica. Alternatively, you can use \texttt{auto} instead of an OSD UUID. With \texttt{auto} set, the \texttt{xtfsutil} will automatically select an OSD.
+Replicas can be added for files that have a replication policy defined, i.e. not \texttt{none}. When adding a replica, you need to specify on which OSD to create the new replica. Alternatively, you can use \texttt{AUTO} instead of an OSD UUID. With \texttt{AUTO} set, the \texttt{xtfsutil} will automatically select an OSD.
 
 To add a replica execute:
 
 \begin{verbatim}
-$> xtfsutil --add-replica auto /xtreemfs/test.txt
+$> xtfsutil --add-replica AUTO /xtreemfs/test.txt
 \end{verbatim}
 
 For read-only replicated files, replicas are partial by default. To create a full replica, you can use the \verb|--full| flag when adding a replica. For read-write replicated files, all replicas are equal and there is no further options.
@@ -2105,11 +2104,11 @@ $> xtfsutil --set-drp --replication-policy WqRq \
             --replication-factor 3 /xtreemfs
 \end{verbatim}
 
-The following values can be passed to \verb|--replication-policy|:
+The following values (or its aliases stated in parentheses) can be passed to \verb|--replication-policy|:
 \begin{description}
   \item[none] New files are not replicated.
-  \item[ronly] Files are initially created without replicas and can be modified until they are closed. On close, the file is set to read-only and the replicas are created. Replicas are partial by default, full replicas will be created if the \verb|--full| flag is set.
-  \item[WqRq, WaR1] New files are read-write replicated and can be modified.
+  \item[ronly (readonly)] Files are initially created without replicas and can be modified until they are closed. On close, the file is set to read-only and the replicas are created. Replicas are partial by default. Full replicas will be created if the \verb|--full| flag is set.
+  \item[WqRq (quorum), WaR1 (all)] New files are read-write replicated and can be modified. Please refer to the Section \ref{sec:readwrite_replication} for more information on both policies and their properties.
 \end{description}
 
 
@@ -2228,13 +2227,14 @@ XtreemFS offers replication of all data. On the one hand, the Directory Service 
 File that are replicated with read/write replication have the same semantics as non-replicated files. That means that all operations can be executed on those files and that data is kept consistent across replicas. Applications and users won't see a difference between read/write replicated and regular files.
 
 \subsection{Technical Details}
-Internally, the read/write replication is implemented using the primary/backup approach with leases. When a file is opened, all OSDs that have a replica ``talk'' to each other to decide which replica becomes the \textit{primary}. In XtreemFS we use leases for the primary election, this means that an OSD will become primary for some time. If it fails, the lease times out and another OSD can become primary.
+Internally, the read/write replication is implemented using the primary/backup approach with leases. When a file is opened, all OSDs that have a replica ``talk'' to each other to decide which replica becomes the \textit{primary}. In XtreemFS we use leases for the primary election, this means that an OSD will become primary for some time. As long as the file is accessed on the OSD, the lease will be periodically renewed in the background. If the OSD fails, the lease times out and another OSD can become primary.
 Once a replica has acquired the lease to become primary, it checks with the other replicas to ensure all replicas are in a consistent state. After this so called replica reset phase, the primary processes client operations.
 Reads can be executed locally on the primary. However, operations that modify data such as write and truncate, are executed on the primary which passes these updates on to the other replicas (backups).
 
 The replication of files adds significant communication overhead to keep replicas in sync. When a file is opened, the OSD which the client contacts requires at least three message round-trips to acquire the lease and to execute the replica reset. Once a primary was elected, read operations can be executed locally without any communication. Truncate and write require a single round-trip between the primary and the backup OSDs.
 
-Depending on the selected replication policy, the read/write replication can tolerate some replica failures. The \textbf{WqRq} (\textit{write quorum, read quorum}) policy employs majority voting and can tolerate replica failures as long as a majority of replicas is available. This is the most fault-tolerant strategy in XtreemFS. However, it guarantees only that data is stored on a majority of the replicas. If you lose more replicas permanently, data might be lost.
+Depending on the selected replication policy, the read/write replication can tolerate some replica failures. The \textbf{WqRq} (\textit{write quorum, read quorum}) policy employs majority voting and can tolerate replica failures as long as a majority of replicas is available. This is the most fault-tolerant strategy in XtreemFS. However, it guarantees only that data is stored on a majority of the replicas. If you lose more replicas permanently, data might be lost. Please note that, unlike the term \textit{read quorum} suggests, read operations are not executed on the majority of replicas. Instead it means that a majority of replicas has to be available during the replica reset phase in order to synchronize the primary's replica. After this phase read operations are executed locally. Please keep in mind that the majority of two replicas is two, i.e. using WqRq with two replicas will provide you no availability in case of a replica failure. Use the WqRq policy only if you have at least 3 OSDs - otherwise select the WqR1 policy.
+
 The \textbf{WaR1} (\textit{write all, read 1}) policy writes updates to all replicas which yields higher data safety. However, if any replica is unavailable, modifications are not possible and the client will receive a write error. Local data can be still read from an OSD.
 
 \subsection{Limitations}
