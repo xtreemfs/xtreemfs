@@ -207,6 +207,8 @@ class XtfsUtilServer {
   Volume* volume_;
   /** UUIDResolver to resolve UUIDs to addresses. */
   UUIDResolver* uuid_resolver_;
+  /** XAttr prefix used for Policy Attribute names by the MRC. */
+  const std::string xtreemfs_policies_prefix_;
 };
 
 }  // namespace xtreemfs
