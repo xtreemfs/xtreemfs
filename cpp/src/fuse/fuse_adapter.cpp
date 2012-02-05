@@ -471,6 +471,9 @@ int FuseAdapter::statfs(const char *path, struct statvfs *statv) {
 
     // According to Fuse.h: "The 'f_frsize', 'f_favail', 'f_fsid' and 'f_flag'
     //                       fields are ignored"
+    // However, f_frsize is required on MacOSX to display the correct
+    // number of total and free space (e.g. by df, see issue 247)
+    statv->f_frsize  = stat_vfs->bsize();  // file system block size
     statv->f_bsize   = stat_vfs->bsize();  // file system block size
     statv->f_bfree   = stat_vfs->bavail();  // # free blocks
     // # free blocks for unprivileged users
