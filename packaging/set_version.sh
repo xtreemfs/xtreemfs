@@ -1,9 +1,16 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # No grep -oE support on Solaris
 if [ "$(uname)" = "SunOS" ]
 then
   exit 0
+fi
+
+# sed -r on Linux, sed -E on MacOSX
+sed_extended_regex_switch="-r"
+if [ "$(uname)" = "Darwin" ]
+then
+  sed_extended_regex_switch="-E"
 fi
 
 # Path is relative to the directory path of this script, usually /packaging/
@@ -49,7 +56,7 @@ function update_version() {
     current_version=$(grep "$keyword" "$file" | grep -oE "\".*\"" | tr -d '"')
     if [ -n "$add_svn_revision_only" ]
     then
-      current_version=$(echo "$current_version" | sed -r -e "s/^.*-?trunk/trunk/")
+      current_version=$(echo "$current_version" | sed $sed_extended_regex_switch "s/^.*-?trunk/trunk/")
       echo "$current_version" "$version_string"
     fi
 
@@ -59,10 +66,20 @@ function update_version() {
       if [ -n "$add_svn_revision_only" ]
       then
         #echo "Replacing trunk with new version string: $version_string"
-        sed -i -e "s/$current_version\"/$version_string\"/" $file        
+        if [ "$(uname)" = "Darwin" ]
+        then
+          sed -i '' "s/$current_version\"/$version_string\"/" $file
+        else
+          sed -i "s/$current_version\"/$version_string\"/" $file
+        fi
       else
         #echo "Replacing current version: $current_version with new version string: $version_string"
-        sed -i -e "s/\"$current_version\"/\"$version_string\"/" $file
+        if [ "$(uname)" = "Darwin" ]
+        then
+          sed -i '' "s/\"$current_version\"/\"$version_string\"/" $file
+        else
+          sed -i "s/\"$current_version\"/\"$version_string\"/" $file
+        fi
       fi
       if [ $? -ne 0 ]
       then
@@ -111,7 +128,7 @@ function find_releasename() {
     done
     unset IFS
 
-    version=`echo "$version" | sed -r -e "s/\.?[0-9]$//"`
+    version=`echo "$version" | sed $sed_extended_regex_switch "s/\.?[0-9]$//"`
   done
 }
 
@@ -196,7 +213,7 @@ EOF
     fi
 
     revision=$(svn info "$svn_root" | grep ^Revision | awk '{ print $2 }')
-    trunk_or_branch=$(svn info "$svn_root" | grep ^URL | sed -r -e "s/URL:[ \t]+http(s)?:\/\/xtreemfs.googlecode.com\/svn\/(branches\/)?//")
+    trunk_or_branch=$(svn info "$svn_root" | grep ^URL | sed $sed_extended_regex_switch "s/URL:[ \t]+http(s)?:\/\/xtreemfs.googlecode.com\/svn\/(branches\/)?//")
 
     if [ "$trunk_or_branch" = "trunk" ]
     then
