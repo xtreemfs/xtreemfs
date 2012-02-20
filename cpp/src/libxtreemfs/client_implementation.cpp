@@ -97,7 +97,7 @@ void ClientImplementation::Start() {
       new boost::thread(boost::bind(&xtreemfs::rpc::Client::run,
                                     network_client_.get())));
 
-  dir_service_client_.reset(new DIRServiceClient(network_client_.get()));
+  dir_service_client_.reset(new DirectoryServiceClient(network_client_.get()));
 
   GenerateVersion4UUID(&client_uuid_);
   assert(!client_uuid_.empty());
@@ -302,7 +302,7 @@ void ClientImplementation::UUIDToAddress(const std::string& uuid,
   boost::scoped_ptr< SyncCallback<AddressMappingSet> > response(
       ExecuteSyncRequest< SyncCallback<AddressMappingSet>* >(
           boost::bind(
-              &xtreemfs::pbrpc::DIRServiceClient::
+              &xtreemfs::pbrpc::DirectoryServiceClient::
                   xtreemfs_address_mappings_get_sync,
               dir_service_client_.get(),
               _1,
@@ -371,7 +371,7 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
   boost::scoped_ptr< SyncCallback<ServiceSet> > response(
       ExecuteSyncRequest< SyncCallback<ServiceSet>* >(
           boost::bind(
-              &xtreemfs::pbrpc::DIRServiceClient::
+              &xtreemfs::pbrpc::DirectoryServiceClient::
                   xtreemfs_service_get_by_name_sync,
               dir_service_client_.get(),
               _1,
@@ -432,7 +432,7 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
   boost::scoped_ptr< SyncCallback<ServiceSet> > response(
       ExecuteSyncRequest< SyncCallback<ServiceSet>* >(
           boost::bind(
-              &xtreemfs::pbrpc::DIRServiceClient::
+              &xtreemfs::pbrpc::DirectoryServiceClient::
                   xtreemfs_service_get_by_name_sync,
               dir_service_client_.get(),
               _1,
