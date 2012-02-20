@@ -29,7 +29,7 @@ import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.osd.OSDConfig;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 
@@ -57,8 +57,8 @@ public class SetupUtils {
         props.setProperty("dir_service.port", "33638");
         props.setProperty("object_dir", dir);
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("debug.categories", ""
-            + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("debug.categories",
+                "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("listen.port", "" + port);
         props.setProperty("http_port", "" + (port - 3000));
         props.setProperty("listen.address", "localhost");
@@ -77,7 +77,7 @@ public class SetupUtils {
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getUUID("localhost", port).toString());
         props.setProperty("snmp.enabled", "true");
-        props.setProperty("snmp.port", "" + (port+1000));
+        props.setProperty("snmp.port", "" + (port + 1000));
         props.setProperty("snmp.address", "localhost");
         props.setProperty("measure_requests", "false");
         return props;
@@ -127,8 +127,8 @@ public class SetupUtils {
     public static org.xtreemfs.dir.DIRConfig createDIRConfig() throws IOException {
         Properties props = new Properties();
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("debug.categories", ""
-            + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("debug.categories",
+                "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("listen.port", "33638");
         props.setProperty("http_port", "30638");
         props.setProperty("uuid", "UUID:localhost:33638");
@@ -154,8 +154,8 @@ public class SetupUtils {
     public static BabuDBConfig createDIRdbsConfig() throws IOException {
         Properties props = new Properties();
         props.setProperty("babudb.debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("babudb.debug.categories", ""
-                + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("babudb.debug.categories",
+                "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("babudb.cfgFile", "config.db");
         props.setProperty("babudb.baseDir", TEST_DIR);
         props.setProperty("babudb.logDir", TEST_DIR);
@@ -175,8 +175,8 @@ public class SetupUtils {
         props.setProperty("dir_service.port", "33638");
         props.setProperty("osd_check_interval", "10");
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("debug.categories", ""
-            + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("debug.categories",
+                "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("listen.port", "33636");
         props.setProperty("http_port", "30636");
         props.setProperty("listen.address", "localhost");
@@ -206,8 +206,8 @@ public class SetupUtils {
     public static BabuDBConfig createMRC1dbsConfig() throws IOException {
         Properties props = new Properties();
         props.setProperty("babudb.debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("debug.categories", ""
-                + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("debug.categories",
+                "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("babudb.cfgFile", "config.db");
         props.setProperty("babudb.baseDir", TEST_DIR + "/mrc0");
         props.setProperty("babudb.logDir", TEST_DIR + "/test-brain0.log");
@@ -227,8 +227,8 @@ public class SetupUtils {
         props.setProperty("dir_service.port", "33638");
         props.setProperty("osd_check_interval", "10");
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("debug.categories", ""
-            + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("debug.categories",
+                "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("listen.port", "33639");
         props.setProperty("http_port", "30639");
         props.setProperty("listen.address", "localhost");
@@ -257,8 +257,8 @@ public class SetupUtils {
     public static BabuDBConfig createMRC2dbsConfig() throws IOException {
         Properties props = new Properties();
         props.setProperty("babudb.debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("babudb.debug.categories", ""
-                + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("babudb.debug.categories",
+                "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("babudb.cfgFile", "config.db");
         props.setProperty("babudb.baseDir", TEST_DIR + "/mrc1");
         props.setProperty("babudb.logDir", TEST_DIR + "/test-brain1.log");
@@ -325,18 +325,12 @@ public class SetupUtils {
     }
     
     static void localResolver() {
-        UUIDResolver.addLocalMapping(getMRC1UUID(), 33636, SSL_ON ? Schemes.SCHEME_PBRPCS
-            : Schemes.SCHEME_PBRPC);
-        UUIDResolver.addLocalMapping(getMRC2UUID(), 33639, SSL_ON ? Schemes.SCHEME_PBRPCS
-            : Schemes.SCHEME_PBRPC);
-        UUIDResolver.addLocalMapping(getOSD1UUID(), 33637, SSL_ON ? Schemes.SCHEME_PBRPCS
-            : Schemes.SCHEME_PBRPC);
-        UUIDResolver.addLocalMapping(getOSD2UUID(), 33640, SSL_ON ? Schemes.SCHEME_PBRPCS
-            : Schemes.SCHEME_PBRPC);
-        UUIDResolver.addLocalMapping(getOSD3UUID(), 33641, SSL_ON ? Schemes.SCHEME_PBRPCS
-            : Schemes.SCHEME_PBRPC);
-        UUIDResolver.addLocalMapping(getOSD4UUID(), 33642, SSL_ON ? Schemes.SCHEME_PBRPCS
-            : Schemes.SCHEME_PBRPC);
+        UUIDResolver.addLocalMapping(getMRC1UUID(), 33636, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
+        UUIDResolver.addLocalMapping(getMRC2UUID(), 33639, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
+        UUIDResolver.addLocalMapping(getOSD1UUID(), 33637, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
+        UUIDResolver.addLocalMapping(getOSD2UUID(), 33640, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
+        UUIDResolver.addLocalMapping(getOSD3UUID(), 33641, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
+        UUIDResolver.addLocalMapping(getOSD4UUID(), 33642, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
     }
     
     private static ServiceUUID getUUID(String listenAddress, int port) {
@@ -353,13 +347,13 @@ public class SetupUtils {
     
     static RPCNIOSocketClient createRPCClient(int timeout) throws IOException {
         final SSLOptions sslOptions = SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "Client.p12"),
-            "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trusted.jks"),
-            "passphrase", SSLOptions.JKS_CONTAINER, false) : null;
+                "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase",
+                SSLOptions.JKS_CONTAINER, false) : null;
         return new RPCNIOSocketClient(sslOptions, timeout, 5 * 60 * 1000);
     }
     
-    static DIRServiceClient createDIRClient(RPCNIOSocketClient client) throws IOException {
-        return new DIRServiceClient(client, new InetSocketAddress("localhost", 33638));
+    static DirectoryServiceClient createDIRClient(RPCNIOSocketClient client) throws IOException {
+        return new DirectoryServiceClient(client, new InetSocketAddress("localhost", 33638));
     }
     
     public static OSDConfig createOSD1ConfigForceWithoutSSL() throws IOException {
@@ -427,15 +421,14 @@ public class SetupUtils {
      */
     public static ReusableBuffer generateData(int size, byte ch) {
         byte[] data = new byte[size];
-        for(int i = 0; i < data.length; i++)
+        for (int i = 0; i < data.length; i++)
             data[i] = ch;
         return ReusableBuffer.wrap(data);
     }
-
+    
     public static StripingPolicy getStripingPolicy(int width, int stripeSize) {
-        return StripingPolicy.newBuilder().setType(StripingPolicyType.STRIPING_POLICY_RAID0).setStripeSize(stripeSize).setWidth(width).build();
+        return StripingPolicy.newBuilder().setType(StripingPolicyType.STRIPING_POLICY_RAID0).setStripeSize(stripeSize)
+                .setWidth(width).build();
     }
-
-
     
 }

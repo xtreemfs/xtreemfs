@@ -6581,9 +6581,9 @@ public final class DIR {
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.configurationSetResponse)
   }
   
-  public static abstract class DIRService
+  public static abstract class DirectoryService
       implements com.google.protobuf.Service {
-    protected DIRService() {}
+    protected DirectoryService() {}
     
     public interface Interface {
       public abstract void xtreemfsAddressMappingsGet(
@@ -6665,7 +6665,7 @@ public final class DIR {
     
     public static com.google.protobuf.Service newReflectiveService(
         final Interface impl) {
-      return new DIRService() {
+      return new DirectoryService() {
         @Override
         public  void xtreemfsAddressMappingsGet(
             com.google.protobuf.RpcController controller,
@@ -7204,7 +7204,7 @@ public final class DIR {
       return new Stub(channel);
     }
     
-    public static final class Stub extends org.xtreemfs.pbrpc.generatedinterfaces.DIR.DIRService implements Interface {
+    public static final class Stub extends org.xtreemfs.pbrpc.generatedinterfaces.DIR.DirectoryService implements Interface {
       private Stub(com.google.protobuf.RpcChannel channel) {
         this.channel = channel;
       }
@@ -7857,49 +7857,49 @@ public final class DIR {
       "E_TYPE_VOLUME\020\003*g\n\rServiceStatus\022\030\n\024SERV" +
       "ICE_STATUS_AVAIL\020\000\022 \n\034SERVICE_STATUS_TO_",
       "BE_REMOVED\020\001\022\032\n\026SERVICE_STATUS_REMOVED\020\002" +
-      "2\371\014\n\nDIRService\022u\n\035xtreemfs_address_mapp" +
-      "ings_get\022(.xtreemfs.pbrpc.addressMapping" +
-      "GetRequest\032!.xtreemfs.pbrpc.AddressMappi" +
-      "ngSet\"\007\215\265\030\001\000\000\000\022t\n xtreemfs_address_mappi" +
-      "ngs_remove\022(.xtreemfs.pbrpc.addressMappi" +
-      "ngGetRequest\032\035.xtreemfs.pbrpc.emptyRespo" +
-      "nse\"\007\215\265\030\002\000\000\000\022v\n\035xtreemfs_address_mapping" +
-      "s_set\022!.xtreemfs.pbrpc.AddressMappingSet" +
-      "\032).xtreemfs.pbrpc.addressMappingSetRespo",
-      "nse\"\007\215\265\030\003\000\000\000\022Z\n\025xtreemfs_discover_dir\022\034." +
-      "xtreemfs.pbrpc.emptyRequest\032\032.xtreemfs.p" +
-      "brpc.DirService\"\007\215\265\030\004\000\000\000\022k\n\032xtreemfs_glo" +
-      "bal_time_s_get\022\034.xtreemfs.pbrpc.emptyReq" +
-      "uest\032&.xtreemfs.pbrpc.globalTimeSGetResp" +
-      "onse\"\007\215\265\030\005\000\000\000\022o\n\033xtreemfs_service_deregi" +
-      "ster\022(.xtreemfs.pbrpc.serviceDeregisterR" +
-      "equest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215" +
-      "\265\030\006\000\000\000\022l\n\034xtreemfs_service_get_by_name\022\'" +
-      ".xtreemfs.pbrpc.serviceGetByNameRequest\032",
-      "\032.xtreemfs.pbrpc.ServiceSet\"\007\215\265\030\007\000\000\000\022l\n\034" +
-      "xtreemfs_service_get_by_type\022\'.xtreemfs." +
-      "pbrpc.serviceGetByTypeRequest\032\032.xtreemfs" +
-      ".pbrpc.ServiceSet\"\007\215\265\030\010\000\000\000\022l\n\034xtreemfs_s" +
-      "ervice_get_by_uuid\022\'.xtreemfs.pbrpc.serv" +
-      "iceGetByUUIDRequest\032\032.xtreemfs.pbrpc.Ser" +
-      "viceSet\"\007\215\265\030\t\000\000\000\022k\n\030xtreemfs_service_off" +
-      "line\022\'.xtreemfs.pbrpc.serviceGetByUUIDRe" +
-      "quest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265" +
-      "\030\n\000\000\000\022u\n\031xtreemfs_service_register\022&.xtr",
-      "eemfs.pbrpc.serviceRegisterRequest\032\'.xtr" +
-      "eemfs.pbrpc.serviceRegisterResponse\"\007\215\265\030" +
-      "\013\000\000\000\022[\n\023xtreemfs_checkpoint\022\034.xtreemfs.p" +
-      "brpc.emptyRequest\032\035.xtreemfs.pbrpc.empty" +
-      "Response\"\007\215\265\030\024\000\000\000\022Y\n\021xtreemfs_shutdown\022\034" +
-      ".xtreemfs.pbrpc.emptyRequest\032\035.xtreemfs." +
-      "pbrpc.emptyResponse\"\007\215\265\030\025\000\000\000\022m\n\032xtreemfs" +
-      "_configuration_get\022\'.xtreemfs.pbrpc.conf" +
-      "igurationGetRequest\032\035.xtreemfs.pbrpc.Con" +
-      "figuration\"\007\215\265\030\026\000\000\000\022n\n\032xtreemfs_configur",
-      "ation_set\022\035.xtreemfs.pbrpc.Configuration" +
-      "\032(.xtreemfs.pbrpc.configurationSetRespon" +
-      "se\"\007\215\265\030\027\000\000\000\032\007\225\265\030\021\'\000\000B(\n&org.xtreemfs.pbr" +
-      "pc.generatedinterfaces"
+      "2\377\014\n\020DirectoryService\022u\n\035xtreemfs_addres" +
+      "s_mappings_get\022(.xtreemfs.pbrpc.addressM" +
+      "appingGetRequest\032!.xtreemfs.pbrpc.Addres" +
+      "sMappingSet\"\007\215\265\030\001\000\000\000\022t\n xtreemfs_address" +
+      "_mappings_remove\022(.xtreemfs.pbrpc.addres" +
+      "sMappingGetRequest\032\035.xtreemfs.pbrpc.empt" +
+      "yResponse\"\007\215\265\030\002\000\000\000\022v\n\035xtreemfs_address_m" +
+      "appings_set\022!.xtreemfs.pbrpc.AddressMapp" +
+      "ingSet\032).xtreemfs.pbrpc.addressMappingSe",
+      "tResponse\"\007\215\265\030\003\000\000\000\022Z\n\025xtreemfs_discover_" +
+      "dir\022\034.xtreemfs.pbrpc.emptyRequest\032\032.xtre" +
+      "emfs.pbrpc.DirService\"\007\215\265\030\004\000\000\000\022k\n\032xtreem" +
+      "fs_global_time_s_get\022\034.xtreemfs.pbrpc.em" +
+      "ptyRequest\032&.xtreemfs.pbrpc.globalTimeSG" +
+      "etResponse\"\007\215\265\030\005\000\000\000\022o\n\033xtreemfs_service_" +
+      "deregister\022(.xtreemfs.pbrpc.serviceDereg" +
+      "isterRequest\032\035.xtreemfs.pbrpc.emptyRespo" +
+      "nse\"\007\215\265\030\006\000\000\000\022l\n\034xtreemfs_service_get_by_" +
+      "name\022\'.xtreemfs.pbrpc.serviceGetByNameRe",
+      "quest\032\032.xtreemfs.pbrpc.ServiceSet\"\007\215\265\030\007\000" +
+      "\000\000\022l\n\034xtreemfs_service_get_by_type\022\'.xtr" +
+      "eemfs.pbrpc.serviceGetByTypeRequest\032\032.xt" +
+      "reemfs.pbrpc.ServiceSet\"\007\215\265\030\010\000\000\000\022l\n\034xtre" +
+      "emfs_service_get_by_uuid\022\'.xtreemfs.pbrp" +
+      "c.serviceGetByUUIDRequest\032\032.xtreemfs.pbr" +
+      "pc.ServiceSet\"\007\215\265\030\t\000\000\000\022k\n\030xtreemfs_servi" +
+      "ce_offline\022\'.xtreemfs.pbrpc.serviceGetBy" +
+      "UUIDRequest\032\035.xtreemfs.pbrpc.emptyRespon" +
+      "se\"\007\215\265\030\n\000\000\000\022u\n\031xtreemfs_service_register",
+      "\022&.xtreemfs.pbrpc.serviceRegisterRequest" +
+      "\032\'.xtreemfs.pbrpc.serviceRegisterRespons" +
+      "e\"\007\215\265\030\013\000\000\000\022[\n\023xtreemfs_checkpoint\022\034.xtre" +
+      "emfs.pbrpc.emptyRequest\032\035.xtreemfs.pbrpc" +
+      ".emptyResponse\"\007\215\265\030\024\000\000\000\022Y\n\021xtreemfs_shut" +
+      "down\022\034.xtreemfs.pbrpc.emptyRequest\032\035.xtr" +
+      "eemfs.pbrpc.emptyResponse\"\007\215\265\030\025\000\000\000\022m\n\032xt" +
+      "reemfs_configuration_get\022\'.xtreemfs.pbrp" +
+      "c.configurationGetRequest\032\035.xtreemfs.pbr" +
+      "pc.Configuration\"\007\215\265\030\026\000\000\000\022n\n\032xtreemfs_co",
+      "nfiguration_set\022\035.xtreemfs.pbrpc.Configu" +
+      "ration\032(.xtreemfs.pbrpc.configurationSet" +
+      "Response\"\007\215\265\030\027\000\000\000\032\007\225\265\030\021\'\000\000B(\n&org.xtreem" +
+      "fs.pbrpc.generatedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

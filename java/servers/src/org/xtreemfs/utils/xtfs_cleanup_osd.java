@@ -18,7 +18,6 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
-import org.xtreemfs.foundation.TimeServerClient;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.Schemes;
@@ -29,15 +28,14 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthPassword;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.util.CLIParser;
-import org.xtreemfs.foundation.util.ONCRPCServiceURL;
 import org.xtreemfs.foundation.util.CLIParser.CliOption;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR.globalTimeSGetResponse;
+import org.xtreemfs.foundation.util.ONCRPCServiceURL;
+import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.PORTS;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_statusResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
  * Console-tool for the cleanUp-functionality of the XtreemFS OSD.
@@ -195,7 +193,7 @@ public class xtfs_cleanup_osd {
             dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
             dirClient.start();
             dirClient.waitForStartup();
-            DIRServiceClient dirRpcClient = new DIRServiceClient(dirClient, dirAddr);
+            DirectoryServiceClient dirRpcClient = new DirectoryServiceClient(dirClient, dirAddr);
             dir = new DIRClient(dirRpcClient, new InetSocketAddress[]{dirAddr}, 100, 15*1000);
             
             try {

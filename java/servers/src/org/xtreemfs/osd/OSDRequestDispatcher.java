@@ -23,30 +23,28 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.xtreemfs.common.HeartbeatThread;
-import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
+import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.common.monitoring.StatusMonitor;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.dir.discovery.DiscoveryUtils;
 import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.SSLOptions;
-import org.xtreemfs.foundation.TimeServerClient;
+import org.xtreemfs.foundation.SSLOptions.TrustManager;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.VersionManagement;
-import org.xtreemfs.foundation.SSLOptions.TrustManager;
 import org.xtreemfs.foundation.checksums.ChecksumFactory;
 import org.xtreemfs.foundation.checksums.provider.JavaChecksumProvider;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.Schemes;
-import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
@@ -70,12 +68,14 @@ import org.xtreemfs.osd.operations.DeleteOperation;
 import org.xtreemfs.osd.operations.EventCloseFile;
 import org.xtreemfs.osd.operations.EventCreateFileVersion;
 import org.xtreemfs.osd.operations.EventInsertPaddingObject;
+import org.xtreemfs.osd.operations.EventRWRStatus;
 import org.xtreemfs.osd.operations.EventWriteObject;
 import org.xtreemfs.osd.operations.FleaseMessageOperation;
 import org.xtreemfs.osd.operations.GetFileIDListOperation;
 import org.xtreemfs.osd.operations.GetObjectSetOperation;
 import org.xtreemfs.osd.operations.InternalGetFileSizeOperation;
 import org.xtreemfs.osd.operations.InternalGetGmaxOperation;
+import org.xtreemfs.osd.operations.InternalRWRAuthStateOperation;
 import org.xtreemfs.osd.operations.InternalRWRFetchOperation;
 import org.xtreemfs.osd.operations.InternalRWRStatusOperation;
 import org.xtreemfs.osd.operations.InternalRWRTruncateOperation;
@@ -104,18 +104,17 @@ import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.DirService;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIR.globalTimeSGetResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 import com.google.protobuf.Message;
 import com.sun.net.httpserver.BasicAuthenticator;
@@ -123,9 +122,6 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.xtreemfs.dir.DIRClient;
-import org.xtreemfs.osd.operations.EventRWRStatus;
-import org.xtreemfs.osd.operations.InternalRWRAuthStateOperation;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener {
     
@@ -336,7 +332,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         // initialize TimeSync and Heartbeat thread
         // ----------------------------------------
         
-        DIRServiceClient dirRpcClient = new DIRServiceClient(rpcClient, config.getDirectoryService());
+        DirectoryServiceClient dirRpcClient = new DirectoryServiceClient(rpcClient, config.getDirectoryService());
         dirClient = new DIRClient(dirRpcClient, config.getDirectoryServices(), config.getFailoverMaxRetries(), config.getFailoverWait());
         mrcClient = new MRCServiceClient(rpcClient, null);
         osdClient = new OSDServiceClient(rpcClient, null);

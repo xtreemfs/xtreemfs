@@ -12,9 +12,9 @@ import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.database.DatabaseInsertGroup;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.addressMappingGetRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
 
 import com.google.protobuf.Message;
 
@@ -33,7 +33,7 @@ public class DeleteAddressMappingOperation extends DIROperation {
     
     @Override
     public int getProcedureId() {
-        return DIRServiceConstants.PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_REMOVE;
+        return DirectoryServiceConstants.PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_REMOVE;
     }
     
     @Override

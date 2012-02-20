@@ -51,8 +51,8 @@ import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.SSLOptions;
-import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.SSLOptions.TrustManager;
+import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
@@ -66,7 +66,7 @@ import org.xtreemfs.foundation.pbrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.util.OutputUtils;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
 
 import com.sun.net.httpserver.BasicAuthenticator;
 import com.sun.net.httpserver.HttpContext;
@@ -407,7 +407,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
          * Nettest.handleNettest(hdr,rq); return; }
          */
 
-        if (rqHdr.getInterfaceId() != DIRServiceConstants.INTERFACE_ID) {
+        if (rqHdr.getInterfaceId() != DirectoryServiceConstants.INTERFACE_ID) {
             rq.sendError(ErrorType.INVALID_INTERFACE_ID, POSIXErrno.POSIX_ERROR_EIO,
                 "invalid interface id. Maybe wrong service address/port configured?");
             return;

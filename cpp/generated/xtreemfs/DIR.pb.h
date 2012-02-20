@@ -2007,16 +2007,16 @@ class configurationSetResponse : public ::google::protobuf::Message {
 };
 // ===================================================================
 
-class DIRService_Stub;
+class DirectoryService_Stub;
 
-class DIRService : public ::google::protobuf::Service {
+class DirectoryService : public ::google::protobuf::Service {
  protected:
   // This class should be treated as an abstract interface.
-  inline DIRService() {};
+  inline DirectoryService() {};
  public:
-  virtual ~DIRService();
+  virtual ~DirectoryService();
   
-  typedef DIRService_Stub Stub;
+  typedef DirectoryService_Stub Stub;
   
   static const ::google::protobuf::ServiceDescriptor* descriptor();
   
@@ -2095,19 +2095,19 @@ class DIRService : public ::google::protobuf::Service {
     const ::google::protobuf::MethodDescriptor* method) const;
 
  private:
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(DIRService);
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(DirectoryService);
 };
 
-class DIRService_Stub : public DIRService {
+class DirectoryService_Stub : public DirectoryService {
  public:
-  DIRService_Stub(::google::protobuf::RpcChannel* channel);
-  DIRService_Stub(::google::protobuf::RpcChannel* channel,
+  DirectoryService_Stub(::google::protobuf::RpcChannel* channel);
+  DirectoryService_Stub(::google::protobuf::RpcChannel* channel,
                    ::google::protobuf::Service::ChannelOwnership ownership);
-  ~DIRService_Stub();
+  ~DirectoryService_Stub();
   
   inline ::google::protobuf::RpcChannel* channel() { return channel_; }
   
-  // implements DIRService ------------------------------------------
+  // implements DirectoryService ------------------------------------------
   
   void xtreemfs_address_mappings_get(::google::protobuf::RpcController* controller,
                        const ::xtreemfs::pbrpc::addressMappingGetRequest* request,
@@ -2172,7 +2172,7 @@ class DIRService_Stub : public DIRService {
  private:
   ::google::protobuf::RpcChannel* channel_;
   bool owns_channel_;
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(DIRService_Stub);
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(DirectoryService_Stub);
 };
 
 

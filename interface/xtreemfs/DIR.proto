@@ -190,7 +190,7 @@ message configurationSetResponse {
 }
 
 
-service DIRService {
+service DirectoryService {
   
   option(interface_id)=10001;
 

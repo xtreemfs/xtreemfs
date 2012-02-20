@@ -18,10 +18,10 @@ import org.xtreemfs.dir.data.AddressMappingRecords;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.addressMappingSetResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
 
 import com.google.protobuf.Message;
 
@@ -30,9 +30,9 @@ import com.google.protobuf.Message;
  * @author bjko
  */
 public class SetAddressMappingOperation extends DIROperation {
-
+    
     private final Database database;
-        
+    
     public SetAddressMappingOperation(DIRRequestDispatcher master) {
         super(master);
         database = master.getDirDatabase();
@@ -40,12 +40,12 @@ public class SetAddressMappingOperation extends DIROperation {
     
     @Override
     public int getProcedureId() {
-        return DIRServiceConstants.PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_SET;
+        return DirectoryServiceConstants.PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_SET;
     }
     
     @Override
     public void startRequest(DIRRequest rq) {
-
+        
         final AddressMappingSet mappings = (AddressMappingSet) rq.getRequestMessage();
         String uuid = null;
         if (mappings.getMappingsCount() == 0) {
@@ -66,8 +66,8 @@ public class SetAddressMappingOperation extends DIROperation {
         
         final String UUID = uuid;
         
-        database.lookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, 
-                uuid.getBytes(), rq).registerListener(new DBRequestListener<byte[], Long>(false) {
+        database.lookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes(), rq).registerListener(
+                new DBRequestListener<byte[], Long>(false) {
                     
                     @Override
                     Long execute(byte[] result, DIRRequest rq) throws Exception {
@@ -79,29 +79,27 @@ public class SetAddressMappingOperation extends DIROperation {
                                 currentVersion = dbData.getRecord(0).getVersion();
                             }
                         }
-        
+                        
                         if (mappings.getMappings(0).getVersion() != currentVersion)
                             throw new ConcurrentModificationException();
                         
                         final long version = ++currentVersion;
-
+                        
                         AddressMappingSet.Builder newSet = mappings.toBuilder();
                         for (int i = 0; i < mappings.getMappingsCount(); i++) {
                             newSet.setMappings(i, mappings.getMappings(i).toBuilder().setVersion(currentVersion));
                         }
-        
+                        
                         AddressMappingRecords newData = new AddressMappingRecords(newSet.build());
                         final int size = newData.getSize();
                         byte[] newBytes = new byte[size];
                         ReusableBuffer buf = ReusableBuffer.wrap(newBytes);
                         newData.serialize(buf);
-                        database.singleInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, 
-                                UUID.getBytes(), newBytes,rq).registerListener(
-                                        new DBRequestListener<Object, Long>(true) {
+                        database.singleInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, UUID.getBytes(), newBytes, rq)
+                                .registerListener(new DBRequestListener<Object, Long>(true) {
                                     
                                     @Override
-                                    Long execute(Object result, DIRRequest rq) 
-                                             throws Exception {
+                                    Long execute(Object result, DIRRequest rq) throws Exception {
                                         return version;
                                     }
                                 });
@@ -125,9 +123,10 @@ public class SetAddressMappingOperation extends DIROperation {
     protected Message getRequestMessagePrototype() {
         return AddressMappingSet.getDefaultInstance();
     }
+    
     @Override
     void requestFinished(Object result, DIRRequest rq) {
-        addressMappingSetResponse resp = addressMappingSetResponse.newBuilder().setNewVersion((Long)result).build();
+        addressMappingSetResponse resp = addressMappingSetResponse.newBuilder().setNewVersion((Long) result).build();
         rq.sendSuccess(resp);
     }
 }

@@ -11,7 +11,6 @@ package org.xtreemfs.osd;
 import java.io.FileInputStream;
 import java.util.HashMap;
 
-import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.config.PolicyContainer;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
@@ -19,12 +18,11 @@ import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration;
+import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 
 public class OSD {
@@ -37,11 +35,9 @@ public class OSD {
     public OSD(OSDConfig config) {
         
         if (Logging.isInfo()) {
-            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "JAVA_HOME=%s", System
-                    .getProperty("java.home"));
-            Logging
-                    .logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "UUID: %s", config
-                            .getUUID());
+            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "JAVA_HOME=%s",
+                    System.getProperty("java.home"));
+            Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "UUID: %s", config.getUUID());
         }
         
         try {
@@ -57,8 +53,7 @@ public class OSD {
                     try {
                         
                         if (Logging.isInfo())
-                            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
-                                "received shutdown signal");
+                            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "received shutdown signal");
                         
                         ctrl.heartbeatThread.shutdown();
                         // FIXME: provide a solution that does not attempt to
@@ -67,8 +62,7 @@ public class OSD {
                         // ctrl.shutdown();
                         
                         if (Logging.isInfo())
-                            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
-                                "OSD shutdown complete");
+                            Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "OSD shutdown complete");
                         
                     } catch (Throwable ex) {
                         ex.printStackTrace();
@@ -78,8 +72,7 @@ public class OSD {
             
         } catch (Exception ex) {
             
-            Logging.logMessage(Logging.LEVEL_ERROR, null,
-                "OSD could not start up due to an exception. Aborted.");
+            Logging.logMessage(Logging.LEVEL_ERROR, null, "OSD could not start up due to an exception. Aborted.");
             Logging.logError(Logging.LEVEL_ERROR, null, ex);
             
             if (dispatcher != null)
@@ -124,8 +117,7 @@ public class OSD {
                 config.mergeConfig(remoteConfig);
             } catch (Exception e) {
                 e.printStackTrace();
-                Logging.logMessage(Logging.LEVEL_WARN, config.getUUID(),
-                    "couldn't fetch configuration file from DIR");
+                Logging.logMessage(Logging.LEVEL_WARN, config.getUUID(), "couldn't fetch configuration file from DIR");
                 Logging.logError(Logging.LEVEL_DEBUG, config.getUUID(), e);
             }
         }
@@ -145,16 +137,15 @@ public class OSD {
         }
         Logging.logMessage(Logging.LEVEL_INFO, null, "Loading configuration from DIR, %d retries", retries);
         
-        SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
-                .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
-                .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
-                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
-                .isGRIDSSLmode(), new PolicyContainer(config).getTrustManager()) : null;
+        SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config.getServiceCredsFile()),
+                config.getServiceCredsPassphrase(), config.getServiceCredsContainer(), new FileInputStream(
+                        config.getTrustedCertsFile()), config.getTrustedCertsPassphrase(),
+                config.getTrustedCertsContainer(), false, config.isGRIDSSLmode(),
+                new PolicyContainer(config).getTrustManager()) : null;
         
         RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, 1000, 60 * 1000);
-        DIRServiceClient dirRPCClient = new DIRServiceClient(clientStage, config.getDirectoryService());
-        DIRClient dirClient = new DIRClient(dirRPCClient, config.getDirectoryServices(),
-                retries, WAIT_BETWEEN_RETRIES);
+        DirectoryServiceClient dirRPCClient = new DirectoryServiceClient(clientStage, config.getDirectoryService());
+        DIRClient dirClient = new DIRClient(dirRPCClient, config.getDirectoryServices(), retries, WAIT_BETWEEN_RETRIES);
         
         clientStage.start();
         clientStage.waitForStartup();
@@ -162,11 +153,10 @@ public class OSD {
         TimeSync.initializeLocal(60000, 50);
         
         Auth authNone = Auth.newBuilder().setAuthType(AuthType.AUTH_NONE).build();
-        UserCredentials uc = UserCredentials.newBuilder().setUsername("main-method").addGroups(
-            "xtreemfs-services").build();
-
-        Configuration conf = dirClient.xtreemfs_configuration_get(null, authNone, uc, config.getUUID()
-                    .toString());
+        UserCredentials uc = UserCredentials.newBuilder().setUsername("main-method").addGroups("xtreemfs-services")
+                .build();
+        
+        Configuration conf = dirClient.xtreemfs_configuration_get(null, authNone, uc, config.getUUID().toString());
         
         clientStage.shutdown();
         clientStage.waitForShutdown();

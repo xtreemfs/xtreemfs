@@ -74,7 +74,7 @@ const ::google::protobuf::internal::GeneratedMessageReflection*
   configurationSetResponse_reflection_ = NULL;
 const ::google::protobuf::EnumDescriptor* ServiceType_descriptor_ = NULL;
 const ::google::protobuf::EnumDescriptor* ServiceStatus_descriptor_ = NULL;
-const ::google::protobuf::ServiceDescriptor* DIRService_descriptor_ = NULL;
+const ::google::protobuf::ServiceDescriptor* DirectoryService_descriptor_ = NULL;
 
 }  // namespace
 
@@ -389,7 +389,7 @@ void protobuf_AssignDesc_xtreemfs_2fDIR_2eproto() {
       sizeof(configurationSetResponse));
   ServiceType_descriptor_ = file->enum_type(0);
   ServiceStatus_descriptor_ = file->enum_type(1);
-  DIRService_descriptor_ = file->service(0);
+  DirectoryService_descriptor_ = file->service(0);
 }
 
 namespace {
@@ -536,49 +536,49 @@ void protobuf_AddDesc_xtreemfs_2fDIR_2eproto() {
     "E_TYPE_VOLUME\020\003*g\n\rServiceStatus\022\030\n\024SERV"
     "ICE_STATUS_AVAIL\020\000\022 \n\034SERVICE_STATUS_TO_"
     "BE_REMOVED\020\001\022\032\n\026SERVICE_STATUS_REMOVED\020\002"
-    "2\371\014\n\nDIRService\022u\n\035xtreemfs_address_mapp"
-    "ings_get\022(.xtreemfs.pbrpc.addressMapping"
-    "GetRequest\032!.xtreemfs.pbrpc.AddressMappi"
-    "ngSet\"\007\215\265\030\001\000\000\000\022t\n xtreemfs_address_mappi"
-    "ngs_remove\022(.xtreemfs.pbrpc.addressMappi"
-    "ngGetRequest\032\035.xtreemfs.pbrpc.emptyRespo"
-    "nse\"\007\215\265\030\002\000\000\000\022v\n\035xtreemfs_address_mapping"
-    "s_set\022!.xtreemfs.pbrpc.AddressMappingSet"
-    "\032).xtreemfs.pbrpc.addressMappingSetRespo"
-    "nse\"\007\215\265\030\003\000\000\000\022Z\n\025xtreemfs_discover_dir\022\034."
-    "xtreemfs.pbrpc.emptyRequest\032\032.xtreemfs.p"
-    "brpc.DirService\"\007\215\265\030\004\000\000\000\022k\n\032xtreemfs_glo"
-    "bal_time_s_get\022\034.xtreemfs.pbrpc.emptyReq"
-    "uest\032&.xtreemfs.pbrpc.globalTimeSGetResp"
-    "onse\"\007\215\265\030\005\000\000\000\022o\n\033xtreemfs_service_deregi"
-    "ster\022(.xtreemfs.pbrpc.serviceDeregisterR"
-    "equest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215"
-    "\265\030\006\000\000\000\022l\n\034xtreemfs_service_get_by_name\022\'"
-    ".xtreemfs.pbrpc.serviceGetByNameRequest\032"
-    "\032.xtreemfs.pbrpc.ServiceSet\"\007\215\265\030\007\000\000\000\022l\n\034"
-    "xtreemfs_service_get_by_type\022\'.xtreemfs."
-    "pbrpc.serviceGetByTypeRequest\032\032.xtreemfs"
-    ".pbrpc.ServiceSet\"\007\215\265\030\010\000\000\000\022l\n\034xtreemfs_s"
-    "ervice_get_by_uuid\022\'.xtreemfs.pbrpc.serv"
-    "iceGetByUUIDRequest\032\032.xtreemfs.pbrpc.Ser"
-    "viceSet\"\007\215\265\030\t\000\000\000\022k\n\030xtreemfs_service_off"
-    "line\022\'.xtreemfs.pbrpc.serviceGetByUUIDRe"
-    "quest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265"
-    "\030\n\000\000\000\022u\n\031xtreemfs_service_register\022&.xtr"
-    "eemfs.pbrpc.serviceRegisterRequest\032\'.xtr"
-    "eemfs.pbrpc.serviceRegisterResponse\"\007\215\265\030"
-    "\013\000\000\000\022[\n\023xtreemfs_checkpoint\022\034.xtreemfs.p"
-    "brpc.emptyRequest\032\035.xtreemfs.pbrpc.empty"
-    "Response\"\007\215\265\030\024\000\000\000\022Y\n\021xtreemfs_shutdown\022\034"
-    ".xtreemfs.pbrpc.emptyRequest\032\035.xtreemfs."
-    "pbrpc.emptyResponse\"\007\215\265\030\025\000\000\000\022m\n\032xtreemfs"
-    "_configuration_get\022\'.xtreemfs.pbrpc.conf"
-    "igurationGetRequest\032\035.xtreemfs.pbrpc.Con"
-    "figuration\"\007\215\265\030\026\000\000\000\022n\n\032xtreemfs_configur"
-    "ation_set\022\035.xtreemfs.pbrpc.Configuration"
-    "\032(.xtreemfs.pbrpc.configurationSetRespon"
-    "se\"\007\215\265\030\027\000\000\000\032\007\225\265\030\021\'\000\000B(\n&org.xtreemfs.pbr"
-    "pc.generatedinterfaces", 3342);
+    "2\377\014\n\020DirectoryService\022u\n\035xtreemfs_addres"
+    "s_mappings_get\022(.xtreemfs.pbrpc.addressM"
+    "appingGetRequest\032!.xtreemfs.pbrpc.Addres"
+    "sMappingSet\"\007\215\265\030\001\000\000\000\022t\n xtreemfs_address"
+    "_mappings_remove\022(.xtreemfs.pbrpc.addres"
+    "sMappingGetRequest\032\035.xtreemfs.pbrpc.empt"
+    "yResponse\"\007\215\265\030\002\000\000\000\022v\n\035xtreemfs_address_m"
+    "appings_set\022!.xtreemfs.pbrpc.AddressMapp"
+    "ingSet\032).xtreemfs.pbrpc.addressMappingSe"
+    "tResponse\"\007\215\265\030\003\000\000\000\022Z\n\025xtreemfs_discover_"
+    "dir\022\034.xtreemfs.pbrpc.emptyRequest\032\032.xtre"
+    "emfs.pbrpc.DirService\"\007\215\265\030\004\000\000\000\022k\n\032xtreem"
+    "fs_global_time_s_get\022\034.xtreemfs.pbrpc.em"
+    "ptyRequest\032&.xtreemfs.pbrpc.globalTimeSG"
+    "etResponse\"\007\215\265\030\005\000\000\000\022o\n\033xtreemfs_service_"
+    "deregister\022(.xtreemfs.pbrpc.serviceDereg"
+    "isterRequest\032\035.xtreemfs.pbrpc.emptyRespo"
+    "nse\"\007\215\265\030\006\000\000\000\022l\n\034xtreemfs_service_get_by_"
+    "name\022\'.xtreemfs.pbrpc.serviceGetByNameRe"
+    "quest\032\032.xtreemfs.pbrpc.ServiceSet\"\007\215\265\030\007\000"
+    "\000\000\022l\n\034xtreemfs_service_get_by_type\022\'.xtr"
+    "eemfs.pbrpc.serviceGetByTypeRequest\032\032.xt"
+    "reemfs.pbrpc.ServiceSet\"\007\215\265\030\010\000\000\000\022l\n\034xtre"
+    "emfs_service_get_by_uuid\022\'.xtreemfs.pbrp"
+    "c.serviceGetByUUIDRequest\032\032.xtreemfs.pbr"
+    "pc.ServiceSet\"\007\215\265\030\t\000\000\000\022k\n\030xtreemfs_servi"
+    "ce_offline\022\'.xtreemfs.pbrpc.serviceGetBy"
+    "UUIDRequest\032\035.xtreemfs.pbrpc.emptyRespon"
+    "se\"\007\215\265\030\n\000\000\000\022u\n\031xtreemfs_service_register"
+    "\022&.xtreemfs.pbrpc.serviceRegisterRequest"
+    "\032\'.xtreemfs.pbrpc.serviceRegisterRespons"
+    "e\"\007\215\265\030\013\000\000\000\022[\n\023xtreemfs_checkpoint\022\034.xtre"
+    "emfs.pbrpc.emptyRequest\032\035.xtreemfs.pbrpc"
+    ".emptyResponse\"\007\215\265\030\024\000\000\000\022Y\n\021xtreemfs_shut"
+    "down\022\034.xtreemfs.pbrpc.emptyRequest\032\035.xtr"
+    "eemfs.pbrpc.emptyResponse\"\007\215\265\030\025\000\000\000\022m\n\032xt"
+    "reemfs_configuration_get\022\'.xtreemfs.pbrp"
+    "c.configurationGetRequest\032\035.xtreemfs.pbr"
+    "pc.Configuration\"\007\215\265\030\026\000\000\000\022n\n\032xtreemfs_co"
+    "nfiguration_set\022\035.xtreemfs.pbrpc.Configu"
+    "ration\032(.xtreemfs.pbrpc.configurationSet"
+    "Response\"\007\215\265\030\027\000\000\000\032\007\225\265\030\021\'\000\000B(\n&org.xtreem"
+    "fs.pbrpc.generatedinterfaces", 3348);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/DIR.proto", &protobuf_RegisterTypes);
   AddressMapping::default_instance_ = new AddressMapping();
@@ -5568,19 +5568,19 @@ void configurationSetResponse::Swap(configurationSetResponse* other) {
 
 // ===================================================================
 
-DIRService::~DIRService() {}
+DirectoryService::~DirectoryService() {}
 
-const ::google::protobuf::ServiceDescriptor* DIRService::descriptor() {
+const ::google::protobuf::ServiceDescriptor* DirectoryService::descriptor() {
   protobuf_AssignDescriptorsOnce();
-  return DIRService_descriptor_;
+  return DirectoryService_descriptor_;
 }
 
-const ::google::protobuf::ServiceDescriptor* DIRService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* DirectoryService::GetDescriptor() {
   protobuf_AssignDescriptorsOnce();
-  return DIRService_descriptor_;
+  return DirectoryService_descriptor_;
 }
 
-void DIRService::xtreemfs_address_mappings_get(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_address_mappings_get(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::addressMappingGetRequest*,
                          ::xtreemfs::pbrpc::AddressMappingSet*,
                          ::google::protobuf::Closure* done) {
@@ -5588,7 +5588,7 @@ void DIRService::xtreemfs_address_mappings_get(::google::protobuf::RpcController
   done->Run();
 }
 
-void DIRService::xtreemfs_address_mappings_remove(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_address_mappings_remove(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::addressMappingGetRequest*,
                          ::xtreemfs::pbrpc::emptyResponse*,
                          ::google::protobuf::Closure* done) {
@@ -5596,7 +5596,7 @@ void DIRService::xtreemfs_address_mappings_remove(::google::protobuf::RpcControl
   done->Run();
 }
 
-void DIRService::xtreemfs_address_mappings_set(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_address_mappings_set(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::AddressMappingSet*,
                          ::xtreemfs::pbrpc::addressMappingSetResponse*,
                          ::google::protobuf::Closure* done) {
@@ -5604,7 +5604,7 @@ void DIRService::xtreemfs_address_mappings_set(::google::protobuf::RpcController
   done->Run();
 }
 
-void DIRService::xtreemfs_discover_dir(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_discover_dir(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::emptyRequest*,
                          ::xtreemfs::pbrpc::DirService*,
                          ::google::protobuf::Closure* done) {
@@ -5612,7 +5612,7 @@ void DIRService::xtreemfs_discover_dir(::google::protobuf::RpcController* contro
   done->Run();
 }
 
-void DIRService::xtreemfs_global_time_s_get(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_global_time_s_get(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::emptyRequest*,
                          ::xtreemfs::pbrpc::globalTimeSGetResponse*,
                          ::google::protobuf::Closure* done) {
@@ -5620,7 +5620,7 @@ void DIRService::xtreemfs_global_time_s_get(::google::protobuf::RpcController* c
   done->Run();
 }
 
-void DIRService::xtreemfs_service_deregister(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_service_deregister(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::serviceDeregisterRequest*,
                          ::xtreemfs::pbrpc::emptyResponse*,
                          ::google::protobuf::Closure* done) {
@@ -5628,7 +5628,7 @@ void DIRService::xtreemfs_service_deregister(::google::protobuf::RpcController* 
   done->Run();
 }
 
-void DIRService::xtreemfs_service_get_by_name(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_service_get_by_name(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::serviceGetByNameRequest*,
                          ::xtreemfs::pbrpc::ServiceSet*,
                          ::google::protobuf::Closure* done) {
@@ -5636,7 +5636,7 @@ void DIRService::xtreemfs_service_get_by_name(::google::protobuf::RpcController*
   done->Run();
 }
 
-void DIRService::xtreemfs_service_get_by_type(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_service_get_by_type(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::serviceGetByTypeRequest*,
                          ::xtreemfs::pbrpc::ServiceSet*,
                          ::google::protobuf::Closure* done) {
@@ -5644,7 +5644,7 @@ void DIRService::xtreemfs_service_get_by_type(::google::protobuf::RpcController*
   done->Run();
 }
 
-void DIRService::xtreemfs_service_get_by_uuid(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_service_get_by_uuid(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::serviceGetByUUIDRequest*,
                          ::xtreemfs::pbrpc::ServiceSet*,
                          ::google::protobuf::Closure* done) {
@@ -5652,7 +5652,7 @@ void DIRService::xtreemfs_service_get_by_uuid(::google::protobuf::RpcController*
   done->Run();
 }
 
-void DIRService::xtreemfs_service_offline(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_service_offline(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::serviceGetByUUIDRequest*,
                          ::xtreemfs::pbrpc::emptyResponse*,
                          ::google::protobuf::Closure* done) {
@@ -5660,7 +5660,7 @@ void DIRService::xtreemfs_service_offline(::google::protobuf::RpcController* con
   done->Run();
 }
 
-void DIRService::xtreemfs_service_register(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_service_register(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::serviceRegisterRequest*,
                          ::xtreemfs::pbrpc::serviceRegisterResponse*,
                          ::google::protobuf::Closure* done) {
@@ -5668,7 +5668,7 @@ void DIRService::xtreemfs_service_register(::google::protobuf::RpcController* co
   done->Run();
 }
 
-void DIRService::xtreemfs_checkpoint(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_checkpoint(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::emptyRequest*,
                          ::xtreemfs::pbrpc::emptyResponse*,
                          ::google::protobuf::Closure* done) {
@@ -5676,7 +5676,7 @@ void DIRService::xtreemfs_checkpoint(::google::protobuf::RpcController* controll
   done->Run();
 }
 
-void DIRService::xtreemfs_shutdown(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_shutdown(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::emptyRequest*,
                          ::xtreemfs::pbrpc::emptyResponse*,
                          ::google::protobuf::Closure* done) {
@@ -5684,7 +5684,7 @@ void DIRService::xtreemfs_shutdown(::google::protobuf::RpcController* controller
   done->Run();
 }
 
-void DIRService::xtreemfs_configuration_get(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_configuration_get(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::configurationGetRequest*,
                          ::xtreemfs::pbrpc::Configuration*,
                          ::google::protobuf::Closure* done) {
@@ -5692,7 +5692,7 @@ void DIRService::xtreemfs_configuration_get(::google::protobuf::RpcController* c
   done->Run();
 }
 
-void DIRService::xtreemfs_configuration_set(::google::protobuf::RpcController* controller,
+void DirectoryService::xtreemfs_configuration_set(::google::protobuf::RpcController* controller,
                          const ::xtreemfs::pbrpc::Configuration*,
                          ::xtreemfs::pbrpc::configurationSetResponse*,
                          ::google::protobuf::Closure* done) {
@@ -5700,12 +5700,12 @@ void DIRService::xtreemfs_configuration_set(::google::protobuf::RpcController* c
   done->Run();
 }
 
-void DIRService::CallMethod(const ::google::protobuf::MethodDescriptor* method,
+void DirectoryService::CallMethod(const ::google::protobuf::MethodDescriptor* method,
                              ::google::protobuf::RpcController* controller,
                              const ::google::protobuf::Message* request,
                              ::google::protobuf::Message* response,
                              ::google::protobuf::Closure* done) {
-  GOOGLE_DCHECK_EQ(method->service(), DIRService_descriptor_);
+  GOOGLE_DCHECK_EQ(method->service(), DirectoryService_descriptor_);
   switch(method->index()) {
     case 0:
       xtreemfs_address_mappings_get(controller,
@@ -5803,7 +5803,7 @@ void DIRService::CallMethod(const ::google::protobuf::MethodDescriptor* method,
   }
 }
 
-const ::google::protobuf::Message& DIRService::GetRequestPrototype(
+const ::google::protobuf::Message& DirectoryService::GetRequestPrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   GOOGLE_DCHECK_EQ(method->service(), descriptor());
   switch(method->index()) {
@@ -5843,7 +5843,7 @@ const ::google::protobuf::Message& DIRService::GetRequestPrototype(
   }
 }
 
-const ::google::protobuf::Message& DIRService::GetResponsePrototype(
+const ::google::protobuf::Message& DirectoryService::GetResponsePrototype(
     const ::google::protobuf::MethodDescriptor* method) const {
   GOOGLE_DCHECK_EQ(method->service(), descriptor());
   switch(method->index()) {
@@ -5883,116 +5883,116 @@ const ::google::protobuf::Message& DIRService::GetResponsePrototype(
   }
 }
 
-DIRService_Stub::DIRService_Stub(::google::protobuf::RpcChannel* channel)
+DirectoryService_Stub::DirectoryService_Stub(::google::protobuf::RpcChannel* channel)
   : channel_(channel), owns_channel_(false) {}
-DIRService_Stub::DIRService_Stub(
+DirectoryService_Stub::DirectoryService_Stub(
     ::google::protobuf::RpcChannel* channel,
     ::google::protobuf::Service::ChannelOwnership ownership)
   : channel_(channel),
     owns_channel_(ownership == ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
-DIRService_Stub::~DIRService_Stub() {
+DirectoryService_Stub::~DirectoryService_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void DIRService_Stub::xtreemfs_address_mappings_get(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_address_mappings_get(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::addressMappingGetRequest* request,
                               ::xtreemfs::pbrpc::AddressMappingSet* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0),
                        controller, request, response, done);
 }
-void DIRService_Stub::xtreemfs_address_mappings_remove(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_address_mappings_remove(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::addressMappingGetRequest* request,
                               ::xtreemfs::pbrpc::emptyResponse* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1),
                        controller, request, response, done);
 }
-void DIRService_Stub::xtreemfs_address_mappings_set(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_address_mappings_set(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::AddressMappingSet* request,
                               ::xtreemfs::pbrpc::addressMappingSetResponse* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(2),
                        controller, request, response, done);
 }
-void DIRService_Stub::xtreemfs_discover_dir(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_discover_dir(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::emptyRequest* request,
                               ::xtreemfs::pbrpc::DirService* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(3),
                        controller, request, response, done);
 }
-void DIRService_Stub::xtreemfs_global_time_s_get(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_global_time_s_get(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::emptyRequest* request,
                               ::xtreemfs::pbrpc::globalTimeSGetResponse* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(4),
                        controller, request, response, done);
 }
-void DIRService_Stub::xtreemfs_service_deregister(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_service_deregister(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::serviceDeregisterRequest* request,
                               ::xtreemfs::pbrpc::emptyResponse* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(5),
                        controller, request, response, done);
 }
-void DIRService_Stub::xtreemfs_service_get_by_name(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_service_get_by_name(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::serviceGetByNameRequest* request,
                               ::xtreemfs::pbrpc::ServiceSet* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(6),
                        controller, request, response, done);
 }
-void DIRService_Stub::xtreemfs_service_get_by_type(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_service_get_by_type(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::serviceGetByTypeRequest* request,
                               ::xtreemfs::pbrpc::ServiceSet* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(7),
                        controller, request, response, done);
 }
-void DIRService_Stub::xtreemfs_service_get_by_uuid(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_service_get_by_uuid(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::serviceGetByUUIDRequest* request,
                               ::xtreemfs::pbrpc::ServiceSet* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(8),
                        controller, request, response, done);
 }
-void DIRService_Stub::xtreemfs_service_offline(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_service_offline(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::serviceGetByUUIDRequest* request,
                               ::xtreemfs::pbrpc::emptyResponse* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(9),
                        controller, request, response, done);
 }
-void DIRService_Stub::xtreemfs_service_register(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_service_register(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::serviceRegisterRequest* request,
                               ::xtreemfs::pbrpc::serviceRegisterResponse* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(10),
                        controller, request, response, done);
 }
-void DIRService_Stub::xtreemfs_checkpoint(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_checkpoint(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::emptyRequest* request,
                               ::xtreemfs::pbrpc::emptyResponse* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(11),
                        controller, request, response, done);
 }
-void DIRService_Stub::xtreemfs_shutdown(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_shutdown(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::emptyRequest* request,
                               ::xtreemfs::pbrpc::emptyResponse* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(12),
                        controller, request, response, done);
 }
-void DIRService_Stub::xtreemfs_configuration_get(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_configuration_get(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::configurationGetRequest* request,
                               ::xtreemfs::pbrpc::Configuration* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(13),
                        controller, request, response, done);
 }
-void DIRService_Stub::xtreemfs_configuration_set(::google::protobuf::RpcController* controller,
+void DirectoryService_Stub::xtreemfs_configuration_set(::google::protobuf::RpcController* controller,
                               const ::xtreemfs::pbrpc::Configuration* request,
                               ::xtreemfs::pbrpc::configurationSetResponse* response,
                               ::google::protobuf::Closure* done) {

@@ -16,10 +16,10 @@ import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
 
 import com.google.protobuf.Message;
 
@@ -38,7 +38,7 @@ public class RegisterServiceOperation extends DIROperation {
     
     @Override
     public int getProcedureId() {
-        return DIRServiceConstants.PROC_ID_XTREEMFS_SERVICE_REGISTER;
+        return DirectoryServiceConstants.PROC_ID_XTREEMFS_SERVICE_REGISTER;
     }
     
     @Override
@@ -47,8 +47,8 @@ public class RegisterServiceOperation extends DIROperation {
         
         final Service.Builder reg = request.getService().toBuilder();
         
-        database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), rq)
-                .registerListener(new DBRequestListener<byte[], Long>(false) {
+        database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), rq).registerListener(
+                new DBRequestListener<byte[], Long>(false) {
                     
                     @Override
                     Long execute(byte[] result, DIRRequest rq) throws Exception {
@@ -58,8 +58,9 @@ public class RegisterServiceOperation extends DIROperation {
                             ServiceRecord dbData = new ServiceRecord(buf);
                             currentVersion = dbData.getVersion();
                         } else {
-                            // The registered service wasn't registered before. 
-                            // Collect data from the request and inform all listeners about this registration
+                            // The registered service wasn't registered before.
+                            // Collect data from the request and inform all
+                            // listeners about this registration
                             String uuid, name, type, pageUrl, geoCoordinates;
                             long totalRam, usedRam, lastUpdated;
                             int status, load, protoVersion;
@@ -70,10 +71,10 @@ public class RegisterServiceOperation extends DIROperation {
                             name = sRec.getName();
                             type = sRec.getType().toString();
                             
-                            
-                            pageUrl = sRec.getData().get("status_page_url") == null ? "": sRec.getData().get("status_page_url");
-                            geoCoordinates = sRec.getData().get("vivaldi_coordinates") == null ? "" :
-                                sRec.getData().get("vivaldi_coordinates");
+                            pageUrl = sRec.getData().get("status_page_url") == null ? "" : sRec.getData().get(
+                                    "status_page_url");
+                            geoCoordinates = sRec.getData().get("vivaldi_coordinates") == null ? "" : sRec.getData()
+                                    .get("vivaldi_coordinates");
                             try {
                                 totalRam = Long.parseLong(sRec.getData().get("totalRAM"));
                             } catch (NumberFormatException nfe) {
@@ -101,14 +102,14 @@ public class RegisterServiceOperation extends DIROperation {
                                 protoVersion = -1;
                             }
                             
-                            master.notifyServiceRegistred(uuid, name, type, pageUrl, geoCoordinates, totalRam, usedRam, 
+                            master.notifyServiceRegistred(uuid, name, type, pageUrl, geoCoordinates, totalRam, usedRam,
                                     lastUpdated, status, load, protoVersion);
                         }
                         
                         if (reg.getVersion() != currentVersion) {
                             throw new ConcurrentModificationException("The requested version number ("
-                                + reg.getVersion() + ") did not match the " + "expected version ("
-                                + currentVersion + ")!");
+                                    + reg.getVersion() + ") did not match the " + "expected version (" + currentVersion
+                                    + ")!");
                         }
                         
                         final long version = ++currentVersion;
@@ -120,16 +121,15 @@ public class RegisterServiceOperation extends DIROperation {
                         byte[] newData = new byte[newRec.getSize()];
                         newRec.serialize(ReusableBuffer.wrap(newData));
                         
-                        database.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG,
-                            newRec.getUuid().getBytes(), newData, rq).registerListener(
-                            new DBRequestListener<Object, Long>(true) {
+                        database.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, newRec.getUuid().getBytes(),
+                                newData, rq).registerListener(new DBRequestListener<Object, Long>(true) {
+                            
+                            @Override
+                            Long execute(Object result, DIRRequest rq) throws Exception {
                                 
-                                @Override
-                                Long execute(Object result, DIRRequest rq) throws Exception {
-                                    
-                                    return version;
-                                }
-                            });
+                                return version;
+                            }
+                        });
                         return null;
                     }
                 });
@@ -147,8 +147,7 @@ public class RegisterServiceOperation extends DIROperation {
     
     @Override
     void requestFinished(Object result, DIRRequest rq) {
-        serviceRegisterResponse resp = serviceRegisterResponse.newBuilder().setNewVersion((Long) result)
-                .build();
+        serviceRegisterResponse resp = serviceRegisterResponse.newBuilder().setNewVersion((Long) result).build();
         rq.sendSuccess(resp);
     }
     

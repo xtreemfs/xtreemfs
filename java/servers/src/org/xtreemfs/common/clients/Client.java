@@ -29,16 +29,16 @@ import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
+import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
  * 
@@ -61,7 +61,7 @@ public class Client {
         this.dirAddress = dirAddresses;
         mdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout);
         osdClient = new RPCNIOSocketClient(ssl, requestTimeout, connectionTimeout);
-        DIRServiceClient dirRpcClient = new DIRServiceClient(mdClient, dirAddress[0]);
+        DirectoryServiceClient dirRpcClient = new DirectoryServiceClient(mdClient, dirAddress[0]);
         dirClient = new DIRClient(dirRpcClient, dirAddress, 100, 1000 * 15);
         TimeSync.initializeLocal(0, 50);
         uuidRes = UUIDResolver.startNonSingelton(dirClient, 3600, 1000);

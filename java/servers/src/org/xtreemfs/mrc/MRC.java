@@ -13,19 +13,17 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import org.xtreemfs.babudb.config.BabuDBConfig;
-import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration;
+import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 
 /**
@@ -151,7 +149,7 @@ public class MRC {
                 .isGRIDSSLmode(), new MRCPolicyContainer(config).getTrustManager()) : null;
         
         RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, 1000, 60 * 1000);
-        DIRServiceClient dirRPCClient = new DIRServiceClient(clientStage, config.getDirectoryService());
+        DirectoryServiceClient dirRPCClient = new DirectoryServiceClient(clientStage, config.getDirectoryService());
         DIRClient dirClient = new DIRClient(dirRPCClient, config.getDirectoryServices(),
                 retries, WAIT_BETWEEN_RETRIES);
         

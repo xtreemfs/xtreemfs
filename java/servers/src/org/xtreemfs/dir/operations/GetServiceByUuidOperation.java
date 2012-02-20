@@ -13,9 +13,9 @@ import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByUUIDRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
 
 import com.google.protobuf.Message;
 
@@ -25,9 +25,8 @@ import com.google.protobuf.Message;
  */
 public class GetServiceByUuidOperation extends DIROperation {
     
-    
     private final Database database;
-        
+    
     public GetServiceByUuidOperation(DIRRequestDispatcher master) {
         super(master);
         database = master.getDirDatabase();
@@ -35,25 +34,22 @@ public class GetServiceByUuidOperation extends DIROperation {
     
     @Override
     public int getProcedureId() {
-        return DIRServiceConstants.PROC_ID_XTREEMFS_SERVICE_GET_BY_UUID;
+        return DirectoryServiceConstants.PROC_ID_XTREEMFS_SERVICE_GET_BY_UUID;
     }
     
     @Override
     public void startRequest(DIRRequest rq) {
-        serviceGetByUUIDRequest request =
-            (serviceGetByUUIDRequest) rq.getRequestMessage();
-
-        database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName()
-                .getBytes(),rq).registerListener(new DBRequestListener<byte[], ServiceSet>(true) {
+        serviceGetByUUIDRequest request = (serviceGetByUUIDRequest) rq.getRequestMessage();
+        
+        database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getName().getBytes(), rq).registerListener(
+                new DBRequestListener<byte[], ServiceSet>(true) {
                     
                     @Override
-                    ServiceSet execute(byte[] result, DIRRequest rq) 
-                            throws Exception {
+                    ServiceSet execute(byte[] result, DIRRequest rq) throws Exception {
                         
                         ServiceSet.Builder services = ServiceSet.newBuilder();
                         if (result != null) {
-                            ServiceRecord dbData = new ServiceRecord(
-                                    ReusableBuffer.wrap(result));
+                            ServiceRecord dbData = new ServiceRecord(ReusableBuffer.wrap(result));
                             services.addServices(dbData.getService());
                         }
                         return services.build();
@@ -70,11 +66,13 @@ public class GetServiceByUuidOperation extends DIROperation {
     protected Message getRequestMessagePrototype() {
         return serviceGetByUUIDRequest.getDefaultInstance();
     }
-
-
+    
     /*
      * (non-Javadoc)
-     * @see org.xtreemfs.dir.operations.DIROperation#requestFinished(java.lang.Object, org.xtreemfs.dir.DIRRequest)
+     * 
+     * @see
+     * org.xtreemfs.dir.operations.DIROperation#requestFinished(java.lang.Object
+     * , org.xtreemfs.dir.DIRRequest)
      */
     @Override
     void requestFinished(Object result, DIRRequest rq) {

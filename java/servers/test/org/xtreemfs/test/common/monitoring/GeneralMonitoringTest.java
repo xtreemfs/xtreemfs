@@ -9,6 +9,8 @@ package org.xtreemfs.test.common.monitoring;
 
 import java.io.IOException;
 
+import junit.framework.TestCase;
+
 import org.junit.After;
 import org.junit.Before;
 import org.xtreemfs.babudb.BabuDBFactory;
@@ -19,7 +21,7 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.osd.OSDConfig;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 import org.xtreemfs.test.SetupUtils;
@@ -37,83 +39,83 @@ import com.sun.management.snmp.manager.SnmpPeer;
 import com.sun.management.snmp.manager.SnmpRequest;
 import com.sun.management.snmp.manager.SnmpSession;
 
-import junit.framework.TestCase;
-
 public class GeneralMonitoringTest extends TestCase {
-
+    
     private DIRRequestDispatcher dir;
-
+    
     private TestEnvironment      testEnv;
-
+    
     private DIRConfig            dirConfig;
-
+    
     private MRCConfig            mrcConfig;
-
+    
     private OSDConfig            osdConfig;
-
+    
     private SnmpPeer             dirAgent, mrcAgent, osdAgent;
-
+    
     private SnmpSession          session;
-
+    
     public GeneralMonitoringTest() throws IOException {
-
+        
         dirConfig = SetupUtils.createDIRConfig();
         Logging.start(Logging.LEVEL_DEBUG);
-
+        
     }
-
+    
     @Before
     public void setUp() throws Exception {
-
+        
         System.out.println("TEST: " + getClass().getSimpleName());
-
+        
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
         
         dir = new DIRRequestDispatcher(dirConfig, SetupUtils.createDIRdbsConfig());
         dir.startup();
         dir.waitForStartup();
-
+        
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
-                TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
-                TestEnvironment.Services.MRC, TestEnvironment.Services.OSD });
+                TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT, TestEnvironment.Services.MRC,
+                TestEnvironment.Services.OSD });
         testEnv.start();
-
+        
         final SnmpOidTableSupport oidTable = new XTREEMFS_MIBOidTable();
         SnmpOid.setSnmpOidTable(oidTable);
-
+        
         mrcConfig = SetupUtils.createMRC1Config();
         osdConfig = SetupUtils.createMultipleOSDConfigs(1)[0];
-
+        
         dirAgent = new SnmpPeer(dirConfig.getSnmpAddress().getHostName(), dirConfig.getSnmpPort());
         mrcAgent = new SnmpPeer(mrcConfig.getSnmpAddress().getHostName(), mrcConfig.getSnmpPort());
         osdAgent = new SnmpPeer(osdConfig.getSnmpAddress().getHostName(), osdConfig.getSnmpPort());
-
-        // Create and set Parameters, i.e. the community strings for read-only and read-write.
-        // Since the config don't provide an ACL file it doens't matter what community strings are
+        
+        // Create and set Parameters, i.e. the community strings for read-only
+        // and read-write.
+        // Since the config don't provide an ACL file it doens't matter what
+        // community strings are
         // used here
         final SnmpParameters params = new SnmpParameters("public", "private");
-
+        
         dirAgent.setParams(params);
         mrcAgent.setParams(params);
         osdAgent.setParams(params);
-
+        
         session = new SnmpSession("UnitTest Session");
-
+        
     }
-
+    
     @After
     public void tearDown() throws Exception {
-
+        
         session.destroySession();
-
+        
         testEnv.shutdown();
-
+        
         dir.shutdown();
-
+        
         dir.waitForShutdown();
-
+        
     }
-
+    
     /**
      * Make an SNMP get
      * 
@@ -126,91 +128,90 @@ public class GeneralMonitoringTest extends TestCase {
      */
     private SnmpVarBindList makeSnmpGet(SnmpPeer agent, String varDesc) throws Exception {
         final SnmpVarBindList list = new SnmpVarBindList("UnitTest varbind list");
-
+        
         // We want to read the "sysDescr" variable.
         list.addVarBind(varDesc);
-
+        
         // Make the SNMP get request and wait for the result.
         SnmpRequest request = session.snmpGetRequest(agent, null, list);
         final boolean completed = request.waitForCompletion(10000);
-
+        
         // Check for a timeout of the request.
         assertTrue(completed);
-
+        
         // Check if the response contains an error.
         int errorStatus = request.getErrorStatus();
         assertEquals(SnmpDefinitions.snmpRspNoError, errorStatus);
-
+        
         // Now we can extract the content of the result.
         return request.getResponseVarBindList();
-
+        
     }
-
+    
     public void testRpcInterface() throws Exception {
         
-
         // DIR InterfaceID
         SnmpVarBindList result = makeSnmpGet(dirAgent, "rpcInterface.0");
         SnmpVarBind varBind = result.getVarBindAt(0);
         SnmpInt snmpInt = varBind.getSnmpIntValue();
-
-        assertEquals(DIRServiceConstants.INTERFACE_ID, snmpInt.intValue());
-
+        
+        assertEquals(DirectoryServiceConstants.INTERFACE_ID, snmpInt.intValue());
+        
         // MRC InterfaceID
         result = makeSnmpGet(mrcAgent, "rpcInterface.0");
         varBind = result.getVarBindAt(0);
         snmpInt = varBind.getSnmpIntValue();
-
+        
         assertEquals(MRCServiceConstants.INTERFACE_ID, snmpInt.intValue());
-
+        
         // OSD InterfaceID
         result = makeSnmpGet(osdAgent, "rpcInterface.0");
         varBind = result.getVarBindAt(0);
         snmpInt = varBind.getSnmpIntValue();
-
+        
         assertEquals(OSDServiceConstants.INTERFACE_ID, snmpInt.intValue());
-
+        
     }
-
+    
     public void testDatabaseVersion() throws Exception {
         // DIR BaduDB Version
         SnmpVarBindList result = makeSnmpGet(dirAgent, "databaseVersion.0");
         SnmpVarBind varBind = result.getVarBindAt(0);
         SnmpString snmpString = varBind.getSnmpStringValue();
-
+        
         assertEquals(BabuDBFactory.BABUDB_VERSION, snmpString.toString());
-
+        
         // MRC BaduDB Version
         result = makeSnmpGet(mrcAgent, "databaseVersion.0");
         varBind = result.getVarBindAt(0);
         snmpString = varBind.getSnmpStringValue();
-
+        
         assertEquals(BabuDBFactory.BABUDB_VERSION, snmpString.toString());
     }
-
+    
     public void testTcpPort() throws Exception {
-
+        
         // DIR TCPPort
         SnmpVarBindList result = makeSnmpGet(dirAgent, "tcpPort.0");
         SnmpVarBind varBind = result.getVarBindAt(0);
         SnmpInt snmpInt = varBind.getSnmpIntValue();
-
+        
         assertEquals(dirConfig.getPort(), snmpInt.intValue());
-
+        
         // MRC TCPPort
         result = makeSnmpGet(mrcAgent, "tcpPort.0");
         varBind = result.getVarBindAt(0);
         snmpInt = varBind.getSnmpIntValue();
-
+        
         assertEquals(mrcConfig.getPort(), snmpInt.intValue());
-
+        
         // OSD TCPPort
         result = makeSnmpGet(osdAgent, "tcpPort.0");
         varBind = result.getVarBindAt(0);
         snmpInt = varBind.getSnmpIntValue();
-
+        
         assertEquals(osdConfig.getPort(), snmpInt.intValue());
-
+        
     }
     
     public void testDebugLevel() throws Exception {
@@ -218,50 +219,46 @@ public class GeneralMonitoringTest extends TestCase {
         SnmpVarBindList result = makeSnmpGet(dirAgent, "debugLevel.0");
         SnmpVarBind varBind = result.getVarBindAt(0);
         SnmpInt snmpInt = varBind.getSnmpIntValue();
-
-        assertEquals(dirConfig.getDebugLevel(), snmpInt.intValue());
         
+        assertEquals(dirConfig.getDebugLevel(), snmpInt.intValue());
         
         // MRC DebugLevel
         result = makeSnmpGet(mrcAgent, "debugLevel.0");
         varBind = result.getVarBindAt(0);
         snmpInt = varBind.getSnmpIntValue();
-
-        assertEquals(mrcConfig.getDebugLevel(), snmpInt.intValue());
         
+        assertEquals(mrcConfig.getDebugLevel(), snmpInt.intValue());
         
         // OSD DebugLevel
         result = makeSnmpGet(osdAgent, "debugLevel.0");
         varBind = result.getVarBindAt(0);
         snmpInt = varBind.getSnmpIntValue();
-
+        
         assertEquals(osdConfig.getDebugLevel(), snmpInt.intValue());
     }
     
     public void testIsRunning() throws Exception {
-      // DIR isRunning
-      SnmpVarBindList result = makeSnmpGet(dirAgent, "isRunning.0");
-      SnmpVarBind varBind = result.getVarBindAt(0);
-      SnmpString snmpString = varBind.getSnmpStringValue();
-
-      assertEquals("ONLINE", snmpString.toString());
-
-      
-      // MRC isRunning
-      result = makeSnmpGet(mrcAgent, "isRunning.0");
-      varBind = result.getVarBindAt(0);
-      snmpString = varBind.getSnmpStringValue();
-
-      assertEquals("ONLINE", snmpString.toString());
-      
-      
-      // OSD isRunning
-      result = makeSnmpGet(osdAgent, "isRunning.0");
-      varBind = result.getVarBindAt(0);
-      snmpString = varBind.getSnmpStringValue();
-
-      assertEquals("ONLINE", snmpString.toString());
-    
+        // DIR isRunning
+        SnmpVarBindList result = makeSnmpGet(dirAgent, "isRunning.0");
+        SnmpVarBind varBind = result.getVarBindAt(0);
+        SnmpString snmpString = varBind.getSnmpStringValue();
+        
+        assertEquals("ONLINE", snmpString.toString());
+        
+        // MRC isRunning
+        result = makeSnmpGet(mrcAgent, "isRunning.0");
+        varBind = result.getVarBindAt(0);
+        snmpString = varBind.getSnmpStringValue();
+        
+        assertEquals("ONLINE", snmpString.toString());
+        
+        // OSD isRunning
+        result = makeSnmpGet(osdAgent, "isRunning.0");
+        varBind = result.getVarBindAt(0);
+        snmpString = varBind.getSnmpStringValue();
+        
+        assertEquals("ONLINE", snmpString.toString());
+        
     }
     
     public void testServiceType() throws Exception {
@@ -269,23 +266,21 @@ public class GeneralMonitoringTest extends TestCase {
         SnmpVarBindList result = makeSnmpGet(dirAgent, "serviceType.0");
         SnmpVarBind varBind = result.getVarBindAt(0);
         SnmpString snmpString = varBind.getSnmpStringValue();
-
+        
         assertEquals("DIR", snmpString.toString());
-
         
         // MRC TYPE
         result = makeSnmpGet(mrcAgent, "serviceType.0");
         varBind = result.getVarBindAt(0);
         snmpString = varBind.getSnmpStringValue();
-
-        assertEquals("MRC", snmpString.toString());
         
+        assertEquals("MRC", snmpString.toString());
         
         // OSD TYPE
         result = makeSnmpGet(osdAgent, "serviceType.0");
         varBind = result.getVarBindAt(0);
         snmpString = varBind.getSnmpStringValue();
-
+        
         assertEquals("OSD", snmpString.toString());
     }
     
@@ -294,24 +289,22 @@ public class GeneralMonitoringTest extends TestCase {
         SnmpVarBindList result = makeSnmpGet(dirAgent, "serviceUUID.0");
         SnmpVarBind varBind = result.getVarBindAt(0);
         SnmpString snmpString = varBind.getSnmpStringValue();
-
-        assertEquals(dirConfig.getUUID().toString(), snmpString.toString());
-
         
-        // MRC UUID                     
+        assertEquals(dirConfig.getUUID().toString(), snmpString.toString());
+        
+        // MRC UUID
         result = makeSnmpGet(mrcAgent, "serviceUUID.0");
         varBind = result.getVarBindAt(0);
         snmpString = varBind.getSnmpStringValue();
-
-        assertEquals(mrcConfig.getUUID().toString(), snmpString.toString());
         
+        assertEquals(mrcConfig.getUUID().toString(), snmpString.toString());
         
         // OSD UUID
         result = makeSnmpGet(osdAgent, "serviceUUID.0");
         varBind = result.getVarBindAt(0);
         snmpString = varBind.getSnmpStringValue();
-
+        
         assertEquals(osdConfig.getUUID().toString(), snmpString.toString());
     }
-
+    
 }

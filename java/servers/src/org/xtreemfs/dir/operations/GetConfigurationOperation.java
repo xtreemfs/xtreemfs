@@ -13,9 +13,9 @@ import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ConfigurationRecord;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationGetRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
 
 import com.google.protobuf.Message;
 
@@ -30,7 +30,7 @@ public class GetConfigurationOperation extends DIROperation {
     
     @Override
     public int getProcedureId() {
-        return DIRServiceConstants.PROC_ID_XTREEMFS_CONFIGURATION_GET;
+        return DirectoryServiceConstants.PROC_ID_XTREEMFS_CONFIGURATION_GET;
     }
     
     @Override

@@ -24,13 +24,13 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.util.CLIParser;
-import org.xtreemfs.foundation.util.ONCRPCServiceURL;
 import org.xtreemfs.foundation.util.CLIParser.CliOption;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
+import org.xtreemfs.foundation.util.ONCRPCServiceURL;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
+import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.PORTS;
 
@@ -119,7 +119,7 @@ public class xtfs_chstatus {
             RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(sslOptions, 15 * 100, 5 * 60 * 1000);
             rpcClient.start();
             rpcClient.waitForStartup();
-            DIRServiceClient dc = new DIRServiceClient(rpcClient, dirAddr);
+            DirectoryServiceClient dc = new DirectoryServiceClient(rpcClient, dirAddr);
             RPCResponse<ServiceSet> r = dc.xtreemfs_service_get_by_uuid(dirAddr, RPCAuthentication.authNone,
                 RPCAuthentication.userService, uuid);
             ServiceSet set = r.get();
