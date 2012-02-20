@@ -29,7 +29,7 @@ int main() {
   user_credentials.set_username("example_libxtreemfs");
   user_credentials.add_groups("example_libxtreemfs");
 
-  // Class which allows to change options of the librray.
+  // Class which allows to change options of the library.
   xtreemfs::Options options;
 
   try {
