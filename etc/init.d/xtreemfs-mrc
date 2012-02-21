@@ -89,7 +89,7 @@ stop() {
     if [ -f $PID_MRC ]
     then
         echo -n "stopping XtreemFS Metadata and Replica Catalog (MRC)..."
-        killproc -p $PID_MRC java
+        killproc -p $PID_MRC sudo
 	echo
     fi
 

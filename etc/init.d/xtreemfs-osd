@@ -89,7 +89,7 @@ stop() {
     if [ -f $PID_OSD ]
     then
         echo -n "stopping XtreemFS Object Storage Device (OSD)..."
-        killproc -p $PID_OSD java
+        killproc -p $PID_OSD sudo
 	echo
     fi
 

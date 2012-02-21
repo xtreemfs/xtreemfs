@@ -86,7 +86,7 @@ stop() {
     if [ -f $PID_DS ]
     then
         echo -n "stopping XtreemFS Directory Service (DIR)..."
-        killproc -p $PID_DS java
+        killproc -p $PID_DS sudo
 	echo
     fi
 
