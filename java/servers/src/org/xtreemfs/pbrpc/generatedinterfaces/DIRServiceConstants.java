@@ -1,11 +1,11 @@
-//automatically generated from DIR.proto at Mon Feb 20 14:24:57 CET 2012
+//automatically generated from DIR.proto at Tue Feb 21 14:34:05 CET 2012
 //(c) 2012. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
 
 import com.google.protobuf.Message;
 
-public class DirectoryServiceConstants {
+public class DIRServiceConstants {
 
     public static final int INTERFACE_ID = 10001;
     public static final int PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_GET = 1;

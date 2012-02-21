@@ -1,4 +1,4 @@
-//automatically generated from DIR.proto at Mon Feb 20 14:24:57 CET 2012
+//automatically generated from DIR.proto at Tue Feb 21 14:34:05 CET 2012
 //(c) 2012. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -14,12 +14,12 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 
-public class DirectoryServiceClient {
+public class DIRServiceClient {
 
     private RPCNIOSocketClient client;
     private InetSocketAddress  defaultServer;
 
-    public DirectoryServiceClient(RPCNIOSocketClient client, InetSocketAddress defaultServer) {
+    public DIRServiceClient(RPCNIOSocketClient client, InetSocketAddress defaultServer) {
         this.client = client;
         this.defaultServer = defaultServer;
     }

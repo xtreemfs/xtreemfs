@@ -189,7 +189,9 @@ message configurationSetResponse {
   optional fixed64 new_version = 1;
 }
 
-
+// Due to a name clash with "message DIRService", the former service
+// "DIRService" had to be renamed to another name, now "DirectoryService".
+// See http://code.google.com/p/xtreemfs/issues/detail?id=248 for more info.
 service DirectoryService {
   
   option(interface_id)=10001;

@@ -14,7 +14,7 @@ import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.monitoring.StatusMonitor.ServiceTypes;
 import org.xtreemfs.common.monitoring.generatedcode.General;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
@@ -102,7 +102,7 @@ public class GeneralImpl extends General {
     @Override
     public Integer getRpcInterface() throws SnmpStatusException {
         if (statusMonitor.getInitiatingService().equals(ServiceTypes.DIR)) {
-            return DirectoryServiceConstants.INTERFACE_ID;
+            return DIRServiceConstants.INTERFACE_ID;
         }
         
         if (statusMonitor.getInitiatingService().equals(ServiceTypes.MRC)) {

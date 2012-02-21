@@ -34,7 +34,7 @@ import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.drain.OSDDrain;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.PORTS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
@@ -208,7 +208,7 @@ public class xtfs_remove_osd {
         dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
         dirClient.start();
         dirClient.waitForStartup();
-        DirectoryServiceClient tmp = new DirectoryServiceClient(dirClient, dirAddress);
+        DIRServiceClient tmp = new DIRServiceClient(dirClient, dirAddress);
         dir = new DIRClient(tmp, new InetSocketAddress[] { dirAddress }, 100, 15 * 1000);
 
         resolverClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);

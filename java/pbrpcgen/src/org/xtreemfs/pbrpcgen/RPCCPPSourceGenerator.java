@@ -116,8 +116,12 @@ public class RPCCPPSourceGenerator {
                     //printMessage(proto.getMessageTypeList());
 
                     for (ServiceDescriptorProto srv : proto.getServiceList()) {
-
-                        String className = srv.getName() + "Client";
+                        // proto.getName() returns the file name of the .proto file
+                        // e.g. "xtreemfs/DIR.proto"
+                        // Example: "xtreemfs/DIR.proto" -> "DIRServiceClient"
+                        String className =  (new java.io.File(proto.getName())).getName().replace(".proto", "ServiceClient");
+                        // Example: "xtreemfs/DIR.proto" -> "xtreemfs/DIRServiceClient.h"
+                        String classFileName = proto.getName().replace(".proto", "ServiceClient.h");
 
                         StringBuilder codeBuilder = new StringBuilder();
                         
@@ -300,7 +304,7 @@ public class RPCCPPSourceGenerator {
                         file = file.replace("@@@INCLUDE@@@", extraIncludes);
 
                         //filePrefix+"/"+className + ".cpp"
-                        File f = File.newBuilder().setName(proto.getName().replace(".proto", "ServiceClient.h")).setContent(
+                        File f = File.newBuilder().setName(classFileName).setContent(
                             file).build();
                         responseBuilder.addFile(f);
                     }

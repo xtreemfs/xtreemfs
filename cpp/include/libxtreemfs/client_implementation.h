@@ -30,7 +30,7 @@ class Volume;
 class VolumeImplementation;
 
 namespace pbrpc {
-class DirectoryServiceClient;
+class DIRServiceClient;
 }  // namespace pbrpc
 
 namespace rpc {
@@ -125,8 +125,8 @@ class ClientImplementation : public Client, public UUIDResolver {
   boost::scoped_ptr<xtreemfs::rpc::Client> network_client_;
   boost::scoped_ptr<boost::thread> network_client_thread_;
 
-  /** A DirectoryServiceClient is a wrapper for an RPC Client. */
-  boost::scoped_ptr<xtreemfs::pbrpc::DirectoryServiceClient> dir_service_client_;
+  /** A DIRServiceClient is a wrapper for an RPC Client. */
+  boost::scoped_ptr<xtreemfs::pbrpc::DIRServiceClient> dir_service_client_;
 
   /** Random, non-persistent UUID to distinguish locks of different clients. */
   std::string client_uuid_;

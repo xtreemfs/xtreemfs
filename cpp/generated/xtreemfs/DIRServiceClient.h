@@ -1,18 +1,16 @@
-//automatically generated from DIR.proto at Mon Feb 20 14:24:42 CET 2012
+//automatically generated from DIR.proto at Tue Feb 21 14:34:05 CET 2012
 //(c) 2012. See LICENSE file for details.
 
-#ifndef DIRECTORYSERVICECLIENT_H
-#define DIRECTORYSERVICECLIENT_H
+#ifndef DIRSERVICECLIENT_H
+#define DIRSERVICECLIENT_H
 
 #include <boost/cstdint.hpp>
 #include "pbrpc/RPC.pb.h"
 #include "rpc/client.h"
 #include "rpc/sync_callback.h"
 #include "rpc/callback_interface.h"
-#include "xtreemfs/OSD.pb.h"
 #include "include/Common.pb.h"
 #include "xtreemfs/DIR.pb.h"
-#include "xtreemfs/GlobalTypes.pb.h"
 
 
 namespace xtreemfs {
@@ -21,13 +19,13 @@ namespace xtreemfs {
         using ::xtreemfs::rpc::CallbackInterface;
         using ::xtreemfs::rpc::SyncCallback;
 
-        class DirectoryServiceClient {
+        class DIRServiceClient {
 
         public:
-            DirectoryServiceClient(Client* client) : client_(client) {
+            DIRServiceClient(Client* client) : client_(client) {
             }
 
-            virtual ~DirectoryServiceClient() {
+            virtual ~DIRServiceClient() {
             }
 
             void xtreemfs_address_mappings_get(const std::string &address,
@@ -380,4 +378,4 @@ namespace xtreemfs {
         };
     }
 }
-#endif //DIRECTORYSERVICECLIENT_H
+#endif //DIRSERVICECLIENT_H

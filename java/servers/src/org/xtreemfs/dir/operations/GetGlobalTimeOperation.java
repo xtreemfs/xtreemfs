@@ -12,7 +12,7 @@ import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.globalTimeSGetResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 
 import com.google.protobuf.Message;
 /**
@@ -28,7 +28,7 @@ public class GetGlobalTimeOperation extends DIROperation {
 
     @Override
     public int getProcedureId() {
-        return DirectoryServiceConstants.PROC_ID_XTREEMFS_GLOBAL_TIME_S_GET;
+        return DIRServiceConstants.PROC_ID_XTREEMFS_GLOBAL_TIME_S_GET;
     }
 
     @Override

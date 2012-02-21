@@ -28,7 +28,7 @@ import org.xtreemfs.mrc.MRC;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
@@ -81,7 +81,7 @@ public class ClientTest {
         
         userCredentials = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
         
-        dirClient = new DIRClient(new DirectoryServiceClient(testEnv.getRpcClient(), null),
+        dirClient = new DIRClient(new DIRServiceClient(testEnv.getRpcClient(), null),
                 new InetSocketAddress[] { testEnv.getDIRAddress() }, 3, 1000);
         
         // start second MRC

@@ -1,4 +1,4 @@
-//automatically generated from Ping.proto at Tue Jan 24 11:27:14 CET 2012
+//automatically generated from Ping.proto at Tue Feb 21 14:34:05 CET 2012
 //(c) 2012. See LICENSE file for details.
 
 package org.xtreemfs.foundation.pbrpc.generatedinterfaces;
@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.List;
 import java.net.InetSocketAddress;
 import com.google.protobuf.Message;
+import com.google.protobuf.ByteString;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;

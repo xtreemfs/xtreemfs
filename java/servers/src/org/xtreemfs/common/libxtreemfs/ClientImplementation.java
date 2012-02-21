@@ -31,7 +31,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
@@ -76,7 +76,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
     /**
      * A DIRServiceClient is a wrapper for an RPC Client.
      */
-    private DirectoryServiceClient                 dirServiceClient          = null;
+    private DIRServiceClient                 dirServiceClient          = null;
     
     /**
      * The RPC Client processes requests from a queue and executes callbacks in
@@ -122,7 +122,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
         networkClient.start();
         networkClient.waitForStartup();
         
-        dirServiceClient = new DirectoryServiceClient(networkClient, null);
+        dirServiceClient = new DIRServiceClient(networkClient, null);
         
         clientUUID = Helper.generateVersion4UUID();
         assert (clientUUID != null && clientUUID != "");

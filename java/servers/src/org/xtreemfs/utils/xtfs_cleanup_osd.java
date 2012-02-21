@@ -30,7 +30,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.util.CLIParser;
 import org.xtreemfs.foundation.util.CLIParser.CliOption;
 import org.xtreemfs.foundation.util.ONCRPCServiceURL;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.PORTS;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_get_resultsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_cleanup_is_runningResponse;
@@ -193,7 +193,7 @@ public class xtfs_cleanup_osd {
             dirClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
             dirClient.start();
             dirClient.waitForStartup();
-            DirectoryServiceClient dirRpcClient = new DirectoryServiceClient(dirClient, dirAddr);
+            DIRServiceClient dirRpcClient = new DIRServiceClient(dirClient, dirAddr);
             dir = new DIRClient(dirRpcClient, new InetSocketAddress[]{dirAddr}, 100, 15*1000);
             
             try {

@@ -29,7 +29,7 @@ import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.osd.OSDConfig;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 
@@ -352,8 +352,8 @@ public class SetupUtils {
         return new RPCNIOSocketClient(sslOptions, timeout, 5 * 60 * 1000);
     }
     
-    static DirectoryServiceClient createDIRClient(RPCNIOSocketClient client) throws IOException {
-        return new DirectoryServiceClient(client, new InetSocketAddress("localhost", 33638));
+    static DIRServiceClient createDIRClient(RPCNIOSocketClient client) throws IOException {
+        return new DIRServiceClient(client, new InetSocketAddress("localhost", 33638));
     }
     
     public static OSDConfig createOSD1ConfigForceWithoutSSL() throws IOException {

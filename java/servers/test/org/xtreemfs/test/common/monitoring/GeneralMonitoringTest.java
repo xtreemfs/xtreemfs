@@ -21,7 +21,7 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.osd.OSDConfig;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 import org.xtreemfs.test.SetupUtils;
@@ -155,7 +155,7 @@ public class GeneralMonitoringTest extends TestCase {
         SnmpVarBind varBind = result.getVarBindAt(0);
         SnmpInt snmpInt = varBind.getSnmpIntValue();
         
-        assertEquals(DirectoryServiceConstants.INTERFACE_ID, snmpInt.intValue());
+        assertEquals(DIRServiceConstants.INTERFACE_ID, snmpInt.intValue());
         
         // MRC InterfaceID
         result = makeSnmpGet(mrcAgent, "rpcInterface.0");

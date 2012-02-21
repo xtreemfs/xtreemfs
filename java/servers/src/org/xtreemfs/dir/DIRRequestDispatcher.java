@@ -66,7 +66,7 @@ import org.xtreemfs.foundation.pbrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.util.OutputUtils;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 
 import com.sun.net.httpserver.BasicAuthenticator;
 import com.sun.net.httpserver.HttpContext;
@@ -407,7 +407,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
          * Nettest.handleNettest(hdr,rq); return; }
          */
 
-        if (rqHdr.getInterfaceId() != DirectoryServiceConstants.INTERFACE_ID) {
+        if (rqHdr.getInterfaceId() != DIRServiceConstants.INTERFACE_ID) {
             rq.sendError(ErrorType.INVALID_INTERFACE_ID, POSIXErrno.POSIX_ERROR_EIO,
                 "invalid interface id. Maybe wrong service address/port configured?");
             return;

@@ -19,7 +19,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationSetResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 
 import com.google.protobuf.Message;
 
@@ -35,7 +35,7 @@ public class SetConfigurationOperation extends DIROperation {
     
     @Override
     public int getProcedureId() {
-        return DirectoryServiceConstants.PROC_ID_XTREEMFS_CONFIGURATION_SET;
+        return DIRServiceConstants.PROC_ID_XTREEMFS_CONFIGURATION_SET;
     }
     
     @Override

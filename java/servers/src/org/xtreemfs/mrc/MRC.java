@@ -23,7 +23,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 
 /**
@@ -149,7 +149,7 @@ public class MRC {
                 .isGRIDSSLmode(), new MRCPolicyContainer(config).getTrustManager()) : null;
         
         RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, 1000, 60 * 1000);
-        DirectoryServiceClient dirRPCClient = new DirectoryServiceClient(clientStage, config.getDirectoryService());
+        DIRServiceClient dirRPCClient = new DIRServiceClient(clientStage, config.getDirectoryService());
         DIRClient dirClient = new DIRClient(dirRPCClient, config.getDirectoryServices(),
                 retries, WAIT_BETWEEN_RETRIES);
         

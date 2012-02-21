@@ -109,7 +109,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
@@ -332,7 +332,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         // initialize TimeSync and Heartbeat thread
         // ----------------------------------------
         
-        DirectoryServiceClient dirRpcClient = new DirectoryServiceClient(rpcClient, config.getDirectoryService());
+        DIRServiceClient dirRpcClient = new DIRServiceClient(rpcClient, config.getDirectoryService());
         dirClient = new DIRClient(dirRpcClient, config.getDirectoryServices(), config.getFailoverMaxRetries(), config.getFailoverWait());
         mrcClient = new MRCServiceClient(rpcClient, null);
         osdClient = new OSDServiceClient(rpcClient, null);

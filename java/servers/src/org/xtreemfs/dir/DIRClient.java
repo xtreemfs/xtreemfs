@@ -31,7 +31,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.addressMappingSetResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationSetResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.globalTimeSGetResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 
 /**
  * DIR Client with automatic fail-over and redirect support. All operations are
@@ -44,7 +44,7 @@ public class DIRClient implements TimeServerClient {
     /**
      * Generated DIR service rpc client.
      */
-    protected DirectoryServiceClient          rpcClient;
+    protected DIRServiceClient          rpcClient;
     
     /**
      * List of DIR servers.
@@ -93,7 +93,7 @@ public class DIRClient implements TimeServerClient {
      * @param retryWaitMs
      *            time (milliseconds) to wait between retries.
      */
-    public DIRClient(DirectoryServiceClient rpcClient, InetSocketAddress[] servers, int maxRetries, int retryWaitMs) {
+    public DIRClient(DIRServiceClient rpcClient, InetSocketAddress[] servers, int maxRetries, int retryWaitMs) {
         if (servers.length == 0) {
             throw new IllegalArgumentException("Must provide at least one directory service address.");
         }
@@ -116,7 +116,7 @@ public class DIRClient implements TimeServerClient {
             InterruptedException {
         AddressMappingSet response = (AddressMappingSet) syncCall(new CallGenerator() {
             @Override
-            public RPCResponse executeCall(DirectoryServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_address_mappings_get(server, authHeader, userCreds, uuid);
             }
         }, maxRetries);
@@ -133,7 +133,7 @@ public class DIRClient implements TimeServerClient {
             InterruptedException {
         Object response = syncCall(new CallGenerator() {
             @Override
-            public RPCResponse executeCall(DirectoryServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_address_mappings_remove(server, authHeader, userCreds, uuid);
             }
         }, maxRetries);
@@ -150,7 +150,7 @@ public class DIRClient implements TimeServerClient {
             InterruptedException {
         addressMappingSetResponse response = (addressMappingSetResponse) syncCall(new CallGenerator() {
             @Override
-            public RPCResponse executeCall(DirectoryServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_address_mappings_set(server, authHeader, userCreds, mappings);
             }
         }, maxRetries);
@@ -167,7 +167,7 @@ public class DIRClient implements TimeServerClient {
             InterruptedException {
         addressMappingSetResponse response = (addressMappingSetResponse) syncCall(new CallGenerator() {
             @Override
-            public RPCResponse executeCall(DirectoryServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_address_mappings_set(server, authHeader, userCreds, input);
             }
         }, maxRetries);
@@ -184,7 +184,7 @@ public class DIRClient implements TimeServerClient {
             final UserCredentials userCreds, final String uuid, int maxRetries) throws IOException, InterruptedException {
         Object response = syncCall(new CallGenerator() {
             @Override
-            public RPCResponse executeCall(DirectoryServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_service_deregister(server, authHeader, userCreds, uuid);
             }
         }, maxRetries);
@@ -200,7 +200,7 @@ public class DIRClient implements TimeServerClient {
             InterruptedException {
         Object response = syncCall(new CallGenerator() {
             @Override
-            public RPCResponse executeCall(DirectoryServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_service_offline(server, authHeader, userCreds, name);
             }
         }, maxRetries);
@@ -216,7 +216,7 @@ public class DIRClient implements TimeServerClient {
             InterruptedException {
         ServiceSet response = (ServiceSet) syncCall(new CallGenerator() {
             @Override
-            public RPCResponse executeCall(DirectoryServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_service_get_by_name(server, authHeader, userCreds, name);
             }
         }, maxRetries);
@@ -233,7 +233,7 @@ public class DIRClient implements TimeServerClient {
             InterruptedException {
         ServiceSet response = (ServiceSet) syncCall(new CallGenerator() {
             @Override
-            public RPCResponse executeCall(DirectoryServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_service_get_by_uuid(server, authHeader, userCreds, uuid);
             }
         }, maxRetries);
@@ -250,7 +250,7 @@ public class DIRClient implements TimeServerClient {
             InterruptedException {
         ServiceSet response = (ServiceSet) syncCall(new CallGenerator() {
             @Override
-            public RPCResponse executeCall(DirectoryServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_service_get_by_type(server, authHeader, userCreds, type);
             }
         }, maxRetries);
@@ -267,7 +267,7 @@ public class DIRClient implements TimeServerClient {
             InterruptedException {
         serviceRegisterResponse response = (serviceRegisterResponse) syncCall(new CallGenerator() {
             @Override
-            public RPCResponse executeCall(DirectoryServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_service_register(server, authHeader, userCreds, service);
             }
         }, maxRetries);
@@ -284,7 +284,7 @@ public class DIRClient implements TimeServerClient {
             InterruptedException {
         Configuration response = (Configuration) syncCall(new CallGenerator() {
             @Override
-            public RPCResponse executeCall(DirectoryServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_configuration_get(server, authHeader, userCreds, uuid);
             }
         }, maxRetries);
@@ -301,7 +301,7 @@ public class DIRClient implements TimeServerClient {
             InterruptedException {
         configurationSetResponse response = (configurationSetResponse) syncCall(new CallGenerator() {
             @Override
-            public RPCResponse executeCall(DirectoryServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_configuration_set(server, authHeader, userCreds, config);
             }
         }, maxRetries);
@@ -321,7 +321,7 @@ public class DIRClient implements TimeServerClient {
         globalTimeSGetResponse response = (globalTimeSGetResponse) syncCall(new CallGenerator() {
             
             @Override
-            public RPCResponse executeCall(DirectoryServiceClient client, InetSocketAddress server) throws IOException {
+            public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_global_time_s_get(server, auth, user);
             }
         }, 0);
@@ -337,7 +337,7 @@ public class DIRClient implements TimeServerClient {
      * retry.
      */
     protected interface CallGenerator {
-        public RPCResponse executeCall(DirectoryServiceClient client, InetSocketAddress server) throws IOException;
+        public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException;
     }
     
     protected Object syncCall(CallGenerator call, int maxRetries) throws InterruptedException, PBRPCException,

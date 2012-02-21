@@ -14,7 +14,7 @@ import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceDeregisterRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 
 import com.google.protobuf.Message;
 
@@ -33,7 +33,7 @@ public class DeregisterServiceOperation extends DIROperation {
     
     @Override
     public int getProcedureId() {
-        return DirectoryServiceConstants.PROC_ID_XTREEMFS_SERVICE_DEREGISTER;
+        return DIRServiceConstants.PROC_ID_XTREEMFS_SERVICE_DEREGISTER;
     }
     
     @Override

@@ -37,7 +37,7 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 
@@ -315,7 +315,7 @@ public class StatusPage {
         tmp = tmp.replace(Vars.TABLEDUMP.toString(), dump.toString());
         
         tmp = tmp.replace(Vars.VERSION.toString(), VersionManagement.RELEASE_VERSION);
-        tmp = tmp.replace(Vars.PROTOVERSION.toString(), Integer.toString(DirectoryServiceConstants.INTERFACE_ID));
+        tmp = tmp.replace(Vars.PROTOVERSION.toString(), Integer.toString(DIRServiceConstants.INTERFACE_ID));
         tmp = tmp.replace(Vars.DBVERSION.toString(), BabuDBFactory.BABUDB_VERSION);
         
         return tmp;

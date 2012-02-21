@@ -18,7 +18,7 @@ import org.xtreemfs.dir.data.AddressMappingRecords;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.addressMappingGetRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 
 import com.google.protobuf.Message;
 
@@ -37,7 +37,7 @@ public class GetAddressMappingOperation extends DIROperation {
 
     @Override
     public int getProcedureId() {
-        return DirectoryServiceConstants.PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_GET;
+        return DIRServiceConstants.PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_GET;
     }
 
     @Override

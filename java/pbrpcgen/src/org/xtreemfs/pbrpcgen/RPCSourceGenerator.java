@@ -109,9 +109,12 @@ public class RPCSourceGenerator {
                     //printMessage(proto.getMessageTypeList());
 
                     for (ServiceDescriptorProto srv : proto.getServiceList()) {
-
-                        String className = srv.getName() + "Client";
-                        String classNameConst = srv.getName() + "Constants";
+                        // proto.getName() returns the file name of the .proto file
+                        // e.g. "xtreemfs/DIR.proto"
+                        // Example: "xtreemfs/DIR.proto" -> "DIRServiceClient"
+                        String className =  (new java.io.File(proto.getName())).getName().replace(".proto", "ServiceClient");
+                        String classNameConst = (new java.io.File(proto.getName())).getName().replace(".proto", "ServiceConstants");
+                        
 
                         StringBuilder codeBuilder = new StringBuilder();
                         StringBuilder codeBuilderConst = new StringBuilder();

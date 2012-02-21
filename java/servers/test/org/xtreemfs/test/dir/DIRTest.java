@@ -34,7 +34,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.addressMappingSetResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationSetResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.globalTimeSGetResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
@@ -93,7 +93,7 @@ public class DIRTest extends TestCase {
     @Test
     public void testAddressMapping() throws Exception {
         
-        DirectoryServiceClient client = testEnv.getDirClient();
+        DIRServiceClient client = testEnv.getDirClient();
         
         AddressMappingSet.Builder setB = AddressMappingSet.newBuilder();
         AddressMapping mapping = AddressMapping.newBuilder().setUuid("uuid1").setProtocol(Schemes.SCHEME_PBRPC)
@@ -137,7 +137,7 @@ public class DIRTest extends TestCase {
     @Test
     public void testRegistry() throws Exception {
         
-        DirectoryServiceClient client = testEnv.getDirClient();
+        DIRServiceClient client = testEnv.getDirClient();
         
         ServiceDataMap dmap = ServiceDataMap.newBuilder()
                 .addData(KeyValuePair.newBuilder().setKey("bla").setValue("yagga")).build();
@@ -174,7 +174,7 @@ public class DIRTest extends TestCase {
     @Test
     public void testConfiguration() throws Exception {
         
-        DirectoryServiceClient client = testEnv.getDirClient();
+        DIRServiceClient client = testEnv.getDirClient();
         
         long version = 0;
         String uuid = "uuidConfTest";
@@ -235,7 +235,7 @@ public class DIRTest extends TestCase {
     @Test
     public void testManyUpdates() throws Exception {
         
-        DirectoryServiceClient client = testEnv.getDirClient();
+        DIRServiceClient client = testEnv.getDirClient();
         
         ServiceDataMap dmap = ServiceDataMap.newBuilder()
                 .addData(KeyValuePair.newBuilder().setKey("bla").setValue("yagga")).build();

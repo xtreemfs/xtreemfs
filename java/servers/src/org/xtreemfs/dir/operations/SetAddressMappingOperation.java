@@ -21,7 +21,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.addressMappingSetResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 
 import com.google.protobuf.Message;
 
@@ -40,7 +40,7 @@ public class SetAddressMappingOperation extends DIROperation {
     
     @Override
     public int getProcedureId() {
-        return DirectoryServiceConstants.PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_SET;
+        return DIRServiceConstants.PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_SET;
     }
     
     @Override

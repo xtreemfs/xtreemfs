@@ -30,7 +30,7 @@ import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.addressMappingGetResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.globalTimeSGetResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.test.TestEnvironment;
 
 /**
@@ -66,7 +66,7 @@ public class DIRClientTest extends TestCase {
             try {
                 final RPCHeader hdr = rq.getHeader();
                 assertTrue(hdr.hasRequestHeader());
-                assertEquals(DirectoryServiceConstants.PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_GET, hdr.getRequestHeader()
+                assertEquals(DIRServiceConstants.PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_GET, hdr.getRequestHeader()
                         .getProcId());
                 
                 if (sendRedirectTo != null) {

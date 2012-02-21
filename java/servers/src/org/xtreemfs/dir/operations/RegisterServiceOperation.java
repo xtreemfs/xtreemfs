@@ -19,7 +19,7 @@ import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 
 import com.google.protobuf.Message;
 
@@ -38,7 +38,7 @@ public class RegisterServiceOperation extends DIROperation {
     
     @Override
     public int getProcedureId() {
-        return DirectoryServiceConstants.PROC_ID_XTREEMFS_SERVICE_REGISTER;
+        return DIRServiceConstants.PROC_ID_XTREEMFS_SERVICE_REGISTER;
     }
     
     @Override

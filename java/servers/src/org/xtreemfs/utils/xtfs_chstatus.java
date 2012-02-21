@@ -30,7 +30,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.PORTS;
 
@@ -119,7 +119,7 @@ public class xtfs_chstatus {
             RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(sslOptions, 15 * 100, 5 * 60 * 1000);
             rpcClient.start();
             rpcClient.waitForStartup();
-            DirectoryServiceClient dc = new DirectoryServiceClient(rpcClient, dirAddr);
+            DIRServiceClient dc = new DIRServiceClient(rpcClient, dirAddr);
             RPCResponse<ServiceSet> r = dc.xtreemfs_service_get_by_uuid(dirAddr, RPCAuthentication.authNone,
                 RPCAuthentication.userService, uuid);
             ServiceSet set = r.get();

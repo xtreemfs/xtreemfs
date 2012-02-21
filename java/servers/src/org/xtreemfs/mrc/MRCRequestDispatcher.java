@@ -73,7 +73,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceConstants;
@@ -179,7 +179,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         serverStage = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
         serverStage.setLifeCycleListener(this);
         
-        DirectoryServiceClient dirRpcClient = new DirectoryServiceClient(clientStage, config.getDirectoryService());
+        DIRServiceClient dirRpcClient = new DIRServiceClient(clientStage, config.getDirectoryService());
         dirClient = new DIRClient(dirRpcClient, config.getDirectoryServices(), config.getFailoverMaxRetries(),
                 config.getFailoverWait());
         osdClient = new OSDServiceClient(clientStage, null);

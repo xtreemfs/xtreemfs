@@ -18,7 +18,7 @@ import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceGetByNameRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceConstants;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 
 import com.google.protobuf.Message;
 
@@ -37,7 +37,7 @@ public class GetServiceByNameOperation extends DIROperation {
     
     @Override
     public int getProcedureId() {
-        return DirectoryServiceConstants.PROC_ID_XTREEMFS_SERVICE_GET_BY_NAME;
+        return DIRServiceConstants.PROC_ID_XTREEMFS_SERVICE_GET_BY_NAME;
     }
     
     @Override

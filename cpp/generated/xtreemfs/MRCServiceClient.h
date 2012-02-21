@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Mon Feb 20 14:24:42 CET 2012
+//automatically generated from MRC.proto at Tue Feb 21 14:34:05 CET 2012
 //(c) 2012. See LICENSE file for details.
 
 #ifndef MRCSERVICECLIENT_H
@@ -9,11 +9,10 @@
 #include "rpc/client.h"
 #include "rpc/sync_callback.h"
 #include "rpc/callback_interface.h"
-#include "xtreemfs/OSD.pb.h"
 #include "xtreemfs/MRC.pb.h"
 #include "include/Common.pb.h"
-#include "xtreemfs/DIR.pb.h"
 #include "xtreemfs/GlobalTypes.pb.h"
+#include "xtreemfs/DIR.pb.h"
 
 
 namespace xtreemfs {

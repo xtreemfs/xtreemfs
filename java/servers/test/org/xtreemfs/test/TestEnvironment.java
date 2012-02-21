@@ -35,7 +35,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.serviceRegisterResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.DirectoryServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
@@ -64,7 +64,7 @@ public class TestEnvironment {
     /**
      * @return the dirClient
      */
-    public DirectoryServiceClient getDirClient() {
+    public DIRServiceClient getDirClient() {
         return dirClient;
     }
     
@@ -116,7 +116,7 @@ public class TestEnvironment {
     
     private org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient pbrpcClient;
     
-    private DirectoryServiceClient                                  dirClient;
+    private DIRServiceClient                                  dirClient;
     
     private MRCServiceClient                                        mrcClient;
     
