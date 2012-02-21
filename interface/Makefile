@@ -24,6 +24,8 @@ PROTOS_SERVERS=$(wildcard xtreemfs/*.proto) include/Common.proto
 
 .PHONY: foundation_clean pbrpcgen_clean servers_clean
 
+all: cpp servers foundation
+
 cpp:
 	$(PROTOC) -I$(PROTOBUF_INCLUDE) -I. -I$(@D)/pbrpc/ $(PROTOS_FOUNDATION) --cpp_out=$(TARGET_DIR_CPP_CLIENT)
 
