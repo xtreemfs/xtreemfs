@@ -199,9 +199,17 @@ set_version:
 
 .PHONY:	client client_clean client_distclean client_thirdparty_clean client_package_macosx
 
+# Client section.
 CLIENT_THIRDPARTY_REQUIREMENTS = $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
 ifdef BUILD_CLIENT_TESTS
 	CLIENT_THIRDPARTY_REQUIREMENTS += $(CLIENT_GOOGLE_TEST_CPP_LIBRARY) $(CLIENT_GOOGLE_TEST_CPP_MAIN)
+	CMAKE_BUILD_CLIENT_TESTS = -DBUILD_CLIENT_TESTS=true
+endif
+
+# Do not use env variables to control the CMake behavior as stated in http://www.cmake.org/Wiki/CMake_FAQ#How_can_I_get_or_set_environment_variables.3F
+# Instead define them via -D, so they will be cached.
+ifdef BOOST_ROOT
+	CMAKE_BOOST_ROOT = -DBOOST_ROOT="${BOOST_ROOT}"
 endif
 
 client_thirdparty: $(CLIENT_THIRDPARTY_REQUIREMENTS)
@@ -245,12 +253,14 @@ client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
 client_debug: client
 
 client: check_client client_thirdparty set_version
-	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG)
+	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) ${CMAKE_BOOST_ROOT} ${CMAKE_BUILD_CLIENT_TESTS}
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)	
 	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTFS_BINDIR)
 	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/xtfsutil $(XTFS_BINDIR)
+
 client_clean: check_client client_thirdparty_clean
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
+
 client_distclean: check_client client_thirdparty_distclean
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
 

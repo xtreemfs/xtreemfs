@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
 PROJECT(cpp CXX)
-set(BUILD_CLIENT_TESTS $ENV{BUILD_CLIENT_TESTS})
 
 #SET (CMAKE_VERBOSE_MAKEFILE true)
 
@@ -66,16 +65,16 @@ IF(WIN32)
 ENDIF(WIN32)
 
 # Set required thirdparty libraries.
-# Finding the boost libraries may fail. If existing, we point FIND_PACKAGE to /usr/lib64.
-if(EXISTS "/usr/lib64/libboost_system.so")
-  set(BOOST_LIBRARYDIR "/usr/lib64")
-endif(EXISTS "/usr/lib64/libboost_system.so")
 if (BOOST_ROOT)
   message(STATUS "Info: BOOST_ROOT is set to: ${BOOST_ROOT}")
 endif(BOOST_ROOT)
+# Finding the boost libraries may fail. If existing, we point FIND_PACKAGE to /usr/lib64.
+if(NOT BOOST_ROOT AND EXISTS "/usr/lib64/libboost_system.so")
+  set(BOOST_LIBRARYDIR "/usr/lib64")
+endif(NOT BOOST_ROOT AND EXISTS "/usr/lib64/libboost_system.so")
 FIND_PACKAGE(Boost COMPONENTS system thread program_options regex REQUIRED)
 if (NOT Boost_FOUND)
-  message(FATAL_ERROR "The boost library was not found on your system. If needed, you can also download and compile it on your own. After compiling boost locally, set the the environment variable BOOST_ROOT to the boost base directory, e.g. export BOOST_ROOT=/Users/xyz/boost_1_47_0.")
+  message(FATAL_ERROR "The boost library was not found on your system. If needed, you can also download and compile it on your own. After compiling boost locally, set the the environment variable BOOST_ROOT to the boost base directory before executing 'make' e.g., 'export BOOST_ROOT=/Users/xyz/boost_1_47_0'.")
 endif(NOT Boost_FOUND)
 include_directories(${Boost_INCLUDE_DIRS})
 
