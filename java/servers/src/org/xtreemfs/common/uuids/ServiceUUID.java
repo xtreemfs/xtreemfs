@@ -74,7 +74,11 @@ public final class ServiceUUID implements Serializable, Comparable {
      *             DIR).
      */
     public void resolve() throws UnknownUUIDException {
-        updateMe();
+        resolve(null);
+    }
+
+    public void resolve(String protocol) throws UnknownUUIDException {
+        updateMe(protocol);
     }
     
     /**
@@ -173,10 +177,14 @@ public final class ServiceUUID implements Serializable, Comparable {
      * @throws org.xtreemfs.common.uuids.UnknownUUIDException
      */
     private void updateMe() throws UnknownUUIDException {
+        updateMe(null);
+    }
+
+    private void updateMe(String protocol) throws UnknownUUIDException {
         if (nonSingleton == null) {
-            cacheEntry = UUIDResolver.resolve(this.uuid);
+            cacheEntry = UUIDResolver.resolve(this.uuid, protocol);
         } else {
-            cacheEntry = UUIDResolver.resolve(this.uuid, nonSingleton);
+            cacheEntry = UUIDResolver.resolve(this.uuid, protocol, nonSingleton);
         }
         
         this.validUntil = cacheEntry.getValidUntil();

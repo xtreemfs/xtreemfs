@@ -120,6 +120,10 @@ public final class UUIDResolver extends Thread {
     }
     
     static UUIDCacheEntry resolve(String uuid) throws UnknownUUIDException {
+        return resolve(uuid, (String)null); // call the method below
+    }
+
+    static UUIDCacheEntry resolve(String uuid, String protocol) throws UnknownUUIDException {
         assert (theInstance != null);
         
         UUIDCacheEntry entry = theInstance.cache.get(uuid);
@@ -128,10 +132,14 @@ public final class UUIDResolver extends Thread {
             entry.setLastAccess(TimeSync.getLocalSystemTime());
             return entry;
         }
-        return theInstance.fetchUUID(uuid);
-    }
+        return theInstance.fetchUUID(uuid, protocol);
+    } 
     
     static UUIDCacheEntry resolve(String uuid, UUIDResolver nonSingleton) throws UnknownUUIDException {
+        return resolve(uuid, null, nonSingleton);
+    }
+
+    static UUIDCacheEntry resolve(String uuid, String protocol, UUIDResolver nonSingleton) throws UnknownUUIDException {
         
         UUIDCacheEntry entry = nonSingleton.cache.get(uuid);
         // check if it is still valid
@@ -139,10 +147,14 @@ public final class UUIDResolver extends Thread {
             entry.setLastAccess(TimeSync.getLocalSystemTime());
             return entry;
         }
-        return nonSingleton.fetchUUID(uuid);
+        return nonSingleton.fetchUUID(uuid, protocol);
     }
     
     UUIDCacheEntry fetchUUID(String uuid) throws UnknownUUIDException {
+        return fetchUUID(uuid, null);
+    }
+    
+    UUIDCacheEntry fetchUUID(String uuid, String protocol) throws UnknownUUIDException {
         if (dir == null)
             throw new UnknownUUIDException("there is no mapping for " + uuid
                 + ". Attention: local mode enabled, no remote lookup possible.");
@@ -164,16 +176,16 @@ public final class UUIDResolver extends Thread {
             }
             for (AddressMapping addrMapping : ams.getMappingsList()) {
                 final String network = addrMapping.getMatchNetwork();
-                if (myNetworks.contains(network) || (network.equals("*"))) {
+                if ((myNetworks.contains(network) || (network.equals("*"))) && ((protocol == null) || addrMapping.getProtocol().equals(protocol))) {
                     final String address = addrMapping.getAddress();
-                    final String protocol = addrMapping.getProtocol();
+                    final String proto = addrMapping.getProtocol();
                     final int port = addrMapping.getPort();
                     final long validUntil = TimeSync.getLocalSystemTime() + addrMapping.getTtlS() * 1000;
                     final InetSocketAddress endpoint = new InetSocketAddress(address, port);
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                             "matching uuid record found for uuid " + uuid + " with network " + network);
-                    UUIDCacheEntry e = new UUIDCacheEntry(uuid, validUntil, new Mapping(protocol, endpoint, address + ":" + port));
+                    UUIDCacheEntry e = new UUIDCacheEntry(uuid, validUntil, new Mapping(proto, endpoint, address + ":" + port));
                     cache.put(uuid, e);
                     return e;
                 }
@@ -193,7 +205,7 @@ public final class UUIDResolver extends Thread {
             throw new UnknownUUIDException(
                 "cannot retrieve mapping from server due to invalid data sent by the server: " + ex);
         }
-    }
+    }    
     
     @Override
     public void run() {
