@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2011 by Bjoern Kolbeck,
+ * Copyright (c) 2009-2012 by Bjoern Kolbeck, Matthias Noack
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
@@ -37,6 +37,7 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
@@ -321,4 +322,78 @@ public class StatusPage {
         return tmp;
         
     }
+    
+    
+    public static String getVivaldiData(DIRRequestDispatcher master, DIRConfig config) throws BabuDBException,
+    IOException, InterruptedException {
+        final Database database = master.getDirDatabase();
+        StringBuilder dump = new StringBuilder();
+        Iterator<Entry<byte[], byte[]>> iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
+        
+        // create tab separated plain text table
+        dump.append("uuid");
+        dump.append("\t");
+        dump.append("name");
+        dump.append("\t");
+        dump.append("type");
+        dump.append("\t");
+        dump.append("status");
+        dump.append("\t");
+        dump.append("vivaldi_x");
+        dump.append("\t");
+        dump.append("vivaldi_y");
+        dump.append("\t");
+        dump.append("vivaldi_err");
+                
+        while (iter.hasNext()) {
+            Entry<byte[], byte[]> e = iter.next();
+            final String uuid = new String(e.getKey());
+            final ServiceRecord sreg = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));
+
+            final ServiceStatus status = ServiceStatus.valueOf(Integer.valueOf(sreg.getData().get(HeartbeatThread.STATUS_ATTR)));
+            String statusString = "unknown value";
+            switch (status) {
+            case SERVICE_STATUS_AVAIL:
+                statusString = "online";
+                break;
+            case SERVICE_STATUS_TO_BE_REMOVED:
+                statusString = "locked for removal";
+                break;
+            case SERVICE_STATUS_REMOVED:
+                statusString = "removed, dead";
+                break;
+            }
+
+            VivaldiCoordinates coords;
+            // TODO: remove this condition if other services support coordinates too
+            if (sreg.getType() == ServiceType.SERVICE_TYPE_OSD) {
+                coords = VivaldiNode.stringToCoordinates(sreg.getData().get("vivaldi_coordinates"));
+            } else {
+                VivaldiCoordinates.Builder coordBuilder = VivaldiCoordinates.newBuilder();
+                coordBuilder.setXCoordinate(0.0);
+                coordBuilder.setYCoordinate(0.0);
+                coordBuilder.setLocalError(0.0);
+                coords = coordBuilder.build(); 
+            }
+            
+            dump.append("\n");
+            dump.append(uuid);
+            dump.append("\t");
+            dump.append(sreg.getName());
+            dump.append("\t");
+            dump.append(sreg.getType());
+            dump.append("\t");
+            dump.append(statusString);
+            dump.append("\t");
+            dump.append(coords.getXCoordinate());
+            dump.append("\t");
+            dump.append(coords.getYCoordinate());
+            dump.append("\t");
+            dump.append(coords.getLocalError());
+            
+        } // while
+        
+        return dump.toString();
+    }
+    
 }

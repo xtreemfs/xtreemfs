@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2011 by Bjoern Kolbeck,
+ * Copyright (c) 2009-2012 by Bjoern Kolbeck, Matthias Noack,
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
@@ -10,6 +10,7 @@ package org.xtreemfs.dir;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -194,6 +195,54 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
                     httpExchange.sendResponseHeaders(200, content.length);
                     httpExchange.getResponseBody().write(content);
                     httpExchange.getResponseBody().close();
+                } catch (BabuDBException ex) {
+                    ex.printStackTrace();
+                    httpExchange.sendResponseHeaders(500, 0);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    httpExchange.sendResponseHeaders(500, 0);
+                }
+                
+            }
+        });
+        
+        final HttpContext ctxVivaldiData = httpServ.createContext("/vivaldi", new HttpHandler() {
+            public void handle(HttpExchange httpExchange) throws IOException {
+                byte[] content;
+                try {
+                    String uriPath = httpExchange.getRequestURI().getPath();
+                    //System.out.println("RequestURIPath:" + httpExchange.getRequestURI().getPath());
+                    if (uriPath.equals("/vivaldi.data")) {
+                        // generate data
+                        content = StatusPage.getVivaldiData(DIRRequestDispatcher.this, config).getBytes("ascii");
+                        httpExchange.getResponseHeaders().add("Content-Type", "text/plain; charset=UTF-8");
+                        httpExchange.sendResponseHeaders(200, content.length);
+                        httpExchange.getResponseBody().write(content);
+                        httpExchange.getResponseBody().close();
+                    } else if (uriPath.equals("/vivaldi.html") || uriPath.equals("/vivaldi-d3.js")) {
+                        // load requested file
+                        httpExchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
+                        httpExchange.sendResponseHeaders(200, 0);
+                        try {
+                            InputStream htmlFile = StatusPage.class.getClassLoader().getResourceAsStream("org/xtreemfs/dir/templates" + uriPath);
+                            if (htmlFile == null) {
+                                htmlFile = StatusPage.class.getClass().getResourceAsStream("../templates" + uriPath);
+                            }
+                            byte[] buffer = new byte[4096];
+                            int len = 0;
+                            while ((len = htmlFile.read(buffer)) >= 0) {
+                                httpExchange.getResponseBody().write(buffer, 0, len);
+                            }
+                        } catch (Exception e) {
+                            httpExchange.getResponseBody().write(("Sorry, could not read vivaldi status page (" + e.toString() + ")").getBytes("ascii"));
+                            System.out.println("Ex: " + e);
+                        }
+                        httpExchange.getResponseBody().close();
+                    } else {
+                        // 404 for every other URI
+                        httpExchange.sendResponseHeaders(404,-1);
+                        httpExchange.getResponseBody().close();
+                    }
                 } catch (BabuDBException ex) {
                     ex.printStackTrace();
                     httpExchange.sendResponseHeaders(500, 0);
