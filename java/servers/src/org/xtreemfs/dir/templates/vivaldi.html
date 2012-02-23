@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<!-- 
+Copyright (c) 2012 Matthias Noack, Zuse Institute Berlin 
+
+Licensed under the BSD License, see LICENSE file for details.
+-->
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Vivaldi Status</title>
+		<style type="text/css">
+			td.title { border-top:1px solid black;
+				border-bottom: 1px solid black;
+				background-color:#EEEEEE;
+				font-weight:bold;
+			}
+			td.subtitle { text-align:right;
+				border-right:10px solid white;
+			}
+			body {
+				font-family: Verdana, Arial, Sans-Serif;
+			}
+			td {
+				text-align: left;
+			}
+			td.dump {
+				border-top:1px solid black; border-bottom: 1px solid black;
+				border-left: 1px solid black; border-right: 1px solid black;
+		   	}
+			td.dumptitle {
+				border-top:1px solid black; border-bottom: 1px solid black;
+				border-left: 1px solid black; border-right: 1px solid black;
+				background-color:#EEEFFF; font-weight:bold;
+			}
+			td.mapping {
+				text-align:left;
+			}
+			td.version {
+				text-align:right; font-size:small;
+			}
+			td.heading {
+				text-align:left; font-weight:bold;
+			}
+			td.uuid {
+				border-top:1px solid black; border-bottom: 1px solid black;
+				border-left: 1px solid black; border-right: 1px solid black;
+				text-align:center; font-weight:bold; width:30%;
+			}
+			#help { 
+				color:#aaaaaa;
+				font-size:x-small;
+			}
+		</style>
+		<script type="text/javascript" src="vivaldi-d3.js"></script>
+		<script type="text/javascript">//<![CDATA[
+// globals
+var coords = []; // coordinate data
+var edges = []; // edge data
+var paused = false;
+var intervalID = 0; // for periodic data fetch via GET
+var reloadInterval = 2000; // in ms
+var vis; // d3 svg element
+var svgElement; // svg element
+var edges_g; // line element group in svg
+var nodes_g; // circle element group in svg
+var text_g; // text element group in svg
+
+// canvas dimensions available for rendering (to avoid cut-off text)
+var realCanvasHeight = 1.0 * window.innerHeight - 200; 
+var realCanvasWidth = 1.0 * window.innerWidth;
+// frame for drawing text around the nodes
+var canvasFrameWidth = 50;
+var canvasFrameHeight = 50;
+// canvas dimensions used for coordinate rendering
+var canvasWidth = realCanvasWidth - 2 * canvasFrameWidth;
+var canvasHeight = realCanvasHeight - 2 * canvasFrameHeight;
+
+// rendering configuration
+var conf = new Object();
+conf.bgColour = "#ffffff";
+conf.nodeColour = "#aaaaaa";
+conf.nodeColourSelected = "#aa0000";
+conf.edgeColour = conf.bgColour; //"#eeeeee";
+conf.edgeColourSelected = "e5e5e5"; //conf.bgColour;// conf.nodeColourSelected;
+conf.textColour = "#555555";
+conf.nodeRadius = 8;
+conf.lineOffset = 12; // determines space between two lines
+conf.measureLineColour = conf.nodeColourSelected;
+conf.measureTextColour = conf.textColour;
+conf.edgeDuration=0; // 1000; // ms, set > 0 if edges are not in background colour
+conf.nodeDuration=1000; // ms
+conf.nodeMoveDuration=1000; // ms
+var isMouseDown;
+var startPoint;
+
+
+// init code
+window.onload = function() {
+	isMouseDown = false;
+	vis = d3.select("#canvas")
+			.append("svg")
+			.attr("id", "vis")
+			.attr("width", realCanvasWidth)
+			.attr("height", realCanvasHeight)
+			.on("mousedown", function() {
+				if(d3.event.button == 0) { // left mouse button
+					d3.event.preventDefault(); // prevent firefox dragging the svg
+					removeInfo(); // in case we are on a circle and mouse-over info is shown
+					var p = screenToSVG(d3.event);
+					startPoint = p;
+
+					vis.append("line")
+						.attr("class", "measure")
+						.attr("x1", p.x)
+						.attr("y1", p.y)
+						.attr("x2", p.x)
+						.attr("y2", p.y)
+						.attr("stroke", conf.measureLineColour)
+						;
+					vis.append("text")
+						.attr("class", "measure")
+						.text(Number(0).toFixed(2) + " ms")
+						.attr("x", p.x)
+						.attr("y", p.x)
+						//.attr("dx", conf.nodeRadius)
+						.attr("dy", -conf.nodeRadius)
+						.attr("fill", conf.measureTextColour)
+						.style("font-size", "small")
+						;
+					isMouseDown = true;
+				}
+			})
+			.on("mousemove", function() {
+				if(isMouseDown && d3.event.button == 0) {
+					var p = screenToSVG(d3.event);
+					var xScale = getXScale();
+					var yScale = getYScale();
+
+					vis.select("line.measure")
+						.attr("x2", p.x)
+						.attr("y2", p.y)
+						;
+
+					var l = vecLength(xScale.invert(startPoint.x), yScale.invert(startPoint.y), xScale.invert(p.x), yScale.invert(p.y));
+					vis.select("text.measure")
+						.text(l.toFixed(2) + " ms")
+						.attr("x", p.x)
+						.attr("y", p.y)
+						;
+
+				}
+			})
+			.on("mouseup", function() {
+				if(isMouseDown && d3.event.button == 0) {
+					isMouseDown = false;
+					vis.selectAll("text.measure").remove()
+					vis.selectAll("line.measure").remove();
+						
+				}
+			})
+			;
+
+	edges_g = vis.append("g");	
+	nodes_g = vis.append("g");
+	text_g = vis.append("g");
+	text_g.append("text"); // dummy text element for debugging
+
+	svgElement = document.getElementById("vis");
+
+	loadData();
+	intervalID = setInterval('loadData()', reloadInterval); // execute loadData every 2000 ms
+	paused = false;
+}		
+
+// 2D vector length
+function vecLength(x1, y1, x2, y2) {
+	return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+}
+
+// convert screen to svn coordinates
+function screenToSVG(event) {
+    var p = svgElement.createSVGPoint();
+    p.x = d3.event.clientX;
+    p.y = d3.event.clientY;
+    var matrix = svgElement.getScreenCTM();
+	return p.matrixTransform(matrix.inverse());
+}
+
+function getXScale() {
+	return d3.scale.linear().domain([d3.min(coords, function(d) { return d.x}), 
+	                                 d3.max(coords, function(d) { return d.x})])
+	                        .range([canvasFrameWidth + 2*conf.nodeRadius, 
+	                                canvasWidth - 2*conf.nodeRadius - canvasFrameWidth]);
+}
+
+function getYScale() {
+	return d3.scale.linear().domain([d3.min(coords, function(d) { return d.y}), 
+	                                 d3.max(coords, function(d) { return d.y})])
+	                        .range([canvasFrameHeight + 2*conf.nodeRadius,
+	                                canvasHeight - 2*conf.nodeRadius - canvasFrameHeight]);
+	
+}
+
+function removeInfo() {
+	d3.selectAll("circle.selected").attr("fill", conf.nodeColour).attr("class", "");
+	vis.selectAll("text.dataText").transition().duration(conf.nodeDuration).attr("fill-opacity", "0.0").remove();
+
+	edges_g.selectAll("line").attr("visibility", "visible");
+	edges_g.selectAll("line.selected").attr("stroke", conf.edgeColour).attr("class", "");
+	text_g.selectAll("text.distText").remove();
+}
+
+// load vivaldi coordinates from server
+function loadData() {
+	var req = new XMLHttpRequest();
+	req.open('GET', '/vivaldi.data', true);
+	req.onreadystatechange = function() {
+		if(req.readyState == 4) {
+			//document.write(req.responseText);
+			parseData(req.responseText)
+			drawData();
+		}
+	
+	};
+	req.send(null);
+}
+
+// called at the beginning of mouseOver handlers to disable automatic reloads
+function preMouseOver() {
+	if(!paused)	{
+		clearInterval(intervalID);
+	}
+}
+
+// called at the end of mouseOut handlers to re-enable automatic reloads
+function postMouseOver() {
+	if(!paused) {
+		loadData();
+		intervalID = setInterval('loadData()', reloadInterval); // execute loadData every 2000 ms
+	}
+}
+
+function pauseButtonHandler() {
+	if(paused == true) {
+		loadData();
+		intervalID = setInterval('loadData()', reloadInterval); // execute loadData every 2000 ms
+		paused = false;
+		document.getElementById("pauseButton").innerHTML="Disable Auto Reload";
+	} else {
+		clearInterval(intervalID);
+		paused = true;
+		document.getElementById("pauseButton").innerHTML="Enable Auto Reload";
+	}
+}
+
+// parse data into global coords array (called by reloadData)
+function parseData(data) {
+	coords = [];
+	edges = [];
+	var dataArray = [[]];
+
+	// parse data
+	var lineArray = data.split('\n');
+	// NOTE: table header (first line) is skipped
+	for (var i = 1; i < lineArray.length; i++) {
+		dataArray[i-1] = lineArray[i].split('\t')
+	}
+
+	// genenrate additional test data
+	/*
+	for(i = 0; i < 3; i++) 
+		coords.push({"uuid": Math.random().toString(), "x": 200 *Math.random(), "y": 200*Math.random(), "error": Math.random()})
+	for(i = 0; i < 3; i++) 
+		coords.push({"uuid": "my_uuid-" + i.toString(), "x": 200 *Math.random(), "y": 200*Math.random(), "error": Math.random()})
+	*/
+
+	// create coords
+	for (i = 0; i < dataArray.length; i++) {
+		coords.push({"uuid": dataArray[i][0].toString(), "x": parseFloat(dataArray[i][4]), "y": parseFloat(dataArray[i][5]), "error": parseFloat(dataArray[i][6])})
+	}
+	
+	// create edges
+	for (i = 0; i < coords.length; i++) {
+		for (j = i+1; j < coords.length; j++) {
+			var uuids = [coords[i].uuid, coords[j].uuid];
+			uuids.sort();
+			var i1 = (coords[i].uuid == uuids[0]) ? i : j;
+			var i2 = (i1 == i) ? j : i;
+			edges.push({"key": uuids[0] + uuids[1],
+						"uuid1": uuids[0], "uuid2": uuids[1],
+						"relPos": 0.5 + 0.375*Math.random(),
+						"x1": coords[i1].x, "y1": coords[i1].y,
+						"x2": coords[i2].x, "y2": coords[i2].y,
+						"dist": vecLength(coords[i].x, coords[i].y, coords[j].x, coords[j].y)});
+		}
+	}
+}
+
+// visualise the data set stored in coords
+function drawData() {
+	// scale functions from coords space to screen space
+	var xScale = getXScale();
+	var yScale = getYScale();
+	// ***** draw edges ***** //
+
+	// data join by key
+	var lines = edges_g.selectAll("line").data(edges, function(d) { return d.key; });	
+	
+	// update
+	lines.transition().duration(conf.edgeDuration)
+		.attr("x1", function(d) { return xScale(d.x1); })
+		.attr("y1", function(d) { return yScale(d.y1); })
+		.attr("x2", function(d) { return xScale(d.x2); })
+		.attr("y2", function(d) { return yScale(d.y2); });
+	
+	// enter
+	lines.enter().insert("line")
+		.attr("x1", function(d) { return xScale( d.x1 + 0.5 * (d.x2 - d.x1) ); })
+		.attr("y1", function(d) { return yScale( d.y1 + 0.5 * (d.y2 - d.y1)); })
+		.attr("x2", function(d) { return xScale( d.x1 + 0.5 * (d.x2 - d.x1) ); })
+		.attr("y2", function(d) { return yScale( d.y1 + 0.5 * (d.y2 - d.y1)); })
+		.attr("stroke", conf.bgColour)
+		.transition()
+		.attr("x1", function(d) { return xScale(d.x1); })
+		.attr("y1", function(d) { return yScale(d.y1); })
+		.attr("x2", function(d) { return xScale(d.x2); })
+		.attr("y2", function(d) { return yScale(d.y2); })
+		.attr("stroke", conf.edgeColour)
+		.duration(conf.edgeDuration)
+		;
+
+	// exit
+	lines.exit()
+		.transition()
+		.duration(conf.edgeDuration)
+		.attr("x1", function(d) { return xScale( d.x1 + 0.5 * (d.x2 - d.x1) ); })
+		.attr("y1", function(d) { return yScale( d.y1 + 0.5 * (d.y2 - d.y1)); })
+		.attr("x2", function(d) { return xScale( d.x1 + 0.5 * (d.x2 - d.x1) ); })
+		.attr("y2", function(d) { return yScale( d.y1 + 0.5 * (d.y2 - d.y1)); })
+		.attr("stroke", conf.bgColour)
+		.remove();
+	
+	// ***** draw nodes ***** //
+	
+	// data join by uuid
+	var circles = nodes_g.selectAll("circle").data(coords, function(d) { return d.uuid; });
+
+
+	// update
+	circles.transition().duration(conf.nodeMoveDuration)
+		.attr("cx", function(d) { return xScale(d.x)})
+		.attr("cy", function(d) { return yScale(d.y)});
+
+	// enter
+	circles.enter().append("circle")
+		.attr("cx", function(d) { return xScale(d.x); })
+		.attr("cy", function(d) { return yScale(d.y); })
+		.attr("r", conf.nodeRadius)
+		.attr("fill", conf.bgColour)
+		.on("mouseover", function(d) { 
+			if(!isMouseDown) {
+				preMouseOver();
+	
+				this.parentNode.appendChild(this);
+	
+				var xScale = getXScale();
+				var yScale = getYScale();
+
+				d3.select(this)
+					.attr("fill", conf.nodeColourSelected)
+					.attr("class", "selected");
+
+				var data = d; //d3.event.currentTarget.__data__;
+			
+				p = screenToSVG(d3.event);
+
+				text_g.insert("text")
+					.attr("class", "dataText")
+					.attr("x", p.x)//Scale(data.x))
+					.attr("y", p.y)//Scale(data.y))
+					.attr("dx", 2*conf.nodeRadius)
+					.style("font-size", "small")
+					.attr("fill", conf.textColour)
+					.text(function(d, i) { return "UUID: " + data.uuid; })
+					;
+				text_g.insert("text")
+					.attr("class", "dataText")
+					.attr("x", p.x)//Scale(data.x))
+					.attr("y", p.y)//Scale(data.y))
+					.attr("dx", 2*conf.nodeRadius)
+					.attr("dy", conf.lineOffset)
+					.style("font-size", "small")
+					.attr("fill", conf.textColour)
+					.text(function(d, i) { return "x: " + data.x.toFixed(2); })
+					;
+				text_g.insert("text")
+					.attr("class", "dataText")
+					.attr("x", p.x)//Scale(data.x))
+					.attr("y", p.y)//Scale(data.y))
+					.attr("dx", 2*conf.nodeRadius)
+					.attr("dy", 2*conf.lineOffset)
+					.style("font-size", "small")
+					.attr("fill", conf.textColour)
+					.text(function(d, i) { return "y: " + data.y.toFixed(2); })
+					;
+				text_g.insert("text")
+					.attr("class", "dataText")
+					.attr("x", p.x)//Scale(data.x))
+					.attr("y", p.y)//Scale(data.y))
+					.attr("dx", 2*conf.nodeRadius)
+					.attr("dy", 3*conf.lineOffset)
+					.style("font-size", "small")
+					.attr("fill", conf.textColour)
+					.text(function(d, i) { return "error: " + data.error.toFixed(2); })
+					;	
+			
+				var event_this = this;
+				var selector = function(d) { return (d.uuid1 == event_this.__data__.uuid) || (d.uuid2 == event_this.__data__.uuid); };
+				var notSelector = function(d) { return !selector(d); };
+				var allLines = edges_g.selectAll("line").data(edges, function(d) { return d.key; });
+			
+				var currentLines = allLines.filter(selector).attr("stroke", conf.edgeColourSelected).attr("class", "selected")[0];
+				
+				allLines.filter(notSelector).attr("visibility", "hidden");
+
+				var texts = text_g.selectAll("text.distText").data(currentLines, function(d) { return d.__data__.key; });
+				texts.enter().append("text")
+					.text(function(d, i) { 
+						return currentLines[i].__data__.dist.toFixed(2) + " ms"; })
+					.attr("class", "distText")
+					.attr("x", function(d, i) { 
+						return (currentLines[i].__data__.uuid1 == event_this.__data__.uuid) ?
+													xScale( currentLines[i].__data__.x1 + (currentLines[i].__data__.x2 - currentLines[i].__data__.x1)  )
+												  :	xScale( currentLines[i].__data__.x2 + (currentLines[i].__data__.x1 - currentLines[i].__data__.x2) ); })
+					.attr("y", function(d, i) { 
+						return (currentLines[i].__data__.uuid1 == event_this.__data__.uuid) ?
+													yScale( currentLines[i].__data__.y1 + (currentLines[i].__data__.y2 - currentLines[i].__data__.y1))
+												  :	yScale( currentLines[i].__data__.y2 + (currentLines[i].__data__.y1 - currentLines[i].__data__.y2) ); })
+					.attr("text-anchor", "middle")
+					.attr("dy", -1.25*conf.nodeRadius)
+					.style("font-size", "small")
+					.attr("fill", conf.textColour)
+					;
+			} // if(!isMouseDown) {
+		})
+		.on("mouseout", function() { 
+			if(!isMouseDown) {
+				removeInfo();
+				postMouseOver();
+			} // if(!isMouseDown) {
+		})
+		.transition()
+		.duration(conf.nodeDuration)
+		.attr("fill", conf.nodeColour)
+		;
+	
+	// exit
+	circles.exit()
+		.transition()
+		.duration(conf.nodeDuration)
+		.attr("r", 0)
+		.attr("fill", conf.bgColour)
+		.remove();
+}
+//]]></script>
+	</head>
+	<body>
+		<h1><a href="http://www.XtreemFS.org"><img src="http://www.xtreemfs.com/imgs/Logo_200px.jpg" alt="XtreemFS Logo"/></a> VIVALDI</h1>
+		<div class="body" id="controls">
+			<button onclick="loadData()">Reload</button>
+			<button type="button" id="pauseButton" onclick="pauseButtonHandler()">Disable Auto Reload</button>
+		</div>
+		<div class="body" id="canvas"></div>
+		<div class="body" id="help">
+			Usage:<br/>
+			- move the mouse over a node to get information <br/>
+			- left click and drag to measure distance
+		</div>
+	</body>
+</html>
