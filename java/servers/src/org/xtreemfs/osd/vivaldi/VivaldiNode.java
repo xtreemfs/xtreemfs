@@ -150,6 +150,7 @@ public class VivaldiNode {
         VivaldiCoordinates.Builder coordA = VivaldiCoordinates.newBuilder();
         coordA.setXCoordinate( (Math.random()*2) - 1 );
         coordA.setYCoordinate( (Math.random()*2) - 1 );
+        coordA.setLocalError(0.0); // this has to be set to avoid com.google.protobuf.UninitializedMessageException
         return coordA.build();
     }
     

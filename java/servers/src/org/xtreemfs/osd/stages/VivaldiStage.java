@@ -23,7 +23,6 @@ import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -32,12 +31,12 @@ import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.osd.vivaldi.ZipfGenerator;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 /**
  * Stage used in the OSD to manage Vivaldi.
@@ -101,14 +100,14 @@ public class VivaldiStage extends Stage {
      * The recalculation period is randomly determined and is always included between
      * the minimum and the maximum period.
      */
-    private static final int MIN_RECALCULATION_IN_MS = 1000 * 270;
+    private static final int MIN_RECALCULATION_IN_MS = 1000 * 270;  // TODO: set back to 1000 * 270
     /**
      * Maximum recalculation period.
      *
      * The recalculation period is randomly determined and is always included between
      * the minimum and the maximum period.
      */
-    private static final int MAX_RECALCULATION_IN_MS = 1000 * 330;
+    private static final int MAX_RECALCULATION_IN_MS = 1000 * 330; // TODO: set back to 1000 * 330
     /**
      * Number of times the node recalculates its position before updating
      * its list of existent OSDs.
@@ -222,6 +221,17 @@ public class VivaldiStage extends Stage {
                     RPCHeader.RequestHeader rqHdr = RPCHeader.RequestHeader.newBuilder().setAuthData(RPCAuthentication.authNone).setUserCreds(RPCAuthentication.userService).setInterfaceId(OSDServiceConstants.INTERFACE_ID).setProcId(OSDServiceConstants.PROC_ID_XTREEMFS_PING).build();
                     RPCHeader hdr = RPCHeader.newBuilder().setCallId(0).setMessageType(MessageType.RPC_REQUEST).setRequestHeader(rqHdr).build();
                     xtreemfs_pingMesssage response = xtreemfs_pingMesssage.newBuilder().setCoordinates(this.vNode.getCoordinates()).setRequestResponse(false).build();
+
+                    // TODO: remove before committing, just for testing
+                    /*
+                    if(master.getConfig().getUUID().toString().equals("test9-localhost-OSD") || sender.getPort() == 32649)
+                        Thread.sleep(300);
+                    else if (master.getConfig().getUUID().toString().equals("test8-localhost-OSD") || sender.getPort() == 32648)
+                        Thread.sleep(150);
+                    else
+                        Thread.sleep(20);
+                    */
+                    
                     master.sendUDPMessage(hdr, response, sender);
                 } else {
                     coordinatesJ = msg.getCoordinates();
@@ -418,21 +428,8 @@ public class VivaldiStage extends Stage {
     }
 
     /**
-     * Creates and sends a response for a given request.
-     *
-     * @param request The request we are responding to.
-     * @param myCoordinates Our own coordinates, to be included in the response.
-     */
-    private void sendVivaldiResponse(UDPMessage request, VivaldiCoordinates myCoordinates) {
-//    xtreemfs_pingResponse resp = new xtreemfs_pingResponse(myCoordinates);
-//
-//    UDPMessage msg = request.createResponse(resp);
-//
-//    master.getUdpComStage().send(msg);
-    }
-
-    /**
      * Sends a message to a OSD requesting its coordinates.
+     * (NOTE: the response is sent in processMethod(..).)
      *
      * @param osd Address of the OSD we want to contact.
      * @param myCoordinates Our own coordinates.
@@ -452,28 +449,20 @@ public class VivaldiStage extends Stage {
                     setMessageType(MessageType.RPC_REQUEST).
                     setRequestHeader(rqHdr).build();
 
-
-
-            //If we're sending a request, we need to register it in our structures so we can process its response later
-
-
+            
+            xtreemfs_pingMesssage pingMsg = xtreemfs_pingMesssage.newBuilder().setCoordinates(myCoordinates).setRequestResponse(true).build();
+            
             long systemTimeNow = System.currentTimeMillis();
             //getLocalSystemTime does not introduce such a big overhead, while currentTimeMillis is required to get the necessary precision.
-
-
             long localTimeNow = TimeSync.getLocalSystemTime();
 
+            //If we're sending a request, we need to register it in our structures so we can process its response later
             sentRequests.put(osd, new SentRequest(localTimeNow, systemTimeNow));
-
-
+            
             try {
-                master.sendUDPMessage(hdr, myCoordinates, osd);
-
-
+                master.sendUDPMessage(hdr, pingMsg, osd);
             } catch (IOException ex) {
                 Logging.logError(Logging.LEVEL_ERROR, this, ex);
-
-
             }
         }
     }
@@ -682,18 +671,12 @@ public class VivaldiStage extends Stage {
 
                         if (Logging.isDebug()) {
                             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Retrying:" + addr.getHostName());
-
-
                         }
 
                         sendVivaldiRequest(addr, vNode.getCoordinates());
                         toBeRetried.get(addr).setRetried(true);
-
-
                     }
-
                 }
-
             } else {
 
                 //Choose a random OSD and send it a new request
@@ -702,25 +685,17 @@ public class VivaldiStage extends Stage {
                 //if we get here, knownOSDs is not empty and therefore rankGenerator != null
                 int chosenIndex = rankGenerator.next();
 
-
                 KnownOSD chosenOSD = knownOSDs.get(chosenIndex);
-
-
 
                 try {
 
                     //Get the corresponding InetAddress
                     ServiceUUID sUUID = new ServiceUUID(chosenOSD.getUUID());
-
-                    sUUID.resolve();
-
+                    sUUID.resolve(Schemes.SCHEME_PBRPCU);
                     InetSocketAddress osdAddr = null;
                     Mapping serviceMappings[] = sUUID.getMappings();
 
-
                     int mapIt = 0;
-
-
 
                     while ((osdAddr == null) && (mapIt < serviceMappings.length)) {
 
@@ -728,12 +703,8 @@ public class VivaldiStage extends Stage {
 
                             osdAddr = serviceMappings[mapIt].resolvedAddr;
 
-
-
                             if (Logging.isDebug()) {
                                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "Recalculating against:" + chosenOSD.getUUID());
-
-
                             }
 
                             //Only at this point we known which InetAddress corresponds with which UUID
@@ -742,34 +713,20 @@ public class VivaldiStage extends Stage {
                                     + osdAddr.getPort());
 
                             //After receiving the response, we will be able to recalculate
-                            sendVivaldiRequest(
-                                    osdAddr, vNode.getCoordinates());
-
-
+                            sendVivaldiRequest(osdAddr, vNode.getCoordinates());
                         }
-
                         mapIt++;
-
-
-
                     }
 
                 } catch (UnknownUUIDException unke) {
                     Logging.logMessage(Logging.LEVEL_ERROR, this, "Unknown UUID:" + chosenOSD.getUUID());
-
-
                 } catch (Exception e) {
                     Logging.logMessage(Logging.LEVEL_ERROR, this, "Error detected while iterating Vivaldi");
-
-
                 }
             }
-
         }
 
         vivaldiIterations = (vivaldiIterations + 1) % Long.MAX_VALUE;
-
-
     }
 
     /**
@@ -784,50 +741,28 @@ public class VivaldiStage extends Stage {
 
         vivaldiIterations = 0;
 
-
-
         long pollTimeoutInMS;
 
         nextRecalculationInMS = -1;
         nextTimerRunInMS = -1;
 
-
-
         while (!quit) {
             try {
-
                 pollTimeoutInMS = checkTimer();
-
                 final StageRequest op = q.poll(pollTimeoutInMS, TimeUnit.MILLISECONDS);
-
-
-
                 if (op != null) {
                     processMethod(op);
-
-
                 }
-
             } catch (InterruptedException ex) {
                 break;
-
-
             } catch (Exception ex) {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, "Error detected:" + ex);
                 notifyCrashed(
                         ex);
-
-
                 break;
-
-
             }
-
         }
-
         notifyStopped();
-
-
     }
 
     /**
@@ -857,8 +792,6 @@ public class VivaldiStage extends Stage {
         if (nextTimerRunInMS <= 0) {
             executeTimer();
             nextTimerRunInMS = TIMER_INTERVAL_IN_MS;
-
-
         }
 
         //Time to iterate
@@ -869,24 +802,11 @@ public class VivaldiStage extends Stage {
 
             //Determine when the next recalculation will be executed
             nextRecalculationInMS = MIN_RECALCULATION_IN_MS + (long) ((MAX_RECALCULATION_IN_MS - MIN_RECALCULATION_IN_MS) * Math.random());
-
-
         }
 
         long nextCheck = nextTimerRunInMS > nextRecalculationInMS ? nextRecalculationInMS : nextTimerRunInMS;
 
-
         return nextCheck;
-
-
-
-
-
-
-
-
-
-
     }
 
     public class KnownOSD {

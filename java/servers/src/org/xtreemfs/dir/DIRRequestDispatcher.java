@@ -205,28 +205,40 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
                 
             }
         });
+
         
+        /* The following url structure is used:
+         * /vivaldi
+         * /vivaldi/d3.js
+         * /vivaldi/data
+         */
         final HttpContext ctxVivaldiData = httpServ.createContext("/vivaldi", new HttpHandler() {
             public void handle(HttpExchange httpExchange) throws IOException {
                 byte[] content;
                 try {
                     String uriPath = httpExchange.getRequestURI().getPath();
-                    //System.out.println("RequestURIPath:" + httpExchange.getRequestURI().getPath());
-                    if (uriPath.equals("/vivaldi.data")) {
+                    System.out.println("RequestURIPath:" + httpExchange.getRequestURI().getPath());
+                    if (uriPath.equals("/vivaldi/data")) {
                         // generate data
                         content = StatusPage.getVivaldiData(DIRRequestDispatcher.this, config).getBytes("ascii");
                         httpExchange.getResponseHeaders().add("Content-Type", "text/plain; charset=UTF-8");
                         httpExchange.sendResponseHeaders(200, content.length);
                         httpExchange.getResponseBody().write(content);
                         httpExchange.getResponseBody().close();
-                    } else if (uriPath.equals("/vivaldi.html") || uriPath.equals("/vivaldi-d3.js")) {
+                    } else if (uriPath.equals("/vivaldi") || uriPath.equals("/vivaldi/d3.js")) {
                         // load requested file
+                        String path = "";
+                        if (uriPath.equals("/vivaldi")) {
+                            path = "/vivaldi.html";
+                        } else if (uriPath.equals("/vivaldi/d3.js")) {
+                            path = "/d3.js";
+                        }
                         httpExchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
                         httpExchange.sendResponseHeaders(200, 0);
                         try {
-                            InputStream htmlFile = StatusPage.class.getClassLoader().getResourceAsStream("org/xtreemfs/dir/templates" + uriPath);
+                            InputStream htmlFile = StatusPage.class.getClassLoader().getResourceAsStream("org/xtreemfs/dir/templates" + path);
                             if (htmlFile == null) {
-                                htmlFile = StatusPage.class.getClass().getResourceAsStream("../templates" + uriPath);
+                                htmlFile = StatusPage.class.getClass().getResourceAsStream("../templates" + path);
                             }
                             byte[] buffer = new byte[4096];
                             int len = 0;

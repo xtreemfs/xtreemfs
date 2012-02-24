@@ -53,7 +53,7 @@ Licensed under the BSD License, see LICENSE file for details.
 				font-size:x-small;
 			}
 		</style>
-		<script type="text/javascript" src="vivaldi-d3.js"></script>
+		<script type="text/javascript" src="/vivaldi/d3.js"></script>
 		<script type="text/javascript">//<![CDATA[
 // globals
 var coords = []; // coordinate data
@@ -215,7 +215,7 @@ function removeInfo() {
 // load vivaldi coordinates from server
 function loadData() {
 	var req = new XMLHttpRequest();
-	req.open('GET', '/vivaldi.data', true);
+	req.open('GET', '/vivaldi/data', true);
 	req.onreadystatechange = function() {
 		if(req.readyState == 4) {
 			//document.write(req.responseText);
