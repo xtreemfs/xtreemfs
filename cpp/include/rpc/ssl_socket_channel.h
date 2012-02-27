@@ -70,6 +70,7 @@ class SSLSocketChannel : public AbstractSocketChannel {
   }
 
   virtual void close() {
+    ssl_stream_.lowest_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both);
     ssl_stream_.lowest_layer().close();
   }
 

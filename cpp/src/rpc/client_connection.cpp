@@ -118,7 +118,11 @@ void ClientConnection::DoProcess() {
 
 void ClientConnection::CreateChannel() {
   if (socket_ != NULL) {
-    socket_->close();
+    try {
+      socket_->close();
+    } catch (const boost::system::system_error& e) {
+      // Ignore close errors. Needed for Windows.
+    }
     delete socket_;
   }
   if (ssl_context_ == NULL) {
@@ -301,7 +305,11 @@ void ClientConnection::Reset() {
 }
 
 void ClientConnection::Close() {
-  socket_->close();
+  try {
+    socket_->close();
+  } catch (const boost::system::system_error& e) {
+    // Ignore close errors. Needed for Windows.
+  }
   delete socket_;
   socket_ = NULL;
   connection_state_ = CLOSED;
