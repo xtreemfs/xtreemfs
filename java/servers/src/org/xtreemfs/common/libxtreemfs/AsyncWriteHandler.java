@@ -15,6 +15,7 @@ import java.util.List;
 import net.jcip.annotations.GuardedBy;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
+import org.xtreemfs.common.libxtreemfs.exceptions.UUIDIteratorListIsEmpyException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
@@ -48,84 +49,84 @@ public class AsyncWriteHandler {
      * State of this object.
      */
     @GuardedBy("this")
-    private State                   state;
+    private State                  state;
 
     /**
      * List of pending writes.
      */
     // TODO(mberlin): Limit the size of writes in flight to avoid flooding.
     @GuardedBy("this")
-    private List<AsyncWriteBuffer>  writesInFlight;
+    private List<AsyncWriteBuffer> writesInFlight;
 
     /**
      * Number of pending bytes.
      */
     @GuardedBy("this")
-    private int                     pendingBytes;
+    private int                    pendingBytes;
 
     /**
-     * Set by WaitForPendingWrites() to true if there are temporarily no new async writes allowed
-     * and will be set to false again once the state IDLE is reached.
+     * Set by WaitForPendingWrites() to true if there are temporarily no new async writes allowed and will be
+     * set to false again once the state IDLE is reached.
      */
     @GuardedBy("this")
-    private boolean                 writingPaused;
+    private boolean                writingPaused;
 
     /**
      * Used to notify blocked WaitForPendingWrites() callers for the state change back to IDLE.
      */
-    private Object                  allPendingWritesDidComplete;
+    private Object                 allPendingWritesDidComplete;
 
     /**
-     * Number of threads blocked by WaitForPendingWrites() waiting on allPendingWritesDidComplete for a
-     * state change back to IDLE.
+     * Number of threads blocked by WaitForPendingWrites() waiting on allPendingWritesDidComplete for a state
+     * change back to IDLE.
      */
     @GuardedBy("this")
-    private int                     waitingBlockingThreadsCount;
+    private int                    waitingBlockingThreadsCount;
 
     /**
      * FileInfo object to which this AsyncWriteHandler does belong. Accessed for file size updates.
      */
-    private FileInfo                fileInfo;
+    private FileInfo               fileInfo;
 
     /**
      * Pointer to the UUIDIterator of the FileInfo object.
      */
-    private UUIDIterator            uuidIterator;
+    private UUIDIterator           uuidIterator;
 
     /**
      * Required for resolving UUIDs to addresses.
      */
-    private UUIDResolver            uuidResolver;
+    private UUIDResolver           uuidResolver;
 
     /**
      * Client which is used to send out the writes.
      */
-    OSDServiceClient                osdServiceClient;
+    OSDServiceClient               osdServiceClient;
 
     /**
      * Auth needed for ServiceClients. Always set to AUTH_NONE by Volume.
      */
-    private Auth                    authBogus;
+    private Auth                   authBogus;
 
     /**
      * For same reason needed as authBogus. Always set to user "xtreemfs".
      */
-    private UserCredentials         userCredentialsBogus;
+    private UserCredentials        userCredentialsBogus;
 
     /**
      * Maximum number in bytes which may be pending.
      */
-    private int                     maxWriteahead;
+    private int                    maxWriteahead;
 
     /**
      * Maximum number of pending write requests.
      */
-    private int                     maxWriteaheadRequests;
+    private int                    maxWriteaheadRequests;
 
     /**
      * Maximum number of attempts a write will be tried.
      */
-    private int                     maxWriteTries;
+    private int                    maxWriteTries;
 
     protected AsyncWriteHandler(FileInfo fileInfo, UUIDIterator uuidIterator, UUIDResolver uuidResolver,
             OSDServiceClient osdServiceClient, Auth authBogus, UserCredentials userCredentialsBogus,
@@ -150,10 +151,11 @@ public class AsyncWriteHandler {
      * Adds writeBuffer to the list of pending writes and sends it to the OSD specified by
      * writeBuffer.uuidIterator (or write_buffer.osdUuid if writeBuffer.useUuidIterator is false).
      * 
-     * Blocks if the number of pending bytes exceeds the maximum write-ahead or
-     * waitForPendingWrites() was called beforehand.
+     * Blocks if the number of pending bytes exceeds the maximum write-ahead or waitForPendingWrites() was
+     * called beforehand.
      */
-    protected void write(AsyncWriteBuffer writeBuffer) throws AddressToUUIDNotFoundException {
+    protected void write(AsyncWriteBuffer writeBuffer) throws AddressToUUIDNotFoundException,
+            XtreemFSException {
         assert (writeBuffer != null);
 
         if (writeBuffer.getDataLength() > maxWriteahead) {
@@ -223,11 +225,12 @@ public class AsyncWriteHandler {
         } catch (IOException e1) {
             Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, "asyncWrite:"
                     + " failed due to the following reasons ", e1.getMessage());
-                decreasePendingBytesHelper(finalWriteBufferForCallback);
+            decreasePendingBytesHelper(finalWriteBufferForCallback);
         }
     }
 
-    private String retrieveOSDUuidAndSetItInWriteBuffer(AsyncWriteBuffer writeBuffer) {
+    private String retrieveOSDUuidAndSetItInWriteBuffer(AsyncWriteBuffer writeBuffer)
+            throws UUIDIteratorListIsEmpyException {
         String osdUuid;
         if (writeBuffer.isUsingUuidIterator()) {
             osdUuid = uuidIterator.getUUID();
@@ -268,7 +271,6 @@ public class AsyncWriteHandler {
             waitingBlockingThreadsCount--;
         }
     }
-
 
     /**
      * Implements callback for an async write request.

@@ -918,7 +918,10 @@ public class VolumeImplementation extends Volume {
     public DirectoryEntries readDir(UserCredentials userCredentials, String path, int offset, int count,
             boolean namesOnly) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         DirectoryEntries result = null;
-
+        if (count == 0) {
+            count = Integer.MAX_VALUE - offset  - 1;
+        }
+        
         // Try to get DirectoryEntries from cache
         result = metadataCache.getDirEntries(path, offset, count);
         if (result != null) {
@@ -968,17 +971,17 @@ public class VolumeImplementation extends Volume {
 
         // Cache the first stat buffers that fit into the cache.
         int minimum = //
-                (volumeOptions.getMetadataCacheSize() > result.getEntriesCount()) //
-                ? result.getEntriesCount()
+                (volumeOptions.getMetadataCacheSize() > dirEntriesBuilder.getEntriesCount()) //
+                ? dirEntriesBuilder.getEntriesCount()
                         : volumeOptions.getMetadataCacheSize();
 
         for (int i = 0; i < minimum; i++) {
-            if (result.getEntries(i).hasStbuf()) {
-                if (result.getEntries(i).getStbuf().getNlink() > 1) { // Do not cache hard links.
+            if (dirEntriesBuilder.getEntries(i).hasStbuf()) {
+                if (dirEntriesBuilder.getEntries(i).getStbuf().getNlink() > 1) { // Do not cache hard links.
                     metadataCache.invalidate(path);
                 } else {
-                    metadataCache.updateStat(Helper.concatenatePath(path, result.getEntries(i).getName()),
-                            result.getEntries(i).getStbuf());
+                    metadataCache.updateStat(Helper.concatenatePath(path, dirEntriesBuilder.getEntries(i).getName()),
+                            dirEntriesBuilder.getEntries(i).getStbuf());
                 }
             }
         }
@@ -991,7 +994,7 @@ public class VolumeImplementation extends Volume {
         // condition.
         // TODO: Set an upper bound of dentries, otherwise don't cache it.
 
-        if (!namesOnly && offset == 0 && result.getEntriesCount() < count) {
+        if (!namesOnly && offset == 0 && dirEntriesBuilder.getEntriesCount() < count) {
             metadataCache.updateDirEntries(path, result);
         }
         return dirEntriesBuilder.build();

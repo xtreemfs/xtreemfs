@@ -293,13 +293,8 @@ public abstract class Volume {
             PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
-     * Appends the list of requested directory entries to "dirEntries".
-     * 
-     * There does not exist something like openDir and closeDir. Instead one can limit the number of requested
-     * entries (count) and specify the offset.
-     * 
-     * {@link DirectoryEntries} will contain the names of the entries and, if not disabled by "namesOnly", a
-     * {@link Stat} object for every entry.
+     * Returns a list of "count" directories/files contained in the directory "path" beginning by "offset". If
+     * count equals 0 all entries beginning by "offset" will be in the list.
      * 
      * @param userCredentials
      *            Name and Groups of the user.
@@ -312,12 +307,13 @@ public abstract class Volume {
      * @param namesOnly
      *            If set to true, the {@link Stat} object of every entry will be omitted.
      * 
+     * @return {@link DirectoryEntries} will contain the names of the entries and, if not disabled by
+     *         "namesOnly", a {@link Stat} object for every entry.
+     * 
      * @throws AddressToUUIDNotFoundException
      * @throws {@link IOException}
      * @throws PosixErrorException
      * @throws UnknownAddressSchemeException
-     * 
-     * @remark Ownership is transferred to the caller.
      */
     public abstract DirectoryEntries readDir(UserCredentials userCredentials, String path, int offset,
             int count, boolean namesOnly) throws IOException, PosixErrorException,

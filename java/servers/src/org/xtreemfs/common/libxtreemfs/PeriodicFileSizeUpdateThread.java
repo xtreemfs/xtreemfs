@@ -9,7 +9,6 @@ package org.xtreemfs.common.libxtreemfs;
 import java.io.IOException;
 import java.util.Map.Entry;
 
-import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 
@@ -51,12 +50,6 @@ public class PeriodicFileSizeUpdateThread extends Thread {
                 try {
                     entry.getValue().writeBackFileSizeAsync();
                 } catch (IOException e) {
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
-                                "PeriodicFileSizeUpdateThread: failed to update filesize. Reason: ",
-                                e.getMessage());
-                    }
-                } catch (AddressToUUIDNotFoundException e) {
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                                 "PeriodicFileSizeUpdateThread: failed to update filesize. Reason: ",

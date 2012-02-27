@@ -724,5 +724,24 @@ public class VolumeTest {
     //
     // assertEquals(configs[1].getUUID().toString(), volume.getSuitableOSDs(userCredentials, fileName, 1));
     // }
+    
+    @Test
+    public void testCreateListDirectory() throws Exception {
+        VOLUME_NAME = "testCreateListDirectory";
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        
+        volume.createDirectory(userCredentials, "/DIR1", 0);
+        volume.createDirectory(userCredentials, "DIR2", 0);
+        DirectoryEntries dirEntries = volume.readDir(userCredentials, "/", 0, Integer.MAX_VALUE, true);
+        assertEquals(4, dirEntries.getEntriesCount());
+        dirEntries = volume.readDir(userCredentials, "/", 0, 0, true);
+        assertEquals(4, dirEntries.getEntriesCount());
+        assertEquals("..", dirEntries.getEntries(0).getName());
+        assertEquals(".", dirEntries.getEntries(1).getName());
+        assertEquals("DIR1", dirEntries.getEntries(2).getName());
+        assertEquals("DIR2", dirEntries.getEntries(3).getName());
+    }
+
 
 }

@@ -12,7 +12,7 @@ package org.xtreemfs.common.libxtreemfs.exceptions;
  * Sep 2, 2011
  */
 @SuppressWarnings("serial")
-public class VolumeNotFoundException extends Exception {
+public class VolumeNotFoundException extends XtreemFSException {
 
     /**
  * 

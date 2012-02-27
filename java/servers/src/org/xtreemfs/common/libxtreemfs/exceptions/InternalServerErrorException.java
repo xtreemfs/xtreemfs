@@ -10,7 +10,7 @@ package org.xtreemfs.common.libxtreemfs.exceptions;
  *
  * <br>Nov 22, 2011
  */
-public class InternalServerErrorException extends RuntimeException {
+public class InternalServerErrorException extends XtreemFSException {
 
     /**
      * 

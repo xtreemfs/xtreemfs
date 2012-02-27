@@ -19,6 +19,7 @@ import net.jcip.annotations.GuardedBy;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
+import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -582,7 +583,7 @@ public class FileInfo {
     /**
      * Calls asyncWriteHandler.write().
      */
-    void asyncWrite(AsyncWriteBuffer writeBuffer) throws AddressToUUIDNotFoundException {
+    void asyncWrite(AsyncWriteBuffer writeBuffer) throws XtreemFSException {
         asyncWriteHandler.write(writeBuffer);
     }
 

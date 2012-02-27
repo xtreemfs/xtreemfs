@@ -10,24 +10,14 @@ import java.io.IOException;
 
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 
-/**
- * 
- * <br>
- * Sep 9, 2011
- */
-public class PosixErrorException extends IOException {
+public class PosixErrorException extends XtreemFSException {
     /**
      * 
      */
     private static final long serialVersionUID = 1L;
     
     private POSIXErrno posixError;
-    /**
- * 
- */
-    public PosixErrorException() {
-        super();
-    }
+   
     public PosixErrorException(String message) {
         super(message);
     }

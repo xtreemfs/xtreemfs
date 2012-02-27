@@ -1,6 +1,6 @@
 package org.xtreemfs.common.libxtreemfs.exceptions;
 
-public class AddressToUUIDNotFoundException extends Exception {
+public class AddressToUUIDNotFoundException extends XtreemFSException {
 
 	public AddressToUUIDNotFoundException(String uuid) {
 		super("UUID: service not found for uuid " + uuid);

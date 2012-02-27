@@ -6,12 +6,14 @@
  */
 package org.xtreemfs.common.libxtreemfs.exceptions;
 
+import java.io.IOException;
+
 /**
  * 
  * <br>
  * Nov 22, 2011
  */
-public class XtreemFSException extends RuntimeException {
+public class XtreemFSException extends IOException {
     /**
 	 * 
 	 */
