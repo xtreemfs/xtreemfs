@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # No grep -oE support on Solaris
 if [ "$(uname)" = "SunOS" ]
@@ -56,7 +56,7 @@ function update_version() {
     current_version=$(grep "$keyword" "$file" | grep -oE "\".*\"" | tr -d '"')
     if [ -n "$add_svn_revision_only" ]
     then
-      current_version=$(echo "$current_version" | sed $sed_extended_regex_switch "s/^.*-?trunk/trunk/")
+      current_version=$(echo "$current_version" | sed $sed_extended_regex_switch -e "s|^.*-?trunk|trunk|")
       echo "$current_version" "$version_string"
     fi
 
@@ -128,7 +128,7 @@ function find_releasename() {
     done
     unset IFS
 
-    version=`echo "$version" | sed $sed_extended_regex_switch "s/\.?[0-9]$//"`
+    version=`echo "$version" | sed $sed_extended_regex_switch -e "s|\.?[0-9]$||"`
   done
 }
 
@@ -167,12 +167,27 @@ x stands for feature and y for stable releases.
 z is optional and may be in the following ranges:
 .80+ = beta releases
 .90+ = release candidates
+
+Known release names, which will be automatically appended in parentheses, are:
 EOF
+      IFS='
+'
+      for line in $xtreemfs_release_names
+      do
+        # Skip empty lines
+        [ -z "$line" ] && continue
+
+        number=$(echo "$line" | cut -f1 -d\|)
+        release=$(echo "$line" | cut -f2 -d\|)
+        echo "starting with $number: $release"
+      done
+      unset IFS
+      echo
       read version
     done
 
     check_version_format "$version"
-    releasename=$(find_releasename "$2")
+    releasename=$(find_releasename "$version")
     if [ -z "$releasename" ]
     then
       version_string=$version
@@ -213,14 +228,20 @@ EOF
     fi
 
     revision=$(svn info "$svn_root" | grep ^Revision | awk '{ print $2 }')
-    trunk_or_branch=$(svn info "$svn_root" | grep ^URL | sed $sed_extended_regex_switch "s/URL:[ \t]+http(s)?:\/\/xtreemfs.googlecode.com\/svn\/(branches\/)?//")
+    svn_url=$(svn info "$svn_root" | grep ^URL)
+    # Do not modify the version of a release located in tags/
+    if [ -n "$(echo "$svn_url" | grep -E "http(s)?://xtreemfs.googlecode.com/svn/tags/")" ]
+    then
+      exit 0
+    fi
+    trunk_or_branch=$(echo "$svn_url" | sed $sed_extended_regex_switch -e "s|URL:[ \t]+http(s)?://xtreemfs.googlecode.com/svn/(branches/)?||")
 
     if [ "$trunk_or_branch" = "trunk" ]
     then
       version_string="trunk-svn-r${revision}"
       update_version "$version_string" "replace-trunk-only"
     else
-      version_version="${trunk_or_branch} svn-r${revision}"
+      version_string="${trunk_or_branch} svn-r${revision}"
       update_version "$version_string"
     fi
     ;;
