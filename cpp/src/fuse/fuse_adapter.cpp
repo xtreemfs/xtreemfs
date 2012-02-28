@@ -213,9 +213,11 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
          ACCESS_CONTROL_POLICY_POSIX) {
        options_->use_fuse_permission_checks = false;
        // Tell the user.
-       Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
-           "not passing -o default_permissions to Fuse) because the access "
-           "policy is not set to ACCESS_CONTROL_POLICY_POSIX" << endl;
+       if (Logging::log->loggingActive(LEVEL_INFO)) {
+         Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
+             "not passing -o default_permissions to Fuse) because the access "
+             "policy is not set to ACCESS_CONTROL_POLICY_POSIX" << endl;
+       }
      }
     }
 
@@ -228,8 +230,10 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
           options_->grid_gridmap_location =
               options_->grid_gridmap_location_default_globus;
         }
-        Logging::log->getLog(LEVEL_INFO) << "Using Globus gridmap file "
-            << options_->grid_gridmap_location << endl;
+        if (Logging::log->loggingActive(LEVEL_INFO)) {
+          Logging::log->getLog(LEVEL_INFO) << "Using Globus gridmap file "
+              << options_->grid_gridmap_location << endl;
+        }
       }
 
       if (xattr.name() == "xtreemfs.volattr.unicore_uudb") {
@@ -239,8 +243,10 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
           options_->grid_gridmap_location =
               options_->grid_gridmap_location_default_unicore;
         }
-        Logging::log->getLog(LEVEL_INFO) << "Using Unicore uudb file "
-            << options_->grid_gridmap_location << endl;
+        if (Logging::log->loggingActive(LEVEL_INFO)) {
+          Logging::log->getLog(LEVEL_INFO) << "Using Unicore uudb file "
+              << options_->grid_gridmap_location << endl;
+        }
       }
     }
   }
@@ -266,25 +272,31 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   if (options_->grid_auth_mode_globus || options_->grid_auth_mode_unicore) {
     options_->use_fuse_permission_checks = false;
 
-    Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
-        " not passing -o default_permissions to Fuse) because a Grid"
-        " usermapping is used." << endl;
+    if (Logging::log->loggingActive(LEVEL_INFO)) {
+      Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
+          " not passing -o default_permissions to Fuse) because a Grid"
+          " usermapping is used." << endl;
+    }
   }
   if (options_->use_fuse_permission_checks && options_->SSLEnabled()) {
     options_->use_fuse_permission_checks = false;
 
-    Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
-        " not passing -o default_permissions to Fuse) as SSL is used. In rare"
-        " cases it may be safe to pass -o default_permissions manually (that is"
-        " if the NullAuthenticationProvider is used in the MRC or service"
-        " certificates (contrary to user certificates) are used in the client"
-        " to connect to the MRC)."
-        << endl;
+    if (Logging::log->loggingActive(LEVEL_INFO)) {
+      Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
+          " not passing -o default_permissions to Fuse) as SSL is used. In rare"
+          " cases it may be safe to pass -o default_permissions manually (that"
+          " is if the NullAuthenticationProvider is used in the MRC or service"
+          " certificates (contrary to user certificates) are used in the client"
+          " to connect to the MRC)."
+          << endl;
+    }
   }
   if (options_->fuse_permission_checks_explicitly_disabled) {
-    Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
-        " not passing -o default_permissions to Fuse) as requested by the user."
-        << endl;
+    if (Logging::log->loggingActive(LEVEL_INFO)) {
+      Logging::log->getLog(LEVEL_INFO) << "Disabled Fuse POSIX checks (i. e."
+          " not passing -o default_permissions to Fuse) as requested by the"
+          " user." << endl;
+    }
   }
 
   // Add Fuse default options.

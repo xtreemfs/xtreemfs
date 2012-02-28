@@ -60,7 +60,9 @@ Client::Client(int32_t connect_timeout_s,
       certFileName(NULL) {
   // Check if ssl options were passed.
   if (options != NULL) {
-    Logging::log->getLog(LEVEL_INFO) << "SSL support activated" << endl;
+    if (Logging::log->loggingActive(LEVEL_INFO)) {
+      Logging::log->getLog(LEVEL_INFO) << "SSL support activated." << endl;
+    }
 
     use_gridssl_ = options->use_grid_ssl();
     ssl_context_ =
@@ -79,8 +81,10 @@ Client::Client(int32_t connect_timeout_s,
     // afterwards the pem- and cert-files are written to temporary files on disk
     // these can be accessed by boost::assio::ssl
     if (!options->pkcs12_file_name().empty()) {
-      Logging::log->getLog(LEVEL_INFO) << "SSL suport using pkcs12 file "
-          << options->pkcs12_file_name() << endl;
+      if (Logging::log->loggingActive(LEVEL_INFO)) {
+        Logging::log->getLog(LEVEL_INFO) << "SSL support using PKCS#12 file "
+            << options->pkcs12_file_name() << endl;
+      }
 
       char tmplate1[] = "/tmp/pmXXXXXX";
       char tmplate2[] = "/tmp/ctXXXXXX";
@@ -90,7 +94,7 @@ Client::Client(int32_t connect_timeout_s,
 
       // read the pkcs12 file
       if (!p12_file) {
-        Logging::log->getLog(LEVEL_ERROR) << "Error opening pkcs12 file:"
+        Logging::log->getLog(LEVEL_ERROR) << "Error opening PKCS#12 file: "
             << options->pkcs12_file_name() << ". (file not found)" << endl;
         //TODO(mberlin): Use a better approach than exit - throw?
         exit(1);
@@ -99,7 +103,7 @@ Client::Client(int32_t connect_timeout_s,
       fclose(p12_file);
 
       if (!p12) {
-        Logging::log->getLog(LEVEL_ERROR) << "Error reading pkcs12 file:"
+        Logging::log->getLog(LEVEL_ERROR) << "Error reading PKCS#12 file: "
             << options->pkcs12_file_name() << ". (no access rights?)" << endl;
         ERR_print_errors_fp(stderr);
         //TODO(mberlin): Use a better approach than exit - throw?
@@ -116,7 +120,7 @@ Client::Client(int32_t connect_timeout_s,
                         &pkey,
                         &cert,
                         &ca)) {
-        Logging::log->getLog(LEVEL_ERROR) << "Error parsing pkcs12 file:"
+        Logging::log->getLog(LEVEL_ERROR) << "Error parsing PKCS#12 file: "
             << options->pkcs12_file_name()
             << " Please check if the supplied certificate password is correct."
             << endl;
@@ -215,8 +219,10 @@ Client::Client(int32_t connect_timeout_s,
       // FIXME(ps) make sure that the temporary files are deleted!
     } else if (!options->pem_file_name().empty()) {
       // otherwise use the pem files
-      Logging::log->getLog(LEVEL_INFO) << "SSL support using key file "
-          << options->pem_file_name() << endl;
+      if (Logging::log->loggingActive(LEVEL_INFO)) {
+        Logging::log->getLog(LEVEL_INFO) << "SSL support using PEM private key"
+            " file " << options->pem_file_name() << endl;
+      }
 
       try {
         ssl_context_->set_password_callback(
@@ -418,19 +424,16 @@ void Client::run() {
                                            this,
                                            asio::placeholders::error));
 
-  if (Logging::log->loggingActive(LEVEL_INFO)) {
-    Logging::log->getLog(LEVEL_INFO) << "starting rpc client" << endl;
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "Starting RPC client." << endl;
     if (ssl_context_ != NULL) {
       if (use_gridssl_) {
-        Logging::log->getLog(LEVEL_INFO) << "running in GRID SSL mode"
-            << endl;
+        Logging::log->getLog(LEVEL_DEBUG) << "Running in GRID SSL mode." << endl;
       } else {
-        Logging::log->getLog(LEVEL_INFO) << "running in SSL mode"
-            << endl;
+        Logging::log->getLog(LEVEL_DEBUG) << "Running in SSL mode." << endl;
       }
     } else {
-      Logging::log->getLog(LEVEL_INFO) << "running in plain TCP mode"
-          << endl;
+      Logging::log->getLog(LEVEL_DEBUG) << "Running in plain TCP mode."<< endl;
     }
   }
 
@@ -447,8 +450,8 @@ void Client::run() {
 
 void Client::shutdown() {
   service_.stop();
-  if (Logging::log->loggingActive(LEVEL_INFO)) {
-    Logging::log->getLog(LEVEL_INFO) << "rpc client stopped" << endl;
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG) << "RPC client stopped." << endl;
   }
 }
 
