@@ -98,7 +98,7 @@ Options::Options()
 
   // SSL options.
   ssl_pem_cert_path = "";
-  ssl_pem_path = "";
+  ssl_pem_key_path = "";
   ssl_pem_key_pass = "";
   ssl_pkcs12_path = "";
   ssl_pkcs12_pass = "";
@@ -221,20 +221,22 @@ void Options::GenerateProgramOptionsDescriptions() {
 
   ssl_options_.add_options()
     ("pem-certificate-file-path",
-        po::value(&ssl_pem_cert_path)->default_value(ssl_pem_cert_path),
+        po::value(&ssl_pem_cert_path)->implicit_value(ssl_pem_cert_path),
         "PEM certificate file path")
     ("pem-private-key-file-path",
-        po::value(&ssl_pem_path)->default_value(ssl_pem_path),
+        po::value(&ssl_pem_key_path)->implicit_value(ssl_pem_key_path),
         "PEM private key file path")
     ("pem-private-key-passphrase",
-        po::value(&ssl_pem_key_pass)->default_value(ssl_pem_key_pass),
-        "PEM private key passphrase")
+        po::value(&ssl_pem_key_pass)->implicit_value(ssl_pem_key_pass),
+        "PEM private key passphrase (If no value is given, the user will be"
+        " prompted for it.)")
     ("pkcs12-file-path",
-        po::value(&ssl_pkcs12_path)->default_value(ssl_pkcs12_path),
+        po::value(&ssl_pkcs12_path)->implicit_value(ssl_pkcs12_path),
         "PKCS#12 file path")
     ("pkcs12-passphrase",
-        po::value(&ssl_pkcs12_pass)->default_value(ssl_pkcs12_pass),
-        "PKCS#12 passphrase");
+        po::value(&ssl_pkcs12_pass)->implicit_value(ssl_pkcs12_pass),
+        "PKCS#12 passphrase (If no value is given, the user will be prompted"
+        " for it.)");
 
   grid_options_.add_options()
     ("grid-ssl",
@@ -374,6 +376,61 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
   }
 #endif  // !WIN32
 
+  // PEM certificate _and_ private key are both required.
+  if ((vm.count("pem-certificate-file-path") &&
+       vm.count("pem-private-key-file-path") == 0) ||
+      (vm.count("pem-private-key-file-path") &&
+       vm.count("pem-certificate-file-path") == 0)) {
+    throw InvalidCommandLineParametersException(
+        "If you use SSL and PEM files, you have to specify both the PEM"
+        " certificate and the PEM private key.");
+  }
+
+  // PKCS#12 and PEM files are mutually exclusive.
+  if (vm.count("pem-private-key-file-path") && vm.count("pkcs12-file-path")) {
+    throw InvalidCommandLineParametersException("You can only use PEM files"
+        " OR a PKCS#12 certificate. However, you specified both.");
+  }
+
+  // PKCS#12 and PEM Private Key password are mutually exclusive.
+  if (vm.count("pem-private-key-passphrase") && vm.count("pkcs12-passphrase")) {
+    throw InvalidCommandLineParametersException("You can only use PEM files"
+        " OR a PKCS#12 certificate. However, you specified the password option"
+        " for both.");
+  }
+
+  // If a SSL password was given via command line, clean the value from args.
+  string to_be_cleaned_password;
+  if (!ssl_pem_key_pass.empty()) {
+    to_be_cleaned_password = ssl_pem_key_pass;
+  }
+  if (!ssl_pkcs12_pass.empty()) {
+    to_be_cleaned_password = ssl_pkcs12_pass;
+  }
+  if (!to_be_cleaned_password.empty()) {
+    // Replace the password in all command line arguments. We don't know from
+    // which argv[i] it was actually parsed, so we try them all.
+    for (int i = 1; i < argc; i++) {
+      const string arg(argv[i]);
+      if (arg.find(to_be_cleaned_password) != string::npos) {
+        memset(argv[i], 0, arg.length());
+      }
+    }
+  }
+
+  // If the passphrase parameter was specified, but not set, mark that the
+  // password shall be read from stdin.
+  if (vm.count("pem-private-key-passphrase") && ssl_pem_key_pass.empty()) {
+    ReadPasswordFromStdin(
+        "No PEM private key passphrase was given. Please enter it now:",
+        &ssl_pem_key_pass);
+  }
+  if (vm.count("pkcs12-passphrase") && ssl_pkcs12_pass.empty()) {
+    ReadPasswordFromStdin(
+        "No PKCS#12 certificate passphrase was given. Please enter it now:",
+        &ssl_pkcs12_pass);
+  }
+
   // Return unparsed options.
   return po::collect_unrecognized(parsed.options, po::include_positional);
 }
@@ -433,13 +490,19 @@ xtreemfs::rpc::SSLOptions* Options::GenerateSSLOptions() const {
   xtreemfs::rpc::SSLOptions* opts = NULL;
   if (SSLEnabled()) {
     opts = new xtreemfs::rpc::SSLOptions(
-        ssl_pem_path, ssl_pem_cert_path, ssl_pem_key_pass,  // PEM.
+        ssl_pem_key_path, ssl_pem_cert_path, ssl_pem_key_pass,  // PEM.
         ssl_pkcs12_path, ssl_pkcs12_pass,  // PKCS12.
         boost::asio::ssl::context::pem,
         grid_ssl || protocol == PBRPCURL::SCHEME_PBRPCG);
   }
 
   return opts;
+}
+
+void Options::ReadPasswordFromStdin(const std::string& msg,
+                                    std::string* password) {
+  cout << msg << endl;
+  getline(cin, *password);
 }
 
 }  // namespace xtreemfs

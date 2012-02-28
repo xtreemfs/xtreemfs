@@ -63,7 +63,7 @@ class Options {
   bool SSLEnabled() const;
 
   /** Creates a new SSLOptions object based on the value of the members:
-   *  - ssl_pem_path
+   *  - ssl_pem_key_path
    *  - ssl_pem_cert_path
    *  - ssl_pem_key_pass
    *  - ssl_pkcs12_path
@@ -140,7 +140,7 @@ class Options {
 
   // SSL options.
   std::string ssl_pem_cert_path;
-  std::string ssl_pem_path;
+  std::string ssl_pem_key_path;
   std::string ssl_pem_key_pass;
   std::string ssl_pkcs12_path;
   std::string ssl_pkcs12_pass;
@@ -181,6 +181,9 @@ class Options {
   void ParseURL(XtreemFSServiceType service_type);
 
  private:
+  /** Reads password from stdin and stores it in 'password'. */
+  void ReadPasswordFromStdin(const std::string& msg, std::string* password);
+
   // Sums of options.
   /** Contains all boost program options, needed for parsing and by
    *  ShowCommandLineHelp(). */
