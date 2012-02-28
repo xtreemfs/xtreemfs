@@ -343,8 +343,8 @@ template<class ReturnMessageType, class F>
             + retry_count_msg;
         if (xtreemfs::util::Logging::log->loggingActive(level)) {
           xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
+          xtreemfs::util::ErrorLog::error_log->AppendError(error);
         }
-        xtreemfs::util::ErrorLog::error_log->AppendError(error);
         throw PosixErrorException(posix_errno, error);
       }
       case xtreemfs::pbrpc::IO_ERROR:  {
