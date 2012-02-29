@@ -46,11 +46,13 @@ public class WriteOperation {
     protected int getReqSize() {
         return reqSize;
     }
+    
+    protected int getReqOffset() {
+        return reqOffset;
+    }
 
     
-    protected byte[] getReqData() {
-        byte[] data = new byte[reqSize];
-        buf.get(data, reqOffset, reqSize);
-        return data;
+    protected ReusableBuffer getReqData() {
+        return buf;
     }
 }

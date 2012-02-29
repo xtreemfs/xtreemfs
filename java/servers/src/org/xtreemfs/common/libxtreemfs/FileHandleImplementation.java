@@ -184,7 +184,7 @@ public class FileHandleImplementation implements FileHandle {
      * int)
      */
     @Override
-    public int read(UserCredentials userCredentials, ReusableBuffer buf, int count, int offset)
+    public int read(UserCredentials userCredentials, byte[] data, int count, int offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         fileInfo.waitForPendingAsyncWrites();
 
@@ -204,6 +204,7 @@ public class FileHandleImplementation implements FileHandle {
         }
         FileCredentials fc = fcBuilder.setXlocs(fileInfo.getXLocSet()).build();
 
+        ReusableBuffer buf = ReusableBuffer.wrap(data);
         int receivedData = 0;
 
         if (fc.getXlocs().getReplicasCount() == 0) {
@@ -257,7 +258,7 @@ public class FileHandleImplementation implements FileHandle {
 
             buf.position(operations.get(j).getBufferStart());
             // If synccall gets a buffer it fill it with data from the response.
-            ObjectData data =
+            ObjectData objectData =
                     RPCCaller.<readRequest, ObjectData> syncCall(SERVICES.OSD, userCredentialsBogus,
                             authBogus, volumeOptions, uuidResolver, uuidIterator, false,
                             readRqBuilder.build(), buf, new CallGenerator<readRequest, ObjectData>() {
@@ -271,7 +272,7 @@ public class FileHandleImplementation implements FileHandle {
                                 }
                             });
             // if zeropadding > 0, put zeros at the end of the buffer.
-            for (int i = 0; i < data.getZeroPadding(); i++) {
+            for (int i = 0; i < objectData.getZeroPadding(); i++) {
                 buf.put((byte) 0);
             }
 
@@ -288,7 +289,7 @@ public class FileHandleImplementation implements FileHandle {
      * int)
      */
     @Override
-    public synchronized int write(UserCredentials userCredentials, ReusableBuffer buf, int count, int offset)
+    public synchronized int write(UserCredentials userCredentials, byte[] data, int count, int offset)
             throws IOException, PosixErrorException, InternalServerErrorException,
             AddressToUUIDNotFoundException {
         FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
@@ -316,11 +317,12 @@ public class FileHandleImplementation implements FileHandle {
         }
 
         // Map operation to stripes.
+        ReusableBuffer buffer = ReusableBuffer.wrap(data);
         Vector<WriteOperation> operations = new Vector<WriteOperation>();
         StripingPolicy stripingPolicy = xlocs.getReplicas(0).getStripingPolicy();
         StripeTranslator translator = getStripeTranslator(stripingPolicy.getType());
 
-        translator.translateWriteRequest(count, offset, stripingPolicy, buf, operations);
+        translator.translateWriteRequest(count, offset, stripingPolicy, buffer, operations);
 
         FileCredentials fileCredentials = fcBuilder.build();
 
@@ -336,13 +338,13 @@ public class FileHandleImplementation implements FileHandle {
 
                 request.setObjectNumber(operations.get(j).getObjNumber());
                 request.setObjectVersion(0);
-                request.setOffset(operations.get(j).getOsdOffset());
+                request.setOffset(operations.get(j).getReqOffset());
                 request.setLeaseTimeout(0);
 
-                ObjectData data =
+                ObjectData objectData =
                         ObjectData.newBuilder().setChecksum(0).setInvalidChecksumOnOsd(false)
                                 .setZeroPadding(0).build();
-                request.setObjectData(data);
+                request.setObjectData(objectData);
 
                 // Create new WriteBuffer and differ between striping and the
                 // rest (
@@ -377,13 +379,14 @@ public class FileHandleImplementation implements FileHandle {
                 request.setFileId(globalFileId);
                 request.setObjectNumber(operations.get(j).getObjNumber());
                 request.setObjectVersion(0);
-                request.setOffset(operations.get(j).getOsdOffset());
+                request.setOffset(operations.get(j).getReqOffset());
                 request.setLeaseTimeout(0);
 
-                ObjectData data =
+                ObjectData objectData =
                         ObjectData.newBuilder().setChecksum(0).setInvalidChecksumOnOsd(false)
                                 .setZeroPadding(0).build();
-                request.setObjectData(data);
+                
+                request.setObjectData(objectData);
 
                 // Differ between striping and the rest (replication, no
                 // replication).
@@ -400,7 +403,7 @@ public class FileHandleImplementation implements FileHandle {
                     uuidIterator = osdUuidIterator;
                 }
 
-                final ReusableBuffer finalBuf = buf;
+                final ReusableBuffer writeDataBuffer = operations.get(j).getReqData();
                 OSDWriteResponse response =
                         RPCCaller.<writeRequest, OSDWriteResponse> syncCall(SERVICES.OSD, userCredentials,
                                 authBogus, volumeOptions, uuidResolver, uuidIterator, false, request.build(),
@@ -412,7 +415,7 @@ public class FileHandleImplementation implements FileHandle {
                                             UserCredentials userCreds, writeRequest input) throws IOException {
                                         // TODO Auto-generated method stub
                                         return osdServiceClient.write(server, authHeader, userCreds, input,
-                                                finalBuf);
+                                                writeDataBuffer);
                                     }
                                 });
 

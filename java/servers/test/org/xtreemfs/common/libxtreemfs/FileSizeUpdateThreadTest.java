@@ -13,7 +13,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
@@ -105,8 +104,7 @@ public class FileSizeUpdateThreadTest {
 
         // Write to file.
         String data = "Need a testfile? Why not (\\|)(+,,,+)(|/)?";
-        ReusableBuffer buf = ReusableBuffer.wrap(data.getBytes());
-        fileHandle.write(userCredentials, buf, buf.capacity(), 0);
+        fileHandle.write(userCredentials, data.getBytes(), data.length(), 0);
 
         // MRC shouldn't know about filesize yet
         stat =

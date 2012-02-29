@@ -9,16 +9,12 @@ package org.xtreemfs.common.libxtreemfs;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
@@ -32,8 +28,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getattrResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -370,7 +368,7 @@ public class FileHandleTest {
         FileHandleImplementation fileHandle =
                 (FileHandleImplementation) volume.openFile(userCredentials, fileName, flags, 0777);
         fileHandle.markAsyncWritesAsFailed();
-        fileHandle.write(userCredentials, ReusableBuffer.wrap("hallo".getBytes()), 5, 0);
+        fileHandle.write(userCredentials, "hallo".getBytes(), 5, 0);
     }
 
     @Test(expected = PosixErrorException.class)
@@ -387,7 +385,7 @@ public class FileHandleTest {
         FileHandleImplementation fileHandle =
                 (FileHandleImplementation) volume.openFile(userCredentials, fileName, flags, 0777);
         fileHandle.markAsyncWritesAsFailed();
-        fileHandle.read(userCredentials, ReusableBuffer.wrap("a".getBytes()), 0, 1);
+        fileHandle.read(userCredentials, "a".getBytes(), 0, 1);
     }
 
     @Test
@@ -445,5 +443,135 @@ public class FileHandleTest {
     
         assertEquals(response.getSizeInBytes(), response2.getStbuf().getSize());
         assertEquals(response.getTruncateEpoch(), response2.getStbuf().getTruncateEpoch());        
+    }
+    
+    @Test
+    public void testWriteWithMoreThanOneBlock() throws Exception {
+        final String VOLUME_NAME = "testWriteWithMoreThanOneBlock";
+        
+        Options options = new Options();
+        options.setPeriodicFileSizeUpdatesIntervalS(10);
+        options.setMetadataCacheSize(0);
+        
+        String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
+        String mrcAddress = testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort();
+        
+        Client client = Client.createClient(dirAddress, userCredentials, null, options);
+        client.start();
+        
+        // Open a volume named "foobar".
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        
+        // Open a file.
+        FileHandle fileHandle = volume.openFile(
+                userCredentials,
+                "/bla.tzt",
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_SYNC.getNumber());
+        
+        // Get file attributes
+        Stat stat = volume.getAttr(userCredentials, "/bla.tzt");
+        assertEquals(0, stat.getSize());
+        
+        // Write to file.\
+        final int numBytes = 5500;
+        final String xtreemfs = "XTREEMFS";
+        String data = "";
+        while (data.length() < numBytes) {
+            data += xtreemfs;
+        }
+        
+        int writtenBytes = fileHandle.write(userCredentials, data.getBytes(), 4092, 0);
+    
+        stat = volume.getAttr(userCredentials, "/bla.tzt");
+        assertEquals(4092, stat.getSize());
+        
+        byte[] secondChunk = new byte[data.length()-writtenBytes];
+        for (int i = 0; i < secondChunk.length; i++) {
+            secondChunk[i] = data.getBytes()[writtenBytes+i];
+        }
+        fileHandle.write(userCredentials, secondChunk, secondChunk.length, writtenBytes);
+        fileHandle.flush();
+        
+//        Thread.sleep(options.getPeriodicFileSizeUpdatesIntervalS()*1000+1000);
+        
+        stat = volume.getAttr(userCredentials, "/bla.tzt");
+        assertEquals(data.length(), stat.getSize());
+        
+        // Read from file.
+        byte[] readData = new byte[data.length()];
+        int readCount = fileHandle.read(userCredentials, readData, data.length(), 0);
+        
+        assertEquals(data.length(), readCount);
+        for (int i = 0; i < data.length(); i++) {
+            assertEquals(readData[i], data.getBytes()[i]);
+        }
+        
+        fileHandle.close();
+        client.shutdown();
+    }
+    
+    @Test
+    public void testWriteGreaterThanStripesize() throws Exception {
+        final String VOLUME_NAME = "testWriteGreaterThanStripesize";
+        
+        Options options = new Options();
+        options.setPeriodicFileSizeUpdatesIntervalS(10);
+        options.setMetadataCacheSize(0);
+        
+        String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
+        String mrcAddress = testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort();
+        
+        Client client = Client.createClient(dirAddress, userCredentials, null, options);
+        client.start();
+        
+        // Open a volume named "foobar".
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        
+        // Open a file.
+        FileHandle fileHandle = volume.openFile(
+                userCredentials,
+                "/bla.tzt",
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_SYNC.getNumber());
+        
+        // Get file attributes
+        Stat stat = volume.getAttr(userCredentials, "/bla.tzt");
+        assertEquals(0, stat.getSize());
+        
+        // Write to file.\
+        final int numExtraBytes = 5500/8;
+        final String xtreemfs = "XTREEMFS";
+        String data = "";
+        while (data.length() < defaultStripingPolicy.getStripeSize()*1024) {
+            data += xtreemfs;
+        }
+        for (int i = 0; i < numExtraBytes; i++) {
+            data += xtreemfs;
+        }
+        
+        int writtenBytes = fileHandle.write(userCredentials, data.getBytes(), data.length(), 0);
+    
+        stat = volume.getAttr(userCredentials, "/bla.tzt");
+        assertEquals(data.length(), stat.getSize());
+        
+        // Read from file.
+        byte[] readData = new byte[data.length()];
+        int readCount = fileHandle.read(userCredentials, readData, data.length(), 0);
+        
+        assertEquals(data.length(), readCount);
+        assertEquals(writtenBytes, readCount);
+        for (int i = 0; i < data.length(); i++) {
+            assertEquals(readData[i], data.getBytes()[i]);
+        }
+        
+        fileHandle.close();
+        client.shutdown();
     }
 }

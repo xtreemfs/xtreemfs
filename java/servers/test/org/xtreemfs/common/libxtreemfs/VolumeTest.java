@@ -24,7 +24,6 @@ import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
@@ -54,11 +53,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
-/**
- * 
- * <br>
- * Sep 9, 2011
- */
+
 public class VolumeTest {
 
     private static DIRRequestDispatcher dir;
@@ -639,8 +634,7 @@ public class VolumeTest {
                                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 0777);
 
         String data = "1234567890";
-        ReusableBuffer buf = ReusableBuffer.wrap(data.getBytes());
-        fileHandle.write(userCredentials, buf, data.length(), 0);
+        fileHandle.write(userCredentials, data.getBytes(), data.length(), 0);
         fileHandle.flush();
 
         assertEquals(data.length(), volume.getAttr(userCredentials, fileName).getSize());

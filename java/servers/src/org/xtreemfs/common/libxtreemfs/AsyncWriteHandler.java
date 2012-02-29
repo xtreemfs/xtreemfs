@@ -190,7 +190,7 @@ public class AsyncWriteHandler {
         try {
             response =
                     osdServiceClient.write(osdInetSocketAddress, authBogus, userCredentialsBogus,
-                            writeBuffer.getWriteRequest(), ReusableBuffer.wrap(writeBuffer.getData()));
+                            writeBuffer.getWriteRequest(), writeBuffer.getData());
 
             response.registerListener(new RPCResponseAvailableListener<OSDWriteResponse>() {
                 @Override

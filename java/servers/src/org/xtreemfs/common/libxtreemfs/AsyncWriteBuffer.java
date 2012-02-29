@@ -6,6 +6,7 @@
  */
 package org.xtreemfs.common.libxtreemfs;
 
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest;
 
 /**
@@ -15,16 +16,17 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest;
 public class AsyncWriteBuffer {
 
     /**
-     * Creates a new {@link AsyncWriteBuffer} which is using the osdUuidIterator from  {@link AsyncWriteHandler}
+     * Creates a new {@link AsyncWriteBuffer} which is using the osdUuidIterator from
+     * {@link AsyncWriteHandler}
      * 
      */
-    protected AsyncWriteBuffer(writeRequest writeRequest, byte[] data, int dataLength,
+    protected AsyncWriteBuffer(writeRequest writeRequest, ReusableBuffer data, int dataLength,
             FileHandleImplementation fileHandle) {
         this.writeRequest = writeRequest;
         this.data = data;
         this.dataLength = dataLength;
         this.fileHandle = fileHandle;
-        
+
         this.osdUuid = null;
         this.useUuidIterator = true;
     }
@@ -32,14 +34,14 @@ public class AsyncWriteBuffer {
     /**
      * Creates a new {@link AsyncWriteBuffer} with a own osdUuid
      */
-    protected AsyncWriteBuffer(writeRequest writeRequest, byte[] data, int dataLength,
+    protected AsyncWriteBuffer(writeRequest writeRequest, ReusableBuffer data, int dataLength,
             FileHandleImplementation fileHandle, String osdUuid) {
         this.writeRequest = writeRequest;
         this.data = data;
         this.dataLength = dataLength;
         this.fileHandle = fileHandle;
         this.osdUuid = osdUuid;
-        
+
         this.useUuidIterator = false;
     }
 
@@ -51,7 +53,7 @@ public class AsyncWriteBuffer {
     /**
      * Actual payload of the write request.
      */
-    private byte[]                   data;
+    private ReusableBuffer           data;
 
     /**
      * Length of the payload.
@@ -79,7 +81,7 @@ public class AsyncWriteBuffer {
         return writeRequest;
     }
 
-    protected byte[] getData() {
+    protected ReusableBuffer getData() {
         return data;
     }
 

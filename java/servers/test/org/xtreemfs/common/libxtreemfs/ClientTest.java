@@ -18,7 +18,6 @@ import org.junit.Test;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
@@ -38,11 +37,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
-/**
- * 
- * <br>
- * Sep 3, 2011
- */
+
 public class ClientTest {
     
     private static DIRRequestDispatcher dir;
@@ -233,16 +228,14 @@ public class ClientTest {
         
         // Write to file.
         String data = "Need a testfile? Why not (\\|)(+,,,+)(|/)?";
-        ReusableBuffer buf = ReusableBuffer.wrap(data.getBytes());
-        fileHandle.write(userCredentials, buf, buf.capacity(), 0);
+        fileHandle.write(userCredentials, data.getBytes(), data.length(), 0);
         
         stat = volume.getAttr(userCredentials, "/bla.tzt");
         assertEquals(data.length(), stat.getSize());
         
         // Read from file.
         byte[] readData = new byte[data.length()];
-        ReusableBuffer readBuf = ReusableBuffer.wrap(readData);
-        int readCount = fileHandle.read(userCredentials, readBuf, data.length(), 0);
+        int readCount = fileHandle.read(userCredentials, readData, data.length(), 0);
         
         assertEquals(data.length(), readCount);
         for (int i = 0; i < data.length(); i++) {
@@ -287,16 +280,14 @@ public class ClientTest {
         
         // Write to file.
         String data = "Need a testfile? Why not (\\|)(+,,,+)(|/)?";
-        ReusableBuffer buf = ReusableBuffer.wrap(data.getBytes());
-        fileHandle.write(userCredentials, buf, buf.capacity(), 0);
+        fileHandle.write(userCredentials, data.getBytes(), data.length(), 0);
         
         stat = volume.getAttr(userCredentials, "/bla.tzt");
         assertEquals(data.length(), stat.getSize());
         
         // Read from file.
         byte[] readData = new byte[data.length()];
-        ReusableBuffer readBuf = ReusableBuffer.wrap(readData);
-        int readCount = fileHandle.read(userCredentials, readBuf, data.length(), 0);
+        int readCount = fileHandle.read(userCredentials, readData, data.length(), 0);
         
         assertEquals(data.length(), readCount);
         for (int i = 0; i < data.length(); i++) {
@@ -343,16 +334,14 @@ public class ClientTest {
         
         // Write to file.
         String data = "Need a testfile? Why not (\\|)(+,,,+)(|/)?";
-        ReusableBuffer buf = ReusableBuffer.wrap(data.getBytes());
-        fileHandle.write(userCredentials, buf, buf.capacity(), 0);
+        fileHandle.write(userCredentials, data.getBytes(), data.length(), 0);
         
         stat = volume.getAttr(userCredentials, "/bla.tzt");
         assertEquals(data.length(), stat.getSize());
         
         // Read from file.
         byte[] readData = new byte[data.length()];
-        ReusableBuffer readBuf = ReusableBuffer.wrap(readData);
-        int readCount = fileHandle.read(userCredentials, readBuf, data.length(), 0);
+        int readCount = fileHandle.read(userCredentials, readData, data.length(), 0);
         
         assertEquals(data.length(), readCount);
         for (int i = 0; i < data.length(); i++) {

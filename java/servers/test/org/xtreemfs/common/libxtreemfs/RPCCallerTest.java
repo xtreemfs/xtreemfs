@@ -156,8 +156,7 @@ public class RPCCallerTest {
 
         // write testfile
         String data = "Need a testfile? Why not (\\|)(+,,,+)(|/)?";
-        ReusableBuffer buf = ReusableBuffer.wrap(data.getBytes());
-        fileHandle.write(userCredentials, buf, buf.capacity(), 0);
+        fileHandle.write(userCredentials, data.getBytes(), data.length(), 0);
 
         // create uuidIterator with switched OSDs in order force a Redirect Exception
         UUIDIterator uuidIterator = new UUIDIterator();
@@ -195,8 +194,7 @@ public class RPCCallerTest {
 
         // Read from file.
         byte[] readData = new byte[overwriteData.length()];
-        ReusableBuffer readBuf = ReusableBuffer.wrap(readData);
-        int readCount = fileHandle.read(userCredentials, readBuf, overwriteData.length(), 0);
+        int readCount = fileHandle.read(userCredentials, readData, overwriteData.length(), 0);
 
         assertEquals(overwriteData.length(), readCount);
         for (int i = 0; i < overwriteData.length(); i++) {

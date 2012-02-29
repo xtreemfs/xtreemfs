@@ -25,8 +25,8 @@ public interface FileHandle {
      * 
      * @param userCredentials
      *            Name and Groups of the user.
-     * @param buf
-     *            [out] Buffer to be filled with read data.
+     * @param data
+     *            [out] Byte array to be filled with read data.
      * @param count
      *            Number of requested bytes.
      * @param offset
@@ -39,7 +39,7 @@ public interface FileHandle {
      * 
      * @return Number of bytes read.
      */
-    public abstract int read(UserCredentials userCredentials, ReusableBuffer buf, int count, int offset)
+    public abstract int read(UserCredentials userCredentials, byte[] data, int count, int offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -53,8 +53,8 @@ public interface FileHandle {
      * 
      * @param userCredentials
      *            Name and Groups of the user.
-     * @param buf
-     *            [in] Buffer which contains data to be written.
+     * @param data[]
+     *            [in] Byte array which contains data to be written.
      * @param count
      *            Number of bytes to be written from buf.
      * @param offset
@@ -67,7 +67,7 @@ public interface FileHandle {
      * 
      * @return Number of bytes written (see @attention above).
      */
-    public abstract int write(UserCredentials userCredentials, ReusableBuffer buf, int count, int offset)
+    public abstract int write(UserCredentials userCredentials, byte[] data, int count, int offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**

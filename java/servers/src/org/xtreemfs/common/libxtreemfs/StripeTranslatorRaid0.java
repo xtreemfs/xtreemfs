@@ -28,7 +28,10 @@ public class StripeTranslatorRaid0 implements StripeTranslator {
             int reqSize = (size - start) < (stripeSize - reqOffset) ? (size - start)
                     : (stripeSize - reqOffset);
 
-            operations.add(new WriteOperation(objNumber, osdOffset, reqSize, reqOffset, buf));
+            ReusableBuffer viewBuffer = buf.createViewBuffer();
+            viewBuffer.range(start, reqSize);
+            
+            operations.add(new WriteOperation(objNumber, osdOffset, reqSize, reqOffset, viewBuffer));
 
             start += reqSize;
         }
