@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import net.jcip.annotations.GuardedBy;
+// JCIP import net.jcip.annotations.GuardedBy;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
@@ -55,7 +55,7 @@ public class FileInfo {
     /**
      * Path of the File, used for debug output and writing back the OSDWriteResponse to the MetadataCache.
      */
-    @GuardedBy("pathLock")
+// JCIP     @GuardedBy("pathLock")
     private String                                          path;
 
     /**
@@ -77,7 +77,7 @@ public class FileInfo {
     /**
      * List of corresponding OSDs.
      */
-    @GuardedBy("xLocSetLock")
+// JCIP     @GuardedBy("xLocSetLock")
     private XLocSet                                         xlocset;
 
     /**
@@ -115,7 +115,7 @@ public class FileInfo {
      * This extra list is needed to distinguish between the regular file handles (see open_file_handles_) and
      * the ones used for file size updates. The intersection of both lists is empty.
      */
-    @GuardedBy("osdWriteResponseLock")
+// JCIP     @GuardedBy("osdWriteResponseLock")
     private List<FileHandle>                                pendingFilesizeUpdates;
 
     /**
@@ -126,19 +126,19 @@ public class FileInfo {
      * "osdWriteResponse" also corresponds to the "maximum" of all known OSDWriteReponses. The maximum has the
      * highest "truncateEpoch", or if equal compared to another response, the higher "sizeInBytes" value.
      */
-    @GuardedBy("osdWriteResponseLock")
+// JCIP     @GuardedBy("osdWriteResponseLock")
     private OSDWriteResponse                                osdWriteResponse;
 
     /**
      * Denotes the state of the stored "osdWriteResponse" object.
      */
-    @GuardedBy("osdWriteResponseLock")
+// JCIP     @GuardedBy("osdWriteResponseLock")
     private FilesizeUpdateStatus                            osdWriteResponseStatus;
 
     /**
      * XCap required to send an OSDWriteResponse to the MRC.
      */
-    @GuardedBy("osdWriteResponseLock")
+// JCIP     @GuardedBy("osdWriteResponseLock")
     private XCap                                            osdWriteResponseXcap;
 
     /**

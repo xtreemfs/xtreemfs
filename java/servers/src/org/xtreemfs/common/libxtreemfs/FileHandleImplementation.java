@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.locks.ReentrantLock;
 
-import net.jcip.annotations.GuardedBy;
+// JCIP import net.jcip.annotations.GuardedBy;
 
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
@@ -93,7 +93,7 @@ public class FileHandleImplementation implements FileHandle {
     /**
      * True if there is an outstanding xcapRenew callback.
      */
-    @GuardedBy("xcapRenewalPendingLock")
+// JCIP     @GuardedBy("xcapRenewalPendingLock")
     private boolean                           xcapRenewalPending;
 
     /**

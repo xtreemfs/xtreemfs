@@ -13,7 +13,6 @@
 	<classpathentry kind="lib" path="../lib/jdmkrt.jar"/>
 	<classpathentry kind="lib" path="../lib/jdmktk.jar"/>
 	<classpathentry kind="lib" path="../lib/protobuf-java-2.3.0.jar"/>
-	<classpathentry kind="lib" path="../lib/jcip-annotations.jar"/>
 	<classpathentry kind="lib" path="../foundation/dist/Foundation.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

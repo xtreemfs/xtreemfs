@@ -12,7 +12,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.jcip.annotations.GuardedBy;
+// JCIP import net.jcip.annotations.GuardedBy;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.UUIDIteratorListIsEmpyException;
@@ -48,27 +48,27 @@ public class AsyncWriteHandler {
     /**
      * State of this object.
      */
-    @GuardedBy("this")
+// JCIP     @GuardedBy("this")
     private State                  state;
 
     /**
      * List of pending writes.
      */
     // TODO(mberlin): Limit the size of writes in flight to avoid flooding.
-    @GuardedBy("this")
+// JCIP     @GuardedBy("this")
     private List<AsyncWriteBuffer> writesInFlight;
 
     /**
      * Number of pending bytes.
      */
-    @GuardedBy("this")
+// JCIP     @GuardedBy("this")
     private int                    pendingBytes;
 
     /**
      * Set by WaitForPendingWrites() to true if there are temporarily no new async writes allowed and will be
      * set to false again once the state IDLE is reached.
      */
-    @GuardedBy("this")
+// JCIP     @GuardedBy("this")
     private boolean                writingPaused;
 
     /**
@@ -80,7 +80,7 @@ public class AsyncWriteHandler {
      * Number of threads blocked by WaitForPendingWrites() waiting on allPendingWritesDidComplete for a state
      * change back to IDLE.
      */
-    @GuardedBy("this")
+// JCIP     @GuardedBy("this")
     private int                    waitingBlockingThreadsCount;
 
     /**
