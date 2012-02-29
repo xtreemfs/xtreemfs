@@ -31,6 +31,39 @@ Usage: ./set-version.sh [option] where option may be
 EOF
 }
 
+# Updates the version information in the package files. Only executed if started with -n or -i.
+function update_version_macos_packaging() {
+  version="$1"
+
+  package_files="../packaging/macosx/XtreemFS_MacOSX_Package.pmdoc/01mount.xml ../packaging/macosx/XtreemFS_MacOSX_Package.pmdoc/02mkfs.xml ../packaging/macosx/XtreemFS_MacOSX_Package.pmdoc/03rmfs.xml ../packaging/macosx/XtreemFS_MacOSX_Package.pmdoc/04lsfs.xml ../packaging/macosx/XtreemFS_MacOSX_Package.pmdoc/05uninstall.xml ../packaging/macosx/XtreemFS_MacOSX_Package.pmdoc/06xtreemfs.xml ../packaging/macosx/XtreemFS_MacOSX_Package.pmdoc/07xtfsutil.xml"
+
+  if [ "$(uname)" != "Darwin" ]
+  then
+    # Skip editing the MacOSX files if we aren't on a MacOSX system.
+    continue
+  fi
+
+  for file in $package_files
+  do
+    file="${path_to_packaging_directory}/${file}"
+
+    # Retrieve current version
+    current_version=$(grep "<version>" "$file" | sed $sed_extended_regex_switch -e "s|^.*<version>(.*)</version>.*$|\1|")
+
+    # Change version
+    if [ "$current_version" != "$version" ]
+    then
+      #echo "Replacing current version: $current_version with new version string: $version"
+      if [ "$(uname)" = "Darwin" ]
+      then
+        sed -i '' "s|<version>$current_version</version>|<version>$version</version>|" $file
+      else
+        sed -i "s|<version>$current_version</version>|<version>$version</version>|" $file
+      fi
+    fi
+  done
+}
+
 function update_version() {
   version_string="$1"
   add_svn_revision_only="$2"
@@ -195,6 +228,7 @@ EOF
       version_string="$version ($releasename)"
     fi
     update_version "$version_string"
+    update_version_macos_packaging "$version"
     echo "Changed version string to: $version_string"
     ;;
   -n)
@@ -216,6 +250,7 @@ EOF
       version_string="$version ($releasename)"
     fi
     update_version "$version_string"
+    update_version_macos_packaging "$version"
     echo "OK $version $releasename"
     ;;
   -s)

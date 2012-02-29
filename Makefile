@@ -209,7 +209,7 @@ endif
 # Do not use env variables to control the CMake behavior as stated in http://www.cmake.org/Wiki/CMake_FAQ#How_can_I_get_or_set_environment_variables.3F
 # Instead define them via -D, so they will be cached.
 ifdef BOOST_ROOT
-	CMAKE_BOOST_ROOT = -DBOOST_ROOT="${BOOST_ROOT}"
+	CMAKE_BOOST_ROOT = -DBOOST_ROOT="$(BOOST_ROOT)"
 endif
 
 client_thirdparty: $(CLIENT_THIRDPARTY_REQUIREMENTS)
@@ -253,7 +253,7 @@ client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
 client_debug: client
 
 client: check_client client_thirdparty set_version
-	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) ${CMAKE_BOOST_ROOT} ${CMAKE_BUILD_CLIENT_TESTS}
+	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS)
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)	
 	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTFS_BINDIR)
 	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/xtfsutil $(XTFS_BINDIR)
@@ -267,6 +267,10 @@ client_distclean: check_client client_thirdparty_distclean
 CLIENT_PACKAGE_MACOSX_OUTPUT_DIR = XtreemFS_Client_MacOSX.mpkg
 CLIENT_PACKAGE_MACOSX_OUTPUT_FILE = XtreemFS_Client_MacOSX_installer.dmg
 client_package_macosx:
+ifeq ($(CMAKE_BOOST_ROOT),)
+	@echo No BOOST_ROOT environment variable is specified. This will probably fail. Please set it first.; exit 1
+endif
+	@./packaging/set_version.sh -i
 # Clean everything first to ensure we package a clean client.
 	@$(MAKE) client_distclean
 # We call $(MAKE) instead of specifying the targets as requirements as its not possible to define dependencies between these two and this breaks in case of parallel builds.
