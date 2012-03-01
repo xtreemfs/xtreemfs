@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -898,7 +898,7 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
   rq.set_known_etag(0);
   rq.set_path(path);
   rq.set_names_only(names_only);
-  for (int current_offset = offset;
+  for (boost::uint64_t current_offset = offset;
        current_offset < offset + count;
        current_offset += volume_options_.readdir_chunk_size) {
     rq.set_seen_directory_entries_count(current_offset);

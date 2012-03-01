@@ -17,6 +17,11 @@
 
 namespace xtreemfs {
 
+#ifdef WIN32
+typedef unsigned int uid_t;
+typedef unsigned int gid_t;
+#endif  // WIN32
+
 class UUIDResolver;
 class Volume;
 
@@ -132,9 +137,9 @@ class XtfsUtilServer {
    * user.
    */
   XCtlFile* FindFile(uid_t uid,
-                      gid_t gid,
-                      const std::string& path,
-                      bool create);
+                     gid_t gid,
+                     const std::string& path,
+                     bool create);
 
   /** Parses the input JSON and executes the operation.
    *  Stores the result in file.

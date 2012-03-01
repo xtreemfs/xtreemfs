@@ -5,6 +5,7 @@
  *
  */
 
+#ifndef WIN32
 #include <gtest/gtest.h>
 
 #include <list>
@@ -208,3 +209,4 @@ TEST_F(UserMappingUnixTest, GetGroupnamesReturnsPrimaryGroupAtFirst) {
             (*groupnames.begin()));
 }
 
+#endif  // !WIN32

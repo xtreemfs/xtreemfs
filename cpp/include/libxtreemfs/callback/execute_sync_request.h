@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -18,7 +18,7 @@
 #include <windows.h>
 #else
 #include <ctime>
-#endif
+#endif  // WIN32
 
 #include <algorithm>
 #include <boost/cstdint.hpp>
@@ -323,7 +323,7 @@ template<class ReturnMessageType, class F>
     // Throw an exception.
     switch (error_type) {
       case xtreemfs::pbrpc::ERRNO:  {
-        // Posix errors are usually not logged as errors.
+        // POSIX errors are usually not logged as errors.
         level = xtreemfs::util::LEVEL_INFO;
         if (posix_errno == xtreemfs::pbrpc::POSIX_ERROR_ENOENT) {
           level = xtreemfs::util::LEVEL_DEBUG;
@@ -402,7 +402,7 @@ template<class ReturnMessageType, class F>
   }
 }
 
-/** Executes the request without delaying the last try and no xcap handler. */
+/** Executes the request without delaying the last try and no XCap handler. */
 template<class ReturnMessageType, class F>
     ReturnMessageType ExecuteSyncRequest(F sync_function,
                                          UUIDIterator* uuid_iterator,
@@ -420,7 +420,7 @@ template<class ReturnMessageType, class F>
                                                NULL);
 }
 
-/** Executes the request without a xcap handler. */
+/** Executes the request without a XCap handler. */
 template<class ReturnMessageType, class F>
     ReturnMessageType ExecuteSyncRequest(F sync_function,
                                          UUIDIterator* uuid_iterator,

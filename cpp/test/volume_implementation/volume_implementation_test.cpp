@@ -8,10 +8,14 @@
 #include <gtest/gtest.h>
 
 #include <boost/scoped_ptr.hpp>
+#include <boost/thread/thread.hpp>
 #include <cstdlib>
 #include <cstdio>
 #include <cctype>
 #include <string>
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/file_info.h"
@@ -24,6 +28,10 @@
 #include "util/logging.h"
 #include "xtreemfs/MRC.pb.h"
 #include "xtreemfs/OSD.pb.h"
+
+#ifdef WIN32
+#define snprintf _snprintf
+#endif  // WIN32
 
 /** Assumes a running XtreemFS installation listing to localhost at the default
  *  ports.
@@ -39,9 +47,13 @@ using namespace xtreemfs::util;
 namespace xtreemfs {
 
 std::string RandomVolumeName(const int length) {
+#ifdef WIN32
+  srand(GetTickCount());
+#else
   struct timeval time;
   gettimeofday(&time, NULL);
   srand((time.tv_sec * 1000) + (time.tv_usec / 1000));
+#endif  // WIN32
 
   std::string result = "volume_implementation_test_";
   char c;
@@ -280,7 +292,7 @@ TEST_F(VolumeImplementationTestFastPeriodicFileSizeUpdate,
     EXPECT_NE(kClean, dynamic_cast<FileHandleImplementation*>(file_handle)
         ->file_info_->osd_write_response_status_);
     // Wait for the periodic file size update thread.
-    sleep(2);
+    boost::this_thread::sleep(boost::posix_time::seconds(2));
     EXPECT_EQ(kClean, dynamic_cast<FileHandleImplementation*>(file_handle)
         ->file_info_->osd_write_response_status_);
     file_handle->Close();
@@ -306,7 +318,7 @@ TEST_F(VolumeImplementationTestFastPeriodicXCapRenewal,
     // Wait for the periodic xcap renewal thread.
     boost::uint64_t timeout_s = dynamic_cast<FileHandleImplementation*>(file_handle)
             ->xcap_.expire_time_s();
-    sleep(2);
+    boost::this_thread::sleep(boost::posix_time::seconds(2));
     EXPECT_LT(timeout_s, dynamic_cast<FileHandleImplementation*>(file_handle)
         ->xcap_.expire_time_s());
 
@@ -849,7 +861,7 @@ TEST_F(VolumeImplementationTest, CorrectDirectoryEntriesUpdateAfterRmDir) {
 
   ASSERT_NO_THROW({
     // Create dir.
-    volume_->CreateDirectory(user_credentials_, path, 448);
+    volume_->MakeDirectory(user_credentials_, path, 448);
 
     // List directory (and thereby caching it).
     boost::scoped_ptr<DirectoryEntries> dentries(volume_->ReadDir(
@@ -857,7 +869,7 @@ TEST_F(VolumeImplementationTest, CorrectDirectoryEntriesUpdateAfterRmDir) {
     EXPECT_EQ(3, dentries->entries_size());
 
     // Delete dir.
-    volume_->RemoveDirectory(user_credentials_, path);
+    volume_->DeleteDirectory(user_credentials_, path);
 
     // List directory again and check for correct update.
     dentries.reset(volume_->ReadDir(

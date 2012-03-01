@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -22,27 +22,28 @@ namespace xtreemfs {
 
 class UserMappingGridmap : public UserMapping {
  public:
-  UserMappingGridmap(UserMappingType user_mapping_type_system,
-                     const std::string& gridmap_file,
+  UserMappingGridmap(const std::string& gridmap_file,
                      int gridmap_reload_interval_s);
 
-#ifndef WIN32
   virtual void Start();
 
   virtual void Stop();
 
-  virtual std::string UIDToUsername(uid_t uid);
+  virtual void LocalToGlobalUsername(const std::string& username_local,
+                                     std::string* username_global);
 
-  virtual uid_t       UsernameToUID(const std::string& username);
+  virtual void LocalToGlobalGroupname(const std::string& groupname_local,
+                                      std::string* groupname_global);
 
-  virtual std::string GIDToGroupname(gid_t gid);
+  virtual void GlobalToLocalUsername(const std::string& username_global,
+                                      std::string* username_local);
 
-  virtual gid_t       GroupnameToGID(const std::string& groupname);
+  virtual void GlobalToLocalGroupname(const std::string& groupname_local,
+                                      std::string* groupname_global);
 
-  virtual void        GetGroupnames(uid_t uid,
-                                    gid_t gid,
-                                    pid_t pid,
-                                    std::list<std::string>* groupnames);
+  virtual void GetGroupnames(
+      const std::string& username_local,
+      xtreemfs::pbrpc::UserCredentials* user_credentials);
 
  protected:
   /** Parses the file gridmap_file_ and stores the information in the maps
@@ -85,13 +86,14 @@ class UserMappingGridmap : public UserMapping {
   void PeriodicGridmapFileReload();
 
   /** Looks up a username in the mapfile and returns the DN if found, else "".*/
-  std::string UsernameToDN(std::string username);
+  std::string UsernameToDN(const std::string& username);
 
   /** Looks up a DN in the mapfile and returns the username if found, else "".*/
-  std::string DNToUsername(std::string dn);
+  std::string DNToUsername(const std::string& dn);
 
-  /** Fills ous with the OUs of the DN. */
-  void DNToOUs(std::string dn, std::list<std::string>* ous);
+  /** Adds OUs as groups from the DN. */
+  void DNToOUs(const std::string& dn,
+               xtreemfs::pbrpc::UserCredentials* user_credentials);
 
   /** Path to grid map file which will be periodically re-read. */
   std::string gridmap_file_;
@@ -104,10 +106,6 @@ class UserMappingGridmap : public UserMapping {
    * @remarks   Start() and Stop() have to be executed to start and stop the
    *            thread responsible for the periodic reread. */
   int gridmap_reload_interval_s_;
-
-  /** Required base usermapping to retrieve IDs or names from the system. */
-  boost::scoped_ptr<UserMapping> system_user_mapping_;
-#endif // !WIN32
 };
 
 }  // namespace xtreemfs

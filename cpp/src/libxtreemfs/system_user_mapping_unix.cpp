@@ -1,14 +1,14 @@
 /*
  * Copyright (c) 2010-2011 by Patrick Schaefer, Zuse Institute Berlin
- *                    2011 by Michael Berlin, Zuse Institute Berlin
+ *               2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
 
-#include "libxtreemfs/user_mapping_unix.h"
-
 #ifndef WIN32
+#include "libxtreemfs/system_user_mapping_unix.h"
+
 #include <grp.h>
 #include <pwd.h>
 #include <sys/types.h>

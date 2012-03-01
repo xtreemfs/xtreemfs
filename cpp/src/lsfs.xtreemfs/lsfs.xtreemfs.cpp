@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -8,12 +8,10 @@
 #include <boost/scoped_ptr.hpp>
 #include <iostream>
 #include <string>
-#include <unistd.h>
 
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/helper.h"
-#include "libxtreemfs/user_mapping.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "lsfs.xtreemfs/lsfs_options.h"

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2010-2011 by Patrick Schaefer, Zuse Institute Berlin
- *                    2011 by Michael Berlin, Zuse Institute Berlin
+ *               2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -115,7 +115,7 @@ std::string GetOSDUUIDFromXlocSet(const xtreemfs::pbrpc::XLocSet& xlocs,
   if (xlocs.replicas_size() == 0) {
     Logging::log->getLog(LEVEL_ERROR)
        << "GetOSDUUIDFromXlocSet: Empty replicas list in XlocSet: "
-       <<  xlocs.DebugString() << std::endl;
+       <<  xlocs.DebugString() << endl;
     return "";
   }
 
@@ -123,7 +123,7 @@ std::string GetOSDUUIDFromXlocSet(const xtreemfs::pbrpc::XLocSet& xlocs,
   if (replica.osd_uuids_size() == 0) {
     Logging::log->getLog(LEVEL_ERROR)
         << "GetOSDUUIDFromXlocSet: No head OSD available in XlocSet:"
-        <<  xlocs.DebugString() << std::endl;
+        <<  xlocs.DebugString() << endl;
     return "";
   }
 
@@ -144,14 +144,15 @@ std::string GetOSDUUIDFromXlocSet(
 void GenerateVersion4UUID(std::string* result) {
   FILE *urandom = fopen("/dev/urandom", "r");
   if (!urandom) {
-    srand(time(NULL));  // Use rand() instead if /dev/urandom not available.
+    // Use rand() instead if /dev/urandom not available.
+    srand(static_cast<unsigned int>(time(NULL)));
   }
 
   // Base62 characters for UUID generation.
   char set[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
   uint32_t block_length[] = {8, 4, 4, 4, 12};
-  int block_length_count = 5;
+  uint32_t block_length_count = 5;
   char uuid[37];
 
   uint64_t random_value;
@@ -281,5 +282,79 @@ int GetMacOSXKernelVersion() {
   return darwin_kernel_version;
 }
 #endif  // __APPLE__
+
+#ifdef WIN32
+void ConvertWindowsToUTF8(const WCHAR* windows_string,
+                          std::string* utf8_string) {
+  UINT system_code_page = CP_UTF8;
+
+  // Determine the size of the resulting string first.
+  int string_length = WideCharToMultiByte(system_code_page,
+                                          0,
+                                          windows_string,
+                                          -1,
+                                          NULL,
+                                          0,
+                                          NULL,
+                                          NULL);
+  if (string_length == 0) {
+    Logging::log->getLog(LEVEL_ERROR) <<
+       "Failed to convert Windows string to UTF8 encoded string, error"
+       " code: " << ::GetLastError() << endl;
+  }
+
+  // WideCharToMultiByte returns the length including the null-termination, but
+  // std::string.resize() does not.
+  utf8_string->resize(string_length - 1);
+  int conversion_result = WideCharToMultiByte(system_code_page,
+                                              0,
+                                              windows_string,
+                                              -1,
+                                              &((*utf8_string)[0]),
+                                              string_length,
+                                              NULL,
+                                              NULL);
+
+  if (conversion_result == 0 || conversion_result != string_length) {
+    Logging::log->getLog(LEVEL_ERROR) <<
+       "Failed to convert Windows string to UTF8 encoded string, error"
+       " code: " << ::GetLastError() << endl;
+  }
+}
+
+void ConvertUTF8ToWindows(const std::string& utf8_string,
+                          std::wstring* utf16_string) {
+  UINT system_code_page = CP_UTF8;
+
+  int string_length = MultiByteToWideChar(system_code_page,
+                                          0,
+                                          utf8_string.c_str(),
+                                          -1,
+                                          NULL,
+                                          0);
+  if (string_length == 0) {
+    Logging::log->getLog(LEVEL_ERROR) <<
+       "Failed to convert UTF8 encoded string to Windows string, error"
+       " code: " << ::GetLastError() << endl;
+  }
+
+  // MultiByteToWideChar returns the length including the null-termination, but
+  // std::wstring.resize() does not.
+  utf16_string->resize(string_length - 1);
+
+  int conversion_result = MultiByteToWideChar(system_code_page,
+                                              0,
+                                              utf8_string.c_str(),
+                                              -1,
+                                              &((*utf16_string)[0]),
+                                              string_length);
+
+  if (conversion_result == 0 || conversion_result != string_length) {
+    Logging::log->getLog(LEVEL_ERROR) <<
+       "Failed to convert UTF8 encoded string to Windows string, error"
+       " code: " << ::GetLastError() << endl;
+  }
+}
+#endif  // WIN32
 
 }  // namespace xtreemfs

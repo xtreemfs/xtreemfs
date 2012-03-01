@@ -1,14 +1,12 @@
 /*
  * Copyright (c) 2010-2011 by Patrick Schaefer, Zuse Institute Berlin
- *                    2011 by Michael Berlin, Zuse Institute Berlin
+ *               2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
 
 #include "libxtreemfs/user_mapping_gridmap_globus.h"
-
-#ifndef WIN32
 
 #include <boost/bimap.hpp>
 #include <boost/tokenizer.hpp>
@@ -28,11 +26,9 @@ using namespace xtreemfs::util;
 namespace xtreemfs {
 
 UserMappingGridmapGlobus::UserMappingGridmapGlobus(
-    UserMappingType user_mapping_type_system,
     const std::string& gridmap_file,
     int gridmap_reload_interval_s)
-    : UserMappingGridmap(user_mapping_type_system,
-                         gridmap_file,
+    : UserMappingGridmap(gridmap_file,
                          gridmap_reload_interval_s) {}
 
 void UserMappingGridmapGlobus::ReadGridmapFile() {
@@ -108,5 +104,3 @@ void UserMappingGridmapGlobus::ReadGridmapFile() {
 }
 
 }  // namespace xtreemfs
-
-#endif // !WIN32

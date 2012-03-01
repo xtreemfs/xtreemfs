@@ -150,7 +150,6 @@ class Options {
    *  data itself) shall be used. */
   bool grid_ssl;
   /** True if the Globus user mapping shall be used. */
-#ifndef WIN32
   bool grid_auth_mode_globus;
   /** True if the Unicore user mapping shall be used. */
   bool grid_auth_mode_unicore;
@@ -162,7 +161,6 @@ class Options {
   std::string grid_gridmap_location_default_unicore;
   /** Periodic interval after which the gridmap file will be reloaded. */
   int grid_gridmap_reload_interval_m;
-#endif  // !WIN32
 
   // Advanced XtreemFS options.
   /** Interval for periodic file size updates in seconds. */
@@ -170,11 +168,9 @@ class Options {
   /** Interval for periodic xcap renewal in seconds. */
   int periodic_xcap_renewal_interval_s;
 
-#ifndef WIN32
-  // User mapping.
-  /** Type of the UserMapping used to resolve user and group IDs to names. */
+  // Additional User mapping.
+  /** Type of the UserMapping used to translate between local/global names. */
   UserMapping::UserMappingType user_mapping_type;
-#endif  // !WIN32
 
  protected:
   /** Extract volume name and dir service address from dir_volume_url. */

@@ -10,6 +10,11 @@
 
 #include <boost/cstdint.hpp>
 #include <string>
+#ifdef WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif  // WIN32
 
 namespace xtreemfs {
 
@@ -83,6 +88,19 @@ bool CheckIfUnsignedInteger(const std::string& string);
 /** Returns the MacOSX Kernel Version (8 = Tiger, 9 = Leopard, 10 = Snow Leopard). */
 int GetMacOSXKernelVersion();
 #endif  // __APPLE__
+
+#ifdef WIN32
+/** Convert a Windows Multibyte string (e.g. a path or username) into
+ *  an UTF8 string. */
+void ConvertWindowsToUTF8(const WCHAR* windows_string,
+                          std::string* utf8_string);
+
+/** Convert an UTF8 string (e.g. a path or username) into
+ *  a Windows Multibyte string. */
+void ConvertUTF8ToWindows(const std::string& utf8_string,
+                          std::wstring* utf16_string);
+#endif  // WIN32
+
 
 }  // namespace xtreemfs
 

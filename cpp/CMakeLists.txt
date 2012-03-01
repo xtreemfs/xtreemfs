@@ -18,6 +18,7 @@ if (MSVC)
   # autolink for boost::asio does wrongfully require date_time and regex libraries.
   # See: http://www.boost.org/doc/libs/1_46_1/doc/html/boost_asio/using.html
   add_definitions(-DBOOST_DATE_TIME_NO_LIB -DBOOST_REGEX_NO_LIB)
+  ADD_DEFINITIONS(/D _CRT_SECURE_NO_WARNINGS)
 endif(MSVC)
 if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set (SOLARIS true)
@@ -30,11 +31,23 @@ if (WIN32)
 else()
   set(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY "${CLIENT_GOOGLE_PROTOBUF_CPP}/src/.libs/libprotobuf.a")
 endif(WIN32)
-# Windows requires for a Debug build also debug libraries from protobuf & co.
-STRING(REGEX REPLACE "/Release/" "/Debug/" CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY_DEBUG ${CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY})
 set(CLIENT_GOOGLE_TEST_CPP "${CMAKE_SOURCE_DIR}/thirdparty/gtest-1.5.0")
-set(CLIENT_GOOGLE_TEST_CPP_LIBRARY "${CLIENT_GOOGLE_TEST_CPP}/lib/.libs/libgtest.a")
-set(CLIENT_GOOGLE_TEST_CPP_MAIN "${CLIENT_GOOGLE_TEST_CPP}/lib/.libs/libgtest_main.a")
+if (WIN32)
+  set(CLIENT_GOOGLE_TEST_CPP_LIBRARY "${CLIENT_GOOGLE_TEST_CPP}/msvc/gtest-md/Release/gtest.lib")
+else()
+  set(CLIENT_GOOGLE_TEST_CPP_LIBRARY "${CLIENT_GOOGLE_TEST_CPP}/lib/.libs/libgtest.a")
+endif(WIN32)
+if (WIN32)
+  set(CLIENT_GOOGLE_TEST_CPP_MAIN "${CLIENT_GOOGLE_TEST_CPP}/msvc/gtest-md/Release/gtest_main-md.lib")
+else()
+  set(CLIENT_GOOGLE_TEST_CPP_MAIN "${CLIENT_GOOGLE_TEST_CPP}/lib/.libs/libgtest_main.a")
+endif(WIN32)
+# Windows requires for a Debug build also debug libraries from protobuf & co.
+STRING(REPLACE "Release" "Debug" CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY_DEBUG ${CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY})
+STRING(REPLACE "Release" "Debug" TEMP ${CLIENT_GOOGLE_TEST_CPP_LIBRARY})
+STRING(REPLACE ".lib" "d.lib" CLIENT_GOOGLE_TEST_CPP_LIBRARY_DEBUG ${TEMP})
+STRING(REPLACE "Release" "Debug" TEMP ${CLIENT_GOOGLE_TEST_CPP_MAIN})
+STRING(REPLACE ".lib" "d.lib" CLIENT_GOOGLE_TEST_CPP_MAIN_DEBUG ${TEMP})
 
 # Set required libraries.
 if (NOT WIN32)
@@ -62,6 +75,25 @@ IF(APPLE)
 ENDIF(APPLE)
 IF(WIN32)
   SET(Boost_USE_STATIC_LIBS true)
+  
+  ## Find dokan
+  #  DOKAN_ROOT        - Input variable: Set to 
+  #  DOKAN_FOUND       - Output variable: Dokan was found.
+  #  DOKAN_INCLUDE_DIR - Output variable: Directory which contains the dokan.h file.
+  #  DOKAN_LIBRARIES   - Output variable: Will be set to dokan.lib location.
+  find_path(DOKAN_INCLUDE_DIR dokan.h PATHS $ENV{ProgramFiles}/Dokan/DokanLibrary ${DOKAN_ROOT})
+  find_library(DOKAN_LIBRARY dokan $ENV{ProgramFiles}/Dokan/DokanLibrary ${DOKAN_ROOT})
+
+  include(FindPackageHandleStandardArgs)
+  FIND_PACKAGE_HANDLE_STANDARD_ARGS(DOKAN DEFAULT_MSG DOKAN_LIBRARY DOKAN_INCLUDE_DIR)
+
+  if (DOKAN_FOUND)
+    set(DOKAN_LIBRARIES ${DOKAN_LIBRARY})
+    include_directories(${DOKAN_INCLUDE_DIR})
+  else(DOKAN_FOUND)
+    message(FATAL_ERROR "The required library 'dokan' was not found. Please install it from http://dokan-dev.net/ first. If you installed it to a non-default location, please set DOKAN_ROOT to the directory which contains the dokan.h and dokan.lib files.")
+  endif (DOKAN_FOUND)
+  mark_as_advanced(DOKAN_LIBRARY)
 ENDIF(WIN32)
 
 # Set required thirdparty libraries.
@@ -87,8 +119,6 @@ if (NOT OPENSSL_FOUND)
 endif(NOT OPENSSL_FOUND)
 include_directories(${OPENSSL_INCLUDE_DIR})
 
-
-
 SET(REQUIRED_STATIC_LIBRARIES ${CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY})
 if(BUILD_CLIENT_TESTS)
   SET(REQUIRED_STATIC_LIBRARIES ${REQUIRED_STATIC_LIBRARIES} ${CLIENT_GOOGLE_TEST_CPP_LIBRARY} ${CLIENT_GOOGLE_TEST_CPP_MAIN})
@@ -108,9 +138,13 @@ SET_PROPERTY(TARGET protobuf_debug PROPERTY IMPORTED_LOCATION ${CLIENT_GOOGLE_PR
 include_directories(${CLIENT_GOOGLE_PROTOBUF_CPP}/src)
 
 ADD_LIBRARY(gtest STATIC IMPORTED)
+ADD_LIBRARY(gtest_debug STATIC IMPORTED)
 ADD_LIBRARY(gtest_main STATIC IMPORTED)
+ADD_LIBRARY(gtest_main_debug STATIC IMPORTED)
 SET_PROPERTY(TARGET gtest PROPERTY IMPORTED_LOCATION ${CLIENT_GOOGLE_TEST_CPP_LIBRARY})
+SET_PROPERTY(TARGET gtest_debug PROPERTY IMPORTED_LOCATION ${CLIENT_GOOGLE_TEST_CPP_LIBRARY_DEBUG})
 SET_PROPERTY(TARGET gtest_main PROPERTY IMPORTED_LOCATION ${CLIENT_GOOGLE_TEST_CPP_MAIN})
+SET_PROPERTY(TARGET gtest_main_debug PROPERTY IMPORTED_LOCATION ${CLIENT_GOOGLE_TEST_CPP_MAIN_DEBUG})
 include_directories(${CLIENT_GOOGLE_TEST_CPP}/include)
 
 # Check if this is a 64 Bit system
@@ -154,14 +188,7 @@ TARGET_LINK_LIBRARIES(xtreemfs optimized protobuf debug protobuf_debug ${Boost_S
 ADD_EXECUTABLE(example_libxtreemfs src/example_libxtreemfs/example_libxtreemfs.cpp)
 TARGET_LINK_LIBRARIES(example_libxtreemfs xtreemfs)
 
-if (NOT WIN32)
-  file(GLOB_RECURSE SRCS_FUSE_ADAPTER src/fuse/*.cpp)
-  file(GLOB_RECURSE SRCS_XTFS_UTIL src/xtfsutil/xtfsutil_server.cpp)
-  file(GLOB_RECURSE SRCS_JSONCPP src/json/*.cpp)
-  ADD_EXECUTABLE(mount.xtreemfs ${SRCS_FUSE_ADAPTER} ${SRCS_XTFS_UTIL} ${SRCS_JSONCPP})
-  TARGET_LINK_LIBRARIES(mount.xtreemfs xtreemfs ${LIBFUSE})
-
-  file(GLOB_RECURSE SRCS_MKFS src/mkfs.xtreemfs/*.cpp)
+file(GLOB_RECURSE SRCS_MKFS src/mkfs.xtreemfs/*.cpp)
 ADD_EXECUTABLE(mkfs.xtreemfs ${SRCS_MKFS})
 TARGET_LINK_LIBRARIES(mkfs.xtreemfs xtreemfs)
 
@@ -173,9 +200,22 @@ file(GLOB_RECURSE SRCS_LSFS src/lsfs.xtreemfs/*.cpp)
 ADD_EXECUTABLE(lsfs.xtreemfs ${SRCS_LSFS})
 TARGET_LINK_LIBRARIES(lsfs.xtreemfs xtreemfs)
 
-ADD_EXECUTABLE(xtfsutil src/xtfsutil/xtfsutil.cpp ${SRCS_JSONCPP})
-TARGET_LINK_LIBRARIES(xtfsutil ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_REGEX_LIBRARY} ${LIBATTR})
+file(GLOB_RECURSE SRCS_XTFS_UTIL src/xtfsutil/xtfsutil_server.cpp)
+file(GLOB_RECURSE SRCS_JSONCPP src/json/*.cpp)
+
+if (NOT WIN32)
+  file(GLOB_RECURSE SRCS_FUSE_ADAPTER src/fuse/*.cpp)
+  ADD_EXECUTABLE(mount.xtreemfs ${SRCS_FUSE_ADAPTER} ${SRCS_XTFS_UTIL} ${SRCS_JSONCPP})
+  TARGET_LINK_LIBRARIES(mount.xtreemfs xtreemfs ${LIBFUSE})
+
+  ADD_EXECUTABLE(xtfsutil src/xtfsutil/xtfsutil.cpp ${SRCS_JSONCPP})
+  TARGET_LINK_LIBRARIES(xtfsutil ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_REGEX_LIBRARY} ${LIBATTR})
 endif(NOT WIN32)
+if(WIN32)
+  file(GLOB_RECURSE SRCS_DOKAN_ADAPTER src/dokan/*.cpp)
+  ADD_EXECUTABLE(mount.xtreemfs ${SRCS_DOKAN_ADAPTER} ${SRCS_XTFS_UTIL} ${SRCS_JSONCPP})
+  TARGET_LINK_LIBRARIES(mount.xtreemfs xtreemfs ${DOKAN_LIBRARIES})
+endif(WIN32)
 
 # Define building of unittests.
 ##########################################
@@ -194,7 +234,7 @@ if(BUILD_CLIENT_TESTS)
       if (SRCS_TESTS)
         MESSAGE(STATUS "\tConfiguring test: ${testname}.")
         add_executable(${testname} ${SRCS_TESTS})
-        TARGET_LINK_LIBRARIES(${testname} gtest_main gtest xtreemfs)
+        TARGET_LINK_LIBRARIES(${testname} optimized gtest_main debug gtest_main_debug optimized gtest debug gtest_debug xtreemfs)
         ADD_TEST(${testname} ${testname})
       endif()
     endif(IS_DIRECTORY ${testdir})

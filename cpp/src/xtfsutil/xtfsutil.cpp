@@ -11,10 +11,12 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#ifndef __sun
+#if !defined(__sun) && !defined(WIN32)
 #include <sys/xattr.h>
-#endif  // !__sun
+#endif  // !__sun && WIN32
+#ifndef WIN32
 #include <unistd.h>
+#endif  // !WIN32
 
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/program_options.hpp>

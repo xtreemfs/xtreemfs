@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 
+#include <boost/thread/thread.hpp>
 #include <cstdio>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -18,9 +19,11 @@
 #include "libxtreemfs/user_mapping.h"
 #include "libxtreemfs/user_mapping_gridmap_globus.h"
 #include "util/logging.h"
+#include "pbrpc/RPC.pb.h"
 
 using namespace std;
 using namespace xtreemfs;
+using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 
 class UserMappingGridmapGlobusTest : public ::testing::Test {
@@ -42,7 +45,6 @@ class UserMappingGridmapGlobusTest : public ::testing::Test {
     out.close();
 
     user_mapping_.reset(new UserMappingGridmapGlobus(
-        UserMapping::GetUserMappingSystemType(),
         gridmap_file_path_,
         1));  // Check every second for changes.
     user_mapping_->Start();
@@ -62,74 +64,72 @@ class UserMappingGridmapGlobusTest : public ::testing::Test {
 };
 
 TEST_F(UserMappingGridmapGlobusTest, TestBasicDNAndOUResolving) {
-  EXPECT_EQ("CN=Michael Berlin,OU=CSR,OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB),O=GridGermany,C=DE",
-            user_mapping_->UIDToUsername(0));
-  EXPECT_EQ(0,
-            user_mapping_->UsernameToUID("CN=Michael Berlin,OU=CSR,OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB),O=GridGermany,C=DE"));
+  string result;
+  user_mapping_->LocalToGlobalUsername("root", &result);
+  EXPECT_EQ("CN=Michael Berlin,OU=CSR,OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB),O=GridGermany,C=DE",  // NOLINT
+            result);
+  user_mapping_->GlobalToLocalUsername("CN=Michael Berlin,OU=CSR,OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB),O=GridGermany,C=DE",
+                                       &result);
+  EXPECT_EQ("root",
+            result);
 
-  // All OUs will be returned as list of groups.
-  list<string> list_of_groups;
-  user_mapping_->GetGroupnames(0, 0, 0, &list_of_groups);
-  ASSERT_EQ(2, list_of_groups.size());
-  EXPECT_EQ("CSR",
-            *(list_of_groups.begin()));
+  // All OUs will be returned as list of groups of UserCredentials.
+  UserCredentials uc;
+  user_mapping_->GetGroupnames("root", &uc);
+  ASSERT_EQ(2, uc.groups_size());
+  EXPECT_EQ("CSR", uc.groups(0));
   EXPECT_EQ("Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)",
-            *(++list_of_groups.begin()));
-
-  // If a user is not found, the result of the system usermapping will be
-  // returned.
-  boost::scoped_ptr<UserMapping> system_user_mapping(
-      UserMapping::CreateUserMapping(UserMapping::GetUserMappingSystemType()));
-  string system_user = system_user_mapping->UIDToUsername(1);
-  EXPECT_EQ(system_user, user_mapping_->UIDToUsername(1));
-  uid_t system_user_uid = system_user_mapping->UsernameToUID("unknownuser");
-  EXPECT_EQ(system_user_uid, user_mapping_->UsernameToUID("unknownuser"));
+            uc.groups(1));
 
   // Groups in general do not work and always return "root" or 0.
-  EXPECT_EQ("root", user_mapping_->GIDToGroupname(0));
-  EXPECT_EQ("root", user_mapping_->GIDToGroupname(1));
-  EXPECT_EQ(0, user_mapping_->GroupnameToGID("unknowngroup"));
+  user_mapping_->LocalToGlobalGroupname("CSR", &result);
+  EXPECT_EQ("root", result);
+  user_mapping_->LocalToGlobalGroupname("Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)", &result);  // NOLINT
+  EXPECT_EQ("root", result);
+  user_mapping_->GlobalToLocalGroupname("unknowngroup", &result);
+  EXPECT_EQ("root", result);
 
   // List of groups is empty for unknown users.
-  list<string> empty_list_of_groups;
-  user_mapping_->GetGroupnames(1, 0, 0, &empty_list_of_groups);
-  ASSERT_EQ(0, empty_list_of_groups.size());
-
+  UserCredentials uc2;
+  user_mapping_->GetGroupnames("nobody", &uc2);
+  ASSERT_EQ(0, uc2.groups_size());
 }
 
 TEST_F(UserMappingGridmapGlobusTest, GridmapFileReload) {
+  string result;
+  user_mapping_->LocalToGlobalUsername("root", &result);
   EXPECT_EQ("CN=Michael Berlin,OU=CSR,OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB),O=GridGermany,C=DE",  // NOLINT
-            user_mapping_->UIDToUsername(0));
-  EXPECT_EQ(0,
-            user_mapping_->UsernameToUID("CN=Michael Berlin,OU=CSR,OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB),O=GridGermany,C=DE"));  // NOLINT
+            result);
+  user_mapping_->GlobalToLocalUsername("CN=Michael Berlin,OU=CSR,OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB),O=GridGermany,C=DE", &result);  // NOLINT
+  EXPECT_EQ("root", result);
 
-  list<string> list_of_groups;
-  user_mapping_->GetGroupnames(0, 0, 0, &list_of_groups);
-  ASSERT_EQ(2, list_of_groups.size());
-  EXPECT_EQ("CSR",
-            *(list_of_groups.begin()));
+  UserCredentials uc;
+  user_mapping_->GetGroupnames("root", &uc);
+  ASSERT_EQ(2, uc.groups_size());
+  EXPECT_EQ("CSR", uc.groups(0));
   EXPECT_EQ("Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)",
-            *(++list_of_groups.begin()));
+            uc.groups(1));
 
   // Rewrite file with another entry.
-  sleep(1);
+  boost::this_thread::sleep(boost::posix_time::seconds(1));
   ofstream out(gridmap_file_path_.c_str());
   out << "\"/C=DE/O=GridGermany/OU=Dummy OU 1/CN=Dummy Username\" root\n";
   out.close();
   // Wait for reload.
-  sleep(2);
+  boost::this_thread::sleep(boost::posix_time::seconds(2));
 
   // Old entry is no longer visible.
-  EXPECT_EQ(65534,
-            user_mapping_->UsernameToUID("CN=Michael Berlin,OU=CSR,OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB),O=GridGermany,C=DE"));  // NOLINT
+  string dn = "CN=Michael Berlin,OU=CSR,OU=Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB),O=GridGermany,C=DE";  // NOLINT
+  user_mapping_->GlobalToLocalUsername(dn, &result);
+  EXPECT_EQ(dn, result);
   // New entry can be seen.
-  EXPECT_EQ("CN=Dummy Username,OU=Dummy OU 1,O=GridGermany,C=DE",
-            user_mapping_->UIDToUsername(0));
-  EXPECT_EQ(0,
-            user_mapping_->UsernameToUID("CN=Dummy Username,OU=Dummy OU 1,O=GridGermany,C=DE"));  // NOLINT
-  list<string> list_of_groups_new;
-  user_mapping_->GetGroupnames(0, 0, 0, &list_of_groups_new);
-  ASSERT_EQ(1, list_of_groups_new.size());
-  EXPECT_EQ("Dummy OU 1",
-            *(list_of_groups_new.begin()));
+  string new_dn = "CN=Dummy Username,OU=Dummy OU 1,O=GridGermany,C=DE";
+  user_mapping_->LocalToGlobalUsername("root", &result);
+  EXPECT_EQ(new_dn, result);
+  user_mapping_->GlobalToLocalUsername(new_dn, &result);
+  EXPECT_EQ("root", result);
+  UserCredentials uc2;
+  user_mapping_->GetGroupnames("root", &uc2);
+  ASSERT_EQ(1, uc2.groups_size());
+  EXPECT_EQ("Dummy OU 1", uc2.groups(0));
 }

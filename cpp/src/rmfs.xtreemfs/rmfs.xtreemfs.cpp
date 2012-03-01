@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -8,11 +8,11 @@
 #include <boost/scoped_ptr.hpp>
 #include <iostream>
 #include <string>
-#include <unistd.h>
 
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/helper.h"
+#include "libxtreemfs/system_user_mapping.h"
 #include "libxtreemfs/user_mapping.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
@@ -50,31 +50,35 @@ int main(int argc, char* argv[]) {
   }
 
   bool success = true;
-  boost::scoped_ptr<UserMapping> user_mapping;
+  boost::scoped_ptr<SystemUserMapping> system_user_mapping;
   boost::scoped_ptr<Client> client;
   try {
-    // Start logging manually (altough it would be automatically started by
+    // Start logging manually (although it would be automatically started by
     // ClientImplementation()) as its required by UserMapping.
     initialize_logger(options.log_level_string,
                       options.log_file_path,
                       LEVEL_WARN);
 
     // Set user_credentials.
-    user_mapping.reset(UserMapping::CreateUserMapping(
+    system_user_mapping.reset(SystemUserMapping::GetSystemUserMapping());
+    // Check if the user specified an additional user mapping in options.
+    UserMapping* additional_user_mapping = UserMapping::CreateUserMapping(
         options.user_mapping_type,
-        UserMapping::kUnix,
-        options));
-    user_mapping->Start();
+        options);
+    if (additional_user_mapping) {
+      system_user_mapping->RegisterAdditionalUserMapping(
+        additional_user_mapping);
+      system_user_mapping->StartAdditionalUserMapping();
+    }
 
     UserCredentials user_credentials;
-    user_credentials.set_username(user_mapping->UIDToUsername(geteuid()));
+    system_user_mapping->GetUserCredentialsForCurrentUser(&user_credentials);
     if (user_credentials.username().empty()) {
       cout << "Error: No name found for the current user (using the configured "
           "UserMapping: " << options.user_mapping_type << ")\n";
       return 1;
     }
-    // The groups won't be checked and maybe therefore empty.
-    user_credentials.add_groups(user_mapping->GIDToGroupname(getegid()));
+    // The groups won't be checked and therefore may be empty.
 
     // Create a new client and start it.
     client.reset(Client::CreateClient(
@@ -84,7 +88,7 @@ int main(int argc, char* argv[]) {
         options));
     client->Start();
 
-    // Create the volume.
+    // Delete the volume.
     Auth auth;
     if (options.admin_password.empty()) {
       auth.set_auth_type(AUTH_NONE);
@@ -108,7 +112,7 @@ int main(int argc, char* argv[]) {
   if (client) {
     client->Shutdown();
   }
-  user_mapping->Stop();
+  system_user_mapping->StopAdditionalUserMapping();
 
   if (success) {
     cout << "Successfully deleted the volume \"" << options.volume_name
