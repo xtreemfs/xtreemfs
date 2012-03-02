@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
+#include <limits>
 #include <map>
 #include <string>
 
@@ -886,6 +887,10 @@ xtreemfs::pbrpc::DirectoryEntries* VolumeImplementation::ReadDir(
     boost::uint32_t count,
     bool names_only) {
   DirectoryEntries* result = NULL;
+
+  if (count == 0) {
+    count = numeric_limits<boost::uint32_t>::max();
+  }
 
   result = metadata_cache_.GetDirEntries(path, offset, count);
   if (result != NULL) {
