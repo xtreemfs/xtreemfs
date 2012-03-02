@@ -25,6 +25,7 @@ import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
+import org.xtreemfs.mrc.ac.FileAccessPolicy;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
@@ -54,7 +55,7 @@ public class Converter {
      * @param acl
      * @return
      */
-    public static Map<String, Object> aclToMap(Iterator<ACLEntry> acl) {
+    public static Map<String, Object> aclToMap(Iterator<ACLEntry> acl, FileAccessPolicy policy) {
         
         if (acl == null)
             return null;
@@ -62,7 +63,7 @@ public class Converter {
         Map<String, Object> aclMap = new HashMap<String, Object>();
         while (acl.hasNext()) {
             ACLEntry next = acl.next();
-            aclMap.put(next.getEntity(), (long) next.getRights());
+            aclMap.put(next.getEntity(), policy.translatePermissions(next.getRights()));
         }
         
         return aclMap;

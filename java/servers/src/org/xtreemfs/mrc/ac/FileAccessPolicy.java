@@ -38,6 +38,17 @@ public interface FileAccessPolicy {
     public String translateAccessFlags(int accessMode);
     
     /**
+     * Returns a string representing the policy-specific translation of the
+     * given permissions into the 'rwx' scheme.
+     * 
+     * @param permissions
+     *            an integer representing the permissions for a specific user or
+     *            group
+     * @return an 'rwx' string describing the permissions
+     */
+    public String translatePermissions(int permissions);
+    
+    /**
      * Checks whether the user with the given ID is allowed to perform
      * operations for the given file with the given access mode.
      * 
