@@ -760,7 +760,7 @@ string GetPathOnVolume(const char* real_path_cstr) {
 
   string real_path = string(real_path_cstr);
   std::string line;
-  const boost::regex mtab_mount_point_re("^xtreemfs@[^\\t]+\\t([^\\t]+)\\tfuse\\t");
+  const boost::regex mtab_mount_point_re("^xtreemfs@[^\\t]+\\t([^\\t]+)\\tfuse\\t");  // NOLINT
   bool entry_found = false;
   while (getline(in, line)) {
     boost::smatch matcher;
@@ -789,15 +789,15 @@ string GetPathOnVolume(const char* real_path_cstr) {
 #endif
 
   if (length <= 0) {
-      struct stat sb;
-      if (stat(real_path_cstr, &sb)) {
-          // Show more meaningful error message if path does not exist at all.
-          throw xtreemfs::XtreemFSException("File/Directory does not exist: "
-              + string(real_path_cstr));
-      } else {
-          throw xtreemfs::XtreemFSException("Path doesn't point to an entity on"
-              " an XtreemFS volume!\nxattr xtreemfs.url is missing.");
-      }
+    struct stat sb;
+    if (stat(real_path_cstr, &sb)) {
+      // Show more meaningful error message if path does not exist at all.
+      throw xtreemfs::XtreemFSException("File/Directory does not exist: "
+          + string(real_path_cstr));
+    } else {
+        throw xtreemfs::XtreemFSException("Path doesn't point to an entity on"
+            " an XtreemFS volume!\nxattr xtreemfs.url is missing.");
+    }
   }
 
   string url(xtfs_url, length);
