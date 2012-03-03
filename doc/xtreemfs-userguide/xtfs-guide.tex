@@ -2568,9 +2568,9 @@ This section will help you to set up a simple Hadoop configuration with all nece
 
 \textbf{Required software:}
 \begin{itemize}
-\item XtreemFS servers (v 1.2.1) inlcuding XtreemFS.jar and yidl.jar (\href{http://www.XtreemFS.org}{www.XtreemFS.org})
+\item XtreemFS servers (v 1.3.1) inlcuding XtreemFS.jar and Foundation.jar (\href{http://www.XtreemFS.org}{www.XtreemFS.org})
 \item HadoopClient.jar (\href{http://www.XtreemFS.org}{www.XtreemFS.org})
-\item Hadoop (v 0.20.1) (\href{http://hadoop.apache.org}{hadoop.apache.org})
+\item Hadoop (v 1.0.1) (\href{http://hadoop.apache.org}{hadoop.apache.org})
 \item JDK 1.6+ (\href{http://java.sun.com}{Oracle/SUN})
 \end{itemize}
 
@@ -2584,10 +2584,16 @@ This section will help you to set up a simple Hadoop configuration with all nece
 
 \item Configure Hadoop to use XtreemFS instead of HDFS:
 	\begin{enumerate}
-	\item After downloading and extracting Hadoop you first have to add XtreemFS, the HadoopClient and yidl to its 
+	\item After downloading and extracting Hadoop you first have to add XtreemFS, the HadoopClient and the Foundation package to its 
 	classpath. To do so edit the \textit{hadoop-env.sh} that can be found in the \textit{conf} directory of Hadoop and 
-	add the paths to XtreemFS.jar, yidl.jar and HadoopClient.jar separated by '\textit{:}' to the HADOOP\_CLASSPATH. 
+	add the paths to XtreemFS.jar, Foundation.jar and HadoopClient.jar separated by '\textit{:}' to the HADOOP\_CLASSPATH. 
 	If you run a Linux-based OS these jar-libraries are located at '\textit{/usr/share/java/}'.
+	For example
+	\begin{verbatim}
+	export HADOOP_CLASSPATH="/usr/share/java/Foundation.jar:
+	/usr/share/XtreemFS.jar:/usr/share/HadoopClient.jar"
+	\end{verbatim}
+	should be sufficient on the most systems.
 	\item Now you have to specify some properties at the \textit{core-site.xml} which also has to be in the \textit{conf} 
 	directory of Hadoop. If this file does not exist you can safely create it.
 	\begin{verbatim}
