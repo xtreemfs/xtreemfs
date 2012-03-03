@@ -93,7 +93,7 @@ public class FileHandleImplementation implements FileHandle {
     /**
      * True if there is an outstanding xcapRenew callback.
      */
-// JCIP     @GuardedBy("xcapRenewalPendingLock")
+    // JCIP @GuardedBy("xcapRenewalPendingLock")
     private boolean                           xcapRenewalPending;
 
     /**
@@ -184,8 +184,8 @@ public class FileHandleImplementation implements FileHandle {
      * int)
      */
     @Override
-    public int read(UserCredentials userCredentials, byte[] data, int count, int offset)
-            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+    public int read(UserCredentials userCredentials, byte[] data, int count, int offset) throws IOException,
+            PosixErrorException, AddressToUUIDNotFoundException {
         fileInfo.waitForPendingAsyncWrites();
 
         FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
@@ -243,10 +243,10 @@ public class FileHandleImplementation implements FileHandle {
             if (readRqBuilder.getFileCredentials().getXlocs().getReplicas(0).getOsdUuidsCount() > 1) {
                 // Replica is striped. Pick UUID from xlocset.
                 osdUuid = Helper.getOSDUUIDFromXlocSet(fc.getXlocs(), 0, // Use
-                                                                                // first
-                                                                                // and
-                                                                                // only
-                                                                                // replica.
+                                                                         // first
+                                                                         // and
+                                                                         // only
+                                                                         // replica.
                         operations.get(j).getOsdOffset());
                 tempUuidIteratorForStriping.clearAndAddUUID(osdUuid);
                 uuidIterator = tempUuidIteratorForStriping;
@@ -275,7 +275,6 @@ public class FileHandleImplementation implements FileHandle {
             for (int i = 0; i < objectData.getZeroPadding(); i++) {
                 buf.put((byte) 0);
             }
-
             receivedData += buf.position() - operations.get(j).getBufferStart();
         }
         return receivedData;
@@ -292,6 +291,26 @@ public class FileHandleImplementation implements FileHandle {
     public synchronized int write(UserCredentials userCredentials, byte[] data, int count, int offset)
             throws IOException, PosixErrorException, InternalServerErrorException,
             AddressToUUIDNotFoundException {
+        ReusableBuffer buffer = ReusableBuffer.wrap(data);
+        return write(userCredentials, buffer, count, offset);
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.xtreemfs.common.libxtreemfs.FileHandle#write(org.xtreemfs.foundation.pbrpc.generatedinterfaces.
+     * RPC.UserCredentials, byte[], int, int, int)
+     */
+    @Override
+    public int write(UserCredentials userCredentials, byte[] data, int dataOffset, int count, int offset)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+        ReusableBuffer buffer = ReusableBuffer.wrap(data, dataOffset, count);
+        return write(userCredentials, buffer, count, offset);
+    }
+
+    private int write(UserCredentials userCredentials, ReusableBuffer buffer, int count, int offset)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
         fileHandleLock.lock();
         try {
@@ -317,7 +336,6 @@ public class FileHandleImplementation implements FileHandle {
         }
 
         // Map operation to stripes.
-        ReusableBuffer buffer = ReusableBuffer.wrap(data);
         Vector<WriteOperation> operations = new Vector<WriteOperation>();
         StripingPolicy stripingPolicy = xlocs.getReplicas(0).getStripingPolicy();
         StripeTranslator translator = getStripeTranslator(stripingPolicy.getType());
@@ -385,7 +403,7 @@ public class FileHandleImplementation implements FileHandle {
                 ObjectData objectData =
                         ObjectData.newBuilder().setChecksum(0).setInvalidChecksumOnOsd(false)
                                 .setZeroPadding(0).build();
-                
+
                 request.setObjectData(objectData);
 
                 // Differ between striping and the rest (replication, no

@@ -10,13 +10,13 @@ import java.io.IOException;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.common.libxtreemfs.exceptions.UUIDNotInXlocSetException;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 
 /**
- * FileHandle represents an open file. 
+ * FileHandle represents an open file.
  */
 public interface FileHandle {
 
@@ -53,12 +53,13 @@ public interface FileHandle {
      * 
      * @param userCredentials
      *            Name and Groups of the user.
-     * @param data[]
-     *            [in] Byte array which contains data to be written.
+     * @param data
+     *            [] [in] Byte array which contains data to be written.
      * @param count
      *            Number of bytes to be written from buf.
      * @param offset
      *            Offset in bytes.
+     * 
      * 
      * @throws AddressToUUIDNotFoundException
      * @throws IOException
@@ -69,6 +70,38 @@ public interface FileHandle {
      */
     public abstract int write(UserCredentials userCredentials, byte[] data, int count, int offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+
+    /**
+     * Write to a file 'count' bytes at file offset 'offset' from 'buf'.
+     * 
+     * @attention If asynchronous writes are enabled (which is the default unless the file was opened with
+     *            O_SYNC or async writes were disabled globally), no possible write errors can be returned as
+     *            write() does return immediately after putting the write request into the send queue instead
+     *            of waiting until the result was received. In this case, only after calling flush() or
+     *            close() occurred write errors are returned to the user.
+     * 
+     * @param userCredentials
+     *            Name and Groups of the user.
+     * 
+     * @param data
+     *            [] [in] Byte array which contains data to be written.
+     * @param dataOffset
+     *            Offset in data array. This is the position of the first bytes in the data array that should
+     *            be written.
+     * @param count
+     *            Number of bytes to be written from buf.
+     * @param offset
+     *            Offset in bytes. At this position in the file the data will be written.
+     * 
+     * @throws AddressToUUIDNotFoundException
+     * @throws IOException
+     * @throws PosixErrorException
+     * @throws UnknownAddressSchemeException
+     * 
+     * @return Number of bytes written (see @attention above).
+     */
+    public abstract int write(UserCredentials userCredentials, byte[] data, int dataOffset, int count,
+            int offset) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Flushes pending writes and file size updates (corresponds to a fsync() system call).

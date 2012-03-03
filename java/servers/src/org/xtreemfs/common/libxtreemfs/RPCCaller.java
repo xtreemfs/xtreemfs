@@ -96,7 +96,7 @@ public class RPCCaller {
                     // If the buffer is not null it should be filled with data
                     // piggybacked in the RPCResponse.
                     // This is used by the read request.
-                    if (buffer != null) {
+                    if (buffer != null && r.getData() != null) {
                         buffer.put(r.getData());
                     }
                 } catch (PBRPCException pbe) {
