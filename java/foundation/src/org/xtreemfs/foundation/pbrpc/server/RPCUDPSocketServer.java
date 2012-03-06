@@ -150,8 +150,8 @@ public class RPCUDPSocketServer extends LifeCycleThread implements RPCServerInte
                     continue;
 
                 if (q.size() > 10000) {
-                    System.out.println("QS!!!!! " + q.size());
-                    System.out.println("is readOnly: " + isRdOnly);
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "QS!!!!! %d", q.size());
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "is readOnly: " + isRdOnly);
                 }
 
                 // fetch events
@@ -183,9 +183,13 @@ public class RPCUDPSocketServer extends LifeCycleThread implements RPCServerInte
 
                             try {
                                 data.flip();
-                                System.out.println(" data: "+data.toString());
+                                if (Logging.isDebug())
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "data: %s",
+                                            data.toString());
                                 RecordMarker rm = new RecordMarker(data.getBuffer());
-                                System.out.println("rm: "+rm.getRpcHeaderLength()+"/"+rm.getMessageLength()+" data: "+data.limit());
+                                if (Logging.isDebug())
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "rm: %d/%d data: %d",
+                                            rm.getRpcHeaderLength(), rm.getMessageLength(), data.limit());
                                 ReusableBufferInputStream rbis = new ReusableBufferInputStream(data);
 
                                 final int origLimit = data.limit();
@@ -216,7 +220,8 @@ public class RPCUDPSocketServer extends LifeCycleThread implements RPCServerInte
                             int sent = channel.send(r.getBuffer().getBuffer(), r.getAddress());
                             BufferPool.free(r.getBuffer());
                             if (sent == 0) {
-                                System.out.println("cannot send anymore");
+                                if (Logging.isDebug())
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "cannot send anymore");
                                 q.put(r);
                                 break;
                             }

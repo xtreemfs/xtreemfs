@@ -201,6 +201,10 @@ public abstract class Stage extends LifeCycleThread {
             return callback;
         }
         
+        public OSDRequest getRequest() {
+            return request;
+        }
+        
         public void sendInternalServerError(Throwable cause) {
             if (request != null) {
                 request.sendInternalServerError(cause);

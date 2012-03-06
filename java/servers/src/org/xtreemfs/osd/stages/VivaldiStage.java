@@ -239,6 +239,10 @@ public class VivaldiStage extends Stage {
                 }
             } catch (Exception ex) {
                 Logging.logError(Logging.LEVEL_WARN, this, ex);
+            } finally {
+                // free the request buffer, as it won't be freed otherwise
+                // because the response is sent asynchronously
+                method.getRequest().getRpcRequest().freeBuffers();
             }
         } else {
             VivaldiPingCallback callback = (VivaldiPingCallback) method.getCallback();

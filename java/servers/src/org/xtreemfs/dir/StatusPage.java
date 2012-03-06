@@ -22,6 +22,7 @@ import java.util.TreeMap;
 
 import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.api.database.Database;
+import org.xtreemfs.babudb.api.database.ResultSet;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.config.ServiceConfig;
@@ -114,7 +115,7 @@ public class StatusPage {
         
         long time = System.currentTimeMillis();
         
-        Iterator<Entry<byte[], byte[]>> iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS,
+        ResultSet<byte[], byte[]> iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS,
             new byte[0], null).get();
         
         StringBuilder dump = new StringBuilder();
@@ -150,6 +151,7 @@ public class StatusPage {
             dump.append("</b></td></tr></table>");
         }
         dump.append("</td></tr></table>");
+        iter.free();
         
         iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
         
@@ -251,6 +253,8 @@ public class StatusPage {
         }
         
         dump.append("</td></tr></table>");
+        iter.free();
+        
         // Configuration part
         
         iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_CONFIGURATIONS, new byte[0], null).get();
@@ -294,6 +298,8 @@ public class StatusPage {
             dump.append(conf.getVersion());
             dump.append("</b></td></table></td></tr>");
         }
+        iter.free();
+        
         dump.append("</b></td></table></td></tr>");
         dump.append("</table>");
         
@@ -328,7 +334,7 @@ public class StatusPage {
     IOException, InterruptedException {
         final Database database = master.getDirDatabase();
         StringBuilder dump = new StringBuilder();
-        Iterator<Entry<byte[], byte[]>> iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
+        ResultSet<byte[], byte[]> iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
         
         // create tab separated plain text table
         dump.append("uuid");
@@ -392,6 +398,8 @@ public class StatusPage {
             dump.append(coords.getLocalError());
             
         } // while
+        
+        iter.free();
         
         return dump.toString();
     }
