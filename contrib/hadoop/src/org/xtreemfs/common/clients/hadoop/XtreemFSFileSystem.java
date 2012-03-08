@@ -157,9 +157,19 @@ public class XtreemFSFileSystem extends FileSystem {
                     return -1;
                 }
                 seek(getPos()+1);
-                return buf[0] & 0xFF;
+                return (int)(buf[0] & 0xFF);
             }
 
+            @Override
+            public int read(byte[] bytes, int offset, int length) throws IOException {
+                int bytesRead = fileHandle.read(userCredentials, bytes, length, (int)position);
+                if ((bytesRead == 0) && (length > 0)) {
+                    return -1;
+                }
+                seek(getPos()+bytesRead);
+                return bytesRead;
+            }
+            
             @Override
             public int read(long position, byte[] bytes, int offset, int length) throws IOException {
                 int bytesRead = fileHandle.read(userCredentials, bytes, length, (int)position);
@@ -172,7 +182,6 @@ public class XtreemFSFileSystem extends FileSystem {
 
             @Override
             public int read(byte[] bytes) throws IOException {
-                System.out.println("READ NUMBER 3");
                 return read(position, bytes, 0, bytes.length);
             }
 
