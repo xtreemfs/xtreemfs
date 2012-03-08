@@ -90,7 +90,8 @@ public class XtreemFSFileSystem extends FileSystem {
 
         //initialize XtreemFS Client with default Options and without SSL.
         Options xtreemfsOptions = new Options();
-        xtreemfsClient = Client.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials, null, new Options());
+        xtreemfsClient = Client.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials, 
+                xtreemfsOptions.generateSSLOptions(), xtreemfsOptions);
         try {
             //TODO: Fix stupid Exception in libxtreemfs
             xtreemfsClient.start();
@@ -156,12 +157,11 @@ public class XtreemFSFileSystem extends FileSystem {
                     return -1;
                 }
                 seek(getPos()+1);
-                return buf[0];
+                return buf[0] & 0xFF;
             }
 
             @Override
             public int read(long position, byte[] bytes, int offset, int length) throws IOException {
-                System.out.println("READING" + length + " BYTES AT OFFSET " + offset);
                 int bytesRead = fileHandle.read(userCredentials, bytes, length, (int)position);
                 if ((bytesRead == 0) && (length > 0)) {
                     return -1;
@@ -172,6 +172,7 @@ public class XtreemFSFileSystem extends FileSystem {
 
             @Override
             public int read(byte[] bytes) throws IOException {
+                System.out.println("READ NUMBER 3");
                 return read(position, bytes, 0, bytes.length);
             }
 
@@ -186,6 +187,7 @@ public class XtreemFSFileSystem extends FileSystem {
     @Override
     public FSDataOutputStream create(Path path, FsPermission fp, boolean overwrite, int bufferSize, short replication,
             long blockSize, Progressable p) throws IOException {
+        //TODO: Find out what replication stands for and uses. Hadoop JavaDoc says: replication - required block replication for the file
         final String pathString = path.toUri().getPath();
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber();
         if (overwrite) {
@@ -257,7 +259,7 @@ public class XtreemFSFileSystem extends FileSystem {
             return deleteXtreemFSDirectory(pathString, recursive);
         }
 
-        // path is neiter a file nor a directory.  Considere it as not existing.
+        // path is neither a file nor a directory.  Consider it as not existing.
         return false;
     }
 
