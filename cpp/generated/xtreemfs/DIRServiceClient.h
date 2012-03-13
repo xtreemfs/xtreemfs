@@ -1,4 +1,4 @@
-//automatically generated from DIR.proto at Tue Feb 21 14:34:05 CET 2012
+//automatically generated from DIR.proto at Tue Feb 28 11:16:01 CET 2012
 //(c) 2012. See LICENSE file for details.
 
 #ifndef DIRSERVICECLIENT_H
@@ -10,6 +10,7 @@
 #include "rpc/sync_callback.h"
 #include "rpc/callback_interface.h"
 #include "include/Common.pb.h"
+#include "xtreemfs/GlobalTypes.pb.h"
 #include "xtreemfs/DIR.pb.h"
 
 
@@ -369,6 +370,29 @@ namespace xtreemfs {
                 SyncCallback<xtreemfs::pbrpc::configurationSetResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::configurationSetResponse>();
                 client_->sendRequest(address, 10001, 23,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::configurationSetResponse(),
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_vivaldi_client_update(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::VivaldiCoordinates* request,
+                CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
+                const char* data = NULL; boost::uint32_t data_length = 0;
+                client_->sendRequest(address, 10001, 24,
+                     creds, auth, request, data, data_length, NULL,
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::emptyResponse>* xtreemfs_vivaldi_client_update_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::VivaldiCoordinates* request) {
+                const char* data = NULL; boost::uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
+                client_->sendRequest(address, 10001, 24,
+                     creds, auth, request, data, data_length, NULL,
                      NULL, sync_cb);
                 return sync_cb;
             }

@@ -536,7 +536,7 @@ void protobuf_AddDesc_xtreemfs_2fDIR_2eproto() {
     "E_TYPE_VOLUME\020\003*g\n\rServiceStatus\022\030\n\024SERV"
     "ICE_STATUS_AVAIL\020\000\022 \n\034SERVICE_STATUS_TO_"
     "BE_REMOVED\020\001\022\032\n\026SERVICE_STATUS_REMOVED\020\002"
-    "2\377\014\n\020DirectoryService\022u\n\035xtreemfs_addres"
+    "2\355\r\n\020DirectoryService\022u\n\035xtreemfs_addres"
     "s_mappings_get\022(.xtreemfs.pbrpc.addressM"
     "appingGetRequest\032!.xtreemfs.pbrpc.Addres"
     "sMappingSet\"\007\215\265\030\001\000\000\000\022t\n xtreemfs_address"
@@ -577,8 +577,11 @@ void protobuf_AddDesc_xtreemfs_2fDIR_2eproto() {
     "pc.Configuration\"\007\215\265\030\026\000\000\000\022n\n\032xtreemfs_co"
     "nfiguration_set\022\035.xtreemfs.pbrpc.Configu"
     "ration\032(.xtreemfs.pbrpc.configurationSet"
-    "Response\"\007\215\265\030\027\000\000\000\032\007\225\265\030\021\'\000\000B(\n&org.xtreem"
-    "fs.pbrpc.generatedinterfaces", 3348);
+    "Response\"\007\215\265\030\027\000\000\000\022l\n\036xtreemfs_vivaldi_cl"
+    "ient_update\022\".xtreemfs.pbrpc.VivaldiCoor"
+    "dinates\032\035.xtreemfs.pbrpc.emptyResponse\"\007"
+    "\215\265\030\030\000\000\000\032\007\225\265\030\021\'\000\000B(\n&org.xtreemfs.pbrpc.g"
+    "eneratedinterfaces", 3458);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/DIR.proto", &protobuf_RegisterTypes);
   AddressMapping::default_instance_ = new AddressMapping();
@@ -5700,6 +5703,14 @@ void DirectoryService::xtreemfs_configuration_set(::google::protobuf::RpcControl
   done->Run();
 }
 
+void DirectoryService::xtreemfs_vivaldi_client_update(::google::protobuf::RpcController* controller,
+                         const ::xtreemfs::pbrpc::VivaldiCoordinates*,
+                         ::xtreemfs::pbrpc::emptyResponse*,
+                         ::google::protobuf::Closure* done) {
+  controller->SetFailed("Method xtreemfs_vivaldi_client_update() not implemented.");
+  done->Run();
+}
+
 void DirectoryService::CallMethod(const ::google::protobuf::MethodDescriptor* method,
                              ::google::protobuf::RpcController* controller,
                              const ::google::protobuf::Message* request,
@@ -5797,6 +5808,12 @@ void DirectoryService::CallMethod(const ::google::protobuf::MethodDescriptor* me
              ::google::protobuf::down_cast< ::xtreemfs::pbrpc::configurationSetResponse*>(response),
              done);
       break;
+    case 15:
+      xtreemfs_vivaldi_client_update(controller,
+             ::google::protobuf::down_cast<const ::xtreemfs::pbrpc::VivaldiCoordinates*>(request),
+             ::google::protobuf::down_cast< ::xtreemfs::pbrpc::emptyResponse*>(response),
+             done);
+      break;
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
       break;
@@ -5837,6 +5854,8 @@ const ::google::protobuf::Message& DirectoryService::GetRequestPrototype(
       return ::xtreemfs::pbrpc::configurationGetRequest::default_instance();
     case 14:
       return ::xtreemfs::pbrpc::Configuration::default_instance();
+    case 15:
+      return ::xtreemfs::pbrpc::VivaldiCoordinates::default_instance();
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
       return *reinterpret_cast< ::google::protobuf::Message*>(NULL);
@@ -5877,6 +5896,8 @@ const ::google::protobuf::Message& DirectoryService::GetResponsePrototype(
       return ::xtreemfs::pbrpc::Configuration::default_instance();
     case 14:
       return ::xtreemfs::pbrpc::configurationSetResponse::default_instance();
+    case 15:
+      return ::xtreemfs::pbrpc::emptyResponse::default_instance();
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
       return *reinterpret_cast< ::google::protobuf::Message*>(NULL);
@@ -5997,6 +6018,13 @@ void DirectoryService_Stub::xtreemfs_configuration_set(::google::protobuf::RpcCo
                               ::xtreemfs::pbrpc::configurationSetResponse* response,
                               ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(14),
+                       controller, request, response, done);
+}
+void DirectoryService_Stub::xtreemfs_vivaldi_client_update(::google::protobuf::RpcController* controller,
+                              const ::xtreemfs::pbrpc::VivaldiCoordinates* request,
+                              ::xtreemfs::pbrpc::emptyResponse* response,
+                              ::google::protobuf::Closure* done) {
+  channel_->CallMethod(descriptor()->method(15),
                        controller, request, response, done);
 }
 

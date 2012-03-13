@@ -265,11 +265,16 @@ service DirectoryService {
 
   // Returns the configuration for the service with UUID.
   rpc xtreemfs_configuration_get(configurationGetRequest) returns(Configuration) {
-        option(proc_id)=22;
+    option(proc_id)=22;
   };
   
   // Updates the configuration for the service.
   rpc xtreemfs_configuration_set(Configuration) returns(configurationSetResponse) {
-        option(proc_id)=23;
+    option(proc_id)=23;
+  };
+  
+  // Send a client's vivaldi coordinates to th DIR.
+  rpc xtreemfs_vivaldi_client_update(VivaldiCoordinates) returns(emptyResponse) {
+    option(proc_id)=24;
   };
 }

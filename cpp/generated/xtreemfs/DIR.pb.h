@@ -2080,6 +2080,10 @@ class DirectoryService : public ::google::protobuf::Service {
                        const ::xtreemfs::pbrpc::Configuration* request,
                        ::xtreemfs::pbrpc::configurationSetResponse* response,
                        ::google::protobuf::Closure* done);
+  virtual void xtreemfs_vivaldi_client_update(::google::protobuf::RpcController* controller,
+                       const ::xtreemfs::pbrpc::VivaldiCoordinates* request,
+                       ::xtreemfs::pbrpc::emptyResponse* response,
+                       ::google::protobuf::Closure* done);
   
   // implements Service ----------------------------------------------
   
@@ -2168,6 +2172,10 @@ class DirectoryService_Stub : public DirectoryService {
   void xtreemfs_configuration_set(::google::protobuf::RpcController* controller,
                        const ::xtreemfs::pbrpc::Configuration* request,
                        ::xtreemfs::pbrpc::configurationSetResponse* response,
+                       ::google::protobuf::Closure* done);
+  void xtreemfs_vivaldi_client_update(::google::protobuf::RpcController* controller,
+                       const ::xtreemfs::pbrpc::VivaldiCoordinates* request,
+                       ::xtreemfs::pbrpc::emptyResponse* response,
                        ::google::protobuf::Closure* done);
  private:
   ::google::protobuf::RpcChannel* channel_;
