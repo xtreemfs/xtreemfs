@@ -2149,24 +2149,19 @@ In addition, custom policies can be set by passing a list of basic policy IDs to
 \subsection{Setting and Listing Policy Attributes}
 \label{sec:policyAttributes}
 
-OSD and replica selection policy behavior can be further specified by means of policy attributes. For a list of predefined attributes, see Section~\ref{sec:osd_policies}. Attributes for \emph{all} policies can be set as follows:
+OSD and replica selection policy behavior can be further specified by means of policy attributes.
+
+An individual attribute for a policy (see Section \ref{sec:predefinedPolicies}) can be defined by using a combined key consisting of policy ID to the attriubte name, e.g.:
 
 \begin{verbatim}
- $> xtfsutil --set-pattr domains --value "*.xtreemfs.org bla.com" \
-    /xtreemfs
+ $> xtfsutil --set-pattr 1001.domains \
+    --value "*.xtreemfs.org bla.com" /xtreemfs
 \end{verbatim}
 
-To specify an individual attribute for \emph{a certain} policy (see Section \ref{sec:predefinedPolicies}), it is possible to prepend the policy ID to the attriubte name:
+Policy attributes can be removed by setting an empty value, e.g.:
 
 \begin{verbatim}
- $> xtfsutil --set-pattr 1001.domains --value "*.xtreemfs.org bla.com" \
-    /xtreemfs
-\end{verbatim}
-
-Policy attributes can be removed by adjusting an empty value, e.g.:
-
-\begin{verbatim}
- $> xtfsutil --set-pattr domains --value "" /xtreemfs
+ $> xtfsutil --set-pattr 1001.domains --value "" /xtreemfs
 \end{verbatim}
 
 A list of all policy attributes that have been set can be shown as follows:
@@ -2174,6 +2169,8 @@ A list of all policy attributes that have been set can be shown as follows:
 \begin{verbatim}
  $> xtfsutil --list-pattrs /xtreemfs
 \end{verbatim}
+
+Please note that it is no longer possible to specify global policy attributes without a specific policy ID.
 
 \subsection{Modifying Access Control Lists}
 
@@ -2402,7 +2399,7 @@ The following predefined policies exist:
  \item \emph{domains}: a comma or space-separated list of domain names. The list may include leading and trailing `*'s, which will be regarded as wildcard characters.
  \end{itemize}
 
- \item \textbf{UUID-based filte (policy ID 1002)}\\
+ \item \textbf{UUID-based filter (policy ID 1002)}\\
  Removes OSDs from the list that do not match any of the UUIDs in a given set. By default, the set of UUIDs contains `*', which indicates that no domains are removed.\\
 
  Attributes:

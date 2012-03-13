@@ -37,11 +37,6 @@ public class FilterUUIDPolicy implements OSDSelectionPolicy {
     
     private List<String>        uuids     = new LinkedList<String>();
     
-    {
-        // default: all domains match
-        uuids.add("*");
-    }
-    
     @Override
     public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs, InetAddress clientIP,
         VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs) {
@@ -64,17 +59,25 @@ public class FilterUUIDPolicy implements OSDSelectionPolicy {
     
     @Override
     public void setAttribute(String key, String value) {
+        
         if (key.equals(UUIDS)) {
+            
             uuids.clear();
-            StringTokenizer st = new StringTokenizer(value, " ,;\t\n");
-            while (st.hasMoreTokens())
-                uuids.add(st.nextToken());
+            
+            if (value != null) {
+                StringTokenizer st = new StringTokenizer(value, " ,;\t\n");
+                while (st.hasMoreTokens())
+                    uuids.add(st.nextToken());
+            }
         }
     }
     
     private boolean isInUUIDs(Service osd) {
         
         final String osdUUID = new ServiceUUID(osd.getUuid()).toString();
+        
+        if (uuids.size() == 0)
+            return true;
         
         for (String uuid : uuids) {
             
