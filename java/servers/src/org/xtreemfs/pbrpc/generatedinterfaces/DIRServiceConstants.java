@@ -1,4 +1,4 @@
-//automatically generated from DIR.proto at Tue Feb 21 14:34:05 CET 2012
+//automatically generated from DIR.proto at Tue Feb 28 11:16:01 CET 2012
 //(c) 2012. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -23,6 +23,7 @@ public class DIRServiceConstants {
     public static final int PROC_ID_XTREEMFS_SHUTDOWN = 21;
     public static final int PROC_ID_XTREEMFS_CONFIGURATION_GET = 22;
     public static final int PROC_ID_XTREEMFS_CONFIGURATION_SET = 23;
+    public static final int PROC_ID_XTREEMFS_VIVALDI_CLIENT_UPDATE = 24;
 
     public static Message getRequestMessage(int procId) {
         switch (procId) {
@@ -41,6 +42,7 @@ public class DIRServiceConstants {
            case 21: return null;
            case 22: return DIR.configurationGetRequest.getDefaultInstance();
            case 23: return DIR.Configuration.getDefaultInstance();
+           case 24: return GlobalTypes.VivaldiCoordinates.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }
     }
@@ -63,6 +65,7 @@ public class DIRServiceConstants {
            case 21: return null;
            case 22: return DIR.Configuration.getDefaultInstance();
            case 23: return DIR.configurationSetResponse.getDefaultInstance();
+           case 24: return null;
            default: throw new RuntimeException("unknown procedure id");
         }
     }

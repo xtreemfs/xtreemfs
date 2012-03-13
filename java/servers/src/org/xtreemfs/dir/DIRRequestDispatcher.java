@@ -48,6 +48,7 @@ import org.xtreemfs.dir.operations.RegisterServiceOperation;
 import org.xtreemfs.dir.operations.ServiceOfflineOperation;
 import org.xtreemfs.dir.operations.SetAddressMappingOperation;
 import org.xtreemfs.dir.operations.SetConfigurationOperation;
+import org.xtreemfs.dir.operations.UpdateVivaldiClientOperation;
 import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.LifeCycleThread;
@@ -122,7 +123,9 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     public static final String                    DB_NAME                 = "dirdb";
 
     private List<DIRStatusListener>               statusListener;
-
+    
+    private VivaldiClientMap vivaldiClientMap;
+    
     public DIRRequestDispatcher(final DIRConfig config, final BabuDBConfig dbsConfig) throws IOException,
         BabuDBException {
         super("DIR RqDisp");
@@ -132,6 +135,8 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             + VersionManagement.RELEASE_VERSION);
         
         registry = new HashMap<Integer, DIROperation>();
+
+        vivaldiClientMap = new VivaldiClientMap(config.getVivaldiMaxClients(), config.getVivaldiClientTimeout());
         
         // start up babudb
         database = BabuDBFactory.createBabuDB(dbsConfig, new StaticInitialization() {
@@ -186,6 +191,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         }
         
         httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
+        
         final HttpContext ctx = httpServ.createContext("/", new HttpHandler() {
             public void handle(HttpExchange httpExchange) throws IOException {
                 byte[] content;
@@ -205,7 +211,6 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
                 
             }
         });
-
         
         /* The following url structure is used:
          * /vivaldi
@@ -217,7 +222,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
                 byte[] content;
                 try {
                     String uriPath = httpExchange.getRequestURI().getPath();
-                    System.out.println("RequestURIPath:" + httpExchange.getRequestURI().getPath());
+                    //System.out.println("RequestURIPath:" + httpExchange.getRequestURI().getPath()); // TODO(mno): Comment before committing
                     if (uriPath.equals("/vivaldi/data")) {
                         // generate data
                         content = StatusPage.getVivaldiData(DIRRequestDispatcher.this, config).getBytes("ascii");
@@ -268,6 +273,12 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         
         if (config.getAdminPassword().length() > 0) {
             ctx.setAuthenticator(new BasicAuthenticator("XtreemFS DIR") {
+                @Override
+                public boolean checkCredentials(String arg0, String arg1) {
+                    return (arg0.equals("admin") && arg1.equals(config.getAdminPassword()));
+                }
+            });
+            ctxVivaldiData.setAuthenticator(new BasicAuthenticator("XtreemFS DIR") {
                 @Override
                 public boolean checkCredentials(String arg0, String arg1) {
                     return (arg0.equals("admin") && arg1.equals(config.getAdminPassword()));
@@ -433,6 +444,9 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         
         op = new GetConfigurationOperation(this);
         registry.put(op.getProcedureId(), op);
+        
+        op = new UpdateVivaldiClientOperation(this);
+        registry.put(op.getProcedureId(), op);
     }
     
     public Database getDirDatabase() {
@@ -522,6 +536,11 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     
     public int getNumConnections() {
         return server.getNumConnections();
+    }
+    
+    //public HashMap<InetSocketAddress, VivaldiClientValue> getVivaldiClientMap(){
+    public VivaldiClientMap getVivaldiClientMap(){
+        return vivaldiClientMap;
     }
     
     public DIRConfig getConfig() {

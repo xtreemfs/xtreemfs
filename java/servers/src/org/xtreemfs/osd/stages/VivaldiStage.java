@@ -89,40 +89,40 @@ public class VivaldiStage extends Stage {
      */
     private long vivaldiIterations;
     private ZipfGenerator rankGenerator;
-    private static final double ZIPF_GENERATOR_SKEW = 0.5;
+    private final double ZIPF_GENERATOR_SKEW = 0.5; // TODO(mno): move to global config?! (depends on keeping ZIPF or not)
     /**
      * Number of retries to be sent before accepting 'suspiciously high' RTT
      */
-    private static final int MAX_RETRIES_FOR_A_REQUEST = 2;
+    private final int MAX_RETRIES_FOR_A_REQUEST;
     /**
-     * Minimum recalculation period.
+     * Recalculation intervall.
      *
-     * The recalculation period is randomly determined and is always included between
-     * the minimum and the maximum period.
+     * The recalculation period is randomly determined and lies within:
+     * [RECALCULATION_INTERVALL - RECALCULATION_EPSILON, RECALCULATION_INTERVALL + RECALCULATION_EPSILON]
      */
-    private static final int MIN_RECALCULATION_IN_MS = 1000 * 270;  // TODO: set back to 1000 * 270
+    private final int RECALCULATION_INTERVALL;
     /**
-     * Maximum recalculation period.
+     * Recalculation epsilon.
      *
-     * The recalculation period is randomly determined and is always included between
-     * the minimum and the maximum period.
+     * The recalculation period is randomly determined and lies within:
+     * [RECALCULATION_INTERVALL - RECALCULATION_EPSILON, RECALCULATION_INTERVALL + RECALCULATION_EPSILON]
      */
-    private static final int MAX_RECALCULATION_IN_MS = 1000 * 330; // TODO: set back to 1000 * 330
+    private final int RECALCULATION_EPSILON;
     /**
      * Number of times the node recalculates its position before updating
      * its list of existent OSDs.
      */
-    private static final int ITERATIONS_BEFORE_UPDATING = 12;
+    private final int ITERATIONS_BEFORE_UPDATING;
     /**
      * Maximum number of milliseconds an OSD waits for a RESPONSE before discarding
      * its corresponding REQUEST. Expiration times under {@code TIMER_INTERVAL_IN_MS}
      * are not granted.
      */
-    private static final int MAX_REQUEST_TIMEOUT_IN_MS = 1000 * 10;
+    private final int MAX_REQUEST_TIMEOUT_IN_MS;
     /**
      * Period of time between timer executions.
      */
-    private static final int TIMER_INTERVAL_IN_MS = 1000 * 60;
+    private final int TIMER_INTERVAL_IN_MS;
 
     public VivaldiStage(OSDRequestDispatcher master) {
         super("VivaldiSt");
@@ -133,6 +133,13 @@ public class VivaldiStage extends Stage {
         this.toBeRetried = new HashMap<InetSocketAddress, VivaldiRetry>();
         this.vNode = new VivaldiNode();
 
+        MAX_RETRIES_FOR_A_REQUEST = master.getConfig().getVivaldiMaxRetriesForARequest();
+        RECALCULATION_INTERVALL = master.getConfig().getVivaldiRecalculationIntervall();
+        RECALCULATION_EPSILON = master.getConfig().getVivaldiRecalculationEpsilon();
+        ITERATIONS_BEFORE_UPDATING = master.getConfig().getVivaldiIterationsBeforeUpdating();
+        MAX_REQUEST_TIMEOUT_IN_MS = master.getConfig().getVivaldiMaxRequestTimeout();
+        TIMER_INTERVAL_IN_MS = master.getConfig().getVivaldiTimerIntervall();
+        
         //TOFIX: should  the coordinates be initialized from a file?
         if (Logging.isDebug()) {
             Logging.logMessage(
@@ -209,10 +216,7 @@ public class VivaldiStage extends Stage {
 
     @Override
     protected void processMethod(StageRequest method) {
-
         xtreemfs_pingMesssage msg = (xtreemfs_pingMesssage) method.getArgs()[0];
-        VivaldiCoordinates coordinatesJ = null;
-        boolean coordinatesModificated = false;
 
         if (method.getStageMethod() == STAGEOP_ASYNC_PING) {
             try {
@@ -222,7 +226,7 @@ public class VivaldiStage extends Stage {
                     RPCHeader hdr = RPCHeader.newBuilder().setCallId(0).setMessageType(MessageType.RPC_REQUEST).setRequestHeader(rqHdr).build();
                     xtreemfs_pingMesssage response = xtreemfs_pingMesssage.newBuilder().setCoordinates(this.vNode.getCoordinates()).setRequestResponse(false).build();
 
-                    // TODO: remove before committing, just for testing
+                    // TODO(mno): Comment the following sleeps before committing. They are just for local testing with a simulated delay.
                     /*
                     if(master.getConfig().getUUID().toString().equals("test9-localhost-OSD") || sender.getPort() == 32649)
                         Thread.sleep(300);
@@ -234,7 +238,6 @@ public class VivaldiStage extends Stage {
                     
                     master.sendUDPMessage(hdr, response, sender);
                 } else {
-                    coordinatesJ = msg.getCoordinates();
                     recalculateCoordinates(msg.getCoordinates(), sender);
                 }
             } catch (Exception ex) {
@@ -253,7 +256,7 @@ public class VivaldiStage extends Stage {
     protected void recalculateCoordinates(VivaldiCoordinates coordinatesJ, InetSocketAddress sender) {
         try {
 
-            boolean coordinatesModificated = false;
+            boolean coordinatesModified = false;
 
             SentRequest correspondingReq = sentRequests.remove(sender);
 
@@ -294,7 +297,7 @@ public class VivaldiStage extends Stage {
 
                             //Recalculate using the previous RTTs
                             forceVivaldiRecalculation(coordinatesJ, prevRetry.getRTTs());
-                            coordinatesModificated = true;
+                            coordinatesModified = true;
 
                             //Just for traceVar
                             forcedTraceVar = true;
@@ -307,7 +310,7 @@ public class VivaldiStage extends Stage {
 
                 } else {
 
-                    coordinatesModificated = true;
+                    coordinatesModified = true;
 
                     if (prevRetry != null) {
                         /*The received RTT is correct but it has been necessary to retry
@@ -360,7 +363,7 @@ public class VivaldiStage extends Stage {
                     }
                 }
 
-                if (coordinatesModificated) {
+                if (coordinatesModified) {
                     /*Client's position has been modified so we must
                      * re-sort knownOSDs accordingly to the new vivaldi distances*/
 
@@ -478,61 +481,38 @@ public class VivaldiStage extends Stage {
     private void maintainSentRequests() {
 
         final long localNow = TimeSync.getLocalSystemTime();
-
         ArrayList<InetSocketAddress> removedRequests = new ArrayList<InetSocketAddress>();
 
         //Check which requests have timed out
-
-
         for (InetSocketAddress reqKey : sentRequests.keySet()) {
             if (localNow >= sentRequests.get(reqKey).getLocalTime() + MAX_REQUEST_TIMEOUT_IN_MS) {
-
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, this, "OSD times out:" + reqKey.getHostName());
-
-
                 }
-
                 removedRequests.add(reqKey);
-
-
             }
         }
 
-
         //Manage the timed out requests
         for (InetSocketAddress removed : removedRequests) {
-
             //Is it the first time the node times out?
             VivaldiRetry prevRetry = toBeRetried.get(removed);
 
             //The retry is marked as 'not retried' so it will have priority when sending the next request
-
-
             if (prevRetry == null) {
                 toBeRetried.put(removed, new VivaldiRetry());
-
-
             } else {
-
                 //Take note of the new time out
                 prevRetry.addTimeout();
                 prevRetry.setRetried(false);
 
                 //We've already retried too many times, so it's time to recalculate with the available info
-
-
                 if (prevRetry.numberOfRetries() > MAX_RETRIES_FOR_A_REQUEST) {
                     forceVivaldiRecalculation(null, prevRetry.getRTTs());
                     toBeRetried.remove(removed);
-
-
                 }
             }
-
             sentRequests.remove(removed);
-
-
         }
     }
 
@@ -543,19 +523,14 @@ public class VivaldiStage extends Stage {
      * TIMER_INTERVAL_IN_MS}
      */
     private void executeTimer() {
-
-        master.updateVivaldiCoordinates(vNode.getCoordinates());
+        master.updateVivaldiCoordinates(vNode.getCoordinates());  
 
         //Remove the requests that are not needed anymore
         maintainSentRequests();
-
-
     }
 
     public void receiveVivaldiMessage(UDPMessage msg) {
         enqueueOperation(STAGEOP_ASYNC_PING, new Object[]{msg}, null, null);
-
-
     }
 
     /**
@@ -570,8 +545,6 @@ public class VivaldiStage extends Stage {
             String ownUUID = master.getConfig().getUUID().toString();
 
             knownOSDs = new LinkedList<KnownOSD>();
-
-
 
             for (Service osd : receivedOSDs.getServicesList()) {
 
@@ -588,42 +561,29 @@ public class VivaldiStage extends Stage {
                         VivaldiCoordinates osdCoords = VivaldiNode.stringToCoordinates(strCoords);
                         KnownOSD newOSD = new KnownOSD(osd.getUuid(), osdCoords);
 
-
-
                         double insertedOSDDistance =
                                 VivaldiNode.calculateDistance(osdCoords, this.vNode.getCoordinates());
 
                         //Insert the new OSD accordingly to its vivaldi distance
 
-
                         int i = 0;
 
-
                         boolean inserted = false;
-
 
                         while ((!inserted) && (i < knownOSDs.size())) {
                             double oldOSDDistance =
                                     VivaldiNode.calculateDistance(knownOSDs.get(i).getCoordinates(),
                                     this.vNode.getCoordinates());
 
-
-
                             if (insertedOSDDistance <= oldOSDDistance) {
                                 knownOSDs.add(i, newOSD);
                                 inserted = true;
-
-
                             } else {
                                 i++;
-
-
                             }
                         }
                         if (!inserted) {
                             knownOSDs.add(newOSD);
-
-
                         }
                     }
                 }
@@ -631,8 +591,6 @@ public class VivaldiStage extends Stage {
 
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "Updating list of known OSDs (size:" + knownOSDs.size() + ")");
-
-
             }
 
         } catch (Exception exc) {
@@ -800,12 +758,11 @@ public class VivaldiStage extends Stage {
 
         //Time to iterate
         if (nextRecalculationInMS <= 0) {
-
             //We must recalculate our position now
             iterateVivaldi();
 
             //Determine when the next recalculation will be executed
-            nextRecalculationInMS = MIN_RECALCULATION_IN_MS + (long) ((MAX_RECALCULATION_IN_MS - MIN_RECALCULATION_IN_MS) * Math.random());
+            nextRecalculationInMS = RECALCULATION_INTERVALL - RECALCULATION_EPSILON  + (long)(2 * RECALCULATION_EPSILON * Math.random());
         }
 
         long nextCheck = nextTimerRunInMS > nextRecalculationInMS ? nextRecalculationInMS : nextTimerRunInMS;

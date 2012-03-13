@@ -76,6 +76,9 @@ public class ServiceConfig extends Config {
             MAX_WARNINGS("monitoring.max_warnings", 1, Integer.class, false),
             SENDMAIL_BIN("monitoring.email.programm", "/usr/sbin/sendmail", String.class, false),
             TIMEOUT_SECONDS("monitoring.service_timeout_s", 5 * 60, Integer.class, false),
+            VIVALDI_MAX_CLIENTS("vivaldi.max_clients", 32, Integer.class, false),
+            VIVALDI_CLIENT_TIMEOUT("vivaldi.client_timeout", 600000, Integer.class, false), // default: twice the recalculation intervall
+
             
             /*
              * MRC specific configuration parameter
@@ -105,7 +108,13 @@ public class ServiceConfig extends Config {
             FLEASE_MESSAGE_TO_MS("flease.message_to_ms", 500, Integer.class, false),
             FLEASE_RETRIES("flease.retries", 3, Integer.class, false),
             SOCKET_SEND_BUFFER_SIZE("socket.send_buffer_size", -1, Integer.class, false),
-            SOCKET_RECEIVE_BUFFER_SIZE("socket.recv_buffer_size", -1, Integer.class, false);
+            SOCKET_RECEIVE_BUFFER_SIZE("socket.recv_buffer_size", -1, Integer.class, false),
+            VIVALDI_RECALCULATION_INTERVALL_IN_MS("vivaldi.recalculation_intervall_in_ms", 300000, Integer.class, false),
+            VIVALDI_RECALCULATION_EPSILON_IN_MS("vivaldi_recalculation_intervall_in_ms", 30000, Integer.class, false),
+            VIVALDI_ITERATIONS_BEFORE_UPDATING("vivaldi.iterations_before_updating", 12, Integer.class, false),
+            VIVALDI_MAX_RETRIES_FOR_A_REQUEST("vivaldi.max_retries_for_a_request", 2, Integer.class, false),
+            VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS("vivaldi.max_request_timeout_in_ms", 10000, Integer.class, false),
+            VIVALDI_TIMER_INTERVAL_IN_MS("vivaldi.timer_intervall_in_ms", 60000, Integer.class, false);
         
         Parameter(String propString, Object defaultValue, Class propClass, Boolean req) {
             propertyString = propString;
@@ -117,7 +126,7 @@ public class ServiceConfig extends Config {
         /**
          * number of values the enumeration contains
          */
-        private static final int size = 27;
+        private static final int size = 35;
         
         /**
          * String representation of the parameter in .property file

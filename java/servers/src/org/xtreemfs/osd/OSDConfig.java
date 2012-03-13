@@ -68,7 +68,13 @@ public class OSDConfig extends ServiceConfig {
             Parameter.SNMP_ACL,
             Parameter.FAILOVER_MAX_RETRIES,
             Parameter.FAILOVER_WAIT,
-            Parameter.MAX_CLIENT_Q
+            Parameter.MAX_CLIENT_Q,
+            Parameter.VIVALDI_RECALCULATION_INTERVALL_IN_MS,
+            Parameter.VIVALDI_RECALCULATION_EPSILON_IN_MS,
+            Parameter.VIVALDI_ITERATIONS_BEFORE_UPDATING,
+            Parameter.VIVALDI_MAX_RETRIES_FOR_A_REQUEST,
+            Parameter.VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS,
+            Parameter.VIVALDI_TIMER_INTERVAL_IN_MS
     };
     
     /**
@@ -137,7 +143,7 @@ public class OSDConfig extends ServiceConfig {
     }
 
     public InetSocketAddress[] getDirectoryServices() {
-        List<InetSocketAddress> addresses = new ArrayList();
+        List<InetSocketAddress> addresses = new ArrayList<InetSocketAddress>();
         addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE));
         if (parameter.get(Parameter.DIRECTORY_SERVICE0) != null) {
             addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE0));
@@ -305,6 +311,33 @@ public class OSDConfig extends ServiceConfig {
         hm.putAll(customParams);
         return hm;
     }
+    
+    
+    public int getVivaldiRecalculationIntervall() {
+        return (Integer) parameter.get(Parameter.VIVALDI_RECALCULATION_INTERVALL_IN_MS);
+    }
+    
+    public int getVivaldiRecalculationEpsilon() {
+        return (Integer) parameter.get(Parameter.VIVALDI_RECALCULATION_EPSILON_IN_MS);
+    }
+
+    public int getVivaldiIterationsBeforeUpdating() {
+        return (Integer) parameter.get(Parameter.VIVALDI_ITERATIONS_BEFORE_UPDATING);
+    }
+
+    public int getVivaldiMaxRetriesForARequest() {
+        return (Integer) parameter.get(Parameter.VIVALDI_MAX_RETRIES_FOR_A_REQUEST);
+    }
+
+    public int getVivaldiMaxRequestTimeout() {
+        return (Integer) parameter.get(Parameter.VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS);
+    }
+
+    public int getVivaldiTimerIntervall() {
+        return (Integer) parameter.get(Parameter.VIVALDI_TIMER_INTERVAL_IN_MS);
+    }
+
 }
+
     
 

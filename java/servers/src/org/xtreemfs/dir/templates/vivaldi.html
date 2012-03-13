@@ -80,12 +80,15 @@ var canvasHeight = realCanvasHeight - 2 * canvasFrameHeight;
 // rendering configuration
 var conf = new Object();
 conf.bgColour = "#ffffff";
-conf.nodeColour = "#aaaaaa";
+conf.nodeColour = "#aa8888";
 conf.nodeColourSelected = "#aa0000";
+conf.nodeColourClient = "#88aa88";
+conf.nodeColourClientSelected = "#00aa00";
 conf.edgeColour = conf.bgColour; //"#eeeeee";
 conf.edgeColourSelected = "e5e5e5"; //conf.bgColour;// conf.nodeColourSelected;
 conf.textColour = "#555555";
 conf.nodeRadius = 8;
+conf.nodeRadiusClient = 7;
 conf.lineOffset = 12; // determines space between two lines
 conf.measureLineColour = conf.nodeColourSelected;
 conf.measureTextColour = conf.textColour;
@@ -204,7 +207,7 @@ function getYScale() {
 }
 
 function removeInfo() {
-	d3.selectAll("circle.selected").attr("fill", conf.nodeColour).attr("class", "");
+	d3.selectAll("circle.selected").attr("fill", function(d) { return d.type == "CLIENT" ? conf.nodeColourClient : conf.nodeColour; }).attr("class", "");
 	vis.selectAll("text.dataText").transition().duration(conf.nodeDuration).attr("fill-opacity", "0.0").remove();
 
 	edges_g.selectAll("line").attr("visibility", "visible");
@@ -277,8 +280,8 @@ function parseData(data) {
 	*/
 
 	// create coords
-	for (i = 0; i < dataArray.length; i++) {
-		coords.push({"uuid": dataArray[i][0].toString(), "x": parseFloat(dataArray[i][4]), "y": parseFloat(dataArray[i][5]), "error": parseFloat(dataArray[i][6])})
+	for (i = 0; (i < dataArray.length) && (dataArray[i].length >= 7); i++) {
+		coords.push({"uuid": dataArray[i][0].toString(), "type": dataArray[i][2].toString(), "x": parseFloat(dataArray[i][4]), "y": parseFloat(dataArray[i][5]), "error": parseFloat(dataArray[i][6])})
 	}
 	
 	// create edges
@@ -357,7 +360,7 @@ function drawData() {
 	circles.enter().append("circle")
 		.attr("cx", function(d) { return xScale(d.x); })
 		.attr("cy", function(d) { return yScale(d.y); })
-		.attr("r", conf.nodeRadius)
+		.attr("r", function(d) { return d.type == "CLIENT" ? conf.nodeRadiusClient : conf.nodeRadius; })
 		.attr("fill", conf.bgColour)
 		.on("mouseover", function(d) { 
 			if(!isMouseDown) {
@@ -369,7 +372,7 @@ function drawData() {
 				var yScale = getYScale();
 
 				d3.select(this)
-					.attr("fill", conf.nodeColourSelected)
+					.attr("fill", function(d) { return d.type == "CLIENT" ? conf.nodeColourClientSelected : conf.nodeColourSelected; })
 					.attr("class", "selected");
 
 				var data = d; //d3.event.currentTarget.__data__;
@@ -453,7 +456,7 @@ function drawData() {
 		})
 		.transition()
 		.duration(conf.nodeDuration)
-		.attr("fill", conf.nodeColour)
+		.attr("fill", function(d) { return d.type == "CLIENT" ? conf.nodeColourClient : conf.nodeColour; })
 		;
 	
 	// exit

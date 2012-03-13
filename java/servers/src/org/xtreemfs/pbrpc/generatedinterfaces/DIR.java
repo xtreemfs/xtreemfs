@@ -6661,6 +6661,11 @@ public final class DIR {
           org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration request,
           com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationSetResponse> done);
       
+      public abstract void xtreemfsVivaldiClientUpdate(
+          com.google.protobuf.RpcController controller,
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates request,
+          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
+      
     }
     
     public static com.google.protobuf.Service newReflectiveService(
@@ -6786,6 +6791,14 @@ public final class DIR {
           impl.xtreemfsConfigurationSet(controller, request, done);
         }
         
+        @Override
+        public  void xtreemfsVivaldiClientUpdate(
+            com.google.protobuf.RpcController controller,
+            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates request,
+            com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
+          impl.xtreemfsVivaldiClientUpdate(controller, request, done);
+        }
+        
       };
     }
     
@@ -6838,6 +6851,8 @@ public final class DIR {
               return impl.xtreemfsConfigurationGet(controller, (org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationGetRequest)request);
             case 14:
               return impl.xtreemfsConfigurationSet(controller, (org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration)request);
+            case 15:
+              return impl.xtreemfsVivaldiClientUpdate(controller, (org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates)request);
             default:
               throw new java.lang.AssertionError("Can't get here.");
           }
@@ -6882,6 +6897,8 @@ public final class DIR {
               return org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationGetRequest.getDefaultInstance();
             case 14:
               return org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration.getDefaultInstance();
+            case 15:
+              return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.getDefaultInstance();
             default:
               throw new java.lang.AssertionError("Can't get here.");
           }
@@ -6926,6 +6943,8 @@ public final class DIR {
               return org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration.getDefaultInstance();
             case 14:
               return org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationSetResponse.getDefaultInstance();
+            case 15:
+              return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
             default:
               throw new java.lang.AssertionError("Can't get here.");
           }
@@ -7008,6 +7027,11 @@ public final class DIR {
         com.google.protobuf.RpcController controller,
         org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration request,
         com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationSetResponse> done);
+    
+    public abstract void xtreemfsVivaldiClientUpdate(
+        com.google.protobuf.RpcController controller,
+        org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates request,
+        com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done);
     
     public static final
         com.google.protobuf.Descriptors.ServiceDescriptor
@@ -7106,6 +7130,11 @@ public final class DIR {
             com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationSetResponse>specializeCallback(
               done));
           return;
+        case 15:
+          this.xtreemfsVivaldiClientUpdate(controller, (org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates)request,
+            com.google.protobuf.RpcUtil.<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse>specializeCallback(
+              done));
+          return;
         default:
           throw new java.lang.AssertionError("Can't get here.");
       }
@@ -7150,6 +7179,8 @@ public final class DIR {
           return org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationGetRequest.getDefaultInstance();
         case 14:
           return org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration.getDefaultInstance();
+        case 15:
+          return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates.getDefaultInstance();
         default:
           throw new java.lang.AssertionError("Can't get here.");
       }
@@ -7194,6 +7225,8 @@ public final class DIR {
           return org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration.getDefaultInstance();
         case 14:
           return org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationSetResponse.getDefaultInstance();
+        case 15:
+          return org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance();
         default:
           throw new java.lang.AssertionError("Can't get here.");
       }
@@ -7439,6 +7472,21 @@ public final class DIR {
             org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationSetResponse.class,
             org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationSetResponse.getDefaultInstance()));
       }
+      
+      public  void xtreemfsVivaldiClientUpdate(
+          com.google.protobuf.RpcController controller,
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates request,
+          com.google.protobuf.RpcCallback<org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(15),
+          controller,
+          request,
+          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.class,
+            org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance()));
+      }
     }
     
     public static BlockingInterface newBlockingStub(
@@ -7520,6 +7568,11 @@ public final class DIR {
       public org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationSetResponse xtreemfsConfigurationSet(
           com.google.protobuf.RpcController controller,
           org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration request)
+          throws com.google.protobuf.ServiceException;
+      
+      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsVivaldiClientUpdate(
+          com.google.protobuf.RpcController controller,
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates request)
           throws com.google.protobuf.ServiceException;
     }
     
@@ -7709,6 +7762,18 @@ public final class DIR {
           org.xtreemfs.pbrpc.generatedinterfaces.DIR.configurationSetResponse.getDefaultInstance());
       }
       
+      
+      public org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse xtreemfsVivaldiClientUpdate(
+          com.google.protobuf.RpcController controller,
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates request)
+          throws com.google.protobuf.ServiceException {
+        return (org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(15),
+          controller,
+          request,
+          org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse.getDefaultInstance());
+      }
+      
     }
   }
   
@@ -7857,7 +7922,7 @@ public final class DIR {
       "E_TYPE_VOLUME\020\003*g\n\rServiceStatus\022\030\n\024SERV" +
       "ICE_STATUS_AVAIL\020\000\022 \n\034SERVICE_STATUS_TO_",
       "BE_REMOVED\020\001\022\032\n\026SERVICE_STATUS_REMOVED\020\002" +
-      "2\377\014\n\020DirectoryService\022u\n\035xtreemfs_addres" +
+      "2\355\r\n\020DirectoryService\022u\n\035xtreemfs_addres" +
       "s_mappings_get\022(.xtreemfs.pbrpc.addressM" +
       "appingGetRequest\032!.xtreemfs.pbrpc.Addres" +
       "sMappingSet\"\007\215\265\030\001\000\000\000\022t\n xtreemfs_address" +
@@ -7898,8 +7963,11 @@ public final class DIR {
       "pc.Configuration\"\007\215\265\030\026\000\000\000\022n\n\032xtreemfs_co",
       "nfiguration_set\022\035.xtreemfs.pbrpc.Configu" +
       "ration\032(.xtreemfs.pbrpc.configurationSet" +
-      "Response\"\007\215\265\030\027\000\000\000\032\007\225\265\030\021\'\000\000B(\n&org.xtreem" +
-      "fs.pbrpc.generatedinterfaces"
+      "Response\"\007\215\265\030\027\000\000\000\022l\n\036xtreemfs_vivaldi_cl" +
+      "ient_update\022\".xtreemfs.pbrpc.VivaldiCoor" +
+      "dinates\032\035.xtreemfs.pbrpc.emptyResponse\"\007" +
+      "\215\265\030\030\000\000\000\032\007\225\265\030\021\'\000\000B(\n&org.xtreemfs.pbrpc.g" +
+      "eneratedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

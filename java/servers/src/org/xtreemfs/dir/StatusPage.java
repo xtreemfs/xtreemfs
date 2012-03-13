@@ -12,10 +12,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -400,6 +401,26 @@ public class StatusPage {
         } // while
         
         iter.free();
+
+        master.getVivaldiClientMap().filterTimeOuts();
+        // append clients
+        //for (Map.Entry<InetSocketAddress, VivaldiClientValue> entry: master.getVivaldiClientMap().entrySet()) {
+        for (Map.Entry<InetSocketAddress, org.xtreemfs.dir.VivaldiClientMap.VivaldiClientValue> entry: master.getVivaldiClientMap().entrySet()) {
+            dump.append("\n");
+            dump.append(entry.getKey().toString());
+            dump.append("\t");
+            dump.append(entry.getKey().getHostName());
+            dump.append("\t");
+            dump.append("CLIENT");
+            dump.append("\t");
+            dump.append("online");
+            dump.append("\t");
+            dump.append(entry.getValue().getCoordinates().getXCoordinate());
+            dump.append("\t");
+            dump.append(entry.getValue().getCoordinates().getYCoordinate());
+            dump.append("\t");
+            dump.append(entry.getValue().getCoordinates().getLocalError());
+        }
         
         return dump.toString();
     }

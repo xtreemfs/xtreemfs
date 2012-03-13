@@ -52,6 +52,8 @@ public class DIRConfig extends ServiceConfig {
             Parameter.SNMP_ADDRESS,
             Parameter.SNMP_PORT,
             Parameter.SNMP_ACL,
+            Parameter.VIVALDI_MAX_CLIENTS,
+            Parameter.VIVALDI_CLIENT_TIMEOUT
     };
     
     private Map<String, Integer> mirrors;
@@ -156,5 +158,13 @@ public class DIRConfig extends ServiceConfig {
      */
     public void checkConfig() {
         super.checkConfig(dirParameter);
+    }
+    
+    public int getVivaldiMaxClients() {
+        return (Integer)parameter.get(Parameter.VIVALDI_MAX_CLIENTS);
+    }
+    
+    public int getVivaldiClientTimeout() {
+        return (Integer)parameter.get(Parameter.VIVALDI_CLIENT_TIMEOUT);
     }
 }
