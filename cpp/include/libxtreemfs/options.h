@@ -164,6 +164,15 @@ class Options {
   int grid_gridmap_reload_interval_m;
 #endif  // !WIN32
 
+  // Vivaldi Options
+  bool vivaldi_enable;
+  std::string vivaldi_filename;
+  unsigned int vivaldi_recalculation_intervall_ms;
+  unsigned int vivaldi_recalculation_epsilon_ms;
+  unsigned int vivaldi_max_iterations_before_updating;
+  unsigned int vivaldi_max_request_retries;
+  double vivaldi_zipf_generator_skew;
+
   // Advanced XtreemFS options.
   /** Interval for periodic file size updates in seconds. */
   int periodic_file_size_updates_interval_s;
@@ -210,6 +219,9 @@ class Options {
 
   /** Description of options of the Grid support. */
   boost::program_options::options_description grid_options_;
+
+  /** Description of the vivaldi options */
+  boost::program_options::options_description vivaldi_options_;
 
   // Hidden options.
   /** Description of options of the Grid support. */

@@ -34,6 +34,7 @@ Options::Options()
       error_handling_("Error Handling options"),
       ssl_options_("SSL options"),
       grid_options_("Grid Support options"),
+      vivaldi_options_("Vivaldi Options"),
       xtreemfs_advanced_options_("XtreemFS Advanced options") {
   // Version information.
   // If you change this, do not forget to change this also in xtfsutil.cpp!
@@ -113,6 +114,15 @@ Options::Options()
   grid_gridmap_location_default_unicore = "/etc/grid-security/d-grid_uudb";
   grid_gridmap_reload_interval_m = 60;  // 60 Minutes = 1 Hour.
 #endif  // !WIN32
+
+  // Vivaldi Options
+  vivaldi_enable = false;
+  vivaldi_filename = "vivaldi-coordinates";
+  vivaldi_recalculation_intervall_ms = 1000 * 270; // in ms
+  vivaldi_recalculation_epsilon_ms = 1000 * 330; // in ms
+  vivaldi_max_iterations_before_updating = 12;
+  vivaldi_max_request_retries = 2;
+  vivaldi_zipf_generator_skew = 0.5;
 
   // Advanced XtreemFS options.
   periodic_file_size_updates_interval_s = 60;  // Default: 1 Minute.
@@ -264,6 +274,22 @@ void Options::GenerateProgramOptionsDescriptions() {
         " changes and reloaded if necessary.");
 #endif  // WIN32
 
+  vivaldi_options_.add_options()
+      ("vivaldi-enable",
+          po::value(&vivaldi_enable)->default_value(vivaldi_enable))
+      ("vivaldi-filename",
+          po::value(&vivaldi_filename)->default_value(vivaldi_filename))
+      ("vivaldi-min-recalculation",
+          po::value(&vivaldi_recalculation_intervall_ms)->default_value(vivaldi_recalculation_intervall_ms))
+      ("vivaldi-max-recalculation",
+          po::value(&vivaldi_recalculation_epsilon_ms)->default_value(vivaldi_recalculation_epsilon_ms))
+      ("vivaldi-max-iterations-before-updating",
+          po::value(&vivaldi_max_iterations_before_updating)->default_value(vivaldi_max_iterations_before_updating))
+      ("vivaldi-max-request-retries",
+          po::value(&vivaldi_max_request_retries)->default_value(vivaldi_max_request_retries))
+      ("vivaldi-zipf-generator-skew",
+          po::value(&vivaldi_zipf_generator_skew)->default_value(vivaldi_zipf_generator_skew));
+
   xtreemfs_advanced_options_.add_options()
     ("periodic-filesize-update-interval",
         po::value(&periodic_file_size_updates_interval_s),
@@ -275,7 +301,7 @@ void Options::GenerateProgramOptionsDescriptions() {
         "renews the XCap of all open file handles.");
 
   all_descriptions_.add(general_).add(optimizations_).add(error_handling_)
-      .add(ssl_options_).add(grid_options_);
+      .add(ssl_options_).add(grid_options_).add(vivaldi_options_);
   // These options are not shown in the "-h" output to not confuse the user.
   hidden_descriptions_.add(xtreemfs_advanced_options_);
 

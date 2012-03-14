@@ -17,6 +17,7 @@
 #include "libxtreemfs/uuid_cache.h"
 #include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/uuid_resolver.h"
+#include "libxtreemfs/vivaldi.h"
 
 namespace boost {
 class thread;
@@ -31,6 +32,7 @@ class VolumeImplementation;
 
 namespace pbrpc {
 class DIRServiceClient;
+class OSDServiceClient;
 }  // namespace pbrpc
 
 namespace rpc {
@@ -130,6 +132,11 @@ class ClientImplementation : public Client, public UUIDResolver {
 
   /** Random, non-persistent UUID to distinguish locks of different clients. */
   std::string client_uuid_;
+
+  /** Vivaldi thread, periodically updates vivaldi-coordinates. */
+  boost::scoped_ptr<boost::thread> vivaldi_thread_;
+  boost::scoped_ptr<xtreemfs::Vivaldi> vivaldi_;
+  boost::scoped_ptr<xtreemfs::pbrpc::OSDServiceClient> osd_service_client_;
 };
 
 }  // namespace xtreemfs

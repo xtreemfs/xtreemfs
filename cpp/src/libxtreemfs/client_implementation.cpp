@@ -101,6 +101,13 @@ void ClientImplementation::Start() {
 
   GenerateVersion4UUID(&client_uuid_);
   assert(!client_uuid_.empty());
+
+  // Start vivaldi thread if configured
+  if (options_.vivaldi_enable) {
+    std::cout << "Starting vivaldi..." << std::endl; // TODO: use logger
+    vivaldi_.reset(new Vivaldi(network_client_.get(), dir_service_client_.get(), &dir_service_addresses, this->GetUUIDResolver(), options_));
+    vivaldi_thread_.reset(new boost::thread(boost::bind(&xtreemfs::Vivaldi::Run, vivaldi_.get())));
+  }
 }
 
 void ClientImplementation::Shutdown() {
@@ -114,6 +121,14 @@ void ClientImplementation::Shutdown() {
     delete *it;
     it = list_open_volumes_.erase(it);
   }
+
+  // Stop vivaldi thread if running
+  if(vivaldi_thread_->joinable())
+  {
+    vivaldi_thread_->interrupt();
+    vivaldi_thread_->join();
+  }
+
 }
 
 Volume* ClientImplementation::OpenVolume(
