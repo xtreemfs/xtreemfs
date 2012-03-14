@@ -113,10 +113,10 @@ babudb.pseudoSyncWait = 200
 # vivaldi status visualisation configuration
 # set the maximum number of client data set to be remembered, 0 deactivates
 # the client visualisation (but clients might still try)
-vivaldi.max_clients = 32
+#vivaldi.max_clients = 32
 
 # set a timeout (in ms) after which a client's data set will be removed
 # this value should be set with respect to the recalculation intervall
 # of the vivaldi algorithm
-vivaldi.client_timeout = 600000
+#vivaldi.client_timeout = 600000
 

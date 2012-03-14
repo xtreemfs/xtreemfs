@@ -46,14 +46,14 @@ public class VivaldiClientMap extends ConcurrentHashMap<InetSocketAddress, Vival
     }
     
     public VivaldiClientMap(int maxSize, long timeOut) {
-        super();
+        super(maxSize + 1); // +1 because put inserts first, and then removes an old element if necessary
         MAX_SIZE = maxSize;
         TIME_OUT_IN_MS = timeOut;
     }
 
     public void put(InetSocketAddress addr, VivaldiCoordinates coords) {
         // TODO (mno): InetSocketAddress changes as a side effect when 
-        // some getter or toString a lookup or reverse-lookup is triggered
+        // some getter or toString trigger a lookup or reverse-lookup respectively
         if(MAX_SIZE > 0)
         {
             // first put ...

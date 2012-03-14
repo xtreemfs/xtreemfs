@@ -100,20 +100,20 @@ policy_dir = /etc/xos/xtreemfs/policies
 
 # the time between two recalculations of the vivaldi coordinates is randomly
 # choosen as recalculation_intervall +/- recalculation_epsilon
-vivaldi.recalculation_intervall_in_ms = 300000
-vivaldi_recalculation_intervall_in_ms = 30000
+vivaldi.recalculation_intervall_in_ms = 300 #300000
+vivaldi_recalculation_intervall_in_ms = 30 #30000
 
 # the number of vivaldi iterations before a new list of peers (OSDs) will be
 # fetched from the DIR
-vivaldi.iterations_before_updating = 12
+#vivaldi.iterations_before_updating = 12
 
 # number of retries before accepting a 'suspiciously high' RTT
-vivaldi.max_retries_for_a_request = 2
+#vivaldi.max_retries_for_a_request = 2
 
 # maximum number of milliseconds an OSD waits for a RESPONSE before discarding
 # its corresponding REQUEST (expiration times smaller than 
 # vivaldi.timer_intervall_in_ms are not granted)
-vivaldi.max_request_timeout_in_ms = 10000
+#vivaldi.max_request_timeout_in_ms = 10000
 
 # period of time between timer executions (used for regular tasks)
-vivaldi.timer_intervall_in_ms = 60000
+#vivaldi.timer_intervall_in_ms = 60000
