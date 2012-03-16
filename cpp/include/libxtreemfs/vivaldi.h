@@ -10,11 +10,12 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_VIVALDI_H_
 #define CPP_INCLUDE_LIBXTREEMFS_VIVALDI_H_
 
+#include <list>
+#include <string>
+
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/vivaldi_node.h"
 #include "xtreemfs/DIRServiceClient.h"
-#include <list>
-#include <string>
 
 namespace xtreemfs {
 
@@ -44,7 +45,7 @@ class KnownOSD {
 
 
 class Vivaldi {
-public:
+ public:
   Vivaldi(xtreemfs::rpc::Client* rpc_client,
           xtreemfs::pbrpc::DIRServiceClient* dir_client,
           UUIDIterator* dir_service_addresses,
@@ -53,8 +54,9 @@ public:
 
   void Run();
 
-private:
-  bool update_known_osds(std::list<KnownOSD> &updated_osds, VivaldiNode &own_node);
+ private:
+  bool update_known_osds(std::list<KnownOSD>* updated_osds,
+                         const VivaldiNode& own_node);
 
   xtreemfs::rpc::Client* rpc_client_;
   xtreemfs::pbrpc::DIRServiceClient* dir_client_;
@@ -81,9 +83,8 @@ private:
    *  @remark Cannot be set to const because it's modified inside the
    *          constructor VolumeImplementation(). */
   xtreemfs::pbrpc::UserCredentials user_credentials_bogus_;
-
 };
 
-#endif
+}  // namespace xtreemfs
 
-} // namespace xtreemfs
+#endif  // CPP_INCLUDE_LIBXTREEMFS_VIVALDI_H_
