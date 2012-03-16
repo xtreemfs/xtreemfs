@@ -123,12 +123,10 @@ void ClientImplementation::Shutdown() {
   }
 
   // Stop vivaldi thread if running
-  if(vivaldi_thread_->joinable())
-  {
+  if (!vivaldi_thread_.get() && vivaldi_thread_->joinable()) {
     vivaldi_thread_->interrupt();
     vivaldi_thread_->join();
   }
-
 }
 
 Volume* ClientImplementation::OpenVolume(
