@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -41,16 +42,17 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntry;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 
 /**
- *
+ * 
  * @author PaulSeiferth
  */
 public class XtreemFSFileSystem extends FileSystem {
 
-    private URI fileSystemURI;
-    private Client xtreemfsClient;
-    private Volume xtreemfsVolume;
-    private Path workingDirectory;
+    private URI             fileSystemURI;
+    private Client          xtreemfsClient;
+    private Volume          xtreemfsVolume;
+    private Path            workingDirectory;
     private UserCredentials userCredentials;
+    private long            stripeSize;
 
     @Override
     public void initialize(URI uri, Configuration conf) throws IOException {
@@ -58,12 +60,14 @@ public class XtreemFSFileSystem extends FileSystem {
 
         TimeSync.initializeLocal(1000, 100);
         int logLevel = Logging.LEVEL_WARN;
-        if (conf.getBoolean("xtreemfs.client.debug", false)) {
+        if (conf.getBoolean("xtreemfs.client.debug", true)) {
             logLevel = Logging.LEVEL_DEBUG;
         }
 
         Logging.start(logLevel, Logging.Category.all);
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "init : " + uri);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "init : " + uri);
+        }
 
         String volumeName = conf.get("xtreemfs.volumeName");
         if (volumeName == null) {
@@ -71,29 +75,29 @@ public class XtreemFSFileSystem extends FileSystem {
                     + " core-site.xml! (xtreemfs.volumeName)");
         }
 
-
         // create UserCredentials
-        if ((conf.get("xtreemfs.client.userid") != null)
-                && (conf.get("xtreemfs.client.groupid") != null)) {
-            userCredentials = UserCredentials.newBuilder().
-                    setUsername(conf.get("xtreemfs.client.userid")).
-                    addGroups(conf.get("xtreemfs.client.groupid")).build();
+        if ((conf.get("xtreemfs.client.userid") != null) && (conf.get("xtreemfs.client.groupid") != null)) {
+            userCredentials =
+                    UserCredentials.newBuilder().setUsername(conf.get("xtreemfs.client.userid"))
+                            .addGroups(conf.get("xtreemfs.client.groupid")).build();
         }
         if (userCredentials == null) {
-            //try to guess from env
+            // try to guess from env
             if (System.getenv("USER") != null) {
-                userCredentials = UserCredentials.newBuilder().
-                        setUsername(System.getProperty("user.name")).
-                        addGroups("users").build();
+                userCredentials =
+                        UserCredentials.newBuilder().setUsername(System.getProperty("user.name"))
+                                .addGroups("users").build();
             }
         }
 
-        //initialize XtreemFS Client with default Options and without SSL.
+        // initialize XtreemFS Client with default Options and without SSL.
         Options xtreemfsOptions = new Options();
-        xtreemfsClient = Client.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials, 
-                xtreemfsOptions.generateSSLOptions(), xtreemfsOptions);
+        xtreemfsOptions.setMetadataCacheSize(0);
+        xtreemfsClient =
+                Client.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials,
+                        xtreemfsOptions.generateSSLOptions(), xtreemfsOptions);
         try {
-            //TODO: Fix stupid Exception in libxtreemfs
+            // TODO: Fix stupid Exception in libxtreemfs
             xtreemfsClient.start();
         } catch (Exception ex) {
             Logger.getLogger(XtreemFSFileSystem.class.getName()).log(Level.SEVERE, null, ex);
@@ -114,10 +118,14 @@ public class XtreemFSFileSystem extends FileSystem {
             e.printStackTrace();
         }
 
+        stripeSize = xtreemfsVolume.statFS(userCredentials).getDefaultStripingPolicy().getStripeSize();
+        stripeSize *= 1024;
         fileSystemURI = uri;
         workingDirectory = getHomeDirectory();
 
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "file system init complete: " + uri.getUserInfo());        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "file system init complete: " + uri.getUserInfo());
+        }
     }
 
     @Override
@@ -127,66 +135,77 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public FSDataInputStream open(Path path, int bufferSize) throws IOException {
-        final String pathAsString = path.toUri().getPath();
-        final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathAsString,
-                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber(), 0);
+        final String pathString = makeAbsolute(path).toUri().getPath();
+        final FileHandle fileHandle =
+                xtreemfsVolume.openFile(userCredentials, pathString,
+                        SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber(), 0);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Openning file %s", pathString);
+        }
+        statistics.incrementReadOps(1);
 
         return new FSDataInputStream(new FSInputStream() {
             private long position = 0;
 
             @Override
-            public void seek(long l) throws IOException {
+            public synchronized void seek(long l) throws IOException {
                 this.position = l;
             }
 
             @Override
-            public long getPos() throws IOException {
+            public synchronized long getPos() throws IOException {
                 return position;
             }
 
             @Override
-            public boolean seekToNewSource(long l) throws IOException {
+            public synchronized boolean seekToNewSource(long l) throws IOException {
                 return false;
             }
 
             @Override
-            public int read() throws IOException {
+            public synchronized int read() throws IOException {
                 byte[] buf = new byte[1];
-                int numRead = fileHandle.read(userCredentials, buf, 1, (int)position);
+                int numRead = fileHandle.read(userCredentials, buf, 1, (int) position);
                 if (numRead == 0) {
                     return -1;
                 }
-                seek(getPos()+1);
-                return (int)(buf[0] & 0xFF);
+                seek(getPos() + 1);
+                statistics.incrementBytesRead(1);
+                return (int) (buf[0] & 0xFF);
             }
 
             @Override
-            public int read(byte[] bytes, int offset, int length) throws IOException {
-                int bytesRead = fileHandle.read(userCredentials, bytes, length, (int)position);
+            public synchronized int read(byte[] bytes, int offset, int length) throws IOException {
+                int bytesRead = fileHandle.read(userCredentials, bytes, length, (int) getPos());
                 if ((bytesRead == 0) && (length > 0)) {
                     return -1;
                 }
-                seek(getPos()+bytesRead);
-                return bytesRead;
-            }
-            
-            @Override
-            public int read(long position, byte[] bytes, int offset, int length) throws IOException {
-                int bytesRead = fileHandle.read(userCredentials, bytes, length, (int)position);
-                if ((bytesRead == 0) && (length > 0)) {
-                    return -1;
-                }
-                seek(position+bytesRead);
+                seek(getPos() + bytesRead);
+                statistics.incrementBytesRead(bytesRead);
                 return bytesRead;
             }
 
             @Override
-            public int read(byte[] bytes) throws IOException {
+            public synchronized int read(long position, byte[] bytes, int offset, int length)
+                    throws IOException {
+                int bytesRead = fileHandle.read(userCredentials, bytes, length, (int) position);
+                if ((bytesRead == 0) && (length > 0)) {
+                    return -1;
+                }
+                statistics.incrementBytesRead(bytesRead);
+                return bytesRead;
+            }
+
+            @Override
+            public synchronized int read(byte[] bytes) throws IOException {
                 return read(position, bytes, 0, bytes.length);
             }
 
             @Override
-            public void close() throws IOException {
+            public synchronized void close() throws IOException {
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "Closing file %s", pathString);
+                }
                 super.close();
                 fileHandle.close();
             }
@@ -194,46 +213,79 @@ public class XtreemFSFileSystem extends FileSystem {
     }
 
     @Override
-    public FSDataOutputStream create(Path path, FsPermission fp, boolean overwrite, int bufferSize, short replication,
-            long blockSize, Progressable p) throws IOException {
-        //TODO: Find out what replication stands for and uses. Hadoop JavaDoc says: replication - required block replication for the file
-        final String pathString = path.toUri().getPath();
-        int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber();
+    public FSDataOutputStream create(Path path, FsPermission fp, boolean overwrite, int bufferSize,
+            short replication, long blockSize, Progressable p) throws IOException {
+        System.out.println("CREATING " + path.toString() + " WITH BLOCKSIZE: " + blockSize);
+        // TODO: Find out what replication stands for and uses. Hadoop JavaDoc says: replication - required
+        // block replication for the file
+        final String pathString = makeAbsolute(path).toUri().getPath();
+        int flags =
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber();
         if (overwrite) {
             flags |= SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber();
         }
 
-        final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString, flags, fp.toShort());
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Creating file %s. Overwrite = %s", pathString,
+                    overwrite);
+        }
+
+        // If some of the parent directories don't exist they should be created.
+        final String[] dirs = pathString.split("/");
+        String tempPath = "";
+        for (int i = 0; i < dirs.length - 1; i++) {
+            if (dirs[i].isEmpty() == false) {
+                tempPath = tempPath + "/" + dirs[i];
+                if (isXtreemFSDirectory(tempPath) == false) {
+                    xtreemfsVolume.createDirectory(userCredentials, tempPath, fp.toShort());
+                }
+            }
+        }
+
+        final FileHandle fileHandle =
+                xtreemfsVolume.openFile(userCredentials, pathString, flags, fp.toShort());
+        statistics.incrementWriteOps(1);
+
         return new FSDataOutputStream(new OutputStream() {
             private int position = 0;
-            
+
             @Override
-            public void write(int b) throws IOException {
+            public synchronized void write(int b) throws IOException {
                 byte[] data = new byte[4];
                 data[0] = (byte) (b >>> 24);
                 data[1] = (byte) (b >>> 16);
                 data[2] = (byte) (b >>> 8);
-                data[4] = (byte) b;
-                int writtenBytes = fileHandle.write(userCredentials, data , 4, position);
+                data[3] = (byte) b;
+                int writtenBytes = fileHandle.write(userCredentials, data, 4, position);
+                if (statistics != null) {
+                    statistics.incrementBytesWritten(writtenBytes);
+                }
                 position += writtenBytes;
             }
 
             @Override
-            public void write(byte b[], int off, int len) throws IOException {
+            public synchronized void write(byte b[], int off, int len) throws IOException {
                 if (b == null) {
                     throw new NullPointerException();
-                } else if ((off < 0) || (off > b.length) || (len < 0)
-                        || ((off + len) > b.length) || ((off + len) < 0)) {
+                } else if ((off < 0) || (off > b.length) || (len < 0) || ((off + len) > b.length)
+                        || ((off + len) < 0)) {
                     throw new IndexOutOfBoundsException();
                 } else if (len == 0) {
                     return;
                 }
                 int writtenBytes = fileHandle.write(userCredentials, b, off, len, position);
+                if (statistics != null) {
+                    statistics.incrementBytesWritten(writtenBytes);
+                }
                 position += writtenBytes;
             }
 
             @Override
-            public void close() throws IOException {
+            public synchronized void close() throws IOException {
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "Closing file %s", pathString);
+                }
                 super.close();
                 fileHandle.close();
             }
@@ -247,9 +299,14 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public boolean rename(Path src, Path dest) throws IOException {
-        final String srcPath = src.toUri().getPath();
-        final String destPath = dest.toUri().getPath();
+        final String srcPath = makeAbsolute(src).toUri().getPath();
+        final String destPath = makeAbsolute(dest).toUri().getPath();
         xtreemfsVolume.rename(userCredentials, srcPath, destPath);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Renamed file/dir. src: %s, dst: %s", srcPath,
+                    destPath);
+        }
+        statistics.incrementWriteOps(1);
         return true;
     }
 
@@ -260,21 +317,27 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public boolean delete(Path path, boolean recursive) throws IOException {
-        final String pathString = path.toUri().getPath();
+        statistics.incrementWriteOps(1);
+        final String pathString = makeAbsolute(path).toUri().getPath();
         if (isXtreemFSFile(pathString)) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Deleting file %s", pathString);
+            }
             return deleteXtreemFSFile(pathString);
         }
         if (isXtreemFSDirectory(pathString)) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Deleting directory %s", pathString);
+            }
             return deleteXtreemFSDirectory(pathString, recursive);
         }
-
-        // path is neither a file nor a directory.  Consider it as not existing.
+        // path is neither a file nor a directory. Consider it as not existing.
         return false;
     }
 
     private boolean deleteXtreemFSDirectory(String path, boolean recursive) throws IOException {
         DirectoryEntries dirEntries = xtreemfsVolume.readDir(userCredentials, path, 0, 0, true);
-        boolean isEmpty = (dirEntries.getEntriesCount() > 2);
+        boolean isEmpty = (dirEntries.getEntriesCount() <= 2);
 
         if (recursive) {
             return deleteXtreemFSDirRecursive(path);
@@ -371,31 +434,43 @@ public class XtreemFSFileSystem extends FileSystem {
             return null;
         }
 
-        final String pathString = path.toUri().getPath();
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "ls: " + path);
+        final String pathString = makeAbsolute(path).toUri().getPath();
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "ls: " + pathString);
+        }
 
         if (isXtreemFSDirectory(pathString) == false) {
             return null;
         }
 
         DirectoryEntries dirEntries = xtreemfsVolume.readDir(userCredentials, pathString, 0, 0, false);
-        ArrayList<FileStatus> fileStatus = new ArrayList<FileStatus>(dirEntries.getEntriesCount()-2);   
+        statistics.incrementLargeReadOps(1);
+        ArrayList<FileStatus> fileStatus = new ArrayList<FileStatus>(dirEntries.getEntriesCount() - 2);
         for (DirectoryEntry entry : dirEntries.getEntriesList()) {
             if (entry.getName().equals("..") || entry.getName().equals(".")) {
                 continue;
             }
             final Stat stat = entry.getStbuf();
-            final boolean isDirectory = isXtreemFSDirectory(stat);
-            fileStatus.add(new FileStatus(stat.getSize(), isDirectory, 1, 1, (long) (stat.getMtimeNs() / 1e6),
-                    (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()),
-                    stat.getUserId(), stat.getGroupId(), new Path(path, entry.getName())));
+            final boolean isDir = isXtreemFSDirectory(stat);
+            if (isDir) {
+                // for directories, set blocksize to 0
+                fileStatus.add(new FileStatus(0, isDir, 1, 0, (long) (stat.getMtimeNs() / 1e6), (long) (stat
+                        .getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(),
+                        stat.getGroupId(), new Path(makeAbsolute(path), entry.getName())));
+            } else {
+                // for files, set blocksize to stripeSize of the volume
+                fileStatus.add(new FileStatus(stat.getSize(), isDir, 1, stripeSize,
+                        (long) (stat.getMtimeNs() / 1e6), (long) (stat.getAtimeNs() / 1e6), new FsPermission(
+                                (short) stat.getMode()), stat.getUserId(), stat.getGroupId(), new Path(
+                                makeAbsolute(path), entry.getName())));
+            }
         }
         return fileStatus.toArray(new FileStatus[fileStatus.size()]);
     }
 
     @Override
     public void setWorkingDirectory(Path path) {
-        this.workingDirectory = path;
+        this.workingDirectory = makeAbsolute(path);
     }
 
     @Override
@@ -403,15 +478,24 @@ public class XtreemFSFileSystem extends FileSystem {
         return this.workingDirectory;
     }
 
+    private Path makeAbsolute(Path p) {
+        if (p.isAbsolute()) {
+            return p;
+        } else {
+            return new Path(workingDirectory, p);
+        }
+    }
+
     @Override
     public boolean mkdirs(Path path, FsPermission fp) throws IOException {
-        final String pathString = path.toUri().getPath();
+        final String pathString = makeAbsolute(path).toUri().getPath();
         final String[] dirs = pathString.split("/");
-        
+        statistics.incrementWriteOps(1);
+
         final short mode = fp.toShort();
         String dirString = "";
         for (String dir : dirs) {
-            dirString += dir+"/";
+            dirString += dir + "/";
             if (isXtreemFSFile(dirString)) {
                 return false;
             }
@@ -419,28 +503,54 @@ public class XtreemFSFileSystem extends FileSystem {
                 xtreemfsVolume.createDirectory(userCredentials, dirString, mode);
             }
         }
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Created direcotry %s", pathString);
+        }
         return true;
     }
 
     @Override
     public FileStatus getFileStatus(Path path) throws IOException {
-        final String pathString = path.toUri().getPath();
+        final String pathString = makeAbsolute(path).toUri().getPath();
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "getting file status for file %s", pathString);
+        }
         Stat stat = null;
         try {
-            stat = xtreemfsVolume.getAttr(userCredentials, pathString);    
+            stat = xtreemfsVolume.getAttr(userCredentials, pathString);
         } catch (PosixErrorException pee) {
             if (pee.getPosixError().equals(POSIXErrno.POSIX_ERROR_ENOENT)) {
                 throw new FileNotFoundException();
-            } 
+            }
             throw pee;
-        }  
+        }
         final boolean isDir = isXtreemFSDirectory(stat);
-        return new FileStatus(stat.getSize(), isDir, 1, 1, (long) (stat.getMtimeNs() / 1e6), (long) (stat.getAtimeNs() / 1e6), 
-                new FsPermission((short)stat.getMode()), stat.getUserId(), stat.getGroupId(), path);
+        if (isDir) {
+            // for directories, set blocksize to 0
+            return new FileStatus(0, isDir, 1, 0, (long) (stat.getMtimeNs() / 1e6),
+                    (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()),
+                    stat.getUserId(), stat.getGroupId(), makeAbsolute(path));
+        } else {
+            // for files, set blocksize to stripesize of the volume
+            return new FileStatus(stat.getSize(), isDir, 1, stripeSize, (long) (stat.getMtimeNs() / 1e6),
+                    (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()),
+                    stat.getUserId(), stat.getGroupId(), makeAbsolute(path));
+        }
     }
+
+    // private long calculateNumberOfblock(Stat statOfFile) {
+    // if ((statOfFile.getSize() % statOfFile.getBlksize()) == 0) {
+    // return statOfFile.getSize() / statOfFile.getBlksize();
+    // } else {
+    // return statOfFile.getSize() / statOfFile.getBlksize() + 1;
+    // }
+    // }
 
     @Override
     public void close() throws IOException {
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Closing %s", XtreemFSFileSystem.class.getName());
+        }
         super.close();
         xtreemfsVolume.close();
         xtreemfsClient.shutdown();

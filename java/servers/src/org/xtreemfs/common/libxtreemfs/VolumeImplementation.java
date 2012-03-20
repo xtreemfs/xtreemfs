@@ -384,7 +384,6 @@ public class VolumeImplementation extends Volume {
                                 return mrcServiceClient.link(server, authHeader, userCreds, input);
                             }
                         });
-        ;
 
         assert (response != null);
 
@@ -871,7 +870,6 @@ public class VolumeImplementation extends Volume {
         // TODO: Retrieve stat as optional member of openResponse instead
         // and update cached DirectoryEntries accordingly.
         metadataCache.invalidateDirEntries(parentDir);
-
     }
 
     /*
@@ -905,7 +903,6 @@ public class VolumeImplementation extends Volume {
                 | Setattrs.SETATTR_MTIME.getNumber());
         metadataCache.invalidatePrefix(path);
         metadataCache.invalidateDirEntry(path, Helper.getBasename(path));
-
     }
 
     /*
