@@ -85,7 +85,8 @@ conf.nodeColourSelected = "#aa0000";
 conf.nodeColourClient = "#88aa88";
 conf.nodeColourClientSelected = "#00aa00";
 conf.edgeColour = conf.bgColour; //"#eeeeee";
-conf.edgeColourSelected = "e5e5e5"; //conf.bgColour;// conf.nodeColourSelected;
+conf.edgeColourSelected = "#eeeeee"; //conf.bgColour;// conf.nodeColourSelected;
+// .attr("stroke-dasharray", "3 1")
 conf.textColour = "#555555";
 conf.nodeRadius = 8;
 conf.nodeRadiusClient = 7;
@@ -126,7 +127,7 @@ window.onload = function() {
 						.attr("class", "measure")
 						.text(Number(0).toFixed(2) + " ms")
 						.attr("x", p.x)
-						.attr("y", p.x)
+						.attr("y", p.y)
 						//.attr("dx", conf.nodeRadius)
 						.attr("dy", -conf.nodeRadius)
 						.attr("fill", conf.measureTextColour)
@@ -424,9 +425,9 @@ function drawData() {
 				var notSelector = function(d) { return !selector(d); };
 				var allLines = edges_g.selectAll("line").data(edges, function(d) { return d.key; });
 			
-				var currentLines = allLines.filter(selector).attr("stroke", conf.edgeColourSelected).attr("class", "selected")[0];
-				
 				allLines.filter(notSelector).attr("visibility", "hidden");
+				
+				var currentLines = allLines.filter(selector).attr("stroke", conf.edgeColourSelected).attr("class", "selected")[0];
 
 				var texts = text_g.selectAll("text.distText").data(currentLines, function(d) { return d.__data__.key; });
 				texts.enter().append("text")
