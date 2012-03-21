@@ -494,4 +494,9 @@ UUIDResolver* ClientImplementation::GetUUIDResolver() {
   return static_cast<UUIDResolver*>(this);
 }
 
+
+const VivaldiCoordinates& ClientImplementation::GetVivaldiCoordinates() const {
+  return vivaldi_->getVivaldiCoordinates();
+}
+
 }  // namespace xtreemfs

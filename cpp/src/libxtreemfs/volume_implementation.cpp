@@ -328,6 +328,10 @@ FileHandle* VolumeImplementation::OpenFile(
   rq.set_mode(mode);
   rq.set_attributes(0);
 
+  // set vivaldi coordinates if vivaldi is enabled
+  if(volume_options_.vivaldi_enable)
+    rq.mutable_coordinates()->CopyFrom(this->client_->GetVivaldiCoordinates());
+
   boost::scoped_ptr< SyncCallback<openResponse> > response(
       ExecuteSyncRequest< SyncCallback<openResponse>* >(
           boost::bind(
@@ -1413,7 +1417,8 @@ FileInfo* VolumeImplementation::GetFileInfoOrCreateUnmutexed(
     return it->second;
   } else {
     // File has not been opened yet, add it.
-    FileInfo* file_info(new FileInfo(this,
+    FileInfo* file_info(new FileInfo(client_,
+                                     this,
                                      file_id,
                                      path,
                                      replicate_on_close,

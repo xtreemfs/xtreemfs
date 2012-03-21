@@ -23,13 +23,15 @@ using namespace std;
 namespace xtreemfs {
 
 FileInfo::FileInfo(
+    ClientImplementation* client,
     VolumeImplementation* volume,
     boost::uint64_t file_id,
     const std::string& path,
     bool replicate_on_close,
     const xtreemfs::pbrpc::XLocSet& xlocset,
     const std::string& client_uuid)
-    : volume_(volume),
+    : client_(client),
+      volume_(volume),
       file_id_(file_id),
       path_(path),
       replicate_on_close_(replicate_on_close),
@@ -68,6 +70,7 @@ FileHandleImplementation* FileInfo::CreateFileHandle(
     bool async_writes_enabled,
     bool used_for_pending_filesize_update) {
   FileHandleImplementation* file_handle = new FileHandleImplementation(
+      client_,
       volume_->client_uuid(),
       this,
       xcap,

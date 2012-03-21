@@ -49,19 +49,18 @@ Vivaldi::Vivaldi(
 
 void Vivaldi::Run() {
   // Initialized to (0,0) by default
-  VivaldiCoordinates my_vivaldi_coordinates;
-  my_vivaldi_coordinates.set_local_error(0.0);
-  my_vivaldi_coordinates.set_x_coordinate(0.0);
-  my_vivaldi_coordinates.set_y_coordinate(0.0);
+  my_vivaldi_coordinates_.set_local_error(0.0);
+  my_vivaldi_coordinates_.set_x_coordinate(0.0);
+  my_vivaldi_coordinates_.set_y_coordinate(0.0);
 
   std::ifstream vivaldi_coordinates_file(options_.vivaldi_filename.c_str());
   if (vivaldi_coordinates_file.is_open()) {
-    my_vivaldi_coordinates.ParseFromIstream(&vivaldi_coordinates_file);
-    if (!my_vivaldi_coordinates.IsInitialized()) {
+    my_vivaldi_coordinates_.ParseFromIstream(&vivaldi_coordinates_file);
+    if (!my_vivaldi_coordinates_.IsInitialized()) {
         Logging::log->getLog(LEVEL_ERROR)
             << "Vivaldi: Could not load coordinates from file: "
-            << my_vivaldi_coordinates.InitializationErrorString() << std::endl;
-      my_vivaldi_coordinates.Clear();
+            << my_vivaldi_coordinates_.InitializationErrorString() << std::endl;
+      my_vivaldi_coordinates_.Clear();
     }
   } else {
     Logging::log->getLog(LEVEL_INFO)
@@ -71,7 +70,7 @@ void Vivaldi::Run() {
   }
   vivaldi_coordinates_file.close();
 
-  VivaldiNode own_node(my_vivaldi_coordinates);
+  VivaldiNode own_node(my_vivaldi_coordinates_);
 
   uint64_t vivaldiIterations = 0;
 
@@ -212,25 +211,28 @@ void Vivaldi::Run() {
 
 
                 // Update client coordinates at the DIR
-                // TODO(mno): add some configuration to prevent spamming the DIR
-                Logging::log->getLog(LEVEL_DEBUG)
-                    << "Vivaldi: Sending coords to DIR." << std::endl;
-                boost::scoped_ptr< SyncCallback<emptyResponse> > response(
-                    ExecuteSyncRequest< SyncCallback<emptyResponse>* >(
-                        boost::bind(
-                            &xtreemfs::pbrpc::DIRServiceClient
-                                ::xtreemfs_vivaldi_client_update_sync,
-                            dir_client_,
-                            _1,
-                            boost::cref(auth_bogus_),
-                            boost::cref(user_credentials_bogus_),
-                            own_node.getCoordinates()),
-                        dir_service_addresses_,
-                        NULL,
-                        options_.max_tries,
-                        options_,
-                        true,
-                        false));
+                if(options_.vivaldi_enable_dir_updates) {
+                  Logging::log->getLog(LEVEL_DEBUG)
+                      << "Vivaldi: Sending coords to DIR." << std::endl;
+                  boost::scoped_ptr< SyncCallback<emptyResponse> > response(
+                      ExecuteSyncRequest< SyncCallback<emptyResponse>* >(
+                          boost::bind(
+                              &xtreemfs::pbrpc::DIRServiceClient
+                                  ::xtreemfs_vivaldi_client_update_sync,
+                              dir_client_,
+                              _1,
+                              boost::cref(auth_bogus_),
+                              boost::cref(user_credentials_bogus_),
+                              own_node.getCoordinates()),
+                          dir_service_addresses_,
+                          NULL,
+                          options_.max_tries,
+                          options_,
+                          true,
+                          false));
+                  response->DeleteBuffers();
+                }
+
               }
             } else {
               // Choose the lowest RTT
@@ -259,7 +261,7 @@ void Vivaldi::Run() {
 //            char auxStr[256];
 //            SPRINTF_VIV(auxStr,
 //                        256,
-//                        "%s:%lld(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f "\
+//                        "%s:%lld(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f "
 //                            "Rem:(%.3f,%.3f) rE=%.3f %s\n",
 //                        retried ? "RETRY" : "RTT",
 //                        static_cast<long long int> (measuredRTT),
@@ -354,10 +356,10 @@ void Vivaldi::Run() {
 
     // Sleep until the next iteration
     uint64_t sleep_in_ms = static_cast<uint64_t>(
-        options_.vivaldi_recalculation_intervall_ms
-        - options_.vivaldi_recalculation_epsilon_ms
-        + ((static_cast<double> (std::rand()) / (RAND_MAX - 1)) * 2.0
-            * options_.vivaldi_recalculation_epsilon_ms));
+        options_.vivaldi_recalculation_interval_ms -
+        options_.vivaldi_recalculation_epsilon_ms +
+        (static_cast<double>(std::rand()) / (RAND_MAX - 1)) *
+        2.0 * options_.vivaldi_recalculation_epsilon_ms);
 
     Logging::log->getLog(LEVEL_DEBUG)
         << "Vivaldi: sleeping during " << sleep_in_ms << " ms." << std::endl;
@@ -392,8 +394,6 @@ bool Vivaldi::update_known_osds(std::list<KnownOSD>* updated_osds,
             options_,
             true,
             false));
-
-      // TODO(mno): check for failure?
 
       ServiceSet* received_osds = response->response();
       updated_osds->clear();
@@ -453,5 +453,10 @@ bool Vivaldi::update_known_osds(std::list<KnownOSD>* updated_osds,
 
   return retval;
 }  // update_known_osds
+
+
+const VivaldiCoordinates& Vivaldi::getVivaldiCoordinates() const {
+    return my_vivaldi_coordinates_;
+}
 
 }  // namespace xtreemfs

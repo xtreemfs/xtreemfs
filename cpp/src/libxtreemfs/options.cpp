@@ -117,12 +117,14 @@ Options::Options()
 
   // Vivaldi Options
   vivaldi_enable = false;
+  vivaldi_enable_dir_updates = false;
   vivaldi_filename = "vivaldi-coordinates";
-  vivaldi_recalculation_intervall_ms = 1000 * 270; // in ms
-  vivaldi_recalculation_epsilon_ms = 1000 * 330; // in ms
+  vivaldi_recalculation_interval_ms = 1000 * 300; // in ms
+  vivaldi_recalculation_epsilon_ms = 1000 * 30; // in ms
   vivaldi_max_iterations_before_updating = 12;
   vivaldi_max_request_retries = 2;
   vivaldi_zipf_generator_skew = 0.5;
+
 
   // Advanced XtreemFS options.
   periodic_file_size_updates_interval_s = 60;  // Default: 1 Minute.
@@ -277,11 +279,13 @@ void Options::GenerateProgramOptionsDescriptions() {
   vivaldi_options_.add_options()
       ("vivaldi-enable",
           po::value(&vivaldi_enable)->default_value(vivaldi_enable))
+      ("vivaldi-enable-dir-updates",
+          po::value(&vivaldi_enable_dir_updates)->default_value(vivaldi_enable_dir_updates))
       ("vivaldi-filename",
           po::value(&vivaldi_filename)->default_value(vivaldi_filename))
-      ("vivaldi-min-recalculation",
-          po::value(&vivaldi_recalculation_intervall_ms)->default_value(vivaldi_recalculation_intervall_ms))
-      ("vivaldi-max-recalculation",
+      ("vivaldi-recalculation-interval",
+          po::value(&vivaldi_recalculation_interval_ms)->default_value(vivaldi_recalculation_interval_ms))
+      ("vivaldi-recalculation-epsilon",
           po::value(&vivaldi_recalculation_epsilon_ms)->default_value(vivaldi_recalculation_epsilon_ms))
       ("vivaldi-max-iterations-before-updating",
           po::value(&vivaldi_max_iterations_before_updating)->default_value(vivaldi_max_iterations_before_updating))

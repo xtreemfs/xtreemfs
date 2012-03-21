@@ -16,6 +16,7 @@
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/vivaldi_node.h"
 #include "xtreemfs/DIRServiceClient.h"
+#include "xtreemfs/GlobalTypes.pb.h"
 
 namespace xtreemfs {
 
@@ -54,6 +55,8 @@ class Vivaldi {
 
   void Run();
 
+  const xtreemfs::pbrpc::VivaldiCoordinates& getVivaldiCoordinates() const;
+
  private:
   bool update_known_osds(std::list<KnownOSD>* updated_osds,
                          const VivaldiNode& own_node);
@@ -83,6 +86,9 @@ class Vivaldi {
    *  @remark Cannot be set to const because it's modified inside the
    *          constructor VolumeImplementation(). */
   xtreemfs::pbrpc::UserCredentials user_credentials_bogus_;
+
+
+  xtreemfs::pbrpc::VivaldiCoordinates my_vivaldi_coordinates_;
 };
 
 }  // namespace xtreemfs

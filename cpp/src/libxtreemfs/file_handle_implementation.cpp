@@ -20,6 +20,7 @@
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/stripe_translator.h"
 #include "libxtreemfs/uuid_resolver.h"
+#include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "util/error_log.h"
 #include "util/logging.h"
@@ -43,6 +44,7 @@ namespace xtreemfs {
  *         opened FileHandle Close() has to be called.
  */
 FileHandleImplementation::FileHandleImplementation(
+    ClientImplementation* client,
     const std::string& client_uuid,
     FileInfo* file_info,
     const xtreemfs::pbrpc::XCap& xcap,
@@ -57,7 +59,8 @@ FileHandleImplementation::FileHandleImplementation(
     const Options& options,
     const xtreemfs::pbrpc::Auth& auth_bogus,
     const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus)
-    : client_uuid_(client_uuid),
+    : client_(client),
+      client_uuid_(client_uuid),
       mrc_uuid_iterator_(mrc_uuid_iterator),
       osd_uuid_iterator_(osd_uuid_iterator),
       uuid_resolver_(uuid_resolver),
@@ -849,6 +852,11 @@ void FileHandleImplementation::WriteBackFileSize(
   rq.mutable_osd_write_response()->CopyFrom(owr);
   rq.set_close_file(close_file);
 
+  // TODO(mno): set vivaldi coordinates (maybe only if enabled?)
+  // set vivaldi coordinates if vivaldi is enabled
+  if(volume_options_.vivaldi_enable)
+    rq.mutable_coordinates()->CopyFrom(this->client_->GetVivaldiCoordinates());
+
   boost::scoped_ptr< SyncCallback<timestampResponse> > response(
       ExecuteSyncRequest< SyncCallback<timestampResponse>* >(
           boost::bind(
@@ -893,6 +901,11 @@ void FileHandleImplementation::WriteBackFileSizeAsync() {
   }
   // Set to false because a close would use a sync writeback.
   rq.set_close_file(false);
+
+  // TODO(mno): set vivaldi coordinates (maybe only if enabled?)
+  // set vivaldi coordinates if vivaldi is enabled
+  if(volume_options_.vivaldi_enable)
+    rq.mutable_coordinates()->CopyFrom(this->client_->GetVivaldiCoordinates());
 
   string mrc_uuid;
   string mrc_address;

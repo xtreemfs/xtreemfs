@@ -166,8 +166,9 @@ class Options {
 
   // Vivaldi Options
   bool vivaldi_enable;
+  bool vivaldi_enable_dir_updates;
   std::string vivaldi_filename;
-  unsigned int vivaldi_recalculation_intervall_ms;
+  unsigned int vivaldi_recalculation_interval_ms;
   unsigned int vivaldi_recalculation_epsilon_ms;
   unsigned int vivaldi_max_iterations_before_updating;
   unsigned int vivaldi_max_request_retries;

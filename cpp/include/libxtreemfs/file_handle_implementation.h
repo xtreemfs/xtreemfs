@@ -20,7 +20,7 @@
 #include "rpc/callback_interface.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 #include "xtreemfs/MRC.pb.h"
-
+#include "libxtreemfs/client_implementation.h"
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/xcap_handler.h"
 
@@ -48,6 +48,7 @@ class FileHandleImplementation
       public XCapHandler {
  public:
   FileHandleImplementation(
+      ClientImplementation* client,
       const std::string& client_uuid,
       FileInfo* file_info,
       const xtreemfs::pbrpc::XCap& xcap,
@@ -207,6 +208,9 @@ class FileHandleImplementation
 
   /** Any modification to the object must obtain a lock first. */
   boost::mutex mutex_;
+
+  /** Reference to Client which did open this volume. */
+  ClientImplementation* client_;
 
   /** UUID of the Client (needed to distinguish Locks of different clients). */
   const std::string& client_uuid_;

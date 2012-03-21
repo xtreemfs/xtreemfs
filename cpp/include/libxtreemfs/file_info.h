@@ -18,6 +18,7 @@
 #include <map>
 #include <string>
 
+#include "libxtreemfs/client_implementation.h"
 #include "libxtreemfs/async_write_handler.h"
 #include "libxtreemfs/uuid_iterator.h"
 #include "xtreemfs/GlobalTypes.pb.h"
@@ -40,7 +41,8 @@ enum FilesizeUpdateStatus {
 
 class FileInfo {
  public:
-  FileInfo(VolumeImplementation* volume,
+  FileInfo(ClientImplementation* client,
+           VolumeImplementation* volume,
            boost::uint64_t file_id,
            const std::string& path,
            bool replicate_on_close,
@@ -204,6 +206,9 @@ class FileInfo {
 
   /** See WaitForPendingFileSizeUpdates(). */
   void WaitForPendingFileSizeUpdatesHelper(boost::mutex::scoped_lock* lock);
+
+  /** Reference to Client which did open this volume. */
+  ClientImplementation* client_;
 
   /** Volume which did open this file. */
   VolumeImplementation* volume_;
