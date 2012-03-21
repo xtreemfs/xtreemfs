@@ -95,17 +95,17 @@ public class VivaldiStage extends Stage {
      */
     private final int MAX_RETRIES_FOR_A_REQUEST;
     /**
-     * Recalculation intervall.
+     * Recalculation interval.
      *
      * The recalculation period is randomly determined and lies within:
-     * [RECALCULATION_INTERVALL - RECALCULATION_EPSILON, RECALCULATION_INTERVALL + RECALCULATION_EPSILON]
+     * [RECALCULATION_INTERVAL - RECALCULATION_EPSILON, RECALCULATION_INTERVAL + RECALCULATION_EPSILON]
      */
-    private final int RECALCULATION_INTERVALL;
+    private final int RECALCULATION_INTERVAL;
     /**
      * Recalculation epsilon.
      *
      * The recalculation period is randomly determined and lies within:
-     * [RECALCULATION_INTERVALL - RECALCULATION_EPSILON, RECALCULATION_INTERVALL + RECALCULATION_EPSILON]
+     * [RECALCULATION_INTERVAL - RECALCULATION_EPSILON, RECALCULATION_INTERVAL + RECALCULATION_EPSILON]
      */
     private final int RECALCULATION_EPSILON;
     /**
@@ -134,11 +134,11 @@ public class VivaldiStage extends Stage {
         this.vNode = new VivaldiNode();
 
         MAX_RETRIES_FOR_A_REQUEST = master.getConfig().getVivaldiMaxRetriesForARequest();
-        RECALCULATION_INTERVALL = master.getConfig().getVivaldiRecalculationIntervall();
+        RECALCULATION_INTERVAL = master.getConfig().getVivaldiRecalculationInterval();
         RECALCULATION_EPSILON = master.getConfig().getVivaldiRecalculationEpsilon();
         ITERATIONS_BEFORE_UPDATING = master.getConfig().getVivaldiIterationsBeforeUpdating();
         MAX_REQUEST_TIMEOUT_IN_MS = master.getConfig().getVivaldiMaxRequestTimeout();
-        TIMER_INTERVAL_IN_MS = master.getConfig().getVivaldiTimerIntervall();
+        TIMER_INTERVAL_IN_MS = master.getConfig().getVivaldiTimerInterval();
         
         //TOFIX: should  the coordinates be initialized from a file?
         if (Logging.isDebug()) {
@@ -762,7 +762,7 @@ public class VivaldiStage extends Stage {
             iterateVivaldi();
 
             //Determine when the next recalculation will be executed
-            nextRecalculationInMS = RECALCULATION_INTERVALL - RECALCULATION_EPSILON  + (long)(2 * RECALCULATION_EPSILON * Math.random());
+            nextRecalculationInMS = RECALCULATION_INTERVAL - RECALCULATION_EPSILON  + (long)(2 * RECALCULATION_EPSILON * Math.random());
         }
 
         long nextCheck = nextTimerRunInMS > nextRecalculationInMS ? nextRecalculationInMS : nextTimerRunInMS;

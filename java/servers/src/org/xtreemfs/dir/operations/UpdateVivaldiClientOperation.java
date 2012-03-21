@@ -40,7 +40,7 @@ public class UpdateVivaldiClientOperation extends DIROperation {
         VivaldiCoordinates coords = (VivaldiCoordinates) rq.getRequestMessage();
         InetSocketAddress clientAddress = (InetSocketAddress)rq.getRPCRequest().getSenderAddress(); 
         vivaldiClientMap.put(clientAddress, coords);
-        vivaldiClientMap.filterTimeOuts();
+        //vivaldiClientMap.filterTimeOuts();
         // send response
         rq.sendSuccess(emptyResponse.getDefaultInstance());
     }

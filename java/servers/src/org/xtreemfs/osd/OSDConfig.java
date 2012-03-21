@@ -69,7 +69,7 @@ public class OSDConfig extends ServiceConfig {
             Parameter.FAILOVER_MAX_RETRIES,
             Parameter.FAILOVER_WAIT,
             Parameter.MAX_CLIENT_Q,
-            Parameter.VIVALDI_RECALCULATION_INTERVALL_IN_MS,
+            Parameter.VIVALDI_RECALCULATION_INTERVAL_IN_MS,
             Parameter.VIVALDI_RECALCULATION_EPSILON_IN_MS,
             Parameter.VIVALDI_ITERATIONS_BEFORE_UPDATING,
             Parameter.VIVALDI_MAX_RETRIES_FOR_A_REQUEST,
@@ -313,8 +313,8 @@ public class OSDConfig extends ServiceConfig {
     }
     
     
-    public int getVivaldiRecalculationIntervall() {
-        return (Integer) parameter.get(Parameter.VIVALDI_RECALCULATION_INTERVALL_IN_MS);
+    public int getVivaldiRecalculationInterval() {
+        return (Integer) parameter.get(Parameter.VIVALDI_RECALCULATION_INTERVAL_IN_MS);
     }
     
     public int getVivaldiRecalculationEpsilon() {
@@ -333,7 +333,7 @@ public class OSDConfig extends ServiceConfig {
         return (Integer) parameter.get(Parameter.VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS);
     }
 
-    public int getVivaldiTimerIntervall() {
+    public int getVivaldiTimerInterval() {
         return (Integer) parameter.get(Parameter.VIVALDI_TIMER_INTERVAL_IN_MS);
     }
 

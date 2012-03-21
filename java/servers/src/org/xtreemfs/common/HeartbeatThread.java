@@ -30,7 +30,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
@@ -57,9 +56,9 @@ public class HeartbeatThread extends LifeCycleThread {
         public DIR.ServiceSet getServiceData();
     }
     
-    public static final long      UPDATE_INTERVAL            = 60 * 1000;                    // 60s
+    public static final long      UPDATE_INTERVAL           = 60 * 1000;  // 60s
                                                                                               
-    public static final long      CONCURRENT_RETRY_INTERVALL = 5 * 1000;                     // 5s
+    public static final long      CONCURRENT_RETRY_INTERVAL = 5 * 1000;   // 5s
                                                                                               
     private ServiceUUID           uuid;
     
@@ -79,9 +78,9 @@ public class HeartbeatThread extends LifeCycleThread {
     
     private final UserCredentials uc;
     
-    public static final String    STATIC_ATTR_PREFIX         = "static.";
+    public static final String    STATIC_ATTR_PREFIX = "static.";
     
-    public static final String    STATUS_ATTR                = STATIC_ATTR_PREFIX + "status";
+    public static final String    STATUS_ATTR        = STATIC_ATTR_PREFIX + "status";
     
     /**
      * Timestamp when the last heartbeat was send.
@@ -149,7 +148,7 @@ public class HeartbeatThread extends LifeCycleThread {
                         if (Logging.isInfo())
                             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this,
                                     "concurrent service registration; will try again after %d milliseconds",
-                                    CONCURRENT_RETRY_INTERVALL);
+                                    CONCURRENT_RETRY_INTERVAL);
                     } else
                         throw ex;
                 }
