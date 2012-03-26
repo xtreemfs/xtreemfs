@@ -82,11 +82,13 @@ public class XtreemFSFileSystem extends FileSystem {
                             .addGroups(conf.get("xtreemfs.client.groupid")).build();
         }
         if (userCredentials == null) {
-            // try to guess from env
-            if (System.getenv("USER") != null) {
+            if (System.getProperty("user.name") != null) {
                 userCredentials =
                         UserCredentials.newBuilder().setUsername(System.getProperty("user.name"))
                                 .addGroups("users").build();
+            } else {
+                userCredentials =
+                        UserCredentials.newBuilder().setUsername("xtreemfs").addGroups("xtreemfs").build();
             }
         }
 
@@ -140,7 +142,7 @@ public class XtreemFSFileSystem extends FileSystem {
                 xtreemfsVolume.openFile(userCredentials, pathString,
                         SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber(), 0);
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Openning file %s", pathString);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Opening file %s", pathString);
         }
         statistics.incrementReadOps(1);
 
@@ -215,8 +217,6 @@ public class XtreemFSFileSystem extends FileSystem {
     @Override
     public FSDataOutputStream create(Path path, FsPermission fp, boolean overwrite, int bufferSize,
             short replication, long blockSize, Progressable p) throws IOException {
-        System.out.println("CREATING " + path.toString() + " WITH BLOCKSIZE: " + blockSize);
-        // TODO: Find out what replication stands for and uses. Hadoop JavaDoc says: replication - required
         // block replication for the file
         final String pathString = makeAbsolute(path).toUri().getPath();
         int flags =

@@ -259,7 +259,27 @@ public abstract class Volume {
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
-     * Creates a directory with the modes "mode".
+     * Creates a directory with the modes "mode". Creates missing parent directories if and only if recursive
+     * is set to true. Results in an error otherwise.
+     * 
+     * @param userCredentials
+     *            Name and Groups of the user.
+     * @param path
+     *            Path to the new directory.
+     * @param mode
+     *            Permissions of the new directory.
+     * @param recursive
+     *            Whether or not non existing parent directories should be created.
+     * 
+     * @throws IOException
+     * @throws PosixErrorException
+     * @throws AddressToUUIDNotFoundException
+     */
+    public abstract void createDirectory(UserCredentials userCredentials, String path, int mode,
+            boolean recursive) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+
+    /**
+     * Creates a directory with the modes "mode". Results in an error when parent directory doesn't exist.
      * 
      * @param userCredentials
      *            Name and Groups of the user.

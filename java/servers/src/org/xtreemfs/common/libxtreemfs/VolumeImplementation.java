@@ -841,35 +841,78 @@ public class VolumeImplementation extends Volume {
     /*
      * (non-Javadoc)
      * 
+     * @see
+     * org.xtreemfs.common.libxtreemfs.Volume#createDirectory(org.xtreemfs.foundation.pbrpc.generatedinterfaces
+     * .RPC.UserCredentials, java.lang.String, int, boolean)
+     */
+    @Override
+    public void createDirectory(UserCredentials userCredentials, String path, int mode, boolean recursive)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+        if (recursive) {
+            if (path.equals("/")) {
+                return;
+            }
+            if (path.endsWith("/")) {
+                path = path.substring(0, path.length()-1);
+            }
+            final String parent = path.substring(0, path.lastIndexOf("/"));
+            if (isDirectory(userCredentials, parent) || parent.isEmpty()) {
+                createDirectory(userCredentials, path, mode, false);
+            } else {
+                createDirectory(userCredentials, parent, mode, true);
+                createDirectory(userCredentials, path, mode, false);
+            }
+        } else {
+            mkdirRequest request =
+                    mkdirRequest.newBuilder().setVolumeName(volumeName).setPath(path).setMode(mode).build();
+
+            timestampResponse response =
+                    RPCCaller.<mkdirRequest, timestampResponse> syncCall(SERVICES.MRC, userCredentials,
+                            authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                            new CallGenerator<mkdirRequest, timestampResponse>() {
+                                @Override
+                                public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
+                                        Auth authHeader, UserCredentials userCreds, mkdirRequest input)
+                                        throws IOException {
+                                    return mrcServiceClient.mkdir(server, authHeader, userCreds, input);
+                                }
+                            });
+
+            assert (response != null);
+
+            String parentDir = Helper.resolveParentDirectory(path);
+            metadataCache.updateStatTime(path, response.getTimestampS(), Setattrs.SETATTR_CTIME.getNumber()
+                    | Setattrs.SETATTR_MTIME.getNumber());
+            // TODO: Retrieve stat as optional member of openResponse instead
+            // and update cached DirectoryEntries accordingly.
+            metadataCache.invalidateDirEntries(parentDir);
+        }
+    }
+
+    private boolean isDirectory(UserCredentials userCredentials, String path) throws PosixErrorException,
+            IOException, AddressToUUIDNotFoundException {
+        try {
+            Stat stat = getAttr(userCredentials, path);
+            return (stat.getMode() & SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_S_IFDIR.getNumber()) > 0;
+        } catch (PosixErrorException pee) {
+            if (pee.getPosixError().equals(POSIXErrno.POSIX_ERROR_ENOENT)) {
+                return false;
+            } else {
+                throw pee;
+            }
+        }
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.xtreemfs.common.libxtreemfs.Volume#createDirectory(org.xtreemfs.
      * foundation.pbrpc.generatedinterfaces .RPC.UserCredentials, java.lang.String, int)
      */
     @Override
     public void createDirectory(UserCredentials userCredentials, String path, int mode) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
-        mkdirRequest request =
-                mkdirRequest.newBuilder().setVolumeName(volumeName).setPath(path).setMode(mode).build();
-
-        timestampResponse response =
-                RPCCaller.<mkdirRequest, timestampResponse> syncCall(SERVICES.MRC, userCredentials,
-                        authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                        new CallGenerator<mkdirRequest, timestampResponse>() {
-                            @Override
-                            public RPCResponse<timestampResponse> executeCall(InetSocketAddress server,
-                                    Auth authHeader, UserCredentials userCreds, mkdirRequest input)
-                                    throws IOException {
-                                return mrcServiceClient.mkdir(server, authHeader, userCreds, input);
-                            }
-                        });
-
-        assert (response != null);
-
-        String parentDir = Helper.resolveParentDirectory(path);
-        metadataCache.updateStatTime(path, response.getTimestampS(), Setattrs.SETATTR_CTIME.getNumber()
-                | Setattrs.SETATTR_MTIME.getNumber());
-        // TODO: Retrieve stat as optional member of openResponse instead
-        // and update cached DirectoryEntries accordingly.
-        metadataCache.invalidateDirEntries(parentDir);
+        this.createDirectory(userCredentials, path, mode, false);
     }
 
     /*
@@ -916,9 +959,9 @@ public class VolumeImplementation extends Volume {
             boolean namesOnly) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         DirectoryEntries result = null;
         if (count == 0) {
-            count = Integer.MAX_VALUE - offset  - 1;
+            count = Integer.MAX_VALUE - offset - 1;
         }
-        
+
         // Try to get DirectoryEntries from cache
         result = metadataCache.getDirEntries(path, offset, count);
         if (result != null) {
@@ -977,7 +1020,8 @@ public class VolumeImplementation extends Volume {
                 if (dirEntriesBuilder.getEntries(i).getStbuf().getNlink() > 1) { // Do not cache hard links.
                     metadataCache.invalidate(path);
                 } else {
-                    metadataCache.updateStat(Helper.concatenatePath(path, dirEntriesBuilder.getEntries(i).getName()),
+                    metadataCache.updateStat(
+                            Helper.concatenatePath(path, dirEntriesBuilder.getEntries(i).getName()),
                             dirEntriesBuilder.getEntries(i).getStbuf());
                 }
             }
@@ -1022,7 +1066,7 @@ public class VolumeImplementation extends Volume {
         listxattrResponse response = null;
         if (useCache) {
             response = metadataCache.getXAttrs(path);
-            if (response != null)  {
+            if (response != null) {
                 return response;
             }
         }
@@ -1031,7 +1075,7 @@ public class VolumeImplementation extends Volume {
                 listxattrRequest.newBuilder().setVolumeName(volumeName).setPath(path).setNamesOnly(false)
                         .build();
 
-       response =
+        response =
                 RPCCaller.<listxattrRequest, listxattrResponse> syncCall(SERVICES.MRC, userCredentials,
                         authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
                         new CallGenerator<listxattrRequest, listxattrResponse>() {
@@ -1161,11 +1205,11 @@ public class VolumeImplementation extends Volume {
         // attributes from the cache.
         boolean xtreemfsAttributeRequested;
         if (name.length() >= 9) {
-            xtreemfsAttributeRequested = name.substring(0, 9).equals("xtreemfs.");    
+            xtreemfsAttributeRequested = name.substring(0, 9).equals("xtreemfs.");
         } else {
             xtreemfsAttributeRequested = false;
         }
-        
+
         // Differ between "xtreeemfs." attributes and user attributes.
         if (xtreemfsAttributeRequested) {
             // Always retrive from the server
@@ -1398,26 +1442,26 @@ public class VolumeImplementation extends Volume {
      * Called by FileHandle.Cclose() to remove fileHandle from the list.
      */
     protected void closeFile(long fileId, FileInfo fileInfo, FileHandleImplementation fileHandle) {
-     // Remove file_info if it has no more open file handles.
+        // Remove file_info if it has no more open file handles.
         if (fileInfo.decreaseReferenceCount() == 0) {
             // The last file handle of this file was closed: Release all locks.
             // All locks for the process of this file handle have to be released.
             try {
-              fileInfo.releaseAllLocks(fileHandle);
-            } catch(XtreemFSException e) {
-              // Ignore errors.
+                fileInfo.releaseAllLocks(fileHandle);
+            } catch (XtreemFSException e) {
+                // Ignore errors.
             } catch (Exception e) {
-                // TODO: change Type of AddressToUUIDNotFoundException, PosixErrorException to XTreemfsE 
+                // TODO: change Type of AddressToUUIDNotFoundException, PosixErrorException to XTreemfsE
             }
-            
+
             fileInfo.waitForPendingFileSizeUpdates();
             openFileTable.remove(fileId);
-            
+
             // Write back the OSDWriteResponse to the stat cache if there is one.
             OSDWriteResponse response = fileInfo.getOSDWriteResponse();
             if (response != null) {
                 String path = fileInfo.getPath();
-                metadataCache.updateStatFromOSDWriteResponse(path, response);   
+                metadataCache.updateStatFromOSDWriteResponse(path, response);
             }
         }
     }

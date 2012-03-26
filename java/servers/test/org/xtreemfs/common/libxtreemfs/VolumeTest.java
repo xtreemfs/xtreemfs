@@ -28,6 +28,7 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.mrc.ac.FileAccessManager;
@@ -736,6 +737,45 @@ public class VolumeTest {
         assertEquals("DIR1", dirEntries.getEntries(2).getName());
         assertEquals("DIR2", dirEntries.getEntries(3).getName());
     }
-
-
+    
+    
+    @Test 
+    public void testCreateDirectoryRecursive() throws Exception {
+        VOLUME_NAME = "testCreateDirectoryRecursive";
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+        
+        final String directory1 = "/home/foo/bar/user/xtreemfs/test/bar/foo";
+        final String directroy2 = "/home/foo/path/with/slash/at/end/";
+        volume.createDirectory(userCredentials, directory1, 0777, true);
+        volume.createDirectory(userCredentials, directroy2, 0777, true);
+        
+        final String[] dirs1 = directory1.split("/");
+        final String[] dirs2 = directroy2.split("/");
+        
+        String tempdir = "";
+        for (int i = 1; i < dirs1.length; i++) {
+            tempdir = tempdir + "/" + dirs1[i];
+            assertTrue(isDirectory(volume, tempdir));
+        }
+        
+        tempdir = "";
+        for (int i = 1; i < dirs2.length; i++) {
+            tempdir = tempdir + "/" + dirs2[i];
+            assertTrue(isDirectory(volume, tempdir));
+        }
+    }
+    
+    private boolean isDirectory(Volume volume, String path) throws IOException {
+        try {
+            Stat stat = volume.getAttr(userCredentials, path);
+            return (stat.getMode() & SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_S_IFDIR.getNumber()) > 0;
+        } catch (PosixErrorException pee) {
+            if (pee.getPosixError().equals(POSIXErrno.POSIX_ERROR_ENOENT)) {
+                return false;
+            } else {
+                throw pee;
+            }
+        }
+    }
 }

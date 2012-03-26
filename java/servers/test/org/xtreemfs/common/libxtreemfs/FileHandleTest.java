@@ -119,7 +119,6 @@ public class FileHandleTest {
             if (osds[i] != null) {
                 osds[i].shutdown();
             }
-
         }
 
         testEnv.shutdown();

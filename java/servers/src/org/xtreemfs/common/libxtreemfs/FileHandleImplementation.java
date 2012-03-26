@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.locks.ReentrantLock;
 
-// JCIP import net.jcip.annotations.GuardedBy;
 
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
@@ -51,6 +50,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.truncateRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
+
+//JCIP import net.jcip.annotations.GuardedBy;
 
 /**
  * Default implmenation of FileHandle. Used only internally.
