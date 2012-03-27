@@ -252,12 +252,9 @@ public class XtreemFSFileSystem extends FileSystem {
 
             @Override
             public synchronized void write(int b) throws IOException {
-                byte[] data = new byte[4];
-                data[0] = (byte) (b >>> 24);
-                data[1] = (byte) (b >>> 16);
-                data[2] = (byte) (b >>> 8);
-                data[3] = (byte) b;
-                int writtenBytes = fileHandle.write(userCredentials, data, 4, position);
+                byte[] data = new byte[1];
+                data[0] = (byte) b;
+                int writtenBytes = fileHandle.write(userCredentials, data, 1, position);
                 if (statistics != null) {
                     statistics.incrementBytesWritten(writtenBytes);
                 }
