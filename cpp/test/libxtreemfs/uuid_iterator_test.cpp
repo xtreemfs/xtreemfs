@@ -221,4 +221,32 @@ TEST_F(UUIDIteratorTest, ClearAndAddUUID) {
   EXPECT_EQ(1, uuid_iterator_->uuids_.size());
 }
 
+TEST_F(UUIDIteratorTest, ConcurrentSetAndMarkAsFailed) {
+  string uuid1 = "uuid1";
+  string uuid2 = "uuid2";
+  string uuid3 = "uuid3";
+  string current_uuid;
+
+  uuid_iterator_->AddUUID(uuid1);
+  uuid_iterator_->AddUUID(uuid2);
+  uuid_iterator_->AddUUID(uuid3);
+
+  EXPECT_EQ(3, uuid_iterator_->uuids_.size());
+
+  uuid_iterator_->MarkUUIDAsFailed(uuid1);
+  uuid_iterator_->MarkUUIDAsFailed(uuid2);
+  uuid_iterator_->GetUUID(&current_uuid);
+  EXPECT_EQ(uuid3, current_uuid);
+
+  // Thread 1 sets only uuid1.
+  uuid_iterator_->SetCurrentUUID(uuid1);
+  uuid_iterator_->GetUUID(&current_uuid);
+  EXPECT_EQ(uuid1, current_uuid);
+
+  // Thread 2 concurrently marks uuid1 as failed.
+  uuid_iterator_->MarkUUIDAsFailed(uuid1);
+  uuid_iterator_->GetUUID(&current_uuid);
+  EXPECT_EQ(uuid2, current_uuid);
+}
+
 }  // namespace xtreemfs

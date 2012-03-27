@@ -849,7 +849,7 @@ TEST_F(VolumeImplementationTest, CorrectDirectoryEntriesUpdateAfterRmDir) {
 
   ASSERT_NO_THROW({
     // Create dir.
-    volume_->CreateDirectory(user_credentials_, path, 448);
+    volume_->MakeDirectory(user_credentials_, path, 448);
 
     // List directory (and thereby caching it).
     boost::scoped_ptr<DirectoryEntries> dentries(volume_->ReadDir(
@@ -857,7 +857,7 @@ TEST_F(VolumeImplementationTest, CorrectDirectoryEntriesUpdateAfterRmDir) {
     EXPECT_EQ(3, dentries->entries_size());
 
     // Delete dir.
-    volume_->RemoveDirectory(user_credentials_, path);
+    volume_->DeleteDirectory(user_credentials_, path);
 
     // List directory again and check for correct update.
     dentries.reset(volume_->ReadDir(
