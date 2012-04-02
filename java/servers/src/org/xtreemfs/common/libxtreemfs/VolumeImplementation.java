@@ -7,12 +7,15 @@
 package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
@@ -853,7 +856,7 @@ public class VolumeImplementation extends Volume {
                 return;
             }
             if (path.endsWith("/")) {
-                path = path.substring(0, path.length()-1);
+                path = path.substring(0, path.length() - 1);
             }
             final String parent = path.substring(0, path.lastIndexOf("/"));
             if (isDirectory(userCredentials, parent) || parent.isEmpty()) {
@@ -1439,7 +1442,7 @@ public class VolumeImplementation extends Volume {
     }
 
     /**
-     * Called by FileHandle.Cclose() to remove fileHandle from the list.
+     * Called by FileHandle.close() to remove fileHandle from the list.
      */
     protected void closeFile(long fileId, FileInfo fileInfo, FileHandleImplementation fileHandle) {
         // Remove file_info if it has no more open file handles.
@@ -1450,8 +1453,6 @@ public class VolumeImplementation extends Volume {
                 fileInfo.releaseAllLocks(fileHandle);
             } catch (XtreemFSException e) {
                 // Ignore errors.
-            } catch (Exception e) {
-                // TODO: change Type of AddressToUUIDNotFoundException, PosixErrorException to XTreemfsE
             }
 
             fileInfo.waitForPendingFileSizeUpdates();
@@ -1526,4 +1527,108 @@ public class VolumeImplementation extends Volume {
         return this.stripeTranslators;
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.xtreemfs.common.libxtreemfs.Volume#getStripeLocations(org.xtreemfs.foundation.pbrpc.generatedinterfaces
+     * .RPC.UserCredentials, java.lang.String, int, int)
+     */
+    @Override
+    public List<StripeLocation> getStripeLocations(UserCredentials userCredentials, String path,
+            long startSize, long length) throws IOException, PosixErrorException,
+            AddressToUUIDNotFoundException {
+        FileHandleImplementation fileHandle =
+                (FileHandleImplementation) this.openFile(userCredentials, path,
+                        SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
+        XLocSet xLocs = fileHandle.getXlocList();
+        fileHandle.close();
+
+        long minStripeSize = getMininimalStripeSizeFromXlocList(xLocs)*1024;
+        long indexOfFirstStripeToConsider = (startSize / (minStripeSize));
+        long lengthOfFirstStripe = Math.min(length, minStripeSize - (startSize%minStripeSize));
+        long startSizeOfFirstStripe = indexOfFirstStripeToConsider*minStripeSize;
+
+        ArrayList<StripeLocation> stripeLocations = new ArrayList<StripeLocation>();
+        // add first Stripe
+        ArrayList<String> uuids =
+                getUuidsForStripeFromReplicas(xLocs.getReplicasList(), minStripeSize,
+                        indexOfFirstStripeToConsider);
+        ArrayList<String> hostnames = resolveHostnamesFromUuids(uuids);
+        stripeLocations.add(new StripeLocation(startSize, lengthOfFirstStripe, uuids.toArray(new String[uuids.size()]),
+                hostnames.toArray(new String[hostnames.size()])));
+
+        for (long size = startSizeOfFirstStripe + minStripeSize; size < startSize + length; size +=
+                minStripeSize) {
+            uuids =
+                    getUuidsForStripeFromReplicas(xLocs.getReplicasList(), minStripeSize,
+                            indexOfFirstStripeToConsider);
+            hostnames = resolveHostnamesFromUuids(uuids);
+            new StripeLocation(size, Math.min(size + minStripeSize, length), uuids.toArray(new String[uuids.size()]),
+                    hostnames.toArray(new String[hostnames.size()]));
+        }
+        return stripeLocations;
+    }
+
+    private ArrayList<String> resolveHostnamesFromUuids(ArrayList<String> uuids)
+            throws AddressToUUIDNotFoundException {
+        ArrayList<String> hostnames = new ArrayList<String>();
+        for (int i = 0; i < uuids.size(); i++) {
+            String hostname = uuidResolver.uuidToAddress(uuids.get(i));
+            hostname = hostname.substring(0, hostname.lastIndexOf(':'));
+            if (isIpAddress(hostname)) {
+                try {
+                    InetSocketAddress address = new InetSocketAddress(InetAddress.getByName(hostname), 0);
+                    hostname = address.getHostName();
+                } catch (Exception e) {
+                    hostname = null;
+                }
+
+                if (hostname == null) {
+                    // if hostname can not be resolved corretly, delete corresponding uuid. Also decrement
+                    // the counter i to not skip entries in the uuid list!
+                    uuids.remove(i);
+                    i--;
+                } else {
+                    hostnames.add(hostname);
+                }
+            } else {
+                hostnames.add(hostname);
+            }
+        }
+        return hostnames;
+    }
+
+    private ArrayList<String> getUuidsForStripeFromReplicas(List<Replica> replicasList, long minStripeSize,
+            long stripeIndex) {
+        ArrayList<String> uuids = new ArrayList<String>();
+        for (Replica replica : replicasList) {
+            if ((replica.getStripingPolicy().getStripeSize()*1024) == minStripeSize) {
+                uuids.add(replica.getOsdUuids((int)stripeIndex));
+            } else {
+                long stripeIndexForReplica = minStripeSize * stripeIndex / replica.getStripingPolicy().getStripeSize()*1024;
+                uuids.add(replica.getOsdUuids((int)stripeIndexForReplica));
+            }
+        }
+        return uuids;
+    }
+
+    private boolean isIpAddress(String hostname) {
+        final String IPADDRESS_PATTERN =
+                "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+                        + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
+
+        Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
+        return pattern.matcher(hostname).matches();
+    }
+
+    private long getMininimalStripeSizeFromXlocList(XLocSet xLocs) {
+        long stripeSize = 0;
+        for (Replica replica : xLocs.getReplicasList()) {
+            if (replica.getStripingPolicy().getStripeSize() > stripeSize) {
+                stripeSize = replica.getStripingPolicy().getStripeSize();
+            }
+        }
+        return Math.max(128, stripeSize);
+    }
 }

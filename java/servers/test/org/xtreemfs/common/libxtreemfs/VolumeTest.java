@@ -14,11 +14,13 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.libxtreemfs.Volume.StripeLocation;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.common.xloc.ReplicationFlags;
@@ -37,6 +39,7 @@ import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.REPL_FLAG;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
@@ -53,7 +56,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.statvfsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
-
 
 public class VolumeTest {
 
@@ -118,7 +120,7 @@ public class VolumeTest {
         osds = new OSD[3];
         configs = SetupUtils.createMultipleOSDConfigs(3);
 
-        // start two OSDs
+        // start three OSDs
         osds[0] = new OSD(configs[0]);
         osds[1] = new OSD(configs[1]);
         osds[2] = new OSD(configs[2]);
@@ -719,13 +721,13 @@ public class VolumeTest {
     //
     // assertEquals(configs[1].getUUID().toString(), volume.getSuitableOSDs(userCredentials, fileName, 1));
     // }
-    
+
     @Test
     public void testCreateListDirectory() throws Exception {
         VOLUME_NAME = "testCreateListDirectory";
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
-        
+
         volume.createDirectory(userCredentials, "/DIR1", 0);
         volume.createDirectory(userCredentials, "DIR2", 0);
         DirectoryEntries dirEntries = volume.readDir(userCredentials, "/", 0, Integer.MAX_VALUE, true);
@@ -737,35 +739,34 @@ public class VolumeTest {
         assertEquals("DIR1", dirEntries.getEntries(2).getName());
         assertEquals("DIR2", dirEntries.getEntries(3).getName());
     }
-    
-    
-    @Test 
+
+    @Test
     public void testCreateDirectoryRecursive() throws Exception {
         VOLUME_NAME = "testCreateDirectoryRecursive";
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
-        
+
         final String directory1 = "/home/foo/bar/user/xtreemfs/test/bar/foo";
         final String directroy2 = "/home/foo/path/with/slash/at/end/";
         volume.createDirectory(userCredentials, directory1, 0777, true);
         volume.createDirectory(userCredentials, directroy2, 0777, true);
-        
+
         final String[] dirs1 = directory1.split("/");
         final String[] dirs2 = directroy2.split("/");
-        
+
         String tempdir = "";
         for (int i = 1; i < dirs1.length; i++) {
             tempdir = tempdir + "/" + dirs1[i];
             assertTrue(isDirectory(volume, tempdir));
         }
-        
+
         tempdir = "";
         for (int i = 1; i < dirs2.length; i++) {
             tempdir = tempdir + "/" + dirs2[i];
             assertTrue(isDirectory(volume, tempdir));
         }
     }
-    
+
     private boolean isDirectory(Volume volume, String path) throws IOException {
         try {
             Stat stat = volume.getAttr(userCredentials, path);
@@ -777,5 +778,58 @@ public class VolumeTest {
                 throw pee;
             }
         }
+    }
+
+    @Test
+    public void testGetStripeLocations() throws Exception {
+        VOLUME_NAME = "testGetStripeLocatations";
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+
+        // set replication update policy of the file
+        int flags = ReplicationFlags.setSequentialStrategy(0);
+        flags = ReplicationFlags.setFullReplica(flags);
+        volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE,
+                2, flags);
+        
+        final String FILENAME = "/foobar.tzt";
+        FileHandle fileHandle =
+                volume.openFile(userCredentials, FILENAME,
+                        SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber(), 0777);
+        List<StripeLocation> stripeLocations = volume.getStripeLocations(userCredentials, FILENAME, 0, 100);
+        assertEquals(1, stripeLocations.size());
+        assertEquals(2, stripeLocations.get(0).getUuids().length);
+        assertEquals(2, stripeLocations.get(0).getHostnames().length);
+        assertEquals(0, stripeLocations.get(0).getStartSize());
+        assertEquals(100, stripeLocations.get(0).getLength());
+        
+        stripeLocations = volume.getStripeLocations(userCredentials, FILENAME, 200, 123);
+        assertEquals(1, stripeLocations.size());
+        assertEquals(2, stripeLocations.get(0).getUuids().length);
+        assertEquals(2, stripeLocations.get(0).getHostnames().length);
+        assertEquals(200, stripeLocations.get(0).getStartSize());
+        assertEquals(123, stripeLocations.get(0).getLength());        
+        
+        List<String> suitableOsds = volume.getSuitableOSDs(userCredentials, FILENAME, 1);
+        Replica replica =
+                Replica.newBuilder().setStripingPolicy(defaultStripingPolicy)
+                        .setReplicationFlags(flags).addOsdUuids(suitableOsds.get(0)).build();
+        volume.addReplica(userCredentials, FILENAME, replica);
+        
+        stripeLocations = volume.getStripeLocations(userCredentials, FILENAME, 0, 100);
+        assertEquals(1, stripeLocations.size());
+        assertEquals(3, stripeLocations.get(0).getUuids().length);
+        assertEquals(3, stripeLocations.get(0).getHostnames().length);
+        assertEquals(0, stripeLocations.get(0).getStartSize());
+        assertEquals(100, stripeLocations.get(0).getLength());
+        
+        stripeLocations = volume.getStripeLocations(userCredentials, FILENAME, 200, 123);
+        assertEquals(1, stripeLocations.size());
+        assertEquals(3, stripeLocations.get(0).getUuids().length);
+        assertEquals(3, stripeLocations.get(0).getHostnames().length);
+        assertEquals(200, stripeLocations.get(0).getStartSize());
+        assertEquals(123, stripeLocations.get(0).getLength());        
+        
+        fileHandle.close();
     }
 }

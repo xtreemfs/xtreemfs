@@ -25,6 +25,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
  * Represents a volume. A volume object can be obtain by opening a volume with a client.
  */
 public abstract class Volume {
+
     public abstract void internalShutdown();
 
     /**
@@ -557,4 +558,42 @@ public abstract class Volume {
     public abstract void setDefaultReplicationPolicy(UserCredentials userCredentials, String directory,
             String replicationPolicy, int replicationFactor, int replicationFlags) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException;
+
+    public abstract List<StripeLocation> getStripeLocations(UserCredentials userCredentials, String path,
+            long startSize, long length) throws IOException, PosixErrorException,
+            AddressToUUIDNotFoundException;
+
+    /**
+     * Encapsulates information about one Stripe. Used only for HDFS Interface
+     */
+    public class StripeLocation {
+        private long     startSize;
+        private long     length;
+        private String[] uuids;
+        private String[] hostnames;
+
+        protected StripeLocation(long startSize2, long length2, String[] uuids, String[] hostnames) {
+            this.startSize = startSize2;
+            this.length = length2;
+            this.uuids = uuids;
+            this.hostnames = hostnames;
+        }
+
+        public long getStartSize() {
+            return startSize;
+        }
+
+        public long getLength() {
+            return length;
+        }
+
+        public String[] getUuids() {
+            return uuids;
+        }
+
+        public String[] getHostnames() {
+            return hostnames;
+        }
+    }
+
 }

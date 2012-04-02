@@ -12,7 +12,6 @@ import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 
 public interface UUIDResolver {
 
-    // TODO: Exceptions!
 
     /**
      * Resolves the address (ip-address:port) for a given UUID.
@@ -21,7 +20,7 @@ public interface UUIDResolver {
      *                  The resolved address as String.
      * 
 
-     * @throws UnknownAddressSchemeException
+     * @throws AddressToUUIDNotFoundException
      */
     public String uuidToAddress(String uuid) throws AddressToUUIDNotFoundException;
 

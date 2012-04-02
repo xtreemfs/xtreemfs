@@ -1127,11 +1127,15 @@ public class FileHandleImplementation implements FileHandle {
             if (xcapRenewalPending == true) {
                 try {
                     xcapRenewalPendingLock.wait();
-                } catch (InterruptedException ie) {// TODO: find out what to
+                } catch (InterruptedException ie) {
                     // TODO: find out what to do in this case;
                     return;
                 }
             }
         }
+    }
+    
+    protected XLocSet getXlocList() {
+        return fileInfo.getXLocSet();
     }
 }
