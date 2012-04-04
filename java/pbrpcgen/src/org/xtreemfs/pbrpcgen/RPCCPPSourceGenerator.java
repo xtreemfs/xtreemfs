@@ -186,12 +186,13 @@ public class RPCCPPSourceGenerator {
                         codeBuilderConst.append("//automatically generated from "+filchen.getName()+" at "+new Date()+"\n");
                         codeBuilderConst.append("//(c) "+((new Date()).getYear()+1900)+". See LICENSE file for details.\n\n");
                         codeBuilderConst.append("#ifndef "+classNameConst.toUpperCase()+"_H_\n");
-                        codeBuilderConst.append("#define "+classNameConst.toUpperCase()+"_H_\n\n");
+                        codeBuilderConst.append("#define "+classNameConst.toUpperCase()+"_H_\n");
+                        codeBuilderConst.append("#include <boost/cstdint.hpp>\n\n");
                         for (int i = 0; i < namespaceTokens.length; i++) {
                             codeBuilderConst.append("namespace " + namespaceTokens[i] + " {\n");
                         }
                         codeBuilderConst.append("\n");
-                        codeBuilderConst.append("const int INTERFACE_ID_" + (new java.io.File(proto.getName())).getName().replace(".proto", "").toUpperCase() + " = " + interfaceId + ";\n");
+                        codeBuilderConst.append("const boost::uint32_t INTERFACE_ID_" + (new java.io.File(proto.getName())).getName().replace(".proto", "").toUpperCase() + " = " + interfaceId + ";\n");
 
                         //imports
                         codeBuilder.append("//automatically generated from "+filchen.getName()+" at "+new Date()+"\n");
@@ -241,7 +242,7 @@ public class RPCCPPSourceGenerator {
                             includes.add(typeDefs.get(method.getOutputType()).fileName);
 
                             final int procId = method.getOptions().getExtension(PBRPC.procId);
-                            codeBuilderConst.append("const int PROC_ID_"+method.getName().toUpperCase()+" = " + procId + ";\n");
+                            codeBuilderConst.append("const boost::uint32_t PROC_ID_"+method.getName().toUpperCase()+" = " + procId + ";\n");
 
                             final boolean data_in = method.getOptions().hasExtension(PBRPC.dataIn) ? method.getOptions().getExtension(PBRPC.dataIn) : false;
                             final String dataValue = data_in ? "data" : "null";
