@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Apr 04 16:50:47 CEST 2012
+//automatically generated from OSD.proto at Wed Apr 04 18:21:52 CEST 2012
 //(c) 2012. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H

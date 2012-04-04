@@ -1,29 +1,30 @@
-//automatically generated from DIR.proto at Wed Apr 04 16:50:47 CEST 2012
+//automatically generated from DIR.proto at Wed Apr 04 18:21:52 CEST 2012
 //(c) 2012. See LICENSE file for details.
 
 #ifndef DIRSERVICECONSTANTS_H_
 #define DIRSERVICECONSTANTS_H_
+#include <boost/cstdint.hpp>
 
 namespace xtreemfs {
 namespace pbrpc {
 
-const int INTERFACE_ID_DIR = 10001;
-const int PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_GET = 1;
-const int PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_REMOVE = 2;
-const int PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_SET = 3;
-const int PROC_ID_XTREEMFS_DISCOVER_DIR = 4;
-const int PROC_ID_XTREEMFS_GLOBAL_TIME_S_GET = 5;
-const int PROC_ID_XTREEMFS_SERVICE_DEREGISTER = 6;
-const int PROC_ID_XTREEMFS_SERVICE_GET_BY_NAME = 7;
-const int PROC_ID_XTREEMFS_SERVICE_GET_BY_TYPE = 8;
-const int PROC_ID_XTREEMFS_SERVICE_GET_BY_UUID = 9;
-const int PROC_ID_XTREEMFS_SERVICE_OFFLINE = 10;
-const int PROC_ID_XTREEMFS_SERVICE_REGISTER = 11;
-const int PROC_ID_XTREEMFS_CHECKPOINT = 20;
-const int PROC_ID_XTREEMFS_SHUTDOWN = 21;
-const int PROC_ID_XTREEMFS_CONFIGURATION_GET = 22;
-const int PROC_ID_XTREEMFS_CONFIGURATION_SET = 23;
-const int PROC_ID_XTREEMFS_VIVALDI_CLIENT_UPDATE = 24;
+const boost::uint32_t INTERFACE_ID_DIR = 10001;
+const boost::uint32_t PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_GET = 1;
+const boost::uint32_t PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_REMOVE = 2;
+const boost::uint32_t PROC_ID_XTREEMFS_ADDRESS_MAPPINGS_SET = 3;
+const boost::uint32_t PROC_ID_XTREEMFS_DISCOVER_DIR = 4;
+const boost::uint32_t PROC_ID_XTREEMFS_GLOBAL_TIME_S_GET = 5;
+const boost::uint32_t PROC_ID_XTREEMFS_SERVICE_DEREGISTER = 6;
+const boost::uint32_t PROC_ID_XTREEMFS_SERVICE_GET_BY_NAME = 7;
+const boost::uint32_t PROC_ID_XTREEMFS_SERVICE_GET_BY_TYPE = 8;
+const boost::uint32_t PROC_ID_XTREEMFS_SERVICE_GET_BY_UUID = 9;
+const boost::uint32_t PROC_ID_XTREEMFS_SERVICE_OFFLINE = 10;
+const boost::uint32_t PROC_ID_XTREEMFS_SERVICE_REGISTER = 11;
+const boost::uint32_t PROC_ID_XTREEMFS_CHECKPOINT = 20;
+const boost::uint32_t PROC_ID_XTREEMFS_SHUTDOWN = 21;
+const boost::uint32_t PROC_ID_XTREEMFS_CONFIGURATION_GET = 22;
+const boost::uint32_t PROC_ID_XTREEMFS_CONFIGURATION_SET = 23;
+const boost::uint32_t PROC_ID_XTREEMFS_VIVALDI_CLIENT_UPDATE = 24;
 
 }  // namespace pbrpc
 }  // namespace xtreemfs
