@@ -1,4 +1,4 @@
-//automatically generated from DIR.proto at Tue Feb 28 11:16:01 CET 2012
+//automatically generated from DIR.proto at Wed Apr 04 16:50:47 CEST 2012
 //(c) 2012. See LICENSE file for details.
 
 #ifndef DIRSERVICECLIENT_H
@@ -15,7 +15,7 @@
 
 
 namespace xtreemfs {
-    namespace pbrpc {
+namespace pbrpc {
         using ::xtreemfs::rpc::Client;
         using ::xtreemfs::rpc::CallbackInterface;
         using ::xtreemfs::rpc::SyncCallback;
