@@ -1,5 +1,5 @@
 /*
- * Copyright (c)      2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
  *               2010-2011 by Patrick Schaefer, Zuse Institute Berlin
  *
  *
@@ -39,7 +39,8 @@ ClientImplementation::ClientImplementation(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const xtreemfs::rpc::SSLOptions* ssl_options,
     const Options& options)
-  : dir_service_auth_(),
+  : was_shutdown_(false),
+    dir_service_auth_(),
     dir_service_user_credentials_(user_credentials),
     dir_service_ssl_options_(ssl_options),
     options_(options),
@@ -69,6 +70,7 @@ ClientImplementation::ClientImplementation(
 }
 
 ClientImplementation::~ClientImplementation() {
+  Shutdown();
   if (!list_open_volumes_.empty()) {
     string error = "Client::~Client(): Not all XtreemFS volumes were closed."
         " Did you forget to call Client::Shutdown()? Memory leaks are the"
@@ -76,8 +78,6 @@ ClientImplementation::~ClientImplementation() {
     Logging::log->getLog(LEVEL_ERROR) << error << endl;
     ErrorLog::error_log->AppendError(error);
   }
-  network_client_->shutdown();
-  network_client_thread_->join();
 
   atexit(google::protobuf::ShutdownProtobufLibrary);
 
@@ -111,21 +111,27 @@ void ClientImplementation::Start() {
 }
 
 void ClientImplementation::Shutdown() {
-  boost::mutex::scoped_lock lock(list_open_volumes_mutex_);
+  if (!was_shutdown_) {
+    was_shutdown_ = true;
+    boost::mutex::scoped_lock lock(list_open_volumes_mutex_);
 
-  // Issue Close() on every Volume and remove it's pointer.
-  list<VolumeImplementation*>::iterator it;
-  while (!list_open_volumes_.empty()) {
-    it = list_open_volumes_.begin();
-    (*it)->CloseInternal();
-    delete *it;
-    it = list_open_volumes_.erase(it);
-  }
+    // Issue Close() on every Volume and remove it's pointer.
+    list<VolumeImplementation*>::iterator it;
+    while (!list_open_volumes_.empty()) {
+      it = list_open_volumes_.begin();
+      (*it)->CloseInternal();
+      delete *it;
+      it = list_open_volumes_.erase(it);
+    }
+  
+    // Stop vivaldi thread if running
+    if (vivaldi_thread_.get() && vivaldi_thread_->joinable()) {
+      vivaldi_thread_->interrupt();
+      vivaldi_thread_->join();
+    }
 
-  // Stop vivaldi thread if running
-  if (vivaldi_thread_.get() && vivaldi_thread_->joinable()) {
-    vivaldi_thread_->interrupt();
-    vivaldi_thread_->join();
+    network_client_->shutdown();
+    network_client_thread_->join();
   }
 }
 
@@ -254,7 +260,6 @@ void ClientImplementation::DeleteVolume(
           false));
   response->DeleteBuffers();
 }
-
 
 xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
     const std::string& mrc_address,

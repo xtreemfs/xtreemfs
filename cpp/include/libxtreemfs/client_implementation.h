@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -104,6 +104,9 @@ class ClientImplementation : public Client, public UUIDResolver {
   const xtreemfs::pbrpc::VivaldiCoordinates& GetVivaldiCoordinates() const;
 
  private:
+  /** True if Shutdown() was executed. */
+  bool was_shutdown_;
+
   /** Auth of type AUTH_NONE which is required for most operations which do not
    *  check the authentication data (except Create, Delete, ListVolume(s)). */
   xtreemfs::pbrpc::Auth auth_bogus_;
