@@ -10,6 +10,7 @@
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread/mutex.hpp>
+#include <gtest/gtest_prod.h>
 #include <list>
 #include <string>
 
@@ -38,6 +39,8 @@ class OSDServiceClient;
 namespace rpc {
 class Client;
 class SSLOptions;
+class ClientTestFastLingerTimeout_LingerTests_Test;  // see FRIEND_TEST @bottom.
+class ClientTestFastLingerTimeoutConnectTimeout_LingerTests_Test;
 }  // namespace rpc
 
 /**
@@ -140,6 +143,9 @@ class ClientImplementation : public Client, public UUIDResolver {
   boost::scoped_ptr<boost::thread> vivaldi_thread_;
   boost::scoped_ptr<xtreemfs::Vivaldi> vivaldi_;
   boost::scoped_ptr<xtreemfs::pbrpc::OSDServiceClient> osd_service_client_;
+
+  FRIEND_TEST(xtreemfs::rpc::ClientTestFastLingerTimeout, LingerTests);
+  FRIEND_TEST(xtreemfs::rpc::ClientTestFastLingerTimeoutConnectTimeout, LingerTests);
 };
 
 }  // namespace xtreemfs

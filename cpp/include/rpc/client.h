@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009-2010 by Bjoern Kolbeck, Zuse Institute Berlin
+ *                    2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -15,6 +16,7 @@
 #include <boost/function.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/thread/mutex.hpp>
+#include <gtest/gtest_prod.h>
 #include <queue>
 #include <string>
 
@@ -94,6 +96,9 @@ class Client {
 
   char* pemFileName;
   char* certFileName;
+
+  FRIEND_TEST(ClientTestFastLingerTimeout, LingerTests);
+  FRIEND_TEST(ClientTestFastLingerTimeoutConnectTimeout, LingerTests);
 };
 }  // namespace rpc
 }  // namespace xtreemfs
