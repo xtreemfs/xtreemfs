@@ -102,6 +102,26 @@ public class RPCCPPSourceGenerator {
         for (Entry<FieldDescriptor, Object> files : map.entrySet()) {
 
             if (files.getKey().getName().equals("proto_file")) {
+                // This generator is executed multiple times with different sets
+                // of files. Therefore it shall only write the
+                // "get_request_message" file if files like DIR.proto, MRC.proto
+                // or OSD.proto are parsed.
+                boolean writeFileGetRequestMessage = false;
+              
+                String fileNameGetRequestMessage = "xtreemfs/get_request_message.h";
+                String includeGuardGetRequestMessage = "CPP_GENERATED_XTREEMFS_GET_REQUEST_MESSAGE_H_";
+                StringBuilder codeBuilderGetRequestMessage = new StringBuilder();
+                codeBuilderGetRequestMessage.append("//automatically generated at "+new Date()+"\n");
+                codeBuilderGetRequestMessage.append("//(c) "+((new Date()).getYear()+1900)+". See LICENSE file for details.\n\n");
+
+                codeBuilderGetRequestMessage.append("#ifndef "+ includeGuardGetRequestMessage +"\n");
+                codeBuilderGetRequestMessage.append("#define "+ includeGuardGetRequestMessage +"\n\n");
+                codeBuilderGetRequestMessage.append("#include <boost/cstdint.hpp>\n");
+                codeBuilderGetRequestMessage.append("\n");
+                codeBuilderGetRequestMessage.append("@@@INCLUDE@@@\n");
+
+                boolean initializedGetRequestMessage = false;
+                String[] namespaceTokensGetRequestMessage = null;
 
                 for (FileDescriptorProto proto : (List<FileDescriptorProto>) files.getValue()) {
 
@@ -112,19 +132,67 @@ public class RPCCPPSourceGenerator {
                     final String msgName = filchen.getName().replace(".proto", "");
                     System.err.println("proto: "+proto.getName());
 
+                    boolean addThisFileToGetRequestMessage = false;
+                    if (filchen.getName().equals("DIR.proto") || filchen.getName().equals("MRC.proto") || filchen.getName().equals("OSD.proto")) {
+                        writeFileGetRequestMessage = true;
+                        addThisFileToGetRequestMessage = true;
+                    }
+
 
                     //printMessage(proto.getMessageTypeList());
+                    final String[] namespaceTokens = cppPackage.split("\\.");
+                    
+                    if (writeFileGetRequestMessage && !initializedGetRequestMessage) {
+                        namespaceTokensGetRequestMessage = namespaceTokens.clone();
+                        for (int i = 0; i < namespaceTokens.length; i++) {
+                            codeBuilderGetRequestMessage.append("namespace " + namespaceTokens[i] + " {\n");
+                        }
+                        codeBuilderGetRequestMessage.append("\n");
+                        codeBuilderGetRequestMessage.append(
+    "google::protobuf::Message* GetMessageForProcID(boost::uint32_t interface_id,\n");
+                        codeBuilderGetRequestMessage.append(
+    "                                               boost::uint32_t proc_id) {\n");
+                        codeBuilderGetRequestMessage.append(
+    "  switch (interface_id) {\n");
+                        initializedGetRequestMessage = true;
+                    }
 
                     for (ServiceDescriptorProto srv : proto.getServiceList()) {
+                        int interfaceId = srv.getOptions().getExtension(PBRPC.interfaceId);
+                        
+                        if (addThisFileToGetRequestMessage) {
+                            codeBuilderGetRequestMessage.append(
+"// Generated from " + filchen.getName() + "\n");
+                            codeBuilderGetRequestMessage.append(
+"    case " + interfaceId + ": {\n");
+                            codeBuilderGetRequestMessage.append(
+"      switch (proc_id) {\n");
+                        }
+
+                        
                         // proto.getName() returns the file name of the .proto file
                         // e.g. "xtreemfs/DIR.proto"
                         // Example: "xtreemfs/DIR.proto" -> "DIRServiceClient"
                         String className =  (new java.io.File(proto.getName())).getName().replace(".proto", "ServiceClient");
                         // Example: "xtreemfs/DIR.proto" -> "xtreemfs/DIRServiceClient.h"
                         String classFileName = proto.getName().replace(".proto", "ServiceClient.h");
+                        String classNameConst = (new java.io.File(proto.getName())).getName().replace(".proto", "ServiceConstants");
+                        String classFileNameConst = proto.getName().replace(".proto", "ServiceConstants.h");
+
 
                         StringBuilder codeBuilder = new StringBuilder();
+                        StringBuilder codeBuilderConst = new StringBuilder();
                         
+                        codeBuilderConst.append("//automatically generated from "+filchen.getName()+" at "+new Date()+"\n");
+                        codeBuilderConst.append("//(c) "+((new Date()).getYear()+1900)+". See LICENSE file for details.\n\n");
+                        codeBuilderConst.append("#ifndef "+classNameConst.toUpperCase()+"_H_\n");
+                        codeBuilderConst.append("#define "+classNameConst.toUpperCase()+"_H_\n\n");
+                        for (int i = 0; i < namespaceTokens.length; i++) {
+                            codeBuilderConst.append("namespace " + namespaceTokens[i] + " {\n");
+                        }
+                        codeBuilderConst.append("\n");
+                        codeBuilderConst.append("const int INTERFACE_ID_" + (new java.io.File(proto.getName())).getName().replace(".proto", "").toUpperCase() + " = " + interfaceId + ";\n");
+
                         //imports
                         codeBuilder.append("//automatically generated from "+filchen.getName()+" at "+new Date()+"\n");
                         codeBuilder.append("//(c) "+((new Date()).getYear()+1900)+". See LICENSE file for details.\n\n");
@@ -141,10 +209,8 @@ public class RPCCPPSourceGenerator {
 
                         codeBuilder.append("\n");
                         
-                        String[] namespaceTokens = cppPackage.split("\\.");
                         String indent = "";
                         for (int i = 0; i < namespaceTokens.length; i++) {
-                            codeBuilder.append(indent);
                             codeBuilder.append("namespace "+namespaceTokens[i]+" {\n");
                             indent = indent + ONE_INDENT;
                         }
@@ -164,8 +230,6 @@ public class RPCCPPSourceGenerator {
                         codeBuilder.append(indent+ONE_INDENT+"virtual ~"+className+"() {\n");
                         codeBuilder.append(indent+ONE_INDENT+"}\n\n");
 
-                        int interfaceId = srv.getOptions().getExtension(PBRPC.interfaceId);
-
                         for (MethodDescriptorProto method: srv.getMethodList()) {
 
                             System.err.println("input type: "+method.getInputType());
@@ -177,13 +241,29 @@ public class RPCCPPSourceGenerator {
                             includes.add(typeDefs.get(method.getOutputType()).fileName);
 
                             final int procId = method.getOptions().getExtension(PBRPC.procId);
+                            codeBuilderConst.append("const int PROC_ID_"+method.getName().toUpperCase()+" = " + procId + ";\n");
 
                             final boolean data_in = method.getOptions().hasExtension(PBRPC.dataIn) ? method.getOptions().getExtension(PBRPC.dataIn) : false;
                             final String dataValue = data_in ? "data" : "null";
 
+                            String inputTypeBuilder = "new " + inputType + "()";
+                            if (inputTypeBuilder.contains("emptyResponse")) {
+                                inputTypeBuilder = "NULL";
+                            }
                             String returnTypeBuilder = "new "+returnType+"()";
                             if (returnType.contains("emptyResponse"))
                                 returnTypeBuilder = "NULL";
+
+                            if (addThisFileToGetRequestMessage) {
+                                codeBuilderGetRequestMessage.append(
+"        case " + procId + ": {\n");
+                                codeBuilderGetRequestMessage.append(
+"          return " + inputTypeBuilder + ";\n");
+                                codeBuilderGetRequestMessage.append(
+"          break;\n");
+                                codeBuilderGetRequestMessage.append(
+"        }\n");
+                            }
 
                             codeBuilder.append(indent+ONE_INDENT+"void "+method.getName()+"(const std::string &address,\n");
                             codeBuilder.append(indent+ONE_INDENT+ONE_INDENT+"const xtreemfs::pbrpc::Auth& auth,\n");
@@ -292,8 +372,14 @@ public class RPCCPPSourceGenerator {
                             codeBuilder.append(indent);
                             codeBuilder.append("}\n");
                         }
-
                         codeBuilder.append("#endif //"+className.toUpperCase()+"_H\n");
+                        
+                        codeBuilderConst.append("\n");
+                        for (int i = Math.max(0, namespaceTokens.length - 1); i >= 0; i--) {
+                            codeBuilderConst.append("}  // namespace " + namespaceTokens[i] + "\n");
+                        }
+                        codeBuilderConst.append("\n");
+                        codeBuilderConst.append("#endif // "+className.toUpperCase()+"_H_\n");
 
                         String file = codeBuilder.toString();
 
@@ -307,10 +393,58 @@ public class RPCCPPSourceGenerator {
                         File f = File.newBuilder().setName(classFileName).setContent(
                             file).build();
                         responseBuilder.addFile(f);
+                        
+                        f = File.newBuilder().setName(classFileNameConst).setContent(
+                            codeBuilderConst.toString()).build();
+                        responseBuilder.addFile(f);
+                        
+                        if (addThisFileToGetRequestMessage) {
+                            codeBuilderGetRequestMessage.append(
+"        default: {\n");
+                            codeBuilderGetRequestMessage.append(
+"          return NULL;\n");
+                            codeBuilderGetRequestMessage.append(
+"        }\n");
+                            codeBuilderGetRequestMessage.append(
+"      }\n");
+                            codeBuilderGetRequestMessage.append(
+"    break;\n");
+                            codeBuilderGetRequestMessage.append(
+"    }\n");
+                        }
+                        
                     }
 
                 }
 
+                if (writeFileGetRequestMessage) {
+                    codeBuilderGetRequestMessage.append(
+"    default: {\n");
+                    codeBuilderGetRequestMessage.append(
+"      return NULL;\n");
+                    codeBuilderGetRequestMessage.append(
+"    }\n");
+                    codeBuilderGetRequestMessage.append(
+"  }\n");
+                    codeBuilderGetRequestMessage.append(
+"}\n");
+                    codeBuilderGetRequestMessage.append("\n");
+                    for (int i = Math.max(0, namespaceTokensGetRequestMessage.length - 1); i >= 0; i--) {
+                        codeBuilderGetRequestMessage.append("}  // namespace " + namespaceTokensGetRequestMessage[i] + "\n");
+                    }
+                    codeBuilderGetRequestMessage.append("\n");
+                    codeBuilderGetRequestMessage.append("#endif // " + includeGuardGetRequestMessage + "\n");
+
+                    String extraIncludes = "";
+                    for (String incl : includes) {
+                        extraIncludes += "#include \""+incl+"\"\n";
+                    }
+
+                    String fileContent = codeBuilderGetRequestMessage.toString();
+                    fileContent = fileContent.replace("@@@INCLUDE@@@", extraIncludes);
+                    File f = File.newBuilder().setName(fileNameGetRequestMessage).setContent(fileContent).build();
+                    responseBuilder.addFile(f);
+                }
             }
         }
 
