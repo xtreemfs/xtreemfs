@@ -36,8 +36,6 @@ Options::Options()
       grid_options_("Grid Support options"),
       vivaldi_options_("Vivaldi Options"),
       xtreemfs_advanced_options_("XtreemFS Advanced options") {
-  // Version information.
-  // If you change this, do not forget to change this also in xtfsutil.cpp!
   version_string = XTREEMFS_VERSION_STRING;
 
   // XtreemFS URL Options.
@@ -124,7 +122,6 @@ Options::Options()
   vivaldi_max_iterations_before_updating = 12;
   vivaldi_max_request_retries = 2;
   vivaldi_zipf_generator_skew = 0.5;
-
 
   // Advanced XtreemFS options.
   periodic_file_size_updates_interval_s = 60;  // Default: 1 Minute.

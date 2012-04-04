@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <boost/cstdint.hpp>
+#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/tss.hpp>
@@ -198,8 +199,10 @@ template<class ReturnMessageType, class F>
           if (attempt == 1 && max_tries != 1) {
             std::string retries_left = max_tries == 0 ? "infinite"
                 : boost::lexical_cast<std::string>(max_tries - attempt);
-            error = "Got no response from server " + service_uuid
-                + " (" + service_address + "), retrying ("
+            error = "Got no response from server "
+                + (uuid_iterator_has_addresses ? service_address
+                      : ( service_address + " (" + service_uuid + ")"))
+                + ", retrying ("
                 + boost::lexical_cast<std::string>(retries_left)
                 + " attempts left)";
           }
@@ -236,10 +239,9 @@ template<class ReturnMessageType, class F>
           if (!error.empty()) {
             // Append time left to error message.
             error += ", waiting "
-                + boost::lexical_cast<std::string>(
-                    std::max(0.0,
-                             std::floor(static_cast<double>(delay_time_left)
-                                 / 100000) / 10))
+                + boost::str(boost::format("%.1f") %
+                    (std::max(0.0,
+                              static_cast<double>(delay_time_left) / 1000000)))
                 + " more seconds till next attempt.";
             if (xtreemfs::util::Logging::log->loggingActive(level)) {
               xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
@@ -336,8 +338,10 @@ template<class ReturnMessageType, class F>
         if (enum_desc) {
             posix_errono_string = enum_desc->name();
         }
-        error = "The server " + service_uuid + " (" + service_address
-            + ") denied the requested operation."
+        error = "The server "
+            + (uuid_iterator_has_addresses ? service_address
+                  : ( service_address + " (" + service_uuid + ")"))
+            + " denied the requested operation."
               " Error Value: " + posix_errono_string
             + " Error message: " + error_message
             + retry_count_msg;
@@ -349,8 +353,10 @@ template<class ReturnMessageType, class F>
       }
       case xtreemfs::pbrpc::IO_ERROR:  {
         error = "The client encountered a communication error sending a request"
-            " to the server: " + service_uuid + " (" + service_address + ")."
-            " Error: " + error_message + retry_count_msg;
+            " to the server: "
+            + (uuid_iterator_has_addresses ? service_address
+                  : ( service_address + " (" + service_uuid + ")"))
+            + ". Error: " + error_message + retry_count_msg;
         if (xtreemfs::util::Logging::log->loggingActive(level)) {
           xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
         }
@@ -358,8 +364,10 @@ template<class ReturnMessageType, class F>
         throw IOException(error_message);
       }
       case xtreemfs::pbrpc::INTERNAL_SERVER_ERROR:  {
-        error = "The server " + service_uuid + " (" + service_address + ") "
-            "returned an internal server error: " + error_message
+        error = "The server "
+            + (uuid_iterator_has_addresses ? service_address
+                  : ( service_address + " (" + service_uuid + ")"))
+            + " returned an internal server error: " + error_message
             + retry_count_msg;
         if (xtreemfs::util::Logging::log->loggingActive(level)) {
           xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
@@ -380,8 +388,10 @@ template<class ReturnMessageType, class F>
         if (enum_desc) {
           error_type_name = enum_desc->name();
         }
-        error = "The server " + service_uuid + " (" + service_address + ") "
-            "returned an error: " + error_type_name
+        error = "The server "
+            + (uuid_iterator_has_addresses ? service_address
+                  : ( service_address + " (" + service_uuid + ")"))
+            + " returned an error: " + error_type_name
             + " Error: " + error_message + retry_count_msg;
         if (xtreemfs::util::Logging::log->loggingActive(level)) {
           xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
@@ -394,11 +404,13 @@ template<class ReturnMessageType, class F>
     // No Response given, probably interrupted.
     throw PosixErrorException(
         xtreemfs::pbrpc::POSIX_ERROR_EINTR,
-        "The operation (sending a request to the server " + service_uuid + " ("
-        + service_address + ")) was aborted by the user at attempt: "
-        // attempt + 1 because the interrupt is only possible after the request
-        // came back.
-        + boost::lexical_cast<std::string>(attempt + 1) + ".");
+        "The operation (sending a request to the server "
+            + (uuid_iterator_has_addresses ? service_address
+                  : ( service_address + " (" + service_uuid + ")"))
+            + ") was aborted by the user at attempt: "
+            // attempt + 1 because the interrupt is only possible after the
+            // request came back.
+            + boost::lexical_cast<std::string>(attempt + 1) + ".");
   }
 }
 
