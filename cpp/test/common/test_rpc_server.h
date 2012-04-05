@@ -71,11 +71,12 @@ template <class Derived> class TestRPCServer {
       return false;
     }
 
-    if (operations_.size() == 0) {
-      Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
-          << "You have not registered any implemented operations." << std::endl;
-      return false;
-    }
+    // TODO(mberlin): Reenable check when implementations are done.
+//    if (operations_.size() == 0) {
+//      Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
+//          << "You have not registered any implemented operations." << std::endl;
+//      return false;
+//    }
 
     try {
       acceptor_.reset(
@@ -138,19 +139,21 @@ template <class Derived> class TestRPCServer {
     // the blocking acceptor_->accept() if it was interrupted by the debugger.
     // Therefore, we call a no-op signal handler in the thread now and accept()
     // becomes unblocked, effectively allowing to stop the daemon_ thread.
-    daemon_->interrupt();
-    // Ignore errors.
-    boost::system::error_code ec;
-    acceptor_->close(ec);
-    if (!daemon_->timed_join(boost::posix_time::milliseconds(10))) {
-  #ifdef WIN32
-      Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
-          << "Failed to stop the server, daemon thread won't unblock. "
-             "Abort manually with Ctrl + C." << std::endl;
-  #else
-      pthread_kill(daemon_->native_handle(), SIGUSR2);
-      daemon_->join();
-  #endif
+    if (daemon_.get()) {
+      daemon_->interrupt();
+      // Ignore errors.
+      boost::system::error_code ec;
+      acceptor_->close(ec);
+      if (!daemon_->timed_join(boost::posix_time::milliseconds(10))) {
+#ifdef WIN32
+        Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
+            << "Failed to stop the server, daemon thread won't unblock. "
+               "Abort manually with Ctrl + C." << std::endl;
+#else
+        pthread_kill(daemon_->native_handle(), SIGUSR2);
+        daemon_->join();
+#endif
+      }
     }
   }
 
