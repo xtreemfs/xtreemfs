@@ -16,25 +16,44 @@ using namespace xtreemfs::rpc;
 
 namespace xtreemfs {
 
-TestEnvironment::TestEnvironment(int num_of_osds)
-    : options(), user_credentials(), num_of_osds_(num_of_osds) {
+TestEnvironment::TestEnvironment()
+    : options(), user_credentials() {
   user_credentials.set_username("ClientTest");
   user_credentials.add_groups("ClientTest");
 
   dir.reset(new TestRPCServerDIR());
   mrc.reset(new TestRPCServerMRC());
-  osds.reset(new TestRPCServerOSD[num_of_osds_]);
+  osds.push_back(new TestRPCServerOSD());
 
   volume_name_ = "test";
 }
 
-void TestEnvironment::Start() {
-  dir->Start();
-  mrc->Start();
-  dir->RegisterVolume(volume_name_, mrc->GetAddress());
-  for (int i = 0; i < num_of_osds_; i++) {
-    osds[i].Start();
+TestEnvironment::~TestEnvironment() {
+  for (size_t i = 0; i < osds.size(); i++) {
+    delete osds[i];
   }
+}
+
+void TestEnvironment::AddOSDs(int num_of_osds) {
+  for (int i = 1; i < num_of_osds; i++) {
+    osds.push_back(new TestRPCServerOSD());
+  }
+}
+
+bool TestEnvironment::Start() {
+  if (!dir->Start()) {
+    return false;
+  }
+  if (!mrc->Start()) {
+    return false;
+  }
+  dir->RegisterVolume(volume_name_, mrc->GetAddress());
+  for (size_t i = 0; i < osds.size(); i++) {
+    if (!osds[i]->Start()) {
+      return false;
+    }
+  }
+  // TODO(mberlin): Register OSDs at MRC.
 
   // If the DIR server address was not explicitly overridden, set it to the
   // started test DIR server.
@@ -49,6 +68,8 @@ void TestEnvironment::Start() {
 
   // Start the client (a connection to the DIR service will be setup).
   client->Start();
+
+  return true;
 }
 
 void TestEnvironment::Stop() {
@@ -62,8 +83,8 @@ void TestEnvironment::Stop() {
   if (mrc.get()) {
     mrc->Stop();
   }
-  for (int i = 0; i < num_of_osds_; i++) {
-    osds[i].Stop();
+  for (size_t i = 0; i < osds.size(); i++) {
+    osds[i]->Stop();
   }
 }
 

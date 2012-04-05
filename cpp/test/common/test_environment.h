@@ -9,8 +9,8 @@
 #define CPP_TEST_COMMON_TEST_ENVIRONMENT_H_
 
 #include <boost/scoped_ptr.hpp>
-#include <boost/scoped_array.hpp>
 #include <string>
+#include <vector>
 
 #include "libxtreemfs/options.h"
 #include "pbrpc/RPC.pb.h"  // xtreemfs::pbrpc::UserCredentials
@@ -33,24 +33,25 @@ class Client;
  */
 class TestEnvironment {
  public:
-  explicit TestEnvironment(int num_of_osds);
+  explicit TestEnvironment();
+  ~TestEnvironment();
 
-  void Start();
+  bool Start();
   void Stop();
+
+  /** Add num_of_osds additional OSDs before executing Start(). */
+  void AddOSDs(int num_of_osds);
 
   boost::scoped_ptr<Client> client;
   Options options;
   xtreemfs::pbrpc::UserCredentials user_credentials;
-
-  /** Count of started OSDs. */
-  int num_of_osds_;
 
   /** Volume name under which the MRC will be registered. */
   std::string volume_name_;
 
   boost::scoped_ptr<xtreemfs::rpc::TestRPCServerDIR> dir;
   boost::scoped_ptr<xtreemfs::rpc::TestRPCServerMRC> mrc;
-  boost::scoped_array<xtreemfs::rpc::TestRPCServerOSD> osds;
+  std::vector<xtreemfs::rpc::TestRPCServerOSD*> osds;
 };
 
 }  // namespace xtreemfs
