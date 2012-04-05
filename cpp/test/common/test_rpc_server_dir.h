@@ -10,9 +10,9 @@
 
 #include "common/test_rpc_server.h"
 
-#include <boost/cstdint.hpp>
-
+#include <boost/thread/mutex.hpp>
 #include <map>
+#include <string>
 
 namespace google {
 namespace protobuf {
@@ -23,13 +23,21 @@ class Message;
 namespace xtreemfs {
 namespace rpc {
 
-class TestRPCServerDIR : public TestRPCServer {
+class TestRPCServerDIR : public TestRPCServer<TestRPCServerDIR> {
  public:
   TestRPCServerDIR();
 
+  void RegisterVolume(const std::string& volume_name,
+                      const std::string& mrc_uuid);
+
  private:
-  static google::protobuf::Message* GetServiceByNameOperation(
+  google::protobuf::Message* GetServiceByNameOperation(
       const google::protobuf::Message& request);
+
+  /** Guards access to known_volumes_. */
+  boost::mutex mutex_;
+
+  std::map<std::string, std::string> known_volumes_;
 };
 
 }  // namespace rpc

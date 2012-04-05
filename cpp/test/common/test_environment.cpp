@@ -8,22 +8,34 @@
 #include "common/test_environment.h"
 
 #include "common/test_rpc_server_dir.h"
+#include "common/test_rpc_server_mrc.h"
+#include "common/test_rpc_server_osd.h"
 #include "libxtreemfs/client.h"
 
 using namespace xtreemfs::rpc;
 
 namespace xtreemfs {
 
-TestEnvironment::TestEnvironment() : options(), user_credentials() {
+TestEnvironment::TestEnvironment(int num_of_osds)
+    : options(), user_credentials(), num_of_osds_(num_of_osds) {
   user_credentials.set_username("ClientTest");
   user_credentials.add_groups("ClientTest");
 
   dir.reset(new TestRPCServerDIR());
+  mrc.reset(new TestRPCServerMRC());
+  osds.reset(new TestRPCServerOSD[num_of_osds_]);
+
+  volume_name_ = "test";
 }
 
 void TestEnvironment::Start() {
   dir->Start();
-  
+  mrc->Start();
+  dir->RegisterVolume(volume_name_, mrc->GetAddress());
+  for (int i = 0; i < num_of_osds_; i++) {
+    osds[i].Start();
+  }
+
   // If the DIR server address was not explicitly overridden, set it to the
   // started test DIR server.
   if (options.service_address.empty()) {
@@ -46,6 +58,12 @@ void TestEnvironment::Stop() {
 
   if (dir.get()) {
     dir->Stop();
+  }
+  if (mrc.get()) {
+    mrc->Stop();
+  }
+  for (int i = 0; i < num_of_osds_; i++) {
+    osds[i].Stop();
   }
 }
 

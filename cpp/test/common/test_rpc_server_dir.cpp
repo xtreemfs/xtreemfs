@@ -20,7 +20,13 @@ TestRPCServerDIR::TestRPCServerDIR() {
   interface_id_ = INTERFACE_ID_DIR;
   // Register available operations.
   operations_[PROC_ID_XTREEMFS_SERVICE_GET_BY_NAME]
-      = &GetServiceByNameOperation;
+      = Op(this, &TestRPCServerDIR::GetServiceByNameOperation);
+}
+
+void TestRPCServerDIR::RegisterVolume(const std::string& volume_name,
+                                      const std::string& mrc_uuid) {
+  boost::mutex::scoped_lock lock(mutex_);
+  known_volumes_[volume_name] = mrc_uuid;
 }
 
 google::protobuf::Message* TestRPCServerDIR::GetServiceByNameOperation(
@@ -28,16 +34,27 @@ google::protobuf::Message* TestRPCServerDIR::GetServiceByNameOperation(
   const serviceGetByNameRequest* rq
       = reinterpret_cast<const serviceGetByNameRequest*>(&request);
 
+  string mrc_uuid;
+  {
+    boost::mutex::scoped_lock lock(mutex_);
+    map<string, string>::iterator iter = known_volumes_.find(rq->name());
+    if (iter != known_volumes_.end()) {
+      mrc_uuid = iter->second;
+    }
+  }
+
   ServiceSet* response = new ServiceSet();
-  Service* new_entry = response->add_services();
-  new_entry->set_type(SERVICE_TYPE_VOLUME);
-  new_entry->set_uuid(rq->name());
-  new_entry->set_version(0);
-  new_entry->set_name(rq->name());
-  new_entry->set_last_updated_s(0);
-  KeyValuePair* new_data = new_entry->mutable_data()->add_data();
-  new_data->set_key("mrc");
-  new_data->set_value(rq->name());
+  if (!mrc_uuid.empty()) {
+    Service* new_entry = response->add_services();
+    new_entry->set_type(SERVICE_TYPE_VOLUME);
+    new_entry->set_uuid(rq->name());
+    new_entry->set_version(0);
+    new_entry->set_name(rq->name());
+    new_entry->set_last_updated_s(0);
+    KeyValuePair* new_data = new_entry->mutable_data()->add_data();
+    new_data->set_key("mrc");
+    new_data->set_value(mrc_uuid);
+  }
   return response;
 }
 
