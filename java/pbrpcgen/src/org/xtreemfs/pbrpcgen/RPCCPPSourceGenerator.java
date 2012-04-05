@@ -108,17 +108,29 @@ public class RPCCPPSourceGenerator {
                 // or OSD.proto are parsed.
                 boolean writeFileGetRequestMessage = false;
               
-                String fileNameGetRequestMessage = "xtreemfs/get_request_message.h";
+                String fileNameGetRequestMessageH = "xtreemfs/get_request_message.h";
+                String fileNameGetRequestMessageCC = "xtreemfs/get_request_message.cc";
                 String includeGuardGetRequestMessage = "CPP_GENERATED_XTREEMFS_GET_REQUEST_MESSAGE_H_";
-                StringBuilder codeBuilderGetRequestMessage = new StringBuilder();
-                codeBuilderGetRequestMessage.append("//automatically generated at "+new Date()+"\n");
-                codeBuilderGetRequestMessage.append("//(c) "+((new Date()).getYear()+1900)+". See LICENSE file for details.\n\n");
+                StringBuilder codeBuilderGetRequestMessageH = new StringBuilder();
+                StringBuilder codeBuilderGetRequestMessageCC = new StringBuilder();
+                codeBuilderGetRequestMessageH.append("//automatically generated at "+new Date()+"\n");
+                codeBuilderGetRequestMessageH.append("//(c) "+((new Date()).getYear()+1900)+". See LICENSE file for details.\n\n");
+                codeBuilderGetRequestMessageCC.append("//automatically generated at "+new Date()+"\n");
+                codeBuilderGetRequestMessageCC.append("//(c) "+((new Date()).getYear()+1900)+". See LICENSE file for details.\n\n");
 
-                codeBuilderGetRequestMessage.append("#ifndef "+ includeGuardGetRequestMessage +"\n");
-                codeBuilderGetRequestMessage.append("#define "+ includeGuardGetRequestMessage +"\n\n");
-                codeBuilderGetRequestMessage.append("#include <boost/cstdint.hpp>\n");
-                codeBuilderGetRequestMessage.append("\n");
-                codeBuilderGetRequestMessage.append("@@@INCLUDE@@@\n");
+                codeBuilderGetRequestMessageH.append("#ifndef "+ includeGuardGetRequestMessage +"\n");
+                codeBuilderGetRequestMessageH.append("#define "+ includeGuardGetRequestMessage +"\n\n");
+                codeBuilderGetRequestMessageH.append("#include <boost/cstdint.hpp>\n");
+                codeBuilderGetRequestMessageH.append("\n");
+                codeBuilderGetRequestMessageH.append("namespace google {\n");
+                codeBuilderGetRequestMessageH.append("namespace protobuf {\n");
+                codeBuilderGetRequestMessageH.append("class Message;\n");
+                codeBuilderGetRequestMessageH.append("}  // namespace protobuf\n");
+                codeBuilderGetRequestMessageH.append("}  // namespace google\n");
+                codeBuilderGetRequestMessageH.append("\n");
+                
+                codeBuilderGetRequestMessageCC.append("#include \"" + fileNameGetRequestMessageH + "\"\n\n");
+                codeBuilderGetRequestMessageCC.append("@@@INCLUDE@@@\n");
 
                 boolean initializedGetRequestMessage = false;
                 String[] namespaceTokensGetRequestMessage = null;
@@ -145,14 +157,21 @@ public class RPCCPPSourceGenerator {
                     if (writeFileGetRequestMessage && !initializedGetRequestMessage) {
                         namespaceTokensGetRequestMessage = namespaceTokens.clone();
                         for (int i = 0; i < namespaceTokens.length; i++) {
-                            codeBuilderGetRequestMessage.append("namespace " + namespaceTokens[i] + " {\n");
+                            codeBuilderGetRequestMessageH.append("namespace " + namespaceTokens[i] + " {\n");
+                            codeBuilderGetRequestMessageCC.append("namespace " + namespaceTokens[i] + " {\n");
                         }
-                        codeBuilderGetRequestMessage.append("\n");
-                        codeBuilderGetRequestMessage.append(
+                        codeBuilderGetRequestMessageH.append("\n");
+                        codeBuilderGetRequestMessageH.append(
     "google::protobuf::Message* GetMessageForProcID(boost::uint32_t interface_id,\n");
-                        codeBuilderGetRequestMessage.append(
+                        codeBuilderGetRequestMessageH.append(
+    "                                               boost::uint32_t proc_id);\n\n");
+                        
+                        codeBuilderGetRequestMessageCC.append("\n");
+                        codeBuilderGetRequestMessageCC.append(
+    "google::protobuf::Message* GetMessageForProcID(boost::uint32_t interface_id,\n");
+                        codeBuilderGetRequestMessageCC.append(
     "                                               boost::uint32_t proc_id) {\n");
-                        codeBuilderGetRequestMessage.append(
+                        codeBuilderGetRequestMessageCC.append(
     "  switch (interface_id) {\n");
                         initializedGetRequestMessage = true;
                     }
@@ -161,11 +180,11 @@ public class RPCCPPSourceGenerator {
                         int interfaceId = srv.getOptions().getExtension(PBRPC.interfaceId);
                         
                         if (addThisFileToGetRequestMessage) {
-                            codeBuilderGetRequestMessage.append(
+                            codeBuilderGetRequestMessageCC.append(
 "// Generated from " + filchen.getName() + "\n");
-                            codeBuilderGetRequestMessage.append(
+                            codeBuilderGetRequestMessageCC.append(
 "    case " + interfaceId + ": {\n");
-                            codeBuilderGetRequestMessage.append(
+                            codeBuilderGetRequestMessageCC.append(
 "      switch (proc_id) {\n");
                         }
 
@@ -256,13 +275,13 @@ public class RPCCPPSourceGenerator {
                                 returnTypeBuilder = "NULL";
 
                             if (addThisFileToGetRequestMessage) {
-                                codeBuilderGetRequestMessage.append(
+                                codeBuilderGetRequestMessageCC.append(
 "        case " + procId + ": {\n");
-                                codeBuilderGetRequestMessage.append(
+                                codeBuilderGetRequestMessageCC.append(
 "          return " + inputTypeBuilder + ";\n");
-                                codeBuilderGetRequestMessage.append(
+                                codeBuilderGetRequestMessageCC.append(
 "          break;\n");
-                                codeBuilderGetRequestMessage.append(
+                                codeBuilderGetRequestMessageCC.append(
 "        }\n");
                             }
 
@@ -400,17 +419,17 @@ public class RPCCPPSourceGenerator {
                         responseBuilder.addFile(f);
                         
                         if (addThisFileToGetRequestMessage) {
-                            codeBuilderGetRequestMessage.append(
+                            codeBuilderGetRequestMessageCC.append(
 "        default: {\n");
-                            codeBuilderGetRequestMessage.append(
+                            codeBuilderGetRequestMessageCC.append(
 "          return NULL;\n");
-                            codeBuilderGetRequestMessage.append(
+                            codeBuilderGetRequestMessageCC.append(
 "        }\n");
-                            codeBuilderGetRequestMessage.append(
+                            codeBuilderGetRequestMessageCC.append(
 "      }\n");
-                            codeBuilderGetRequestMessage.append(
+                            codeBuilderGetRequestMessageCC.append(
 "    break;\n");
-                            codeBuilderGetRequestMessage.append(
+                            codeBuilderGetRequestMessageCC.append(
 "    }\n");
                         }
                         
@@ -419,31 +438,35 @@ public class RPCCPPSourceGenerator {
                 }
 
                 if (writeFileGetRequestMessage) {
-                    codeBuilderGetRequestMessage.append(
+                    codeBuilderGetRequestMessageCC.append(
 "    default: {\n");
-                    codeBuilderGetRequestMessage.append(
+                    codeBuilderGetRequestMessageCC.append(
 "      return NULL;\n");
-                    codeBuilderGetRequestMessage.append(
+                    codeBuilderGetRequestMessageCC.append(
 "    }\n");
-                    codeBuilderGetRequestMessage.append(
+                    codeBuilderGetRequestMessageCC.append(
 "  }\n");
-                    codeBuilderGetRequestMessage.append(
+                    codeBuilderGetRequestMessageCC.append(
 "}\n");
-                    codeBuilderGetRequestMessage.append("\n");
+                    codeBuilderGetRequestMessageCC.append("\n");
                     for (int i = Math.max(0, namespaceTokensGetRequestMessage.length - 1); i >= 0; i--) {
-                        codeBuilderGetRequestMessage.append("}  // namespace " + namespaceTokensGetRequestMessage[i] + "\n");
+                        codeBuilderGetRequestMessageH.append("}  // namespace " + namespaceTokensGetRequestMessage[i] + "\n");
+                        codeBuilderGetRequestMessageCC.append("}  // namespace " + namespaceTokensGetRequestMessage[i] + "\n");
                     }
-                    codeBuilderGetRequestMessage.append("\n");
-                    codeBuilderGetRequestMessage.append("#endif // " + includeGuardGetRequestMessage + "\n");
+                    codeBuilderGetRequestMessageH.append("\n");
+                    codeBuilderGetRequestMessageH.append("#endif  // " + includeGuardGetRequestMessage + "\n");
 
                     String extraIncludes = "";
                     for (String incl : includes) {
                         extraIncludes += "#include \""+incl+"\"\n";
                     }
 
-                    String fileContent = codeBuilderGetRequestMessage.toString();
-                    fileContent = fileContent.replace("@@@INCLUDE@@@", extraIncludes);
-                    File f = File.newBuilder().setName(fileNameGetRequestMessage).setContent(fileContent).build();
+                    File f = File.newBuilder().setName(fileNameGetRequestMessageH).setContent(codeBuilderGetRequestMessageH.toString()).build();
+                    responseBuilder.addFile(f);
+
+                    String fileContentGetRequestMessageCC = codeBuilderGetRequestMessageCC.toString();
+                    fileContentGetRequestMessageCC = fileContentGetRequestMessageCC.replace("@@@INCLUDE@@@", extraIncludes);
+                    f = File.newBuilder().setName(fileNameGetRequestMessageCC).setContent(fileContentGetRequestMessageCC).build();
                     responseBuilder.addFile(f);
                 }
             }
