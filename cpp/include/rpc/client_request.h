@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009-2010 by Bjoern Kolbeck, Zuse Institute Berlin
+ *                    2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -27,6 +28,7 @@ using std::string;
 using boost::int32_t;
 using boost::uint32_t;
 
+class ClientConnection;
 class ClientRequest;
 class ClientRequestCallbackInterface;
 
@@ -35,14 +37,14 @@ class ClientRequest {
   static const int ERR_NOERR = 0;
 
   ClientRequest(const string& address,
-                uint32_t call_id,
-                uint32_t interface_id,
-                uint32_t proc_id,
+                const uint32_t call_id,
+                const uint32_t interface_id,
+                const uint32_t proc_id,
                 const xtreemfs::pbrpc::UserCredentials& userCreds,
                 const xtreemfs::pbrpc::Auth& auth,
                 const google::protobuf::Message* request_message,
                 const char* request_data,
-                int data_length,
+                const int data_length,
                 google::protobuf::Message* response_message,
                 void *context,
                 ClientRequestCallbackInterface* callback);
@@ -52,6 +54,23 @@ class ClientRequest {
   void ExecuteCallback();
 
   void RequestSent();
+
+  /** Used by Client::handleTimeout() to find the respective ClientConnection.
+   *
+   * @remarks This object does not have the ownership of "client_connection_",
+   *          so it does not get transferred.
+   */
+  ClientConnection* client_connection() {
+    return client_connection_;
+  }
+
+  /**
+   * @remarks Ownership is not transferred. Instead, it's assumed that this
+   *          ClientRequests exists as long as "client_connection".
+   */
+  void set_client_connection(ClientConnection* client_connection) {
+    client_connection_ = client_connection;
+  }
 
   char* resp_data() const {
     return resp_data_;
@@ -109,12 +128,16 @@ class ClientRequest {
     return call_id_;
   }
 
-  boost::posix_time::ptime time_sent() const {
-    return time_sent_;
+  uint32_t interface_id() const {
+    return interface_id_;
   }
 
-  bool cancelled() const {
-    return canceled_;
+  uint32_t proc_id() const {
+    return proc_id_;
+  }
+
+  boost::posix_time::ptime time_sent() const {
+    return time_sent_;
   }
 
   void set_resp_message(google::protobuf::Message *resp_message) {
@@ -151,19 +174,26 @@ class ClientRequest {
   }
 
  private:
-  uint32_t call_id_;
+  /** Pointer to the ClientConnection which is responsible for this object. */
+  ClientConnection* client_connection_;
+
+  /** ID of the request to match received responses to sent requests. */
+  const uint32_t call_id_;
+  /** Type of interface (service) which will be contacted. */
+  const uint32_t interface_id_;
+  /** Number of the operation which will be executed. */
+  const uint32_t proc_id_;
   void *context_;
   ClientRequestCallbackInterface *callback_;
   string address_;
   boost::posix_time::ptime time_sent_;
-  bool canceled_;
   bool callback_executed_;
 
-  // Internal buffers (will be deleted with the object).
+  /** Internal buffers (will be deleted with the object). */
   RecordMarker *request_marker_;
   char *rq_hdr_msg_;
 
-  // Buffers which are passed to the callback.
+  /** Buffers which are passed to the callback. */
   xtreemfs::pbrpc::RPCHeader::ErrorResponse *error_;
   const char *rq_data_;
   xtreemfs::pbrpc::RPCHeader *resp_header_;

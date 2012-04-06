@@ -84,7 +84,22 @@ class Client {
   boost::asio::ssl::context* ssl_context_;
   boost::mutex requests_lock_;
   connection_map connections_;
+  /** Contains all pending requests which are uniquely identified by their
+   *  call id.
+   *
+   *  Requests to this table are added when sending them and removed by the
+   *  handleTimeout() function and the callback processing.
+   *
+   *  @remark All accesses to this object have to be executed in the context of
+   *          service_ and therefore do not require further synchronization.
+   */
   request_map request_table_;
+  /** Global queue where all requests queue up before the required
+   *  ClientConnection is available.
+   *
+   *  Once a ClientRequest was removed from this queue, it will be added to the
+   *  requests_table_ and the queue ClientConnection::requests_.
+   */
   std::queue<ClientRequest*> requests_;
   boost::uint32_t callid_counter_;
   boost::asio::deadline_timer rq_timeout_timer_;
@@ -104,4 +119,3 @@ class Client {
 }  // namespace xtreemfs
 
 #endif  // CPP_INCLUDE_RPC_CLIENT_H_
-

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009-2010 by Bjoern Kolbeck, Zuse Institute Berlin
+ *                    2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -7,6 +8,8 @@
 
 #include "rpc/client.h"
 
+#include <cstdio>
+#include <cstdlib>
 #include <openssl/pem.h>
 #include <openssl/err.h>
 #include <openssl/pkcs12.h>
@@ -21,18 +24,15 @@
 #endif  // WIN32
 
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/interprocess/detail/atomic.hpp>
-
-#include <cstdio>
-#include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <list>
 #include <utility>
+#include <set>
 #include <string>
 
 #include "util/logging.h"
-
 
 namespace xtreemfs {
 namespace rpc {
@@ -135,28 +135,28 @@ Client::Client(int32_t connect_timeout_s,
 #ifdef WIN32
       //  Gets the temp path env string (no guarantee it's a valid path).
       TCHAR temp_path[MAX_PATH];
-      TCHAR filename_temp_pem[MAX_PATH];  
-      TCHAR filename_temp_cert[MAX_PATH];  
+      TCHAR filename_temp_pem[MAX_PATH];
+      TCHAR filename_temp_cert[MAX_PATH];
 
       DWORD dwRetVal = 0;
       dwRetVal = GetTempPath(MAX_PATH,          // length of the buffer
-                             temp_path); // buffer for path 
+                             temp_path); // buffer for path
       if (dwRetVal > MAX_PATH || (dwRetVal == 0)) {
         _tcsncpy_s(temp_path, TEXT("."), 1);
       }
 
-      //  Generates a temporary file name. 
-      if (!GetTempFileName(temp_path, // directory for tmp files     
-                                TEXT("DEMO"),     // temp file name prefix 
-                                0,                // create unique name 
-                                filename_temp_pem)) {  // buffer for name 
+      //  Generates a temporary file name.
+      if (!GetTempFileName(temp_path, // directory for tmp files
+                                TEXT("DEMO"),     // temp file name prefix
+                                0,                // create unique name
+                                filename_temp_pem)) {  // buffer for name
         std::cerr << "Couldn't create temp file name.\n";
         exit(1);
       }
-      if (!GetTempFileName(temp_path, // directory for tmp files     
-                                TEXT("DEMO"),     // temp file name prefix 
-                                0,                // create unique name 
-                                filename_temp_cert)) {  // buffer for name 
+      if (!GetTempFileName(temp_path, // directory for tmp files
+                                TEXT("DEMO"),     // temp file name prefix
+                                0,                // create unique name
+                                filename_temp_cert)) {  // buffer for name
         std::cerr << "Couldn't create temp file name.\n";
         exit(1);
       }
@@ -354,62 +354,98 @@ void Client::sendInternalRequest() {
 }
 
 void Client::handleTimeout(const boost::system::error_code& error) {
+//  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+//    Logging::log->getLog(LEVEL_DEBUG) << "Running handleTimeout()." << endl;
+//  }
   try {
-    request_map::iterator iter = request_table_.begin();
-    list<int32_t> to_be_removed1;
     posix_time::ptime deadline = posix_time::microsec_clock::local_time()
         - posix_time::seconds(rq_timeout_s_);
 
-    for (; iter != request_table_.end(); ++iter) {
-      ClientRequest *rq = iter->second;
-      if (rq->time_sent() < deadline) {
-        if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-          Logging::log->getLog(LEVEL_DEBUG) << "request timed out: "
-              << rq->call_id() << endl;
-        }
+    // Connections which have timed out requests have to be reset later.
+    set<ClientConnection*> to_be_reset_cons;
 
+    // Remove all timed out requests.
+    request_map::iterator iter = request_table_.begin();
+    while (iter != request_table_.end()) {
+      ClientRequest* rq = iter->second;
+      if (rq->time_sent() < deadline) {
+        ClientConnection* respective_con = rq->client_connection();
+        assert(respective_con);
+        to_be_reset_cons.insert(respective_con);
+
+        string error = "Request timed out (call id = "
+            + boost::lexical_cast<string>(rq->call_id())
+            + ", interface id = "
+            + boost::lexical_cast<string>(rq->interface_id())
+            + ", proc id = " + boost::lexical_cast<string>(rq->proc_id())
+            + ").";
         RPCHeader::ErrorResponse* err = new RPCHeader::ErrorResponse();
-        err->set_error_message(string("request timed out"));
+        err->set_error_message(error);
         err->set_error_type(IO_ERROR);
         err->set_posix_errno(POSIX_ERROR_EINVAL);
         rq->set_error(err);
         rq->ExecuteCallback();
-        to_be_removed1.push_back(iter->first);
+        iter = request_table_.erase(iter++);
+        if (Logging::log->loggingActive(LEVEL_INFO)) {
+          Logging::log->getLog(LEVEL_INFO) << error << endl;
+        }
+      } else {
+        ++iter;
       }
     }
-    for (list<int32_t>::iterator it = to_be_removed1.begin();
-        it != to_be_removed1.end(); it++) {
-      request_table_.erase(*it);
+
+    // Reset all connections which had timed out requests.
+    for (set<ClientConnection*>::iterator iter = to_be_reset_cons.begin();
+         iter != to_be_reset_cons.end();
+         iter++) {
+      // Since this request timed out, its callback will be executed.
+      // The callback may delete rq.rq_data() while boost::asio is still
+      // trying to send this data. To avoid possible segmentation faults,
+      // all pending boost::asio async_write for the request's connection
+      // are aborted by closing the connection. This is the only portable
+      // way to cancel a pending request.
+      // See the remarks here: http://www.boost.org/doc/libs/1_45_0/doc/html/boost_asio/reference/basic_stream_socket/cancel/overload2.html  // NOLINT
+      // Closing the connection would be required anyway if the timeout
+      // was caused by a network connection problem which would result in
+      // an aborted TCP connection. Only, if the time out was caused by
+      // an overloaded server, we would close the connection when it was
+      // not needed.
+      string error = "Another request of this requests's connection timed out. "
+          "Therefore the connection had to be closed and this request aborted.";
+      (*iter)->Reset();
+      (*iter)->SendError(POSIX_ERROR_EIO, error);
     }
 
-    connection_map::iterator iter2 = connections_.begin();
-    list<std::string> to_be_removed2;
-    posix_time::ptime deadline2 = posix_time::microsec_clock::local_time()
+    // Close inactive connections.
+    posix_time::ptime linger_deadline = posix_time::microsec_clock::local_time()
         - posix_time::seconds(max_con_linger_);
 
-    for (; iter2 != connections_.end(); iter2++) {
-      pair<string, ClientConnection*> entry = *iter2;
-      ClientConnection *con = entry.second;
-      string addr = entry.first;
+    connection_map::iterator iter2 = connections_.begin();
+    while (iter2 != connections_.end()) {
+      ClientConnection* con = iter2->second;
       assert(con != NULL);
-      if (con->last_used() < deadline2) {
-        if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-          Logging::log->getLog(LEVEL_DEBUG)
-              << "connection not used, closing... " << addr << endl;
+      if (con->last_used() < linger_deadline) {
+        string error = "Connection was inactive for more than "
+            + boost::lexical_cast<string>(max_con_linger_)
+            + " seconds.";
+        if (Logging::log->loggingActive(LEVEL_INFO)) {
+          Logging::log->getLog(LEVEL_INFO) << "Closing connection to '"
+              << iter2->first << "' since it " << error.substr(11) << endl;
         }
-
-        to_be_removed2.push_back(addr);
-        con->Close();
+//        if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+//          Logging::log->getLog(LEVEL_DEBUG)
+//              << error << " Deleting con: " << con << endl;
+//        }
+        con->Close(error);
         delete con;
+        iter2 = connections_.erase(iter2++);
+      } else {
+        ++iter2;
       }
     }
-
-    for (list<string>::iterator it = to_be_removed2.begin();
-        it != to_be_removed2.end(); it++) {
-      connections_.erase(*it);
-    }
-  } catch(std::exception &e) {
-    cerr << "exception: " << e.what() << endl;
+  } catch (std::exception &e) {
+    Logging::log->getLog(LEVEL_ERROR) << "An exception occurred while checking"
+        " for timed out requests and connections: " << e.what() << endl;
   }
   rq_timeout_timer_.expires_from_now(posix_time::seconds(rq_timeout_s_));
   rq_timeout_timer_.async_wait(boost::bind(&Client::handleTimeout,
@@ -418,7 +454,6 @@ void Client::handleTimeout(const boost::system::error_code& error) {
 }
 
 void Client::run() {
-  asio::io_service::work work(service_);
   rq_timeout_timer_.expires_from_now(posix_time::seconds(rq_timeout_s_));
   rq_timeout_timer_.async_wait(boost::bind(&Client::handleTimeout,
                                            this,
@@ -443,7 +478,7 @@ void Client::run() {
   for (; iter2 != connections_.end(); iter2++) {
     ClientConnection *con = iter2->second;
     assert(con != NULL);
-    con->Close();
+    con->Close("RPC client was stopped.");
     delete con;
   }
 }
