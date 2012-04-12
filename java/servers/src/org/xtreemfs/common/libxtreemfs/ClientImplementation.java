@@ -175,7 +175,6 @@ public class ClientImplementation extends Client implements UUIDResolver {
     @Override
     public Volume openVolume(String volumeName, SSLOptions sslOptions, Options options)
             throws AddressToUUIDNotFoundException, VolumeNotFoundException, IOException {
-        
         UUIDIterator mrcUuidIterator = new UUIDIterator();
         volumeNameToMRCUUID(volumeName, mrcUuidIterator);
         
@@ -184,7 +183,6 @@ public class ClientImplementation extends Client implements UUIDResolver {
         volume.start();
         
         listOpenVolumes.add(volume);
-        
         return volume;
     }
     

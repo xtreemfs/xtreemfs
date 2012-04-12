@@ -1544,28 +1544,25 @@ public class VolumeImplementation extends Volume {
         XLocSet xLocs = fileHandle.getXlocList();
         fileHandle.close();
 
-        long minStripeSize = getMininimalStripeSizeFromXlocList(xLocs)*1024;
-        long indexOfFirstStripeToConsider = (startSize / (minStripeSize));
-        long lengthOfFirstStripe = Math.min(length, minStripeSize - (startSize%minStripeSize));
-        long startSizeOfFirstStripe = indexOfFirstStripeToConsider*minStripeSize;
+        long stripeSize = xLocs.getReplicas(0).getStripingPolicy().getStripeSize() * 1024;
+        long indexOfFirstStripeToConsider = (startSize / stripeSize);
+        long remainingLengthOfFirstStripe = Math.min(length, stripeSize - (startSize % stripeSize));
+        int numberOfStrips = (int) (length / stripeSize + 1);
 
-        ArrayList<StripeLocation> stripeLocations = new ArrayList<StripeLocation>();
+        List<StripeLocation> stripeLocations = new ArrayList<StripeLocation>(numberOfStrips);
         // add first Stripe
         ArrayList<String> uuids =
-                getUuidsForStripeFromReplicas(xLocs.getReplicasList(), minStripeSize,
-                        indexOfFirstStripeToConsider);
+                getUuidsForStripeFromReplicas(xLocs.getReplicasList(), indexOfFirstStripeToConsider);
         ArrayList<String> hostnames = resolveHostnamesFromUuids(uuids);
-        stripeLocations.add(new StripeLocation(startSize, lengthOfFirstStripe, uuids.toArray(new String[uuids.size()]),
-                hostnames.toArray(new String[hostnames.size()])));
+        stripeLocations.add(new StripeLocation(startSize, remainingLengthOfFirstStripe, uuids
+                .toArray(new String[uuids.size()]), hostnames.toArray(new String[hostnames.size()])));
 
-        for (long size = startSizeOfFirstStripe + minStripeSize; size < startSize + length; size +=
-                minStripeSize) {
-            uuids =
-                    getUuidsForStripeFromReplicas(xLocs.getReplicasList(), minStripeSize,
-                            indexOfFirstStripeToConsider);
+        for (long index = indexOfFirstStripeToConsider + 1; index * stripeSize < startSize + length; index++) {
+            uuids = getUuidsForStripeFromReplicas(xLocs.getReplicasList(), index);
             hostnames = resolveHostnamesFromUuids(uuids);
-            new StripeLocation(size, Math.min(size + minStripeSize, length), uuids.toArray(new String[uuids.size()]),
-                    hostnames.toArray(new String[hostnames.size()]));
+            stripeLocations.add(new StripeLocation(index * stripeSize, Math.min(stripeSize,
+                    startSize+length-index*stripeSize), uuids.toArray(new String[uuids.size()]), hostnames.toArray(new String[hostnames
+                    .size()])));
         }
         return stripeLocations;
     }
@@ -1585,8 +1582,12 @@ public class VolumeImplementation extends Volume {
                 }
 
                 if (hostname == null) {
-                    // if hostname can not be resolved corretly, delete corresponding uuid. Also decrement
+                    // if hostname can't be resolved correctly, delete corresponding uuid. Also decrement
                     // the counter i to not skip entries in the uuid list!
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                                "Couldn't resolve hostname for uuid %s", uuids.get(i));
+                    }
                     uuids.remove(i);
                     i--;
                 } else {
@@ -1599,36 +1600,22 @@ public class VolumeImplementation extends Volume {
         return hostnames;
     }
 
-    private ArrayList<String> getUuidsForStripeFromReplicas(List<Replica> replicasList, long minStripeSize,
-            long stripeIndex) {
+    private ArrayList<String> getUuidsForStripeFromReplicas(List<Replica> replicasList, long stripeIndex) {
         ArrayList<String> uuids = new ArrayList<String>();
         for (Replica replica : replicasList) {
-            if ((replica.getStripingPolicy().getStripeSize()*1024) == minStripeSize) {
-                uuids.add(replica.getOsdUuids((int)stripeIndex));
-            } else {
-                long stripeIndexForReplica = minStripeSize * stripeIndex / replica.getStripingPolicy().getStripeSize()*1024;
-                uuids.add(replica.getOsdUuids((int)stripeIndexForReplica));
-            }
+            int osdIndex = (int) stripeIndex % replica.getStripingPolicy().getWidth();
+            uuids.add(replica.getOsdUuids(osdIndex));
         }
         return uuids;
     }
 
     private boolean isIpAddress(String hostname) {
+        // TODO: Move this Function to a place where it can be reused.
         final String IPADDRESS_PATTERN =
                 "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
                         + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
 
         Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
         return pattern.matcher(hostname).matches();
-    }
-
-    private long getMininimalStripeSizeFromXlocList(XLocSet xLocs) {
-        long stripeSize = 0;
-        for (Replica replica : xLocs.getReplicasList()) {
-            if (replica.getStripingPolicy().getStripeSize() > stripeSize) {
-                stripeSize = replica.getStripingPolicy().getStripeSize();
-            }
-        }
-        return Math.max(128, stripeSize);
     }
 }

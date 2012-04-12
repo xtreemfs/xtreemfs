@@ -9,16 +9,16 @@ package org.xtreemfs.common.clients.hadoop;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.BlockLocation;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FSInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -28,6 +28,7 @@ import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.Volume;
+import org.xtreemfs.common.libxtreemfs.Volume.StripeLocation;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
@@ -107,7 +108,6 @@ public class XtreemFSFileSystem extends FileSystem {
 
         try {
             xtreemfsVolume = xtreemfsClient.openVolume(volumeName, null, xtreemfsOptions);
-            xtreemfsVolume.start();
         } catch (VolumeNotFoundException ve) {
             Logging.logMessage(Logging.LEVEL_ERROR, Logging.Category.misc, this,
                     "Unable to open volume %s. Make sure this volume exists!", volumeName);
@@ -146,72 +146,8 @@ public class XtreemFSFileSystem extends FileSystem {
         }
         statistics.incrementReadOps(1);
 
-        return new FSDataInputStream(new FSInputStream() {
-            private long position = 0;
-
-            @Override
-            public synchronized void seek(long l) throws IOException {
-                this.position = l;
-            }
-
-            @Override
-            public synchronized long getPos() throws IOException {
-                return position;
-            }
-
-            @Override
-            public synchronized boolean seekToNewSource(long l) throws IOException {
-                return false;
-            }
-
-            @Override
-            public synchronized int read() throws IOException {
-                byte[] buf = new byte[1];
-                int numRead = fileHandle.read(userCredentials, buf, 1, (int) position);
-                if (numRead == 0) {
-                    return -1;
-                }
-                seek(getPos() + 1);
-                statistics.incrementBytesRead(1);
-                return (int) (buf[0] & 0xFF);
-            }
-
-            @Override
-            public synchronized int read(byte[] bytes, int offset, int length) throws IOException {
-                int bytesRead = fileHandle.read(userCredentials, bytes, length, (int) getPos());
-                if ((bytesRead == 0) && (length > 0)) {
-                    return -1;
-                }
-                seek(getPos() + bytesRead);
-                statistics.incrementBytesRead(bytesRead);
-                return bytesRead;
-            }
-
-            @Override
-            public synchronized int read(long position, byte[] bytes, int offset, int length)
-                    throws IOException {
-                int bytesRead = fileHandle.read(userCredentials, bytes, length, (int) position);
-                if ((bytesRead == 0) && (length > 0)) {
-                    return -1;
-                }
-                statistics.incrementBytesRead(bytesRead);
-                return bytesRead;
-            }
-
-            @Override
-            public synchronized int read(byte[] bytes) throws IOException {
-                return read(position, bytes, 0, bytes.length);
-            }
-
-            @Override
-            public synchronized void close() throws IOException {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "Closing file %s", pathString);
-                }
-                super.close();
-                fileHandle.close();
-            }
-        });
+        return new FSDataInputStream(new XtreemFSInputStream(userCredentials, fileHandle, pathString,
+                statistics));
     }
 
     @Override
@@ -246,47 +182,8 @@ public class XtreemFSFileSystem extends FileSystem {
         final FileHandle fileHandle =
                 xtreemfsVolume.openFile(userCredentials, pathString, flags, fp.toShort());
         statistics.incrementWriteOps(1);
-
-        return new FSDataOutputStream(new OutputStream() {
-            private int position = 0;
-
-            @Override
-            public synchronized void write(int b) throws IOException {
-                byte[] data = new byte[1];
-                data[0] = (byte) b;
-                int writtenBytes = fileHandle.write(userCredentials, data, 1, position);
-                if (statistics != null) {
-                    statistics.incrementBytesWritten(writtenBytes);
-                }
-                position += writtenBytes;
-            }
-
-            @Override
-            public synchronized void write(byte b[], int off, int len) throws IOException {
-                if (b == null) {
-                    throw new NullPointerException();
-                } else if ((off < 0) || (off > b.length) || (len < 0) || ((off + len) > b.length)
-                        || ((off + len) < 0)) {
-                    throw new IndexOutOfBoundsException();
-                } else if (len == 0) {
-                    return;
-                }
-                int writtenBytes = fileHandle.write(userCredentials, b, off, len, position);
-                if (statistics != null) {
-                    statistics.incrementBytesWritten(writtenBytes);
-                }
-                position += writtenBytes;
-            }
-
-            @Override
-            public synchronized void close() throws IOException {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "Closing file %s", pathString);
-                }
-                super.close();
-                fileHandle.close();
-            }
-        }, statistics);
+        return new FSDataOutputStream(new XtreemFSFileOutputStream(userCredentials, fileHandle, pathString),
+                statistics);
     }
 
     @Override
@@ -535,14 +432,6 @@ public class XtreemFSFileSystem extends FileSystem {
         }
     }
 
-    // private long calculateNumberOfblock(Stat statOfFile) {
-    // if ((statOfFile.getSize() % statOfFile.getBlksize()) == 0) {
-    // return statOfFile.getSize() / statOfFile.getBlksize();
-    // } else {
-    // return statOfFile.getSize() / statOfFile.getBlksize() + 1;
-    // }
-    // }
-
     @Override
     public void close() throws IOException {
         if (Logging.isDebug()) {
@@ -551,5 +440,24 @@ public class XtreemFSFileSystem extends FileSystem {
         super.close();
         xtreemfsVolume.close();
         xtreemfsClient.shutdown();
+    }
+
+    @Override
+    public BlockLocation[] getFileBlockLocations(FileStatus file, long start, long length) throws IOException {
+        if (file == null) {
+            return null;
+        }
+        String pathString = makeAbsolute(file.getPath()).toUri().getPath();
+        List<StripeLocation> stripeLocations =
+                xtreemfsVolume.getStripeLocations(userCredentials, pathString, start, length);
+
+        BlockLocation[] result = new BlockLocation[stripeLocations.size()];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] =
+                    new BlockLocation(stripeLocations.get(i).getUuids(), stripeLocations.get(i)
+                            .getHostnames(), stripeLocations.get(i).getStartSize(), stripeLocations.get(i)
+                            .getLength());
+        }
+        return result;
     }
 }
