@@ -39,7 +39,7 @@ public interface FileHandle {
      * 
      * @return Number of bytes read.
      */
-    public abstract int read(UserCredentials userCredentials, byte[] data, int count, int offset)
+    public abstract int read(UserCredentials userCredentials, byte[] data, int count, long offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -68,7 +68,7 @@ public interface FileHandle {
      * 
      * @return Number of bytes written (see @attention above).
      */
-    public abstract int write(UserCredentials userCredentials, byte[] data, int count, int offset)
+    public abstract int write(UserCredentials userCredentials, byte[] data, int count, long offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
@@ -101,7 +101,7 @@ public interface FileHandle {
      * @return Number of bytes written (see @attention above).
      */
     public abstract int write(UserCredentials userCredentials, byte[] data, int dataOffset, int count,
-            int offset) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+            long offset) throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
      * Flushes pending writes and file size updates (corresponds to a fsync() system call).

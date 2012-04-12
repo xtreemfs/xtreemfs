@@ -182,10 +182,10 @@ public class FileHandleImplementation implements FileHandle {
      * 
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#read(org.xtreemfs.foundation
      * .pbrpc.generatedinterfaces.RPC .UserCredentials, org.xtreemfs.foundation.buffer.ReusableBuffer, int,
-     * int)
+     * long)
      */
     @Override
-    public int read(UserCredentials userCredentials, byte[] data, int count, int offset) throws IOException,
+    public int read(UserCredentials userCredentials, byte[] data, int count, long offset) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
         fileInfo.waitForPendingAsyncWrites();
 
@@ -286,10 +286,10 @@ public class FileHandleImplementation implements FileHandle {
      * 
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#write(org.xtreemfs.foundation
      * .pbrpc.generatedinterfaces. RPC.UserCredentials, org.xtreemfs.foundation.buffer.ReusableBuffer, int,
-     * int)
+     * long)
      */
     @Override
-    public synchronized int write(UserCredentials userCredentials, byte[] data, int count, int offset)
+    public synchronized int write(UserCredentials userCredentials, byte[] data, int count, long offset)
             throws IOException, PosixErrorException, InternalServerErrorException,
             AddressToUUIDNotFoundException {
         ReusableBuffer buffer = ReusableBuffer.wrap(data);
@@ -301,16 +301,16 @@ public class FileHandleImplementation implements FileHandle {
      * 
      * @see
      * org.xtreemfs.common.libxtreemfs.FileHandle#write(org.xtreemfs.foundation.pbrpc.generatedinterfaces.
-     * RPC.UserCredentials, byte[], int, int, int)
+     * RPC.UserCredentials, byte[], int, int, long)
      */
     @Override
-    public int write(UserCredentials userCredentials, byte[] data, int dataOffset, int count, int offset)
+    public int write(UserCredentials userCredentials, byte[] data, int dataOffset, int count, long offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         ReusableBuffer buffer = ReusableBuffer.wrap(data, dataOffset, count);
         return write(userCredentials, buffer, count, offset);
     }
 
-    private int write(UserCredentials userCredentials, ReusableBuffer buffer, int count, int offset)
+    private int write(UserCredentials userCredentials, ReusableBuffer buffer, int count, long offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
         fileHandleLock.lock();

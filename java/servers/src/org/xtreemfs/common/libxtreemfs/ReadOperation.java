@@ -13,7 +13,7 @@ package org.xtreemfs.common.libxtreemfs;
  */
 public class ReadOperation {
 
-    private int    objNumber;
+    private long    objNumber;
 
     private int    osdOffset;
 
@@ -26,7 +26,7 @@ public class ReadOperation {
      */
     private int    bufferStart;
 
-    protected ReadOperation(int objNumber, int osdOffset, int reqSize, int reqOffset, int bufferStart) {
+    protected ReadOperation(long objNumber, int osdOffset, int reqSize, int reqOffset, int bufferStart) {
 
         this.objNumber = objNumber;
         this.osdOffset = osdOffset;
@@ -36,7 +36,7 @@ public class ReadOperation {
 
     }
 
-    protected int getObjNumber() {
+    protected long getObjNumber() {
         return objNumber;
     }
 

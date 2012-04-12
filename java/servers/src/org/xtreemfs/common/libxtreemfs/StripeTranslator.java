@@ -22,7 +22,7 @@ public interface StripeTranslator {
      * @param policy
      * @param operations
      */
-    public abstract void translateReadRequest(int size, int offset, StripingPolicy policy,
+    public abstract void translateReadRequest(int size, long offset, StripingPolicy policy,
             Vector<ReadOperation> operations);
 
     /**
@@ -35,6 +35,6 @@ public interface StripeTranslator {
      * @param buf
      * @param operations
      */
-    public abstract void translateWriteRequest(int size, int offset, StripingPolicy policy,
+    public abstract void translateWriteRequest(int size, long offset, StripingPolicy policy,
             ReusableBuffer buf, Vector<WriteOperation> operations);
 }

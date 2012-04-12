@@ -13,7 +13,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 
 public class StripeTranslatorRaid0 implements StripeTranslator {
 
-    public void translateWriteRequest(int size, int offset, StripingPolicy policy, ReusableBuffer buf,
+    public void translateWriteRequest(int size, long offset, StripingPolicy policy, ReusableBuffer buf,
             Vector<WriteOperation> operations) {
         // need to know stripe size and stripe width
         int stripeSize = policy.getStripeSize() * 1024; // stripe size in kB
@@ -21,23 +21,19 @@ public class StripeTranslatorRaid0 implements StripeTranslator {
 
         int start = 0;
         while (start < size) {
-            int objNumber = (start + offset) / stripeSize;
-            int osdOffset = objNumber % osdCount;
-            int reqOffset = (start + offset) % stripeSize;
-            // min((size - start), (stripeSize - reqOffset))
-            int reqSize = (size - start) < (stripeSize - reqOffset) ? (size - start)
-                    : (stripeSize - reqOffset);
+            long objNumber = (start + offset) / stripeSize;
+            int osdOffset = (int) (objNumber % osdCount);
+            int reqOffset = (int) ((start + offset) % stripeSize);
+            int reqSize = Math.min(size - start, stripeSize - reqOffset);
 
             ReusableBuffer viewBuffer = buf.createViewBuffer();
             viewBuffer.range(start, reqSize);
-            
             operations.add(new WriteOperation(objNumber, osdOffset, reqSize, reqOffset, viewBuffer));
-
             start += reqSize;
         }
     }
 
-    public void translateReadRequest(int size, int offset, StripingPolicy policy,
+    public void translateReadRequest(int size, long offset, StripingPolicy policy,
             Vector<ReadOperation> operations) {
         // need to know stripe size and stripe width
         int stripeSize = policy.getStripeSize() * 1024; // strip size in kB
@@ -45,15 +41,12 @@ public class StripeTranslatorRaid0 implements StripeTranslator {
 
         int start = 0;
         while (start < size) {
-            int objNumber = (start + offset) / stripeSize;
-            int osdOffset = objNumber % osdCount;
-            int reqOffset = (start + offset) % stripeSize;
-            // min((size - start), (stripeSize - reqOffset))
-            int reqSize = (size - start) < (stripeSize - reqOffset) ? (size - start)
-                    : (stripeSize - reqOffset);
-
+            long objNumber = (start + offset) / stripeSize;
+            int osdOffset = (int) (objNumber % osdCount);
+            int reqOffset = (int) (start + offset) % stripeSize;
+            int reqSize = Math.min(size - start, stripeSize - reqOffset);
+            
             operations.add(new ReadOperation(objNumber, osdOffset, reqSize, reqOffset, start));
-
             start += reqSize;
         }
     }
