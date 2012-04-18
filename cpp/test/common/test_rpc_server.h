@@ -33,6 +33,8 @@
 #include "util/logging.h"
 #include "xtreemfs/DIR.pb.h"
 #include "xtreemfs/get_request_message.h"
+#include "drop_rules.h"
+
 
 namespace xtreemfs {
 namespace rpc {
@@ -44,16 +46,9 @@ namespace rpc {
  */
 template <class Derived> class TestRPCServer {
  public:
-  /** Special value for to_be_dropped_request_by_proc_id_. */
-  static const boost::uint32_t kDropRequestByProcIDDisable = 0;
-
-  /** Special value for to_be_dropped_request_by_proc_id_. */
-  static const boost::uint32_t kDropRequestByProcIDNewConnection = 12345;
-
   TestRPCServer()
       : interface_id_(0),
-        to_be_dropped_requests_(0),
-        to_be_dropped_request_by_proc_id_(kDropRequestByProcIDDisable) {}
+        drop_connection_(false) {}
 
   virtual ~TestRPCServer() {}
 
@@ -71,12 +66,11 @@ template <class Derived> class TestRPCServer {
       return false;
     }
 
-    // TODO(mberlin): Reenable check when implementations are done.
-//    if (operations_.size() == 0) {
-//      Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
-//          << "You have not registered any implemented operations." << std::endl;
-//      return false;
-//    }
+    if (operations_.size() == 0) {
+      Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
+          << "You have not registered any implemented operations." << std::endl;
+      return false;
+    }
 
     try {
       acceptor_.reset(
@@ -131,6 +125,15 @@ template <class Derived> class TestRPCServer {
         }
       }
     }
+
+    {
+      boost::mutex::scoped_lock lock(this->to_be_dropped_requests_mutex_);
+      for (std::list<DropRule*>::iterator it = drop_rules_.begin();
+          it != drop_rules_.end(); ++it)
+        delete *it;
+      drop_rules_.clear();
+    }
+
     // Unfortunately, boost::asio does not allow to abort synchronous operations
     // See: https://svn.boost.org/trac/boost/ticket/2832
     // Randomly acceptor_->close(ec); succeeds, but not guaranteed. Even things
@@ -163,22 +166,27 @@ template <class Derived> class TestRPCServer {
         + boost::lexical_cast<std::string>(acceptor_->local_endpoint().port());
   }
 
-  /** Ignore the next "count" requests. */
-  void DropNextRequests(int count) {
+  /** Add a DropRule for a certain proc_id, ownership is transferred */
+  void AddDropRule(DropRule* rule) {
     boost::mutex::scoped_lock lock(to_be_dropped_requests_mutex_);
-    to_be_dropped_requests_ += count;
+    drop_rules_.push_back(rule);
+    ClearDropRules(lock);
   }
 
-  /** Ignore the next request which has "proc_id". */
-  void DropRequestByProcId(boost::uint32_t proc_id) {
+  /** The connection will be shut down once after this call. */
+  void DropConnection() {
     boost::mutex::scoped_lock lock(to_be_dropped_requests_mutex_);
-    to_be_dropped_request_by_proc_id_ = proc_id;
+    drop_connection_ = true;
   }
 
  protected:
   /** Function pointer an implemented server operation. */
   typedef google::protobuf::Message* (Derived::*Operation)(
-      const google::protobuf::Message& request);
+      const pbrpc::Auth& auth,
+      const pbrpc::UserCredentials& user_credentials,
+      const google::protobuf::Message& request,
+      const char* data,
+      boost::uint32_t data_len);
 
   struct Op {
     Op() {}
@@ -200,20 +208,21 @@ template <class Derived> class TestRPCServer {
   std::map<boost::uint32_t, Op> operations_;
 
  private:
+  /** Delete old rules, should be called from a locked context */
+  void ClearDropRules(const boost::mutex::scoped_lock& lock) {
+    std::remove_if(drop_rules_.begin(), drop_rules_.end(), &DropRule::isPointlessPred);
+  }
+
   /** Returns true if the request shall be dropped. */
   bool CheckIfRequestShallBeDropped(boost::uint32_t proc_id) {
     using xtreemfs::util::Logging;
+    boost::mutex::scoped_lock lock(to_be_dropped_requests_mutex_);
 
     bool drop_request = false;
-    boost::mutex::scoped_lock lock(to_be_dropped_requests_mutex_);
-    if (proc_id != 0 && proc_id == to_be_dropped_request_by_proc_id_) {
-      to_be_dropped_request_by_proc_id_ = kDropRequestByProcIDDisable;
-      drop_request = true;
-    }
 
-    if (!drop_request && to_be_dropped_requests_ > 0) {
-      to_be_dropped_requests_--;
-      drop_request = true;
+    for (std::list<DropRule*>::iterator it = drop_rules_.begin();
+        it != drop_rules_.end(); ++it) {
+      drop_request = drop_request || (*it)->dropRequest(proc_id);
     }
 
     if (drop_request) {
@@ -236,7 +245,11 @@ template <class Derived> class TestRPCServer {
    */
   google::protobuf::Message* ExecuteOperation(
       boost::uint32_t proc_id,
-      const google::protobuf::Message& request) {
+      const pbrpc::Auth& auth,
+      const pbrpc::UserCredentials& user_credentials,
+      const google::protobuf::Message& request,
+      const char* data,
+      boost::uint32_t data_len) {
     typename std::map<boost::uint32_t, Op>::iterator iter
         = operations_.find(proc_id);
     if (iter == operations_.end()) {
@@ -244,7 +257,8 @@ template <class Derived> class TestRPCServer {
     }
 
     Op& entry = iter->second;
-    return (entry.server->*(entry.op)) (request);
+    return (entry.server->*(entry.op))
+        (auth, user_credentials, request, data, data_len);
   }
 
   /** Daemon function which accepts new connections. */
@@ -264,7 +278,8 @@ template <class Derived> class TestRPCServer {
       boost::shared_ptr<tcp::socket> sock(new tcp::socket(io_service));
       try {
         acceptor_->accept(*sock);
-        if (CheckIfRequestShallBeDropped(kDropRequestByProcIDNewConnection)) {
+        if (drop_connection_) {
+          drop_connection_ = false;
           sock->shutdown(tcp::socket::shutdown_both);
           continue;
         }
@@ -437,7 +452,12 @@ template <class Derived> class TestRPCServer {
 
         // Process request.
         boost::scoped_ptr<google::protobuf::Message> response_message(
-            ExecuteOperation(proc_id, *request_message));
+            ExecuteOperation(proc_id,
+                request_rpc_header.request_header().auth_data(),
+                request_rpc_header.request_header().user_creds(),
+                *request_message,
+                data_buffer.get(),
+                request_rm->data_len()));
         if (!response_message.get()) {
           Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
               << "No response was generated. Operation with proc id = "
@@ -467,10 +487,18 @@ template <class Derived> class TestRPCServer {
         response_rm.serialize(response);
         response += xtreemfs::rpc::RecordMarker::get_size();
 
-        response_header.SerializeToArray(response, response_rm.header_len());
+        if (!response_header.SerializeToArray(response, response_rm.header_len())) {
+            Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
+                << "Failed to serialize header" << std::endl;
+            break;
+        }
         response += response_rm.header_len();
 
-        response_message->SerializeToArray(response, response_rm.message_len());
+        if (!response_message->SerializeToArray(response, response_rm.message_len())) {
+            Logging::log->getLog(xtreemfs::util::LEVEL_ERROR)
+                << "Failed to serialize message" << std::endl;
+            break;
+        }
 
         std::vector<boost::asio::mutable_buffer> write_bufs;
         write_bufs.push_back(
@@ -517,16 +545,12 @@ template <class Derived> class TestRPCServer {
   /** Guards access to the shared state of to be dropped requests. */
   boost::mutex to_be_dropped_requests_mutex_;
 
-  /** Number of requests which shall be dropped. */
-  int to_be_dropped_requests_;
+  /** Drop rules for incoming requests */
+  std::list<DropRule*> drop_rules_;
 
-  /** Proc ID of next request which shall be dropped.
-   *
-   * Please note that this implementation assumes that the special values
-   * kDropRequestByProcIDDisable and kDropRequestByProcIDNewConnection
-   * are not used otherwise.
-   */
-  boost::uint32_t to_be_dropped_request_by_proc_id_;
+  /** Used to drop the next connection */
+  bool drop_connection_;
+
 };
 
 }  // namespace rpc

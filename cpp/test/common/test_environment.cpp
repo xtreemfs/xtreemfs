@@ -52,6 +52,7 @@ bool TestEnvironment::Start() {
     if (!osds[i]->Start()) {
       return false;
     }
+    mrc->RegisterOSD(osds[i]->GetAddress());
   }
   // TODO(mberlin): Register OSDs at MRC.
 
