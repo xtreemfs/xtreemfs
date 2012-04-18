@@ -38,9 +38,8 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     
     private boolean              allowSnaps;
     
-    public void init(BabuDBStorageManager sMan, String id, String name, short[] osdPolicy,
-        short[] replicaPolicy, short acPolicy, boolean allowSnaps, AtomicDBUpdate update)
-        throws DatabaseException {
+    public void init(BabuDBStorageManager sMan, String id, String name, short[] osdPolicy, short[] replicaPolicy,
+            short acPolicy, boolean allowSnaps, AtomicDBUpdate update) throws DatabaseException {
         
         this.sMan = sMan;
         this.id = id;
@@ -56,10 +55,10 @@ public class BabuDBVolumeInfo implements VolumeInfo {
                 .shortArrayToString(osdPolicy).getBytes(), true, update);
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.REPL_POL_ATTR_NAME, Converter
                 .shortArrayToString(replicaPolicy).getBytes(), true, update);
-        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.AC_POL_ATTR_NAME, String
-                .valueOf(acPolicy).getBytes(), true, update);
-        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.ALLOW_SNAPS_ATTR_NAME, String
-                .valueOf(allowSnaps).getBytes(), true, update);
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.AC_POL_ATTR_NAME, String.valueOf(acPolicy)
+                .getBytes(), true, update);
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.ALLOW_SNAPS_ATTR_NAME,
+                String.valueOf(allowSnaps).getBytes(), true, update);
     }
     
     public void init(BabuDBStorageManager sMan) throws DatabaseException {
@@ -67,16 +66,45 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         this.sMan = sMan;
         
         try {
-            id = new String(sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME));
+            
+            // retrieve volume attributes
+            byte[] idAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME);
+            byte[] acPolicyAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.AC_POL_ATTR_NAME);
+            byte[] allowSnapsAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID,
+                    BabuDBStorageManager.ALLOW_SNAPS_ATTR_NAME);
+            byte[] osdPolicyAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.OSD_POL_ATTR_NAME);
+            byte[] replicaPolicyAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID,
+                    BabuDBStorageManager.REPL_POL_ATTR_NAME);
+            
+            if (idAttr != null)
+                id = new String(idAttr);
+            else
+                throw new DatabaseException("database corrupted: volume parameter 'id' not found",
+                        ExceptionType.INTERNAL_DB_ERROR);
+            
             name = sMan.getMetadata(1).getFileName();
-            osdPolicy = Converter.stringToShortArray(new String(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
-                BabuDBStorageManager.OSD_POL_ATTR_NAME)));
-            replicaPolicy = Converter.stringToShortArray(new String(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
-                BabuDBStorageManager.REPL_POL_ATTR_NAME)));
-            acPolicy = Short.parseShort(new String(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
-                BabuDBStorageManager.AC_POL_ATTR_NAME)));
-            allowSnaps = "true".equalsIgnoreCase(new String(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
-                BabuDBStorageManager.ALLOW_SNAPS_ATTR_NAME)));
+            
+            if (osdPolicyAttr != null)
+                osdPolicy = Converter.stringToShortArray(new String(osdPolicyAttr));
+            else
+                throw new DatabaseException("database corrupted: volume parameter 'osdPolicy' not found",
+                        ExceptionType.INTERNAL_DB_ERROR);
+            
+            if (replicaPolicyAttr != null)
+                replicaPolicy = Converter.stringToShortArray(new String(replicaPolicyAttr));
+            else
+                throw new DatabaseException("database corrupted: volume parameter 'replicaPolicy' not found",
+                        ExceptionType.INTERNAL_DB_ERROR);
+            
+            if (acPolicyAttr != null)
+                acPolicy = Short.parseShort(new String(acPolicyAttr));
+            else
+                throw new DatabaseException("database corrupted: volume parameter 'acPolicy' not found",
+                        ExceptionType.INTERNAL_DB_ERROR);
+            
+            if (allowSnapsAttr != null)
+                allowSnaps = "true".equalsIgnoreCase(new String(allowSnapsAttr));
+            
         } catch (NumberFormatException exc) {
             Logging.logError(Logging.LEVEL_ERROR, this, exc);
             throw new DatabaseException("currpted MRC database", ExceptionType.INTERNAL_DB_ERROR);
@@ -127,8 +155,8 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     @Override
     public void setAllowSnaps(boolean allowSnaps, AtomicDBUpdate update) throws DatabaseException {
         this.allowSnaps = allowSnaps;
-        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.ALLOW_SNAPS_ATTR_NAME, String
-                .valueOf(allowSnaps).getBytes(), update);
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.ALLOW_SNAPS_ATTR_NAME,
+                String.valueOf(allowSnaps).getBytes(), update);
         sMan.notifyVolumeChange(this);
     }
     
