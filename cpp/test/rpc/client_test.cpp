@@ -84,8 +84,7 @@ class ClientTestDropConnection : public ClientTest {
     test_env.options.connect_timeout_s = 1;
     test_env.options.request_timeout_s = 1;
 
-    test_env.dir->DropRequestByProcId(
-        TestRPCServerDIR::kDropRequestByProcIDNewConnection);
+    test_env.dir->DropConnection();
 
     ClientTest::SetUp();
   }
@@ -93,7 +92,7 @@ class ClientTestDropConnection : public ClientTest {
 
 /** Is a timed out request successfully aborted? */
 TEST_F(ClientTestFastTimeout, TimeoutHandling) {
-  test_env.dir->DropNextRequests(1);
+  test_env.dir->AddDropRule(new DropNRule(1));
 
   EXPECT_NO_THROW({
     string exception_text;
