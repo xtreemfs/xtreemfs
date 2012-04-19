@@ -127,10 +127,12 @@ template <class Derived> class TestRPCServer {
     }
 
     {
-      boost::mutex::scoped_lock lock(this->to_be_dropped_requests_mutex_);
+      boost::mutex::scoped_lock lock(drop_rules_mutex_);
       for (std::list<DropRule*>::iterator it = drop_rules_.begin();
-          it != drop_rules_.end(); ++it)
+           it != drop_rules_.end();
+           ++it) {
         delete *it;
+      }
       drop_rules_.clear();
     }
 
@@ -166,16 +168,16 @@ template <class Derived> class TestRPCServer {
         + boost::lexical_cast<std::string>(acceptor_->local_endpoint().port());
   }
 
-  /** Add a DropRule for a certain proc_id, ownership is transferred */
+  /** Add a DropRule, ownership is transferred to the callee. */
   void AddDropRule(DropRule* rule) {
-    boost::mutex::scoped_lock lock(to_be_dropped_requests_mutex_);
+    boost::mutex::scoped_lock lock(drop_rules_mutex_);
     drop_rules_.push_back(rule);
-    ClearDropRules(lock);
+    RemovePointlessDropRules(lock);
   }
 
   /** The connection will be shut down once after this call. */
   void DropConnection() {
-    boost::mutex::scoped_lock lock(to_be_dropped_requests_mutex_);
+    boost::mutex::scoped_lock lock(drop_connection_mutex_);
     drop_connection_ = true;
   }
 
@@ -209,20 +211,22 @@ template <class Derived> class TestRPCServer {
 
  private:
   /** Delete old rules, should be called from a locked context */
-  void ClearDropRules(const boost::mutex::scoped_lock& lock) {
-    std::remove_if(drop_rules_.begin(), drop_rules_.end(), &DropRule::isPointlessPred);
+  void RemovePointlessDropRules(const boost::mutex::scoped_lock& lock) {
+    std::remove_if(drop_rules_.begin(), drop_rules_.end(), &DropRule::IsPointlessPred);
   }
 
   /** Returns true if the request shall be dropped. */
   bool CheckIfRequestShallBeDropped(boost::uint32_t proc_id) {
     using xtreemfs::util::Logging;
-    boost::mutex::scoped_lock lock(to_be_dropped_requests_mutex_);
+    boost::mutex::scoped_lock lock(drop_rules_mutex_);
 
     bool drop_request = false;
-
+    // NOTE: all drop rules must be asked even if drop_request is already
+    //       true. This is important for counting rules or other side effects.
     for (std::list<DropRule*>::iterator it = drop_rules_.begin();
-        it != drop_rules_.end(); ++it) {
-      drop_request = drop_request || (*it)->dropRequest(proc_id);
+         it != drop_rules_.end();
+         ++it) {
+      drop_request = drop_request || (*it)->DropRequest(proc_id);
     }
 
     if (drop_request) {
@@ -278,10 +282,13 @@ template <class Derived> class TestRPCServer {
       boost::shared_ptr<tcp::socket> sock(new tcp::socket(io_service));
       try {
         acceptor_->accept(*sock);
-        if (drop_connection_) {
-          drop_connection_ = false;
-          sock->shutdown(tcp::socket::shutdown_both);
-          continue;
+        {
+          boost::mutex::scoped_lock lock(drop_connection_mutex_);
+          if (drop_connection_) {
+            drop_connection_ = false;
+            sock->shutdown(tcp::socket::shutdown_both);
+            continue;
+          }
         }
         boost::shared_ptr<boost::thread> new_thread(new boost::thread(
             boost::bind(&TestRPCServer<Derived>::Session, this, sock)));
@@ -542,14 +549,18 @@ template <class Derived> class TestRPCServer {
 
   boost::scoped_ptr<boost::asio::ip::tcp::acceptor> acceptor_;
 
-  /** Guards access to the shared state of to be dropped requests. */
-  boost::mutex to_be_dropped_requests_mutex_;
-
-  /** Drop rules for incoming requests */
+  /** Drop rules for incoming requests. */
   std::list<DropRule*> drop_rules_;
 
-  /** Used to drop the next connection */
+  /** Guards access drop_rules_. */
+  boost::mutex drop_rules_mutex_;
+
+  /** Used to drop the next connection. */
   bool drop_connection_;
+
+  /** Guards access drop_connection_. */
+  boost::mutex drop_connection_mutex_;
+
 
 };
 

@@ -25,10 +25,8 @@ class TestRPCServerMRC : public TestRPCServer<TestRPCServerMRC> {
  public:
   TestRPCServerMRC();
 
-  void setFileSize(uint64_t size);
+  void SetFileSize(uint64_t size);
   void RegisterOSD(std::string uuid);
-  std::list<std::string>* getOSDUUIDs();
-
 
  private:
   google::protobuf::Message* OpenOperation(
@@ -52,9 +50,12 @@ class TestRPCServerMRC : public TestRPCServer<TestRPCServerMRC> {
       const char* data,
       boost::uint32_t data_len);
 
+  /** Mutex used to protect all member variables from concurrent access. */
   boost::mutex mutex_;
 
+  /** Default file size reported by the MRC for every file requested. */
   size_t file_size_;
+
   std::vector<std::string> osd_uuids_;
 };
 

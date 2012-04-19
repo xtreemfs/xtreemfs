@@ -11,6 +11,7 @@
 #include "common/test_rpc_server.h"
 
 #include <boost/thread/mutex.hpp>
+#include <vector>
 
 namespace google {
 namespace protobuf {
@@ -24,18 +25,18 @@ namespace rpc {
 class WriteEntry {
  public:
   WriteEntry()
-      : objectNumber_(0), offset_(0), data_len_(0) { }
+      : object_number_(0), offset_(0), data_len_(0) { }
 
   WriteEntry(uint64_t objectNumber, boost::uint32_t offset, boost::uint32_t data_len)
-    : objectNumber_(objectNumber), offset_(offset), data_len_(data_len) { }
+    : object_number_(objectNumber), offset_(offset), data_len_(data_len) { }
 
   bool operator==(const WriteEntry& other) const {
-    return (other.objectNumber_ == this->objectNumber_)
+    return (other.object_number_ == this->object_number_)
         && (other.offset_ == this->offset_)
         && (other.data_len_ == this->data_len_);
   }
 
-  boost::uint64_t objectNumber_;
+  boost::uint64_t object_number_;
   boost::uint32_t offset_;
   boost::uint32_t data_len_;
 };
@@ -43,7 +44,7 @@ class WriteEntry {
 class TestRPCServerOSD : public TestRPCServer<TestRPCServerOSD> {
  public:
   TestRPCServerOSD();
-  const std::vector<WriteEntry>& getReceivedWrites() const;
+  const std::vector<WriteEntry>& GetReceivedWrites() const;
 
  private:
   google::protobuf::Message* TruncateOperation(
@@ -60,9 +61,15 @@ class TestRPCServerOSD : public TestRPCServer<TestRPCServerOSD> {
       const char* data,
       boost::uint32_t data_len);
 
-  boost::mutex mutex_;
+  /** Mutex used to protect all member variables from concurrent access. */
+  mutable boost::mutex mutex_;
 
+  /** A single file size is remembered between requests. */
   size_t file_size_;
+
+  /** A list of received write requests that can be used to check against an
+   *  expected result.
+   */
   std::vector<WriteEntry> received_writes_;
 };
 

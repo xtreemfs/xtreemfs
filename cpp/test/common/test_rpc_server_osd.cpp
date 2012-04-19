@@ -26,7 +26,8 @@ TestRPCServerOSD::TestRPCServerOSD() : file_size_(1024 * 1024) {
       = Op(this, &TestRPCServerOSD::WriteOperation);
 }
 
-const std::vector<WriteEntry>& TestRPCServerOSD::getReceivedWrites() const {
+const std::vector<WriteEntry>& TestRPCServerOSD::GetReceivedWrites() const {
+  boost::mutex::scoped_lock lock(mutex_);
   return received_writes_;
 }
 
@@ -73,7 +74,10 @@ google::protobuf::Message* TestRPCServerOSD::WriteOperation(
       << "Received write: object_number: " << rq->object_number() << ", offset: " << rq->offset() << ", data_len: " << data_len << std::endl;
   }
 
-  response->set_size_in_bytes(file_size_);
+  {
+    boost::mutex::scoped_lock lock(mutex_);
+    response->set_size_in_bytes(file_size_);
+  }
   response->set_truncate_epoch(0);
 
   return response;
