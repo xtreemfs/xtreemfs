@@ -8,10 +8,21 @@
 #include "libxtreemfs/interrupt.h"
 
 namespace xtreemfs {
-/** See interrupt.h. */
-boost::thread_specific_ptr<int> SignalHandler::intr_pointer_(0);
-/** See interrupt.h. */
-int SignalHandler::dummy_ = 1;
+
+#ifdef __unix
+__thread bool Interruptibilizer::was_interrupted_ = false;
+#endif
+
+void sleep_interruptible(const unsigned int& rel_time_in_ms) {
+  const unsigned int intervall_in_ms = 100;
+  unsigned int runs = rel_time_in_ms / intervall_in_ms
+      + ((rel_time_in_ms % intervall_in_ms) > 0 ? 1 : 0);
+
+  for (unsigned int i = 0;
+       i < runs && !Interruptibilizer::WasInterrupted();
+       ++i) {
+    boost::this_thread::sleep(boost::posix_time::millisec(intervall_in_ms));
+  }
+}
 
 } // namespace xtreemfs
-

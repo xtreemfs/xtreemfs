@@ -8,7 +8,7 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_INTERRUPT_H_
 #define CPP_INCLUDE_LIBXTREEMFS_INTERRUPT_H_
 
-#include <boost/thread/tss.hpp>
+#include <boost/thread/thread.hpp>
 
 #include "libxtreemfs/options.h"
 #include "util/logging.h"
@@ -19,94 +19,79 @@
 
 namespace xtreemfs {
 
-/** This class encapsulates the registration and deregistration of an
- *  interruption signal handler for a given signal (interrupt_signal).
- *
+/**
+ * Wrapper for boost::thread::sleep which catches the interruption exception
+ * without doing anything.
  */
-class SignalHandler {
- public:
-  SignalHandler(int interrupt_signal)
-    : interrupt_signal_(interrupt_signal),
-      previous_signal_handler_(SIG_IGN) {}
+void sleep_interruptible(const unsigned int& rel_time_in_ms);
 
-  bool RegisterHandler() {
-  #ifdef __linux
-    if (interrupt_signal_) {
-      intr_pointer_.reset(NULL);  // Clear current interruption state.
-      previous_signal_handler_ = signal(interrupt_signal_,
-                                        InterruptSyncRequest);
-      return previous_signal_handler_ != SIG_ERR; // report error
-    }
-  #endif
-    return true;
-  }
+#ifdef __unix
 
-  bool UnregisterHandler() {
-  #ifdef __linux
-    // Remove signal handler.
-    if (interrupt_signal_) {
-      return signal(interrupt_signal_, previous_signal_handler_) != SIG_ERR;
-    }
-  #endif
-    return true;
-  }
-
-  bool WasInterrupted() const {
-    return intr_pointer_.get() != 0;
-  }
-
- private:
-
-  static void InterruptSyncRequest(int signal) {
-    if (util::Logging::log->loggingActive(util::LEVEL_DEBUG)) {
-        util::Logging::log->getLog(util::LEVEL_DEBUG)
-          << "INTERRUPT triggered, setting TLS pointer" << std::endl;
-    }
-    intr_pointer_.reset(&dummy_);
-  }
-
-  /** The TLS pointer is set to != 0 if the current operation shall be
-   *  interrupted.
-   */
-  static boost::thread_specific_ptr<int> intr_pointer_;
-
-  /** Calling malloc() inside a signal handler is a really bad idea as there may
-   *  occur a dead lock on the lock of the heap: that happens if a malloc is in
-   *  progress, which already obtained a lock on the heap, and now a signal
-   *  handler is called (and executed in the same thread) and also tries to
-   *  execute malloc.
-   *
-   *  For this reason the TLS is filled with the address of a static integer
-   *  instead of a new-ly created integer.
-   */
-  static int dummy_;
-
-  int interrupt_signal_;
-  sighandler_t previous_signal_handler_;
-};
-
-/** This class is used in combination with SignalHandler in the way a
- *  scoped_lock is used with a mutex in order to make make a scoped block
- *  interruptible by signal.
+/** This class encapsulates the registration and unregistration of an
+ *  interruption signal handler for a given signal (interrupt_signal).
  */
 class Interruptibilizer {
  public:
-  Interruptibilizer(SignalHandler handler) : handler_(handler) {
-    handler_.RegisterHandler();
+  Interruptibilizer(int interrupt_signal)
+    : interrupt_signal_(interrupt_signal),
+      previous_signal_handler_(SIG_IGN) {
+    if (interrupt_signal_) {
+      previous_signal_handler_ = signal(interrupt_signal_,
+                                        InterruptSyncRequest);
+      if(previous_signal_handler_ == SIG_ERR) {
+          util::Logging::log->getLog(util::LEVEL_ERROR)
+              << "Failed to set the signal Handler." << std::endl;
+      }
+      // clear current interruption state if this is not a nested call (which
+      // is detected by checking the previous signal handler
+      if (previous_signal_handler_ != InterruptSyncRequest) {
+        was_interrupted_ = false;
+      }
+    }
   }
 
   ~Interruptibilizer() {
-    handler_.UnregisterHandler();
+    // Remove signal handler.
+    if (interrupt_signal_) {
+      sighandler_t res = signal(interrupt_signal_, previous_signal_handler_);
+      if(res == SIG_ERR) {
+          util::Logging::log->getLog(util::LEVEL_ERROR)
+              << "Failed to re-set the signal Handler." << std::endl;
+      }
+    }
   }
 
-  bool WasInterrupted() const {
-    return handler_.WasInterrupted();
+  static bool WasInterrupted() {
+    return was_interrupted_;
   }
 
  private:
-  SignalHandler handler_;
+  /** NOTE: never call malloc() in a handler because another malloc() could be
+   *  in progress which might lead to a deadlock situation.
+   */
+  static void InterruptSyncRequest(int signal) {
+    if (util::Logging::log->loggingActive(util::LEVEL_DEBUG)) {
+        util::Logging::log->getLog(util::LEVEL_DEBUG)
+          << "INTERRUPT triggered, setting was_interrupted_ true." << std::endl;
+    }
+    was_interrupted_ = true;
+  }
+
+  static __thread bool was_interrupted_;
+  const int interrupt_signal_;
+  sighandler_t previous_signal_handler_;
 };
 
+#else  // for all other platforms
+class Interruptibilizer {
+ public:
+  Interruptibilizer(int interrupt_signal) {}
+  static bool WasInterrupted() {
+    return false;
+  }
+
+}
+#endif
 
 } // namespace xtreemfs
 
