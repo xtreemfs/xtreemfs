@@ -10,8 +10,91 @@
 namespace xtreemfs {
 
 #ifdef __unix
-__thread bool Interruptibilizer::was_interrupted_ = false;
-#endif
+boost::mutex Interruptibilizer::map_mutex_;
+Interruptibilizer::map_type Interruptibilizer::thread_local_was_interrupted_map_;
+
+Interruptibilizer::Interruptibilizer(int interrupt_signal)
+  : interrupt_signal_(interrupt_signal),
+    previous_signal_handler_(SIG_IGN) {
+  if (interrupt_signal_) {
+
+    // clear current interruption state if this is not a nested call (which
+    // is detected by checking the previous signal handler
+    {
+      boost::mutex::scoped_lock lock(map_mutex_);
+      // insert will change nothing if entry already exists, but return a
+      // pair of the iterator to the existing entry and the corresponding
+      // value
+      was_interrupted_iterator_ = thread_local_was_interrupted_map_
+          .insert(map_type::value_type(boost::this_thread::get_id(), false))
+          .first;
+    }
+
+    // register signal handler AFTER adding a map entry
+    previous_signal_handler_ = signal(interrupt_signal_,
+                                      InterruptSyncRequest);
+    if(previous_signal_handler_ == SIG_ERR) {
+        util::Logging::log->getLog(util::LEVEL_ERROR)
+            << "Failed to set the signal Handler." << std::endl;
+    }
+  }
+}
+
+Interruptibilizer::~Interruptibilizer() {
+  if (interrupt_signal_) {
+    // Restore previous signal handler
+    sighandler_t res = signal(interrupt_signal_, previous_signal_handler_);
+    if(res == SIG_ERR) {
+        util::Logging::log->getLog(util::LEVEL_ERROR)
+            << "Failed to re-set the signal Handler." << std::endl;
+    }
+
+    // delete the map entry if this was the first instance in a chain
+    // of nested calls (all nested instances will have InterruptSyncRequest
+    // as previous_signal_handler_)
+    if (previous_signal_handler_ != InterruptSyncRequest) {
+      boost::mutex::scoped_lock lock(map_mutex_);
+      thread_local_was_interrupted_map_.erase(was_interrupted_iterator_);
+    }
+  }
+}
+
+
+bool Interruptibilizer::WasInterrupted() {
+  boost::mutex::scoped_lock lock(map_mutex_);
+
+  // NOTE: When interrupt_signal is set to 0, nothing happens on construction
+  //       and destruction. So this *static* method is called without having
+  //       an instance of this class in the current thread.
+  //       To avoid implicitly inserting an new entry by the [] operator, we
+  //       have to use find instead (which should not increase the cost of
+  //       this method).
+  //       By design decision, there always must be a Interruptibilizer
+  //       instance when inside libxtreemfs code.
+  map_type::iterator it = thread_local_was_interrupted_map_
+                 .find(boost::this_thread::get_id());
+  if (it != thread_local_was_interrupted_map_.end()) {
+      return it->second;
+  } else {
+      return false;
+  }
+}
+
+void Interruptibilizer::InterruptSyncRequest(int signal) {
+  if (util::Logging::log->loggingActive(util::LEVEL_DEBUG)) {
+      util::Logging::log->getLog(util::LEVEL_DEBUG)
+        << "INTERRUPT triggered, setting was_interrupted_ true." << std::endl;
+  }
+
+  {
+    boost::mutex::scoped_lock lock(map_mutex_);
+    // NOTE: An entry in the map MUST exist when the handler is called.
+    //       This is guaranteed by the constructor.
+    thread_local_was_interrupted_map_[boost::this_thread::get_id()] = true;
+  }
+}
+
+#endif // __unix
 
 void sleep_interruptible(const unsigned int& rel_time_in_ms) {
   const unsigned int intervall_in_ms = 100;

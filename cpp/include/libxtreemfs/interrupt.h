@@ -15,13 +15,14 @@
 
 #ifdef __linux
 #include <csignal>
+#include <map>
 #endif
 
 namespace xtreemfs {
 
 /**
- * Wrapper for boost::thread::sleep which catches the interruption exception
- * without doing anything.
+ * Wrapper for boost::thread::sleep which checks for interruptions by
+ * the
  */
 void sleep_interruptible(const unsigned int& rel_time_in_ms);
 
@@ -32,53 +33,33 @@ void sleep_interruptible(const unsigned int& rel_time_in_ms);
  */
 class Interruptibilizer {
  public:
-  Interruptibilizer(int interrupt_signal)
-    : interrupt_signal_(interrupt_signal),
-      previous_signal_handler_(SIG_IGN) {
-    if (interrupt_signal_) {
-      previous_signal_handler_ = signal(interrupt_signal_,
-                                        InterruptSyncRequest);
-      if(previous_signal_handler_ == SIG_ERR) {
-          util::Logging::log->getLog(util::LEVEL_ERROR)
-              << "Failed to set the signal Handler." << std::endl;
-      }
-      // clear current interruption state if this is not a nested call (which
-      // is detected by checking the previous signal handler
-      if (previous_signal_handler_ != InterruptSyncRequest) {
-        was_interrupted_ = false;
-      }
-    }
-  }
+  Interruptibilizer(int interrupt_signal);
+  ~Interruptibilizer();
 
-  ~Interruptibilizer() {
-    // Remove signal handler.
-    if (interrupt_signal_) {
-      sighandler_t res = signal(interrupt_signal_, previous_signal_handler_);
-      if(res == SIG_ERR) {
-          util::Logging::log->getLog(util::LEVEL_ERROR)
-              << "Failed to re-set the signal Handler." << std::endl;
-      }
-    }
-  }
-
-  static bool WasInterrupted() {
-    return was_interrupted_;
-  }
+  /** Returns whether the an interrupt was handeld within the current thread.
+   *  This mehtod is static to ease access without having to pass around
+   *  Interruptibilizer instances
+   */
+  static bool WasInterrupted();
 
  private:
   /** NOTE: never call malloc() in a handler because another malloc() could be
    *  in progress which might lead to a deadlock situation.
    */
-  static void InterruptSyncRequest(int signal) {
-    if (util::Logging::log->loggingActive(util::LEVEL_DEBUG)) {
-        util::Logging::log->getLog(util::LEVEL_DEBUG)
-          << "INTERRUPT triggered, setting was_interrupted_ true." << std::endl;
-    }
-    was_interrupted_ = true;
-  }
+  static void InterruptSyncRequest(int signal);
 
-  static __thread bool was_interrupted_;
+  typedef std::map<boost::thread::id, bool> map_type;
+
+  /** Mutual exclusion for access to thread_local_was_interrupted_map_. */
+  static boost::mutex map_mutex_;
+  /** Pseudo-TLS (thread local storage) implemented with a global map. */
+  static map_type thread_local_was_interrupted_map_;
+
+  /** Iterator to the own entry in thread_local_was_interrupted_map_ map. */
+  std::map<boost::thread::id, bool>::iterator was_interrupted_iterator_;
+  /** The signal used by this instance. */
   const int interrupt_signal_;
+  /** The previous signal handler (will be restored by the destructor. */
   sighandler_t previous_signal_handler_;
 };
 
