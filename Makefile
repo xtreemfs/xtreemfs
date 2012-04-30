@@ -299,5 +299,13 @@ server_clean: check_server
 server_distclean: check_server
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/servers/build-1.6.5.xml clean || exit 1;
 
+.PHONY: hadoop-client hadoop-client_clean hadoop-client_distclean
+hadoop-client: 
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml jar
+hadoop-client_clean:
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml clean || exit 1
+hadoop-client_distclean:
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml clean || exit 1
+
 test: check_test client server
 	python $(XTFS_BINDIR)/../tests/xtestenv -c $(XTFS_BINDIR)/../tests/test_config.py short
