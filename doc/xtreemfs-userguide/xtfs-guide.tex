@@ -2566,7 +2566,7 @@ This section will help you to set up a simple Hadoop configuration with all nece
 \textbf{Required software:}
 \begin{itemize}
 \item XtreemFS servers (v 1.3.1) including XtreemFS.jar and Foundation.jar (\href{http://www.XtreemFS.org}{www.XtreemFS.org})
-\item HadoopClient.jar (Download it from \href{http://code.google.com/p/xtreemfs/downloads/list}{www.XtreemFS.org} or build it by yourself by excecuting make hadoop-client)
+\item XtreemFSHadoopClient.jar (Download it from \href{http://code.google.com/p/xtreemfs/downloads/list}{www.XtreemFS.org} or build it by yourself by excecuting make hadoop-client)
 \item Hadoop (v 1.0.1) (\href{http://hadoop.apache.org}{hadoop.apache.org})
 \item JDK 1.6+ (\href{http://java.sun.com}{Oracle/SUN})
 \end{itemize}
@@ -2581,14 +2581,14 @@ This section will help you to set up a simple Hadoop configuration with all nece
 
 \item Configure Hadoop to use XtreemFS instead of HDFS:
 	\begin{enumerate}
-	\item After downloading and extracting Hadoop you first have to add XtreemFS, the HadoopClient, ProtocolBuffer and the Foundation package to its 
+	\item After downloading and extracting Hadoop you first have to add XtreemFS, the XtreemFSHadoopClient, ProtocolBuffer and the Foundation package to its 
 	classpath. To do so edit the \textit{hadoop-env.sh} that can be found in the \textit{conf} directory of Hadoop and 
-	add the paths to XtreemFS.jar, Foundation.jar, protobuf-java-2.3.0.jar and HadoopClient.jar separated by '\textit{:}' to the HADOOP\_CLASSPATH. 
+	add the paths to XtreemFS.jar, Foundation.jar, protobuf-java-2.3.0.jar and XtreemFSHadoopClient.jar separated by '\textit{:}' to the HADOOP\_CLASSPATH. 
 	If you run a Linux-based OS these jar-libraries are located at '\textit{/usr/share/java/}'.
 	For example
 	\begin{verbatim}
 	export HADOOP_CLASSPATH="/usr/share/java/Foundation.jar:
-	/usr/share/java/XtreemFS.jar:/usr/share/HadoopClient.jar:
+	/usr/share/java/XtreemFS.jar:/usr/share/XtreemFSHadoopClient.jar:
 	/usr/share/java/protobuf-java-2.3.0.jar"
 	\end{verbatim}
 	should be sufficient on the most systems.
