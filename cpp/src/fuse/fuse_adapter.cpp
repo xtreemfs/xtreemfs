@@ -345,13 +345,15 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
 }
 
 void FuseAdapter::Stop() {
-  // Close UserMapping.
-  user_mapping_->Stop();
+  if (user_mapping_.get()) {
+    user_mapping_->Stop();
+  }
 
   // Shutdown() Client. That does also invoke a volume->Close().
-  client_->Shutdown();
+  if (client_.get()) {
+    client_->Shutdown();
+  }
 }
-
 void FuseAdapter::GenerateUserCredentials(
     struct fuse_context* fuse_context,
     xtreemfs::pbrpc::UserCredentials* user_credentials) {
