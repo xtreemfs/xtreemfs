@@ -2190,33 +2190,6 @@ An existing entry can be removed as follows:
 
 Please be aware that when files or directories are accessed, the actual evaluation of ACL entries depends upon the effective authorization policy on the volume (see Section \ref{sec:access_policies}). With a POSIX authorization policy, ACL entries will be evaluated as described at \href{http://www.suse.de/~agruen/acl/linux-acls/online}{http://www.suse.de/\~{}agruen/acl/linux-acls/online}.
 
-\section{Vivaldi}
-\label{sec:vivaldi}
-
-Vivaldi network coordinates are calculated between all OSDs. 
-In order to take advantage of them, two things are necessary.
-\begin{enumerate}
-\item The vivaldi replica and OSD selection policies must be set at the MRC for the volume(s) (see section~\ref{sec:osd_select_policy} for details).
-\item The clients must be configured to calculate their own coordinates relative to the OSDs.
-\end{enumerate}
-
-The latter is done by passing some arguments to the mount command. In most cases the following will suffice.
-\begin{verbatim}
- $> mount.xtreemfs --vivaldi-enable true \
-    remote.dir.machine/myVolume /xtreemfs
-\end{verbatim}
-
-All client options and their descriptions are avaible on the help screen of the mount command.
-The server options are listed in the config files \texttt{dirconfig.properties} and \texttt{osdconfig.properties}.
-
-There is a built-in visualisation for the vivaldi coordinates.
-It is accessible from the DIR status page or directly via \href{http://localhost:30638/vivaldi}{http://localhost:30638/vivaldi}.
-Per default, only the OSDs are shown.
-Clients can also be told to send their coordinates to the DIR by adding \verb+--vivaldi--enable-dir-updates true+ to the mount command.
-Be aware that this causes extra traffic between the client and the DIR every time the client recalculates its coordinates.
-The raw data which is used by the visualisation can be queried from \href{http://localhost:30638/vivaldi/data}{http://localhost:30638/vivaldi/data}.
-
-
 \section{Test Tools}
 XtreemFS provides two tools to simplify testing. \texttt{xstartserv} can be used to start and stop XtreemFS servers manually. \texttt{xtestenv} automatically sets-up an entire test environment with servers and mounted clients. In addition, \texttt{xtestenv} can be used to execute the automatic integration tests.
 
@@ -2473,7 +2446,7 @@ This policy uses domain names of clients and OSDs to determine the distance betw
  Shuffles the given list of OSDs.
 
  \item \textbf{Vivaldi network coordinates based sorting (policy ID 3003)}\\
- Sorts the list of OSDs in ascending order of their distance to the client, according to the vivaldi coordinates of the client and OSDs. This policy requires the clients to run the \texttt{xtfs\_vivaldi} service.
+ Sorts the list of OSDs in ascending order of their distance to the client, according to the vivaldi coordinates of the client and OSDs. This policy requires the clients to run the \texttt{xtfs\_vivaldi} service (see section~\ref{sec:vivaldi} for details).
 
 \end{itemize}
 
@@ -2505,6 +2478,32 @@ and
   \end{verbatim}
 
 will only cause the former OSD to be regarded as eligible for new files and replicas. For further details on how to define \emph{custom configuration parameters}, please refer to Section \ref{sec:config}. For further details on how to specify policy attributes, please refer to Section \ref{sec:policyAttributes}.
+
+\subsection{Vivaldi}
+\label{sec:vivaldi}
+
+Vivaldi network coordinates are calculated between all OSDs. 
+In order to take advantage of them, two things are necessary.
+\begin{enumerate}
+\item The vivaldi replica and OSD selection policies must be set at the MRC for the volume(s) (see section~\ref{sec:osd_select_policy} for details).
+\item The clients must be configured to calculate their own coordinates relative to the OSDs.
+\end{enumerate}
+
+The latter is done by passing some arguments to the mount command. In most cases the following will suffice.
+\begin{verbatim}
+ $> mount.xtreemfs --vivaldi-enable \
+    remote.dir.machine/myVolume /xtreemfs
+\end{verbatim}
+
+All client options and their descriptions are avaible on the help screen of the mount command.
+The server options are listed in the config files \texttt{dirconfig.properties} and \texttt{osdconfig.properties}.
+
+There is a built-in visualisation for the vivaldi coordinates.
+It is accessible from the DIR status page or directly via \href{http://localhost:30638/vivaldi}{http://localhost:30638/vivaldi}.
+Per default, only the OSDs are shown.
+Clients can also be told to send their coordinates to the DIR by adding \verb+--vivaldi--enable-dir-updates+ to the mount command.
+Be aware that this causes extra traffic between the client and the DIR every time the client recalculates its coordinates.
+The raw data which is used by the visualisation can be queried from \href{http://localhost:30638/vivaldi/data}{http://localhost:30638/vivaldi/data}.
 
 \section{Striping Policies} \label{sec:striping_policies}
 
