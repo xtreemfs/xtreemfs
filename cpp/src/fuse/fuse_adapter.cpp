@@ -1497,7 +1497,7 @@ int FuseAdapter::lock(const char* path, struct fuse_file_info *fi, int cmd,
 
     if (cmd == F_GETLK) {
       // Only check if the lock could get acquired.
-      boost::shared_ptr<Lock> checked_lock(file_handle->CheckLock(
+      boost::scoped_ptr<Lock> checked_lock(file_handle->CheckLock(
           osd_user_credentials_,
           flock->l_pid,
           flock->l_start,
@@ -1515,7 +1515,7 @@ int FuseAdapter::lock(const char* path, struct fuse_file_info *fi, int cmd,
     } else if (cmd == F_SETLK || cmd == F_SETLKW) {
       // Set the lock (type = F_RDLCK|F_WRLCK) or release it (type = F_UNLCK).
       if (flock->l_type == F_RDLCK || flock->l_type == F_WRLCK) {
-        boost::shared_ptr<Lock> checked_lock(file_handle->AcquireLock(
+        boost::scoped_ptr<Lock> checked_lock(file_handle->AcquireLock(
             osd_user_credentials_,
             flock->l_pid,
             flock->l_start,
