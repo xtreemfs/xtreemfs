@@ -55,8 +55,10 @@ namespace xtreemfs {
 
 FuseAdapter::FuseAdapter(FuseOptions* options) :
     options_(options),
-    xctl_("/.xctl$$$")
-{}
+    xctl_("/.xctl$$$") {
+  osd_user_credentials_.set_username("x");
+  osd_user_credentials_.add_groups("x");
+}
 
 FuseAdapter::~FuseAdapter() {}
 
@@ -354,6 +356,7 @@ void FuseAdapter::Stop() {
     client_->Shutdown();
   }
 }
+
 void FuseAdapter::GenerateUserCredentials(
     struct fuse_context* fuse_context,
     xtreemfs::pbrpc::UserCredentials* user_credentials) {
@@ -1050,14 +1053,12 @@ int FuseAdapter::write(
     const char *path, const char *buf, size_t size, off_t offset,
     struct fuse_file_info *fi) {
   const string path_str(path);
-  UserCredentials user_credentials;
-  GenerateUserCredentials(fuse_get_context(), &user_credentials);
 
   if (!xctl_.checkXctlFile(path_str)) {
     int result;
     try {
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
-      result = file_handle->Write(user_credentials, buf, size, offset);
+      result = file_handle->Write(osd_user_credentials_, buf, size, offset);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
@@ -1071,6 +1072,9 @@ int FuseAdapter::write(
     return result;
   } else {
     fuse_context* ctx = fuse_get_context();
+    UserCredentials user_credentials;
+    GenerateUserCredentials(ctx, &user_credentials);
+
     return xctl_.write(ctx->uid,
                        ctx->gid,
                        user_credentials,
@@ -1104,12 +1108,9 @@ int FuseAdapter::read(const char *path, char *buf, size_t size, off_t offset,
          struct fuse_file_info *fi) {
   const string path_str(path);
   if (!xctl_.checkXctlFile(path_str)) {
-    UserCredentials user_credentials;
-    GenerateUserCredentials(fuse_get_context(), &user_credentials);
-
     try {
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
-      return file_handle->Read(user_credentials, buf, size, offset);
+      return file_handle->Read(osd_user_credentials_, buf, size, offset);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
@@ -1121,6 +1122,9 @@ int FuseAdapter::read(const char *path, char *buf, size_t size, off_t offset,
     }
   } else {
     fuse_context* ctx = fuse_get_context();
+    UserCredentials user_credentials;
+    GenerateUserCredentials(ctx, &user_credentials);
+
     return xctl_.read(ctx->uid, ctx->gid, path_str, buf, size, offset);
   }
 
@@ -1130,11 +1134,8 @@ int FuseAdapter::read(const char *path, char *buf, size_t size, off_t offset,
 int FuseAdapter::unlink(const char *path) {
   const string path_str(path);
   if (!xctl_.checkXctlFile(path_str)) {
-    UserCredentials user_credentials;
-    GenerateUserCredentials(fuse_get_context(), &user_credentials);
-
     try {
-      volume_->Unlink(user_credentials, path);
+      volume_->Unlink(osd_user_credentials_, path);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
@@ -1148,6 +1149,8 @@ int FuseAdapter::unlink(const char *path) {
     return 0;
   } else {
     fuse_context* ctx = fuse_get_context();
+    UserCredentials user_credentials;
+    GenerateUserCredentials(ctx, &user_credentials);
     return xctl_.unlink(ctx->uid, ctx->gid, path_str);
   }
 }
@@ -1489,16 +1492,13 @@ int FuseAdapter::lock(const char* path, struct fuse_file_info *fi, int cmd,
   }
   // Fuse sets flock->l_whence always to SEEK_SET, meaning the offset has to be
   // interpreted relative to the start of the file.
-  UserCredentials user_credentials;
-  GenerateUserCredentials(fuse_get_context(), &user_credentials);
-
   try {
     FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
 
     if (cmd == F_GETLK) {
       // Only check if the lock could get acquired.
       boost::shared_ptr<Lock> checked_lock(file_handle->CheckLock(
-          user_credentials,
+          osd_user_credentials_,
           flock->l_pid,
           flock->l_start,
           flock->l_len,
@@ -1516,14 +1516,14 @@ int FuseAdapter::lock(const char* path, struct fuse_file_info *fi, int cmd,
       // Set the lock (type = F_RDLCK|F_WRLCK) or release it (type = F_UNLCK).
       if (flock->l_type == F_RDLCK || flock->l_type == F_WRLCK) {
         boost::shared_ptr<Lock> checked_lock(file_handle->AcquireLock(
-            user_credentials,
+            osd_user_credentials_,
             flock->l_pid,
             flock->l_start,
             flock->l_len,
             (flock->l_type == F_WRLCK),
             (cmd == F_SETLKW)));
       } else if (flock->l_type == F_UNLCK) {
-        file_handle->ReleaseLock(user_credentials,
+        file_handle->ReleaseLock(osd_user_credentials_,
                                  flock->l_pid,
                                  flock->l_start,
                                  flock->l_len,

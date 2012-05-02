@@ -140,6 +140,11 @@ class FuseAdapter {
   /** Opened libxtreemfs Volume. */
   Volume* volume_;
 
+  /** Bogus UserCredentials used for OSD requests. Since the OSD currently
+   *  (as of 5/2012) does not check the user credentials value, we sent a bogus
+   *  value. */
+  xtreemfs::pbrpc::UserCredentials osd_user_credentials_;
+
   /** Server for processing commands sent from the xtfsutil tool
       via xctl files. */
   XtfsUtilServer xctl_;
