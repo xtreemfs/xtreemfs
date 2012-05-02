@@ -87,7 +87,8 @@ conf.nodeColourClientSelected = "#00aa00";
 conf.edgeColour = conf.bgColour; //"#eeeeee";
 conf.edgeColourSelected = "#eeeeee"; //conf.bgColour;// conf.nodeColourSelected;
 // .attr("stroke-dasharray", "3 1")
-conf.textColour = "#555555";
+conf.textColour = "#aaaaaa";
+conf.statusTextColour = "#555555";
 conf.nodeRadius = 8;
 conf.nodeRadiusClient = 7;
 conf.lineOffset = 12; // determines space between two lines
@@ -169,7 +170,17 @@ window.onload = function() {
 	edges_g = vis.append("g");	
 	nodes_g = vis.append("g");
 	text_g = vis.append("g");
-	text_g.append("text"); // dummy text element for debugging
+	text_g.append("g"); // dummy text element for debugging
+
+	text_g.insert("text")
+	      .attr("class", "statusText")
+	      .attr("x", realCanvasWidth * 0.5)
+	      .attr("y", realCanvasHeight * 0.5)
+	      .attr("fill", conf.textColour)
+	      .attr("text-anchor", "middle")
+	      .style("font-size", "small")
+	      .text("Loading…")
+	;
 
 	svgElement = document.getElementById("vis");
 
@@ -282,7 +293,13 @@ function parseData(data) {
 
 	// create coords
 	for (i = 0; (i < dataArray.length) && (dataArray[i].length >= 7); i++) {
-		coords.push({"uuid": dataArray[i][0].toString(), "type": dataArray[i][2].toString(), "x": parseFloat(dataArray[i][4]), "y": parseFloat(dataArray[i][5]), "error": parseFloat(dataArray[i][6])})
+	
+		x = parseFloat(dataArray[i][4]);
+		y = parseFloat(dataArray[i][5]);
+		error = parseFloat(dataArray[i][6]);
+		if (x != 0.0 && y != 0.0 && error != 0) {
+			coords.push({"uuid": dataArray[i][0].toString(), "type": dataArray[i][2].toString(), "x": x, "y": y, "error": error})
+		}
 	}
 	
 	// create edges
@@ -304,9 +321,17 @@ function parseData(data) {
 
 // visualise the data set stored in coords
 function drawData() {
+
+	if (coords.length == 0) {
+		text_g.selectAll("text.statusText").text("No data avaiable…");
+	} else {
+		text_g.selectAll("text.statusText").text("");
+	}
+
 	// scale functions from coords space to screen space
 	var xScale = getXScale();
 	var yScale = getYScale();
+	
 	// ***** draw edges ***** //
 
 	// data join by key
