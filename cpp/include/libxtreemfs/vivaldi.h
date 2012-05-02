@@ -10,6 +10,7 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_VIVALDI_H_
 #define CPP_INCLUDE_LIBXTREEMFS_VIVALDI_H_
 
+#include <boost/thread/mutex.hpp>
 #include <list>
 #include <string>
 
@@ -28,15 +29,15 @@ class KnownOSD {
         coordinates(coordinates) {
   }
 
-  pbrpc::VivaldiCoordinates* get_coordinates() {
+  pbrpc::VivaldiCoordinates* GetCoordinates() {
     return &this->coordinates;
   }
 
-  std::string get_uuid() {
+  std::string GetUUID() {
     return this->uuid;
   }
 
-  void set_coordinates(xtreemfs::pbrpc::VivaldiCoordinates new_coords) {
+  void SetCoordinates(xtreemfs::pbrpc::VivaldiCoordinates new_coords) {
     this->coordinates = new_coords;
   }
  private:
@@ -55,10 +56,10 @@ class Vivaldi {
 
   void Run();
 
-  const xtreemfs::pbrpc::VivaldiCoordinates& getVivaldiCoordinates() const;
+  const xtreemfs::pbrpc::VivaldiCoordinates& GetVivaldiCoordinates() const;
 
  private:
-  bool update_known_osds(std::list<KnownOSD>* updated_osds,
+  bool UpdateKnownOSDs(std::list<KnownOSD>* updated_osds,
                          const VivaldiNode& own_node);
 
   xtreemfs::rpc::Client* rpc_client_;
@@ -87,6 +88,9 @@ class Vivaldi {
    *          constructor VolumeImplementation(). */
   xtreemfs::pbrpc::UserCredentials user_credentials_bogus_;
 
+  /** Mutex to serialise concurrent read and write access to
+   *  my_vivaldi_coordinates_. */
+  mutable boost::mutex coordinate_mutex_;
 
   xtreemfs::pbrpc::VivaldiCoordinates my_vivaldi_coordinates_;
 };

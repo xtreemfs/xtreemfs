@@ -18,7 +18,7 @@ namespace xtreemfs {
    *
    * @return the current coordinates of the node.
    */
-  const xtreemfs::pbrpc::VivaldiCoordinates * VivaldiNode::getCoordinates() const {
+  const xtreemfs::pbrpc::VivaldiCoordinates * VivaldiNode::GetCoordinates() const {
     return &this->ownCoordinates;
   }
 
@@ -29,7 +29,7 @@ namespace xtreemfs {
    * @param coordA the coordinates to be multiplied.
    * @param value the real number to multiply by.
    */
-  void VivaldiNode::multiplyValueCoordinates(
+  void VivaldiNode::MultiplyValueCoordinates(
       xtreemfs::pbrpc::VivaldiCoordinates* coord,
       double value) {
     coord->set_x_coordinate(coord->x_coordinate() * value);
@@ -39,7 +39,7 @@ namespace xtreemfs {
   /**
    * Adds two pairs of coordinates and stores the result in coordA
    */
-  void VivaldiNode::addCoordinates(
+  void VivaldiNode::AddCoordinates(
       xtreemfs::pbrpc::VivaldiCoordinates* coordA,
       const xtreemfs::pbrpc::VivaldiCoordinates& coordB) {
     coordA->set_x_coordinate(coordA->x_coordinate() + coordB.x_coordinate());
@@ -49,7 +49,7 @@ namespace xtreemfs {
   /**
    * Subtracts two pairs of coordinates and stores the result in coordA
    */
-  void VivaldiNode::subtractCoordinates(
+  void VivaldiNode::SubtractCoordinates(
       xtreemfs::pbrpc::VivaldiCoordinates* coordA,
       const xtreemfs::pbrpc::VivaldiCoordinates& coordB) {
     coordA->set_x_coordinate(coordA->x_coordinate() - coordB.x_coordinate());
@@ -64,7 +64,7 @@ namespace xtreemfs {
    * @param coordB a pair of coordinates.
    * @return the result of the scalar product.
    */
-  double VivaldiNode::scalarProductCoordinates(
+  double VivaldiNode::ScalarProductCoordinates(
       const xtreemfs::pbrpc::VivaldiCoordinates& coordA,
       const xtreemfs::pbrpc::VivaldiCoordinates& coordB) {
     double retval = 0.0;
@@ -80,9 +80,9 @@ namespace xtreemfs {
    * @return the distance from the position defined by the coordinates to the
    * origin of the system.
    */
-  double VivaldiNode::magnitudeCoordinates(
+  double VivaldiNode::MagnitudeCoordinates(
       const xtreemfs::pbrpc::VivaldiCoordinates& coordA) {
-    double sProd = scalarProductCoordinates(coordA, coordA);
+    double sProd = ScalarProductCoordinates(coordA, coordA);
     return sqrt(sProd);
   }
 
@@ -93,13 +93,13 @@ namespace xtreemfs {
    * @return true if it's been possible to calculate the vector or false
    * otherwise
    */
-  bool VivaldiNode::getUnitaryCoordinates(
+  bool VivaldiNode::GetUnitaryCoordinates(
       xtreemfs::pbrpc::VivaldiCoordinates* coord) {
     bool retval = false;
-    double magn = magnitudeCoordinates(*coord);
+    double magn = MagnitudeCoordinates(*coord);
 
     if (magn > 0) {  // cannot be == 0
-      multiplyValueCoordinates(coord, 1.0 / magn);
+      MultiplyValueCoordinates(coord, 1.0 / magn);
       retval = true;
     }
 
@@ -112,7 +112,7 @@ namespace xtreemfs {
    *
    * @param coord coordinates that must be modified.
    */
-  void VivaldiNode::modifyCoordinatesRandomly(
+  void VivaldiNode::ModifyCoordinatesRandomly(
       xtreemfs::pbrpc::VivaldiCoordinates* coord) {
     // static_cast<double>(rand()))/RAND_MAX) generates real values btw 0 and 1
     coord->set_x_coordinate(((static_cast<double> (rand()) / RAND_MAX) *2) - 1);
@@ -123,7 +123,7 @@ namespace xtreemfs {
    * Modifies the position of the node according to the current distance to a
    * given point in the coordinate space and the real RTT measured against it.
    */
-  bool VivaldiNode::recalculatePosition(
+  bool VivaldiNode::RecalculatePosition(
       const xtreemfs::pbrpc::VivaldiCoordinates& coordinatesJ,
       uint64_t measuredRTT,
       bool forceRecalculation) {
@@ -132,10 +132,10 @@ namespace xtreemfs {
 
     // SUBTRACTION = Xi - Xj
     xtreemfs::pbrpc::VivaldiCoordinates subtractionVector(ownCoordinates);
-    subtractCoordinates(&subtractionVector, coordinatesJ);
+    SubtractCoordinates(&subtractionVector, coordinatesJ);
 
     // ||SUBTRACTION|| should be ~= RTT
-    double subtractionMagnitude = magnitudeCoordinates(subtractionVector);
+    double subtractionMagnitude = MagnitudeCoordinates(subtractionVector);
 
     // Sample weight balances local and remote error
     // If it's close to 1, J knows more than me: localError > errorJ
@@ -195,24 +195,24 @@ namespace xtreemfs {
       if (subtractionMagnitude > 0.0) {
         // Xi = Xi + delta * (rtt - || Xi - Xj ||) * u(Xi - Xj)
         xtreemfs::pbrpc::VivaldiCoordinates additionVector(subtractionVector);
-        if (getUnitaryCoordinates(&additionVector)) {
-          multiplyValueCoordinates(&additionVector, estimatedMovement);
+        if (GetUnitaryCoordinates(&additionVector)) {
+          MultiplyValueCoordinates(&additionVector, estimatedMovement);
           // Move the node according to the calculated addition vector
-          addCoordinates(&ownCoordinates, additionVector);
+          AddCoordinates(&ownCoordinates, additionVector);
           ownCoordinates.set_local_error(localError);
         }
       } else {  // subtractionMagnitude == 0.0
         // Both points have the same Coordinates, so we just pull
         // them apart in a random direction
         xtreemfs::pbrpc::VivaldiCoordinates randomCoords;
-        modifyCoordinatesRandomly(&randomCoords);
+        ModifyCoordinatesRandomly(&randomCoords);
         xtreemfs::pbrpc::VivaldiCoordinates additionVector(randomCoords);
 
         // Xi = Xi + delta * (rtt - || Xi - Xj ||) * u(randomVector)
-        if (getUnitaryCoordinates(&additionVector)) {
-          multiplyValueCoordinates(&additionVector, estimatedMovement);
+        if (GetUnitaryCoordinates(&additionVector)) {
+          MultiplyValueCoordinates(&additionVector, estimatedMovement);
           // Move the node according to the calculated addition vector
-          addCoordinates(&ownCoordinates, additionVector);
+          AddCoordinates(&ownCoordinates, additionVector);
           ownCoordinates.set_local_error(localError);
         }
       }
@@ -226,11 +226,11 @@ namespace xtreemfs {
     return retval;
   }
 
-  double VivaldiNode::calculateDistance(
+  double VivaldiNode::CalculateDistance(
       xtreemfs::pbrpc::VivaldiCoordinates coordA,
       const xtreemfs::pbrpc::VivaldiCoordinates& coordB) {
-    subtractCoordinates(&coordA, coordB);
-    return magnitudeCoordinates(coordA);
+    SubtractCoordinates(&coordA, coordB);
+    return MagnitudeCoordinates(coordA);
   }
 
   char const OutputUtils::trHex[16] =
@@ -261,7 +261,7 @@ namespace xtreemfs {
     {'F', 15}
   };
 
-  void OutputUtils::writeHexInt(std::ostringstream &oss, const int value) {
+  void OutputUtils::WriteHexInt(std::ostringstream &oss, const int value) {
     oss << trHex[(value & 0x0F)];
     oss << trHex[((value >> 4) & 0x0F)];
     oss << trHex[((value >> 8) & 0x0F)];
@@ -272,7 +272,7 @@ namespace xtreemfs {
     oss << trHex[((value >> 28) & 0x0F)];
   }
 
-  char OutputUtils::getEquivalentByte(char ch) {
+  char OutputUtils::GetEquivalentByte(char ch) {
     char retval = 0xFF;
 
     for (int i = 0; i < 22; i++) {
@@ -285,33 +285,33 @@ namespace xtreemfs {
     return retval;
   }
 
-  int OutputUtils::readHexInt(
+  int OutputUtils::ReadHexInt(
       const std::string &str,
       const int position) {
-    int value = getEquivalentByte(str[position]);
-    value += static_cast<int> (getEquivalentByte(str[position + 1])) << 4;
-    value += static_cast<int> (getEquivalentByte(str[position + 2])) << 8;
-    value += static_cast<int> (getEquivalentByte(str[position + 3])) << 12;
-    value += static_cast<int> (getEquivalentByte(str[position + 4])) << 16;
-    value += static_cast<int> (getEquivalentByte(str[position + 5])) << 20;
-    value += static_cast<int> (getEquivalentByte(str[position + 6])) << 24;
-    value += static_cast<int> (getEquivalentByte(str[position + 7])) << 28;
+    int value = GetEquivalentByte(str[position]);
+    value += static_cast<int> (GetEquivalentByte(str[position + 1])) << 4;
+    value += static_cast<int> (GetEquivalentByte(str[position + 2])) << 8;
+    value += static_cast<int> (GetEquivalentByte(str[position + 3])) << 12;
+    value += static_cast<int> (GetEquivalentByte(str[position + 4])) << 16;
+    value += static_cast<int> (GetEquivalentByte(str[position + 5])) << 20;
+    value += static_cast<int> (GetEquivalentByte(str[position + 6])) << 24;
+    value += static_cast<int> (GetEquivalentByte(str[position + 7])) << 28;
 
     return value;
   }
 
-  void OutputUtils::writeHexLongLong(
+  void OutputUtils::WriteHexLongLong(
       std::ostringstream &oss,
       const int64_t value) {
-    writeHexInt(oss, static_cast<int> (value & 0xFFFFFFFF));
-    writeHexInt(oss, static_cast<int> (value >> 32));
+    WriteHexInt(oss, static_cast<int> (value & 0xFFFFFFFF));
+    WriteHexInt(oss, static_cast<int> (value >> 32));
   }
 
-  int64_t OutputUtils::readHexLongLong(
+  int64_t OutputUtils::ReadHexLongLong(
       const std::string &str,
       const int position) {
-    int low = readHexInt(str, position);
-    int high = readHexInt(str, position + 8);
+    int low = ReadHexInt(str, position);
+    int high = ReadHexInt(str, position + 8);
 
     // calculate the value: left-shift the upper 4 bytes by 32 bit and
     // append the lower 32 bit
@@ -320,12 +320,12 @@ namespace xtreemfs {
     return value;
   }
 
-  void OutputUtils::stringToCoordinates(
+  void OutputUtils::StringToCoordinates(
       const std::string &str,
       xtreemfs::pbrpc::VivaldiCoordinates & vc) {
-    int64_t aux_long_x = readHexLongLong(str, 0);
-    int64_t aux_long_y = readHexLongLong(str, 16);
-    int64_t aux_long_err = readHexLongLong(str, 32);
+    int64_t aux_long_x = ReadHexLongLong(str, 0);
+    int64_t aux_long_y = ReadHexLongLong(str, 16);
+    int64_t aux_long_err = ReadHexLongLong(str, 32);
 
     vc.set_x_coordinate(static_cast<double> (aux_long_x));
     vc.set_y_coordinate(static_cast<double> (aux_long_y));

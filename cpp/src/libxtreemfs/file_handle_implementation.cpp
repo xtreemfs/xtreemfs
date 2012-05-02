@@ -852,10 +852,12 @@ void FileHandleImplementation::WriteBackFileSize(
   rq.mutable_osd_write_response()->CopyFrom(owr);
   rq.set_close_file(close_file);
 
-  // TODO(mno): set vivaldi coordinates (maybe only if enabled?)
-  // set vivaldi coordinates if vivaldi is enabled
-  if(volume_options_.vivaldi_enable)
+  // Set vivaldi coordinates if vivaldi is enabled.
+  // According to UpdateFileSizeOperation.java sent coordinates are only
+  // evaluated if close_file in the request is set to true.
+  if (close_file && volume_options_.vivaldi_enable) {
     rq.mutable_coordinates()->CopyFrom(this->client_->GetVivaldiCoordinates());
+  }
 
   boost::scoped_ptr< SyncCallback<timestampResponse> > response(
       ExecuteSyncRequest< SyncCallback<timestampResponse>* >(
@@ -902,10 +904,7 @@ void FileHandleImplementation::WriteBackFileSizeAsync() {
   // Set to false because a close would use a sync writeback.
   rq.set_close_file(false);
 
-  // TODO(mno): set vivaldi coordinates (maybe only if enabled?)
-  // set vivaldi coordinates if vivaldi is enabled
-  if(volume_options_.vivaldi_enable)
-    rq.mutable_coordinates()->CopyFrom(this->client_->GetVivaldiCoordinates());
+  // NOTE: no vivaldi coordinates needed since close_file is set false.
 
   string mrc_uuid;
   string mrc_address;

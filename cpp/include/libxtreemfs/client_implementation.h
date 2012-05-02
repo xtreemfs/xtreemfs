@@ -97,7 +97,6 @@ class ClientImplementation : public Client, public UUIDResolver {
   virtual void VolumeNameToMRCUUID(const std::string& volume_name,
                                    UUIDIterator* uuid_iterator);
 
-  // TODO(mno): make this part of the client interface?
   const xtreemfs::pbrpc::VivaldiCoordinates& GetVivaldiCoordinates() const;
 
  private:

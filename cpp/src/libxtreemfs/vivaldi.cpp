@@ -63,10 +63,12 @@ void Vivaldi::Run() {
       my_vivaldi_coordinates_.Clear();
     }
   } else {
-    Logging::log->getLog(LEVEL_INFO)
-        << "Vivaldi: Coordinates file does not exist,"
-        << "starting with empty coordinates" << std::endl
-        << "Initialization might take some time." << std::endl;
+    if (Logging::log->loggingActive(LEVEL_INFO)) {
+      Logging::log->getLog(LEVEL_INFO)
+          << "Vivaldi: Coordinates file does not exist,"
+          << "starting with empty coordinates" << std::endl
+          << "Initialization might take some time." << std::endl;
+    }
   }
   vivaldi_coordinates_file.close();
 
@@ -90,7 +92,7 @@ void Vivaldi::Run() {
       // Get a list of OSDs from the DIR(s)
       if ((vivaldiIterations % options_.vivaldi_max_iterations_before_updating)
            == 0) {
-        valid_known_osds = update_known_osds(&known_osds, own_node);
+        valid_known_osds = UpdateKnownOSDs(&known_osds, own_node);
         if (valid_known_osds && !known_osds.empty()) {
           rankGen.set_size(known_osds.size());
         }
@@ -117,7 +119,7 @@ void Vivaldi::Run() {
         }
 
         addressMappingGetRequest addr_request;
-        addr_request.set_uuid(chosen_osd_service->get_uuid());
+        addr_request.set_uuid(chosen_osd_service->GetUUID());
 
         boost::scoped_ptr< SyncCallback<AddressMappingSet> > response(
             ExecuteSyncRequest< SyncCallback<AddressMappingSet>* >(
@@ -147,13 +149,15 @@ void Vivaldi::Run() {
             xtreemfs_pingMesssage ping_message;
             ping_message.set_request_response(true);
             ping_message.mutable_coordinates()
-                ->MergeFrom(*own_node.getCoordinates());
+                ->MergeFrom(*own_node.GetCoordinates());
 
             VivaldiCoordinates* random_osd_vivaldi_coordinates;
 
-            Logging::log->getLog(LEVEL_DEBUG)
-                << "Vivaldi: recalculating against: "
-                << chosen_osd_service->get_uuid() << std::endl;
+            if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+              Logging::log->getLog(LEVEL_DEBUG)
+                  << "Vivaldi: recalculating against: "
+                  << chosen_osd_service->GetUUID() << std::endl;
+            }
 
             UUIDIterator osd_service_address;
             osd_service_address.AddUUID(mapping.address() + ":"
@@ -192,12 +196,14 @@ void Vivaldi::Run() {
             random_osd_vivaldi_coordinates = response_ping->response()
                 ->mutable_coordinates();
 
-            Logging::log->getLog(LEVEL_DEBUG)
-                << "Vivaldi: ping response received." << std::endl;
+            if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+              Logging::log->getLog(LEVEL_DEBUG)
+                  << "Vivaldi: ping response received." << std::endl;
+            }
 
             // Recalculate coordinates here
             if (retriesInARow < options_.vivaldi_max_request_retries) {
-              if (!own_node.recalculatePosition(*random_osd_vivaldi_coordinates,
+              if (!own_node.RecalculatePosition(*random_osd_vivaldi_coordinates,
                                                 measuredRTT,
                                                 false)) {
                 // The movement has been postponed because the measured RTT
@@ -212,8 +218,10 @@ void Vivaldi::Run() {
 
                 // Update client coordinates at the DIR
                 if(options_.vivaldi_enable_dir_updates) {
-                  Logging::log->getLog(LEVEL_DEBUG)
-                      << "Vivaldi: Sending coords to DIR." << std::endl;
+                  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+                    Logging::log->getLog(LEVEL_DEBUG)
+                        << "Vivaldi: Sending coords to DIR." << std::endl;
+                  }
                   boost::scoped_ptr< SyncCallback<emptyResponse> > response(
                       ExecuteSyncRequest< SyncCallback<emptyResponse>* >(
                           boost::bind(
@@ -223,7 +231,7 @@ void Vivaldi::Run() {
                               _1,
                               boost::cref(auth_bogus_),
                               boost::cref(user_credentials_bogus_),
-                              own_node.getCoordinates()),
+                              own_node.GetCoordinates()),
                           dir_service_addresses_,
                           NULL,
                           options_.max_tries,
@@ -232,7 +240,6 @@ void Vivaldi::Run() {
                           false));
                   response->DeleteBuffers();
                 }
-
               }
             } else {
               // Choose the lowest RTT
@@ -247,7 +254,7 @@ void Vivaldi::Run() {
               }  // for
 
               // Force recalculation after too many retries
-              own_node.recalculatePosition(*random_osd_vivaldi_coordinates,
+              own_node.RecalculatePosition(*random_osd_vivaldi_coordinates,
                                            lowestRTT,
                                            true);
               currentRetries.clear();
@@ -257,6 +264,11 @@ void Vivaldi::Run() {
               measuredRTT = lowestRTT;
             }
 
+            // update local coordinate copy here
+            {
+              boost::mutex::scoped_lock lock(coordinate_mutex_);
+              my_vivaldi_coordinates_.CopyFrom(*own_node.GetCoordinates());
+            }
 //            //Print a trace
 //            char auxStr[256];
 //            SPRINTF_VIV(auxStr,
@@ -281,7 +293,7 @@ void Vivaldi::Run() {
 
 
             // Update OSD's coordinates
-            chosen_osd_service->set_coordinates(
+            chosen_osd_service->SetCoordinates(
                 *random_osd_vivaldi_coordinates);
 
 
@@ -295,17 +307,17 @@ void Vivaldi::Run() {
                 aux_iterator != aux_osd_list.rend();
                 aux_iterator++) {
               double new_osd_distance =
-                  own_node.calculateDistance(
-                      *(aux_iterator->get_coordinates()),
-                      *own_node.getCoordinates());
+                  own_node.CalculateDistance(
+                      *(aux_iterator->GetCoordinates()),
+                      *own_node.GetCoordinates());
 
               std::list<KnownOSD>::iterator known_iterator = known_osds.begin();
 
               while (known_iterator != known_osds.end()) {
                 double old_osd_distance =  \
-                      own_node.calculateDistance(
-                          *(known_iterator->get_coordinates()),
-                          *own_node.getCoordinates());
+                      own_node.CalculateDistance(
+                          *(known_iterator->GetCoordinates()),
+                          *own_node.GetCoordinates());
                 if (old_osd_distance >= new_osd_distance) {
                   known_osds.insert(known_iterator, (*aux_iterator));
                   break;
@@ -323,8 +335,10 @@ void Vivaldi::Run() {
         }
         response->DeleteBuffers();
       } else {
-          Logging::log->getLog(LEVEL_WARN)
-            << "Vivaldi: no OSD available." << std::endl;
+          if (Logging::log->loggingActive(LEVEL_WARN)) {
+            Logging::log->getLog(LEVEL_WARN)
+                << "Vivaldi: no OSD available." << std::endl;
+          }
       }
     } catch (const std::exception& exc) {
         Logging::log->getLog(LEVEL_ERROR)
@@ -342,16 +356,16 @@ void Vivaldi::Run() {
       }
     }
 
-
     // Store the new coordinates in a local file
-    Logging::log->getLog(LEVEL_DEBUG)
-        << "Vivaldi: storing coordinates to file: ("
-        << own_node.getCoordinates()->x_coordinate() << ", "
-        << own_node.getCoordinates()->y_coordinate() << ")" << std::endl;
-
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG)
+          << "Vivaldi: storing coordinates to file: ("
+          << own_node.GetCoordinates()->x_coordinate() << ", "
+          << own_node.GetCoordinates()->y_coordinate() << ")" << std::endl;
+    }
     std::ofstream file_out(options_.vivaldi_filename.c_str(),
         std::ios_base::binary | std::ios_base::trunc);
-    own_node.getCoordinates()->SerializePartialToOstream(&file_out);
+    own_node.GetCoordinates()->SerializePartialToOstream(&file_out);
     file_out.close();
 
     // Sleep until the next iteration
@@ -361,8 +375,10 @@ void Vivaldi::Run() {
         (static_cast<double>(std::rand()) / (RAND_MAX - 1)) *
         2.0 * options_.vivaldi_recalculation_epsilon_ms);
 
-    Logging::log->getLog(LEVEL_DEBUG)
-        << "Vivaldi: sleeping during " << sleep_in_ms << " ms." << std::endl;
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG)
+          << "Vivaldi: sleeping during " << sleep_in_ms << " ms." << std::endl;
+    }
     boost::this_thread::sleep(boost::posix_time::milliseconds(sleep_in_ms));
 
     vivaldiIterations = (vivaldiIterations + 1) % LONG_MAX;
@@ -370,7 +386,7 @@ void Vivaldi::Run() {
 }  // Run()
 
 
-bool Vivaldi::update_known_osds(std::list<KnownOSD>* updated_osds,
+bool Vivaldi::UpdateKnownOSDs(std::list<KnownOSD>* updated_osds,
                                 const VivaldiNode& own_node) {
   bool retval = true;
 
@@ -416,20 +432,20 @@ bool Vivaldi::update_known_osds(std::list<KnownOSD>* updated_osds,
           if (coordinates_string) {
             // Parse the coordinates provided by the DS
             VivaldiCoordinates osd_coords;
-            OutputUtils::stringToCoordinates(*coordinates_string, osd_coords);
+            OutputUtils::StringToCoordinates(*coordinates_string, osd_coords);
 
             KnownOSD new_osd(service.uuid(), osd_coords);
 
             // Calculate the current distance from the client to the new OSD
-            double new_osd_distance = own_node.calculateDistance(
-                 *(own_node.getCoordinates()),
+            double new_osd_distance = own_node.CalculateDistance(
+                 *(own_node.GetCoordinates()),
                  osd_coords);
 
             std::list<KnownOSD>::iterator up_iterator = updated_osds->begin();
             while (up_iterator != updated_osds->end()) {
               double old_osd_distance =
-                  own_node.calculateDistance(*up_iterator->get_coordinates(),
-                                             *(own_node.getCoordinates()));
+                  own_node.CalculateDistance(*up_iterator->GetCoordinates(),
+                                             *(own_node.GetCoordinates()));
               if (old_osd_distance >= new_osd_distance) {
                 updated_osds->insert(up_iterator, new_osd);
                 break;
@@ -454,9 +470,9 @@ bool Vivaldi::update_known_osds(std::list<KnownOSD>* updated_osds,
   return retval;
 }  // update_known_osds
 
-
-const VivaldiCoordinates& Vivaldi::getVivaldiCoordinates() const {
-    return my_vivaldi_coordinates_;
+const VivaldiCoordinates& Vivaldi::GetVivaldiCoordinates() const {
+  boost::mutex::scoped_lock lock(coordinate_mutex_);
+  return my_vivaldi_coordinates_;
 }
 
 }  // namespace xtreemfs

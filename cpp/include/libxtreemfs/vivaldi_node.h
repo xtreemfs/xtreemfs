@@ -27,33 +27,34 @@ namespace xtreemfs {
 
 class VivaldiNode {
  public:
-  explicit VivaldiNode(xtreemfs::pbrpc::VivaldiCoordinates nodeCoordinates)
-              : ownCoordinates(nodeCoordinates) {
+  explicit VivaldiNode(
+      const xtreemfs::pbrpc::VivaldiCoordinates& nodeCoordinates)
+   : ownCoordinates(nodeCoordinates) {
   }
-  const xtreemfs::pbrpc::VivaldiCoordinates* getCoordinates() const;
-  bool recalculatePosition(
+  const xtreemfs::pbrpc::VivaldiCoordinates* GetCoordinates() const;
+  bool RecalculatePosition(
           const xtreemfs::pbrpc::VivaldiCoordinates& coordinatesJ,
           uint64_t measuredRTT,
           bool forceRecalculation);
 
-  static double calculateDistance(xtreemfs::pbrpc::VivaldiCoordinates coordA,
+  static double CalculateDistance(xtreemfs::pbrpc::VivaldiCoordinates coordA,
                            const xtreemfs::pbrpc::VivaldiCoordinates& coordB);
 
  private:
-  static void multiplyValueCoordinates(
+  static void MultiplyValueCoordinates(
           xtreemfs::pbrpc::VivaldiCoordinates* coord,
           double value);
-  static void addCoordinates(xtreemfs::pbrpc::VivaldiCoordinates* coordA,
+  static void AddCoordinates(xtreemfs::pbrpc::VivaldiCoordinates* coordA,
                       const xtreemfs::pbrpc::VivaldiCoordinates& coordB);
-  static void subtractCoordinates(xtreemfs::pbrpc::VivaldiCoordinates* coordA,
+  static void SubtractCoordinates(xtreemfs::pbrpc::VivaldiCoordinates* coordA,
                            const xtreemfs::pbrpc::VivaldiCoordinates& coordB);
-  static double scalarProductCoordinates(
+  static double ScalarProductCoordinates(
           const xtreemfs::pbrpc::VivaldiCoordinates& coordA,
           const xtreemfs::pbrpc::VivaldiCoordinates& coordB);
-  static double magnitudeCoordinates(
+  static double MagnitudeCoordinates(
           const xtreemfs::pbrpc::VivaldiCoordinates& coordA);
-  static bool getUnitaryCoordinates(xtreemfs::pbrpc::VivaldiCoordinates* coord);
-  static void modifyCoordinatesRandomly(
+  static bool GetUnitaryCoordinates(xtreemfs::pbrpc::VivaldiCoordinates* coord);
+  static void ModifyCoordinatesRandomly(
           xtreemfs::pbrpc::VivaldiCoordinates* coord);
 
   xtreemfs::pbrpc::VivaldiCoordinates ownCoordinates;
@@ -62,19 +63,19 @@ class VivaldiNode {
 
 class OutputUtils {
  public:
-  static void writeHexInt(std::ostringstream &oss, const int value);
-  static int readHexInt(const std::string &str, const int position);
+  static void WriteHexInt(std::ostringstream &oss, const int value);
+  static int ReadHexInt(const std::string &str, const int position);
 
-  static void writeHexLongLong(std::ostringstream &oss, const int64_t value);
-  static int64_t readHexLongLong(const std::string &str, const int position);
+  static void WriteHexLongLong(std::ostringstream &oss, const int64_t value);
+  static int64_t ReadHexLongLong(const std::string &str, const int position);
 
-  static void stringToCoordinates(const std::string &str,
+  static void StringToCoordinates(const std::string &str,
                                   xtreemfs::pbrpc::VivaldiCoordinates &vc);
 
  private:
   static const char trHex[16];
   static const char frHex[22][2];
-  static char getEquivalentByte(char ch);
+  static char GetEquivalentByte(char ch);
 };
 }
 

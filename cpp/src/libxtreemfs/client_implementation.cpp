@@ -104,7 +104,10 @@ void ClientImplementation::Start() {
 
   // Start vivaldi thread if configured
   if (options_.vivaldi_enable) {
-    std::cout << "Starting vivaldi..." << std::endl; // TODO: use logger
+    if (Logging::log->loggingActive(LEVEL_INFO)) {
+      Logging::log->getLog(LEVEL_INFO)
+          << "Starting vivaldi..." << std::endl;
+    }
     vivaldi_.reset(new Vivaldi(network_client_.get(), dir_service_client_.get(), &dir_service_addresses, this->GetUUIDResolver(), options_));
     vivaldi_thread_.reset(new boost::thread(boost::bind(&xtreemfs::Vivaldi::Run, vivaldi_.get())));
   }
@@ -496,7 +499,7 @@ UUIDResolver* ClientImplementation::GetUUIDResolver() {
 
 
 const VivaldiCoordinates& ClientImplementation::GetVivaldiCoordinates() const {
-  return vivaldi_->getVivaldiCoordinates();
+  return vivaldi_->GetVivaldiCoordinates();
 }
 
 }  // namespace xtreemfs

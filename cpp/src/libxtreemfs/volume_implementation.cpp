@@ -329,8 +329,9 @@ FileHandle* VolumeImplementation::OpenFile(
   rq.set_attributes(0);
 
   // set vivaldi coordinates if vivaldi is enabled
-  if(volume_options_.vivaldi_enable)
+  if (volume_options_.vivaldi_enable) {
     rq.mutable_coordinates()->CopyFrom(this->client_->GetVivaldiCoordinates());
+  }
 
   boost::scoped_ptr< SyncCallback<openResponse> > response(
       ExecuteSyncRequest< SyncCallback<openResponse>* >(

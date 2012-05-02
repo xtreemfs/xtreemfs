@@ -11,6 +11,11 @@
 #include <boost/program_options/cmdline.hpp>
 #include <iostream>
 #include <string>
+// for getpwuid
+#ifdef __APPLE__
+  #include <sys/types.h>
+  #include <pwd.h>
+#endif
 
 #include "rpc/ssl_options.h"
 #include "libxtreemfs/pbrpc_url.h"
@@ -118,13 +123,21 @@ Options::Options()
   // Vivaldi Options
   vivaldi_enable = false;
   vivaldi_enable_dir_updates = false;
-  vivaldi_filename = "vivaldi-coordinates";
+#ifdef __linux__
+  vivaldi_filename = string(getenv("HOME")) + "/.xtreemfs_vivaldi_coordinates";
+#elif __APPLE__
+  struct passwd* pwd = getpwuid(getuid());
+  vivaldi_filename = string(getenv(pwd->pw_dir)) + "/.xtreemfs_vivaldi_coordinates";
+#elif defined WIN32
+  vivaldi_filename = string(getenv("HOMEDRIVE")) + string(getenv("HOMEPATH")) + "/.xtreemfs_vivaldi_coordinates";
+#else
+  vivaldi_filename = ".xtreemfs_vivaldi_coordinates";
+#endif
   vivaldi_recalculation_interval_ms = 1000 * 300; // in ms
   vivaldi_recalculation_epsilon_ms = 1000 * 30; // in ms
   vivaldi_max_iterations_before_updating = 12;
   vivaldi_max_request_retries = 2;
   vivaldi_zipf_generator_skew = 0.5;
-
 
   // Advanced XtreemFS options.
   periodic_file_size_updates_interval_s = 60;  // Default: 1 Minute.
@@ -278,21 +291,41 @@ void Options::GenerateProgramOptionsDescriptions() {
 
   vivaldi_options_.add_options()
       ("vivaldi-enable",
-          po::value(&vivaldi_enable)->default_value(vivaldi_enable))
+          po::value(&vivaldi_enable)->default_value(vivaldi_enable)
+            ->zero_tokens(),
+          "Enables the vivaldi coordinate calculation for the client.")
       ("vivaldi-enable-dir-updates",
-          po::value(&vivaldi_enable_dir_updates)->default_value(vivaldi_enable_dir_updates))
+          po::value(&vivaldi_enable_dir_updates)
+            ->default_value(vivaldi_enable_dir_updates)->zero_tokens(),
+          "Enables sending the coordinates to the DIR after each recalculation."
+          " This is only needed to add the clients to the vivaldi visualisation"
+          " at the cost of some additional traffic between client and DIR.")
       ("vivaldi-filename",
-          po::value(&vivaldi_filename)->default_value(vivaldi_filename))
+          po::value(&vivaldi_filename)->default_value(vivaldi_filename),
+          "The file where the vivaldi coordinates should be saved after each "
+          "recalculation.")
       ("vivaldi-recalculation-interval",
-          po::value(&vivaldi_recalculation_interval_ms)->default_value(vivaldi_recalculation_interval_ms))
+          po::value(&vivaldi_recalculation_interval_ms)
+            ->default_value(vivaldi_recalculation_interval_ms),
+          "The interval between coordinate recalculations. Also see vivaldi-"
+          "recalculation-epsilon.")
       ("vivaldi-recalculation-epsilon",
-          po::value(&vivaldi_recalculation_epsilon_ms)->default_value(vivaldi_recalculation_epsilon_ms))
+          po::value(&vivaldi_recalculation_epsilon_ms)
+            ->default_value(vivaldi_recalculation_epsilon_ms),
+          "The recalculation interval will be randomly chosen from"
+          " vivaldi-recalculation-inverval +/- vivaldi-recalculation-epsilon.")
       ("vivaldi-max-iterations-before-updating",
-          po::value(&vivaldi_max_iterations_before_updating)->default_value(vivaldi_max_iterations_before_updating))
+          po::value(&vivaldi_max_iterations_before_updating)
+            ->default_value(vivaldi_max_iterations_before_updating),
+          "Number of coordinate recalculations before updating the list of OSDs.")
       ("vivaldi-max-request-retries",
-          po::value(&vivaldi_max_request_retries)->default_value(vivaldi_max_request_retries))
+          po::value(&vivaldi_max_request_retries)
+            ->default_value(vivaldi_max_request_retries),
+          "Maximal number of retries when requesting coordinates from another vivaldi node.")
+
       ("vivaldi-zipf-generator-skew",
-          po::value(&vivaldi_zipf_generator_skew)->default_value(vivaldi_zipf_generator_skew));
+          po::value(&vivaldi_zipf_generator_skew)
+            ->default_value(vivaldi_zipf_generator_skew));
 
   xtreemfs_advanced_options_.add_options()
     ("periodic-filesize-update-interval",

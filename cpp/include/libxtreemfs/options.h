@@ -165,13 +165,27 @@ class Options {
 #endif  // !WIN32
 
   // Vivaldi Options
+  /** Enables the vivaldi coordinate calculation for the client. */
   bool vivaldi_enable;
+  /** Enables sending the coordinates to the DIR after each recalculation. This
+   *  is only needed to add the clients to the vivaldi visualisation at the cost
+   *  of some additional traffic between client and DIR.") */
   bool vivaldi_enable_dir_updates;
+  /** The file where the vivaldi coordinates should be saved after each
+   *  recalculation. */
   std::string vivaldi_filename;
+  /** The interval between coordinate recalculations. Also see
+   *  vivaldi_recalculation_epsilon_ms. */
   unsigned int vivaldi_recalculation_interval_ms;
+  /** The recalculation interval will be randomly chosen from
+   *  vivaldi_recalculation_inverval_ms +/- vivaldi_recalculation_epsilon_ms */
   unsigned int vivaldi_recalculation_epsilon_ms;
+  /** Number of coordinate recalculations before updating the list of OSDs. */
   unsigned int vivaldi_max_iterations_before_updating;
+  /** Maximal number of retries when requesting coordinates from another
+   *  vvivaldi node. */
   unsigned int vivaldi_max_request_retries;
+
   double vivaldi_zipf_generator_skew;
 
   // Advanced XtreemFS options.
