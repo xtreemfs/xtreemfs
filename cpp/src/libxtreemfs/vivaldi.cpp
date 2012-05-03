@@ -12,6 +12,7 @@
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/lexical_cast.hpp>
+#include <algorithm>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -81,10 +82,7 @@ void Vivaldi::Run() {
 
   std::vector<uint64_t> currentRetries;
   int retriesInARow = 0;
-
-
-  KnownOSD* chosen_osd_service;
-
+  std::list<KnownOSD>::iterator chosen_osd_service;
   ZipfGenerator rankGen(options_.vivaldi_zipf_generator_skew);
 
   for (;;) {
@@ -101,6 +99,7 @@ void Vivaldi::Run() {
         currentRetries.clear();
 
         retriesInARow = 0;
+        chosen_osd_service = known_osds.begin();
       }
 
       if (valid_known_osds && !known_osds.empty()) {
@@ -114,8 +113,7 @@ void Vivaldi::Run() {
               known_iterator++, i++) {
             // Move the iterator over the chosen service
           }
-
-          chosen_osd_service = &(*known_iterator);
+          chosen_osd_service = known_iterator;
         }
 
         addressMappingGetRequest addr_request;
@@ -296,11 +294,10 @@ void Vivaldi::Run() {
             chosen_osd_service->SetCoordinates(
                 *random_osd_vivaldi_coordinates);
 
-
             // Re-sort known_osds
-
             std::list<KnownOSD> aux_osd_list(known_osds);
-            known_osds.clear();
+            KnownOSD chosen_osd_service_value = *chosen_osd_service;
+            known_osds.clear();  // NOTE: this invalidates all ptrs and itrs
 
             for (std::list<KnownOSD>::reverse_iterator aux_iterator
                 = aux_osd_list.rbegin();
@@ -330,6 +327,12 @@ void Vivaldi::Run() {
                 known_osds.push_back((*aux_iterator));
               }
             }  // end re-sorting
+
+            // find the chosen OSD in the resorted list
+            chosen_osd_service = find(known_osds.begin(),
+                                      known_osds.end(),
+                                      chosen_osd_service_value);
+            assert(chosen_osd_service != known_osds.end());
             response_ping->DeleteBuffers();
           }
         }
@@ -433,7 +436,6 @@ bool Vivaldi::UpdateKnownOSDs(std::list<KnownOSD>* updated_osds,
             // Parse the coordinates provided by the DS
             VivaldiCoordinates osd_coords;
             OutputUtils::StringToCoordinates(*coordinates_string, osd_coords);
-
             KnownOSD new_osd(service.uuid(), osd_coords);
 
             // Calculate the current distance from the client to the new OSD

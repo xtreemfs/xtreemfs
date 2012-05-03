@@ -108,8 +108,13 @@ void ClientImplementation::Start() {
       Logging::log->getLog(LEVEL_INFO)
           << "Starting vivaldi..." << std::endl;
     }
-    vivaldi_.reset(new Vivaldi(network_client_.get(), dir_service_client_.get(), &dir_service_addresses, this->GetUUIDResolver(), options_));
-    vivaldi_thread_.reset(new boost::thread(boost::bind(&xtreemfs::Vivaldi::Run, vivaldi_.get())));
+    vivaldi_.reset(new Vivaldi(network_client_.get(),
+                               dir_service_client_.get(),
+                               &dir_service_addresses,
+                               this->GetUUIDResolver(),
+                               options_));
+    vivaldi_thread_.reset(new boost::thread(boost::bind(&xtreemfs::Vivaldi::Run,
+                                                        vivaldi_.get())));
   }
 }
 

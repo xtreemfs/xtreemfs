@@ -23,10 +23,17 @@ namespace xtreemfs {
 
 class KnownOSD {
  public:
-  KnownOSD(const std::string uuid,
+  KnownOSD(const std::string& uuid,
            const xtreemfs::pbrpc::VivaldiCoordinates& coordinates)
       : uuid(uuid),
         coordinates(coordinates) {
+  }
+
+  bool operator==(const KnownOSD& other) {
+    return (uuid == other.uuid) &&
+           (coordinates.local_error() == other.coordinates.local_error()) &&
+           (coordinates.x_coordinate() == other.coordinates.x_coordinate()) &&
+           (coordinates.y_coordinate() == other.coordinates.y_coordinate());
   }
 
   pbrpc::VivaldiCoordinates* GetCoordinates() {
@@ -37,7 +44,7 @@ class KnownOSD {
     return this->uuid;
   }
 
-  void SetCoordinates(xtreemfs::pbrpc::VivaldiCoordinates new_coords) {
+  void SetCoordinates(const xtreemfs::pbrpc::VivaldiCoordinates& new_coords) {
     this->coordinates = new_coords;
   }
  private:
