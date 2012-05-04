@@ -33,6 +33,9 @@ BuildRequires:  pwdutils >= 3
 %if 0%{?mandriva_version} >= 2007
 Requires(pre):  /usr/sbin/groupadd /usr/sbin/useradd /bin/mkdir /bin/grep /bin/chmod /bin/chown /bin/chgrp /bin/stat
 #BuildRequires:  libopenssl-devel >= 0.8 libboost-devel >= 1.42
+%if 0%{?mandriva_version} >= 2011 || 0%{?mdkversion} >= 201100
+BuildConflicts: libpulseaudio0 lib64pulseaudio0 libalsa-plugins-pulseaudio lib64alsa-plugins-pulseaudio
+%endif
 %endif
 
 # Fedora >=7 with Extras
@@ -175,7 +178,9 @@ _POSTINSTALL_
 %restart_on_update xtreemfs-dir xtreemfs-mrc xtreemfs-osd
 %endif
 %if 0%{?fedora_version}
-/sbin/chkconfig --add xtreemfs-dir xtreemfs-mrc xtreemfs-osd
+/sbin/chkconfig --add xtreemfs-dir
+/sbin/chkconfig --add xtreemfs-mrc
+/sbin/chkconfig --add xtreemfs-osd
 %endif
 %if 0%{?mandriva_version}
 %_post_service xtreemfs-dir xtreemfs-mrc xtreemfs-osd
@@ -191,7 +196,9 @@ _POSTINSTALL_
     /sbin/service xtreemfs-dir stop >/dev/null 2>&1
     /sbin/service xtreemfs-mrc stop >/dev/null 2>&1
     /sbin/service xtreemfs-osd stop >/dev/null 2>&1
-    /sbin/chkconfig --del xtreemfs-dir xtreemfs-mrc xtreemfs-osd
+    /sbin/chkconfig --del xtreemfs-dir
+    /sbin/chkconfig --del xtreemfs-mrc
+    /sbin/chkconfig --del xtreemfs-osd
   fi
 %endif
 %if 0%{?mandriva_version}
