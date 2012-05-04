@@ -33,6 +33,9 @@ BuildRequires:  pwdutils >= 3
 %if 0%{?mandriva_version} >= 2007
 Requires(pre):  /usr/sbin/groupadd /usr/sbin/useradd /bin/mkdir /bin/grep /bin/chmod /bin/chown /bin/chgrp /bin/stat
 #BuildRequires:  libopenssl-devel >= 0.8 libboost-devel >= 1.42
+%if 0%{?mandriva_version} >= 2011 || 0%{?mdkversion} >= 201100
+BuildConflicts: libpulseaudio0 lib64pulseaudio0 libalsa-plugins-pulseaudio lib64alsa-plugins-pulseaudio
+%endif
 %endif
 
 # Fedora >=7 with Extras
