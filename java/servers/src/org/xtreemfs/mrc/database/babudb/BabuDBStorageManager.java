@@ -467,11 +467,14 @@ public class BabuDBStorageManager implements StorageManager {
                 while (it.hasNext())
                     update.addUpdate(BabuDBStorageManager.XATTRS_INDEX, it.next().getKey(), null);
                 
-                if (file.isDirectory())
-                    updateCount(NUM_DIRS_KEY, false, update);
-                else {
-                    volume.updateVolumeSize(-file.getSize(), update);
-                    updateCount(NUM_FILES_KEY, false, update);
+                // if a file is deleted, update file count and volume size
+                if (file.getXLocList() != null) {
+                    if (file.isDirectory())
+                        updateCount(NUM_DIRS_KEY, false, update);
+                    else {
+                        volume.updateVolumeSize(-file.getSize(), update);
+                        updateCount(NUM_FILES_KEY, false, update);
+                    }
                 }
                 
             }
