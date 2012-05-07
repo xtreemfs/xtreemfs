@@ -372,17 +372,21 @@ void Vivaldi::Run() {
     file_out.close();
 
     // Sleep until the next iteration
-    uint64_t sleep_in_ms = static_cast<uint64_t>(
-        options_.vivaldi_recalculation_interval_ms -
-        options_.vivaldi_recalculation_epsilon_ms +
+    uint64_t sleep_in_s = static_cast<uint64_t>(
+        options_.vivaldi_recalculation_interval_s -
+        options_.vivaldi_recalculation_epsilon_s +
         (static_cast<double>(std::rand()) / (RAND_MAX - 1)) *
-        2.0 * options_.vivaldi_recalculation_epsilon_ms);
+        2.0 * options_.vivaldi_recalculation_epsilon_s);
 
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
       Logging::log->getLog(LEVEL_DEBUG)
-          << "Vivaldi: sleeping during " << sleep_in_ms << " ms." << std::endl;
+          << "Vivaldi: sleeping during " << sleep_in_s << " s." << std::endl;
     }
-    boost::this_thread::sleep(boost::posix_time::milliseconds(sleep_in_ms));
+    try {
+        boost::this_thread::sleep(boost::posix_time::seconds(sleep_in_s));
+    } catch(const boost::thread_interrupted& e) {
+        break;
+    }
 
     vivaldiIterations = (vivaldiIterations + 1) % LONG_MAX;
   }

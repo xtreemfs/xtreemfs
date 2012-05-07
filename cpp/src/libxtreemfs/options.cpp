@@ -133,15 +133,15 @@ Options::Options()
 #else
   vivaldi_filename = ".xtreemfs_vivaldi_coordinates";
 #endif
-  vivaldi_recalculation_interval_ms = 1000 * 300; // in ms
-  vivaldi_recalculation_epsilon_ms = 1000 * 30; // in ms
+  vivaldi_recalculation_interval_s = 1000 * 300; // in ms
+  vivaldi_recalculation_epsilon_s = 1000 * 30; // in ms
   vivaldi_max_iterations_before_updating = 12;
   vivaldi_max_request_retries = 2;
-  vivaldi_zipf_generator_skew = 0.5;
 
   // Advanced XtreemFS options.
   periodic_file_size_updates_interval_s = 60;  // Default: 1 Minute.
   periodic_xcap_renewal_interval_s = 60;  // Default: 1 Minute.
+  vivaldi_zipf_generator_skew = 0.5;
 
 #ifndef WIN32
   // User mapping.
@@ -306,15 +306,17 @@ void Options::GenerateProgramOptionsDescriptions() {
           "The file where the vivaldi coordinates should be saved after each "
           "recalculation.")
       ("vivaldi-recalculation-interval",
-          po::value(&vivaldi_recalculation_interval_ms)
-            ->default_value(vivaldi_recalculation_interval_ms),
-          "The interval between coordinate recalculations. Also see vivaldi-"
+          po::value(&vivaldi_recalculation_interval_s)
+            ->default_value(vivaldi_recalculation_interval_s),
+          "The interval between coordinate recalculations in seconds. "
+          "Also see vivaldi-"
           "recalculation-epsilon.")
       ("vivaldi-recalculation-epsilon",
-          po::value(&vivaldi_recalculation_epsilon_ms)
-            ->default_value(vivaldi_recalculation_epsilon_ms),
+          po::value(&vivaldi_recalculation_epsilon_s)
+            ->default_value(vivaldi_recalculation_epsilon_s),
           "The recalculation interval will be randomly chosen from"
-          " vivaldi-recalculation-inverval +/- vivaldi-recalculation-epsilon.")
+          " vivaldi-recalculation-inverval +/- vivaldi-recalculation-epsilon "
+          "(Both in seconds).")
       ("vivaldi-max-iterations-before-updating",
           po::value(&vivaldi_max_iterations_before_updating)
             ->default_value(vivaldi_max_iterations_before_updating),
@@ -322,11 +324,8 @@ void Options::GenerateProgramOptionsDescriptions() {
       ("vivaldi-max-request-retries",
           po::value(&vivaldi_max_request_retries)
             ->default_value(vivaldi_max_request_retries),
-          "Maximal number of retries when requesting coordinates from another vivaldi node.")
-
-      ("vivaldi-zipf-generator-skew",
-          po::value(&vivaldi_zipf_generator_skew)
-            ->default_value(vivaldi_zipf_generator_skew));
+          "Maximal number of retries when requesting coordinates from another "
+          "vivaldi node.");
 
   xtreemfs_advanced_options_.add_options()
     ("periodic-filesize-update-interval",
@@ -336,7 +335,12 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("periodic-",
         po::value(&periodic_xcap_renewal_interval_s),
         "Pause time (in seconds) between two invocations of the thread which "
-        "renews the XCap of all open file handles.");
+        "renews the XCap of all open file handles.")
+    ("vivaldi-zipf-generator-skew",
+        po::value(&vivaldi_zipf_generator_skew)
+          ->default_value(vivaldi_zipf_generator_skew),
+        "Skewness of the Zipf distribution used for vivaldi OSD selection");
+
 
   all_descriptions_.add(general_).add(optimizations_).add(error_handling_)
       .add(ssl_options_).add(grid_options_).add(vivaldi_options_);
