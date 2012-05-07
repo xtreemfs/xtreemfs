@@ -42,6 +42,12 @@ using namespace std;
 using namespace boost;
 using namespace google::protobuf;
 
+#if (BOOST_VERSION < 104800)
+using boost::interprocess::detail::atomic_inc32;
+#else
+using boost::interprocess::ipcdetail::atomic_inc32;
+#endif  // BOOST_VERSION < 104800
+
 Client::Client(int32_t connect_timeout_s,
                int32_t request_timeout_s,
                int32_t max_con_linger,
@@ -259,8 +265,7 @@ void Client::sendRequest(const string& address,
                          Message* response_message,
                          void* context,
                          ClientRequestCallbackInterface *callback) {
-  uint32_t call_id =
-      boost::interprocess::detail::atomic_inc32(&callid_counter_);
+  uint32_t call_id = atomic_inc32(&callid_counter_);
   ClientRequest *rq = new ClientRequest(address,
                                         call_id,
                                         interface_id,
