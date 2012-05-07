@@ -183,7 +183,7 @@ class Options {
   /** Number of coordinate recalculations before updating the list of OSDs. */
   unsigned int vivaldi_max_iterations_before_updating;
   /** Maximal number of retries when requesting coordinates from another
-   *  vvivaldi node. */
+   *  vivaldi node. */
   unsigned int vivaldi_max_request_retries;
 
   // Advanced XtreemFS options.

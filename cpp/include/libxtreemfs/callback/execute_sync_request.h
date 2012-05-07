@@ -116,8 +116,20 @@ template<class ReturnMessageType, class F>
     }
     response = sync_function(service_address);
 
+    bool has_failed;
+    try {
+      has_failed = response->HasFailed();
+    } catch (const boost::thread_interrupted& e) {
+        if (response != NULL) {
+          // Free response.
+          response->DeleteBuffers();
+          delete response;
+        }
+        throw;
+    }
+
     // Check response.
-    if (response->HasFailed()) {
+    if (has_failed) {
       // An error has happened. Differ between communication problems (retry
       // allowed) and application errors (need to pass to the caller).
 
@@ -212,9 +224,13 @@ template<class ReturnMessageType, class F>
 
         try {
             sleep_interruptible(delay_time_left.total_milliseconds());
-        } catch (boost::thread_interrupted) {
-            // also use interrupt handler in case the thread was interrupted
-            Interruptibilizer::InterruptHandler(options.interrupt_signal);
+        } catch (const boost::thread_interrupted& e) {
+            if (response != NULL) {
+              // Free response.
+              response->DeleteBuffers();
+              delete response;
+            }
+            throw;
         }
 
       } else {

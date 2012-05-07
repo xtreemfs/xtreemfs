@@ -11,10 +11,14 @@
 #include <boost/program_options/cmdline.hpp>
 #include <iostream>
 #include <string>
-// for getpwuid
+
 #ifdef __APPLE__
+  // for getpwuid
   #include <sys/types.h>
   #include <pwd.h>
+#else
+  // for getenv
+  #include <cstdlib>
 #endif
 
 #include "rpc/ssl_options.h"
@@ -125,7 +129,7 @@ Options::Options()
   vivaldi_enable_dir_updates = false;
 #ifdef __linux__
   vivaldi_filename = string(getenv("HOME")) + "/.xtreemfs_vivaldi_coordinates";
-#elif __APPLE__
+#elif defined __APPLE__
   struct passwd* pwd = getpwuid(getuid());
   vivaldi_filename = string(getenv(pwd->pw_dir)) + "/.xtreemfs_vivaldi_coordinates";
 #elif defined WIN32
