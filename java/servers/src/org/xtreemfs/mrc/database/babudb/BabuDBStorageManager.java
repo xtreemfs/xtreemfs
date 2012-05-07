@@ -96,8 +96,8 @@ public class BabuDBStorageManager implements StorageManager {
     
     protected static final String            VOL_ID_ATTR_NAME           = "volId";
     
-    protected static final int[]             ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX,
-        ACL_INDEX, FILE_ID_INDEX, VOLUME_INDEX                         };
+    protected static final int[]             ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX, ACL_INDEX,
+            FILE_ID_INDEX, VOLUME_INDEX                                };
     
     private final DatabaseManager            dbMan;
     
@@ -138,8 +138,7 @@ public class BabuDBStorageManager implements StorageManager {
      * @param db
      *            the database
      */
-    public BabuDBStorageManager(DatabaseManager dbMan, SnapshotManager sMan, Database db)
-        throws DatabaseException {
+    public BabuDBStorageManager(DatabaseManager dbMan, SnapshotManager sMan, Database db) throws DatabaseException {
         
         this.dbMan = dbMan;
         this.snapMan = sMan;
@@ -159,9 +158,9 @@ public class BabuDBStorageManager implements StorageManager {
      *            the volume ID
      */
     public BabuDBStorageManager(BabuDB dbs, String volumeId, String volumeName, short fileAccessPolicyId,
-        short[] osdPolicy, short[] replPolicy, String ownerId, String owningGroupId, int perms,
-        ACLEntry[] acl, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy rootDirDefSp,
-        boolean allowSnaps, Map<String, String> attrs) throws DatabaseException {
+            short[] osdPolicy, short[] replPolicy, String ownerId, String owningGroupId, int perms, ACLEntry[] acl,
+            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy rootDirDefSp, boolean allowSnaps,
+            Map<String, String> attrs) throws DatabaseException {
         
         this.dbMan = dbs.getDatabaseManager();
         this.snapMan = dbs.getSnapshotManager();
@@ -178,8 +177,8 @@ public class BabuDBStorageManager implements StorageManager {
         createDir(1, 0, volumeName, time, time, time, ownerId, owningGroupId, perms, 0, true, update);
         setLastFileId(1, update);
         
-        volume.init(this, update.getDatabaseName(), volumeName, osdPolicy, replPolicy, fileAccessPolicyId,
-            allowSnaps, update);
+        volume.init(this, update.getDatabaseName(), volumeName, osdPolicy, replPolicy, fileAccessPolicyId, allowSnaps,
+                update);
         
         // set the default striping policy
         if (rootDirDefSp != null)
@@ -227,10 +226,10 @@ public class BabuDBStorageManager implements StorageManager {
     
     @Override
     public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener<Object> listener, Object context)
-        throws DatabaseException {
+            throws DatabaseException {
         try {
-            return new AtomicBabuDBUpdate(database, listener == null ? null
-                : new BabuDBRequestListenerWrapper<Object>(listener), context);
+            return new AtomicBabuDBUpdate(database, listener == null ? null : new BabuDBRequestListenerWrapper<Object>(
+                    listener), context);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
@@ -293,30 +292,28 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public FileMetadata createDir(long fileId, long parentId, String fileName, int atime, int ctime,
-        int mtime, String userId, String groupId, int perms, long w32Attrs, AtomicDBUpdate update)
-        throws DatabaseException {
+    public FileMetadata createDir(long fileId, long parentId, String fileName, int atime, int ctime, int mtime,
+            String userId, String groupId, int perms, long w32Attrs, AtomicDBUpdate update) throws DatabaseException {
         
-        return createDir(fileId, parentId, fileName, atime, ctime, mtime, userId, groupId, perms, w32Attrs,
-            false, update);
+        return createDir(fileId, parentId, fileName, atime, ctime, mtime, userId, groupId, perms, w32Attrs, false,
+                update);
     }
     
-    public FileMetadata createDir(long fileId, long parentId, String fileName, int atime, int ctime,
-        int mtime, String userId, String groupId, int perms, long w32Attrs, boolean initCount,
-        AtomicDBUpdate update) throws DatabaseException {
+    public FileMetadata createDir(long fileId, long parentId, String fileName, int atime, int ctime, int mtime,
+            String userId, String groupId, int perms, long w32Attrs, boolean initCount, AtomicDBUpdate update)
+            throws DatabaseException {
         
         // create metadata
-        BufferBackedFileMetadata fileMetadata = new BufferBackedFileMetadata(parentId, fileName, userId,
-            groupId, fileId, atime, ctime, mtime, perms, w32Attrs, (short) 1);
+        BufferBackedFileMetadata fileMetadata = new BufferBackedFileMetadata(parentId, fileName, userId, groupId,
+                fileId, atime, ctime, mtime, perms, w32Attrs, (short) 1);
         
         // update main metadata in the file index
         update.addUpdate(FILE_INDEX, fileMetadata.getFCMetadataKey(), fileMetadata.getFCMetadataValue());
-        update.addUpdate(FILE_INDEX, fileMetadata.getRCMetadata().getKey(), fileMetadata.getRCMetadata()
-                .getValue());
+        update.addUpdate(FILE_INDEX, fileMetadata.getRCMetadata().getKey(), fileMetadata.getRCMetadata().getValue());
         
         // add an entry to the file ID index
         update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(fileId, (byte) 3),
-            BabuDBStorageHelper.createFileIdIndexValue(parentId, fileName));
+                BabuDBStorageHelper.createFileIdIndexValue(parentId, fileName));
         
         if (initCount)
             initCount(NUM_DIRS_KEY, update);
@@ -327,22 +324,21 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public FileMetadata createFile(long fileId, long parentId, String fileName, int atime, int ctime,
-        int mtime, String userId, String groupId, int perms, long w32Attrs, long size, boolean readOnly,
-        int epoch, int issEpoch, AtomicDBUpdate update) throws DatabaseException {
+    public FileMetadata createFile(long fileId, long parentId, String fileName, int atime, int ctime, int mtime,
+            String userId, String groupId, int perms, long w32Attrs, long size, boolean readOnly, int epoch,
+            int issEpoch, AtomicDBUpdate update) throws DatabaseException {
         
         // create metadata
-        BufferBackedFileMetadata fileMetadata = new BufferBackedFileMetadata(parentId, fileName, userId,
-            groupId, fileId, atime, ctime, mtime, size, perms, w32Attrs, (short) 1, epoch, issEpoch, readOnly);
+        BufferBackedFileMetadata fileMetadata = new BufferBackedFileMetadata(parentId, fileName, userId, groupId,
+                fileId, atime, ctime, mtime, size, perms, w32Attrs, (short) 1, epoch, issEpoch, readOnly);
         
         // update main metadata in the file index
         update.addUpdate(FILE_INDEX, fileMetadata.getFCMetadataKey(), fileMetadata.getFCMetadataValue());
-        update.addUpdate(FILE_INDEX, fileMetadata.getRCMetadata().getKey(), fileMetadata.getRCMetadata()
-                .getValue());
+        update.addUpdate(FILE_INDEX, fileMetadata.getRCMetadata().getKey(), fileMetadata.getRCMetadata().getValue());
         
         // add an entry to the file ID index
         update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(fileId, (byte) 3),
-            BabuDBStorageHelper.createFileIdIndexValue(parentId, fileName));
+                BabuDBStorageHelper.createFileIdIndexValue(parentId, fileName));
         
         volume.updateVolumeSize(size, update);
         updateCount(NUM_FILES_KEY, true, update);
@@ -351,33 +347,32 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public FileMetadata createSymLink(long fileId, long parentId, String fileName, int atime, int ctime,
-        int mtime, String userId, String groupId, String ref, AtomicDBUpdate update) {
+    public FileMetadata createSymLink(long fileId, long parentId, String fileName, int atime, int ctime, int mtime,
+            String userId, String groupId, String ref, AtomicDBUpdate update) {
         
         // create metadata
-        BufferBackedFileMetadata fileMetadata = new BufferBackedFileMetadata(parentId, fileName, userId,
-            groupId, fileId, atime, ctime, mtime, ref.length(), 0777, 0, (short) 1, 0, 0, false);
+        BufferBackedFileMetadata fileMetadata = new BufferBackedFileMetadata(parentId, fileName, userId, groupId,
+                fileId, atime, ctime, mtime, ref.length(), 0777, 0, (short) 1, 0, 0, false);
         
         // create link target (XAttr)
         BufferBackedXAttr lt = new BufferBackedXAttr(fileId, SYSTEM_UID, LINK_TARGET_ATTR_NAME, ref.getBytes(),
-            (short) 0);
+                (short) 0);
         update.addUpdate(XATTRS_INDEX, lt.getKeyBuf(), lt.getValBuf());
         
         // update main metadata in the file index
         update.addUpdate(FILE_INDEX, fileMetadata.getFCMetadataKey(), fileMetadata.getFCMetadataValue());
-        update.addUpdate(FILE_INDEX, fileMetadata.getRCMetadata().getKey(), fileMetadata.getRCMetadata()
-                .getValue());
+        update.addUpdate(FILE_INDEX, fileMetadata.getRCMetadata().getKey(), fileMetadata.getRCMetadata().getValue());
         
         // add an entry to the file ID index
         update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(fileId, (byte) 3),
-            BabuDBStorageHelper.createFileIdIndexValue(parentId, fileName));
+                BabuDBStorageHelper.createFileIdIndexValue(parentId, fileName));
         
         return fileMetadata;
     }
     
     @Override
     public short unlink(final long parentId, final String fileName, final AtomicDBUpdate update)
-        throws DatabaseException {
+            throws DatabaseException {
         
         try {
             
@@ -393,13 +388,13 @@ public class BabuDBStorageManager implements StorageManager {
             // been at least two links
             if (newLinkCount > 0)
                 update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(file.getId(),
-                    FileMetadata.RC_METADATA), file.getRCMetadata().getValue());
+                        FileMetadata.RC_METADATA), file.getRCMetadata().getValue());
             
             // remove all entries from the file index
-            update.addUpdate(FILE_INDEX, BabuDBStorageHelper.createFileKey(parentId, fileName,
-                FileMetadata.FC_METADATA), null);
-            update.addUpdate(FILE_INDEX, BabuDBStorageHelper.createFileKey(parentId, fileName,
-                FileMetadata.RC_METADATA), null);
+            update.addUpdate(FILE_INDEX,
+                    BabuDBStorageHelper.createFileKey(parentId, fileName, FileMetadata.FC_METADATA), null);
+            update.addUpdate(FILE_INDEX,
+                    BabuDBStorageHelper.createFileKey(parentId, fileName, FileMetadata.RC_METADATA), null);
             
             return newLinkCount;
             
@@ -411,7 +406,7 @@ public class BabuDBStorageManager implements StorageManager {
     
     @Override
     public short delete(final long parentId, final String fileName, final AtomicDBUpdate update)
-        throws DatabaseException {
+            throws DatabaseException {
         
         try {
             
@@ -429,36 +424,36 @@ public class BabuDBStorageManager implements StorageManager {
             // link count
             if (newLinkCount > 0)
                 update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(file.getId(),
-                    FileMetadata.RC_METADATA), file.getRCMetadata().getValue());
+                        FileMetadata.RC_METADATA), file.getRCMetadata().getValue());
             
             // delete all keys ...
             
             // remove all content from the file index
-            update.addUpdate(BabuDBStorageManager.FILE_INDEX, BabuDBStorageHelper.createFileKey(parentId,
-                fileName, FileMetadata.FC_METADATA), null);
-            update.addUpdate(BabuDBStorageManager.FILE_INDEX, BabuDBStorageHelper.createFileKey(parentId,
-                fileName, FileMetadata.RC_METADATA), null);
+            update.addUpdate(BabuDBStorageManager.FILE_INDEX,
+                    BabuDBStorageHelper.createFileKey(parentId, fileName, FileMetadata.FC_METADATA), null);
+            update.addUpdate(BabuDBStorageManager.FILE_INDEX,
+                    BabuDBStorageHelper.createFileKey(parentId, fileName, FileMetadata.RC_METADATA), null);
             
             // if the last link to the file is supposed to be deleted, remove
             // the remaining metadata, including ACLs and XAttrs
             if (newLinkCount == 0) {
                 
                 // remove the back link from the file ID index
-                update.addUpdate(BabuDBStorageManager.FILE_ID_INDEX, BabuDBStorageHelper
-                        .createFileIdIndexKey(file.getId(), (byte) 3), null);
+                update.addUpdate(BabuDBStorageManager.FILE_ID_INDEX,
+                        BabuDBStorageHelper.createFileIdIndexKey(file.getId(), (byte) 3), null);
                 
                 // remove potentially existing metadata from the file ID index
-                update.addUpdate(BabuDBStorageManager.FILE_ID_INDEX, BabuDBStorageHelper
-                        .createFileIdIndexKey(file.getId(), FileMetadata.FC_METADATA), null);
-                update.addUpdate(BabuDBStorageManager.FILE_ID_INDEX, BabuDBStorageHelper
-                        .createFileIdIndexKey(file.getId(), FileMetadata.RC_METADATA), null);
+                update.addUpdate(BabuDBStorageManager.FILE_ID_INDEX,
+                        BabuDBStorageHelper.createFileIdIndexKey(file.getId(), FileMetadata.FC_METADATA), null);
+                update.addUpdate(BabuDBStorageManager.FILE_ID_INDEX,
+                        BabuDBStorageHelper.createFileIdIndexKey(file.getId(), FileMetadata.RC_METADATA), null);
                 
                 byte[] idBytes = new byte[8];
                 ByteBuffer.wrap(idBytes).putLong(file.getId());
                 
                 // remove all ACLs
-                Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.ACL_INDEX,
-                    idBytes, null).get();
+                Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.ACL_INDEX, idBytes,
+                        null).get();
                 while (it.hasNext())
                     update.addUpdate(BabuDBStorageManager.ACL_INDEX, it.next().getKey(), null);
                 
@@ -468,13 +463,14 @@ public class BabuDBStorageManager implements StorageManager {
                     update.addUpdate(BabuDBStorageManager.XATTRS_INDEX, it.next().getKey(), null);
                 
                 // if a file is deleted, update file count and volume size
-                if (file.getXLocList() != null) {
-                    if (file.isDirectory())
-                        updateCount(NUM_DIRS_KEY, false, update);
-                    else {
-                        volume.updateVolumeSize(-file.getSize(), update);
-                        updateCount(NUM_FILES_KEY, false, update);
-                    }
+                if (file.isDirectory()) {
+                    updateCount(NUM_DIRS_KEY, false, update);
+                    
+                }
+                
+                else if (file.getXLocList() != null) {
+                    volume.updateVolumeSize(-file.getSize(), update);
+                    updateCount(NUM_FILES_KEY, false, update);
                 }
                 
             }
@@ -517,8 +513,7 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public DatabaseResultSet<FileMetadata> getChildren(long parentId, int seen, int num)
-        throws DatabaseException {
+    public DatabaseResultSet<FileMetadata> getChildren(long parentId, int seen, int num) throws DatabaseException {
         
         try {
             return BabuDBStorageHelper.getChildren(database, parentId, seen, num);
@@ -574,8 +569,8 @@ public class BabuDBStorageManager implements StorageManager {
             byte[][] valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
             
             // retrieve the metadata from the link index
-            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.FILE_ID_INDEX,
-                key, null).get();
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(BabuDBStorageManager.FILE_ID_INDEX, key, null)
+                    .get();
             
             while (it.hasNext()) {
                 
@@ -599,8 +594,7 @@ public class BabuDBStorageManager implements StorageManager {
             if (valBufs[FileMetadata.RC_METADATA] == null)
                 return null;
             
-            byte[][] keyBufs = new byte[][] { null,
-                BabuDBStorageHelper.createFileKey(0, "", FileMetadata.RC_METADATA) };
+            byte[][] keyBufs = new byte[][] { null, BabuDBStorageHelper.createFileKey(0, "", FileMetadata.RC_METADATA) };
             
             // otherwise, a hard link target is contained in the index; create a
             // new metadata object in this case
@@ -626,7 +620,7 @@ public class BabuDBStorageManager implements StorageManager {
         
         try {
             byte[] target = getXAttr(fileId, SYSTEM_UID, LINK_TARGET_ATTR_NAME);
-            return target == null? null: new String(target);
+            return target == null ? null : new String(target);
         } catch (DatabaseException exc) {
             throw exc;
         } catch (Exception exc) {
@@ -694,7 +688,7 @@ public class BabuDBStorageManager implements StorageManager {
     
     @Override
     public void link(final FileMetadata metadata, final long newParentId, final String newFileName,
-        final AtomicDBUpdate update) {
+            final AtomicDBUpdate update) {
         
         // get the link source
         BufferBackedFileMetadata md = (BufferBackedFileMetadata) metadata;
@@ -705,14 +699,14 @@ public class BabuDBStorageManager implements StorageManager {
         
         // insert the whole metadata of the original file in the file ID
         // index
+        update.addUpdate(FILE_ID_INDEX,
+                BabuDBStorageHelper.createFileIdIndexKey(metadata.getId(), FileMetadata.FC_METADATA),
+                md.getFCMetadataValue());
         update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata.getId(),
-            FileMetadata.FC_METADATA), md.getFCMetadataValue());
-        update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata.getId(),
-            FileMetadata.RC_METADATA), md.getRCMetadata().getValue());
+                FileMetadata.RC_METADATA), md.getRCMetadata().getValue());
         
         // remove the back link
-        update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata.getId(), (byte) 3),
-            null);
+        update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(metadata.getId(), (byte) 3), null);
         
         // if the metadata was retrieved from the FILE_INDEX and hasn't
         // been deleted before (i.e. links == 0), ensure that the original
@@ -720,15 +714,16 @@ public class BabuDBStorageManager implements StorageManager {
         // remove the FC and XLoc metadata entries
         if (links != 0 && md.getIndexId() == FILE_INDEX) {
             
-            update.addUpdate(FILE_INDEX, md.getRCMetadata().getKey(), BabuDBStorageHelper
-                    .createLinkTarget(metadata.getId()));
+            update.addUpdate(FILE_INDEX, md.getRCMetadata().getKey(),
+                    BabuDBStorageHelper.createLinkTarget(metadata.getId()));
             update.addUpdate(FILE_INDEX, md.getFCMetadataKey(), null);
         }
         
         // create an entry for the new link to the metadata in the file
         // index
-        update.addUpdate(FILE_INDEX, BabuDBStorageHelper.createFileKey(newParentId, newFileName,
-            FileMetadata.RC_METADATA), BabuDBStorageHelper.createLinkTarget(metadata.getId()));
+        update.addUpdate(FILE_INDEX,
+                BabuDBStorageHelper.createFileKey(newParentId, newFileName, FileMetadata.RC_METADATA),
+                BabuDBStorageHelper.createLinkTarget(metadata.getId()));
         
     }
     
@@ -756,8 +751,7 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public void setACLEntry(long fileId, String entity, Short rights, AtomicDBUpdate update)
-        throws DatabaseException {
+    public void setACLEntry(long fileId, String entity, Short rights, AtomicDBUpdate update) throws DatabaseException {
         
         BufferBackedACLEntry entry = new BufferBackedACLEntry(fileId, entity, rights == null ? 0 : rights);
         update.addUpdate(ACL_INDEX, entry.getKeyBuf(), rights == null ? null : entry.getValBuf());
@@ -765,26 +759,26 @@ public class BabuDBStorageManager implements StorageManager {
     
     @Override
     public void setDefaultStripingPolicy(long fileId,
-        org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy defaultSp, AtomicDBUpdate update)
-        throws DatabaseException {
+            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy defaultSp, AtomicDBUpdate update)
+            throws DatabaseException {
         
         setDefaultStripingPolicy(fileId, defaultSp, false, update);
     }
     
     public void setDefaultStripingPolicy(long fileId,
-        org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy defaultSp, boolean init,
-        AtomicDBUpdate update) throws DatabaseException {
+            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy defaultSp, boolean init,
+            AtomicDBUpdate update) throws DatabaseException {
         
-        setXAttr(fileId, SYSTEM_UID, DEFAULT_SP_ATTR_NAME, Converter.stripingPolicyToString(defaultSp).getBytes(), init,
-            update);
+        setXAttr(fileId, SYSTEM_UID, DEFAULT_SP_ATTR_NAME, Converter.stripingPolicyToString(defaultSp).getBytes(),
+                init, update);
     }
     
     @Override
     public void setDefaultReplicationPolicy(long fileId, ReplicationPolicy defaultRp, AtomicDBUpdate update)
-        throws DatabaseException {
+            throws DatabaseException {
         
         setXAttr(fileId, SYSTEM_UID, DEFAULT_RP_ATTR_NAME, Converter.replicationPolicyToString(defaultRp).getBytes(),
-            update);
+                update);
     }
     
     @Override
@@ -798,37 +792,40 @@ public class BabuDBStorageManager implements StorageManager {
             for (byte i = 0; i < BufferBackedFileMetadata.NUM_BUFFERS; i++) {
                 byte[] valBuf = md.getValueBuffer(i);
                 assert (valBuf != null);
-                update.addUpdate(index, index == FILE_ID_INDEX ? BabuDBStorageHelper.createFileIdIndexKey(
-                    metadata.getId(), i) : md.getKeyBuffer(i), valBuf);
+                update.addUpdate(
+                        index,
+                        index == FILE_ID_INDEX ? BabuDBStorageHelper.createFileIdIndexKey(metadata.getId(), i) : md
+                                .getKeyBuffer(i), valBuf);
             }
         
         else {
             byte[] valBuf = md.getValueBuffer(type);
             assert (valBuf != null);
-            update.addUpdate(index, index == FILE_ID_INDEX ? BabuDBStorageHelper.createFileIdIndexKey(
-                metadata.getId(), type) : md.getKeyBuffer(type), valBuf);
+            update.addUpdate(
+                    index,
+                    index == FILE_ID_INDEX ? BabuDBStorageHelper.createFileIdIndexKey(metadata.getId(), type) : md
+                            .getKeyBuffer(type), valBuf);
         }
     }
     
     @Override
     public void setXAttr(long fileId, String uid, String key, byte[] value, AtomicDBUpdate update)
-        throws DatabaseException {
+            throws DatabaseException {
         
         setXAttr(fileId, uid, key, value, false, update);
     }
     
-    public void setXAttr(long fileId, String uid, String key, byte[] value, boolean init,
-        AtomicDBUpdate update) throws DatabaseException {
+    public void setXAttr(long fileId, String uid, String key, byte[] value, boolean init, AtomicDBUpdate update)
+            throws DatabaseException {
         
         try {
-            short collNumber = init ? -1 : BabuDBStorageHelper.findXAttrCollisionNumber(database, fileId,
-                uid, key);
+            short collNumber = init ? -1 : BabuDBStorageHelper.findXAttrCollisionNumber(database, fileId, uid, key);
             
             BufferBackedXAttr xattr = new BufferBackedXAttr(fileId, uid, key, value, collNumber);
             update.addUpdate(XATTRS_INDEX, xattr.getKeyBuf(), value == null ? null : xattr.getValBuf());
             
             if (key.startsWith(SYS_ATTR_KEY_PREFIX + MRCHelper.POLICY_ATTR_PREFIX))
-                notifyAttributeSet(volume.getId(), key, value == null? null: new String(value));
+                notifyAttributeSet(volume.getId(), key, value == null ? null : new String(value));
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
@@ -838,7 +835,7 @@ public class BabuDBStorageManager implements StorageManager {
     
     @Override
     public void createSnapshot(String snapName, long parentId, String dirName, boolean recursive)
-        throws DatabaseException {
+            throws DatabaseException {
         
         try {
             
@@ -891,7 +888,7 @@ public class BabuDBStorageManager implements StorageManager {
                         filePrefixes.add(key);
                         dirEntryPrefixes.add(key);
                     }
-
+                    
                     // if the nested file is a file, ...
                     else
                         filePrefixes.add(key);
@@ -905,8 +902,7 @@ public class BabuDBStorageManager implements StorageManager {
                 
                 // FILE_INDEX, XATTRS_INDEX, ACL_INDEX, FILE_ID_INDEX,
                 // VOLUME_INDEX
-                prefixes = new byte[][][] { dirEntryPrefixesA, filePrefixesA, filePrefixesA, filePrefixesA,
-                    null };
+                prefixes = new byte[][][] { dirEntryPrefixesA, filePrefixesA, filePrefixesA, filePrefixesA, null };
             }
             
             // create the snapshot
