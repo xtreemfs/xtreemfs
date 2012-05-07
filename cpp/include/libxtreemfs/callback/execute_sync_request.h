@@ -8,9 +8,9 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_CALLBACK_EXECUTE_SYNC_REQUEST_H_
 #define CPP_INCLUDE_LIBXTREEMFS_CALLBACK_EXECUTE_SYNC_REQUEST_H_
 
-#ifdef __linux
-#include <csignal>
-#endif
+//#ifdef __linux
+//#include <csignal>
+//#endif
 
 #ifdef WIN32
 #define NOMINMAX
@@ -22,13 +22,15 @@
 
 #include <algorithm>
 #include <boost/cstdint.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/thread/tss.hpp>
 #include <google/protobuf/descriptor.h>
 #include <iostream>
 #include <string>
 
+#include "libxtreemfs/interrupt.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/uuid_resolver.h"
@@ -45,11 +47,6 @@ namespace rpc {
 class ClientRequestCallbackInterface;
 }  // namespace rpc
 
-/** Is not NULL, if current thread shall get interrupted. */
-extern boost::thread_specific_ptr<int> intr_pointer;
-
-/** Sets intr_pointer to interrupt execution of the sync request. */
-void InterruptSyncRequest(int signal);
 
 /** Retries to execute the synchronous request "sync_function" up to "options.
  *  max_tries" times and may get interrupted. The "uuid_iterator" object is used
@@ -83,26 +80,17 @@ template<class ReturnMessageType, class F>
   assert(uuid_iterator_has_addresses || uuid_resolver);
   assert((!xcap_handler && !xcap_in_req) || (xcap_handler && xcap_in_req));
 
-#ifdef __linux
-  // Ignore the signal if no previous signal was found.
-  sighandler_t previous_signal_handler = SIG_IGN;
-  if (options.interrupt_signal) {
-    // Clear current interruption state.
-    intr_pointer.reset(NULL);
-    // Register signal handler to allow an interruption.
-    previous_signal_handler = signal(options.interrupt_signal,
-                                     InterruptSyncRequest);
-  }
-#endif
+  Interruptibilizer interrupt(options.interrupt_signal);
 
   int attempt = 0;
   bool redirected = false;
-  bool interrupted = false;
   ReturnMessageType response = NULL;
   std::string service_uuid = "";
   std::string service_address;
+
   // Retry unless maximum tries reached or interrupted.
-  while ((++attempt <= max_tries || max_tries == 0) && !interrupted) {
+  while ((++attempt <= max_tries || max_tries == 0) &&
+         !Interruptibilizer::WasInterrupted()) {
     // Delete any previous response;
     if (response != NULL) {
       response->DeleteBuffers();
@@ -118,17 +106,11 @@ template<class ReturnMessageType, class F>
     }
 
     // Execute request.
-#ifdef WIN32
-    FILETIME request_sent, current_time;
-    ULARGE_INTEGER ularge_request_sent, ularge_current_time;
 
-    GetSystemTimeAsFileTime(&request_sent);
-    ularge_request_sent.LowPart = request_sent.dwLowDateTime;
-    ularge_request_sent.HighPart = request_sent.dwHighDateTime;
-#else
-    timeval request_sent, current_time;
-    gettimeofday(&request_sent, 0);
-#endif  // WIN32
+    // Send out request.
+    boost::posix_time::ptime request_sent_time =
+        boost::posix_time::microsec_clock::local_time();
+
     if (attempt > 1 && xcap_handler && xcap_in_req) {
       xcap_handler->GetXCap(xcap_in_req);
     }
@@ -198,8 +180,10 @@ template<class ReturnMessageType, class F>
           if (attempt == 1 && max_tries != 1) {
             std::string retries_left = max_tries == 0 ? "infinite"
                 : boost::lexical_cast<std::string>(max_tries - attempt);
-            error = "Got no response from server " + service_uuid
-                + " (" + service_address + "), retrying ("
+            error = "Got no response from server "
+                + (uuid_iterator_has_addresses ? service_address
+                      : ( service_address + " (" + service_uuid + ")"))
+                + ", retrying ("
                 + boost::lexical_cast<std::string>(retries_left)
                 + " attempts left)";
           }
@@ -207,61 +191,41 @@ template<class ReturnMessageType, class F>
 
         // If the request did return before the timeout was reached, wait until
         // the timeout is up to avoid flooding.
-        boost::int64_t delay_time_left;
-        do {
-          if (options.interrupt_signal && intr_pointer.get() != NULL) {
-            // Stop retrying if interrupted between two attempts.
-            interrupted = true;
-            break;
+
+        // delay = retry_delay - (current_time - request_sent_time)
+        boost::posix_time::time_duration delay_time_left =
+            boost::posix_time::seconds(options.retry_delay_s) -  // delay
+            (boost::posix_time::microsec_clock::local_time() -   // current time
+             request_sent_time);
+
+        // Append time left to error message.
+        if (!error.empty()) {
+          error += ", waiting " +
+              boost::lexical_cast<std::string>(delay_time_left.total_seconds())
+              + " more seconds till next attempt.";
+          if (xtreemfs::util::Logging::log->loggingActive(level)) {
+            xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
           }
+          xtreemfs::util::ErrorLog::error_log->AppendError(error);
+          error.clear();
+        }
 
-#ifdef WIN32
-          GetSystemTimeAsFileTime(&current_time);
+        try {
+            sleep_interruptible(delay_time_left.total_milliseconds());
+        } catch (boost::thread_interrupted) {
+            // also use interrupt handler in case the thread was interrupted
+            Interruptibilizer::InterruptHandler(options.interrupt_signal);
+        }
 
-          ularge_current_time.LowPart = current_time.dwLowDateTime;
-          ularge_current_time.HighPart = current_time.dwHighDateTime;
-          // FILETIME has a resolution of 100 nanoseconds, round to milliseconds
-          delay_time_left =
-              static_cast<boost::int64_t>(options.retry_delay_s) * 1000000
-              - ((ularge_current_time.QuadPart - ularge_request_sent.QuadPart)
-                 / 10);
-#else
-          gettimeofday(&current_time, 0);
-          delay_time_left =
-              static_cast<boost::int64_t>(options.retry_delay_s) * 1000000
-              - ((current_time.tv_sec * 1000000 + current_time.tv_usec) -
-                 (request_sent.tv_sec * 1000000 + request_sent.tv_usec));
-#endif
-
-          if (!error.empty()) {
-            // Append time left to error message.
-            error += ", waiting "
-                + boost::lexical_cast<std::string>(
-                    std::max(0.0,
-                             std::floor(static_cast<double>(delay_time_left)
-                                 / 100000) / 10))
-                + " more seconds till next attempt.";
-            if (xtreemfs::util::Logging::log->loggingActive(level)) {
-              xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
-            }
-            xtreemfs::util::ErrorLog::error_log->AppendError(error);
-            error.clear();
-          }
-
-          if (delay_time_left > 0) {
-            boost::this_thread::sleep(
-                boost::posix_time::millisec(100));
-          }
-        } while (delay_time_left > 0);
       } else {
-        break;  // Do not retry if error occurred - throw exception.
+        break;  // Do not retry if error occurred - throw exception. // TODO(mno): where is the exception?
       }
     } else {
       // No error happened, check for possible interruption.
-    }
+    }  // if (response->HasFailed())
 
     // Have we been interrupted?
-    if (options.interrupt_signal && intr_pointer.get() != NULL) {
+    if (options.interrupt_signal && Interruptibilizer::WasInterrupted()) {
       if (xtreemfs::util::Logging::log->loggingActive(
               xtreemfs::util::LEVEL_INFO)) {
         std::string error = "Caught interrupt, aborting sync request.";
@@ -269,7 +233,6 @@ template<class ReturnMessageType, class F>
             << error << std::endl;
         xtreemfs::util::ErrorLog::error_log->AppendError(error);
       }
-      intr_pointer.reset(NULL);
       // Clear the current response.
       if (response != NULL) {
         response->DeleteBuffers();
@@ -283,12 +246,6 @@ template<class ReturnMessageType, class F>
       break;  // Do not retry if request was successful.
     }
   }
-#ifdef __linux
-  // Remove signal handler.
-  if (options.interrupt_signal) {
-    signal(options.interrupt_signal, previous_signal_handler);
-  }
-#endif
 
   // Request was successful.
   if (response && !response->HasFailed()) {
@@ -336,8 +293,10 @@ template<class ReturnMessageType, class F>
         if (enum_desc) {
             posix_errono_string = enum_desc->name();
         }
-        error = "The server " + service_uuid + " (" + service_address
-            + ") denied the requested operation."
+        error = "The server "
+            + (uuid_iterator_has_addresses ? service_address
+                  : ( service_address + " (" + service_uuid + ")"))
+            + " denied the requested operation."
               " Error Value: " + posix_errono_string
             + " Error message: " + error_message
             + retry_count_msg;
@@ -349,8 +308,10 @@ template<class ReturnMessageType, class F>
       }
       case xtreemfs::pbrpc::IO_ERROR:  {
         error = "The client encountered a communication error sending a request"
-            " to the server: " + service_uuid + " (" + service_address + ")."
-            " Error: " + error_message + retry_count_msg;
+            " to the server: "
+            + (uuid_iterator_has_addresses ? service_address
+                  : ( service_address + " (" + service_uuid + ")"))
+            + ". Error: " + error_message + retry_count_msg;
         if (xtreemfs::util::Logging::log->loggingActive(level)) {
           xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
         }
@@ -358,8 +319,10 @@ template<class ReturnMessageType, class F>
         throw IOException(error_message);
       }
       case xtreemfs::pbrpc::INTERNAL_SERVER_ERROR:  {
-        error = "The server " + service_uuid + " (" + service_address + ") "
-            "returned an internal server error: " + error_message
+        error = "The server "
+            + (uuid_iterator_has_addresses ? service_address
+                  : ( service_address + " (" + service_uuid + ")"))
+            + " returned an internal server error: " + error_message
             + retry_count_msg;
         if (xtreemfs::util::Logging::log->loggingActive(level)) {
           xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
@@ -380,8 +343,10 @@ template<class ReturnMessageType, class F>
         if (enum_desc) {
           error_type_name = enum_desc->name();
         }
-        error = "The server " + service_uuid + " (" + service_address + ") "
-            "returned an error: " + error_type_name
+        error = "The server "
+            + (uuid_iterator_has_addresses ? service_address
+                  : ( service_address + " (" + service_uuid + ")"))
+            + " returned an error: " + error_type_name
             + " Error: " + error_message + retry_count_msg;
         if (xtreemfs::util::Logging::log->loggingActive(level)) {
           xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
@@ -394,12 +359,14 @@ template<class ReturnMessageType, class F>
     // No Response given, probably interrupted.
     throw PosixErrorException(
         xtreemfs::pbrpc::POSIX_ERROR_EINTR,
-        "The operation (sending a request to the server " + service_uuid + " ("
-        + service_address + ")) was aborted by the user at attempt: "
-        // attempt + 1 because the interrupt is only possible after the request
-        // came back.
-        + boost::lexical_cast<std::string>(attempt + 1) + ".");
-  }
+        "The operation (sending a request to the server "
+            + (uuid_iterator_has_addresses ? service_address
+                  : ( service_address + " (" + service_uuid + ")"))
+            + ") was aborted by the user at attempt: "
+            // attempt + 1 because the interrupt is only possible after the
+            // request came back.
+            + boost::lexical_cast<std::string>(attempt + 1) + ".");
+  } // if (response != NULL)
 }
 
 /** Executes the request without delaying the last try and no xcap handler. */

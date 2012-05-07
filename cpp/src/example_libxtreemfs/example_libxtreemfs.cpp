@@ -20,7 +20,7 @@
 
 using namespace std;
 
-int main() {
+int main(int argc, char* argv[]) {
   // Every operation is executed in the context of a given user and his groups.
   // The UserCredentials object does store this information and is currently
   // (08/2011) *only* evaluated by the MRC (although the protocol requires to
@@ -33,10 +33,17 @@ int main() {
   xtreemfs::Options options;
 
   try {
+    options.ParseCommandLine(argc, argv);
+  } catch(const xtreemfs::XtreemFSException& e) {
+    cout << "Invalid parameters found, error: " << e.what() << endl << endl;
+  }
+
+  try {
     // Create a new instance of a client using the DIR service at
     // 'demo.xtreemfs.org' (default port 32638).
     xtreemfs::Client* client = xtreemfs::Client::CreateClient(
-        "demo.xtreemfs.org:32638",
+        //"demo.xtreemfs.org:32638",
+        "localhost:32638",
         user_credentials,
         NULL,  // No SSL options.
         options);
@@ -44,6 +51,9 @@ int main() {
     // Start the client (a connection to the DIR service will be setup).
     client->Start();
 
+
+
+    /*
     // Open a volume named 'demo'.
     xtreemfs::Volume *volume = NULL;
     volume = client->OpenVolume(
@@ -96,7 +106,8 @@ int main() {
 
     // Close the file (no need to delete it, see documentation volume.h).
     file->Close();
-
+*/
+    sleep(60);
     // Shutdown() does also invoke a volume->Close().
     client->Shutdown();
     delete client;
