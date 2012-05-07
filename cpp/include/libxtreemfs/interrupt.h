@@ -26,7 +26,7 @@ namespace xtreemfs {
  * NOTE: this function contains a boost::thread interruption point and
  *       thus might throw boost::thread_interrupted.
  */
-void sleep_interruptible(const unsigned int& rel_time_in_ms);
+void sleep_interruptible(int rel_time_in_ms);
 
 #ifdef __unix
 

@@ -96,14 +96,13 @@ void Interruptibilizer::InterruptHandler(int signal) {
 
 #endif // __unix
 
-void sleep_interruptible(const unsigned int& rel_time_in_ms) {
-  const unsigned int intervall_in_ms = 100;
-  unsigned int runs = rel_time_in_ms / intervall_in_ms
+void sleep_interruptible(int rel_time_in_ms) {
+  assert(rel_time_in_ms >= 0);
+  const int intervall_in_ms = 100;
+  int runs = rel_time_in_ms / intervall_in_ms
       + ((rel_time_in_ms % intervall_in_ms) > 0 ? 1 : 0);
 
-  for (unsigned int i = 0;
-       i < runs && !Interruptibilizer::WasInterrupted();
-       ++i) {
+  for (int i = 0; i < runs && !Interruptibilizer::WasInterrupted(); ++i) {
     boost::this_thread::sleep(boost::posix_time::millisec(intervall_in_ms));
   }
 }
