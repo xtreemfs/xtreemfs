@@ -210,27 +210,32 @@ template<class ReturnMessageType, class F>
             (boost::posix_time::microsec_clock::local_time() -   // current time
              request_sent_time);
 
-        // Append time left to error message.
-        if (!error.empty()) {
-          error += ", waiting " +
-              boost::lexical_cast<std::string>(delay_time_left.total_seconds())
-              + " more seconds till next attempt.";
-          if (xtreemfs::util::Logging::log->loggingActive(level)) {
-            xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
-          }
-          xtreemfs::util::ErrorLog::error_log->AppendError(error);
-          error.clear();
-        }
-
-        try {
-            sleep_interruptible(delay_time_left.total_milliseconds());
-        } catch (const boost::thread_interrupted& e) {
-            if (response != NULL) {
-              // Free response.
-              response->DeleteBuffers();
-              delete response;
+        if (!delay_time_left.is_negative()) {
+          // Append time left to error message.
+          if (!error.empty()) {
+            error += ", waiting "
+                + boost::str(boost::format("%.1f") % (std::max(
+                    0.0,
+                    static_cast<double>(
+                        delay_time_left.total_milliseconds()) / 1000)))
+                + " more seconds till next attempt.";
+            if (xtreemfs::util::Logging::log->loggingActive(level)) {
+              xtreemfs::util::Logging::log->getLog(level) << error << std::endl;
             }
-            throw;
+            xtreemfs::util::ErrorLog::error_log->AppendError(error);
+            error.clear();
+          }
+
+          try {
+              sleep_interruptible(delay_time_left.total_milliseconds());
+          } catch (const boost::thread_interrupted& e) {
+              if (response != NULL) {
+                // Free response.
+                response->DeleteBuffers();
+                delete response;
+              }
+              throw;
+          }
         }
 
       } else {
