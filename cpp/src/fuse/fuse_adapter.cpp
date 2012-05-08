@@ -1133,9 +1133,13 @@ int FuseAdapter::read(const char *path, char *buf, size_t size, off_t offset,
 
 int FuseAdapter::unlink(const char *path) {
   const string path_str(path);
+
   if (!xctl_.checkXctlFile(path_str)) {
+    UserCredentials user_credentials;
+    GenerateUserCredentials(fuse_get_context(), &user_credentials);
+
     try {
-      volume_->Unlink(osd_user_credentials_, path);
+      volume_->Unlink(user_credentials, path);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
@@ -1149,8 +1153,6 @@ int FuseAdapter::unlink(const char *path) {
     return 0;
   } else {
     fuse_context* ctx = fuse_get_context();
-    UserCredentials user_credentials;
-    GenerateUserCredentials(ctx, &user_credentials);
     return xctl_.unlink(ctx->uid, ctx->gid, path_str);
   }
 }
