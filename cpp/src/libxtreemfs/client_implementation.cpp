@@ -147,6 +147,7 @@ Volume* ClientImplementation::OpenVolume(
     const std::string& volume_name,
     const xtreemfs::rpc::SSLOptions* ssl_options,
     const Options& options) {
+  // TODO(mberlin): Fix possible leak through the use of scoped_ptr and swap().
   UUIDIterator* mrc_uuid_iterator = new UUIDIterator;
   VolumeNameToMRCUUID(volume_name, mrc_uuid_iterator);
 
