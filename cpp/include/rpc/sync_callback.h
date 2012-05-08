@@ -99,6 +99,7 @@ SyncCallback<ReturnMessageType>::SyncCallback()
 
 template <class ReturnMessageType>
 SyncCallback<ReturnMessageType>::~SyncCallback() {
+  // TODO(mberlin): Is a lock here really needed?!
   boost::lock_guard<boost::mutex> lock(cond_lock_);
   delete request_;
 }
