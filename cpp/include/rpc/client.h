@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009-2010 by Bjoern Kolbeck, Zuse Institute Berlin
+ *                    2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -15,6 +16,7 @@
 #include <boost/function.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/thread/mutex.hpp>
+#include <gtest/gtest_prod.h>
 #include <queue>
 #include <string>
 
@@ -69,6 +71,12 @@ class Client {
                    ClientRequestCallbackInterface *callback);
 
  private:
+  /** Helper function which aborts a ClientRequest with "error".
+   *
+   * @remarks    Ownership of "request" is not transferred.
+   */
+  void AbortClientRequest(ClientRequest* request, const std::string& error);
+
   void handleTimeout(const boost::system::error_code& error);
 
   void sendInternalRequest();
@@ -80,10 +88,28 @@ class Client {
   boost::asio::ip::tcp::resolver resolver_;
   bool use_gridssl_;
   boost::asio::ssl::context* ssl_context_;
-  boost::mutex requests_lock_;
   connection_map connections_;
+  /** Contains all pending requests which are uniquely identified by their
+   *  call id.
+   *
+   *  Requests to this table are added when sending them and removed by the
+   *  handleTimeout() function and the callback processing.
+   *
+   *  @remark All accesses to this object have to be executed in the context of
+   *          service_ and therefore do not require further synchronization.
+   */
   request_map request_table_;
+  /** Guards access to requests_ and stopped_. */
+  boost::mutex requests_mutex_;
+  /** Global queue where all requests queue up before the required
+   *  ClientConnection is available.
+   *
+   *  Once a ClientRequest was removed from this queue, it will be added to the
+   *  requests_table_ and the queue ClientConnection::requests_.
+   */
   std::queue<ClientRequest*> requests_;
+  /** True when the RPC client was stopped and no new requests are accepted. */
+  bool stopped_;
   boost::uint32_t callid_counter_;
   boost::asio::deadline_timer rq_timeout_timer_;
   boost::int32_t rq_timeout_s_;
@@ -94,9 +120,11 @@ class Client {
 
   char* pemFileName;
   char* certFileName;
+
+  FRIEND_TEST(ClientTestFastLingerTimeout, LingerTests);
+  FRIEND_TEST(ClientTestFastLingerTimeoutConnectTimeout, LingerTests);
 };
 }  // namespace rpc
 }  // namespace xtreemfs
 
 #endif  // CPP_INCLUDE_RPC_CLIENT_H_
-
