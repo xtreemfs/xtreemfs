@@ -79,6 +79,13 @@ ClientImplementation::~ClientImplementation() {
   network_client_->shutdown();
   network_client_thread_->join();
 
+  // Since we wait for outstanding requests, the RPC client (network_client_)
+  // has to shutdown first and then we can wait for the Vivaldi thread.
+  // The other way around a deadlock might occur.
+  if (vivaldi_thread_.get() && vivaldi_thread_->joinable()) {
+    vivaldi_thread_->join();
+  }
+
   atexit(google::protobuf::ShutdownProtobufLibrary);
 
   shutdown_logger();
@@ -133,7 +140,6 @@ void ClientImplementation::Shutdown() {
   // Stop vivaldi thread if running
   if (vivaldi_thread_.get() && vivaldi_thread_->joinable()) {
     vivaldi_thread_->interrupt();
-    vivaldi_thread_->join();
   }
 }
 
