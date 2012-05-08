@@ -121,6 +121,9 @@ template<class ReturnMessageType, class F>
       has_failed = response->HasFailed();
     } catch (const boost::thread_interrupted& e) {
         if (response != NULL) {
+          // Wait until request was processed - otherwise leaks and accesses
+          // to deleted memory may occur.
+          response->HasFailed();
           // Free response.
           response->DeleteBuffers();
           delete response;
