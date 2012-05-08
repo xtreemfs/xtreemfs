@@ -53,10 +53,6 @@ class ClientRequest {
 
   void RequestSent();
 
-  char* resp_data() const {
-    return resp_data_;
-  }
-
   void set_rq_data(const char* rq_data) {
     this->rq_data_ = rq_data;
   }
@@ -85,8 +81,14 @@ class ClientRequest {
     this->resp_data_ = resp_data;
   }
 
-  char* resp_data() {
+  char* resp_data() const {
     return resp_data_;
+  }
+
+  void clear_resp_data() {
+    delete[] resp_data_;
+    resp_data_ = NULL;
+    resp_data_len_ = 0;
   }
 
   void set_resp_header(xtreemfs::pbrpc::RPCHeader* resp_header) {
@@ -117,12 +119,13 @@ class ClientRequest {
     return canceled_;
   }
 
-  void set_resp_message(google::protobuf::Message *resp_message) {
-    this->resp_message_ = resp_message;
-  }
-
   google::protobuf::Message* resp_message() const {
     return resp_message_;
+  }
+
+  void clear_resp_message() {
+    delete resp_message_;
+    resp_message_ = NULL;
   }
 
   void set_error(xtreemfs::pbrpc::RPCHeader::ErrorResponse* error) {
@@ -132,6 +135,11 @@ class ClientRequest {
     } else {
       delete error;
     }
+  }
+
+  void clear_error() {
+    delete error_;
+    error_ = NULL;
   }
 
   xtreemfs::pbrpc::RPCHeader::ErrorResponse* error() const {
