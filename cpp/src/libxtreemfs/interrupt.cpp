@@ -9,7 +9,7 @@
 
 namespace xtreemfs {
 
-#ifdef __unix
+#ifdef __linux
 boost::mutex Interruptibilizer::map_mutex_;
 Interruptibilizer::map_type Interruptibilizer::thread_local_was_interrupted_map_;
 
@@ -94,7 +94,7 @@ void Interruptibilizer::InterruptHandler(int signal) {
   }
 }
 
-#endif // __unix
+#endif  // __linux
 
 void sleep_interruptible(int rel_time_in_ms) {
   assert(rel_time_in_ms >= 0);
@@ -107,4 +107,4 @@ void sleep_interruptible(int rel_time_in_ms) {
   }
 }
 
-} // namespace xtreemfs
+}  // namespace xtreemfs

@@ -20,15 +20,15 @@
 
 namespace xtreemfs {
 
-/**
- * Wrapper for boost::thread::sleep which checks for interruptions by
- * the signal handler.
- * NOTE: this function contains a boost::thread interruption point and
- *       thus might throw boost::thread_interrupted.
+/** Wrapper for boost::thread::sleep which checks for interruptions by
+ *  the signal handler.
+ *
+ * @remarks this function contains a boost::thread interruption point and
+ *          thus might throw boost::thread_interrupted.
  */
 void sleep_interruptible(int rel_time_in_ms);
 
-#ifdef __unix
+#ifdef __linux
 
 /** This class encapsulates the registration and unregistration of an
  *  interruption signal handler for a given signal (interrupt_signal).
@@ -39,13 +39,15 @@ class Interruptibilizer {
   ~Interruptibilizer();
 
   /** Returns whether the an interrupt was handeld within the current thread.
+   *
    *  This mehtod is static to ease access without having to pass around
-   *  Interruptibilizer instances
+   *  Interruptibilizer instances.
    */
   static bool WasInterrupted();
 
-  /** NOTE: never call malloc() in a handler because another malloc() could be
-   *  in progress which might lead to a deadlock situation.
+  /** 
+   *  @remarks never call malloc() in a handler because another malloc() could
+   *           be in progress which might lead to a deadlock situation.
    */
   static void InterruptHandler(int signal);
 
@@ -74,7 +76,7 @@ class Interruptibilizer {
     return false;
   }
 
-}
+};
 #endif
 
 } // namespace xtreemfs
