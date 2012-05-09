@@ -195,7 +195,9 @@ check_test:
 
 set_version:
 # Try to set the SVN revision and branch name as part of the version. We don't care if this may fail.
+ifndef SKIP_SET_SVN_VERSION
 	@./packaging/set_version.sh -s &>/dev/null; exit 0
+endif
 
 .PHONY:	client client_clean client_distclean client_thirdparty_clean client_package_macosx
 
@@ -274,7 +276,7 @@ endif
 # Clean everything first to ensure we package a clean client.
 	@$(MAKE) client_distclean
 # We call $(MAKE) instead of specifying the targets as requirements as its not possible to define dependencies between these two and this breaks in case of parallel builds.
-	@$(MAKE) client
+	@$(MAKE) client SKIP_SET_SVN_VERSION=1
 	@echo "Running the Apple Packagemaker..."
 	@/Developer/usr/bin/packagemaker -d packaging/macosx/XtreemFS_MacOSX_Package.pmdoc/ -o $(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)
 	@echo "Creating a DMG file..."
