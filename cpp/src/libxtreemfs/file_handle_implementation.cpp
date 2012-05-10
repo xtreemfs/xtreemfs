@@ -333,7 +333,7 @@ int FileHandleImplementation::Write(
         if (file_info_->TryToUpdateOSDWriteResponse(response->response(),
                                                     xcap_)) {
           // Free everything except the response.
-          delete response->data();
+          delete [] response->data();
           delete response->error();
         } else {
           response->DeleteBuffers();
@@ -444,7 +444,7 @@ void FileHandleImplementation::TruncatePhaseTwoAndThree(
 
   assert(response->response()->has_size_in_bytes());
   // Free the rest of the msg.
-  delete response->data();
+  delete [] response->data();
   delete response->error();
 
   // Register the osd write response at this file's FileInfo.
@@ -972,7 +972,7 @@ void FileHandleImplementation::CallFinished(
 
   // Cleanup.
   delete response_message;
-  delete data;
+  delete [] data;
   delete error;
 }
 
@@ -1005,7 +1005,7 @@ void FileHandleImplementation::CallFinished(
 
   // Cleanup.
   delete new_xcap;
-  delete data;
+  delete [] data;
   delete error;
 
   xcap_renewal_pending_ = false;
