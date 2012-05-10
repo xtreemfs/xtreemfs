@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009-2010 by Bjoern Kolbeck, Zuse Institute Berlin
+ *               2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -51,8 +52,10 @@ std::ostream& Logging::getLog(LogLevel level, const char* file, int line) {
 #endif
 
   log_stream_
-      << "[ " << levelToChar(level)
-      << " | " << file << ":" << line << " | "
+      << "[ " << levelToChar(level) << " | "
+      // NOTE(mberlin): Disabled output of __FILE__ and __LINE__ since they are
+      // not used in the current (3/2012) code base.
+//      << file << ":" << line << " | "
 
       << setiosflags(ios::dec)
 #ifdef WIN32
@@ -68,10 +71,10 @@ std::ostream& Logging::getLog(LogLevel level, const char* file, int line) {
       << setfill('0') << setw(2) << tm->tm_sec << "."
       << setfill('0') << setw(3) << (current_time.tv_usec / 1000) << " | "
 #endif
-
+      << left << setfill(' ') << setw(14)
       << boost::this_thread::get_id() << " ] "
       // Reset modifiers.
-      << setfill(' ') << setiosflags(ios::dec);
+      << setfill(' ') << resetiosflags(ios::hex | ios::left);
   return log_stream_;
 }
 
