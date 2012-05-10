@@ -22,9 +22,11 @@ namespace xtreemfs {
 
 /**
  * Wrapper for boost::thread::sleep which checks for interruptions by
- * the
+ * the signal handler.
+ * NOTE: this function contains a boost::thread interruption point and
+ *       thus might throw boost::thread_interrupted.
  */
-void sleep_interruptible(const unsigned int& rel_time_in_ms);
+void sleep_interruptible(int rel_time_in_ms);
 
 #ifdef __unix
 
@@ -42,12 +44,13 @@ class Interruptibilizer {
    */
   static bool WasInterrupted();
 
- private:
   /** NOTE: never call malloc() in a handler because another malloc() could be
    *  in progress which might lead to a deadlock situation.
    */
-  static void InterruptSyncRequest(int signal);
+  static void InterruptHandler(int signal);
 
+
+ private:
   typedef std::map<boost::thread::id, bool> map_type;
 
   /** Mutual exclusion for access to thread_local_was_interrupted_map_. */

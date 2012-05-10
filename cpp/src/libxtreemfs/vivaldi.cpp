@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "libxtreemfs/callback/execute_sync_request.h"
+#include "libxtreemfs/execute_sync_request.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/pbrpc_url.h"
 #include "util/logging.h"

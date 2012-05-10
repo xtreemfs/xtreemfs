@@ -12,6 +12,7 @@
 #include <boost/thread/mutex.hpp>
 #include <list>
 
+#include "libxtreemfs/options.h"
 #include "rpc/callback_interface.h"
 
 namespace xtreemfs {
@@ -37,9 +38,7 @@ class AsyncWriteHandler
       xtreemfs::pbrpc::OSDServiceClient* osd_service_client,
       const xtreemfs::pbrpc::Auth& auth_bogus,
       const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus,
-      int max_writeahead,
-      int max_writeahead_requests,
-      int max_write_tries);
+      const Options& volume_options);
 
   ~AsyncWriteHandler();
 
@@ -66,7 +65,10 @@ class AsyncWriteHandler
  private:
   /** Possible states of this object. */
   enum State {
-    IDLE, WRITES_PENDING
+    IDLE,
+    WRITES_PENDING,
+    HAS_FAILED_WRITES,
+    FINALLY_FAILED
   };
 
   /** Contains information about observer who has to be notified once all
@@ -100,15 +102,34 @@ class AsyncWriteHandler
   void IncreasePendingBytesHelper(AsyncWriteBuffer* write_buffer,
                                   boost::mutex::scoped_lock* lock);
 
-  /** Helper function which removes "write_buffer" from the list
-   *  writes_in_flight_, deletes "write_buffer", reduces the number of pending
-   *  bytes and takes care of state changes.
+  /** Helper function reduces the number of pending bytes and takes care
+   *  of state changes.
+   *  Depending on "delete_buffer" the buffer is deleted or not (which implies
+   *  DeleteBufferHelper must be called later).
    *
    *  @remark   Ownership of "write_buffer" is transferred to the caller.
    *  @remark   Requires a lock on mutex_.
    */
   void DecreasePendingBytesHelper(AsyncWriteBuffer* write_buffer,
-                                  boost::mutex::scoped_lock* lock);
+                                  boost::mutex::scoped_lock* lock,
+                                  bool delete_buffer);
+
+  /** Helper function which removes all leading elements which were flagged
+   *  as successfully sent from writes_in_flight_ and deletes them.
+   *
+   *  @remark   Requires a lock on mutex_.
+   */
+  void DeleteBufferHelper(boost::mutex::scoped_lock* lock);
+
+
+  void CleanUp(boost::mutex::scoped_lock* lock);
+
+  /**
+   * This method is used to repeat failed writes which already are in the list
+   * of writes in flight. It bypasses the writeahead limitations.
+   */
+  void ReWrite(AsyncWriteBuffer* write_buffer, bool copy_buffer,
+               boost::mutex::scoped_lock* lock);
 
   /** Calls notify_one() on all observers in waiting_observers_, frees each
    *  element in the list and clears the list afterwards.
@@ -129,6 +150,12 @@ class AsyncWriteHandler
 
   /** Number of pending bytes. */
   int pending_bytes_;
+
+  /** Number of pending write requests
+   *  NOTE: this does not equal writes_in_flight_.size(), since it also contains
+   *  successfully sent entries which must be kept for consistent retries in
+   *  case of failure. */
+  int  pending_writes_;
 
   /** Set by WaitForPendingWrites{NonBlocking}() to true if there are
    *  temporarily no new async writes allowed and will be set to false again
@@ -177,6 +204,10 @@ class AsyncWriteHandler
   /** For same reason needed as auth_bogus_. Always set to user "xtreemfs". */
   const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus_;
 
+  const Options& volume_options_;
+
+  // TODO(mno): maybe use volume_options directly instead max_write*
+
   /** Maximum number in bytes which may be pending. */
   const int max_writeahead_;
 
@@ -185,6 +216,22 @@ class AsyncWriteHandler
 
   /** Maximum number of attempts a write will be tried. */
   const int max_write_tries_;
+
+  /** True after the first redirct, set back to false on error resolution */
+  bool redirected_;
+
+  /** Set to true in when redirected is set true for the first time. The retries
+   *  wont be delayed if true. */
+  bool fast_redirect_;
+
+  /** A copy of the worst error which was detected. It determines the error
+   *  handling. */
+  xtreemfs::pbrpc::RPCHeader::ErrorResponse worst_error_;
+
+  /** The write buffer to whom the worst_error_ belongs. */
+  AsyncWriteBuffer* worst_write_buffer_;
+
+
 };
 
 }  // namespace xtreemfs

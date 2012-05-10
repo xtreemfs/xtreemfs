@@ -32,7 +32,7 @@ Interruptibilizer::Interruptibilizer(int interrupt_signal)
 
     // register signal handler AFTER adding a map entry
     previous_signal_handler_ = signal(interrupt_signal_,
-                                      InterruptSyncRequest);
+                                      InterruptHandler);
     if(previous_signal_handler_ == SIG_ERR) {
         util::Logging::log->getLog(util::LEVEL_ERROR)
             << "Failed to set the signal Handler." << std::endl;
@@ -52,7 +52,7 @@ Interruptibilizer::~Interruptibilizer() {
     // delete the map entry if this was the first instance in a chain
     // of nested calls (all nested instances will have InterruptSyncRequest
     // as previous_signal_handler_)
-    if (previous_signal_handler_ != InterruptSyncRequest) {
+    if (previous_signal_handler_ != InterruptHandler) {
       boost::mutex::scoped_lock lock(map_mutex_);
       thread_local_was_interrupted_map_.erase(was_interrupted_iterator_);
     }
@@ -80,7 +80,7 @@ bool Interruptibilizer::WasInterrupted() {
   }
 }
 
-void Interruptibilizer::InterruptSyncRequest(int signal) {
+void Interruptibilizer::InterruptHandler(int signal) {
   if (util::Logging::log->loggingActive(util::LEVEL_DEBUG)) {
       util::Logging::log->getLog(util::LEVEL_DEBUG)
         << "INTERRUPT triggered, setting was_interrupted_ true." << std::endl;
@@ -96,14 +96,13 @@ void Interruptibilizer::InterruptSyncRequest(int signal) {
 
 #endif // __unix
 
-void sleep_interruptible(const unsigned int& rel_time_in_ms) {
-  const unsigned int intervall_in_ms = 100;
-  unsigned int runs = rel_time_in_ms / intervall_in_ms
+void sleep_interruptible(int rel_time_in_ms) {
+  assert(rel_time_in_ms >= 0);
+  const int intervall_in_ms = 100;
+  int runs = rel_time_in_ms / intervall_in_ms
       + ((rel_time_in_ms % intervall_in_ms) > 0 ? 1 : 0);
 
-  for (unsigned int i = 0;
-       i < runs && !Interruptibilizer::WasInterrupted();
-       ++i) {
+  for (int i = 0; i < runs && !Interruptibilizer::WasInterrupted(); ++i) {
     boost::this_thread::sleep(boost::posix_time::millisec(intervall_in_ms));
   }
 }

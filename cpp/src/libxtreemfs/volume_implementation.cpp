@@ -14,8 +14,8 @@
 #include <map>
 #include <string>
 
-#include "libxtreemfs/callback/execute_sync_request.h"
 #include "libxtreemfs/client_implementation.h"
+#include "libxtreemfs/execute_sync_request.h"
 #include "libxtreemfs/file_handle_implementation.h"
 #include "libxtreemfs/file_info.h"
 #include "libxtreemfs/helper.h"

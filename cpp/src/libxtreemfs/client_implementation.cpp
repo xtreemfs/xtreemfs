@@ -16,7 +16,7 @@
 #include <list>
 #include <string>
 
-#include "libxtreemfs/callback/execute_sync_request.h"
+#include "libxtreemfs/execute_sync_request.h"
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/pbrpc_url.h"

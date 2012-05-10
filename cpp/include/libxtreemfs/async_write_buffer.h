@@ -8,6 +8,7 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_ASYNC_WRITE_BUFFER_H_
 #define CPP_INCLUDE_LIBXTREEMFS_ASYNC_WRITE_BUFFER_H_
 
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <string>
 
 namespace xtreemfs {
@@ -19,6 +20,13 @@ class writeRequest;
 class FileHandleImplementation;
 
 struct AsyncWriteBuffer {
+  /** Possible states of this object. */
+  enum State {
+    PENDING,
+    FAILED,
+    SUCCEEDED
+  };
+
   /**
    * @remark Ownership of write_request is transferred to this object.
    */
@@ -57,6 +65,15 @@ struct AsyncWriteBuffer {
   /** UUID of the OSD which was used for the last retry or if use_uuid_iterator
    *  is false, this variable is initialized to the OSD to be used. */
   std::string osd_uuid;
+
+  /** Current state of the object. */
+  State state_;
+
+  /** Retry count.*/
+  int retry_count_;
+
+  /** Time when the request was sent */
+  boost::posix_time::ptime request_sent_time;
 };
 
 }  // namespace xtreemfs

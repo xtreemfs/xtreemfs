@@ -21,7 +21,9 @@ AsyncWriteBuffer::AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
     : write_request(write_request),
       data_length(data_length),
       file_handle(file_handle),
-      use_uuid_iterator(true) {
+      use_uuid_iterator(true),
+      state_(PENDING),
+      retry_count_(0) {
   assert(write_request && data && file_handle);
   this->data = new char[data_length];
   memcpy(this->data, data, data_length);
@@ -36,7 +38,9 @@ AsyncWriteBuffer::AsyncWriteBuffer(xtreemfs::pbrpc::writeRequest* write_request,
       data_length(data_length),
       file_handle(file_handle),
       use_uuid_iterator(false),
-      osd_uuid(osd_uuid) {
+      osd_uuid(osd_uuid),
+      state_(PENDING),
+      retry_count_(0) {
   assert(write_request && data && file_handle);
   this->data = new char[data_length];
   memcpy(this->data, data, data_length);

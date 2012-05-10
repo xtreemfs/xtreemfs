@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "libxtreemfs/async_write_buffer.h"
-#include "libxtreemfs/callback/execute_sync_request.h"
+#include "libxtreemfs/execute_sync_request.h"
 #include "libxtreemfs/file_info.h"
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"
@@ -264,8 +264,6 @@ int FileHandleImplementation::Write(
                                             this);
       }
 
-      // TODO(mberlin): Currently the UserCredentials are ignored by the OSD and
-      //                therefore we avoid copying them into write_buffer.
       // TODO(mberlin): Once the retry support for async writes is available,
       //                modify the implementation to support the new XCapHandler
       file_info_->AsyncWrite(write_buffer);
