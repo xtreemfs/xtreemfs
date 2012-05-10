@@ -217,3 +217,9 @@
    fun:realpath@@GLIBC_*
    fun:main
 }
+{
+   occurs when fusermount -u is run while fuse gets started
+   Memcheck:Leak
+   fun:calloc
+   fun:fuse_fs_new
+}
