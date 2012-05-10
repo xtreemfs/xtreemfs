@@ -102,7 +102,7 @@ template<class ReturnMessageType, class F>
       uuid_iterator->GetUUID(&service_address);
     } else {
       uuid_iterator->GetUUID(&service_uuid);
-      uuid_resolver->UUIDToAddress(service_uuid, &service_address);
+      uuid_resolver->UUIDToAddress(service_uuid, &service_address, options);
     }
 
     // Execute request.

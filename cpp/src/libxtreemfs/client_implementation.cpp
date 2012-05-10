@@ -315,6 +315,12 @@ xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
 
 void ClientImplementation::UUIDToAddress(const std::string& uuid,
                                          std::string* address) {
+  UUIDToAddress(uuid, address, options_);
+}
+
+void ClientImplementation::UUIDToAddress(const std::string& uuid,
+                                         std::string* address,
+                                         const Options& options) {
   // The UUID must never be empty.
   assert(!uuid.empty());
 
@@ -339,8 +345,8 @@ void ClientImplementation::UUIDToAddress(const std::string& uuid,
               &rq),
           &dir_service_addresses,
           NULL,
-          options_.max_tries,
-          options_,
+          options.max_tries,
+          options,
           true,
           false));
 
