@@ -15,8 +15,10 @@
 #include <string>
 
 #include "libxtreemfs/client.h"
+#include "libxtreemfs/options.h"
 #include "libxtreemfs/vivaldi_node.h"
 #include "xtreemfs/DIRServiceClient.h"
+#include "xtreemfs/OSDServiceClient.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 
 namespace xtreemfs {
@@ -37,15 +39,15 @@ class KnownOSD {
   }
 
   pbrpc::VivaldiCoordinates* GetCoordinates() {
-    return &this->coordinates;
+    return &coordinates;
   }
 
-  std::string GetUUID() {
-    return this->uuid;
+  const std::string& GetUUID() {
+    return uuid;
   }
 
   void SetCoordinates(const xtreemfs::pbrpc::VivaldiCoordinates& new_coords) {
-    this->coordinates = new_coords;
+    coordinates = new_coords;
   }
  private:
   std::string uuid;
@@ -55,6 +57,9 @@ class KnownOSD {
 
 class Vivaldi {
  public:
+  /**
+   * @remarks   Ownership is not transferred.
+   */
   Vivaldi(xtreemfs::rpc::Client* rpc_client,
           xtreemfs::pbrpc::DIRServiceClient* dir_client,
           UUIDIterator* dir_service_addresses,
@@ -71,6 +76,7 @@ class Vivaldi {
 
   xtreemfs::rpc::Client* rpc_client_;
   xtreemfs::pbrpc::DIRServiceClient* dir_client_;
+  xtreemfs::pbrpc::OSDServiceClient osd_client_;
   UUIDIterator* dir_service_addresses_;
   UUIDResolver* uuid_resolver_;
 
@@ -100,6 +106,9 @@ class Vivaldi {
   mutable boost::mutex coordinate_mutex_;
 
   xtreemfs::pbrpc::VivaldiCoordinates my_vivaldi_coordinates_;
+
+  /** Default options with max_tries = 1, only used for executing requests. */
+  Options vivaldi_retry_options_;
 };
 
 }  // namespace xtreemfs
