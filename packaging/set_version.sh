@@ -212,10 +212,11 @@ EOF
 
         number=$(echo "$line" | cut -f1 -d\|)
         release=$(echo "$line" | cut -f2 -d\|)
-        echo "starting with $number: $release"
+        echo "- starting with $number: $release"
       done
       unset IFS
       echo
+      echo -n "enter new version: "
       read version
     done
 
