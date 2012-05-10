@@ -59,6 +59,11 @@ IF(APPLE)
   # Update 8/12/2011: Setting macosx-version-min does break mount.xtreemfs for unknown reasons - so disabled for now.
   # Tell gcc to compile 10.4 compatible files (does not work otherwise on older Macs).
   #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.4")
+  
+  SET(OSXFUSE_FUSE_H_INCLUDE_DIR "/usr/local/include/osxfuse/")
+  if (EXISTS ${OSXFUSE_FUSE_H_INCLUDE_DIR})
+    include_directories(${OSXFUSE_FUSE_H_INCLUDE_DIR})
+  endif(EXISTS ${OSXFUSE_FUSE_H_INCLUDE_DIR})
 ENDIF(APPLE)
 IF(WIN32)
   SET(Boost_USE_STATIC_LIBS true)
