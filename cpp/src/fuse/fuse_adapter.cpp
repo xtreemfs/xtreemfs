@@ -490,14 +490,30 @@ int FuseAdapter::statfs(const char *path, struct statvfs *statv) {
     //                       fields are ignored"
     // However, f_frsize is required on MacOSX to display the correct
     // number of total and free space (e.g. by df, see issue 247)
-    statv->f_frsize  = stat_vfs->bsize();  // file system block size
-    statv->f_bsize   = stat_vfs->bsize();  // file system block size
-    statv->f_bfree   = stat_vfs->bavail();  // # free blocks
-    // # free blocks for unprivileged users
-    statv->f_bavail  = stat_vfs->bavail();
+    // Additionally, the maximum size for f_frsize is 128 * 1024. Change
+    // the block count numbers if the default stripe size is larger.
+    boost::uint32_t default_stripe_size = stat_vfs->bsize();
+    boost::uint32_t statvfs_block_size = default_stripe_size;
+    boost::uint64_t total_blocks = stat_vfs->blocks();
+    boost::uint64_t avail_blocks = stat_vfs->bavail();
+    
+#ifdef __APPLE__
+    while (statvfs_block_size > (128 * 1024)) {
+      statvfs_block_size /= 2;
+      total_blocks *= 2;
+      avail_blocks *= 2;
+    }
+    
+    statv->f_bsize   = default_stripe_size;  // "preferred length of I/O requests"
+#else
+    statv->f_bsize   = statvfs_block_size;  // file system block size
+#endif  // ! __APPLE__
+
+    statv->f_frsize  = statvfs_block_size;  // file system block size
+    statv->f_blocks  = total_blocks;  // Total number of blocks in file system.
+    statv->f_bfree   = avail_blocks;  // # free blocks
+    statv->f_bavail  = avail_blocks;  // # free blocks for unprivileged users
     statv->f_files   = 2048;  // # inodes (we use here a bogus number)
-    // Total number of blocks in file system.
-    statv->f_blocks  = stat_vfs->blocks();
     statv->f_ffree   = 2048;  // # free inodes (we use here a bogus number)
     statv->f_namemax = stat_vfs->namemax();  // maximum filename length
   } catch(const PosixErrorException& e) {
