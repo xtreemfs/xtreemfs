@@ -128,12 +128,28 @@ Options::Options()
   vivaldi_enable = false;
   vivaldi_enable_dir_updates = false;
 #ifdef __linux__
-  vivaldi_filename = string(getenv("HOME")) + "/.xtreemfs_vivaldi_coordinates";
+  char* home_dir = getenv("HOME");
+  if (home_dir) {
+    vivaldi_filename = string(home_dir) + "/.xtreemfs_vivaldi_coordinates";
+  } else {
+    vivaldi_filename = ".xtreemfs_vivaldi_coordinates";
+  }
 #elif defined __APPLE__
   struct passwd* pwd = getpwuid(getuid());
-  vivaldi_filename = string(getenv(pwd->pw_dir)) + "/.xtreemfs_vivaldi_coordinates";
+  if (pwd) {
+    vivaldi_filename = string(pwd->pw_dir) + "/.xtreemfs_vivaldi_coordinates";
+  } else {
+    vivaldi_filename = ".xtreemfs_vivaldi_coordinates";
+  }
 #elif defined WIN32
-  vivaldi_filename = string(getenv("HOMEDRIVE")) + string(getenv("HOMEPATH")) + "/.xtreemfs_vivaldi_coordinates";
+  char* home_drive = getenv("HOMEDRIVE");
+  char* home_path = getenv("HOMEPATH");
+  if (home_drive && home_path) {
+    vivaldi_filename = string(home_drive) + string(home_path)
+                       + "/.xtreemfs_vivaldi_coordinates";
+  } else {
+    vivaldi_filename = ".xtreemfs_vivaldi_coordinates";
+  }
 #else
   vivaldi_filename = ".xtreemfs_vivaldi_coordinates";
 #endif
