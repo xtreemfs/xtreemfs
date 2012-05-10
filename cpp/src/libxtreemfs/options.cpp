@@ -273,16 +273,15 @@ void Options::GenerateProgramOptionsDescriptions() {
         "PEM private key file path")
     ("pem-private-key-passphrase",
         po::value(&ssl_pem_key_pass)->default_value(ssl_pem_key_pass),
-        "PEM private key passphrase  (If the parameter was not specified or the"
-        " argument is set to '-', the user will be prompted for the"
-        " passphrase.)")
+        "PEM private key passphrase  (If the argument is set to '-', the user"
+        " will be prompted for the passphrase.)")
     ("pkcs12-file-path",
         po::value(&ssl_pkcs12_path)->default_value(ssl_pkcs12_path),
         "PKCS#12 file path")
     ("pkcs12-passphrase",
         po::value(&ssl_pkcs12_pass)->default_value(ssl_pkcs12_pass),
-        "PKCS#12 passphrase (If the parameter was not specified or the argument"
-        " is set to '-', the user will be prompted for the passphrase.)");
+        "PKCS#12 passphrase (If the argument is set to '-', the user will be"
+        " prompted for the passphrase.)");
 
   grid_options_.add_options()
     ("grid-ssl",
@@ -506,14 +505,12 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
 
   // If the passphrase parameter was specified, but not set, mark that the
   // password shall be read from stdin.
-  if (!ssl_pem_key_path.empty() &&
-      (ssl_pem_key_pass.empty() || ssl_pem_key_pass == "-")) {
+  if (!ssl_pem_key_path.empty() && ssl_pem_key_pass == "-") {
     ReadPasswordFromStdin(
         "No PEM private key passphrase was given. Please enter it now:",
         &ssl_pem_key_pass);
   }
-  if (!ssl_pkcs12_path.empty() &&
-      (ssl_pkcs12_pass.empty() || ssl_pkcs12_pass == "-")) {
+  if (!ssl_pkcs12_path.empty() && ssl_pkcs12_pass == "-") {
     ReadPasswordFromStdin(
         "No PKCS#12 certificate passphrase was given. Please enter it now:",
         &ssl_pkcs12_pass);
