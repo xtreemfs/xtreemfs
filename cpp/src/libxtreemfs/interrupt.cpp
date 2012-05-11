@@ -87,28 +87,36 @@ Interruptibilizer::~Interruptibilizer() {
 
 
 bool Interruptibilizer::WasInterrupted() const {
-  DeInterruptibilizer di(interrupt_signal_);
-  boost::mutex::scoped_lock lock(map_mutex_);
-  return was_interrupted_iterator_->second;
+  if (interrupt_signal_) {
+      DeInterruptibilizer di(interrupt_signal_);
+      boost::mutex::scoped_lock lock(map_mutex_);
+      return was_interrupted_iterator_->second;
+  } else {
+      return false;
+  }
 }
 
 
 bool Interruptibilizer::WasInterrupted(int interrupt_signal) {
-  DeInterruptibilizer di(interrupt_signal);
-  boost::mutex::scoped_lock lock(map_mutex_);
+  if (interrupt_signal) {
+    DeInterruptibilizer di(interrupt_signal);
+    boost::mutex::scoped_lock lock(map_mutex_);
 
-  // NOTE: When interrupt_signal is set to 0, nothing happens on construction
-  //       and destruction. So this *static* method is called without having
-  //       an instance of this class in the current thread.
-  //       To avoid implicitly inserting an new entry by the [] operator, we
-  //       have to use find instead (which should not increase the cost of
-  //       this method).
-  //       By design decision, there always must be a Interruptibilizer
-  //       instance when inside libxtreemfs code.
-  map_type::iterator it = thread_local_was_interrupted_map_
-                 .find(boost::this_thread::get_id());
-  if (it != thread_local_was_interrupted_map_.end()) {
-    return it->second;
+    // NOTE: When interrupt_signal is set to 0, nothing happens on construction
+    //       and destruction. So this *static* method is called without having
+    //       an instance of this class in the current thread.
+    //       To avoid implicitly inserting an new entry by the [] operator, we
+    //       have to use find instead (which should not increase the cost of
+    //       this method).
+    //       By design decision, there always must be a Interruptibilizer
+    //       instance when inside libxtreemfs code.
+    map_type::iterator it = thread_local_was_interrupted_map_
+                   .find(boost::this_thread::get_id());
+    if (it != thread_local_was_interrupted_map_.end()) {
+      return it->second;
+    } else {
+      return false;
+    }
   } else {
     return false;
   }
