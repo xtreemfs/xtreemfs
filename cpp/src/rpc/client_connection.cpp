@@ -87,7 +87,8 @@ void ClientConnection::SendError(POSIXErrno posix_errno,
         request_table_->erase(call_id);
 
         Logging::log->getLog(LEVEL_ERROR)
-            << "operation failed: errno=" << posix_errno
+            << "operation failed: call_id=" << call_id
+            << " errno=" << posix_errno
             << " message=" << error_message << endl;
       }
       requests_.pop();
@@ -145,7 +146,8 @@ void ClientConnection::Connect() {
   connection_state_ = CONNECTING;
   asio::ip::tcp::resolver::query query(server_name_, server_port_);
   resolver_.async_resolve(query,
-                          boost::bind(&ClientConnection::PostResolve, this,
+                          boost::bind(&ClientConnection::PostResolve,
+                                      this,
                                       asio::placeholders::error,
                                       asio::placeholders::iterator));
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -155,20 +157,26 @@ void ClientConnection::Connect() {
 }
 
 void ClientConnection::OnConnectTimeout(const boost::system::error_code& err) {
-//  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-//    Logging::log->getLog(LEVEL_DEBUG) << "Running OnConnectTimeout(): " << this << endl;
-//  }
-  if (err != asio::error::operation_aborted) {
-    Reset();
-    SendError(POSIX_ERROR_EIO,
-              "connection to '" + server_name_ + ":" + server_port_
-                  + "' timed out");
+  if (err == asio::error::operation_aborted) {
+    return;
   }
+  if (connection_state_ == CLOSED) {
+    return;
+  }
+  Reset();
+  SendError(POSIX_ERROR_EIO,
+            "connection to '" + server_name_ + ":" + server_port_
+                + "' timed out");
 }
 
-void ClientConnection::PostResolve(
-    const boost::system::error_code& err,
-    tcp::resolver::iterator endpoint_iterator) {
+void ClientConnection::PostResolve(const boost::system::error_code& err,
+                                   tcp::resolver::iterator endpoint_iterator) {
+  if (err == asio::error::operation_aborted) {
+    return;
+  }
+  if (connection_state_ == CLOSED) {
+    return;
+  }
   if (err) {
     Reset();
     SendError(POSIX_ERROR_EIO,
@@ -198,13 +206,12 @@ void ClientConnection::PostResolve(
   }
 }
 
-void ClientConnection::PostConnect(
-    const boost::system::error_code& err,
-    tcp::resolver::iterator endpoint_iterator) {
-//  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-//    Logging::log->getLog(LEVEL_DEBUG) << "Running PostConnect(): " << this << endl;
-//  }
+void ClientConnection::PostConnect(const boost::system::error_code& err,
+                                   tcp::resolver::iterator endpoint_iterator) {
   if (err == asio::error::operation_aborted) {
+    return;
+  }
+  if (connection_state_ == CLOSED) {
     return;
   }
   timer_.cancel();
@@ -323,8 +330,12 @@ void ClientConnection::Reset() {
 }
 
 void ClientConnection::Close(const std::string& error) {
+  resolver_.cancel();
+  timer_.cancel();
   try {
-    socket_->close();
+    if (socket_) {
+      socket_->close();
+    }
   } catch (const boost::system::system_error& e) {
     // Ignore close errors. Needed for Windows.
   }
@@ -333,31 +344,43 @@ void ClientConnection::Close(const std::string& error) {
   connection_state_ = CLOSED;
   SendError(POSIX_ERROR_EIO,
             "Connection to '" + server_name_ + ":" + server_port_ + "' closed"
-                " locally due to: " + error + ".");
+                " locally due to: " + error);
 }
 
 void ClientConnection::PostWrite(const boost::system::error_code& err,
                                  size_t bytes_written) {
+  if (err == boost::asio::error::operation_aborted) {
+    return;
+  }
+  if (connection_state_ == CLOSED) {
+    return;
+  }
   if (err) {
     Reset();
     SendError(POSIX_ERROR_EIO,
               "Could not send request to '" + server_name_ + ":" +server_port_
                   + "': " + err.message());
   } else {
-    // Send next?
-    requests_.pop();
-    connection_state_ = IDLE;
-    SendRequest();
+    // Pop sent request.
+    if (!requests_.empty()) {
+      requests_.pop();
+      connection_state_ = IDLE;
+    }
+    if (!requests_.empty()) {
+      SendRequest();
+    }
   }
 }
 
 void ClientConnection::PostReadRecordMarker(
     const boost::system::error_code& err) {
+  if (err == boost::asio::error::operation_aborted) {
+    return;
+  }
+  if (connection_state_ == CLOSED) {
+    return;
+  }
   if (err) {
-    if (err == boost::asio::error::operation_aborted) {
-      // Connection was closed. Ignore error.
-      return;
-    }
     Reset();
     SendError(POSIX_ERROR_EIO,
               "could not read record marker in response from '" + server_name_
@@ -392,6 +415,12 @@ void ClientConnection::PostReadRecordMarker(
 }
 
 void ClientConnection::PostReadMessage(const boost::system::error_code& err) {
+  if (err == boost::asio::error::operation_aborted) {
+    return;
+  }
+  if (connection_state_ == CLOSED) {
+    return;
+  }
   if (err) {
     DeleteInternalBuffers();
     Reset();

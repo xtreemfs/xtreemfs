@@ -54,10 +54,10 @@ Client::Client(int32_t connect_timeout_s,
                int32_t max_con_linger,
                const SSLOptions* options)
     : service_(),
-      resolver_(service_),
       use_gridssl_(false),
       ssl_context_(NULL),
       stopped_(false),
+      stopped_ioservice_only_(false),
       callid_counter_(1),
       rq_timeout_timer_(service_),
       rq_timeout_s_(request_timeout_s),
@@ -297,6 +297,9 @@ void Client::sendRequest(const string& address,
 }
 
 void Client::sendInternalRequest() {
+  if (stopped_ioservice_only_) {
+    return;
+  }
   // Process requests.
   do {
     ClientRequest *rq = NULL;
@@ -321,7 +324,6 @@ void Client::sendInternalRequest() {
     } else {
       // New connection.
 
-      // FIXME(bjk) start resolving the address
       const std::string &addr = rq->address();
       int colonpos = addr.find(":");
       if (colonpos < 0) {
@@ -368,9 +370,14 @@ void Client::sendInternalRequest() {
 }
 
 void Client::handleTimeout(const boost::system::error_code& error) {
-//  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-//    Logging::log->getLog(LEVEL_DEBUG) << "Running handleTimeout()." << endl;
-//  }
+  // Do nothing when the timer was canceled.
+  if (error == boost::asio::error::operation_aborted) {
+    return;
+  }
+  if (stopped_ioservice_only_) {
+    return;
+  }
+
   try {
     posix_time::ptime deadline = posix_time::microsec_clock::local_time()
         - posix_time::seconds(rq_timeout_s_);
@@ -446,10 +453,6 @@ void Client::handleTimeout(const boost::system::error_code& error) {
           Logging::log->getLog(LEVEL_INFO) << "Closing connection to '"
               << iter2->first << "' since it " << error.substr(11) << endl;
         }
-//        if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-//          Logging::log->getLog(LEVEL_DEBUG)
-//              << error << " Deleting con: " << con << endl;
-//        }
         con->Close(error);
         delete con;
         iter2 = connections_.erase(iter2++);
@@ -504,20 +507,20 @@ void Client::run() {
     }
   }
 
+  // Does not return as long as there are running timers (e.g.,
+  // rq_timeout_timer_) or pending boost::asio callbacks.
   service_.run();
 
+  // Delete the ClientConnection object of all open connections.
   for (connection_map::iterator iter = connections_.begin();
        iter != connections_.end();
        ++iter) {
-    ClientConnection *con = iter->second;
-    assert(con != NULL);
-    con->Close("RPC client was stopped.");
-    delete con;
+    delete iter->second;
   }
+  connections_.clear();
 
   // A request may not have made it from requests_ to request_table_. Cancel
   // those, too.
-  // ClientRequest still exists in request_table_, it's safe to access it.
   {
     boost::mutex::scoped_lock lock(requests_mutex_);
     while (requests_.size()) {
@@ -541,13 +544,31 @@ void Client::run() {
 }
 
 void Client::shutdown() {
+  bool already_stopped = false;
   {
     boost::mutex::scoped_lock lock(requests_mutex_);
+    already_stopped = stopped_;
     stopped_ = true;
   }
-  service_.stop();
-  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-    Logging::log->getLog(LEVEL_DEBUG) << "RPC client stopped." << endl;
+
+  if (!already_stopped) {
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      Logging::log->getLog(LEVEL_DEBUG) << "RPC client stopped." << endl;
+    }
+    service_.post(boost::bind(&Client::ShutdownHandler, this));
+  }
+}
+
+void Client::ShutdownHandler() {
+  stopped_ioservice_only_ = true;
+  rq_timeout_timer_.cancel();
+
+  for (connection_map::iterator iter = connections_.begin();
+       iter != connections_.end();
+       ++iter) {
+    ClientConnection *con = iter->second;
+    assert(con != NULL);
+    con->Close("RPC client was stopped.");
   }
 }
 

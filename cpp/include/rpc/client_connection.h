@@ -45,6 +45,16 @@ typedef boost::unordered_map<int32_t, ClientRequest*> request_map;
 typedef std::map<int32_t, ClientRequest*> request_map;
 #endif
 
+/** Created by xtreemfs::rpc::Client for every connection.
+ *
+ * This class contains the per-connection data.
+ *
+ * @remarks Special care has to be taken regarding the boost::asio callback
+ *          functions. In particular, every callback must not access members
+ *          when the error_code equals asio::error::operation_aborted.
+ *          Additionally, no further actions must be taken when
+ *          connection_state_ is set to CLOSED.
+ */
 class ClientConnection {
  public:
   struct PendingRequest {
@@ -92,6 +102,7 @@ class ClientConnection {
   char *receive_marker_buffer_;
 
   State connection_state_;
+  /** Queue of requests which have not been sent out yet. */
   std::queue<PendingRequest> requests_;
   ClientRequest* current_request_;
 

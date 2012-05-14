@@ -80,12 +80,13 @@ class Client {
   void handleTimeout(const boost::system::error_code& error);
 
   void sendInternalRequest();
+  
+  void ShutdownHandler();
 
   std::string get_pem_password_callback() const;
   std::string get_pkcs12_password_callback() const;
 
   boost::asio::io_service service_;
-  boost::asio::ip::tcp::resolver resolver_;
   bool use_gridssl_;
   boost::asio::ssl::context* ssl_context_;
   connection_map connections_;
@@ -110,6 +111,9 @@ class Client {
   std::queue<ClientRequest*> requests_;
   /** True when the RPC client was stopped and no new requests are accepted. */
   bool stopped_;
+  /** True when the RPC client was stopped, only accessed in the context of
+   *  io_service::run. */
+  bool stopped_ioservice_only_;
   boost::uint32_t callid_counter_;
   boost::asio::deadline_timer rq_timeout_timer_;
   boost::int32_t rq_timeout_s_;
