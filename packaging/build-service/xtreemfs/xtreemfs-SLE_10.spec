@@ -274,10 +274,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/*.xtreemfs
 /usr/bin/xtfsutil
 /sbin/*.xtreemfs
-#/usr/bin/xtfs_vivaldi
 %dir %{_libdir}/xtreemfs
 %dir %{_libdir}/xtreemfs/policies
-#/etc/init.d/xtreemfs-vivaldi
 /usr/share/man/man1/*.xtreemfs*
 /usr/share/man/man1/xtfsutil*
 #%%dir /etc/xos/
@@ -322,10 +320,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files tools
 %defattr(-,root,root)
-%if %{client_subpackage}
-# these files only appear if the client package is built
-#%%exclude /usr/bin/xtfs_vivaldi
-%endif
 /usr/bin/xtfs_*
 /usr/share/man/man1/xtfs_*
 #/usr/share/doc/xtreemfs-tools/
