@@ -24,11 +24,15 @@ endif
 
 SHELL=/bin/bash
 
+# Paths used during compilation.
+XTREEMFS_CLIENT_BUILD_DIR=$(shell pwd)/cpp/build
+XTREEMFS_BINARIES_DIR = $(shell pwd)/bin
+
+# Install paths relative to DESTDIR.
 XTREEMFS_JAR_DIR=$(DESTDIR)/usr/share/java
 XTREEMFS_CONFIG_PARENT_DIR=$(DESTDIR)/etc/xos
 XTREEMFS_CONFIG_DIR=$(XTREEMFS_CONFIG_PARENT_DIR)/xtreemfs
 XTREEMFS_INIT_DIR=$(DESTDIR)/etc/init.d
-XTREEMFS_CLIENT_BUILD_DIR=$(shell pwd)/cpp/build
 BIN_DIR=$(DESTDIR)/usr/bin
 SBIN_DIR=$(DESTDIR)/sbin
 MAN_DIR=$(DESTDIR)/usr/share/man/man1
@@ -55,10 +59,6 @@ CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
 TARGETS = client server foundation
 .PHONY:	clean distclean set_version
 
-# Some toplevel configuration
-XTFS_BINDIR = $(shell pwd)/bin
-export XTFS_BINDIR
-
 all: check_server check_client check_test $(TARGETS)
 
 clean: check_server check_client $(patsubst %,%_clean,$(TARGETS))
@@ -69,14 +69,13 @@ install: install-client install-server install-tools
 
 install-client:
 
-	@if [ ! -f bin/mount.xtreemfs ]; then echo "PLEASE RUN 'make client' FIRST!"; exit 1; fi
+	@if [ ! -f $(XTREEMFS_BINARIES_DIR)/mount.xtreemfs ]; then echo "PLEASE RUN 'make client' FIRST!"; exit 1; fi
 
 	@mkdir -p $(DOC_DIR_CLIENT)
 	@cp LICENSE $(DOC_DIR_CLIENT)
 
 	@mkdir -p $(BIN_DIR)
-	@cp   -p  bin/*.xtreemfs bin/xtfsutil $(BIN_DIR)
-	          #bin/xtfs_vivaldi
+	@cp   -p  $(XTREEMFS_BINARIES_DIR)/*.xtreemfs $(XTREEMFS_BINARIES_DIR)/xtfsutil $(BIN_DIR)
 	          
 	@mkdir -p $(SBIN_DIR)
 	@ln -s $(BIN_DIR)/mount.xtreemfs $(SBIN_DIR)/mount.xtreemfs
@@ -140,7 +139,7 @@ install-tools:
 	@cp java/lib/*.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(BIN_DIR)
-	@cp   -p  `ls bin/xtfs_* | grep -v xtfs_.*mount` $(BIN_DIR)
+	@cp   -p  `ls $(XTREEMFS_BINARIES_DIR)/xtfs_* | grep -v xtfs_.*mount` $(BIN_DIR)
 
 	@mkdir -p $(MAN_DIR)
 	@cp -R man/man1/xtfs_* $(MAN_DIR)
@@ -256,9 +255,10 @@ client_debug: client
 
 client: check_client client_thirdparty set_version
 	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS)
-	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)	
-	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTFS_BINDIR)
-	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/xtfsutil $(XTFS_BINDIR)
+	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)
+	@cd $(XTREEMFS_CLIENT_BUILD_DIR); for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm $(XTREEMFS_BINARIES_DIR)/$$i; done
+	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTREEMFS_BINARIES_DIR)
+	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/xtfsutil $(XTREEMFS_BINARIES_DIR)
 
 client_clean: check_client client_thirdparty_clean
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
@@ -310,4 +310,4 @@ hadoop-client_distclean:
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml clean || exit 1
 
 test: check_test client server
-	python $(XTFS_BINDIR)/../tests/xtestenv -c $(XTFS_BINDIR)/../tests/test_config.py short
+	python ./tests/xtestenv -c ./tests/test_config.py short
