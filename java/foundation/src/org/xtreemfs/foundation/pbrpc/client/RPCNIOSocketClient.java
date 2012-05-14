@@ -15,6 +15,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -348,7 +349,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 toBeEstablished.add(con);
                 selector.wakeup();
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "connection established");
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "connection created");
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "socket send buffer size: %d",
                         channel.socket().getSendBufferSize());
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "socket receive buffer size: %d",
@@ -496,6 +497,12 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                         .stackTraceToString(ex));
             }
             closeConnection(key, "server closed connection ("+ex+")");
+        } catch (NotYetConnectedException e) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, OutputUtils
+                        .stackTraceToString(e));
+            }
+            closeConnection(key, "server closed connection: "+e);
         }
     }
 
@@ -603,6 +610,12 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                         .stackTraceToString(ex));
             }
             closeConnection(key, "server closed connection: "+ex);
+        } catch (NotYetConnectedException e) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, OutputUtils
+                        .stackTraceToString(e));
+            }
+            closeConnection(key, "server closed connection: "+e);
         }
     }
     
