@@ -120,7 +120,7 @@ public final class ReusableBuffer {
     
     /**
      * Creates a new view buffer. This view buffer shares the same data (i.e.
-     * backing byte buffer) but has independet position, limit etc.
+     * backing byte buffer) but has independent position, limit etc.
      */
     public ReusableBuffer createViewBuffer() {
         
@@ -515,7 +515,7 @@ public final class ReusableBuffer {
     
     public byte[] getData() {
         assert (!returned) : "Buffer was already freed and cannot be used anymore" + this.freeStack;
-        byte[] array = new byte[this.position()];
+        byte[] array = new byte[this.limit()];
         this.position(0);
         this.get(array);
         return array;
