@@ -9,10 +9,7 @@
 package org.xtreemfs.osd;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -136,35 +133,6 @@ public class OSDConfig extends ServiceConfig {
             parameter.put(param, readParameter(param));
         }
         
-    }
-
-    public InetSocketAddress getDirectoryService() {
-        return (InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE);
-    }
-
-    public InetSocketAddress[] getDirectoryServices() {
-        List<InetSocketAddress> addresses = new ArrayList<InetSocketAddress>();
-        addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE));
-        if (parameter.get(Parameter.DIRECTORY_SERVICE0) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE0));
-        }
-        if (parameter.get(Parameter.DIRECTORY_SERVICE1) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE1));
-        }
-        if (parameter.get(Parameter.DIRECTORY_SERVICE2) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE2));
-        }
-        if (parameter.get(Parameter.DIRECTORY_SERVICE3) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE3));
-        }
-        if (parameter.get(Parameter.DIRECTORY_SERVICE4) != null) {
-            addresses.add((InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE4));
-        }
-        return addresses.toArray(new InetSocketAddress[0]);
-    }
-
-    public void setDirectoryService(InetSocketAddress addr) {
-        parameter.put(Parameter.DIRECTORY_SERVICE, addr);
     }
 
     public String getObjDir() {
