@@ -318,7 +318,7 @@ public final class TimeSync extends LifeCycleThread {
                     long tStart = System.currentTimeMillis();
                     long oldDrift = currentDrift;
                     long globalTime = timeServerClient.xtreemfs_global_time_get(null);
-                    if (globalTime < 0) {
+                    if (globalTime <= 0) {
                         //error
                         return;
                     }
