@@ -223,3 +223,26 @@
    fun:calloc
    fun:fuse_fs_new
 }
+{
+   boost static ssl init leak?
+   Memcheck:Leak
+   ...
+   fun:_ZN5boost4asio3ssl6detail12openssl_initILb1EEC1Ev
+   ...
+}
+{
+   unknown leak when interrupting a mount.xtreemfs retrying to mount a volume
+   Memcheck:Leak
+   fun:malloc
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:do_dlopen
+   fun:_dl_catch_error
+   fun:dlerror_run
+   fun:__libc_dlopen_mode
+   fun:__nss_lookup_function
+   obj:*
+   obj:*
+}
