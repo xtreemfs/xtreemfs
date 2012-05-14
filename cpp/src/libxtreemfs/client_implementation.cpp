@@ -16,6 +16,7 @@
 #include <list>
 #include <string>
 
+#include "libxtreemfs/async_write_handler.h"
 #include "libxtreemfs/execute_sync_request.h"
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"
@@ -108,6 +109,8 @@ void ClientImplementation::Start() {
     vivaldi_.reset(new Vivaldi(network_client_.get(), dir_service_client_.get(), &dir_service_addresses, this->GetUUIDResolver(), options_));
     vivaldi_thread_.reset(new boost::thread(boost::bind(&xtreemfs::Vivaldi::Run, vivaldi_.get())));
   }
+
+  async_write_callback_thread_.reset(new boost::thread(&xtreemfs::AsyncWriteHandler::ProcessCallbacks));
 }
 
 void ClientImplementation::Shutdown() {
@@ -128,6 +131,11 @@ void ClientImplementation::Shutdown() {
     if (vivaldi_thread_.get() && vivaldi_thread_->joinable()) {
       vivaldi_thread_->interrupt();
       vivaldi_thread_->join();
+    }
+
+    if (async_write_callback_thread_->joinable()) {
+      async_write_callback_thread_->interrupt();
+      async_write_callback_thread_->join();
     }
 
     network_client_->shutdown();

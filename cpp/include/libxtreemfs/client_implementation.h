@@ -147,6 +147,9 @@ class ClientImplementation : public Client, public UUIDResolver {
   boost::scoped_ptr<xtreemfs::Vivaldi> vivaldi_;
   boost::scoped_ptr<xtreemfs::pbrpc::OSDServiceClient> osd_service_client_;
 
+  /** Thread that handles the callbacks for asynchronous writes. */
+  boost::scoped_ptr<boost::thread> async_write_callback_thread_;
+
   FRIEND_TEST(xtreemfs::rpc::ClientTestFastLingerTimeout, LingerTests);
   FRIEND_TEST(xtreemfs::rpc::ClientTestFastLingerTimeoutConnectTimeout, LingerTests);
 };

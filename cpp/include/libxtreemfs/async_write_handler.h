@@ -14,6 +14,7 @@
 
 #include "libxtreemfs/options.h"
 #include "rpc/callback_interface.h"
+#include "util/synchronized_queue.h"
 
 namespace xtreemfs {
 
@@ -31,6 +32,29 @@ class AsyncWriteHandler
     : public xtreemfs::rpc::CallbackInterface<
           xtreemfs::pbrpc::OSDWriteResponse> {
  public:
+  struct CallbackEntry {
+    CallbackEntry(
+        AsyncWriteHandler* handler,
+        xtreemfs::pbrpc::OSDWriteResponse* response_message,
+        char* data,
+        boost::uint32_t data_length,
+        xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
+        void* context)
+     : handler_(handler),
+       response_message_(response_message),
+       data_(data),
+       data_length_(data_length),
+       error_(error),
+       context_(context) {}
+
+    AsyncWriteHandler* handler_;
+    xtreemfs::pbrpc::OSDWriteResponse* response_message_;
+    char* data_;
+    boost::uint32_t data_length_;
+    xtreemfs::pbrpc::RPCHeader::ErrorResponse* error_;
+    void* context_;
+  };
+
   AsyncWriteHandler(
       FileInfo* file_info,
       UUIDIterator* uuid_iterator,
@@ -62,6 +86,10 @@ class AsyncWriteHandler
                                        bool* wait_completed,
                                        boost::mutex* wait_completed_mutex);
 
+  /** This static method runs in its own thread and does the real callback
+   *  handling to avoid load and blocking on the RPC thread. */
+  static void ProcessCallbacks();
+
  private:
   /** Possible states of this object. */
   enum State {
@@ -92,6 +120,12 @@ class AsyncWriteHandler
                             char* data, boost::uint32_t data_length,
                             xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
                             void* context);
+
+  /** Implements callback for an async write request. */
+  void HandleCallback(xtreemfs::pbrpc::OSDWriteResponse* response_message,
+                      char* data, boost::uint32_t data_length,
+                      xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
+                      void* context);
 
   /** Helper function which adds "write_buffer" to the list writes_in_flight_,
    *  increases the number of pending bytes and takes care of state changes.
@@ -231,7 +265,9 @@ class AsyncWriteHandler
   /** The write buffer to whom the worst_error_ belongs. */
   AsyncWriteBuffer* worst_write_buffer_;
 
-
+  /** Holds the Callbacks enqueued be CallFinished() (producer). They are
+   *  processed by ProcessCallbacks(consumer), running in its own thread. */
+  static util::SynchronizedQueue<CallbackEntry> callback_queue;
 };
 
 }  // namespace xtreemfs

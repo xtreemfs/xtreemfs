@@ -23,6 +23,7 @@
 #include "pbrpc/RPC.pb.h"
 #include "util/error_log.h"
 #include "util/logging.h"
+#include "util/synchronized_queue.h"
 #include "xtreemfs/OSDServiceClient.h"
 
 using namespace std;
@@ -30,6 +31,8 @@ using namespace xtreemfs::util;
 using namespace xtreemfs::pbrpc;
 
 namespace xtreemfs {
+
+util::SynchronizedQueue<AsyncWriteHandler::CallbackEntry> AsyncWriteHandler::callback_queue;
 
 AsyncWriteHandler::AsyncWriteHandler(
     FileInfo* file_info,
@@ -248,7 +251,38 @@ bool AsyncWriteHandler::WaitForPendingWritesNonBlocking(
   }
 }
 
+
+void AsyncWriteHandler::ProcessCallbacks() {
+  while(true) {
+    CallbackEntry e = callback_queue.Dequeue();
+    e.handler_->HandleCallback(
+        e.response_message_,
+        e.data_,
+        e.data_length_,
+        e.error_,
+        e.context_);
+
+    boost::this_thread::interruption_point();
+  }
+}
+
 void AsyncWriteHandler::CallFinished(
+    xtreemfs::pbrpc::OSDWriteResponse* response_message,
+    char* data,
+    boost::uint32_t data_length,
+    xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
+    void* context) {
+  callback_queue.Enqueue(CallbackEntry(
+      this,
+      response_message,
+      data,
+      data_length,
+      error,
+      context
+      ));
+}
+
+void AsyncWriteHandler::HandleCallback(
     xtreemfs::pbrpc::OSDWriteResponse* response_message,
     char* data,
     boost::uint32_t data_length,
@@ -372,7 +406,6 @@ void AsyncWriteHandler::CallFinished(
         }
         delete [] data;
         delete error;
-        throw PosixErrorException(POSIX_ERROR_EIO, error_message);
       }
     } else { // if (error)
       // Write was successful.
