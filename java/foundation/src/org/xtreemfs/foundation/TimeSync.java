@@ -423,6 +423,10 @@ public final class TimeSync extends LifeCycleThread {
         return theInstance;
     }
     
+    public static boolean isInitialized() {
+        return theInstance != null;
+    }
+    
     /**
      * Simple demonstration routine
      */
