@@ -56,6 +56,7 @@ public class DiscoveryMsgThread extends LifeCycleThread {
                 data.limit(data.capacity());
 
                 InetSocketAddress sender = (InetSocketAddress) channel.receive(data.getBuffer());
+                data.flip();
 
                 ReusableBuffer dataOut = null;
                 try {
