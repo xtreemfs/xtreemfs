@@ -115,8 +115,9 @@ class Volume:
                        self.__mount_point_dir_path)
             retcode = subprocess.call(command, shell=True)
             if retcode != 0:
-                raise RuntimeError("Failed to enable read-write replication on volume: " + self.__name + " xtfsutil return value: " + str(retcode))
-
+                raise RuntimeError("Failed to enable read-write replication on volume: " + self.__name
+                    + " xtfsutil return value: " + str(retcode)
+                    + " Executed command: " + self.__xtreemfs_dir + "/bin/xtfsutil " + "--set-drp " + "--replication-policy=" + self.__rwr_policy + " " + "--replication-factor="+str(self.__rwr_factor) + " " + self.__mount_point_dir_path)
 
         # enable replicate on close for ronly replication
         if self.__ronly_factor > 0:
