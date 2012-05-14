@@ -6,13 +6,14 @@ import types
 MANUAL_TEST_SET_NAME = 'manual'
 
 class TestConfig:
-    def __init__(self, filename, testSetName):
+    def __init__(self, filename, testSetName, volume):
         self.__tests = list()
         self.__system_tests = list()
         self.__volumeConfigs = dict()
         self.__testSets = dict()
         self.__filename = filename
         self.__testSetName = testSetName
+        self.__selectedVolume = volume
         self.__curren_test_set = dict()
         self.parseConfig()
         self.applyTestSet()
@@ -66,6 +67,10 @@ class TestConfig:
             if not v.has_key('ronly_factor'):
                 raise Exception('VolumeConfig '+str(k)+' is missing a field: ronly_factor')
 
+        if self.__selectedVolume is not None:
+            if self.__selectedVolume not in cfgVars['VolumeConfigs']:
+                raise Exception('There exists no volume config for the selected volume: ' + self.__selectedVolume)
+
         if not cfgVars.has_key('Tests'):
             raise Exception('Tests is not defined!')
 
@@ -84,7 +89,10 @@ class TestConfig:
 
         self.__testSets = cfgVars['TestSets']
         self.__tests = cfgVars['Tests']
-        self.__volumeConfigs = cfgVars['VolumeConfigs']
+        if self.__selectedVolume is not None:
+          self.__volumeConfigs[self.__selectedVolume] = cfgVars['VolumeConfigs'][self.__selectedVolume]
+        else:
+          self.__volumeConfigs = cfgVars['VolumeConfigs']
 
     def getTestSetConfig(self):
         return self.__curren_test_set
@@ -107,13 +115,18 @@ class TestConfig:
                 if not test['VolumeConfigs']:
                     self.__system_tests.append(test)
                 else:
-                    activeTests.append(test)
-                    for volConf in test['VolumeConfigs']:
-                        if self.__volumeConfigs.has_key(volConf):
+                    anyVolumeConfigFound = False
+                    for volConf in list(test['VolumeConfigs']):
+                        if volConf in self.__volumeConfigs:
                             activeVolumeConfigs[volConf] = self.__volumeConfigs[volConf]
+                            anyVolumeConfigFound = True
                         else:
-                            print 'Unknown VolumeConfig '+str(volConf)+' in test '+test['name']
-                            raise Exception('Invalid Config')
+                            if self.__selectedVolume is None:
+                                raise Exception("Unknown VolumeConfig '+str(volConf)+' in test '+test['name']")
+                            else:
+                                test['VolumeConfigs'].remove(volConf)
+                    if anyVolumeConfigFound:
+                        activeTests.append(test)
 
         self.__tests = activeTests
         self.__volumeConfigs = activeVolumeConfigs
