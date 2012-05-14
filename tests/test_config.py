@@ -42,7 +42,7 @@ VolumeConfigs = {
                     'stripe_width': 1,
                     'rwr_factor': 0,
                     'ronly_factor': 0,
-                    'mount_options': [ '-o', 'user_xattr', '-o', 'allow_other' ],
+                    'mount_options': [ '-ouser_xattr', '-oallow_other' ],
                     'mkfs_options':  [ '--chown-non-root' ]
                 },
     'regular_two_osds' : {
@@ -58,7 +58,7 @@ VolumeConfigs = {
                     'stripe_width': 1,
                     'rwr_factor': 0,
                     'ronly_factor': 0,
-                    'mount_options': [ '--metadata-cache-size=0', '-o', 'user_xattr', '-o', 'allow_other' ],
+                    'mount_options': [ '--metadata-cache-size=0', '-ouser_xattr', '-oallow_other' ],
                     'mkfs_options':  [ '--chown-non-root' ]
                 },
     'directio' : {
@@ -73,14 +73,14 @@ VolumeConfigs = {
                     'stripe_width': 2,
                     'rwr_factor': 0,
                     'ronly_factor': 0,
-                    'mount_options': [ '--max-read-tries=9999' ]
+                    'mount_options': [ ]
                 },
     'replicated_wqrq' : {
                     'stripe_size': 128,
                     'stripe_width': 1,
                     'rwr_factor': 3,
                     'ronly_factor': 0,
-                    'mount_options': [ '--max-read-tries=50', '--max-write-tries=50', '--max-tries=50' ]
+                    'mount_options': [ ]
                 },
     'replicated_war1' : {
                     'stripe_size': 128,
@@ -88,7 +88,7 @@ VolumeConfigs = {
                     'rwr_policy': 'all',
                     'rwr_factor': 2,
                     'ronly_factor': 0,
-                    'mount_options': [ '--max-read-tries=50', '--max-write-tries=50', '--max-tries=50' ]
+                    'mount_options': [ ]
                 },
 }
 
