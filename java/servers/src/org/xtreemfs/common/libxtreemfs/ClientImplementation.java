@@ -370,7 +370,7 @@ public class ClientImplementation extends Client implements UUIDResolver {
         ServiceUUID serviceUuid = new ServiceUUID(uuid, uuidResolver);
         try {
             serviceUuid.resolve();
-            address = serviceUuid.getAddress().getHostName() + ":" + serviceUuid.getAddress().getPort();
+            address = serviceUuid.getAddressString();
         } catch (UnknownUUIDException e) {
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "UUID: SERVICE NOT FOUND FOR UUID %S",
