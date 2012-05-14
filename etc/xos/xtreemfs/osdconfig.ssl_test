@@ -70,7 +70,6 @@ checksums.algorithm = Adler32
 
 # UUID for the OSD
 # IMPORTANT: replace 'localhost' with a reachable host name/IP address
-#uuid = http://farnsworth.zib.de:32640
 uuid = test-localhost-OSD
 
 checksums.enabled = false
