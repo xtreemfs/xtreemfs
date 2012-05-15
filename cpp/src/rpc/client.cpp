@@ -406,7 +406,7 @@ void Client::handleTimeout(const boost::system::error_code& error) {
         err->set_posix_errno(POSIX_ERROR_EINVAL);
         rq->set_error(err);
         rq->ExecuteCallback();
-        iter = request_table_.erase(iter++);
+        request_table_.erase(iter++);
         if (Logging::log->loggingActive(LEVEL_INFO)) {
           Logging::log->getLog(LEVEL_INFO) << error << endl;
         }
@@ -455,7 +455,7 @@ void Client::handleTimeout(const boost::system::error_code& error) {
         }
         con->Close(error);
         delete con;
-        iter2 = connections_.erase(iter2++);
+        connections_.erase(iter2++);
       } else {
         ++iter2;
       }
