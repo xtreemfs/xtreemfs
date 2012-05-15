@@ -37,7 +37,9 @@ class SynchronizedQueue {
     // When there is no data, wait till someone fills it.
     // Lock is automatically released in the wait and obtained
     // again after the wait
-    while (queue_.size()==0) queue_not_empty_cond_.wait(lock);
+    while (queue_.size() == 0) {
+      queue_not_empty_cond_.wait(lock);
+    }
 
     T result = queue_.front();
     queue_.pop();

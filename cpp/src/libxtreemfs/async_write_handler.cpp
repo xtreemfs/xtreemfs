@@ -211,7 +211,7 @@ void AsyncWriteHandler::WaitForPendingWrites() {
   if ((state_ != IDLE) && (state_ != FINALLY_FAILED)) {
     writing_paused_ = true;
     waiting_blocking_threads_count_++;
-    while (state_ != IDLE) {
+    while ((state_ != IDLE) && (state_ != FINALLY_FAILED) ) {
       all_pending_writes_did_complete_.wait(lock);
     }
     waiting_blocking_threads_count_--;
@@ -254,14 +254,13 @@ bool AsyncWriteHandler::WaitForPendingWritesNonBlocking(
 
 void AsyncWriteHandler::ProcessCallbacks() {
   while(true) {
-    CallbackEntry e = callback_queue.Dequeue();
+    const CallbackEntry& e = callback_queue.Dequeue();
     e.handler_->HandleCallback(
         e.response_message_,
         e.data_,
         e.data_length_,
         e.error_,
         e.context_);
-
     boost::this_thread::interruption_point();
   }
 }
@@ -291,6 +290,8 @@ void AsyncWriteHandler::HandleCallback(
   boost::mutex::scoped_lock lock(mutex_);
 
   bool delete_response_message = true;
+
+  --pending_writes_; // we received some answer we were waiting for
 
   // do nothing in case a write has finally failed
   if (state_ !=  FINALLY_FAILED) {
@@ -383,7 +384,7 @@ void AsyncWriteHandler::HandleCallback(
       } else { // if (recoverable error and retries left)
         // FAIL finally after too many retries, or unrecoverable errors
         state_ = FINALLY_FAILED;
-        CleanUp(&lock);
+        // finall cleanup is done when the last expected callback arrives
 
         // Log error.
         string error_type_name = boost::lexical_cast<string>(error->error_type());
@@ -424,8 +425,6 @@ void AsyncWriteHandler::HandleCallback(
       write_buffer->state_ = AsyncWriteBuffer::SUCCEEDED;
       DeleteBufferHelper(&lock);  // do all deletes
     }
-
-    --pending_writes_; // we received some answer we were waiting for
 
     // start retrying when this is the callback of the last response
     // all handling of fails is done here
@@ -492,6 +491,12 @@ void AsyncWriteHandler::HandleCallback(
       worst_error_.Clear();
       worst_write_buffer_ = 0;
     }
+  } else { // state_ == FINALLY_FAILED
+      // clean up when last expected callback arrives
+      if(pending_writes_ == 0) {
+          CleanUp(&lock);
+      }
+
   } // if (state_ != FINALLY_FAILED)
 
   // Cleanup.
@@ -521,7 +526,6 @@ void AsyncWriteHandler::DecreasePendingBytesHelper(
   assert(write_buffer && lock && lock->owns_lock());
 
   pending_bytes_ -= write_buffer->data_length;
-  //--pending_writes_;
 
   if(delete_buffer) {
     // the buffer is deleted
@@ -595,7 +599,9 @@ void AsyncWriteHandler::CleanUp(boost::mutex::scoped_lock* lock) {
 
   // wake up all waiting threads
   NotifyWaitingObserversAndClearAll(lock);
-  all_pending_writes_did_complete_.notify_all();
+  if (waiting_blocking_threads_count_ > 0) {
+    all_pending_writes_did_complete_.notify_all();
+  }
   pending_bytes_were_decreased_.notify_all();
 }
 
