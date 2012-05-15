@@ -574,15 +574,12 @@ void AsyncWriteHandler::DeleteBufferHelper(
 
   // delete all leading successfully sent entries
   std::list<AsyncWriteBuffer*>::iterator it;
-  for(it = writes_in_flight_.begin(); it != writes_in_flight_.end(); ++it) {
-    if((*it)->state_ == AsyncWriteBuffer::SUCCEEDED) {
-      DecreasePendingBytesHelper(*it, lock, false);
-      delete *it;  // delete buffer
-      it = writes_in_flight_.erase(it);  // delete pointer to buffer in list
-    } else {
-      break;  // break the loop on first occurrence of a not yet successfully
-              // sent element
-    }
+  for(it = writes_in_flight_.begin();
+      (it != writes_in_flight_.end())
+      && ((*it)->state_ == AsyncWriteBuffer::SUCCEEDED);  // break on first occurrence of a not yet successfully
+      it = writes_in_flight_.erase(it)) {  // delete buffer in list, returns next iterator
+    DecreasePendingBytesHelper(*it, lock, false);
+    delete *it;  // delete buffer
   }
 }
 
