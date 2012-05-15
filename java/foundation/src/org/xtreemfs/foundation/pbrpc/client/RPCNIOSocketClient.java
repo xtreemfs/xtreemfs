@@ -374,11 +374,11 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         } else {
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                    "reconnect to server still blocked %s", con.getEndpoint().toString());
+                    "reconnect to server still blocked locally to avoid flooding (server: %s)", con.getEndpoint().toString());
             }
             synchronized (con) {
                 for (RPCClientRequest rq : con.getSendQueue()) {
-                    rq.getResponse().requestFailed("sending RPC failed: server '"+con.getEndpoint()+"' not reachable (blocked due to reconnect timeout)");
+                    rq.getResponse().requestFailed("sending RPC failed: reconnecting to the server '"+con.getEndpoint()+"' was blocked locally to avoid flooding");
                     rq.freeBuffers();
                 }
                 con.getSendQueue().clear();
