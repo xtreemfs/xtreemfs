@@ -112,7 +112,7 @@ void AsyncWriteHandler::Write(AsyncWriteBuffer* write_buffer) {
   {
     boost::mutex::scoped_lock lock(mutex_);
 
-    while (state_ != FINALLY_FAILED && (writing_paused_ ||
+    while ((state_ != FINALLY_FAILED) && (writing_paused_ ||
            (pending_bytes_ + write_buffer->data_length) > max_writeahead_ ||
             writes_in_flight_.size() == max_writeahead_requests_)) {
       // TODO(mberlin): Allow interruption and set the write status of the
@@ -148,8 +148,8 @@ void AsyncWriteHandler::Write(AsyncWriteBuffer* write_buffer) {
     // In case of errors, remove write again and throw exception.
     {
       boost::mutex::scoped_lock lock(mutex_);
-
       DecreasePendingBytesHelper(write_buffer, &lock, true);
+      --pending_writes_;
     }
     throw;
   }
@@ -493,10 +493,9 @@ void AsyncWriteHandler::HandleCallback(
     }
   } else { // state_ == FINALLY_FAILED
       // clean up when last expected callback arrives
-      if(pending_writes_ == 0) {
+      if (pending_writes_ == 0) {
           CleanUp(&lock);
       }
-
   } // if (state_ != FINALLY_FAILED)
 
   // Cleanup.
@@ -576,14 +575,14 @@ void AsyncWriteHandler::DeleteBufferHelper(
   // delete all leading successfully sent entries
   std::list<AsyncWriteBuffer*>::iterator it;
   for(it = writes_in_flight_.begin(); it != writes_in_flight_.end(); ++it) {
-      if((*it)->state_ == AsyncWriteBuffer::SUCCEEDED) {
-          DecreasePendingBytesHelper(*it, lock, false);
-          delete *it;  // delete buffer
-          it = writes_in_flight_.erase(it);  // delete pointer to buffer in list
-      } else {
-        break;  // break the loop on first occurrence of a not yet successfully
-                // sent element
-      }
+    if((*it)->state_ == AsyncWriteBuffer::SUCCEEDED) {
+      DecreasePendingBytesHelper(*it, lock, false);
+      delete *it;  // delete buffer
+      it = writes_in_flight_.erase(it);  // delete pointer to buffer in list
+    } else {
+      break;  // break the loop on first occurrence of a not yet successfully
+              // sent element
+    }
   }
 }
 
