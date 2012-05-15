@@ -5,23 +5,26 @@
 # --------------------------
 
 # temporary directory for this script
-TMP_PATH="/tmp/fsdRLgT24fDM7YqmfFlg85gLVf6aLGA6G"
+TMP_PATH="$(mktemp -d -t xtreemfs_release_build.XXXXXX)"
+if [ -z "$TMP_PATH" ]
+then
+  echo "Failed to generate temporary directory."
+  exit 1
+fi
 
 # white list for files/dirs which should be copied
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 
 # black list for files/dirs which should NEVER be copied
 SOURCE_BLACK_LIST=(
-    "contrib/console"
-    "contrib/hadoop"
-	"doc"
-	"etc/xos/xtreemfs/*test"
-	"etc/init.d/xtreemfs-vivaldi"
-	"classfiles"
-	"cpp/CMakeFiles"
-	"cpp/src/util/rdtsc.cpp"
-	"java/pbrpcgen/build"
-	"java/pbrpcgen/dist"
+  "contrib/console"
+  "contrib/hadoop"
+  "doc"
+  "etc/xos/xtreemfs/*test"
+  "classfiles"
+  "cpp/CMakeFiles"
+  "java/pbrpcgen/build"
+  "java/pbrpcgen/dist"
 )
 
 # --------------------------
