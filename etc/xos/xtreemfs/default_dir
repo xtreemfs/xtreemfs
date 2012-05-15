@@ -1,2 +1,9 @@
+# This configuration file is only used by maintenance tools like xtfs_chstatus,
+# xtfs_cleanup_osd, xtfs_remove_osd and xtfs_scrub if a DIR server is not
+# explicitely set at the command line.
+# 
+# Do *not* use this file to tell MRC and OSD which DIR to contact.
+# Edit the corresponding configuration files mrcconfig.properties
+# and osdconfig.properties instead.
 dir_service.host = localhost
 dir_service.port = 32638
