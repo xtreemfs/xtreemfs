@@ -232,15 +232,17 @@ template<class ReturnMessageType, class F>
           error.clear();
         }
 
-        try {
-          sleep_interruptible(delay_time_left.total_milliseconds());
-        } catch (const boost::thread_interrupted& e) {
-          if (response != NULL) {
-            // Free response.
-            response->DeleteBuffers();
-            delete response;
+        if (!delay_time_left.is_negative()) {
+          try {
+            sleep_interruptible(delay_time_left.total_milliseconds());
+          } catch (const boost::thread_interrupted& e) {
+            if (response != NULL) {
+              // Free response.
+              response->DeleteBuffers();
+              delete response;
+            }
+            throw;
           }
-          throw;
         }
 
       } else {

@@ -463,7 +463,7 @@ void AsyncWriteHandler::HandleCallback(
             << std::endl;
       }
 
-      if(!(fast_redirect_ || delay_time_left.is_negative())){
+      if (!(fast_redirect_ || delay_time_left.is_negative())) {
         try {
           sleep_interruptible(delay_time_left.total_milliseconds());  // boost::thread interruption point
         } catch (const boost::thread_interrupted& e) {
