@@ -40,7 +40,7 @@ function update_version_macos_packaging() {
   if [ "$(uname)" != "Darwin" ]
   then
     # Skip editing the MacOSX files if we aren't on a MacOSX system.
-    continue
+    return
   fi
 
   for file in $package_files
