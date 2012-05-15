@@ -573,14 +573,19 @@ void AsyncWriteHandler::DeleteBufferHelper(
   assert(lock && lock->owns_lock());
 
   // delete all leading successfully sent entries
-  std::list<AsyncWriteBuffer*>::iterator it;
-  for(it = writes_in_flight_.begin();
-      (it != writes_in_flight_.end())
-      && ((*it)->state_ == AsyncWriteBuffer::SUCCEEDED);  // break on first occurrence of a not yet successfully
-      it = writes_in_flight_.erase(it)) {  // delete buffer in list, returns next iterator
-    DecreasePendingBytesHelper(*it, lock, false);
-    delete *it;  // delete buffer
+  std::list<AsyncWriteBuffer*>::iterator it = writes_in_flight_.begin();
+  while (it != writes_in_flight_.end()) {
+    if((*it)->state_ == AsyncWriteBuffer::SUCCEEDED) {
+      DecreasePendingBytesHelper(*it, lock, false);
+      delete *it;  // delete buffer
+      it = writes_in_flight_.erase(it);  // delete pointer to buffer in list
+    } else {
+      break;  // break the loop on first occurrence of a not yet successfully
+              // sent element
+    }
   }
+
+  assert(!writes_in_flight_.empty() || (pending_bytes_ == 0));
 }
 
 void AsyncWriteHandler::CleanUp(boost::mutex::scoped_lock* lock) {
