@@ -193,6 +193,10 @@ void AsyncWriteHandler::ReWrite(AsyncWriteBuffer* write_buffer,
     throw;
   }
 
+  // make sure to use the potentially renewed XCap
+  write_buffer->xcap_handler_->GetXCap(
+      write_buffer->write_request->mutable_file_credentials()->mutable_xcap());
+
   // Send out request.
   write_buffer->request_sent_time =
       boost::posix_time::microsec_clock::local_time();

@@ -254,6 +254,7 @@ int FileHandleImplementation::Write(
             operations[j].data,
             operations[j].req_size,
             this,
+            this,
             GetOSDUUIDFromXlocSet(xlocs,
                                   0,  // Use first and only replica.
                                   operations[j].osd_offset));
@@ -261,11 +262,10 @@ int FileHandleImplementation::Write(
         write_buffer = new AsyncWriteBuffer(write_request,
                                             operations[j].data,
                                             operations[j].req_size,
+                                            this,
                                             this);
       }
 
-      // TODO(mberlin): Once the retry support for async writes is available,
-      //                modify the implementation to support the new XCapHandler
       file_info_->AsyncWrite(write_buffer);
 
       // Processing of file size updates is handled by the FileInfo's
