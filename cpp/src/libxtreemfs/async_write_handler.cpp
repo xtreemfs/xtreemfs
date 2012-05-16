@@ -401,12 +401,7 @@ void AsyncWriteHandler::HandleCallback(
         Logging::log->getLog(LEVEL_ERROR) << error_message << endl;
         ErrorLog::error_log->AppendError(error_message);
 
-        // Cleanup before throwing (normally done at the end)
-        if (delete_response_message) {
-          delete response_message;
-        }
-        delete [] data;
-        delete error;
+        // Cleanup is done at the end...
       }
     } else { // if (error)
       // Write was successful.
