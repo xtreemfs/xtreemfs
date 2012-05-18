@@ -175,7 +175,6 @@ _POSTINSTALL_
 
 %if 0%{?suse_version}
 %fillup_and_insserv -f xtreemfs-dir xtreemfs-mrc xtreemfs-osd
-%restart_on_update xtreemfs-dir xtreemfs-mrc xtreemfs-osd
 %endif
 %if 0%{?fedora_version}
 /sbin/chkconfig --add xtreemfs-dir
@@ -207,6 +206,7 @@ _POSTINSTALL_
 
 %postun server
 %if 0%{?suse_version}
+%restart_on_update xtreemfs-dir xtreemfs-mrc xtreemfs-osd
 %insserv_cleanup
 %endif
 %if 0%{?fedora_version}
