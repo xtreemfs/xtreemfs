@@ -1,0 +1,10 @@
+/config.log
+/config.h
+/config.status
+/libtool
+/Makefile
+/protobuf.pc
+/protobuf-lite.pc
+/stamp-h1
+/autom4te.cache
+/*~
