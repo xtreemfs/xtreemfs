@@ -108,6 +108,9 @@ class Interruptibilizer {
 class Interruptibilizer {
  public:
   Interruptibilizer() {}
+  static void Initialize(int interrupt_signal) {}
+  static void Reinitialize(int new_interrupt_signal) {}
+  static void Deinitialize() {}
   bool WasInterrupted() const {
     return false;
   }
