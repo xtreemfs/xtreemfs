@@ -22,6 +22,9 @@ endif(MSVC)
 if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   set (SOLARIS true)
 endif(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+  set (FREEBSD true)
+endif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 
 # Set paths for required thirdparty libraries.
 set(CLIENT_GOOGLE_PROTOBUF_CPP "${CMAKE_SOURCE_DIR}/thirdparty/protobuf-2.3.0")
@@ -42,20 +45,26 @@ if (NOT WIN32)
   SET(LIBATTR "attr")
   SET(LIBPTHREAD "pthread")
 endif(NOT WIN32)
+
 if (SOLARIS)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthreads") 
   SET(LIBSOCKET_SOLARIS "socket")
   SET(LIBNSL_SOLARIS "nsl")
   # No libattr on Solaris.
   SET(LIBATTR "")
-  # On Solaris we use the environment variable BOOST_ROOT to point to a local boost installation and we link the built boost libraries statically.
-  SET(Boost_USE_STATIC_LIBS true)
 endif(SOLARIS)
-IF(APPLE)
-  # No libattr on mac.
+
+IF (APPLE OR FREEBSD)
   SET(LIBATTR "")
-  # On Apple we use the environment variable BOOST_ROOT to point to a local boost installation and we link the built boost libraries statically.
+ENDIF(APPLE OR FREEBSD)
+
+IF (WIN32 OR APPLE OR SOLARIS)
+  # Run cmake with -DBOOST_ROOT=<root path of local boost installation> on Windows, Solaris and MacOSX.
+  # We link against the boost libraries found in BOOST_ROOT.
   SET(Boost_USE_STATIC_LIBS true)
+ENDIF(WIN32 OR APPLE OR SOLARIS)
+
+IF (APPLE)
   # Update 8/12/2011: Setting macosx-version-min does break mount.xtreemfs for unknown reasons - so disabled for now.
   # Tell gcc to compile 10.4 compatible files (does not work otherwise on older Macs).
   #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.4")
@@ -65,9 +74,6 @@ IF(APPLE)
     include_directories(${OSXFUSE_FUSE_H_INCLUDE_DIR})
   endif(EXISTS ${OSXFUSE_FUSE_H_INCLUDE_DIR})
 ENDIF(APPLE)
-IF(WIN32)
-  SET(Boost_USE_STATIC_LIBS true)
-ENDIF(WIN32)
 
 # Set required thirdparty libraries.
 if (BOOST_ROOT)
