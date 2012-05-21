@@ -35,6 +35,13 @@ if [ -z $JAVA_HOME ]; then
 fi
 JAVA_CALL="$JAVA_HOME/bin/java -cp /usr/share/java/XtreemFS.jar:/usr/share/java/BabuDB.jar:/usr/share/java/Flease.jar:/usr/share/java/protobuf-java-2.3.0.jar:/usr/share/java/Foundation.jar:/usr/share/java/jdmkrt.jar:/usr/share/java/jdmktk.jar"
 
+# For SELinux we need to use 'runuser' not 'su'
+if [ -x "/sbin/runuser" ]; then
+    SU="/sbin/runuser -s /bin/sh $XTREEMFS_USER"
+else
+    SU="/bin/sudo -s /bin/sh -u $XTREEMFS_USER"
+fi
+
 pre_check() {
     exists=`grep -c $XTREEMFS_USER /etc/passwd`
     if [ $exists -eq 0 ]; then
@@ -61,7 +68,7 @@ start() {
     echo -e "Starting XtreemFS Metadata and Replica Catalog (MRC)...\n\n" >> $LOG_MRC
 
     echo -n "starting XtreemFS Metadata and Replica Catalog (MRC)..."
-    sudo -u $XTREEMFS_USER $JAVA_CALL org.xtreemfs.mrc.MRC $CONFIG_MRC >> $LOG_MRC 2>&1 &
+    $SU -c "$JAVA_CALL org.xtreemfs.mrc.MRC $CONFIG_MRC" >> $LOG_MRC 2>&1 &
     PROCPID=$!
     echo $PROCPID > $PID_MRC
     sleep 1s
