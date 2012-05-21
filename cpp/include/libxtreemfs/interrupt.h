@@ -69,7 +69,7 @@ class Interruptibilizer {
    */
   static bool WasInterruptedStatic();
 
-  /** 
+  /**
    *  @remarks never call malloc() in a handler because another malloc() could
    *           be in progress which might lead to a deadlock situation.
    */
@@ -107,8 +107,11 @@ class Interruptibilizer {
 #else  // for all other platforms
 class Interruptibilizer {
  public:
-  Interruptibilizer(int interrupt_signal) {}
-  static bool WasInterrupted() {
+  Interruptibilizer() {}
+  bool WasInterrupted() const {
+    return false;
+  }
+  static bool WasInterruptedStatic() {
     return false;
   }
 
