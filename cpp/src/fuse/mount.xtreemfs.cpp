@@ -256,6 +256,9 @@ int main(int argc, char **argv) {
   }
 
   // Run fuse.
+  fuse_adapter->SwitchInterruptSignal();  // NOTE: SwitchInterruptSignal()
+                                          // restores previous handler - so
+                                          // call before next line
   fuse_set_signal_handlers(fuse_get_session(fuse_));
   fuse_loop_mt(fuse_);
   // Cleanup

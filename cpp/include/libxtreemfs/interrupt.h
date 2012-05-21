@@ -24,8 +24,8 @@ namespace xtreemfs {
 #ifdef __linux
 
 /**
- * This class deactivates a signal in its ctor and restores the previous state
- * in its destructor.
+ * This class blocks a signal in its constructor and restores the previous
+ * state in its destructor.
  * This was introduced to deactive the signal handling for the executing thread
  * before locking the global mutex for the pseudo-thread-local-storage map of
  * Interruptibilizer. This is necessary because a signal handler call could
@@ -38,17 +38,20 @@ class DeInterruptibilizer {
  private:
   /** The signal used by this instance. */
   const int interrupt_signal_;
-  /** The previous signal handler (will be restored by the destructor. */
-  sighandler_t previous_signal_handler_;
 };
 
 /** This class encapsulates the registration and deregistration of an
- *  interruption signal handler for a given signal (interrupt_signal).
+ *  interruption signal handler for a given signal (interrupt_signal) and
+ *  manages the interruption state per thread.
  */
 class Interruptibilizer {
  public:
-  Interruptibilizer(int interrupt_signal);
+  Interruptibilizer();
   ~Interruptibilizer();
+
+  static void Initialize(int interrupt_signal);
+  static void Reinitialize(int new_interrupt_signal);
+  static void Deinitialize();
 
   /**
    * Returns whether the an interrupt was handled within the current thread.
@@ -62,10 +65,9 @@ class Interruptibilizer {
    *  This method is static to ease access without having to pass around
    *  Interruptibilizer instances.
    *  However, this variant is more expensive, since it has to find the
-   *  correct map entry by querying a thread id. It also needs the
-   *  signal to deactivate signal handling for it while the map is locked.
+   *  correct map entry by querying a thread id.
    */
-  static bool WasInterrupted(int interrupt_signal);
+  static bool WasInterruptedStatic();
 
   /** 
    *  @remarks never call malloc() in a handler because another malloc() could
@@ -75,19 +77,31 @@ class Interruptibilizer {
 
 
  private:
-  typedef std::map<boost::thread::id, bool> map_type;
+  /** The internal map type used for thread local storage. The key is the
+   *  thread ID, the value is a pair with the interruption state for that
+   *  thread and an instance counter for that thread. The latter is needed
+   *  to detect when the last instance for a thread is destructed, which
+   *  means the map entry can be removed. */
+  typedef std::map<boost::thread::id, std::pair<bool, int> > map_type;
 
   /** Mutual exclusion for access to thread_local_was_interrupted_map_. */
   static boost::mutex map_mutex_;
-  /** Pseudo-TLS (thread local storage) implemented with a global map. */
+
+  /** Pseudo-TLS (thread local storage) implemented with a global map.
+   *  It uses the thread-id as a key and stores a pair consisting of a bool
+   *  containing the interruption state and an instance counter to manage
+   *  entry removal. See also map_type. */
   static map_type thread_local_was_interrupted_map_;
 
   /** Iterator to the own entry in thread_local_was_interrupted_map_ map. */
-  std::map<boost::thread::id, bool>::iterator was_interrupted_iterator_;
+  map_type::iterator was_interrupted_iterator_;
+
+  /** A flag that is set once the first instance was initialised. */
+  static bool initialized_;
   /** The signal used by this instance. */
-  const int interrupt_signal_;
-  /** The previous signal handler (will be restored by the destructor. */
-  sighandler_t previous_signal_handler_;
+  static int interrupt_signal_;
+  /** The previous signal handler (will be restored by the Deinitialize()). */
+  static struct sigaction previous_signal_action_;
 };
 
 #else  // for all other platforms

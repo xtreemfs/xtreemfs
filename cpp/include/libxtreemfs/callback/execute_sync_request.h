@@ -80,7 +80,7 @@ template<class ReturnMessageType, class F>
   assert(uuid_iterator_has_addresses || uuid_resolver);
   assert((!xcap_handler && !xcap_in_req) || (xcap_handler && xcap_in_req));
 
-  Interruptibilizer interrupt(options.interrupt_signal);
+  Interruptibilizer interrupt;
 
   int attempt = 0;
   bool redirected = false;

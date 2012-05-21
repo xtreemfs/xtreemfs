@@ -357,6 +357,10 @@ void FuseAdapter::Stop() {
   }
 }
 
+void FuseAdapter::SwitchInterruptSignal() {
+  client_->SwitchInterruptSignal();
+}
+
 void FuseAdapter::GenerateUserCredentials(
     struct fuse_context* fuse_context,
     xtreemfs::pbrpc::UserCredentials* user_credentials) {

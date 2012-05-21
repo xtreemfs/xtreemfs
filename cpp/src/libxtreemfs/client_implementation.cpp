@@ -93,6 +93,8 @@ ClientImplementation::~ClientImplementation() {
 }
 
 void ClientImplementation::Start() {
+  Interruptibilizer::Initialize(options_.interrupt_signal);
+
   // start network (rpc) client
   network_client_.reset(new xtreemfs::rpc::Client(
       options_.connect_timeout_s,
@@ -141,6 +143,12 @@ void ClientImplementation::Shutdown() {
   if (vivaldi_thread_.get() && vivaldi_thread_->joinable()) {
     vivaldi_thread_->interrupt();
   }
+
+  Interruptibilizer::Deinitialize();
+}
+
+void ClientImplementation::SwitchInterruptSignal() {
+  Interruptibilizer::Reinitialize(options_.interrupt_signal);
 }
 
 Volume* ClientImplementation::OpenVolume(
