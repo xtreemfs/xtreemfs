@@ -12,13 +12,11 @@
 # Description:       XtreemFS OSD. http://www.xtreemfs.org/
 ### END INIT INFO
 
-
 # Source function library.
-if [ -e /lib/lsb/init-functions ]
-then
-	. /lib/lsb/init-functions
+if [ -e /lib/lsb/init-functions ]; then
+    . /lib/lsb/init-functions
 else
-	. /etc/init.d/functions
+    . /etc/init.d/functions
 fi
 
 LOCKDIR=/var/lock/subsys
@@ -33,30 +31,26 @@ CONFIG_OSD=/etc/xos/xtreemfs/osdconfig.properties
 LOG_OSD=/var/log/xtreemfs/osd.log
 
 if [ -z $JAVA_HOME ]; then
-	export JAVA_HOME=/usr
+    export JAVA_HOME=/usr
 fi
 JAVA_CALL="$JAVA_HOME/bin/java -cp /usr/share/java/XtreemFS.jar:/usr/share/java/BabuDB.jar:/usr/share/java/Flease.jar:/usr/share/java/protobuf-java-2.3.0.jar:/usr/share/java/Foundation.jar:/usr/share/java/jdmkrt.jar:/usr/share/java/jdmktk.jar"
 
 pre_check() {
-
-        exists=`grep -c $XTREEMFS_USER /etc/passwd`
-        if [ $exists -eq 0 ]
-        then
-                echo "user $XTREEMFS_USER does not exist."
-                exit 1
-        fi
-        dir=`dirname $LOG_OSD`
-        if [ ! -e $dir ]
-        then
-                echo "directory for logfiles $dir does not exist"
-        fi
+    exists=`grep -c $XTREEMFS_USER /etc/passwd`
+    if [ $exists -eq 0 ]; then
+        echo "user $XTREEMFS_USER does not exist."
+        exit 1
+    fi
+    dir=`dirname $LOG_OSD`
+    if [ ! -e $dir ]; then
+        echo "directory for logfiles $dir does not exist"
+    fi
 }
 
 start() {
-    if [ -f $LOCKFILE ]
-    then
-	echo -n "XtreemFS Object Storage Device (OSD) already started"
-	echo
+    if [ -f $LOCKFILE ]; then
+        echo -n "XtreemFS Object Storage Device (OSD) already started"
+        echo
         return 0
     fi
 
@@ -72,12 +66,11 @@ start() {
     echo $PROCPID > $PID_OSD
     sleep 1s
 
-    if [ -e /proc/$PROCPID ]
-    then
-	echo
+    if [ -e /proc/$PROCPID ]; then
+        echo
     else
-	echo
-	return 1
+        echo
+        return 1
     fi
     
     if [ ! -d $LOCKDIR ]; then mkdir -p $LOCKDIR; fi
@@ -86,11 +79,10 @@ start() {
 }
 
 stop() {
-    if [ -f $PID_OSD ]
-    then
+    if [ -f $PID_OSD ]; then
         echo -n "stopping XtreemFS Object Storage Device (OSD)..."
         killproc -p $PID_OSD sudo
-	echo
+        echo
     fi
 
     rm -f $LOCKFILE
@@ -98,20 +90,18 @@ stop() {
 }
 
 status() {
-    if [ -f $PID_OSD ]
-    then
+    if [ -f $PID_OSD ]; then
         PROCPID=`cat $PID_OSD`
-	if [ ! -e /proc/$PROCPID ]
-	then
-		echo "XtreemFS Object Storage Device (OSD) has crashed"
-		return 1
-	else
-		echo "XtreemFS Object Storage Device (OSD) is running"
-		return 0
-	fi
+        if [ ! -e /proc/$PROCPID ]; then
+            echo "XtreemFS Object Storage Device (OSD) has crashed"
+            return 1
+        else
+            echo "XtreemFS Object Storage Device (OSD) is running"
+            return 0
+        fi
     else
-	echo "XtreemFS Object Storage Device (OSD) is not running"
-	return 3
+        echo "XtreemFS Object Storage Device (OSD) is not running"
+        return 3
     fi
 }
 
