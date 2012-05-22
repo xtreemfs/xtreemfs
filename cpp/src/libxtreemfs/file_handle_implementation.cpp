@@ -924,10 +924,11 @@ void FileHandleImplementation::RenewXCapAsync() {
 
     // TODO(mberlin): Only renew after some time has elapsed.
     // TODO(mberlin): Cope with local clocks which have a high clock skew.
-    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-        Logging::log->getLog(LEVEL_DEBUG)
+    // TODO(mno): change level back to DEBUG
+    if (Logging::log->loggingActive(LEVEL_INFO)) {
+        Logging::log->getLog(LEVEL_INFO)
             << "Renew XCap for file_id: " <<  GetFileIdHelper(&lock)
-            << " Expiration in: " << (xcap_.expire_time_s() - time(NULL))
+            << ", Expiration in: " << (xcap_.expire_time_s() - time(NULL))
             << endl;
     }
 
@@ -995,9 +996,12 @@ void FileHandleImplementation::CallFinished(
     if (new_xcap->expire_time_s() > xcap_.expire_time_s()) {
       xcap_.CopyFrom(*new_xcap);
 
-      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-        Logging::log->getLog(LEVEL_DEBUG)
-           << "XCap renewed for file_id: " << GetFileIdHelper(&lock) << endl;
+      // TODO(mno): change level back to DEBUG
+      if (Logging::log->loggingActive(LEVEL_INFO)) {
+        Logging::log->getLog(LEVEL_INFO)
+           << "XCap renewed for file_id: " << GetFileIdHelper(&lock)
+           << ", Expiration in: " << (xcap_.expire_time_s() - time(NULL))
+           << endl;
       }
     }
   }

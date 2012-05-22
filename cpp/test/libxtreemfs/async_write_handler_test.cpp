@@ -42,6 +42,8 @@ class AsyncWriteHandlerTest : public ::testing::Test {
     test_env.options.retry_delay_s = 5;
     test_env.options.max_writeahead = 1024 * 128 * 8;
     test_env.options.max_writeahead_requests = 8;
+
+    test_env.options.periodic_xcap_renewal_interval_s = 2;
     test_env.Start();
 
     // Open a volume

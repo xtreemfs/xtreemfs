@@ -84,8 +84,8 @@ google::protobuf::Message* TestRPCServerMRC::RenewCapabilityOperation(
 
   XCap* response = new XCap(*rq);
 
-  response->set_expire_time_s(3600);
-  response->set_expire_timeout_s(time(0) + 3600);
+  response->set_expire_time_s(time(0) + 3600);
+  response->set_expire_timeout_s(3600);
 
   return response;
 }

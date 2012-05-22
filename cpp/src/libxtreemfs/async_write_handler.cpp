@@ -154,6 +154,14 @@ void AsyncWriteHandler::Write(AsyncWriteBuffer* write_buffer) {
     throw;
   }
 
+  // TODO(mno): remove
+  if (Logging::log->loggingActive(LEVEL_INFO)) {
+    Logging::log->getLog(LEVEL_INFO)
+       << "AsyncWriteHandler::Write for file_id: " << write_buffer->write_request->mutable_file_credentials()->xcap().file_id()
+       << ", Expiration in: " << (write_buffer->write_request->mutable_file_credentials()->xcap().expire_time_s() - time(NULL))
+       << endl;
+  }
+
   // Send out request.
   write_buffer->request_sent_time =
       boost::posix_time::microsec_clock::local_time();
@@ -197,6 +205,14 @@ void AsyncWriteHandler::ReWrite(AsyncWriteBuffer* write_buffer,
   // make sure to use the potentially renewed XCap
   write_buffer->xcap_handler_->GetXCap(
       write_buffer->write_request->mutable_file_credentials()->mutable_xcap());
+
+  // TODO(mno): remove
+  if (Logging::log->loggingActive(LEVEL_INFO)) {
+    Logging::log->getLog(LEVEL_INFO)
+        << "AsyncWriteHandler::ReWrite for file_id: " << write_buffer->write_request->mutable_file_credentials()->xcap().file_id()
+        << ", Expiration in: " << (write_buffer->write_request->mutable_file_credentials()->xcap().expire_time_s() - time(NULL))
+        << endl;
+  }
 
   // Send out request.
   write_buffer->request_sent_time =
