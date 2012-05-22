@@ -64,7 +64,7 @@ AsyncWriteHandler::AsyncWriteHandler(
 }
 
 AsyncWriteHandler::~AsyncWriteHandler() {
-  if (pending_bytes_ > 0) {
+  if ((pending_bytes_ > 0) || (pending_writes_ > 0)) {
     string path;
     file_info_->GetPath(&path);
     string error = "The AsyncWriteHandler for the file with the path: " + path
@@ -190,6 +190,7 @@ void AsyncWriteHandler::ReWrite(AsyncWriteBuffer* write_buffer,
     uuid_resolver_->UUIDToAddress(osd_uuid, &osd_address);
   } catch(const exception& e) {
     // In case of errors, throw exception.
+    --pending_writes_;
     throw;
   }
 
@@ -212,10 +213,12 @@ void AsyncWriteHandler::ReWrite(AsyncWriteBuffer* write_buffer,
 
 void AsyncWriteHandler::WaitForPendingWrites() {
   boost::mutex::scoped_lock lock(mutex_);
-  if ((state_ != IDLE) && (state_ != FINALLY_FAILED)) {
+  //if ((state_ != IDLE) && !(state_ == FINALLY_FAILED && pending_writes_ == 0)) {  // TODO(mno): remove after testing
+  if (pending_writes_ > 0) {
     writing_paused_ = true;
     waiting_blocking_threads_count_++;
-    while ((state_ != IDLE) && (state_ != FINALLY_FAILED) ) {
+    //while ((state_ != IDLE) && (state_ != FINALLY_FAILED) ) { // TODO(mno): remove after testing
+    while (pending_writes_ > 0) {
       all_pending_writes_did_complete_.wait(lock);
     }
     waiting_blocking_threads_count_--;
@@ -242,7 +245,8 @@ bool AsyncWriteHandler::WaitForPendingWritesNonBlocking(
   assert(condition_variable && wait_completed && wait_completed_mutex);
   boost::mutex::scoped_lock lock(mutex_);
   
-  if ((state_ != IDLE)  && (state_ != FINALLY_FAILED)) {
+  // if ((state_ != IDLE)  && (state_ != FINALLY_FAILED)) {
+  if (pending_writes_ > 0) {
     writing_paused_ = true;
     waiting_observers_.push_back(new WaitForCompletionObserver(
         condition_variable,
@@ -563,8 +567,10 @@ void AsyncWriteHandler::DecreasePendingBytesHelper(
       all_pending_writes_did_complete_.notify_all();
     }
   }
-  // Tell blocked writers there may be enough space/writing was unpaused now.
-  pending_bytes_were_decreased_.notify_all();
+  // Tell blocked writers there may be enough space/writing
+  if (!writing_paused_) {
+    pending_bytes_were_decreased_.notify_all();
+  }
 }
 
 void AsyncWriteHandler::DeleteBufferHelper(
