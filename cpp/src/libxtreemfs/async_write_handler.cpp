@@ -64,7 +64,7 @@ AsyncWriteHandler::AsyncWriteHandler(
 }
 
 AsyncWriteHandler::~AsyncWriteHandler() {
-  if ((pending_bytes_ > 0) || (pending_writes_ > 0)) {
+  if (pending_writes_ > 0) {
     string path;
     file_info_->GetPath(&path);
     string error = "The AsyncWriteHandler for the file with the path: " + path
@@ -596,11 +596,12 @@ void AsyncWriteHandler::DeleteBufferHelper(
 void AsyncWriteHandler::CleanUp(boost::mutex::scoped_lock* lock) {
   assert(lock && lock->owns_lock() && (state_ == FINALLY_FAILED));
 
-  std::list<AsyncWriteBuffer*>::iterator it;
-  for (it = writes_in_flight_.begin(); it != writes_in_flight_.end(); ++it) {
-    (*it)->file_handle->MarkAsyncWritesAsFailed(); // mark all file handles as failed
+  // delete all buffers
+  std::list<AsyncWriteBuffer*>::iterator it = writes_in_flight_.begin();
+  while (it != writes_in_flight_.end()) {
+    (*it)->file_handle->MarkAsyncWritesAsFailed();  // mark all file handles
     delete *it;  // delete buffers
-    it = writes_in_flight_.erase(it);  // delete pointers to buffer in list
+    it = writes_in_flight_.erase(it);  // delete pointer to buffer in list
   }
 
   // wake up all waiting threads
