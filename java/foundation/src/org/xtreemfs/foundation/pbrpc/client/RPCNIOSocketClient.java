@@ -96,9 +96,6 @@ public class RPCNIOSocketClient extends LifeCycleThread {
      */
     private boolean                                           brokenSelect;
 
-    // Connections with pending writes.
-    private final ConcurrentLinkedQueue<RPCClientConnection>  writeableConnections;
-    
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout)
         throws IOException {
         this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null);
@@ -123,7 +120,6 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         quit = false;
         transactionId = new AtomicInteger((int) (Math.random() * 1e6 + 1.0));
         toBeEstablished = new ConcurrentLinkedQueue<RPCClientConnection>();
-        writeableConnections = new ConcurrentLinkedQueue<RPCClientConnection>();
     }
     
     
@@ -166,11 +162,12 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 
             } else {
                 if (isEmpty) {
-                    writeableConnections.add(con);
-                    //final SelectionKey key = con.getChannel().keyFor(selector);
-                    //key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                    final SelectionKey key = con.getChannel().keyFor(selector);
+                    if (key != null) {
+                        key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                    }
+                    selector.wakeup();
                 }
-                selector.wakeup();
             }
         }
     }
@@ -196,21 +193,6 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         lastCheck = System.currentTimeMillis();
         
         while (!quit) {
-            
-            int numKeys = 0;
-            
-            try {
-                numKeys = selector.select(TIMEOUT_GRANULARITY);
-            } catch (CancelledKeyException ex) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
-                    ex.toString());
-                continue;
-            } catch (IOException ex) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
-                    ex.toString());
-                continue;
-            }
-            
             if (!toBeEstablished.isEmpty()) {
                 while (true) {
                     RPCClientConnection con = toBeEstablished.poll();
@@ -227,6 +209,18 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 toBeEstablished.clear();
             }
             
+            int numKeys = 0;
+            try {
+                numKeys = selector.select(TIMEOUT_GRANULARITY);
+            } catch (CancelledKeyException ex) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
+                    ex.toString());
+                continue;
+            } catch (IOException ex) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
+                    ex.toString());
+                continue;
+            }
             if (numKeys > 0) {
                 // fetch events
                 Set<SelectionKey> keys = selector.selectedKeys();
@@ -254,13 +248,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                     }
                 }
             }
-            while (!writeableConnections.isEmpty()) {
-                RPCClientConnection con = writeableConnections.poll();
-                if (con == null)
-                    break;
-                final SelectionKey key = con.getChannel().keyFor(selector);
-                writeConnection(key);
-            }
+
             if (numKeys == 0 && brokenSelect) {
 
                 try {
