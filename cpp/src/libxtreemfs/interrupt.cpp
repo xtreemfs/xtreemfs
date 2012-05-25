@@ -25,7 +25,7 @@ DeInterruptibilizer::DeInterruptibilizer(int interrupt_signal)
     sigaddset(&set, interrupt_signal_);
 
     int r = pthread_sigmask(SIG_BLOCK, &set, NULL);
-    if (!r) {
+    if (r) {
       util::Logging::log->getLog(util::LEVEL_ERROR)
           << "Failed to block signal." << std::endl;
     }
@@ -40,7 +40,7 @@ DeInterruptibilizer::~DeInterruptibilizer() {
     sigaddset(&set, interrupt_signal_);
 
     int r = pthread_sigmask(SIG_UNBLOCK, &set, NULL);
-    if (!r) {
+    if (r) {
       util::Logging::log->getLog(util::LEVEL_ERROR)
           << "Failed to unblock signal." << std::endl;
     }
