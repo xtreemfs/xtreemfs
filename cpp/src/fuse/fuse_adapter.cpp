@@ -500,14 +500,14 @@ int FuseAdapter::statfs(const char *path, struct statvfs *statv) {
     boost::uint32_t statvfs_block_size = default_stripe_size;
     boost::uint64_t total_blocks = stat_vfs->blocks();
     boost::uint64_t avail_blocks = stat_vfs->bavail();
-    
+
 #ifdef __APPLE__
     while (statvfs_block_size > (128 * 1024)) {
       statvfs_block_size /= 2;
       total_blocks *= 2;
       avail_blocks *= 2;
     }
-    
+
     statv->f_bsize   = default_stripe_size;  // "preferred length of I/O requests"
 #else
     statv->f_bsize   = statvfs_block_size;  // file system block size
@@ -686,7 +686,12 @@ int FuseAdapter::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   CachedDirectoryEntries* cached_direntries
       = reinterpret_cast<CachedDirectoryEntries*>(fi->fh);
   // Struct was created at opendir and deleted at releasedir().
-  assert(cached_direntries != NULL);
+  if (cached_direntries == NULL) {
+    Logging::log->getLog(LEVEL_ERROR)
+        << "Crashing since Fuse tried to execute readdir() on a directory"
+           " which was not opened. Path: " << path << endl;
+    assert(cached_direntries != NULL);
+  }
   boost::mutex::scoped_lock lock(cached_direntries->mutex);
 
   // Use cached entries first if applicable
@@ -793,7 +798,7 @@ int FuseAdapter::releasedir(const char *path, struct fuse_file_info *fi) {
   assert(cached_direntries != NULL);
   delete cached_direntries->dir_entries;
   delete cached_direntries;
-  fi->fh = 0;  // NULL.
+  fi->fh = NULL;
 
   return 0;
 }
@@ -1054,6 +1059,12 @@ int FuseAdapter::ftruncate(const char *path,
 
     try {
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
+      if (file_handle == NULL) {
+        Logging::log->getLog(LEVEL_ERROR)
+            << "Crashing since Fuse tried to execute ftruncate() on a file"
+               " which was not opened. Path: " << path_str << endl;
+        assert(file_handle != NULL);
+      }
       file_handle->Truncate(user_credentials, new_file_size);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
@@ -1078,6 +1089,12 @@ int FuseAdapter::write(
     int result;
     try {
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
+      if (file_handle == NULL) {
+        Logging::log->getLog(LEVEL_ERROR)
+            << "Crashing since Fuse tried to execute write() on a file"
+               " which was not opened. Path: " << path_str << endl;
+        assert(file_handle != NULL);
+      }
       result = file_handle->Write(osd_user_credentials_, buf, size, offset);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
@@ -1109,6 +1126,12 @@ int FuseAdapter::flush(const char *path, struct fuse_file_info *fi) {
   if (!xctl_.checkXctlFile(path_str)) {
     try {
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
+      if (file_handle == NULL) {
+        Logging::log->getLog(LEVEL_ERROR)
+            << "Crashing since Fuse tried to execute flush() on a file"
+               " which was not opened. Path: " << path_str << endl;
+        assert(file_handle != NULL);
+      }
       file_handle->Flush();
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
@@ -1130,6 +1153,12 @@ int FuseAdapter::read(const char *path, char *buf, size_t size, off_t offset,
   if (!xctl_.checkXctlFile(path_str)) {
     try {
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
+      if (file_handle == NULL) {
+        Logging::log->getLog(LEVEL_ERROR)
+            << "Crashing since Fuse tried to execute read() on a file"
+               " which was not opened. Path: " << path_str << endl;
+        assert(file_handle != NULL);
+      }
       return file_handle->Read(osd_user_credentials_, buf, size, offset);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
@@ -1187,6 +1216,12 @@ int FuseAdapter::fgetattr(
 
     try {
       FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
+      if (file_handle == NULL) {
+        Logging::log->getLog(LEVEL_ERROR)
+            << "Crashing since Fuse tried to execute fgetattr() on a file"
+               " which was not opened. Path: " << path_str << endl;
+        assert(file_handle != NULL);
+      }
       file_handle->GetAttr(user_credentials, &stat);
     } catch(const PosixErrorException& e) {
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
@@ -1210,7 +1245,12 @@ int FuseAdapter::release(const char *path, struct fuse_file_info *fi) {
   const string path_str(path);
   if (!xctl_.checkXctlFile(path_str)) {
     FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
-    assert(file_handle != NULL);
+    if (file_handle == NULL) {
+      Logging::log->getLog(LEVEL_ERROR)
+          << "Crashing since Fuse tried to execute release() on a file"
+             " which was not opened. Path: " << path_str << endl;
+      assert(file_handle != NULL);
+    }
 
     // Ensure POSIX semantics and release all locks of the filehandle's process.
     try {
@@ -1222,15 +1262,19 @@ int FuseAdapter::release(const char *path, struct fuse_file_info *fi) {
     try {
       file_handle->Close();
     } catch(const PosixErrorException& e) {
+      fi->fh = NULL;
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
+      fi->fh = NULL;
       return -1 * EIO;
     } catch(const exception& e) {
       ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
                 + string(e.what()));
+      fi->fh = NULL;
       return -1 * EIO;
     }
   }
+  fi->fh = NULL;
   return 0;
 }
 
@@ -1516,6 +1560,12 @@ int FuseAdapter::lock(const char* path, struct fuse_file_info *fi, int cmd,
   // interpreted relative to the start of the file.
   try {
     FileHandle* file_handle = reinterpret_cast<FileHandle*>(fi->fh);
+    if (file_handle == NULL) {
+      Logging::log->getLog(LEVEL_ERROR)
+          << "Crashing since Fuse tried to execute lock() on a file"
+             " which was not opened. Path: " << path_str << endl;
+      assert(file_handle != NULL);
+    }
 
     if (cmd == F_GETLK) {
       // Only check if the lock could get acquired.
