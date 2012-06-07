@@ -68,27 +68,30 @@ AsyncWriteHandler::~AsyncWriteHandler() {
     string path;
     file_info_->GetPath(&path);
     string error = "The AsyncWriteHandler for the file with the path: " + path
-        + " has pending writes left. This should NOT happen.";
+        + " has pending writes left. This must NOT happen.";
     Logging::log->getLog(LEVEL_ERROR) << error << endl;
     ErrorLog::error_log->AppendError(error);
+    assert(pending_writes_ == 0);
   }
   if (waiting_blocking_threads_count_ > 0) {
     string path;
     file_info_->GetPath(&path);
     string error = "The AsyncWriteHandler for the file"
         " with the path: " + path + " has remaining blocked threads waiting"
-        " for the completion of pending writes left. This should NOT happen.";
+        " for the completion of pending writes left. This must NOT happen.";
     Logging::log->getLog(LEVEL_ERROR) << error << endl;
     ErrorLog::error_log->AppendError(error);
+    assert(waiting_blocking_threads_count_ == 0);
   }
   if (waiting_observers_.size() > 0) {
     string path;
     file_info_->GetPath(&path);
     string error = "The AsyncWriteHandler for the file"
         " with the path: " + path + " has remaining observers (calls waiting"
-        " for the completion of pending writes) left. This should NOT happen.";
+        " for the completion of pending writes) left. This must NOT happen.";
     Logging::log->getLog(LEVEL_ERROR) << error << endl;
     ErrorLog::error_log->AppendError(error);
+    assert(waiting_observers_.size() == 0);
   }
   for (list<WaitForCompletionObserver*>::iterator it
            = waiting_observers_.begin();
@@ -119,6 +122,7 @@ void AsyncWriteHandler::Write(AsyncWriteBuffer* write_buffer) {
       //                FileHandle of the interrupted write to an error state.
       pending_bytes_were_decreased_.wait(lock);
     }
+    assert(writes_in_flight_.size() <= max_writeahead_requests_);
 
     // NOTE: the following is done here to reach all threads that started
     //       waiting before the final failure
