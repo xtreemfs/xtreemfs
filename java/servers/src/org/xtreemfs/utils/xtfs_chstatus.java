@@ -116,7 +116,7 @@ public class xtfs_chstatus {
             
             final String newStatus = (arguments.size() == 2) ? arguments.get(1) : null;
             
-            RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(sslOptions, 15 * 100, 5 * 60 * 1000);
+            RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(sslOptions, 15 * 100, 5 * 60 * 1000, "xtfs_chstatus");
             rpcClient.start();
             rpcClient.waitForStartup();
             DIRServiceClient dc = new DIRServiceClient(rpcClient, dirAddr);

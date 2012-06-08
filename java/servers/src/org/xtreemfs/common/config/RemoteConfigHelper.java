@@ -18,8 +18,8 @@ import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Configuration;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 
 public class RemoteConfigHelper {
@@ -37,7 +37,7 @@ public class RemoteConfigHelper {
                 config.getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false,
                 config.isGRIDSSLmode(), new PolicyContainer(config).getTrustManager()) : null;
 
-        RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, 1000, 60 * 1000);
+        RPCNIOSocketClient clientStage = new RPCNIOSocketClient(sslOptions, 1000, 60 * 1000, "RemoteConfigHelper");
         DIRServiceClient dirRPCClient = new DIRServiceClient(clientStage, config.getDirectoryService());
         DIRClient dirClient = new DIRClient(dirRPCClient, config.getDirectoryServices(), retries,
                 WAIT_BETWEEN_RETRIES);

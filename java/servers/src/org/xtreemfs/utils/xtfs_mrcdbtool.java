@@ -28,8 +28,8 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.AuthType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.util.CLIParser;
 import org.xtreemfs.foundation.util.CLIParser.CliOption;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.PORTS;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 
 public class xtfs_mrcdbtool {
     
@@ -119,7 +119,7 @@ public class xtfs_mrcdbtool {
                 sslOptions = new SSLOptions(new FileInputStream(c.stringValue), cp.stringValue,
                     new FileInputStream(t.stringValue), tp.stringValue);
             }
-            rpcClient = new RPCNIOSocketClient(sslOptions, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE);
+            rpcClient = new RPCNIOSocketClient(sslOptions, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE, "xtfs_mrcdbtool");
             rpcClient.start();
             MRCServiceClient client = new MRCServiceClient(rpcClient, new InetSocketAddress(host, port));
             

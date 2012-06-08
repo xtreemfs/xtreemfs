@@ -296,11 +296,11 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                     "outgoing server connections will be bound to '%s'", config.getAddress());
         
         rpcClient = new RPCNIOSocketClient(clientSSLopts, RPC_TIMEOUT, CONNECTION_TIMEOUT,
-                config.getSocketSendBufferSize(), config.getSocketReceiveBufferSize(), bindPoint);
+                config.getSocketSendBufferSize(), config.getSocketReceiveBufferSize(), bindPoint, "OSDRequestDispatcher");
         rpcClient.setLifeCycleListener(this);
         
         // replication uses its own RPCClient with a much higher timeout
-        rpcClientForReplication = new RPCNIOSocketClient(clientSSLopts, 30000, 5 * 60 * 1000);
+        rpcClientForReplication = new RPCNIOSocketClient(clientSSLopts, 30000, 5 * 60 * 1000, "OSDRequestDispatcher (for replication)");
         rpcClientForReplication.setLifeCycleListener(this);
         
         // initialize ServiceAvailability

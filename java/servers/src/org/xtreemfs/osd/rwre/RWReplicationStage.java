@@ -132,8 +132,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts) throws IOException {
         super("RWReplSt");
         this.master = master;
-        client = new RPCNIOSocketClient(sslOpts, 15000, 60000*5);
-        fleaseClient = new RPCNIOSocketClient(sslOpts, 15000, 60000*5);
+        client = new RPCNIOSocketClient(sslOpts, 15000, 60000*5, "RWReplicationStage");
+        fleaseClient = new RPCNIOSocketClient(sslOpts, 15000, 60000*5, "RWReplicationStage (flease)");
         osdClient = new OSDServiceClient(client,null);
         fleaseOsdClient = new OSDServiceClient(fleaseClient,null);
         files = new HashMap<String, ReplicatedFileState>();

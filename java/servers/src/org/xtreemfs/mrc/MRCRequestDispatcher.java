@@ -188,7 +188,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this,
                     "outgoing server connections will be bound to '%s'", config.getAddress());
         
-        clientStage = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT, -1, -1, bindPoint);
+        clientStage = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT, -1, -1, bindPoint, "MRCRequestDispatcher");
         clientStage.setLifeCycleListener(this);
         
         serverStage = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
