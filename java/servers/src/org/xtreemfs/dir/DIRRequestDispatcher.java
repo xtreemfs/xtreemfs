@@ -174,6 +174,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         quit = false;
         
         server = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
+        server.setLifeCycleListener(this);
         
         if (config.isAutodiscoverEnabled()) {
             
