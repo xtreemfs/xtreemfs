@@ -192,79 +192,83 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         notifyStarted();
         lastCheck = System.currentTimeMillis();
         
-        while (!quit) {
-            if (!toBeEstablished.isEmpty()) {
-                while (true) {
-                    RPCClientConnection con = toBeEstablished.poll();
-                    if (con == null) {
-                        break;
-                    }
-                    try {
-                        con.getChannel().register(selector,
-                            SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE | SelectionKey.OP_READ, con);
-                    } catch (ClosedChannelException ex) {
-                        closeConnection(con.getChannel().keyFor(selector), ex.toString());
-                    }
-                }
-                toBeEstablished.clear();
-            }
-            
-            int numKeys = 0;
-            try {
-                numKeys = selector.select(TIMEOUT_GRANULARITY);
-            } catch (CancelledKeyException ex) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
-                    ex.toString());
-                continue;
-            } catch (IOException ex) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
-                    ex.toString());
-                continue;
-            }
-            if (numKeys > 0) {
-                // fetch events
-                Set<SelectionKey> keys = selector.selectedKeys();
-                Iterator<SelectionKey> iter = keys.iterator();
-                
-                // process all events
-                while (iter.hasNext()) {
-                    try {
-                        SelectionKey key = iter.next();
-                        
-                        // remove key from the list
-                        iter.remove();
-                        
-                        if (key.isConnectable()) {
-                            connectConnection(key);
-                        }
-                        if (key.isReadable()) {
-                            readConnection(key);
-                        }
-                        if (key.isWritable()) {
-                            writeConnection(key);
-                        }
-                    } catch (CancelledKeyException ex) {
-                        continue;
-                    }
-                }
-            }
-
-            if (numKeys == 0 && brokenSelect) {
-
-                try {
-                    sleep(25);
-                } catch (InterruptedException ex) {
-                    break;
-                }
-            }
-            try {
-                checkForTimers();
-            } catch (ConcurrentModificationException ce) {
-                Logging.logMessage(Logging.LEVEL_CRIT, this, 
-                        OutputUtils.getThreadDump());
-            }
-
-        }
+        try {
+	        while (!quit) {
+	            if (!toBeEstablished.isEmpty()) {
+	                while (true) {
+	                    RPCClientConnection con = toBeEstablished.poll();
+	                    if (con == null) {
+	                        break;
+	                    }
+	                    try {
+	                        con.getChannel().register(selector,
+	                            SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE | SelectionKey.OP_READ, con);
+	                    } catch (ClosedChannelException ex) {
+	                        closeConnection(con.getChannel().keyFor(selector), ex.toString());
+	                    }
+	                }
+	                toBeEstablished.clear();
+	            }
+	            
+	            int numKeys = 0;
+	            try {
+	                numKeys = selector.select(TIMEOUT_GRANULARITY);
+	            } catch (CancelledKeyException ex) {
+	                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
+	                    ex.toString());
+	                continue;
+	            } catch (IOException ex) {
+	                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
+	                    ex.toString());
+	                continue;
+	            }
+	            if (numKeys > 0) {
+	                // fetch events
+	                Set<SelectionKey> keys = selector.selectedKeys();
+	                Iterator<SelectionKey> iter = keys.iterator();
+	                
+	                // process all events
+	                while (iter.hasNext()) {
+	                    try {
+	                        SelectionKey key = iter.next();
+	                        
+	                        // remove key from the list
+	                        iter.remove();
+	                        
+	                        if (key.isConnectable()) {
+	                            connectConnection(key);
+	                        }
+	                        if (key.isReadable()) {
+	                            readConnection(key);
+	                        }
+	                        if (key.isWritable()) {
+	                            writeConnection(key);
+	                        }
+	                    } catch (CancelledKeyException ex) {
+	                        continue;
+	                    }
+	                }
+	            }
+	
+	            if (numKeys == 0 && brokenSelect) {
+	
+	                try {
+	                    sleep(25);
+	                } catch (InterruptedException ex) {
+	                    break;
+	                }
+	            }
+	            try {
+	                checkForTimers();
+	            } catch (ConcurrentModificationException ce) {
+	                Logging.logMessage(Logging.LEVEL_CRIT, this, 
+	                        OutputUtils.getThreadDump());
+	            }
+	        }
+        } catch (Exception thr) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "ONRPC Client CRASHED!");
+            notifyCrashed(thr);
+        }	        
         
         synchronized (connections) {
             for (RPCClientConnection con : connections.values()) {
