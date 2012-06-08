@@ -8,7 +8,6 @@
 
 package org.xtreemfs.foundation.pbrpc.client;
 
-import com.google.protobuf.Message;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -38,13 +37,15 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.channels.ChannelIO;
 import org.xtreemfs.foundation.pbrpc.channels.SSLChannelIO;
 import org.xtreemfs.foundation.pbrpc.channels.SSLHandshakeOnlyChannelIO;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.pbrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.pbrpc.server.RPCNIOSocketServerConnection;
 import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
 import org.xtreemfs.foundation.util.OutputUtils;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+
+import com.google.protobuf.Message;
 /**
  * 
  * @author bjko
@@ -545,9 +546,10 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 if (channel.doHandshake(key)) {
                     
                     while (true) {
-                        ByteBuffer[] buffers = con.getSendBuffers();
+                        ByteBuffer[] buffers = con.getRequestBuffers();
+                        RPCClientRequest send = con.getPendingRequest();
                         if (buffers == null) {
-                            RPCClientRequest send = null;
+                        	assert(send == null);
                             synchronized (con) {
                                 if (con.getSendQueue().isEmpty()) {
                                     // no more responses, stop writing...
@@ -560,6 +562,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                             con.getRequestRecordMarker().clear();
                             buffers = send.packBuffers(con.getRequestRecordMarker());
                             con.setRequestBuffers(buffers);
+                            con.setPendingRequest(send);
                         }
 
                         assert(buffers != null);
@@ -582,16 +585,24 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 
                         //remove from queue
                         synchronized (con) {
-                            RPCClientRequest send = con.getSendQueue().remove(0);
-                            con.addRequest(send.getRequestHeader().getCallId(), send);
-                            if (Logging.isDebug()) {
-                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                                    "sent request %d to %s", send.getRequestHeader().getCallId(), con.getEndpoint()
-                                        .toString());
-                            }
+                    		
+                        	if (con.getSendQueue().remove(send)) {
+                        		con.addRequest(send.getRequestHeader().getCallId(), send);
+	                            if (Logging.isDebug()) {
+	                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+	                                    "sent request %d to %s", send.getRequestHeader().getCallId(), con.getEndpoint()
+	                                        .toString());
+	                            }
+                        	} else {
+                        		if (Logging.isDebug()) {
+	                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+	                                    "sent request %d to %s, but it already timed out locally", send.getRequestHeader().getCallId(), con.getEndpoint()
+	                                        .toString());
+	                            }
+                        	}
                         }
                         con.setRequestBuffers(null);
-
+                        con.setPendingRequest(null);
                     }
                 }
             }

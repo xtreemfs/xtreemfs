@@ -55,6 +55,8 @@ public class RPCClientConnection {
 
     private ByteBuffer[]         requestBuffers;
 
+    private RPCClientRequest	 pendingRequest;
+    
     private ReceiveState         receiveState;
 
     private final InetSocketAddress    endpoint;
@@ -176,7 +178,7 @@ public class RPCClientConnection {
     /**
      * @return the requestBuffers
      */
-    public ByteBuffer[] getSendBuffers() {
+    public ByteBuffer[] getRequestBuffers() {
         return requestBuffers;
     }
 
@@ -187,6 +189,14 @@ public class RPCClientConnection {
         this.requestBuffers = requestBuffers;
     }
 
+    public RPCClientRequest getPendingRequest() {
+        return pendingRequest;
+    }
+    
+    public void setPendingRequest(RPCClientRequest pendingRequest) {
+    	this.pendingRequest = pendingRequest;
+    }
+    
     /**
      * @return the receiveState
      */
