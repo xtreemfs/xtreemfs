@@ -96,14 +96,14 @@ public class RPCNIOSocketClient extends LifeCycleThread {
      */
     private boolean                                           brokenSelect;
 
-    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout)
+    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout, String nameSuffix)
         throws IOException {
-        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null);
+        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, nameSuffix);
     }
     
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
-        int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint) throws IOException {
-        super("RPC Client");
+        int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint, String nameSuffix) throws IOException {
+        super("RPC Client " + nameSuffix);
         if (requestTimeout >= connectionTimeout - TIMEOUT_GRANULARITY * 2) {
             throw new IllegalArgumentException(
                 "request timeout must be smaller than connection timeout less " + TIMEOUT_GRANULARITY * 2
