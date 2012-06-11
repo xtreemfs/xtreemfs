@@ -110,9 +110,6 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
 
     public static final int         DEFAULT_MAX_CLIENT_Q_LENGTH = 100;
 
-    // Connections with pending writes.
-    private final ConcurrentLinkedQueue<RPCNIOSocketServerConnection>  writeableConnections;
-    
     public RPCNIOSocketServer(int bindPort, InetAddress bindAddr, RPCServerRequestListener rl,
         SSLOptions sslOptions) throws IOException {
         this(bindPort, bindAddr, rl, sslOptions, 256 * 1024);
@@ -167,8 +164,6 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
         
         this.connections = new LinkedList<RPCNIOSocketServerConnection>();
 
-        this.writeableConnections = new ConcurrentLinkedQueue<RPCNIOSocketServerConnection>();
-
         this.maxClientQLength = maxClientQLength;
         this.clientQThreshold = (maxClientQLength/2 >= 0) ? maxClientQLength/2 : 0;
         if (maxClientQLength <= 1) {
@@ -208,14 +203,13 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                 boolean isEmpty = connection.getPendingResponses().isEmpty();
                 connection.addPendingResponse(response);
                 if (isEmpty) {
-                    writeableConnections.add(connection);
-                    /*SelectionKey key = connection.getChannel().keyFor(selector);
+                	final SelectionKey key = connection.getChannel().keyFor(selector);
                     if (key != null) {
                         key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
-                    }*/
+                    }
+                    selector.wakeup();
                 }
             }
-            selector.wakeup();
         } else {
             // ignore and free bufers
             response.freeBuffers();
@@ -251,15 +245,6 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                         "Exception while selecting: %s", ex.toString());
                     continue;
                 }
-
-                while (!writeableConnections.isEmpty()) {
-                    RPCNIOSocketServerConnection con = writeableConnections.poll();
-                    if (con == null)
-                        break;
-                    final SelectionKey key = con.getChannel().keyFor(selector);
-                    writeConnection(key);
-                }
-
 
                 if (numKeys > 0) {
                     // fetch events
@@ -322,12 +307,7 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
      *            a readable key
      */
     private void readConnection(SelectionKey key) {
-        
-        if (key == null) {
-            Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "attempted to read on 'null' selection key");
-            return;
-        }
-        
+
         final RPCNIOSocketServerConnection con = (RPCNIOSocketServerConnection) key.attachment();
         final ChannelIO channel = con.getChannel();
         
@@ -499,11 +479,6 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
      *            the writable key
      */
     private void writeConnection(SelectionKey key) {
-        
-        if (key == null) {
-            Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "attempted to write on 'null' selection key");
-            return;
-        }
         
         final RPCNIOSocketServerConnection con = (RPCNIOSocketServerConnection) key.attachment();
         final ChannelIO channel = con.getChannel();
