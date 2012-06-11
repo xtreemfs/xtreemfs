@@ -97,9 +97,19 @@ public class RPCNIOSocketClient extends LifeCycleThread {
      */
     private boolean                                           brokenSelect;
 
+    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout)
+        throws IOException {
+        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, "");
+    }
+
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout, String nameSuffix)
         throws IOException {
         this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, nameSuffix);
+    }
+    
+    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
+        int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint) throws IOException {
+        this(sslOptions, requestTimeout, connectionTimeout, sendBufferSize, receiveBufferSize, localBindPoint, "");
     }
     
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
