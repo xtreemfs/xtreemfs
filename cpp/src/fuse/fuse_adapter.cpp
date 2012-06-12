@@ -326,6 +326,8 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
           (string("-ovolicon=") + default_xtreemfs_icon_path).c_str()));
     }
   }
+  // Increase default write size from 64 kB to 128 kB.
+  required_fuse_options->push_back(strdup("-oiosize=131072"));
 #endif  // __APPLE__
 #ifdef __linux
   #if FUSE_MAJOR_VERSION > 2 || \
