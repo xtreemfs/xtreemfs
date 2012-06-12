@@ -35,6 +35,7 @@ import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.flease.proposer.FleaseException;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
@@ -479,8 +480,21 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         ObjectData metadata = (ObjectData) r.get();
                         InternalObjectData data = new InternalObjectData(metadata, r.getData());
                         eventObjectFetched(fileId, record, data, null);
+                    } catch (PBRPCException ex) {
+                        // Transform exception into correct ErrorResponse.
+                        // TODO(mberlin): Generalize this functionality by returning "Throwable" instead of
+                        //                "ErrorResponse" to the event* functions.
+                        //                The "ErrorResponse" shall be created in the last 'step' at the
+                        //                invocation of failed().
+                        eventObjectFetched(fileId,
+                                           record,
+                                           null,
+                                           ErrorUtils.getErrorResponse(ex.getErrorType(), ex.getPOSIXErrno(), ex.toString(), ex));
                     } catch (Exception ex) {
-                        eventObjectFetched(fileId, record, null, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
+                        eventObjectFetched(fileId,
+                                           record,
+                                           null,
+                                           ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_NONE, ex.toString(), ex));
                     } finally {
                         r.freeBuffers();
                     }
