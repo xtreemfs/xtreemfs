@@ -107,7 +107,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
             int numResponses = 0;
             int numErrors = 0;
             boolean exceptionSent = false;
-            ReplicaStatus[] states = new ReplicaStatus[numAcksRequired + 1];
+            ReplicaStatus[] states = new ReplicaStatus[remoteOSDUUIDs.size() + 1];
 
             @Override
             public void responseAvailable(RPCResponse r) {
@@ -155,7 +155,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                 }
 
                 if (numResponses == numAcksRequired) {
-                    states[numAcksRequired] = localReplicaState;
+                    states[states.length - 1] = localReplicaState;
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) received enough status responses for %s",localUUID, fileId);
                     }
@@ -167,7 +167,8 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                             r.freeBuffers();
                         }
                     };
-                    // TODO(bjko): Send auth state to all backups.
+                    
+                    // TODO(mberlin): Send auth state only to those backups which don't have the latest state.
                     for (int i = 0; i < remoteOSDUUIDs.size(); i++) {
                         try {
                             RPCResponse r2 = client.xtreemfs_rwr_auth_state(remoteOSDUUIDs.get(i).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
