@@ -27,6 +27,7 @@
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/helper.h"
+#include "libxtreemfs/interrupt.h"
 #include "libxtreemfs/user_mapping.h"
 #include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/uuid_resolver.h"
@@ -63,9 +64,8 @@ FuseAdapter::FuseAdapter(FuseOptions* options) :
 FuseAdapter::~FuseAdapter() {}
 
 void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
-  // Set interrupt signal to SIGINT to allow the interruption of mount.xtreemfs.
-  int preserved_interrupt_signal = options_->interrupt_signal;
-  options_->interrupt_signal = SIGINT;
+  // set interrupt query function
+  Interruptibilizer::Initialize(&fuse_interrupted);
 
   // Start logging manually (altough it would be automatically started by
   // ClientImplementation()) as its required by UserMapping.
@@ -263,9 +263,6 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
     user_mapping_->Start();
   }
 
-  // Restore original signal.
-  options_->interrupt_signal = preserved_interrupt_signal;
-
   // Also do not enable Fuse's POSIX checks, if the Globus or Unicore
   // mode is active, because User Certificates may be used by the under-
   // lying SSL connection. If that's the case, the MRC will ignore the
@@ -302,12 +299,6 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   }
 
   // Add Fuse default options.
-  if (options_->interrupt_signal) {
-    required_fuse_options->push_back(strdup("-ointr"));
-    string signal = string("-ointr_signal=")
-                    + boost::lexical_cast<string>(options_->interrupt_signal);
-    required_fuse_options->push_back(strdup(signal.c_str()));
-  }
   if (options_->use_fuse_permission_checks) {
     required_fuse_options->push_back(strdup("-odefault_permissions"));
   }
@@ -357,10 +348,6 @@ void FuseAdapter::Stop() {
   if (client_.get()) {
     client_->Shutdown();
   }
-}
-
-void FuseAdapter::SwitchInterruptSignal() {
-  client_->SwitchInterruptSignal();
 }
 
 void FuseAdapter::GenerateUserCredentials(

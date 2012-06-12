@@ -71,11 +71,6 @@ class Client {
    */
   virtual void Shutdown() = 0;
 
-  /** Switches the signal used for interrupt handling to the value
-   *  specified in the options.
-   */
-  virtual void SwitchInterruptSignal() = 0;
-
   /** Open a volume and use the returned class to access it.
    * @remark Ownership is NOT transferred to the caller. Instead
    *         Volume->Close() has to be called to destroy the object.

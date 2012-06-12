@@ -53,11 +53,6 @@ class FuseAdapter {
    *  stopped. */
   void Stop();
 
-  /** Calls the corresponding method on the client to change the signal
-   *  from SIGINT to the configured signal for interruption signalling.
-   */
-  void SwitchInterruptSignal();
-
   void GenerateUserCredentials(
       uid_t uid,
       gid_t gid,

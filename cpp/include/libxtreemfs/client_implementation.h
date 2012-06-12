@@ -54,7 +54,6 @@ class ClientImplementation : public Client, public UUIDResolver {
 
   virtual void Start();
   virtual void Shutdown();
-  virtual void SwitchInterruptSignal();
 
   virtual Volume* OpenVolume(
       const std::string& volume_name,

@@ -51,7 +51,6 @@ Vivaldi::Vivaldi(
 
   // Vivaldi requests do not have to be retried nor interrupted.
   vivaldi_retry_options_.max_tries = 1;
-  vivaldi_retry_options_.interrupt_signal = 0;
 }
 
 void Vivaldi::Run() {

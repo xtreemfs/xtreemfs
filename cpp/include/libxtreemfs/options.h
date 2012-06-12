@@ -127,9 +127,6 @@ class Options {
   int max_write_tries;
   /** How long to wait after a failed request? */
   int retry_delay_s;
-  /** Stops retrying to execute a synchronous request if this signal was send
-   *  to the thread responsible for the execution of the request. */
-  int interrupt_signal;
   /** Maximum time until a connection attempt will be aborted. */
   boost::int32_t connect_timeout_s;
   /** Maximum time until a request will be aborted and the response returned. */
@@ -194,6 +191,11 @@ class Options {
   /** Skewness of the Zipf distribution used for vivaldi OSD selection */
   double vivaldi_zipf_generator_skew;
 
+  // Deprecated options
+  /** Stops retrying to execute a synchronous request if this signal was send
+   *  to the thread responsible for the execution of the request. */
+  int interrupt_signal;
+
 #ifndef WIN32
   // User mapping.
   /** Type of the UserMapping used to resolve user and group IDs to names. */
@@ -207,6 +209,34 @@ class Options {
  private:
   /** Reads password from stdin and stores it in 'password'. */
   void ReadPasswordFromStdin(const std::string& msg, std::string* password);
+
+  /** This functor template can be used as argument for the notifier method of
+   *  boost::options. It is specifically used to create a warning whenever
+   *  a deprecated option is used, but is not limited to that purpose.
+   *  Use the createOptionHandler function template to instantiate it (it uses
+   *  a value for type inference).
+   *
+   */
+  template<typename T>
+  class OptionHandler {
+   public:
+    typedef void result_type;
+    OptionHandler(std::string msg)  // first parameter is for type inference
+     : msg_(msg) { }
+
+    void operator()(const T& value) {
+      std::cout << "Warning: Deprecated option used: " << msg_ << std::endl;  // TODO(mno): maybe output somewhere else?!
+    }
+
+   private:
+    const std::string msg_;
+  };
+
+  /** See OptionHandler */
+  template<typename T>
+  OptionHandler<T> createOptionHandler(const T&, std::string msg) {
+    return OptionHandler<T>(msg);
+  }
 
   // Sums of options.
   /** Contains all boost program options, needed for parsing and by
@@ -241,6 +271,9 @@ class Options {
   // Hidden options.
   /** Description of options of the Grid support. */
   boost::program_options::options_description xtreemfs_advanced_options_;
+
+  /** Deprecated options which are kept to ensure backward compatibility. */
+  boost::program_options::options_description deprecated_options_;
 };
 
 }  // namespace xtreemfs

@@ -55,9 +55,6 @@ class ClientRequestCallbackInterface;
  *  and the string retrieved by uuid_iterator->GetUUID() is used as address.
  *  (in this case uuid_resolver may be NULL).
  *
- *  The interrupt handler is only registered, if a signal "options.
- *  interrupt_signal" is set.
- *
  *  The parameter delay_last_attempt should be set true, if this method is
  *  called with max_tries = 1 and one does the looping over the retries on its
  *  own (for instance in FileHandleImplementation::AcquireLock). If set to false
@@ -80,8 +77,6 @@ template<class ReturnMessageType, class F>
   assert(uuid_iterator_has_addresses || uuid_resolver);
   assert((!xcap_handler && !xcap_in_req) || (xcap_handler && xcap_in_req));
 
-  Interruptibilizer interrupt;
-
   int attempt = 0;
   bool redirected = false;
   ReturnMessageType response = NULL;
@@ -90,7 +85,7 @@ template<class ReturnMessageType, class F>
 
   // Retry unless maximum tries reached or interrupted.
   while ((++attempt <= max_tries || max_tries == 0) &&
-         !interrupt.WasInterrupted()) {
+         !Interruptibilizer::WasInterrupted()) {
     // Delete any previous response;
     if (response != NULL) {
       response->DeleteBuffers();
@@ -230,7 +225,7 @@ template<class ReturnMessageType, class F>
           }
 
           try {
-              sleep_interruptible(delay_time_left.total_milliseconds(), interrupt);
+              Interruptibilizer::SleepInterruptible(delay_time_left.total_milliseconds());
           } catch (const boost::thread_interrupted& e) {
               if (response != NULL) {
                 // Free response.
@@ -249,7 +244,7 @@ template<class ReturnMessageType, class F>
     }  // if (response->HasFailed())
 
     // Have we been interrupted?
-    if (options.interrupt_signal && interrupt.WasInterrupted()) {
+    if (Interruptibilizer::WasInterrupted()) {
       if (xtreemfs::util::Logging::log->loggingActive(
               xtreemfs::util::LEVEL_INFO)) {
         std::string error = "Caught interrupt, aborting sync request.";

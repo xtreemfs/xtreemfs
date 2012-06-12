@@ -104,7 +104,6 @@ Options::Options()
   connect_timeout_s = 60;
   request_timeout_s = 60;
   linger_timeout_s = 600;  // 10 Minutes.
-  interrupt_signal = 0;  // Disable interruption support by default.
 
   // SSL options.
   ssl_pem_cert_path = "";
@@ -162,6 +161,9 @@ Options::Options()
   periodic_file_size_updates_interval_s = 60;  // Default: 1 Minute.
   periodic_xcap_renewal_interval_s = 60;  // Default: 1 Minute.
   vivaldi_zipf_generator_skew = 0.5;
+
+  // Deprecated options
+  interrupt_signal = 0;  // Disable interruption support by default.
 
 #ifndef WIN32
   // User mapping.
@@ -240,19 +242,6 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("retry-delay",
         po::value(&retry_delay_s)->default_value(retry_delay_s),
         "Wait time after a request failed until next attempt (in seconds).")
-    ("interrupt-signal",
-        po::value(&interrupt_signal)->default_value(interrupt_signal),
-        "Retry of a request is interrupted if this signal is sent "
-        "(set to 0 to disable it)."
-#ifdef __APPLE__
-        " (This option has no effect with MacFuse as it supports to interrupt"
-        " all requests by default.)"
-#endif  // __APPLE__
-#ifdef __linux
-        "\n(If not disabled and Fuse is used, -o intr and -o intr_signal=10 "
-        "(=SIGUSR1) will be passed to Fuse by default.)"
-#endif  // __linux
-        )
     ("connect-timeout",
         po::value(&connect_timeout_s)->default_value(connect_timeout_s),
         "Timeout after which a connection attempt will be retried "
@@ -360,11 +349,27 @@ void Options::GenerateProgramOptionsDescriptions() {
           ->default_value(vivaldi_zipf_generator_skew),
         "Skewness of the Zipf distribution used for vivaldi OSD selection");
 
+  deprecated_options_.add_options()
+    ("interrupt-signal",
+        po::value(&interrupt_signal)->default_value(interrupt_signal)->notifier(
+            createOptionHandler(interrupt_signal,
+                "interrupt_signal is no longer supported")),
+        "DEPRECATED (has no effect) - Retry of a request is interrupted if this signal is sent "
+        "(set to 0 to disable it)."
+#ifdef __APPLE__
+        " (This option has no effect with MacFuse as it supports to interrupt"
+        " all requests by default.)"
+#endif  // __APPLE__
+#ifdef __linux
+        "\n(If not disabled and Fuse is used, -o intr and -o intr_signal=10 "
+        "(=SIGUSR1) will be passed to Fuse by default.)"
+#endif  // __linux
+        );
 
   all_descriptions_.add(general_).add(optimizations_).add(error_handling_)
       .add(ssl_options_).add(grid_options_).add(vivaldi_options_);
   // These options are not shown in the "-h" output to not confuse the user.
-  hidden_descriptions_.add(xtreemfs_advanced_options_);
+  hidden_descriptions_.add(xtreemfs_advanced_options_).add(deprecated_options_);
 
   all_descriptions_initialized_ = true;
 }
