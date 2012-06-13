@@ -9,10 +9,10 @@
 #define CPP_INCLUDE_LIBXTREEMFS_INTERRUPT_H_
 
 #include <boost/thread/thread.hpp>
+#include <boost/function.hpp>
 
 #include "libxtreemfs/options.h"
 #include "util/logging.h"
-
 
 namespace xtreemfs {
 

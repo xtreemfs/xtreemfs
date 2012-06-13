@@ -191,10 +191,7 @@ class Options {
   /** Skewness of the Zipf distribution used for vivaldi OSD selection */
   double vivaldi_zipf_generator_skew;
 
-  // Deprecated options
-  /** Stops retrying to execute a synchronous request if this signal was send
-   *  to the thread responsible for the execution of the request. */
-  int interrupt_signal;
+  // NOTE: Deprecated options are no longer needed as members
 
 #ifndef WIN32
   // User mapping.
@@ -210,41 +207,39 @@ class Options {
   /** Reads password from stdin and stores it in 'password'. */
   void ReadPasswordFromStdin(const std::string& msg, std::string* password);
 
-  /** This functor template can be used as argument for the notifier method of
-   *  boost::options. It is specifically used to create a warning whenever
+  /** This functor template can be used as argument for the notifier() method
+   *  of boost::options. It is specifically used to create a warning whenever
    *  a deprecated option is used, but is not limited to that purpose.
-   *  Use the createOptionHandler function template to instantiate it (it uses
-   *  a value for type inference).
-   *
+   *  The createMsgOptionHandler function template can be used to instantiate it
+   *  without explicit template type specification. Instead the type inferred
+   *  from the value given by the corresponding member variable.
    */
   template<typename T>
-  class OptionHandler {
+  class MsgOptionHandler {
    public:
     typedef void result_type;
-    OptionHandler(std::string msg)  // first parameter is for type inference
+    MsgOptionHandler(std::string msg)
      : msg_(msg) { }
-
     void operator()(const T& value) {
-      std::cout << "Warning: Deprecated option used: " << msg_ << std::endl;  // TODO(mno): maybe output somewhere else?!
+      std::cerr << "Warning: Deprecated option used: " << msg_ << std::endl;
     }
-
    private:
     const std::string msg_;
   };
 
-  /** See OptionHandler */
+  /** See MsgOptionHandler */
   template<typename T>
-  OptionHandler<T> createOptionHandler(const T&, std::string msg) {
-    return OptionHandler<T>(msg);
+  MsgOptionHandler<T> createMsgOptionHandler(const T&, std::string msg) {
+    return MsgOptionHandler<T>(msg);
   }
 
   // Sums of options.
-  /** Contains all boost program options, needed for parsing and by
-   *  ShowCommandLineHelp(). */
+  /** Contains all boost program options, needed for parsing. */
   boost::program_options::options_description all_descriptions_;
 
-  /** Contains descriptions of advanced options. */
-  boost::program_options::options_description hidden_descriptions_;
+  /** Contains descriptions of all visible options (no advanced and
+   *  deprecated options). Used by ShowCommandLineHelp().*/
+  boost::program_options::options_description visible_descriptions_;
 
   /** Set to true if GenerateProgramOptionsDescriptions() was executed. */
   bool all_descriptions_initialized_;
