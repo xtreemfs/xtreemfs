@@ -65,7 +65,7 @@ public class OSD {
                 try {
                     dispatcher.shutdown();
                 } catch (Exception e) {
-                    Logging.logMessage(Logging.LEVEL_ERROR, config.getUUID(), "could not shutdown MRC: ");
+                    Logging.logMessage(Logging.LEVEL_ERROR, config.getUUID(), "could not shutdown OSD: ");
                     Logging.logError(Logging.LEVEL_ERROR, config.getUUID(), e);
                 }
             System.exit(1);
