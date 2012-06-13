@@ -56,7 +56,7 @@ CLIENT_GOOGLE_TEST_CPP_MAIN = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest_main.
 # This prevents the target from getting executed again as long as the checkfile does not change.
 CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
 
-TARGETS = client server foundation
+TARGETS = client server foundation flease
 .PHONY:	clean distclean set_version
 
 all: check_server check_client check_test $(TARGETS)
@@ -98,6 +98,7 @@ install-server:
 	@mkdir -p $(XTREEMFS_JAR_DIR)
 	@cp java/servers/dist/XtreemFS.jar $(XTREEMFS_JAR_DIR)
 	@cp java/foundation/dist/Foundation.jar $(XTREEMFS_JAR_DIR)
+	@cp java/flease/dist/Flease.jar $(XTREEMFS_JAR_DIR)
 	@cp java/lib/*.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(PLUGIN_DIR)
@@ -136,6 +137,7 @@ install-tools:
 	@mkdir -p $(XTREEMFS_JAR_DIR)
 	@cp java/servers/dist/XtreemFS.jar $(XTREEMFS_JAR_DIR)
 	@cp java/foundation/dist/Foundation.jar $(XTREEMFS_JAR_DIR)
+	@cp java/flease/dist/Flease.jar $(XTREEMFS_JAR_DIR)
 	@cp java/lib/*.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(BIN_DIR)
@@ -285,7 +287,15 @@ endif
 	@if [ -d "$(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)" ]; then echo "Cleaning up temporary files..."; rm -r "$(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)"; fi
 	@echo "Package file created: $(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)"
 
-.PHONY: foundation foundation_clean
+.PHONY: flease flease_clean flease_distclean
+flease: foundation
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/flease/build-1.6.5.xml jar
+flease_clean:
+	$(ANT_BIN)  -D"file.encoding=UTF-8" -f java/flease/build-1.6.5.xml clean || exit 1;
+flease_distclean:
+	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/flease/build-1.6.5.xml clean || exit 1;
+
+.PHONY: foundation foundation_clean foundation_distclean
 foundation: set_version
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/foundation/build-1.6.5.xml jar
 foundation_clean:
@@ -294,7 +304,7 @@ foundation_distclean:
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/foundation/build-1.6.5.xml clean || exit 1;
 
 .PHONY: server server_clean server_distclean
-server: check_server foundation
+server: check_server foundation flease
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/servers/build-1.6.5.xml jar
 server_clean: check_server
 	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/servers/build-1.6.5.xml clean || exit 1;
