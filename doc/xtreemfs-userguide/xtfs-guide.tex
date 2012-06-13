@@ -41,12 +41,25 @@ Version 1.3.x
 XtreemFS is available from the \href{http://www.XtreemFS.org}{XtreemFS website (www.XtreemFS.org)}.
 
 
-This document is \copyright{} 2009-2011 by Bj\"orn Kolbeck, Jan Stender, Michael Berlin, Paul Seiferth, Felix Langner, NEC HPC Europe, Felix Hupfeld, Juan Gonzales. All rights reserved.
+This document is \copyright{} 2009-2011 by Bj\"orn Kolbeck, Jan Stender, Michael Berlin, Matthias Noack, Paul Seiferth, Felix Langner, NEC HPC Europe, Felix Hupfeld, Juan Gonzales. All rights reserved.
 
-\setcounter{tocdepth}{10}
+\setcounter{tocdepth}{2}
 \tableofcontents
 
 \chapter*{Changes}
+Summary of important changes in release 1.3.2:
+
+\begin{itemize}
+ \item \textbf{Re-added and improved Vivaldi support}\\
+    Vivaldi is directly integrated in the client now and there's a visualization of the coordinates available, even of the client coordinates. See section~\ref{sec:vivaldi}.
+ \item \textbf{libxtreemfs for Java}\\
+    Access XtreemFS directly from your Java application. See section~\ref{sec:libxtreemfs_for_java} how to use it.
+ \item \textbf{Re-wrote HDFS interface implementation}\\
+    Use XtreemFS as replacement for HDFS in your Hadoop setup. See section~\ref{sec:hadoop_integration} how to use it.
+ \item \textbf{Support for custom attributes in the OSD Selection policies}\\
+    Added support for OSD Selection based on Custom Attributes e.g., assign a country code to every OSD as custom attribute and limit the placement of files on OSDs based on the attribute (see \ref{sec:customOSDSelection}).
+\end{itemize}
+
 Summary of important changes in release 1.3:
 
 \begin{itemize}
@@ -642,7 +655,7 @@ Aside from using the following predefined parameters to configure services, OSDs
  Description & The BabuDB disk logger can batch multiple operations into a single write+fsync to increase the throughput. This does only work if there are operations executed in parallel by the worker threads. In turn, if you work on a single database it becomes less efficient. To circumvent this problem, BabuDB offers a pseudo-sync mode which is similar to the PostgreSQL write-ahead log (WAL). If pseduoSyncWait is set to a value larger then 0, this pseudo-sync mode is enabled. In this mode, insert operations are acknowledged as soon as they have been executed on the in-memory database index. The disk logger will execute a batch write of up to 500 operations followed by a single sync (see syncMode) every pseudoSyncWait ms. This mode is considerably faster than synchronous writes but you can lose data in case of a crash. In contrast to ASYNC mode the data loss is limited to the operations executed in the last pseudoSyncWait ms.
 \end{tabular}
 
-% \subsubsection{\texttt{babudb.repl.backupDir} \textit{experimental, optional}}
+% \subsubsection{\texttt{babudb.repl.backupDir} \textit{optional}}
 % \begin{tabular}{lp{10cm}}
 %  Services & DIR, MRC\\
 %  Values   & a absolute file system path\\
@@ -650,7 +663,7 @@ Aside from using the following predefined parameters to configure services, OSDs
 %  Description & DB backup directory needed for the initial loading of a slave BabuDB from the master BabuDB.
 % \end{tabular}
 % 
-% \subsubsection{\texttt{babudb.repl.chunkSize} \textit{experimental, optional}}
+% \subsubsection{\texttt{babudb.repl.chunkSize} \textit{optional}}
 % \begin{tabular}{lp{10cm}}
 %  Services & DIR, MRC\\
 %  Values   & a positive integer greater 0\\
@@ -658,7 +671,7 @@ Aside from using the following predefined parameters to configure services, OSDs
 %  Description & At the initial load mechanism the database files will be split into chunks. The size of this chunks in bytes can be defined here.
 % \end{tabular}
 % 
-% \subsubsection{\texttt{babudb.repl.participant} \textit{experimental, optional}}
+% \subsubsection{\texttt{babudb.repl.participant} \textit{optional}}
 % \begin{tabular}{lp{10cm}}
 %  Services & DIR, MRC\\
 %  Values   & see description\\
@@ -677,7 +690,7 @@ Aside from using the following predefined parameters to configure services, OSDs
 % & for n participants. \\
 % \end{tabular} 
 % 
-% \subsubsection{\texttt{babudb.repl.sync.n} \textit{experimental, optional}}
+% \subsubsection{\texttt{babudb.repl.sync.n} \textit{optional}}
 % \begin{tabular}{lp{10cm}}
 %  Services & DIR, MRC\\
 %  Values   & a positive integer value\\
@@ -685,7 +698,7 @@ Aside from using the following predefined parameters to configure services, OSDs
 %  Description & The number of slaves that at least have to be synchronous to the master BabuDB application. To use asynchronous replication, this value has to be set to 0. Otherwise it has to be less or equal to the number of participants. 
 % \end{tabular}
 % 
-% \subsubsection{\texttt{babudb.ssl.authenticationWithoutEncryption} \textit{experimental, optional}}
+% \subsubsection{\texttt{babudb.ssl.authenticationWithoutEncryption} \textit{optional}}
 % \begin{tabular}{lp{10cm}}
 %  Services & DIR, MRC\\
 %  Values   & \texttt{true} or \texttt{false}\\
@@ -693,7 +706,7 @@ Aside from using the following predefined parameters to configure services, OSDs
 %  Description & Flag that determines if authentication should be used without encrypting the connection. For BabuDB replication only.
 % \end{tabular}
 % 
-% \subsubsection{\texttt{babudb.ssl.enabled} \textit{experimental, optional}}
+% \subsubsection{\texttt{babudb.ssl.enabled} \textit{optional}}
 % \begin{tabular}{lp{10cm}}
 %  Services & DIR, MRC\\
 %  Values   & \texttt{true} or \texttt{false}\\
@@ -701,7 +714,7 @@ Aside from using the following predefined parameters to configure services, OSDs
 %  Description & Options to use a secure connection with SSL authenticaion and optionally encryption for the BabuDB replication. 
 % \end{tabular}
 % 
-% \subsubsection{\texttt{babudb.ssl.service\_creds} \textit{experimental, optional}}
+% \subsubsection{\texttt{babudb.ssl.service\_creds} \textit{optional}}
 % \begin{tabular}{lp{10cm}}
 %  Services & MRC, OSD\\
 %  Values   & path to file\\
@@ -709,7 +722,7 @@ Aside from using the following predefined parameters to configure services, OSDs
 %  Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file containing the service credentials (X.509 certificate and private key). PKCS\#12 and JKS format can be used, set \texttt{babudb.ssl.service\_creds.container} accordingly. This file is used during the SSL handshake to authenticate the service.
 % \end{tabular}
 % 
-% \subsubsection{\texttt{babudb.ssl.service\_creds.container } \textit{experimental, optional}}
+% \subsubsection{\texttt{babudb.ssl.service\_creds.container } \textit{optional}}
 % \begin{tabular}{lp{10cm}}
 %  Services & MRC, OSD\\
 %  Values   & \texttt{pkcs12} or \texttt{JKS}\\
@@ -717,7 +730,7 @@ Aside from using the following predefined parameters to configure services, OSDs
 %  Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file format of the \texttt{babudb.ssl.service\_creds} file.
 % \end{tabular}
 % 
-% \subsubsection{\texttt{babudb.ssl.service\_creds.pw} \textit{experimental, optional}}
+% \subsubsection{\texttt{babudb.ssl.service\_creds.pw} \textit{optional}}
 % \begin{tabular}{lp{10cm}}
 %  Services & MRC, OSD\\
 %  Values   & String\\
@@ -725,7 +738,7 @@ Aside from using the following predefined parameters to configure services, OSDs
 %  Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the password which protects the credentials file \texttt{babudb.ssl.service\_creds}.
 % \end{tabular}
 % 
-% \subsubsection{\texttt{babudb.ssl.trusted\_certs} \textit{experimental, optional}}
+% \subsubsection{\texttt{babudb.ssl.trusted\_certs} \textit{optional}}
 % \begin{tabular}{lp{10cm}}
 %  Services & MRC, OSD\\
 %  Values   & path to file\\
@@ -733,7 +746,7 @@ Aside from using the following predefined parameters to configure services, OSDs
 %  Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file containing the trusted root certificates (e.g. CA certificates) used to authenticate clients.
 % \end{tabular}
 % 
-% \subsubsection{\texttt{babudb.ssl.trusted\_certs.container} \textit{experimental, optional}}
+% \subsubsection{\texttt{babudb.ssl.trusted\_certs.container} \textit{optional}}
 % \begin{tabular}{lp{10cm}}
 %  Services & MRC, OSD\\
 %  Values   & \texttt{pkcs12} or \texttt{JKS}\\
@@ -741,7 +754,7 @@ Aside from using the following predefined parameters to configure services, OSDs
 %  Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file format of the \texttt{babudb.ssl.trusted\_certs} file.
 % \end{tabular}
 % 
-% \subsubsection{\texttt{babudb.ssl.trusted\_certs.pw} \textit{experimental, optional}}
+% \subsubsection{\texttt{babudb.ssl.trusted\_certs.pw} \textit{optional}}
 % \begin{tabular}{lp{10cm}}
 %  Services & MRC, OSD\\
 %  Values   & String\\
@@ -1202,7 +1215,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & Time to wait for the DIR to become available during start up of the MRC and OSD. If the DIR does not respond within this time the MRC or OSD will abort startup.
 \end{tabular}
 
-\subsubsection{\texttt{storage\_layout} \textit{optional, experimental}}
+\subsubsection{\texttt{storage\_layout} \textit{optional}}
 \begin{tabular}{lp{10cm}}
  Services & OSD\\
  Values   & HashStorageLayout\\
@@ -1488,6 +1501,8 @@ If an error occurs, please check if all of the following requirements are met:
 \chapter{XtreemFS Client}
 
 The XtreemFS client is needed to access an XtreemFS installation from a local or remote machine. This chapter describes how to use the XtreemFS client in order to work with XtreemFS like a local file system.
+
+If you are interested into integrating XtreemFS directly into your application, please have a look at the description of the C++ and Java implementations of the Client library \texttt{libxtreemfs} in section~\ref{sec:libxtreemfs}.
 
 \section{Installation}
 \label{sec:client_installation}
@@ -2309,6 +2324,7 @@ The XtreemFS Client will send the user ID and group IDs of the process which exe
 The superuser is identified by the user ID \texttt{root} and is allowed to do everything on the MRC. This behavior is similar to NFS with \texttt{no\_root\_squash}.
 
 \subsection{Plain SSL Certificates - SimpleX509AuthProvider}
+\label{sec:simple_x509_auth_provider}
 
 XtreemFS supports two kinds of X.509 certificates which can be used by the client.\index{Authentication Provider!SimpleX509AuthProvider}\index{SimpleX509AuthProvider} When mounted with a service/host certificate the XtreemFS client is regarded as a trusted system component. The MRC will accept any user ID and groups sent by the client and use them for authorization as with the NullAuthProvider. This setup is useful for volumes which are used by multiple users.
 
@@ -2446,7 +2462,7 @@ This policy uses domain names of clients and OSDs to determine the distance betw
  Shuffles the given list of OSDs.
 
  \item \textbf{Vivaldi network coordinates based sorting (policy ID 3003)}\\
- Sorts the list of OSDs in ascending order of their distance to the client, according to the vivaldi coordinates of the client and OSDs. This policy requires the clients to run the \texttt{xtfs\_vivaldi} service (see section~\ref{sec:vivaldi} for details).
+ Sorts the list of OSDs in ascending order of their distance to the client, according to the vivaldi coordinates of the client and OSDs. This policy requires to enable vivaldi in the client (see section~\ref{sec:vivaldi} for details).
 
 \end{itemize}
 
@@ -2495,15 +2511,15 @@ The latter is done by passing some arguments to the mount command. In most cases
     remote.dir.machine/myVolume /xtreemfs
 \end{verbatim}
 
-All client options and their descriptions are avaible on the help screen of the mount command.
+All client options and their descriptions are available on the help screen of the mount command.
 The server options are listed in the config files \texttt{dirconfig.properties} and \texttt{osdconfig.properties}.
 
-There is a built-in visualisation for the vivaldi coordinates.
+There is a built-in visualization for the vivaldi coordinates.
 It is accessible from the DIR status page or directly via \href{http://localhost:30638/vivaldi}{http://localhost:30638/vivaldi}.
 Per default, only the OSDs are shown.
 Clients can also be told to send their coordinates to the DIR by adding \verb+--vivaldi--enable-dir-updates+ to the mount command.
 Be aware that this causes extra traffic between the client and the DIR every time the client recalculates its coordinates.
-The raw data which is used by the visualisation can be queried from \href{http://localhost:30638/vivaldi/data}{http://localhost:30638/vivaldi/data}.
+The raw data which is used by the visualization can be queried from \href{http://localhost:30638/vivaldi/data}{http://localhost:30638/vivaldi/data}.
 
 \section{Striping Policies} \label{sec:striping_policies}
 
@@ -2550,7 +2566,7 @@ Please visit the \href{http://www.xtreemfs.org}{XtreemFS website at www.xtreemfs
 
 XtreemFS\index{Hadoop!Integration} is a distributed file system that can be used instead of HDFS, the distributed file system made by the developers of Hadoop.
 
-Therefore it replaces the NameNode and the DataNodes provided by HDFS in a common Hadoop setup. A DIR is used instead of a NameNode, because it stores the information about where the files and their metadata are located at the OSDs and the MRC, like the NameNode does for DataNodes. These DataNodes hold the files that have been stored at HDFS. On XtreemFS these files are split into metadata and raw file data to be stored separated at a MRC and OSDs.
+Therefore it replaces the NameNode and the DataNodes provided by HDFS in a common Hadoop setup. A DIR is used instead of a NameNode, because it stores the information about where the files and their metadata are located at the OSDs and the MRC, like the NameNode does for DataNodes. These DataNodes hold the files that have been stored at HDFS. On XtreemFS these files are split into metadata and raw file data to be stored separately at a MRC and OSDs.
 
 \begin{figure}[h]
  \centering
@@ -2569,7 +2585,7 @@ This section will help you to set up a simple Hadoop configuration with all nece
 
 \textbf{Required software:}
 \begin{itemize}
-\item XtreemFS servers (v 1.3.1) including XtreemFS.jar and Foundation.jar (\href{http://www.XtreemFS.org}{www.XtreemFS.org})
+\item XtreemFS servers (v 1.3.2 or newer) including XtreemFS.jar and Foundation.jar (\href{http://www.XtreemFS.org}{www.XtreemFS.org})
 \item XtreemFSHadoopClient.jar (Download it from \href{http://code.google.com/p/xtreemfs/downloads/list}{www.XtreemFS.org} or build it by yourself by excecuting make hadoop-client)
 \item Hadoop (v 1.0.1) (\href{http://hadoop.apache.org}{hadoop.apache.org})
 \item JDK 1.6+ (\href{http://java.sun.com}{Oracle/SUN})
@@ -2588,45 +2604,44 @@ This section will help you to set up a simple Hadoop configuration with all nece
 	\item After downloading and extracting Hadoop you first have to add XtreemFS, the XtreemFSHadoopClient, ProtocolBuffer and the Foundation package to its 
 	classpath. To do so edit the \textit{hadoop-env.sh} that can be found in the \textit{conf} directory of Hadoop and 
 	add the paths to XtreemFS.jar, Foundation.jar, protobuf-java-2.3.0.jar and XtreemFSHadoopClient.jar separated by '\textit{:}' to the HADOOP\_CLASSPATH. 
-	If you run a Linux-based OS these jar-libraries are located at '\textit{/usr/share/java/}'.
-	For example
+	If you run a Linux-based OS these jar-libraries are located at '\textit{/usr/share/java/}'. We assume you also put the downloaded HadoopClient.jar there.
+	The resulting class path
 	\begin{verbatim}
 	export HADOOP_CLASSPATH="/usr/share/java/Foundation.jar:
 	/usr/share/java/XtreemFS.jar:/usr/share/XtreemFSHadoopClient.jar:
 	/usr/share/java/protobuf-java-2.3.0.jar"
 	\end{verbatim}
 	should be sufficient on the most systems.
-	\item Now you have to specify some properties at the \textit{core-site.xml} which also has to be in the \textit{conf} 
+	\item Now you have to specify some properties in \textit{core-site.xml} which also has to be in the \textit{conf} 
 	directory of Hadoop. If this file does not exist you can safely create it.
 	\begin{verbatim}
-	<configuration>
+<configuration>
 
-		<property>
-		  <name>fs.xtreemfs.impl</name>
-		  <value>org.xtreemfs.common.clients.hadoop.XtreemFSFileSystem</value>
-		  <description>The FileSystem for xtreemfs: uris.</description>
-		</property>
+  <property>
+    <name>fs.xtreemfs.impl</name>
+    <value>org.xtreemfs.common.clients.hadoop.XtreemFSFileSystem</value>
+    <description>The file system for xtreemfs: URIs.</description>
+  </property>
 
-		<property>
-		  <name>fs.default.name</name>
-		  <value>xtreemfs://localhost:32638</value>
-		  <description>Address for the DIR.</description>
-		</property>
+  <property>
+    <name>fs.default.name</name>
+    <value>xtreemfs://localhost:32638</value>
+    <description>Address for the DIR.</description>
+  </property>
 
-		<property>
-		  <name>xtreemfs.volumeName</name>
-		  <value>volumeName</value>
-		  <description>Name of the volume to use within XtreemFS.</description>
-		</property>
-		
-		<property>
-		  <name>io.file.buffer.size</name>
-		  <value>131072</value>
-		  <description>The size of buffer for use in sequence files 
-		  in bytes.</description>
-		</property>
+  <property>
+    <name>xtreemfs.volumeName</name>
+    <value>volumeName</value>
+    <description>Name of the volume to use within XtreemFS.</description>
+  </property>
+  
+  <property>
+    <name>io.file.buffer.size</name>
+    <value>131072</value>
+    <description>Default buffer size when accessing files.</description>
+  </property>
 
-	</configuration>
+</configuration>
 	\end{verbatim}
 	\begin{enumerate}
 	\item The first property is required to register the HadoopClient of XtreemFS at Hadoop. Now you are able to access 	
@@ -2635,48 +2650,134 @@ This section will help you to set up a simple Hadoop configuration with all nece
 	NameNode, therefore address and port of the DIR has to be populated. In this case the DIR is located at 
 	\textit{localhost:32638}. 
 	\item The third property specifies the name of the volume to use within XtreemFS. Make sure, that the volume (here 
-	named \textit{volumeName}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS!
-	\item The last property is tells Hadoop the size of buffers that will be used when reading/writing files.
-	This size should be excatly the stripesize of your volume. Note that this value is measured in bytes while the
-	stripe size of your volume usally is measured in kilo bytes. 
+	named \textit{volumeName}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS.
+	\item The last property tells Hadoop the buffer size that will be used when reading/writing files.
+	This size should be exactly the default stripesize of your volume. Note that this value is measured in bytes while the
+	stripe size of your volume usually is measured in kilo bytes. 
 	\end{enumerate}
-	Hint: If you want to provide userrights to your Hadoop installation according to the POSIX file-access-policy, you 
+	Hint: If you want to provide user rights to your Hadoop installation according to the POSIX file-access-policy, you 
 	have to set the following additional properties: 
 	\begin{verbatim}
-	<property>
-	  <name>xtreemfs.client.userid</name>
-	  <value>hadoopUserID</value>
-	  <description>UserID to be used by Hadoop while accessing XtreemFS.</description>
-	</property>
+  <property>
+    <name>xtreemfs.client.userid</name>
+    <value>hadoopUserID</value>
+    <description>UserID to be used by Hadoop while accessing XtreemFS.</description>
+  </property>
 
-	<property>
-	  <name>xtreemfs.client.groupid</name>
-	  <value>hadoopGroupID</value>
-	  <description>GroupID to be used by Hadoop while accessing XtreemFS.</description>
-	</property>
+  <property>
+    <name>xtreemfs.client.groupid</name>
+    <value>hadoopGroupID</value>
+    <description>GroupID to be used by Hadoop while accessing XtreemFS.</description>
+  </property>
 	\end{verbatim}
 	\end{enumerate}
 
-\item To provide the minimum JobTracker configuration for Hadoop you have also to add the following property to the 
+\item To provide the minimum JobTracker configuration for Hadoop you also have to add the following property to the 
 	\textit{conf/mapred-site.xml}:
 	
 	\begin{verbatim}
-	<configuration>
+<configuration>
 
-	<property>
-	  <name>mapred.job.tracker</name>
-	  <value>localhost:9001</value>
-	  <description>Listening address for the JobTracker.</description>
-	</property>
+  <property>
+    <name>mapred.job.tracker</name>
+    <value>localhost:9001</value>
+    <description>Listening address for the JobTracker.</description>
+  </property>
 
-	</configuration>
+</configuration>
 	\end{verbatim}
-	Which specifies the address where the JobTracker will be running at.
+	This specifies the address where the JobTracker will be running at.
 
 \item Finally you are now able to start the JobTracker by running '\textit{bin/hadoop jobtracker}' from within the Hadoop root-directory and a TaskTracker by executing '\textit{bin/hadoop tasktracker}'.
 
 \end{enumerate}
 Congratulations! You successfully finished the quick start guide of the XtreemFS-Hadoop integration and are now able to use your Hadoop applications like as is well known or go on with the tutorials available on \href{http://hadoop.apache.org}{hadoop.apache.org}.
+
+\chapter{Client Library libxtreemfs}
+\label{sec:libxtreemfs}
+
+The XtreemFS client functionality is bundled into a library \texttt{libxtreemfs}. Currently, this library is available as C++ and Java version with an almost identical feature set. Both versions are intended to run on a variety of platforms. As of June 2012, both versions work on Linux, Windows, MacOSX and Solaris (other platforms probably also work, but were not tested). The libxtreemfs is also used internally by the XtreemFS components e.g., the FUSE Client \texttt{mount.xtreemfs} uses the C++ libxtreemfs and the HDFS implementation is based on the libxtreemfs for Java.
+
+You can use each version of the \texttt{libxtreemfs} to integrate XtreemFS directly in your application. This way you avoid the overhead and the limitations of FUSE. For instance, you can read and write more than 128 kB data with a single read or write command and you avoid unnecessary copying between kernel and user space. The only drawback compared to using the FUSE Client \texttt{mount.xtreemfs} is that the \texttt{libxtreemfs} currently has no advanced caching functionality while FUSE inherently supports read-ahead and caching of file data.
+
+\section{General Interface}
+
+Both versions of the libxtreemfs have an almost identical design and interface. The functionality is provided by the following three main classes:
+
+\begin{itemize}
+ \item \textbf{Client}
+
+A Client object is initialized with the list of DIR replicas of a single XtreemFS installation.
+It provides methods to resolve an UUID and for volume maintenance e.g., creating, deleting and listing volumes.
+Most users will need only the \texttt{OpenVolume} method which returns a \texttt{Volume} object for a given XtreemFS volume name.
+
+ \item \textbf{Volume}
+
+A \texttt{Volume} object provides methods for the creation, deletion and renaming of files on the particular volume. These methods require the path to the file or directory as parameter and usually result into metadata operations executed on a MRC server. In order to read and write files, the file has to be opened with the \texttt{OpenFile} method which returns a \texttt{FileHandle} object.
+
+ \item \textbf{FileHandle}
+
+The \texttt{FileHandle} object has to be used to read or write data to/from a file. There are also methods for acquiring and releasing advisory locks. All these operations usually will be executed on the OSD which holds the replica of the file.
+
+\end{itemize}
+
+All operations require a \texttt{UserCredentials} object as parameter which contains the name of the user and the list of groups on which behalf the request shall be executed on the server. Currently, this information is only evaluated by the MRC when checking the file permissions. Additionally, the provided \texttt{UserCredentials} will be ignored if the \emph{SimpleX509AuthProvider} authentication provider is enabled on the MRC and the client uses a user certificate. Then, the \texttt{UserCredentials} will be overwritten at the MRC with the content of the client's user certificate (see section~\ref{sec:simple_x509_auth_provider}).
+
+Some administrative operations (e.g., creation and deletion of volumes) also require an \texttt{Auth} object. This Auth object allows to implement additional authorization between client and server. As of June 2012, the available implementations are the \texttt{admin\_password} mechanism or none. Please see the available examples how to initialize the Auth object properly.
+
+\section{Using the C++ libxtreemfs}
+\label{sec:libxtreemfs_cpp}
+
+The interface of the C++ libxtreemfs is defined in the three files client.h, volume.h and file\_handle.h which are located in the directory \texttt{cpp/include/libxtreemfs/} in the XtreemFS sources. You can retrieve the sources from our Google Code Project page at \url{http://code.google.com/p/xtreemfs/source}.
+
+Please note, that there are currently no build targets provided yet which allow to build a dynamic version of the libxtreemfs library. If you want to try out the C++ libxtreemfs, we recommend to start with the provided sub project \emph{example\_libxtreemfs} which statically links the libxtreemfs. Therefore, please follow the following instructions. Specific example commands are given for Linux. As mentioned above, you can also successfully compile the C++ libxtreemfs on other platforms e.g., Windows.
+
+\begin{enumerate}
+ \item Install required libraries and dev(el) packages.
+
+In particular, you need boost and libssl-dev. On a Unix plattform, you also need libfuse-dev or you have to comment out the respective portions in the CMake configuration manually. At last, you have to install ``cmake'' which generates the build system.
+
+  \item Check out the XtreemFS trunk.
+
+\begin{verbatim}
+svn checkout http://xtreemfs.googlecode.com/svn/trunk/ \
+             xtreemfs-read-only 
+\end{verbatim}
+
+  \item Compile the Client.
+
+Currently you can only compile or all nothing, so the FUSE client mount.xtreemfs will be automatically compiled and the binary ``example\_libxtreemfs'', too.
+
+\begin{verbatim}
+cd xtreemfs-read-only
+make client_debug
+\end{verbatim}
+
+The Makefile target ``client\_debug'' is identical to the default ``client'' except that it also enables debug symbols.
+
+  \item Run the example\_libxtreemfs.
+
+\begin{verbatim}
+cd cpp/build
+./example_libxtreemfs
+\end{verbatim}
+
+\item Use the example code as basis for own modifications.
+
+Now modify \texttt{cpp/src/example\_libxtreemfs/example\_libxtreemfs.cpp} to suit your needs.
+
+"make client\_debug" was only needed the first time for letting CMake generate the Makefiles to build everything. From now on, just run ``make'' inside \texttt{cpp/build} and it will compile the changed code.
+
+\end{enumerate}
+
+\section{Using the libxtreemfs for Java}
+\label{sec:libxtreemfs_for_java}
+
+The libxtreemfs for Java can be found in the XtreemFS sources in the directory \texttt{java/servers/src/org/xtreemfs/common/libxtreemfs/}. You can retrieve the sources from our Google Code Project page at \url{http://code.google.com/p/xtreemfs/source}.
+
+Have a look at the unit test ``testMinimalExample()'' in the file \texttt{ClientTest.java}\footnote{located in the XtreemFS sources at \texttt{java/servers/test/org/xtreemfs/common/libxtreemfs/}} for a minimal example how to use the library. Another example is the HDFS implementation which can be found below \texttt{contrib/hadoop/}.
+
+The libxtreemfs for Java is currently not separated from the remaining server Java code. Consequently, you'll find the available functionality as part of the XtreemFS.jar which is generated by ``make server''. 
 
 \chapter{Command Line Utilities}
 \label{sec:cli_utils}
@@ -2696,7 +2797,6 @@ Congratulations! You successfully finished the quick start guide of the XtreemFS
  \item[xtfs\_mrcdbtool] Dumps and restores an XML representation of the MRC database.
  \item[xtfs\_remove\_osd] Relocates all files stored on an OSD in order to remove the OSD from the system.
  \item[xtfs\_scrub] Examines all files in a volume for wrong file sizes and checksums and corrects wrong file sizes in the MRC.
- \item[xtfs\_vivaldi] client service to calculate vivaldi coordinates.
 \end{description}
 
 \printindex
