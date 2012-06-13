@@ -790,7 +790,7 @@ int FuseAdapter::releasedir(const char *path, struct fuse_file_info *fi) {
   assert(cached_direntries != NULL);
   delete cached_direntries->dir_entries;
   delete cached_direntries;
-  fi->fh = NULL;
+  fi->fh = static_cast<uint64_t>(NULL);
 
   return 0;
 }
@@ -1254,19 +1254,19 @@ int FuseAdapter::release(const char *path, struct fuse_file_info *fi) {
     try {
       file_handle->Close();
     } catch(const PosixErrorException& e) {
-      fi->fh = NULL;
+      fi->fh = static_cast<uint64_t>(NULL);
       return -1 * ConvertXtreemFSErrnoToFuse(e.posix_errno());
     } catch(const XtreemFSException& e) {
-      fi->fh = NULL;
+      fi->fh = static_cast<uint64_t>(NULL);
       return -1 * EIO;
     } catch(const exception& e) {
       ErrorLog::error_log->AppendError("A non-XtreemFS exception occured: "
                 + string(e.what()));
-      fi->fh = NULL;
+      fi->fh = static_cast<uint64_t>(NULL);
       return -1 * EIO;
     }
   }
-  fi->fh = NULL;
+  fi->fh = static_cast<uint64_t>(NULL);
   return 0;
 }
 

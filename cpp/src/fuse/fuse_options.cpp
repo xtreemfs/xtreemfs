@@ -27,15 +27,6 @@ namespace xtreemfs {
 
 FuseOptions::FuseOptions() : Options(), fuse_descriptions_("Fuse Options") {
   // Overwrite certain members of Options().
-
-  // MacFuse is not able to send signals to our fuse implementation. However,
-  // it allows interruption of system calls and therefore we leave the tries
-  // values to infinite.
-#ifndef __APPLE__
-  // Fuse's default interrupt signal is SIGUSR1 = 10.
-  interrupt_signal = SIGUSR1;
-#endif // __APPLE__
-
 #ifndef __linux
   // Interrupting read calls does not work with Linux Fuse.
   max_read_tries = 0;

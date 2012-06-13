@@ -162,8 +162,7 @@ Options::Options()
   periodic_xcap_renewal_interval_s = 60;  // Default: 1 Minute.
   vivaldi_zipf_generator_skew = 0.5;
 
-  // Deprecated options
-  interrupt_signal = 0;  // Disable interruption support by default.
+  // NOTE: Deprecated options are no longer needed as members
 
 #ifndef WIN32
   // User mapping.
@@ -340,7 +339,7 @@ void Options::GenerateProgramOptionsDescriptions() {
         po::value(&periodic_file_size_updates_interval_s),
         "Pause time (in seconds) between two invocations of the thread which "
         "writes back file size updates to the MRC in the background.")
-    ("periodic-",
+    ("periodic-xcap-renewal-interval",
         po::value(&periodic_xcap_renewal_interval_s),
         "Pause time (in seconds) between two invocations of the thread which "
         "renews the XCap of all open file handles.")
@@ -351,11 +350,10 @@ void Options::GenerateProgramOptionsDescriptions() {
 
   deprecated_options_.add_options()
     ("interrupt-signal",
-        po::value(&interrupt_signal)->default_value(interrupt_signal)->notifier(
-            createOptionHandler(interrupt_signal,
-                "interrupt_signal is no longer supported")),
-        "DEPRECATED (has no effect) - Retry of a request is interrupted if this signal is sent "
-        "(set to 0 to disable it)."
+        po::value<int>()->notifier(MsgOptionHandler<int>(
+        "'interrupt-signal' is no longer supported")),
+        "DEPRECATED (has no effect) - Retry of a request is interrupted if "
+        "this signal is sent (set to 0 to disable it)."
 #ifdef __APPLE__
         " (This option has no effect with MacFuse as it supports to interrupt"
         " all requests by default.)"
@@ -366,10 +364,14 @@ void Options::GenerateProgramOptionsDescriptions() {
 #endif  // __linux
         );
 
+  // These options are parsed
   all_descriptions_.add(general_).add(optimizations_).add(error_handling_)
+      .add(ssl_options_).add(grid_options_).add(vivaldi_options_)
+      .add(xtreemfs_advanced_options_).add(deprecated_options_);
+  // These options are shown in the "-h" output
+  visible_descriptions_.add(general_).add(optimizations_).add(error_handling_)
       .add(ssl_options_).add(grid_options_).add(vivaldi_options_);
-  // These options are not shown in the "-h" output to not confuse the user.
-  hidden_descriptions_.add(xtreemfs_advanced_options_).add(deprecated_options_);
+
 
   all_descriptions_initialized_ = true;
 }
@@ -390,6 +392,7 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
     // Rethrow boost errors due to invalid command line parameters.
     throw InvalidCommandLineParametersException(string(e.what()));
   }
+
   po::parsed_options parsed = po::command_line_parser(argc, argv)
   .options(all_descriptions_)
   .allow_unregistered()
@@ -547,7 +550,7 @@ void Options::ParseURL(XtreemFSServiceType service_type) {
 std::string Options::ShowCommandLineHelp() {
   GenerateProgramOptionsDescriptions();
   ostringstream stream;
-  stream << all_descriptions_;
+  stream << visible_descriptions_;
   return stream.str();
 }
 
