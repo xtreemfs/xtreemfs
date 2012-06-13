@@ -53,6 +53,8 @@ class FuseAdapter {
    *  stopped. */
   void Stop();
 
+  void SetInterruptQueryFunction() const;
+
   void GenerateUserCredentials(
       uid_t uid,
       gid_t gid,

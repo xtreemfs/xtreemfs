@@ -18,7 +18,8 @@ namespace xtreemfs {
 
 class Interruptibilizer {
  public:
-  typedef int (*query_function)(void);
+  //typedef int (*query_function)(void);  // this also works without changes, but does not support functor objects
+  typedef boost::function0<int> query_function;
 
   static void Initialize(query_function f);
 
@@ -29,8 +30,6 @@ class Interruptibilizer {
  private:
   static query_function f_;
 };
-
-
 
 }  // namespace xtreemfs
 

@@ -64,8 +64,6 @@ FuseAdapter::FuseAdapter(FuseOptions* options) :
 FuseAdapter::~FuseAdapter() {}
 
 void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
-  // set interrupt query function
-  Interruptibilizer::Initialize(&fuse_interrupted);
 
   // Start logging manually (altough it would be automatically started by
   // ClientImplementation()) as its required by UserMapping.
@@ -377,6 +375,11 @@ void FuseAdapter::GenerateUserCredentials(
        it != groupnames.end(); ++it) {
     user_credentials->add_groups(*it);
   }
+}
+
+void FuseAdapter::SetInterruptQueryFunction() const {
+  // set interrupt query function
+  Interruptibilizer::Initialize(&fuse_interrupted);
 }
 
 void FuseAdapter::ConvertXtreemFSStatToFuse(
