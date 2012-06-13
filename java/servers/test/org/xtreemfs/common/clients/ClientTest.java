@@ -146,8 +146,8 @@ public class ClientTest {
         f.setACL(acl);
         
         acl = f.getACL();
-        assertEquals("7", acl.get("u:"));
-        assertEquals("7", acl.get("g:"));
+        assertEquals("rwx", acl.get("u:"));
+        assertEquals("rwx", acl.get("g:"));
                 
         acl.clear();
         acl.put("u:test", "r");
@@ -155,8 +155,8 @@ public class ClientTest {
         f.setACL(acl);
         
         acl = f.getACL();
-        assertEquals("1", acl.get("u:test"));
-        assertEquals("1", acl.get("g:test"));
+        assertEquals("r--", acl.get("u:test"));
+        assertEquals("r--", acl.get("g:test"));
         
         acl.clear();
         f.setACL(acl);
