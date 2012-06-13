@@ -242,7 +242,7 @@ public class RPCUDPSocketServer extends LifeCycleThread implements RPCServerInte
         } catch (IOException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         } catch (Throwable th) {
-            notifyCrashed(th instanceof Exception ? (Exception) th : new Exception(th));
+            notifyCrashed(th);
             return;
         }
 

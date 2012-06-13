@@ -276,8 +276,8 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 	                        OutputUtils.getThreadDump());
 	            }
 	        }
-        } catch (Exception thr) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "ONRPC Client CRASHED!");
+        } catch (Throwable thr) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "PBRPC Client CRASHED!");
             notifyCrashed(thr);
         }	        
         

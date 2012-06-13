@@ -293,8 +293,8 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                     "PBRPC Server %d shutdown complete", bindPort);
             
             notifyStopped();
-        } catch (Exception thr) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "ONRPC Server %d CRASHED!", bindPort);
+        } catch (Throwable thr) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "PBRPC Server %d CRASHED!", bindPort);
             notifyCrashed(thr);
         }
         
