@@ -8,6 +8,10 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_CALLBACK_EXECUTE_SYNC_REQUEST_H_
 #define CPP_INCLUDE_LIBXTREEMFS_CALLBACK_EXECUTE_SYNC_REQUEST_H_
 
+//#ifdef __linux
+//#include <csignal>
+//#endif
+
 #ifdef WIN32
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN

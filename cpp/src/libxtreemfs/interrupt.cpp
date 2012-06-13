@@ -7,7 +7,7 @@
 
 #include "libxtreemfs/interrupt.h"
 
-#include <boost/date_time.hpp>
+#include "boost/date_time.hpp"
 
 namespace xtreemfs
 {
