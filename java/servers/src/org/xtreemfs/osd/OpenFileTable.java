@@ -81,13 +81,13 @@ public final class OpenFileTable {
             return currEntry.getCowPolicy();
         } else {
             Logging.logMessage(Logging.LEVEL_WARN, this,
-                    "attempt to keep file %s open failed because no open state exists; creating new open state", fId);
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "new entry for %s", fId);
-            // 'currEntry' is a new entry, so
-            // insert it in the table
-            OpenFileTableEntry newEntry = new OpenFileTableEntry(fId, expTime);
-            openFiles.put(fId, newEntry);
-            expTimes.add(newEntry);
+                    "attempt to keep file %s open failed because no open state exists anymore", fId);
+            // Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "new entry for %s", fId);
+            // // 'currEntry' is a new entry, so
+            // // insert it in the table
+            // OpenFileTableEntry newEntry = new OpenFileTableEntry(fId, expTime);
+            // openFiles.put(fId, newEntry);
+            // expTimes.add(newEntry);
             return null;
         }
     }
