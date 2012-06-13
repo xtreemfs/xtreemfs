@@ -261,7 +261,7 @@ public class TCPCommunicator extends LifeCycleThread {
             }
 
             notifyStopped();
-        } catch (Exception thr) {
+        } catch (Throwable thr) {
             Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "TPC Server @%d CRASHED!", port);
             notifyCrashed(thr);
         }

@@ -462,7 +462,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
                 if (quit) {
                     break;
                 }
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 notifyCrashed(ex);
                 break;
             }
