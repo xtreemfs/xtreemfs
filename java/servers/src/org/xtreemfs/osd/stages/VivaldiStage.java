@@ -717,10 +717,9 @@ public class VivaldiStage extends Stage {
                 }
             } catch (InterruptedException ex) {
                 break;
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 Logging.logMessage(Logging.LEVEL_ERROR, this, "Error detected:" + ex);
-                notifyCrashed(
-                        ex);
+                notifyCrashed(ex);
                 break;
             }
         }

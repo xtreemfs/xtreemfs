@@ -123,7 +123,7 @@ public abstract class MRCStage extends LifeCycleThread {
                 
             } catch (InterruptedException ex) {
                 break;
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 this.notifyCrashed(ex);
                 break;
             }

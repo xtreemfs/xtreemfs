@@ -312,7 +312,7 @@ public class HeartbeatThread extends LifeCycleThread {
             }
             
             notifyStopped();
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             notifyCrashed(ex);
         }
     }

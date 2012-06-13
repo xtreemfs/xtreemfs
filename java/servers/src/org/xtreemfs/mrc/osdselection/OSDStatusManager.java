@@ -139,7 +139,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         try {
             knownOSDs = master.getDirClient().xtreemfs_service_get_by_type(null, RPCAuthentication.authNone,
                 RPCAuthentication.userService, ServiceType.SERVICE_TYPE_OSD).toBuilder();
-        } catch (Exception exc) {
+        } catch (Throwable exc) {
             this.notifyCrashed(exc);
         }
         

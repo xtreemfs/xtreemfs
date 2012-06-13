@@ -141,7 +141,7 @@ public abstract class Stage extends LifeCycleThread {
                 
             } catch (InterruptedException ex) {
                 break;
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 this.notifyCrashed(ex);
                 break;
             }

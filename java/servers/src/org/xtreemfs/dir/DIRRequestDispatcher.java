@@ -334,7 +334,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             }
         } catch (InterruptedException ex) {
             quit = true;
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             final String report = CrashReporter.createCrashReport("DIR", VersionManagement.RELEASE_VERSION,
                 ex);
             System.out.println(report);

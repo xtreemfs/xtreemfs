@@ -84,7 +84,7 @@ public class DiscoveryMsgThread extends LifeCycleThread {
 
             channel.close();
             
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             if (!quit)
                 notifyCrashed(ex);
         } finally {

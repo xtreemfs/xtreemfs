@@ -335,7 +335,7 @@ public class PreprocStage extends Stage {
                 
             } catch (InterruptedException ex) {
                 break;
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 notifyCrashed(ex);
                 break;
             }

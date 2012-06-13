@@ -360,7 +360,7 @@ public class CleanupThread extends LifeCycleThread {
 
             } while (!quit);
 
-        } catch (Exception thr) {
+        } catch (Throwable thr) {
             this.notifyCrashed(thr);
         }
 
