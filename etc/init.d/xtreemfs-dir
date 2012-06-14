@@ -37,7 +37,7 @@ JAVA_CALL="$JAVA_HOME/bin/java -cp /usr/share/java/XtreemFS.jar:/usr/share/java/
 if [ -x "/sbin/runuser" ]; then
     SU="/sbin/runuser -s /bin/sh $XTREEMFS_USER"
 else
-    SU="/bin/sudo -s /bin/sh -u $XTREEMFS_USER"
+    SU="/usr/bin/sudo -H -u $XTREEMFS_USER -s /bin/sh"
 fi
 
 pre_check() {
