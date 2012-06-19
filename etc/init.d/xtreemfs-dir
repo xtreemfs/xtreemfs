@@ -35,9 +35,9 @@ JAVA_CALL="$JAVA_HOME/bin/java -cp /usr/share/java/XtreemFS.jar:/usr/share/java/
 
 # For SELinux we need to use 'runuser' not 'su'
 if [ -x "/sbin/runuser" ]; then
-    SU="/sbin/runuser -s /bin/sh $XTREEMFS_USER"
+    SU="/sbin/runuser"
 else
-    SU="/usr/bin/sudo -H -u $XTREEMFS_USER -s /bin/sh"
+    SU="/bin/su"
 fi
 
 pre_check() {
@@ -66,7 +66,7 @@ start() {
     echo -e "Starting XtreemFS Directory Service (DIR)...\n\n" >> $LOG_DS
 
     echo -n "starting XtreemFS Directory Service (DIR)..."
-    $SU -c "$JAVA_CALL org.xtreemfs.dir.DIR $CONFIG_DS" >> $LOG_DS 2>&1 &
+    $SU -s /bin/sh $XTREEMFS_USER -c "$JAVA_CALL org.xtreemfs.dir.DIR $CONFIG_DS" >> $LOG_DS 2>&1 &
     PROCPID=$!
     echo $PROCPID > $PID_DS
     sleep 1s
@@ -86,7 +86,7 @@ start() {
 stop() {
     if [ -f $PID_DS ]; then
         echo -n "stopping XtreemFS Directory Service (DIR)..."
-        killproc -p $PID_DS sudo
+        killproc -p $PID_DS $SU
         echo
     fi
 

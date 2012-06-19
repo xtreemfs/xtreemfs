@@ -37,9 +37,9 @@ JAVA_CALL="$JAVA_HOME/bin/java -cp /usr/share/java/XtreemFS.jar:/usr/share/java/
 
 # For SELinux we need to use 'runuser' not 'su'
 if [ -x "/sbin/runuser" ]; then
-    SU="/sbin/runuser -s /bin/sh $XTREEMFS_USER"
+    SU="/sbin/runuser"
 else
-    SU="/usr/bin/sudo -H -u $XTREEMFS_USER -s /bin/sh"
+    SU="/bin/su"
 fi
 
 pre_check() {
@@ -68,7 +68,7 @@ start() {
     echo -e "Starting XtreemFS Object Storage Device (OSD)...\n\n" >> $LOG_OSD
 
     echo -n "starting Object Storage Device (OSD)..."
-    $SU -c "$JAVA_CALL org.xtreemfs.osd.OSD $CONFIG_OSD" >> $LOG_OSD 2>&1 &
+    $SU -s /bin/sh $XTREEMFS_USER -c "$JAVA_CALL org.xtreemfs.osd.OSD $CONFIG_OSD" >> $LOG_OSD 2>&1 &
     PROCPID=$!
     echo $PROCPID > $PID_OSD
     sleep 1s
@@ -88,7 +88,7 @@ start() {
 stop() {
     if [ -f $PID_OSD ]; then
         echo -n "stopping XtreemFS Object Storage Device (OSD)..."
-        killproc -p $PID_OSD sudo
+        killproc -p $PID_OSD $SU
         echo
     fi
 

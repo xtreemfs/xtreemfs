@@ -37,9 +37,9 @@ JAVA_CALL="$JAVA_HOME/bin/java -cp /usr/share/java/XtreemFS.jar:/usr/share/java/
 
 # For SELinux we need to use 'runuser' not 'su'
 if [ -x "/sbin/runuser" ]; then
-    SU="/sbin/runuser -s /bin/sh $XTREEMFS_USER"
+    SU="/sbin/runuser"
 else
-    SU="/usr/bin/sudo -H -u $XTREEMFS_USER -s /bin/sh"
+    SU="/bin/su"
 fi
 
 pre_check() {
@@ -68,7 +68,7 @@ start() {
     echo -e "Starting XtreemFS Metadata and Replica Catalog (MRC)...\n\n" >> $LOG_MRC
 
     echo -n "starting XtreemFS Metadata and Replica Catalog (MRC)..."
-    $SU -c "$JAVA_CALL org.xtreemfs.mrc.MRC $CONFIG_MRC" >> $LOG_MRC 2>&1 &
+    $SU -s /bin/sh $XTREEMFS_USER -c "$JAVA_CALL org.xtreemfs.mrc.MRC $CONFIG_MRC" >> $LOG_MRC 2>&1 &
     PROCPID=$!
     echo $PROCPID > $PID_MRC
     sleep 1s
@@ -88,7 +88,7 @@ start() {
 stop() {
     if [ -f $PID_MRC ]; then
         echo -n "stopping XtreemFS Metadata and Replica Catalog (MRC)..."
-        killproc -p $PID_MRC sudo
+        killproc -p $PID_MRC $SU
         echo
     fi
 
