@@ -42,8 +42,7 @@ int main(int argc, char* argv[]) {
     // Create a new instance of a client using the DIR service at
     // 'demo.xtreemfs.org' (default port 32638).
     xtreemfs::Client* client = xtreemfs::Client::CreateClient(
-        //"demo.xtreemfs.org:32638",
-        "localhost:32638",
+        "demo.xtreemfs.org:32638",
         user_credentials,
         NULL,  // No SSL options.
         options);
@@ -51,15 +50,11 @@ int main(int argc, char* argv[]) {
     // Start the client (a connection to the DIR service will be setup).
     client->Start();
 
-
-
-    /*
     // Open a volume named 'demo'.
     xtreemfs::Volume *volume = NULL;
-    volume = client->OpenVolume(
-        "demo",
-        NULL,  // No SSL options.
-        options);
+    volume = client->OpenVolume("demo",
+                                NULL,  // No SSL options.
+                                options);
 
     // Open a file.
     xtreemfs::FileHandle* file = volume->OpenFile(
@@ -106,8 +101,7 @@ int main(int argc, char* argv[]) {
 
     // Close the file (no need to delete it, see documentation volume.h).
     file->Close();
-*/
-    sleep(60);
+
     // Shutdown() does also invoke a volume->Close().
     client->Shutdown();
     delete client;
