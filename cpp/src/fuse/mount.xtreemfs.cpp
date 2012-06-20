@@ -161,13 +161,15 @@ int main(int argc, char **argv) {
   xtreemfs_fuse_ops.fgetattr = xtreemfs_fuse_fgetattr;
   xtreemfs_fuse_ops.lock = xtreemfs_fuse_lock;
   xtreemfs_fuse_ops.utimens = xtreemfs_fuse_utimens;
+#if FUSE_MAJOR_VERSION > 2 || ( FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 8 )  // NOLINT
   // We cannot work on unlinked files in case -ohard_remove was specified, so
   // a null path is not okay.
   xtreemfs_fuse_ops.flag_nullpath_ok = 0;
+#endif  // >= FUSE 2.8
 #if FUSE_MAJOR_VERSION > 2 || ( FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 9 )  // NOLINT
   // We require Fuse to calculate the "path" for all file handle operations.
   xtreemfs_fuse_ops.flag_nopath = 0;
-#endif
+#endif  // >= FUSE 2.8
 
   // Forward args.
   vector<char*> fuse_opts;
