@@ -25,6 +25,12 @@ class Interruptibilizer {
 
   static bool WasInterrupted();
 
+  /** Wrapper for boost::thread::sleep which checks for interruptions by
+   *  the signal handler.
+   *
+   * @remarks this function contains a boost::thread interruption point and
+   *          thus might throw boost::thread_interrupted.
+   */
   static void SleepInterruptible(int rel_time_in_ms);
 
  private:
