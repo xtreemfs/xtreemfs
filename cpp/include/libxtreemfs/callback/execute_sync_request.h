@@ -221,19 +221,20 @@ template<class ReturnMessageType, class F>
           }
 
           try {
-              Interruptibilizer::SleepInterruptible(delay_time_left.total_milliseconds());
+            Interruptibilizer::SleepInterruptible(
+                delay_time_left.total_milliseconds());
           } catch (const boost::thread_interrupted& e) {
-              if (response != NULL) {
-                // Free response.
-                response->DeleteBuffers();
-                delete response;
-              }
-              throw;
+            if (response != NULL) {
+              // Free response.
+              response->DeleteBuffers();
+              delete response;
+            }
+            throw;
           }
         }
 
       } else {
-        break;  // Do not retry if error occurred - throw exception. // TODO(mno): where is the exception?
+        break;  // Do not retry if error occurred - throw exception below.
       }
     } else {
       // No error happened, check for possible interruption.
