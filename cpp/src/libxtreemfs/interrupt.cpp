@@ -22,11 +22,11 @@ bool Interruptibilizer::WasInterrupted() {
   return (f_ == NULL) ? false : static_cast<bool>(f_());
 }
 
-void Interruptibilizer::SleepInterruptible(int rel_time_in_ms) {
+void Interruptibilizer::SleepInterruptible(int rel_time_ms) {
   const int sleep_interval_ms = 2000;
 
   int wait_time;
-  while (rel_time_ms > 0 && !interrupt.WasInterrupted()) {
+  while (rel_time_ms > 0 && !Interruptibilizer::WasInterrupted()) {
     wait_time = rel_time_ms > sleep_interval_ms ? sleep_interval_ms
                                                 : rel_time_ms;
     rel_time_ms -= wait_time;

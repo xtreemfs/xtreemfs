@@ -31,7 +31,7 @@ class Interruptibilizer {
    * @remarks this function contains a boost::thread interruption point and
    *          thus might throw boost::thread_interrupted.
    */
-  static void SleepInterruptible(int rel_time_in_ms);
+  static void SleepInterruptible(int rel_time_ms);
 
  private:
   static query_function f_;
