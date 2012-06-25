@@ -211,7 +211,7 @@ class Options {
   /** This functor template can be used as argument for the notifier() method
    *  of boost::options. It is specifically used to create a warning whenever
    *  a deprecated option is used, but is not limited to that purpose.
-   *  The createMsgOptionHandler function template can be used to instantiate it
+   *  The CreateMsgOptionHandler function template can be used to instantiate it
    *  without explicit template type specification. Instead the type inferred
    *  from the value given by the corresponding member variable.
    */
@@ -230,7 +230,7 @@ class Options {
 
   /** See MsgOptionHandler */
   template<typename T>
-  MsgOptionHandler<T> createMsgOptionHandler(const T&, std::string msg) {
+  MsgOptionHandler<T> CreateMsgOptionHandler(const T&, std::string msg) {
     return MsgOptionHandler<T>(msg);
   }
 

@@ -12,13 +12,15 @@
 #include <boost/function.hpp>
 
 #include "libxtreemfs/options.h"
-#include "util/logging.h"
 
 namespace xtreemfs {
 
 class Interruptibilizer {
  public:
-  //typedef int (*query_function)(void);  // this also works without changes, but does not support functor objects
+  // NOTE: the boost::function typedef could be replaced with
+  // typedef int (*query_function)(void);
+  // which would also works without changes, but would not support
+  // functor objects
   typedef boost::function0<int> query_function;
 
   static void Initialize(query_function f);
@@ -39,4 +41,4 @@ class Interruptibilizer {
 
 }  // namespace xtreemfs
 
-#endif
+#endif  // CPP_INCLUDE_LIBXTREEMFS_INTERRUPT_H_

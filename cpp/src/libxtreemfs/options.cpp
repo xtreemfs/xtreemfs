@@ -352,16 +352,8 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("interrupt-signal",
         po::value<int>()->notifier(MsgOptionHandler<int>(
         "'interrupt-signal' is no longer supported")),
-        "DEPRECATED (has no effect) - Retry of a request is interrupted if "
-        "this signal is sent (set to 0 to disable it)."
-#ifdef __APPLE__
-        " (This option has no effect with MacFuse as it supports to interrupt"
-        " all requests by default.)"
-#endif  // __APPLE__
-#ifdef __linux
-        "\n(If not disabled and Fuse is used, -o intr and -o intr_signal=10 "
-        "(=SIGUSR1) will be passed to Fuse by default.)"
-#endif  // __linux
+        "DEPRECATED (has no effect) - Retry of a request was interrupted if "
+        "this signal was sent in earlier versions."
         );
 
   // These options are parsed

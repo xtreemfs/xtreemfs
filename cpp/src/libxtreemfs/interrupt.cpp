@@ -18,7 +18,6 @@ void Interruptibilizer::Initialize(query_function f) {
 }
 
 bool Interruptibilizer::WasInterrupted() {
-  // TODO(mno): NULL check still needed and usefull?
   return (f_ == NULL) ? false : static_cast<bool>(f_());
 }
 
