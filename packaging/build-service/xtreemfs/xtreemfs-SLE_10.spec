@@ -246,6 +246,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/java/BabuDB.jar
 /usr/share/java/jdmkrt.jar
 /usr/share/java/jdmktk.jar
+/usr/share/java/commons-codec-1.3.jar
 
 %doc LICENSE
 
