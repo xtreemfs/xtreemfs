@@ -461,10 +461,14 @@ is divided into following sections:
         <property name="javac.processorpath" value="${javac.classpath}"/>
         <property name="javac.test.processorpath" value="${javac.test.classpath}"/>
         <condition property="ap.supported.internal" value="true">
+          <!-- 'matches' below does not work with ant 1.6.5. Therefore disabled in this file and set to always true. -->
+          <istrue value="true"/>
+<!-- 
             <not>
                 <matches pattern="1\.[0-5](\..*)?" string="${javac.source}"/>
             </not>
-        </condition>
+-->
+          </condition>
     </target>
     <target depends="-init-ap-cmdline-properties" if="ap.supported.internal" name="-init-ap-cmdline-supported">
         <condition else="" property="ap.processors.internal" value="-processor ${annotation.processing.processors.list}">
