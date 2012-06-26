@@ -67,11 +67,6 @@ public class PreprocStage extends Stage {
 
     public final static int                                 STAGEOP_PING_FILE          = 14;
 
-    private final static long                               OFT_CLEAN_INTERVAL         = 1000 * 5; // = 1000
-                                                                                                    // * 60;
-
-    private final static long                               OFT_OPEN_EXTENSION         = 1000 * 30;
-
     private final Map<String, LRUCache<String, Capability>> capCache;
 
     private final OpenFileTable                             oft;
@@ -161,7 +156,8 @@ public class PreprocStage extends Stage {
 
             CowPolicy cowPolicy;
             if (oft.contains(fileId)) {
-                cowPolicy = oft.refresh(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, write);
+                cowPolicy = oft.refresh(fileId, TimeSync.getLocalSystemTime()
+                        + master.getConfig().getImplicitCloseTimeout(), write);
             } else {
 
                 // find out which COW mode to use, depending on the capability
@@ -171,7 +167,8 @@ public class PreprocStage extends Stage {
                 else
                     cowPolicy = new CowPolicy(cowMode.COW_ONCE);
 
-                oft.openFile(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, cowPolicy, write);
+                oft.openFile(fileId, TimeSync.getLocalSystemTime() + master.getConfig().getImplicitCloseTimeout(),
+                        cowPolicy, write);
                 request.setFileOpen(true);
             }
             request.setCowPolicy(cowPolicy);
@@ -188,7 +185,7 @@ public class PreprocStage extends Stage {
         final String fileId = (String) m.getArgs()[0];
 
         // TODO: check if the file was opened for writing
-        oft.refresh(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, false);
+        oft.refresh(fileId, TimeSync.getLocalSystemTime() + master.getConfig().getImplicitCloseTimeout(), false);
 
     }
 
@@ -322,7 +319,7 @@ public class PreprocStage extends Stage {
 
         // interval to check the OFT
 
-        timeToNextOFTclean = OFT_CLEAN_INTERVAL;
+        timeToNextOFTclean = master.getConfig().getOpenFileTableCleanupInterval();
         lastOFTcheck = TimeSync.getLocalSystemTime();
 
         while (!quit) {
@@ -392,7 +389,7 @@ public class PreprocStage extends Stage {
                 }
             }
 
-            timeToNextOFTclean = OFT_CLEAN_INTERVAL;
+            timeToNextOFTclean = master.getConfig().getOpenFileTableCleanupInterval();
         }
         lastOFTcheck = TimeSync.getLocalSystemTime();
     }

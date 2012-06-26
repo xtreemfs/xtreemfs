@@ -21,118 +21,77 @@ import org.xtreemfs.common.config.ServiceConfig;
  * @author bjko
  */
 public class OSDConfig extends ServiceConfig {
-    
-    private final Parameter[] osdParameter = {            
-            Parameter.DEBUG_LEVEL,
-            Parameter.DEBUG_CATEGORIES,
-            Parameter.PORT,
-            Parameter.HTTP_PORT,
-            Parameter.LISTEN_ADDRESS,
-            Parameter.HOSTNAME,
-            Parameter.DIRECTORY_SERVICE,
-            Parameter.OBJECT_DIR,
-            Parameter.LOCAL_CLOCK_RENEW,
-            Parameter.REMOTE_TIME_SYNC,
-            Parameter.USE_SSL,
-            Parameter.SERVICE_CREDS_CONTAINER,
-            Parameter.SERVICE_CREDS_FILE,
-            Parameter.SERVICE_CREDS_PASSPHRASE,
-            Parameter.TRUSTED_CERTS_CONTAINER,
-            Parameter.TRUSTED_CERTS_FILE,
-            Parameter.TRUSTED_CERTS_PASSPHRASE,
-            Parameter.TRUST_MANAGER,
-            Parameter.USE_GRID_SSL_MODE,
-            Parameter.GEO_COORDINATES,
-            Parameter.CHECKSUM_ENABLED,
-            Parameter.CHECKSUM_PROVIDER,
-            Parameter.ADMIN_PASSWORD,
-            Parameter.WAIT_FOR_DIR,
-            Parameter.UUID,
-            Parameter.REPORT_FREE_SPACE,
-            Parameter.STORAGE_LAYOUT,
-            Parameter.IGNORE_CAPABILITIES,
-            Parameter.FLEASE_DMAX_MS,
-            Parameter.FLEASE_LEASE_TIMEOUT_MS,
-            Parameter.FLEASE_MESSAGE_TO_MS,
-            Parameter.FLEASE_RETRIES,
-            Parameter.POLICY_DIR,
-            Parameter.CAPABILITY_SECRET,
-            Parameter.SOCKET_SEND_BUFFER_SIZE,
-            Parameter.SOCKET_RECEIVE_BUFFER_SIZE,
-            Parameter.USE_SNMP,
-            Parameter.SNMP_ADDRESS,
-            Parameter.SNMP_PORT,
-            Parameter.SNMP_ACL,
-            Parameter.FAILOVER_MAX_RETRIES,
-            Parameter.FAILOVER_WAIT,
-            Parameter.MAX_CLIENT_Q,
-            Parameter.VIVALDI_RECALCULATION_INTERVAL_IN_MS,
-            Parameter.VIVALDI_RECALCULATION_EPSILON_IN_MS,
-            Parameter.VIVALDI_ITERATIONS_BEFORE_UPDATING,
-            Parameter.VIVALDI_MAX_RETRIES_FOR_A_REQUEST,
-            Parameter.VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS,
-            Parameter.VIVALDI_TIMER_INTERVAL_IN_MS
-    };
-    
+
+    private final Parameter[]         osdParameter        = { Parameter.DEBUG_LEVEL, Parameter.DEBUG_CATEGORIES,
+            Parameter.PORT, Parameter.HTTP_PORT, Parameter.LISTEN_ADDRESS, Parameter.HOSTNAME,
+            Parameter.DIRECTORY_SERVICE, Parameter.OBJECT_DIR, Parameter.LOCAL_CLOCK_RENEW, Parameter.REMOTE_TIME_SYNC,
+            Parameter.USE_SSL, Parameter.SERVICE_CREDS_CONTAINER, Parameter.SERVICE_CREDS_FILE,
+            Parameter.SERVICE_CREDS_PASSPHRASE, Parameter.TRUSTED_CERTS_CONTAINER, Parameter.TRUSTED_CERTS_FILE,
+            Parameter.TRUSTED_CERTS_PASSPHRASE, Parameter.TRUST_MANAGER, Parameter.USE_GRID_SSL_MODE,
+            Parameter.GEO_COORDINATES, Parameter.CHECKSUM_ENABLED, Parameter.CHECKSUM_PROVIDER,
+            Parameter.ADMIN_PASSWORD, Parameter.WAIT_FOR_DIR, Parameter.UUID, Parameter.REPORT_FREE_SPACE,
+            Parameter.STORAGE_LAYOUT, Parameter.IGNORE_CAPABILITIES, Parameter.FLEASE_DMAX_MS,
+            Parameter.FLEASE_LEASE_TIMEOUT_MS, Parameter.FLEASE_MESSAGE_TO_MS, Parameter.FLEASE_RETRIES,
+            Parameter.POLICY_DIR, Parameter.CAPABILITY_SECRET, Parameter.SOCKET_SEND_BUFFER_SIZE,
+            Parameter.SOCKET_RECEIVE_BUFFER_SIZE, Parameter.USE_SNMP, Parameter.SNMP_ADDRESS, Parameter.SNMP_PORT,
+            Parameter.SNMP_ACL, Parameter.FAILOVER_MAX_RETRIES, Parameter.FAILOVER_WAIT, Parameter.MAX_CLIENT_Q,
+            Parameter.VIVALDI_RECALCULATION_INTERVAL_IN_MS, Parameter.VIVALDI_RECALCULATION_EPSILON_IN_MS,
+            Parameter.VIVALDI_ITERATIONS_BEFORE_UPDATING, Parameter.VIVALDI_MAX_RETRIES_FOR_A_REQUEST,
+            Parameter.VIVALDI_MAX_REQUEST_TIMEOUT_IN_MS, Parameter.VIVALDI_TIMER_INTERVAL_IN_MS,
+            Parameter.OPEN_STATE_IMPLICIT_CLOSE_TIMEOUT, Parameter.OPEN_STATE_OFT_CLEANUP_INTERVAL };
+
     /**
      * Parameter which are required to connect to the DIR.
      */
-    final Parameter[] connectionParameter = {
-            Parameter.DEBUG_CATEGORIES,
-            Parameter.DEBUG_LEVEL,
-            Parameter.HOSTNAME,
-            Parameter.DIRECTORY_SERVICE,
-            Parameter.WAIT_FOR_DIR,
-            Parameter.PORT,
-            Parameter.USE_SSL,
-            Parameter.UUID
-            };
-    
-    public static final int     CHECKSUM_NONE    = 0;
+    final Parameter[]                 connectionParameter = { Parameter.DEBUG_CATEGORIES, Parameter.DEBUG_LEVEL,
+            Parameter.HOSTNAME, Parameter.DIRECTORY_SERVICE, Parameter.WAIT_FOR_DIR, Parameter.PORT, Parameter.USE_SSL,
+            Parameter.UUID                               };
 
-    public static final int     CHECKSUM_ADLER32 = 1;
+    public static final int           CHECKSUM_NONE       = 0;
 
-    public static final int     CHECKSUM_CRC32   = 2;
+    public static final int           CHECKSUM_ADLER32    = 1;
+
+    public static final int           CHECKSUM_CRC32      = 2;
 
     private final Map<String, String> customParams;
 
     /** Creates a new instance of OSDConfig */
     public OSDConfig(String filename) throws IOException {
         super(filename);
-        
+
         this.customParams = new HashMap<String, String>();
         read();
     }
 
     public OSDConfig(Properties prop) throws IOException {
         super(prop);
-        
+
         this.customParams = new HashMap<String, String>();
         read();
     }
-    
+
     public OSDConfig(HashMap<String, String> hm) {
         super(hm);
-        
+
         this.customParams = new HashMap<String, String>();
         for (Entry<String, String> entry : hm.entrySet())
             if (entry.getKey().startsWith(OSD_CUSTOM_RROPERTY_PREFIX))
                 customParams.put(entry.getKey(), entry.getValue());
-        
+
     }
 
     public void read() throws IOException {
-        
+
         for (String propName : this.props.stringPropertyNames()) {
             if (propName.startsWith(ServiceConfig.OSD_CUSTOM_RROPERTY_PREFIX)) {
                 customParams.put(propName, this.props.getProperty(propName));
             }
         }
- 
-        for (Parameter param: osdParameter) {
+
+        for (Parameter param : osdParameter) {
             parameter.put(param, readParameter(param));
         }
-        
+
     }
 
     public String getObjDir() {
@@ -171,7 +130,7 @@ public class OSDConfig extends ServiceConfig {
      * @return the ignoreCaps
      */
     public boolean isIgnoreCaps() {
-            return (Boolean) parameter.get(Parameter.IGNORE_CAPABILITIES);
+        return (Boolean) parameter.get(Parameter.IGNORE_CAPABILITIES);
     }
 
     /**
@@ -223,46 +182,48 @@ public class OSDConfig extends ServiceConfig {
     public void setCapabilitySecret(String capabilitySecret) {
         parameter.put(Parameter.CAPABILITY_SECRET, capabilitySecret);
     }
-    
+
     public int getSocketSendBufferSize() {
         return (Integer) parameter.get(Parameter.SOCKET_SEND_BUFFER_SIZE);
     }
-    
+
     public int getSocketReceiveBufferSize() {
         return (Integer) parameter.get(Parameter.SOCKET_RECEIVE_BUFFER_SIZE);
     }
-    
+
     /**
-     * Set default values according to the value in {@link Parameter} for all configuration 
-     * parameter which are null.
+     * Set default values according to the value in {@link Parameter} for all configuration parameter which
+     * are null.
      */
     public void setDefaults() {
         super.setDefaults(osdParameter);
     }
-    
+
     /**
-     * Checks if there are all required configuration parameter to initialize a connection to the
-     * DIR and request the rest of the configuration
+     * Checks if there are all required configuration parameter to initialize a connection to the DIR and
+     * request the rest of the configuration
+     * 
      * @return {@link Boolean}
      */
     public Boolean isInitializable() {
         for (Parameter param : connectionParameter) {
             if (parameter.get(param) == null) {
-                throw new RuntimeException("property '" + param.getPropertyString()
-                        + "' is required but was not found");  
+                throw new RuntimeException("property '" + param.getPropertyString() + "' is required but was not found");
             }
         }
         checkSSLConfiguration();
         return true;
     }
+
     /**
      * Return the required Parameter that are necessary for a connection to the DIR
+     * 
      * @return {@link Parameter}[]
      */
     public Parameter[] getConnectionParameter() {
         return this.connectionParameter;
     }
-    
+
     /**
      * Check if the configuration contain all necessary values to start the service
      */
@@ -273,18 +234,17 @@ public class OSDConfig extends ServiceConfig {
     public int getMaxClientQ() {
         return (Integer) parameter.get(Parameter.MAX_CLIENT_Q);
     }
-    
+
     public HashMap<String, String> toHashMap() {
         HashMap<String, String> hm = super.toHashMap();
         hm.putAll(customParams);
         return hm;
     }
-    
-    
+
     public int getVivaldiRecalculationInterval() {
         return (Integer) parameter.get(Parameter.VIVALDI_RECALCULATION_INTERVAL_IN_MS);
     }
-    
+
     public int getVivaldiRecalculationEpsilon() {
         return (Integer) parameter.get(Parameter.VIVALDI_RECALCULATION_EPSILON_IN_MS);
     }
@@ -305,7 +265,12 @@ public class OSDConfig extends ServiceConfig {
         return (Integer) parameter.get(Parameter.VIVALDI_TIMER_INTERVAL_IN_MS);
     }
 
+    public int getImplicitCloseTimeout() {
+        return (Integer) parameter.get(Parameter.OPEN_STATE_IMPLICIT_CLOSE_TIMEOUT);
+    }
+
+    public int getOpenFileTableCleanupInterval() {
+        return (Integer) parameter.get(Parameter.OPEN_STATE_OFT_CLEANUP_INTERVAL);
+    }
+
 }
-
-    
-

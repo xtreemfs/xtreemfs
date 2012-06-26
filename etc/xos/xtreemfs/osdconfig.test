@@ -116,3 +116,12 @@ vivaldi_recalculation_epsilon_in_ms = 30
 
 # period of time between timer executions (used for regular tasks)
 #vivaldi.timer_interval_in_ms = 60000
+
+# Maximum period of inactivity after which an open file will be implicitly
+# closed by the OSD. Note that files are not closed before the next internal
+# cleanup of the open file table is performed.
+open_state.implicit_close_timeout=2500
+
+# period of time between two cleanups of the OSD's internal open state (open
+# file table)
+open_state.oft_cleanup_interval=5000
