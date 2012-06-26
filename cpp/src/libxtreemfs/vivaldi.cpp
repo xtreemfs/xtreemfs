@@ -284,7 +284,7 @@ void Vivaldi::Run() {
 //                    random_osd_vivaldi_coordinates->local_error(),
 //                    chosen_osd_service->get_uuid().data());
 //        get_log()->getStream(YIELD::platform::Log::LOG_INFO) <<
-//            "xtfs_vivaldi:" << auxStr;
+//            "Vivaldi: " << auxStr;
 
         // Update OSD's coordinates
         chosen_osd_service->SetCoordinates(*random_osd_vivaldi_coordinates);
@@ -459,7 +459,7 @@ bool Vivaldi::UpdateKnownOSDs(list<KnownOSD>* updated_osds,
       response->DeleteBuffers();
     }
     Logging::log->getLog(LEVEL_ERROR)
-       << "Vivaldi: Failed to update known OSDs:" << e.what() << endl;
+       << "Vivaldi: Failed to update known OSDs: " << e.what() << endl;
     retval = false;
   }
 

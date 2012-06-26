@@ -12,20 +12,28 @@
 #include <boost/function.hpp>
 
 #include "libxtreemfs/options.h"
-#include "util/logging.h"
 
 namespace xtreemfs {
 
 class Interruptibilizer {
  public:
-  //typedef int (*query_function)(void);  // this also works without changes, but does not support functor objects
+  // NOTE: the boost::function typedef could be replaced with
+  // typedef int (*query_function)(void);
+  // which would also works without changes, but would not support
+  // functor objects
   typedef boost::function0<int> query_function;
 
   static void Initialize(query_function f);
 
   static bool WasInterrupted();
 
-  static void SleepInterruptible(int rel_time_in_ms);
+  /** Wrapper for boost::thread::sleep which checks for interruptions by
+   *  the signal handler.
+   *
+   * @remarks this function contains a boost::thread interruption point and
+   *          thus might throw boost::thread_interrupted.
+   */
+  static void SleepInterruptible(int rel_time_ms);
 
  private:
   static query_function f_;
@@ -33,4 +41,4 @@ class Interruptibilizer {
 
 }  // namespace xtreemfs
 
-#endif
+#endif  // CPP_INCLUDE_LIBXTREEMFS_INTERRUPT_H_

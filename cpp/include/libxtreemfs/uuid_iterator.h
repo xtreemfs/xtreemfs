@@ -35,9 +35,9 @@ class UUIDIterator {
     UUIDItem(const std::string& add_uuid)
       : uuid(add_uuid),
         marked_as_failed(false) {}
-        
+
     std::string uuid;
-    
+
     bool marked_as_failed;
   };
 
@@ -58,7 +58,10 @@ class UUIDIterator {
   /** Returns the list of UUIDs and their status. */
   std::string DebugString();
 
-  /** Get the current UUID (by default the first in the list) .*/
+  /** Get the current UUID (by default the first in the list).
+   *
+   * @throws UUIDIteratorListIsEmpyException
+   */
   void GetUUID(std::string* result);
 
   /** Marks "uuid" as failed. Use this function to advance to the next in the

@@ -53,6 +53,18 @@ using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 
 namespace xtreemfs {
+  
+int CheckIfOperationInterrupted() {
+  if (fuse_get_context()->fuse == NULL) {
+    // Calling fuse_interrupted() from a non-Fuse thread results in a
+    // segmentation fault since Fuse does not check beforehand if
+    // fuse_context_i->req is NULL.
+    return 0;
+  } else {
+    // TODO(mberlin): Test for other plattforms that it's safe to call this.
+    return fuse_interrupted();
+  }
+}
 
 FuseAdapter::FuseAdapter(FuseOptions* options) :
     options_(options),
@@ -378,8 +390,7 @@ void FuseAdapter::GenerateUserCredentials(
 }
 
 void FuseAdapter::SetInterruptQueryFunction() const {
-  // set interrupt query function
-  Interruptibilizer::Initialize(&fuse_interrupted);
+  Interruptibilizer::Initialize(&CheckIfOperationInterrupted);
 }
 
 void FuseAdapter::ConvertXtreemFSStatToFuse(

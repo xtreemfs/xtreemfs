@@ -30,6 +30,12 @@ class Stat;
 class UserCredentials;
 }  // namespace pbrpc
 
+/** Uses fuse_interrupted() to check if an operation was cancelled by the user
+ *  and stops retrying to execute the request then.
+ *
+ * Always returns 0, if called from a non-Fuse thread. */
+int CheckIfOperationInterrupted();
+
 class FuseAdapter {
  public:
   /** Creates a new instance of FuseAdapter, but does not create any libxtreemfs
@@ -53,6 +59,8 @@ class FuseAdapter {
    *  stopped. */
   void Stop();
 
+  /** After successfully executing fuse_new, tell libxtreemfs to use
+   *  fuse_interrupted() if a request was cancelled by the user. */
   void SetInterruptQueryFunction() const;
 
   void GenerateUserCredentials(

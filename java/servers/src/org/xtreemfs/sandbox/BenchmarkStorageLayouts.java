@@ -15,6 +15,7 @@ import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.FileMetadata;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
@@ -27,13 +28,14 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class BenchmarkStorageLayouts {
 
     /**
-     * @param args the command line arguments
+     * @param args
+     *            the command line arguments
      */
     public static void main(String[] args) {
         // TODO code application logic here
@@ -46,22 +48,26 @@ public class BenchmarkStorageLayouts {
             System.out.println("press enter after flushing caches: echo 3 > /proc/sys/vm/drop_caches");
             System.in.read();
 
-            SingleFileStorageLayout sfl = new SingleFileStorageLayout(new OSDConfig(createOSDProperties(path+"/sleval_single/")), new MetadataCache());
-            HashStorageLayout hsl = new HashStorageLayout(new OSDConfig(createOSDProperties(path+"/sleval_hash/")), new MetadataCache());
-            RealSingleFileStorageLayout rsl = new RealSingleFileStorageLayout(new OSDConfig(createOSDProperties(path+"/sleval_real/")), new MetadataCache());
+            SingleFileStorageLayout sfl = new SingleFileStorageLayout(new OSDConfig(createOSDProperties(path
+                    + "/sleval_single/")), new MetadataCache());
+            HashStorageLayout hsl = new HashStorageLayout(new OSDConfig(createOSDProperties(path + "/sleval_hash/")),
+                    new MetadataCache());
+            RealSingleFileStorageLayout rsl = new RealSingleFileStorageLayout(new OSDConfig(createOSDProperties(path
+                    + "/sleval_real/")), new MetadataCache());
 
-            /*write(hsl,objSize,objs);
+            /*
+             * write(hsl,objSize,objs);
+             * 
+             * System.out.println("press enter after flushing caches: echo 3 > /proc/sys/vm/drop_caches");
+             * System.in.read();
+             * 
+             * write(sfl,objSize,objs);
+             */
 
             System.out.println("press enter after flushing caches: echo 3 > /proc/sys/vm/drop_caches");
             System.in.read();
 
-            write(sfl,objSize,objs);*/
-
-            System.out.println("press enter after flushing caches: echo 3 > /proc/sys/vm/drop_caches");
-            System.in.read();
-
-            write(rsl,objSize,objs);
-            
+            write(rsl, objSize, objs);
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -71,15 +77,20 @@ public class BenchmarkStorageLayouts {
 
     private static void write(StorageLayout layout, int objSize, int numObjs) throws IOException {
 
-        System.out.println("testing: "+layout.getClass().getCanonicalName());
+        System.out.println("testing: " + layout.getClass().getCanonicalName());
 
         String fileId = "ABCDEF:123";
-        Replica r = Replica.newBuilder().setReplicationFlags(0).setStripingPolicy(StripingPolicy.newBuilder().setType(StripingPolicyType.STRIPING_POLICY_RAID0).setWidth(1).setStripeSize(objSize)).build();
+        Replica r = Replica
+                .newBuilder()
+                .setReplicationFlags(0)
+                .setStripingPolicy(
+                        StripingPolicy.newBuilder().setType(StripingPolicyType.STRIPING_POLICY_RAID0).setWidth(1)
+                                .setStripeSize(objSize)).build();
         StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(r, 0);
 
         FileMetadata md = layout.getFileMetadata(sp, fileId);
 
-        ReusableBuffer buf = BufferPool.allocate(objSize*1024);
+        ReusableBuffer buf = BufferPool.allocate(objSize * 1024);
         while (buf.hasRemaining()) {
             buf.put((byte) 'A');
         }
@@ -88,7 +99,7 @@ public class BenchmarkStorageLayouts {
         long tStart = System.currentTimeMillis();
 
         for (int i = 0; i < numObjs; i++) {
-            layout.writeObject(fileId, md, buf.createViewBuffer(), i, 0, 1, false, false);
+            layout.writeObject(fileId, md, buf.createViewBuffer(), i, 0, 1, 0, false, CowPolicy.PolicyNoCow);
             buf.position(0);
         }
 
@@ -103,7 +114,8 @@ public class BenchmarkStorageLayouts {
         tStart = System.currentTimeMillis();
 
         for (int i = 0; i < numObjs; i++) {
-            ObjectInformation oinfo = layout.readObject(fileId, md, i, 0, StorageLayout.FULL_OBJECT_LENGTH, md.getLatestObjectVersion(i));
+            ObjectInformation oinfo = layout.readObject(fileId, md, i, 0, StorageLayout.FULL_OBJECT_LENGTH, md
+                    .getVersionManager().getLargestObjectVersion(i));
             if (oinfo.getData() != null)
                 BufferPool.free(oinfo.getData());
         }

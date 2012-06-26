@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2008-2011 by Bjoern Kolbeck,
- *               Zuse Institute Berlin
+ * Copyright (c) 2012 by Bjoern Kolbeck.
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -9,10 +8,14 @@
 package org.xtreemfs.osd;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.xtreemfs.common.statusserver.StatusServerModule;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.VersionManagement;
@@ -20,13 +23,16 @@ import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.util.OutputUtils;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
+import com.sun.net.httpserver.HttpExchange;
+
 /**
- *
+ * OSD summary status page.
  * @author bjko
  */
-public class StatusPage {
+class StatusPage extends StatusServerModule {
 
     private enum Vars {
             UUID("<!-- $UUID -->"),
@@ -75,9 +81,11 @@ public class StatusPage {
         }
     }
 
-    private final static String statusPageTemplate;
+    private final String statusPageTemplate;
+    
+    private OSDRequestDispatcher myDispatcher;
 
-    static {
+    public StatusPage() {
         StringBuffer sb = null;
         try {
             InputStream is = StatusPage.class.getClassLoader().getResourceAsStream(
@@ -102,59 +110,139 @@ public class StatusPage {
             statusPageTemplate = sb.toString();
         }
     }
+    
+    @Override
+    public String getDisplayName() {
+        return "OSD Status Summary";
+    }
 
+    @Override
+    public String getUriPath() {
+        return "/";
+    }
 
-    public static String getStatusPage(OSDRequestDispatcher master) {
+    @Override
+    public boolean isAvailableForService(ServiceType service) {
+        return service == ServiceType.SERVICE_TYPE_OSD;
+    }
 
+    @Override
+    public void initialize(ServiceType service, Object serviceRequestDispatcher) {
+        assert(service == ServiceType.SERVICE_TYPE_OSD);
+        myDispatcher = (OSDRequestDispatcher) serviceRequestDispatcher;
+    }
+
+    @Override
+    public void shutdown() {
+        // Noop.
+    }
+    
+    @Override
+    public void handle(HttpExchange httpExchange) throws IOException {
         long globalTime = TimeSync.getGlobalTime();
         long localTime = TimeSync.getLocalSystemTime();
+        
+        Map<Vars, String> values = new HashMap<Vars, String>();
+        
+        values.put(
+                Vars.AVAILPROCS,
+                Runtime.getRuntime().availableProcessors() + " bytes");
+        values.put(
+                Vars.FREEMEM,
+                Runtime.getRuntime().freeMemory() + " bytes");
+        values.put(
+                Vars.MAXMEM,
+                Runtime.getRuntime().maxMemory() + " bytes");
+        values.put(
+                Vars.BPSTATS,
+                BufferPool.getStatus());
+        values.put(
+                Vars.UUID,
+                myDispatcher.getConfig().getUUID().toString());
+        values.put(
+                Vars.PORT,
+                Integer.toString(myDispatcher.getConfig().getPort()));
+        values.put(
+                Vars.DEBUG,
+                Integer.toString(myDispatcher.getConfig().getDebugLevel()));
+        values.put(
+                Vars.NUMCON,
+                Integer.toString(myDispatcher.getNumClientConnections()));
+        values.put(
+                Vars.PINKYQ,
+                Long.toString(myDispatcher.getPendingRequests()));
+        values.put(
+                Vars.PARSERQ,
+                Integer.toString(myDispatcher.getPreprocStage().getQueueLength()));
+        values.put(
+                Vars.STORAGEQ,
+                Integer.toString(myDispatcher.getStorageStage().getQueueLength()));
+        values.put(
+                Vars.DELETIONQ,
+                Integer.toString(myDispatcher.getDeletionStage().getQueueLength()));
+        values.put(
+                Vars.OPENFILES,
+                Integer.toString(myDispatcher.getPreprocStage().getNumOpenFiles()));
+        values.put(
+                Vars.OBJWRITE,
+                Long.toString(myDispatcher.getObjectsReceived()));
+        values.put(
+                Vars.OBJREAD, 
+                Long.toString(myDispatcher.getObjectsSent()));
+        values.put(
+                Vars.BYTETX,
+                OutputUtils.formatBytes(myDispatcher.getBytesSent()));
+        values.put(
+                Vars.BYTERX,
+                OutputUtils.formatBytes(myDispatcher.getBytesReceived()));
+        values.put(
+                Vars.REPLOBJWRITE,
+                Long.toString(myDispatcher.getReplicatedObjectsReceived()));
+        values.put(
+                Vars.REPLBYTERX,
+                OutputUtils.formatBytes(myDispatcher.getReplicatedBytesReceived()));
+        values.put(
+                Vars.DELETES,
+                Long.toString(myDispatcher.getDeletionStage().getNumFilesDeleted()));
+        values.put(
+                Vars.GLOBALTIME,
+                new Date(globalTime).toString() + " (" + globalTime + ")");
+        values.put(
+                Vars.GLOBALRESYNC,
+                Long.toString(TimeSync.getTimeSyncInterval()));
+        values.put(
+                Vars.LOCALTIME,
+                new Date(localTime).toString() + " (" + localTime + ")");
+        values.put(
+                Vars.LOCALRESYNC, 
+                Long.toString(TimeSync.getLocalRenewInterval()));
+        values.put(
+                Vars.UUIDCACHE,
+                UUIDResolver.getCache());
+        values.put(
+                Vars.VERSION,
+                VersionManagement.RELEASE_VERSION);
+        values.put(
+                Vars.PROTOVERSION,
+                Integer.toString(OSDServiceConstants.INTERFACE_ID));
 
-        String tmp = statusPageTemplate.replace(Vars.AVAILPROCS.toString(), Runtime.getRuntime()
-                .availableProcessors()
-            + " bytes");
-        tmp = tmp.replace(Vars.FREEMEM.toString(), Runtime.getRuntime().freeMemory() + " bytes");
-        tmp = tmp.replace(Vars.MAXMEM.toString(), Runtime.getRuntime().maxMemory() + " bytes");
-        tmp = tmp.replace(Vars.BPSTATS.toString(), BufferPool.getStatus());
-        tmp = tmp.replace(Vars.UUID.toString(), master.getConfig().getUUID().toString());
-        tmp = tmp.replace(Vars.PORT.toString(), Integer.toString(master.getConfig().getPort()));
-        tmp = tmp.replace(Vars.DIRURL.toString(), (master.getConfig().isUsingSSL() ? (master.getConfig()
-                .isGRIDSSLmode() ? Schemes.SCHEME_PBRPCG : Schemes.SCHEME_PBRPCS) : Schemes.SCHEME_PBRPC)
-            + "://"
-            + master.getConfig().getDirectoryService().getHostName()
-            + ":"
-            + master.getConfig().getDirectoryService().getPort());
-        tmp = tmp.replace(Vars.DEBUG.toString(), Integer.toString(master.getConfig()
-                .getDebugLevel()));
-        tmp = tmp.replace(Vars.NUMCON.toString(), Integer.toString(master.getNumClientConnections()));
-        tmp = tmp.replace(Vars.PINKYQ.toString(), Long.toString(master.getPendingRequests()));
-        tmp = tmp.replace(Vars.PARSERQ.toString(), Integer.toString(master.getPreprocStage().getQueueLength()));
-        tmp = tmp.replace(Vars.STORAGEQ.toString(), Integer.toString(master.getStorageStage().getQueueLength()));
-        tmp = tmp.replace(Vars.DELETIONQ.toString(), Integer.toString(master.getDeletionStage().getQueueLength()));
-        tmp = tmp.replace(Vars.OPENFILES.toString(), Integer.toString(master.getPreprocStage().getNumOpenFiles()));
-        tmp = tmp.replace(Vars.OBJWRITE.toString(), Long.toString(master.getObjectsReceived()));
-        tmp = tmp.replace(Vars.OBJREAD.toString(), Long.toString(master.getObjectsSent()));
-        tmp = tmp.replace(Vars.BYTETX.toString(), OutputUtils
-                .formatBytes(master.getBytesSent()));
-        tmp = tmp.replace(Vars.BYTERX.toString(), OutputUtils
-                .formatBytes(master.getBytesReceived()));
-        tmp = tmp.replace(Vars.REPLOBJWRITE.toString(), Long.toString(master.getReplicatedObjectsReceived()));
-        tmp = tmp.replace(Vars.REPLBYTERX.toString(), OutputUtils
-                .formatBytes(master.getReplicatedBytesReceived()));
-        tmp = tmp
-                .replace(Vars.DELETES.toString(), Long.toString(master.getDeletionStage().getNumFilesDeleted()));
-        tmp = tmp.replace(Vars.GLOBALTIME.toString(), new Date(globalTime).toString() + " ("
-            + globalTime + ")");
-        tmp = tmp.replace(Vars.GLOBALRESYNC.toString(), Long.toString(TimeSync
-                .getTimeSyncInterval()));
-        tmp = tmp.replace(Vars.LOCALTIME.toString(), new Date(localTime).toString() + " ("
-            + localTime + ")");
-        tmp = tmp.replace(Vars.LOCALRESYNC.toString(), Long.toString(TimeSync
-                .getLocalRenewInterval()));
-        tmp = tmp.replace(Vars.UUIDCACHE.toString(), UUIDResolver.getCache());
-        tmp = tmp.replace(Vars.VERSION.toString(), VersionManagement.RELEASE_VERSION);
-        tmp = tmp.replace(Vars.PROTOVERSION.toString(), Integer.toString(OSDServiceConstants.INTERFACE_ID));
-        /*tmp = tmp.replace(Vars.STATCOLLECT.toString(), "basic stats: "+(StatisticsStage.collect_statistics ? "enabled" : "disabled")+
-                "<BR>per stage request details: "+(StatisticsStage.measure_request_times ? "enabled" : "disabled"));*/
+        String schema = Schemes.SCHEME_PBRPC;
+        if (myDispatcher.getConfig().isUsingSSL()) {
+            if (myDispatcher.getConfig().isGRIDSSLmode()) {
+                schema = Schemes.SCHEME_PBRPCG;
+            } else {
+                schema = Schemes.SCHEME_PBRPCS;
+            }
+        }
+        
+        values.put(
+                Vars.DIRURL,
+                schema
+                + "://"
+                + myDispatcher.getConfig().getDirectoryService().getHostName()
+                + ":"
+                + myDispatcher.getConfig().getDirectoryService().getPort());
+
 
         long freeMem = Runtime.getRuntime().freeMemory();
         String span = "<span>";
@@ -163,11 +251,17 @@ public class StatusPage {
         } else if (freeMem < 1024 * 1024 * 2) {
             span = "<span class=\"levelERROR\">";
         }
-        tmp = tmp.replace(Vars.MEMSTAT.toString(), span + OutputUtils.formatBytes(freeMem) + " / "
-            + OutputUtils.formatBytes(Runtime.getRuntime().maxMemory()) + " / "
-            + OutputUtils.formatBytes(Runtime.getRuntime().totalMemory()) + "</span>");
+        values.put(
+                Vars.MEMSTAT,
+                span
+                + OutputUtils.formatBytes(freeMem)
+                + " / "
+                + OutputUtils.formatBytes(Runtime.getRuntime().maxMemory())
+                + " / "
+                + OutputUtils.formatBytes(Runtime.getRuntime().totalMemory())
+                + "</span>");
 
-        long freeDisk = ((OSDRequestDispatcher) master).getFreeSpace();
+        long freeDisk = myDispatcher.getFreeSpace();
 
         span = "<span>";
         if (freeDisk < 1024 * 1024 * 1024 * 2) {
@@ -175,11 +269,17 @@ public class StatusPage {
         } else if (freeDisk < 1024 * 1024 * 512) {
             span = "<span class=\"levelERROR\">";
         }
-        tmp = tmp.replace(Vars.DISKFREE.toString(), span + OutputUtils.formatBytes(freeDisk)
-            + "</span>");
-
-        return tmp;
-
+        values.put(
+                Vars.DISKFREE,
+                span
+                + OutputUtils.formatBytes(freeDisk)
+                + "</span>");
+        
+        String html = statusPageTemplate;
+        for (Vars key : values.keySet()) {
+            html = html.replace(key.toString(), values.get(key));
+        }
+        sendResponse(httpExchange, html);
     }
 
 }

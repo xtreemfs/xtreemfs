@@ -371,10 +371,8 @@ void Client::sendInternalRequest() {
 
 void Client::handleTimeout(const boost::system::error_code& error) {
   // Do nothing when the timer was canceled.
-  if (error == boost::asio::error::operation_aborted) {
-    return;
-  }
-  if (stopped_ioservice_only_) {
+  if (error == boost::asio::error::operation_aborted
+      || stopped_ioservice_only_) {
     return;
   }
 
@@ -556,6 +554,12 @@ void Client::shutdown() {
       Logging::log->getLog(LEVEL_DEBUG) << "RPC client stopped." << endl;
     }
     service_.post(boost::bind(&Client::ShutdownHandler, this));
+  } else {
+    if (Logging::log->loggingActive(LEVEL_WARN)) {
+      Logging::log->getLog(LEVEL_WARN)
+          << "Tried to stop the RPC client although it was already stopped."
+          << endl;
+    }
   }
 }
 

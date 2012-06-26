@@ -906,16 +906,20 @@ void FileHandleImplementation::WriteBackFileSizeAsync() {
 
   // NOTE: no vivaldi coordinates needed since close_file is set false.
 
-  string mrc_uuid;
-  string mrc_address;
-  mrc_uuid_iterator_->GetUUID(&mrc_uuid);
-  uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address);
-  mrc_service_client_->xtreemfs_update_file_size(mrc_address,
-                                                 auth_bogus_,
-                                                 user_credentials_bogus_,
-                                                 &rq,
-                                                 this,
-                                                 NULL);
+  try {
+    string mrc_uuid;
+    string mrc_address;
+    mrc_uuid_iterator_->GetUUID(&mrc_uuid);
+    uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address);
+    mrc_service_client_->xtreemfs_update_file_size(mrc_address,
+                                                   auth_bogus_,
+                                                   user_credentials_bogus_,
+                                                   &rq,
+                                                   this,
+                                                   NULL);
+  } catch (const XtreemFSException& e) {
+    // Do nothing.
+  }
 }
 
 void FileHandleImplementation::RenewXCapAsync() {
@@ -939,15 +943,19 @@ void FileHandleImplementation::RenewXCapAsync() {
 
   string mrc_uuid;
   string mrc_address;
-  mrc_uuid_iterator_->GetUUID(&mrc_uuid);
-  uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address);
-  mrc_service_client_->xtreemfs_renew_capability(
-      mrc_address,
-      auth_bogus_,
-      user_credentials_bogus_,
-      &xcap_copy,
-      this,
-      NULL);
+  try {
+    mrc_uuid_iterator_->GetUUID(&mrc_uuid);
+    uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address);
+    mrc_service_client_->xtreemfs_renew_capability(
+        mrc_address,
+        auth_bogus_,
+        user_credentials_bogus_,
+        &xcap_copy,
+        this,
+        NULL);
+  } catch (const XtreemFSException& e) {
+    // do nothing.
+  }
 }
 
 void FileHandleImplementation::CallFinished(
@@ -961,7 +969,9 @@ void FileHandleImplementation::CallFinished(
     file_info_->GetPath(&path);
     string error_msg = "Async filesize update for file: " + path
         + "failed. Error: " + error->DebugString();
-    Logging::log->getLog(LEVEL_WARN) << error_msg << endl;
+    if (Logging::log->loggingActive(LEVEL_WARN)) {
+      Logging::log->getLog(LEVEL_WARN) << error_msg << endl;
+    }
     ErrorLog::error_log->AppendError(error_msg);
   }
 
