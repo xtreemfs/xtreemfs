@@ -1008,7 +1008,7 @@ void FileHandleImplementation::CallFinished(
 
   // Cleanup.
   delete new_xcap;
-  delete data;
+  delete[] data;
   delete error;
 
   xcap_renewal_pending_ = false;
