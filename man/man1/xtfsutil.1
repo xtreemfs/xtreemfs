@@ -131,6 +131,10 @@ policy IDs without spaces. The command also accepts one of the following predefi
 \fB\-\-set-pattr [value name] \-\-value [attribute value]
 Changes the value of a policy attribute for a volume. See the XtreemFS user guide for attribute names.
 
+Policy attributes can be removed by setting an empty value, e.g.:
+
+ $> xtfsutil --set-pattr 1001.domains --value "" /xtreemfs
+
 .TP
 \fB\-\-list-pattrs
 Lists all policy attributes that are set on a volume.
