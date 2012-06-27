@@ -1328,6 +1328,13 @@ class OSDWriteResponse : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 truncate_epoch() const;
   inline void set_truncate_epoch(::google::protobuf::uint32 value);
   
+  // optional fixed64 server_timestamp = 3;
+  inline bool has_server_timestamp() const;
+  inline void clear_server_timestamp();
+  static const int kServerTimestampFieldNumber = 3;
+  inline ::google::protobuf::uint64 server_timestamp() const;
+  inline void set_server_timestamp(::google::protobuf::uint64 value);
+  
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.OSDWriteResponse)
  private:
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
@@ -1335,11 +1342,12 @@ class OSDWriteResponse : public ::google::protobuf::Message {
   
   ::google::protobuf::uint64 size_in_bytes_;
   ::google::protobuf::uint32 truncate_epoch_;
+  ::google::protobuf::uint64 server_timestamp_;
   friend void  protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto();
   friend void protobuf_ShutdownFile_xtreemfs_2fGlobalTypes_2eproto();
   
-  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
   
   // WHY DOES & HAVE LOWER PRECEDENCE THAN != !?
   inline bool _has_bit(int index) const {
@@ -2153,6 +2161,22 @@ inline ::google::protobuf::uint32 OSDWriteResponse::truncate_epoch() const {
 inline void OSDWriteResponse::set_truncate_epoch(::google::protobuf::uint32 value) {
   _set_bit(1);
   truncate_epoch_ = value;
+}
+
+// optional fixed64 server_timestamp = 3;
+inline bool OSDWriteResponse::has_server_timestamp() const {
+  return _has_bit(2);
+}
+inline void OSDWriteResponse::clear_server_timestamp() {
+  server_timestamp_ = GOOGLE_ULONGLONG(0);
+  _clear_bit(2);
+}
+inline ::google::protobuf::uint64 OSDWriteResponse::server_timestamp() const {
+  return server_timestamp_;
+}
+inline void OSDWriteResponse::set_server_timestamp(::google::protobuf::uint64 value) {
+  _set_bit(2);
+  server_timestamp_ = value;
 }
 
 // -------------------------------------------------------------------

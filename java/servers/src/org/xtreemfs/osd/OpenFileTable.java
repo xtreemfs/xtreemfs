@@ -230,13 +230,17 @@ public final class OpenFileTable {
         return false;
     }
 
-    public void close(String fileId) {
+    public OpenFileTableEntry close(String fileId) {
+
         OpenFileTableEntry currEntry = openFiles.get(fileId);
 
         if (currEntry != null) {
             expTimes.remove(currEntry);
+            expTimesWrite.remove(currEntry);
             openFiles.remove(fileId);
         }
+
+        return currEntry;
     }
 
     public int getNumOpenFiles() {

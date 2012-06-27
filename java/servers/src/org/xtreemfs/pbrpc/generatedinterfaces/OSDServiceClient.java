@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Tue Feb 28 11:16:01 CET 2012
+//automatically generated from OSD.proto at Wed Jun 27 17:48:27 CEST 2012
 //(c) 2012. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -71,9 +71,22 @@ public class OSDServiceClient {
          return response;
     }
 
-    public RPCResponse<GlobalTypes.OSDWriteResponse> write(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long object_number, long object_version, int offset, long lease_timeout, OSD.ObjectData object_data, ReusableBuffer data) throws IOException {
-         final OSD.writeRequest msg = OSD.writeRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setObjectNumber(object_number).setObjectVersion(object_version).setOffset(offset).setLeaseTimeout(lease_timeout).setObjectData(object_data).build();
+    public RPCResponse<GlobalTypes.OSDWriteResponse> write(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long object_number, long object_version, int offset, long lease_timeout, OSD.ObjectData object_data, long last_seen_server_timestamp, ReusableBuffer data) throws IOException {
+         final OSD.writeRequest msg = OSD.writeRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setObjectNumber(object_number).setObjectVersion(object_version).setOffset(offset).setLeaseTimeout(lease_timeout).setObjectData(object_data).setLastSeenServerTimestamp(last_seen_server_timestamp).build();
          return write(server, authHeader, userCreds,msg, data);
+    }
+
+    public RPCResponse<OSD.closeResponse> close(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.closeRequest input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse<OSD.closeResponse> response = new RPCResponse<OSD.closeResponse>(OSD.closeResponse.getDefaultInstance());
+         client.sendRequest(server, authHeader, userCreds, 30001, 14, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse<OSD.closeResponse> close(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id) throws IOException {
+         final OSD.closeRequest msg = OSD.closeRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).build();
+         return close(server, authHeader, userCreds,msg);
     }
 
     public RPCResponse xtreemfs_broadcast_gmax(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_broadcast_gmaxRequest input) throws IOException {

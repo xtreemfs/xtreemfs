@@ -82,10 +82,11 @@ public class StorageStage extends Stage {
     }
 
     public void writeObject(String fileId, long objNo, StripingPolicyImpl sp, int offset, ReusableBuffer data,
-            CowPolicy cow, XLocations xloc, boolean sync, Long newVersion, OSDRequest request,
-            ReusableBuffer createdViewBuffer, WriteObjectCallback listener) {
+            CowPolicy cow, XLocations xloc, boolean sync, Long newVersion, Long receivedServerTimestamp,
+            OSDRequest request, ReusableBuffer createdViewBuffer, WriteObjectCallback listener) {
         this.enqueueOperation(fileId, StorageThread.STAGEOP_WRITE_OBJECT, new Object[] { fileId, objNo, sp, offset,
-                data, cow, xloc, false, sync, newVersion }, request, createdViewBuffer, listener);
+                data, cow, xloc, false, sync, newVersion, receivedServerTimestamp }, request, createdViewBuffer,
+                listener);
     }
 
     public void insertPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, int size, OSDRequest request,
@@ -138,7 +139,7 @@ public class StorageStage extends Stage {
 
     public static interface CachesFlushedCallback {
 
-        public void cachesFlushed(ErrorResponse error);
+        public void cachesFlushed(ErrorResponse error, FileMetadata md);
     }
 
     public void receivedGMAX_ASYNC(String fileId, long epoch, long lastObject) {

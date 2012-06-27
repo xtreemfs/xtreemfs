@@ -35,60 +35,61 @@ import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
 public class OSDDataIntegrityTest extends TestCase {
-    
-    private final ServiceUUID serverID;
-    
-    private final FileCredentials  fcred;
-    
-    private final String      fileId;
-    
-    private final Capability  cap;
-    
-    private final OSDConfig   osdConfig;
-    
-    
-    private OSDServiceClient         osdClient;
-    
-    
-    private OSD               osdServer;
-    private TestEnvironment testEnv;
-    
+
+    private final ServiceUUID     serverID;
+
+    private final FileCredentials fcred;
+
+    private final String          fileId;
+
+    private final Capability      cap;
+
+    private final OSDConfig       osdConfig;
+
+    private OSDServiceClient      osdClient;
+
+    private OSD                   osdServer;
+    private TestEnvironment       testEnv;
+
     public OSDDataIntegrityTest(String testName) throws Exception {
         super(testName);
-        
+
         Logging.start(Logging.LEVEL_DEBUG);
-        
+
         osdConfig = SetupUtils.createOSD1Config();
         serverID = SetupUtils.getOSD1UUID();
-        
-        fileId = "ABCDEF:1";
-        cap = new Capability(fileId, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60, System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, osdConfig.getCapabilitySecret());
 
-        Replica r = Replica.newBuilder().setReplicationFlags(0).setStripingPolicy(SetupUtils.getStripingPolicy(1, 2)).addOsdUuids(serverID.toString()).build();
-        XLocSet xloc = XLocSet.newBuilder().setReadOnlyFileSize(0).setReplicaUpdatePolicy("").addReplicas(r).setVersion(1).build();
+        fileId = "ABCDEF:1";
+        cap = new Capability(fileId, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60,
+                System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0,
+                osdConfig.getCapabilitySecret());
+
+        Replica r = Replica.newBuilder().setReplicationFlags(0).setStripingPolicy(SetupUtils.getStripingPolicy(1, 2))
+                .addOsdUuids(serverID.toString()).build();
+        XLocSet xloc = XLocSet.newBuilder().setReadOnlyFileSize(0).setReplicaUpdatePolicy("").addReplicas(r)
+                .setVersion(1).build();
 
         fcred = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xloc).build();
     }
-    
+
     protected void setUp() throws Exception {
-        
+
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-        
+
         // cleanup
         File testDir = new File(SetupUtils.TEST_DIR);
-        
+
         FSUtils.delTree(testDir);
         testDir.mkdirs();
-        
+
         // startup: DIR
-        testEnv = new TestEnvironment(new TestEnvironment.Services[]{
-                    TestEnvironment.Services.DIR_SERVICE,TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
-                    TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT
-        });
+        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
+                TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
+                TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT });
         testEnv.start();
-        
+
         osdServer = new OSD(osdConfig);
-        
+
         synchronized (this) {
             try {
                 this.wait(50);
@@ -96,20 +97,20 @@ public class OSDDataIntegrityTest extends TestCase {
                 ex.printStackTrace();
             }
         }
-        
-        osdClient = new OSDServiceClient(testEnv.getRpcClient(),null);
+
+        osdClient = new OSDServiceClient(testEnv.getRpcClient(), null);
     }
-    
+
     protected void tearDown() throws Exception {
         System.out.println("teardown");
         osdServer.shutdown();
-        
+
         testEnv.shutdown();
         System.out.println("shutdown complete");
     }
-    
+
     public void testWriteRanges() throws Exception {
-        
+
         // test for obj 1,2,3...
         for (int objId = 0; objId < 5; objId++) {
             // write half object
@@ -118,50 +119,50 @@ public class OSDDataIntegrityTest extends TestCase {
                 buf.put((byte) 'A');
 
             buf.flip();
-            ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
-            RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, objId, 0, 0, 0, data, buf.createViewBuffer());
+            ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                    .build();
+            RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone,
+                    RPCAuthentication.userService, fcred, fileId, objId, 0, 0, 0, data, -1, buf.createViewBuffer());
             OSDWriteResponse resp = r.get();
 
             assertTrue(resp.hasSizeInBytes());
             assertEquals(1024 + (objId) * 2048, resp.getSizeInBytes());
 
             r.freeBuffers();
-            
+
             // read data
-            RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, objId, 0, 0, buf.capacity());
+            RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone,
+                    RPCAuthentication.userService, fcred, fileId, objId, 0, 0, buf.capacity());
             data = r2.get();
             ReusableBuffer dataOut = r2.getData();
-            
+
             dataOut.position(0);
             assertEquals(1024, dataOut.capacity());
             for (int i = 0; i < 1024; i++)
                 assertEquals((byte) 'A', dataOut.get());
 
             r2.freeBuffers();
-            
+
             // write second half
             BufferPool.free(buf);
             buf = BufferPool.allocate(1024);
             for (int i = 0; i < 1024; i++)
                 buf.put((byte) 'a');
             buf.flip();
-            RPCResponse<OSDWriteResponse> r3 = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, objId, 0, 1024, 0, data, buf);
+            RPCResponse<OSDWriteResponse> r3 = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone,
+                    RPCAuthentication.userService, fcred, fileId, objId, 0, 1024, 0, data, -1, buf);
             resp = r3.get();
             r3.freeBuffers();
 
             assertTrue(resp.hasSizeInBytes());
             assertEquals(2048 + (objId) * 2048, resp.getSizeInBytes());
-            
+
             // read data
-            RPCResponse<ObjectData> r4 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, objId, 0, 0, 2048);
+            RPCResponse<ObjectData> r4 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone,
+                    RPCAuthentication.userService, fcred, fileId, objId, 0, 0, 2048);
             data = r4.get();
             dataOut = r4.getData();
-            
-            
+
             dataOut.position(0);
             assertEquals(2048, dataOut.capacity());
             for (int i = 0; i < 1024; i++)
@@ -170,23 +171,23 @@ public class OSDDataIntegrityTest extends TestCase {
                 assertEquals((byte) 'a', dataOut.get());
 
             r4.freeBuffers();
-            
+
             // write somewhere in the middle
             buf = BufferPool.allocate(1024);
             for (int i = 0; i < 1024; i++)
                 buf.put((byte) 'x');
             buf.flip();
-            RPCResponse<OSDWriteResponse> r5 = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, objId, 0, 512, 0, data, buf);
+            RPCResponse<OSDWriteResponse> r5 = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone,
+                    RPCAuthentication.userService, fcred, fileId, objId, 0, 512, 0, data, -1, buf);
             resp = r5.get();
             r5.freeBuffers();
-            
+
             // read data
-            RPCResponse<ObjectData> r6 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, objId, 0, 0, 2048);
+            RPCResponse<ObjectData> r6 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone,
+                    RPCAuthentication.userService, fcred, fileId, objId, 0, 0, 2048);
             data = r6.get();
             dataOut = r6.getData();
-            
+
             dataOut.position(0);
             assertEquals(2048, dataOut.capacity());
             for (int i = 0; i < 512; i++)
@@ -198,9 +199,9 @@ public class OSDDataIntegrityTest extends TestCase {
 
             r6.freeBuffers();
         }
-        
+
     }
-    
+
     public void testReadRanges() throws Exception {
 
         // test for obj 1,2,3...
@@ -217,15 +218,16 @@ public class OSDDataIntegrityTest extends TestCase {
                 buf.put((byte) 'D');
 
             buf.flip();
-            ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
-            RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, objId, 0, 0, 0, data,buf);
+            ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                    .build();
+            RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone,
+                    RPCAuthentication.userService, fcred, fileId, objId, 0, 0, 0, data, -1, buf);
             OSDWriteResponse resp = r.get();
             r.freeBuffers();
 
             // read data 1st 512 bytes
-            RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, objId, 0, 0, 512);
+            RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone,
+                    RPCAuthentication.userService, fcred, fileId, objId, 0, 0, 512);
             data = r2.get();
             ReusableBuffer dataOut = r2.getData();
 
@@ -240,7 +242,6 @@ public class OSDDataIntegrityTest extends TestCase {
             ObjectData data2 = r2.get();
             dataOut = r2.getData();
 
-
             dataOut.position(0);
             assertEquals(512, dataOut.capacity());
             for (int i = 0; i < 512; i++)
@@ -250,7 +251,6 @@ public class OSDDataIntegrityTest extends TestCase {
         }
     }
 
-
     public void testImplicitTruncateWithinObject() throws Exception {
 
         // first test implicit truncate through write within a single object
@@ -259,19 +259,19 @@ public class OSDDataIntegrityTest extends TestCase {
             buf.put((byte) 'A');
 
         buf.flip();
-        ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
-        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, 0, 0, 1024, 0, data, buf);
+        ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
+        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fcred, fileId, 0, 0, 1024, 0, data, -1, buf);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
 
         assertTrue(resp.hasSizeInBytes());
         assertEquals(2048, resp.getSizeInBytes());
 
-
         // read data
-        RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, 0, 0, 0, 2048);
+        RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fcred, fileId, 0, 0, 0, 2048);
         data = r2.get();
         ReusableBuffer dataOut = r2.getData();
 
@@ -286,7 +286,6 @@ public class OSDDataIntegrityTest extends TestCase {
         r2.freeBuffers();
     }
 
-
     public void testImplicitTruncate() throws Exception {
 
         // first test implicit truncate through write within a single object
@@ -294,9 +293,10 @@ public class OSDDataIntegrityTest extends TestCase {
         for (int i = 0; i < 1024; i++)
             buf.put((byte) 'A');
         buf.flip();
-        ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
-        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, 1, 0, 1024, 0, data,buf);
+        ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
+        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fcred, fileId, 1, 0, 1024, 0, data, -1, buf);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -304,18 +304,18 @@ public class OSDDataIntegrityTest extends TestCase {
 
         // read data
 
-        RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, 0, 0, 0, 2048);
+        RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fcred, fileId, 0, 0, 0, 2048);
         data = r2.get();
         ReusableBuffer dataOut = r2.getData();
 
-        assertTrue( (data.getZeroPadding() == 2048) && (dataOut == null) ||
-                    (data.getZeroPadding() == 0) && (dataOut.capacity() == 2048) );
+        assertTrue((data.getZeroPadding() == 2048) && (dataOut == null) || (data.getZeroPadding() == 0)
+                && (dataOut.capacity() == 2048));
         r2.freeBuffers();
 
         // read data
-        r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, 1, 0, 0, 2048);
+        r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fcred,
+                fileId, 1, 0, 0, 2048);
         data = r2.get();
         dataOut = r2.getData();
 
@@ -336,20 +336,19 @@ public class OSDDataIntegrityTest extends TestCase {
         for (int i = 0; i < 1023; i++)
             buf.put((byte) 'A');
         buf.flip();
-        ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
-        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, 1, 0, 1024, 0, data,buf);
+        ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
+        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fcred, fileId, 1, 0, 1024, 0, data, -1, buf);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
-        assertEquals(2047+2048, resp.getSizeInBytes());
+        assertEquals(2047 + 2048, resp.getSizeInBytes());
 
-
-        RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, 1, 0, 0, 2048);
+        RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fcred, fileId, 1, 0, 0, 2048);
         data = r2.get();
         ReusableBuffer dataOut = r2.getData();
-
 
         dataOut.position(0);
         assertEquals(2047, dataOut.capacity());
@@ -359,17 +358,15 @@ public class OSDDataIntegrityTest extends TestCase {
             assertEquals((byte) 'A', dataOut.get());
         r2.freeBuffers();
 
-
         // read non-existing object (EOF)
-        r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, 2, 0, 0, 2048);
+        r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fcred,
+                fileId, 2, 0, 0, 2048);
         data = r2.get();
         dataOut = r2.getData();
 
         assertNull(dataOut);
         r2.freeBuffers();
     }
-
 
     public void testReadBeyonEOF() throws Exception {
 
@@ -378,17 +375,17 @@ public class OSDDataIntegrityTest extends TestCase {
         for (int i = 0; i < 1023; i++)
             buf.put((byte) 'A');
         buf.flip();
-        ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
-        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, 1, 0, 1024, 0, data, buf);
+        ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
+        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fcred, fileId, 1, 0, 1024, 0, data, -1, buf);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
-        assertEquals(2047+2048, resp.getSizeInBytes());
+        assertEquals(2047 + 2048, resp.getSizeInBytes());
 
-
-        RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, 10, 0, 0, 2048);
+        RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fcred, fileId, 10, 0, 0, 2048);
         data = r2.get();
         ReusableBuffer dataOut = r2.getData();
 
@@ -396,7 +393,6 @@ public class OSDDataIntegrityTest extends TestCase {
         assertEquals(0, data.getZeroPadding());
         r2.freeBuffers();
     }
-
 
     public void testOverlappingWrites() throws Exception {
 
@@ -406,26 +402,27 @@ public class OSDDataIntegrityTest extends TestCase {
             buf.put((byte) 'A');
 
         buf.flip();
-        ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
-        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, 1, 0, 0, 0, data, buf);
+        ObjectData data = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
+        RPCResponse<OSDWriteResponse> r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fcred, fileId, 1, 0, 0, 0, data, -1, buf);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
-        assertEquals(2048+1024, resp.getSizeInBytes());
+        assertEquals(2048 + 1024, resp.getSizeInBytes());
 
         buf = BufferPool.allocate(1024);
         for (int i = 0; i < 1024; i++)
             buf.put((byte) 'B');
         buf.flip();
-        r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, 1, 0, 512, 0, data, buf);
+        r = osdClient.write(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fcred,
+                fileId, 1, 0, 512, 0, data, -1, buf);
         resp = r.get();
         r.freeBuffers();
 
         // read data
-        RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fcred, fileId, 1, 0, 0, 2048);
+        RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fcred, fileId, 1, 0, 0, 2048);
         data = r2.get();
         ReusableBuffer dataOut = r2.getData();
 
@@ -439,9 +436,9 @@ public class OSDDataIntegrityTest extends TestCase {
         r2.freeBuffers();
 
     }
-    
+
     public static void main(String[] args) {
         TestRunner.run(OSDDataIntegrityTest.class);
     }
-    
+
 }

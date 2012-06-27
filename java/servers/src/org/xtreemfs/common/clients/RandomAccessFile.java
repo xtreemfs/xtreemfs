@@ -42,31 +42,32 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class RandomAccessFile {
 
-    public static final int WAIT_MS_BETWEEN_WRITE_SWITCHOVER = 1000;
+    public static final int             WAIT_MS_BETWEEN_WRITE_SWITCHOVER = 1000;
 
-    private final File parent;
-    private final OSDServiceClient osdClient;
-    private final Volume parentVolume;
-    private final boolean readOnly;
-    private final boolean syncMetadata;
-    private long position;
-    private FileCredentials credentials;
-    private Replica currentReplica;
-    private int currentReplicaNo;
-    private final int numReplicas;
-    private final String fileId;
-    private ObjectMapper oMapper;
-    private boolean closed;
-    private UserCredentials userCreds;
+    private final File                  parent;
+    private final OSDServiceClient      osdClient;
+    private final Volume                parentVolume;
+    private final boolean               readOnly;
+    private final boolean               syncMetadata;
+    private long                        position;
+    private FileCredentials             credentials;
+    private Replica                     currentReplica;
+    private int                         currentReplicaNo;
+    private final int                   numReplicas;
+    private final String                fileId;
+    private ObjectMapper                oMapper;
+    private boolean                     closed;
+    private UserCredentials             userCreds;
 
     private final AtomicReference<XCap> uptodateCap;
 
-    RandomAccessFile(File parent, Volume parentVolume, OSDServiceClient client, FileCredentials fc, boolean readOnly, boolean syncMetadata, UserCredentials userCreds) {
+    RandomAccessFile(File parent, Volume parentVolume, OSDServiceClient client, FileCredentials fc, boolean readOnly,
+            boolean syncMetadata, UserCredentials userCreds) {
         this.parent = parent;
         this.parentVolume = parentVolume;
         this.osdClient = client;
@@ -96,7 +97,7 @@ public class RandomAccessFile {
 
     protected void switchToNextReplica() {
         selectReplica((currentReplicaNo + 1) % numReplicas);
-        
+
     }
 
     protected void selectReplica(int replicaNo) {
@@ -104,9 +105,10 @@ public class RandomAccessFile {
         currentReplica = new Replica(credentials.getXlocs().getReplicas(currentReplicaNo), null);
         oMapper = ObjectMapper.getMapper(currentReplica.getStripingPolicy().getPolicy());
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"now using replica %d (%s)",replicaNo,credentials.getXlocs().getReplicasList());
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "now using replica %d (%s)", replicaNo, credentials
+                    .getXlocs().getReplicasList());
     }
-    
+
     public XLocSet getLocationsList() {
         return credentials.getXlocs();
     }
@@ -120,7 +122,7 @@ public class RandomAccessFile {
     }
 
     public void forceReplica(int replicaNo) {
-        if ((replicaNo > numReplicas-1) || (replicaNo < 0))
+        if ((replicaNo > numReplicas - 1) || (replicaNo < 0))
             throw new IllegalArgumentException("invalid replica number");
         selectReplica(replicaNo);
     }
@@ -134,7 +136,8 @@ public class RandomAccessFile {
                 return;
             }
         }
-        throw new IllegalArgumentException("osd "+headOSDuuid+" not in any of the replicas: "+credentials.getXlocs().getReplicasList());
+        throw new IllegalArgumentException("osd " + headOSDuuid + " not in any of the replicas: "
+                + credentials.getXlocs().getReplicasList());
     }
 
     public int getCurrentReplica() {
@@ -171,7 +174,9 @@ public class RandomAccessFile {
             List<ObjectRequest> ors = oMapper.readRequest(data.remaining(), position, currentReplica);
 
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"read from file %s: %d bytes from offset %d (= %d obj rqs)",fileId,data.remaining(),position,ors.size());
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                        "read from file %s: %d bytes from offset %d (= %d obj rqs)", fileId, data.remaining(),
+                        position, ors.size());
 
             if (ors.isEmpty()) {
                 return 0;
@@ -182,13 +187,12 @@ public class RandomAccessFile {
 
             try {
 
-
                 final RPCResponseAvailableListener rl = new RPCResponseAvailableListener<ObjectData>() {
 
                     @Override
                     public void responseAvailable(RPCResponse<ObjectData> r) {
                         if (responseCnt.decrementAndGet() == 0) {
-                            //last response
+                            // last response
                             synchronized (responseCnt) {
                                 responseCnt.notify();
                             }
@@ -200,12 +204,12 @@ public class RandomAccessFile {
                 for (int i = 0; i < ors.size(); i++) {
                     ObjectRequest or = ors.get(i);
                     ServiceUUID osd = new ServiceUUID(or.getOsdUUID(), parentVolume.uuidResolver);
-                    RPCResponse<ObjectData> r = osdClient.read(osd.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                            credentials, fileId, or.getObjNo(), -1, or.getOffset(), or.getLength());
+                    RPCResponse<ObjectData> r = osdClient.read(osd.getAddress(), RPCAuthentication.authNone,
+                            RPCAuthentication.userService, credentials, fileId, or.getObjNo(), -1, or.getOffset(),
+                            or.getLength());
                     resps[i] = r;
                     r.registerListener(rl);
                 }
-
 
                 synchronized (responseCnt) {
                     if (responseCnt.get() > 0) {
@@ -213,11 +217,10 @@ public class RandomAccessFile {
                     }
                 }
 
-
-                //assemble responses
+                // assemble responses
                 InternalObjectData[] ods = new InternalObjectData[ors.size()];
                 for (int i = 0; i < ors.size(); i++) {
-                    ods[i] = new InternalObjectData(resps[i].get(),resps[i].getData());
+                    ods[i] = new InternalObjectData(resps[i].get(), resps[i].getData());
                 }
 
                 int numBytesRead = 0;
@@ -231,13 +234,12 @@ public class RandomAccessFile {
                     if (od.getZero_padding() > 0) {
                         numBytesRead += od.getZero_padding();
                         for (int i = 0; i < od.getZero_padding(); i++)
-                            data.put((byte)0);
+                            data.put((byte) 0);
                     }
                 }
 
-
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"read returned %d bytes",numBytesRead);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "read returned %d bytes", numBytesRead);
 
                 position += numBytesRead;
 
@@ -245,24 +247,24 @@ public class RandomAccessFile {
 
             } catch (InterruptedException ex) {
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
                 cause = new IOException("operation aborted", ex);
             } catch (PBRPCException ex) {
                 if (ex.getErrorType() == ErrorType.REDIRECT) {
                     if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"redirected to: %s",ex.getRedirectToServerUUID());
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "redirected to: %s", ex.getRedirectToServerUUID());
                     forceReplica(ex.getRedirectToServerUUID());
                     continue;
                 } else if (ex.getErrorType() == ErrorType.ERRNO) {
                     cause = ex;
                 } else {
                     if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
                     cause = new IOException("communication failure", ex);
                 }
             } catch (IOException ex) {
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
                 cause = ex;
             } catch (Throwable th) {
                 th.printStackTrace();
@@ -276,15 +278,14 @@ public class RandomAccessFile {
                 Thread.sleep(WAIT_MS_BETWEEN_WRITE_SWITCHOVER);
             } catch (InterruptedException ex) {
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
                 throw new IOException("operation aborted", ex);
             }
             switchToNextReplica();
 
-        } while (numTries < numReplicas+parentVolume.getMaxRetries());
+        } while (numTries < numReplicas + parentVolume.getMaxRetries());
         throw cause;
     }
-
 
     public int checkObject(long objectNo) throws IOException {
 
@@ -292,15 +293,15 @@ public class RandomAccessFile {
             throw new IllegalStateException("file was closed");
         }
 
-
         RPCResponse<ObjectData> r = null;
         try {
 
-            ServiceUUID osd = new ServiceUUID(currentReplica.getOSDForObject(objectNo).toString(), parentVolume.uuidResolver);
+            ServiceUUID osd = new ServiceUUID(currentReplica.getOSDForObject(objectNo).toString(),
+                    parentVolume.uuidResolver);
 
             setXCap();
-            r = osdClient.xtreemfs_check_object(osd.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    credentials, fileId, objectNo, 0l);
+            r = osdClient.xtreemfs_check_object(osd.getAddress(), RPCAuthentication.authNone,
+                    RPCAuthentication.userService, credentials, fileId, objectNo, 0l);
             ObjectData od = r.get();
 
             if (od.getInvalidChecksumOnOsd()) {
@@ -310,16 +311,15 @@ public class RandomAccessFile {
 
             return od.getZeroPadding();
 
-
         } catch (InterruptedException ex) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
             throw new IOException("operation aborted", ex);
         } catch (PBRPCException ex) {
             if (ex.getErrorType() == ErrorType.ERRNO)
                 throw ex;
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
             throw new IOException("communication failure", ex);
         } finally {
             if (r != null)
@@ -328,9 +328,8 @@ public class RandomAccessFile {
     }
 
     /**
-     * Writes bytesToWrite bytes from the writeFromBuffer byte array starting at
-     * offset to this file.
-     *
+     * Writes bytesToWrite bytes from the writeFromBuffer byte array starting at offset to this file.
+     * 
      * @param writeFromBuffer
      * @param offset
      * @param bytesToWrite
@@ -364,22 +363,19 @@ public class RandomAccessFile {
         int numTries = 0;
 
         IOException cause = null;
-        
+
         do {
             final AtomicInteger responseCnt = new AtomicInteger(ors.size());
             RPCResponse[] resps = new RPCResponse[ors.size()];
-            
-
 
             try {
-
 
                 final RPCResponseAvailableListener rl = new RPCResponseAvailableListener<OSDWriteResponse>() {
 
                     @Override
                     public void responseAvailable(RPCResponse<OSDWriteResponse> r) {
                         if (responseCnt.decrementAndGet() == 0) {
-                            //last response
+                            // last response
                             synchronized (responseCnt) {
                                 responseCnt.notify();
                             }
@@ -389,20 +385,20 @@ public class RandomAccessFile {
 
                 int bytesWritten = 0;
                 setXCap();
-                ObjectData objData = ObjectData.newBuilder().setChecksum(0).setInvalidChecksumOnOsd(false).setZeroPadding(0).build();
+                ObjectData objData = ObjectData.newBuilder().setChecksum(0).setInvalidChecksumOnOsd(false)
+                        .setZeroPadding(0).build();
                 for (int i = 0; i < ors.size(); i++) {
                     ObjectRequest or = ors.get(i);
                     or.getData().position(0);
                     bytesWritten += or.getData().capacity();
                     ServiceUUID osd = new ServiceUUID(or.getOsdUUID(), parentVolume.uuidResolver);
 
-                    RPCResponse<OSDWriteResponse> r = osdClient.write(osd.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                            credentials, fileId, or.getObjNo(), -1, or.getOffset(), 0l,
-                            objData, or.getData());
+                    RPCResponse<OSDWriteResponse> r = osdClient.write(osd.getAddress(), RPCAuthentication.authNone,
+                            RPCAuthentication.userService, credentials, fileId, or.getObjNo(), -1, or.getOffset(), 0l,
+                            objData, -1L, or.getData());
                     resps[i] = r;
                     r.registerListener(rl);
                 }
-
 
                 synchronized (responseCnt) {
                     if (responseCnt.get() > 0) {
@@ -410,8 +406,7 @@ public class RandomAccessFile {
                     }
                 }
 
-
-                //assemble responses
+                // assemble responses
                 OSDWriteResponse owr = null;
                 for (int i = 0; i < ors.size(); i++) {
                     owr = (OSDWriteResponse) resps[i].get();
@@ -429,24 +424,24 @@ public class RandomAccessFile {
 
             } catch (InterruptedException ex) {
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
                 cause = new IOException("operation aborted", ex);
             } catch (PBRPCException ex) {
                 if (ex.getErrorType() == ErrorType.REDIRECT) {
                     if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"redirected to: %s",ex.getRedirectToServerUUID());
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "redirected to: %s", ex.getRedirectToServerUUID());
                     forceReplica(ex.getRedirectToServerUUID());
                     continue;
                 } else if (ex.getErrorType() == ErrorType.ERRNO) {
                     cause = ex;
                 } else {
                     if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
                     cause = new IOException("communication failure", ex);
                 }
             } catch (IOException ex) {
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
                 cause = ex;
             } finally {
                 for (RPCResponse r : resps) {
@@ -457,15 +452,16 @@ public class RandomAccessFile {
             numTries++;
             switchToNextReplica();
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"write failed (%s), switched to replica: %s",cause,currentReplica);
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "write failed (%s), switched to replica: %s", cause,
+                        currentReplica);
             try {
                 Thread.sleep(WAIT_MS_BETWEEN_WRITE_SWITCHOVER);
             } catch (InterruptedException ex) {
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
                 throw new IOException("operation aborted", ex);
             }
-        } while (numTries < numReplicas+parentVolume.getMaxRetries());
+        } while (numTries < numReplicas + parentVolume.getMaxRetries());
         throw cause;
     }
 
@@ -479,7 +475,7 @@ public class RandomAccessFile {
 
     public void close() throws IOException {
         this.closed = true;
-        parentVolume.closeFile(this,fileId, readOnly, userCreds);
+        parentVolume.closeFile(this, fileId, readOnly, userCreds);
     }
 
     public void fsync() throws IOException {
@@ -493,29 +489,27 @@ public class RandomAccessFile {
     public long getNumObjects() throws IOException {
         long flength = length();
         if (flength > 0)
-            return currentReplica.getStripingPolicy().getObjectNoForOffset(flength-1)+1;
+            return currentReplica.getStripingPolicy().getObjectNoForOffset(flength - 1) + 1;
         else
             return 0;
     }
 
     public void forceFileSize(long newFileSize) throws IOException {
-        
+
         XCap truncCap = parentVolume.truncateFile(fileId, userCreds);
-       
+
         try {
 
-            parentVolume.storeFileSizeUpdate(fileId, OSDWriteResponse.newBuilder()
-                    .setSizeInBytes(newFileSize).setTruncateEpoch(truncCap.getTruncateEpoch()).build(),
-                userCreds);
+            parentVolume.storeFileSizeUpdate(fileId, OSDWriteResponse.newBuilder().setSizeInBytes(newFileSize)
+                    .setTruncateEpoch(truncCap.getTruncateEpoch()).build(), userCreds);
             parentVolume.pushFileSizeUpdate(fileId, userCreds);
-
 
             if (position > newFileSize)
                 position = newFileSize;
 
         } catch (PBRPCException ex) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
             throw new IOException("communication failure", ex);
         }
     }
@@ -531,30 +525,31 @@ public class RandomAccessFile {
             ServiceUUID osd = new ServiceUUID(currentReplica.getHeadOsd().toString(), parentVolume.uuidResolver);
 
             setXCap();
-            r = osdClient.xtreemfs_internal_get_file_size(osd.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, credentials, fileId);
+            r = osdClient.xtreemfs_internal_get_file_size(osd.getAddress(), RPCAuthentication.authNone,
+                    RPCAuthentication.userService, credentials, fileId);
 
             return r.get().getFileSize();
 
         } catch (InterruptedException ex) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
             throw new IOException("operation aborted", ex);
         } catch (PBRPCException ex) {
             if (ex.getErrorType() == ErrorType.REDIRECT) {
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"redirected to: %s",ex.getRedirectToServerUUID());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "redirected to: %s", ex.getRedirectToServerUUID());
                 forceReplica(ex.getRedirectToServerUUID());
                 return getFileSizeOnOSD();
             } else if (ex.getErrorType() == ErrorType.ERRNO) {
                 throw ex;
             } else {
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
                 throw new IOException("communication failure", ex);
             }
         } finally {
             if (r != null)
-             r.freeBuffers();
+                r.freeBuffers();
         }
     }
 
@@ -563,11 +558,11 @@ public class RandomAccessFile {
             throw new IllegalStateException("file was closed");
         }
 
-
         RPCResponse<ObjectList> r = null;
         try {
 
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica replica = this.credentials.getXlocs().getReplicas(replicaNo);
+            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica replica = this.credentials.getXlocs()
+                    .getReplicas(replicaNo);
             if ((replica.getReplicationFlags() & REPL_FLAG.REPL_FLAG_IS_COMPLETE.getNumber()) > 0) {
                 return true;
             }
@@ -578,7 +573,8 @@ public class RandomAccessFile {
             for (String osdUUID : replica.getOsdUuidsList()) {
                 ServiceUUID osd = new ServiceUUID(osdUUID, parentVolume.uuidResolver);
 
-                r = osdClient.xtreemfs_internal_get_object_set(osd.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, credentials, fileId);
+                r = osdClient.xtreemfs_internal_get_object_set(osd.getAddress(), RPCAuthentication.authNone,
+                        RPCAuthentication.userService, credentials, fileId);
                 ObjectList ol = r.get();
                 r.freeBuffers();
                 r = null;
@@ -586,9 +582,9 @@ public class RandomAccessFile {
                 byte[] serializedBitSet = ol.getSet().toByteArray();
                 ObjectSet oset = null;
                 try {
-                     oset = new ObjectSet(replicaNo, replicaNo, serializedBitSet);
+                    oset = new ObjectSet(replicaNo, replicaNo, serializedBitSet);
                 } catch (Exception ex) {
-                    throw new IOException("cannot deserialize object set: "+ex,ex);
+                    throw new IOException("cannot deserialize object set: " + ex, ex);
                 }
                 for (long objNo = osdRelPos; objNo <= lastObjectNo; objNo += sp.getWidth()) {
                     if (oset.contains(objNo) == false)
@@ -596,28 +592,28 @@ public class RandomAccessFile {
                 }
 
             }
-            //FIXME: mark replica as complete
+            // FIXME: mark replica as complete
             try {
                 parent.setxattr("xtreemfs.mark_replica_complete", replica.getOsdUuids(0));
             } catch (Exception ex) {
-                //only an optimization, ignore errors
+                // only an optimization, ignore errors
             }
             return true;
         } catch (InterruptedException ex) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
             throw new IOException("operation aborted", ex);
         } catch (PBRPCException ex) {
             if (ex.getErrorType() == ErrorType.REDIRECT) {
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"redirected to: %s",ex.getRedirectToServerUUID());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "redirected to: %s", ex.getRedirectToServerUUID());
                 forceReplica(ex.getRedirectToServerUUID());
                 return isCompleteReplica(replicaNo);
             } else if (ex.getErrorType() == ErrorType.ERRNO) {
                 throw ex;
             } else {
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
                 throw new IOException("communication failure", ex);
             }
         } finally {
@@ -628,19 +624,19 @@ public class RandomAccessFile {
 
     public int getReplicaNumber(String headOSDuuid) {
         for (int i = 0; i < this.credentials.getXlocs().getReplicasCount(); i++) {
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica replica = this.credentials.getXlocs().getReplicas(i);
+            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica replica = this.credentials.getXlocs()
+                    .getReplicas(i);
             if (replica.getOsdUuidsList().contains(headOSDuuid))
                 return i;
         }
-        throw new IllegalArgumentException("osd '"+headOSDuuid+"' is not in any replica of this file");
+        throw new IllegalArgumentException("osd '" + headOSDuuid + "' is not in any replica of this file");
     }
-    
+
     /**
-     * Triggers the initial replication of the current replica by reading the
-     * first object on each OSD.
+     * Triggers the initial replication of the current replica by reading the first object on each OSD.
      */
     public void triggerInitialReplication() throws IOException {
-        
+
         // send requests to all OSDs of this replica
         try {
             setXCap();
@@ -653,8 +649,8 @@ public class RandomAccessFile {
                 // remove OSD
                 osdListCopy.remove(osd);
                 // send request (read only 1 byte)
-                RPCResponse<ObjectData> r = osdClient.read(osd.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                        credentials, fileId, objectNo, 0, 0, 1);
+                RPCResponse<ObjectData> r = osdClient.read(osd.getAddress(), RPCAuthentication.authNone,
+                        RPCAuthentication.userService, credentials, fileId, objectNo, 0, 0, 1);
                 r.get();
                 r.freeBuffers();
             }
@@ -673,37 +669,38 @@ public class RandomAccessFile {
 
     public void setLength(long newLength) throws IOException {
         XCap truncCap = parentVolume.truncateFile(fileId, userCreds);
-        FileCredentials tCred = FileCredentials.newBuilder().setXcap(truncCap).setXlocs(this.credentials.getXlocs()).build();
-        
+        FileCredentials tCred = FileCredentials.newBuilder().setXcap(truncCap).setXlocs(this.credentials.getXlocs())
+                .build();
+
         RPCResponse<OSDWriteResponse> r = null;
         try {
             setXCap();
             ServiceUUID osd = new ServiceUUID(currentReplica.getHeadOsd().toString(), parentVolume.uuidResolver);
 
-            r = osdClient.truncate(osd.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, tCred, fileId, newLength);
+            r = osdClient.truncate(osd.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, tCred,
+                    fileId, newLength);
 
             OSDWriteResponse resp = r.get();
 
             parentVolume.storeFileSizeUpdate(fileId, resp, userCreds);
             parentVolume.pushFileSizeUpdate(fileId, userCreds);
 
-
             if (position > newLength)
                 position = newLength;
         } catch (InterruptedException ex) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
             throw new IOException("operation aborted", ex);
         } catch (PBRPCException ex) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
             throw new IOException("communication failure", ex);
         } finally {
             if (r != null)
                 r.freeBuffers();
         }
     }
-    
+
     protected FileCredentials getCredentials() {
         return credentials;
     }
@@ -711,6 +708,5 @@ public class RandomAccessFile {
     public void flush() throws IOException {
         fsync();
     }
-
 
 }

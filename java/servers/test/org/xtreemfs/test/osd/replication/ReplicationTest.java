@@ -5,7 +5,7 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
- 
+
 package org.xtreemfs.test.osd.replication;
 
 import java.io.File;
@@ -55,19 +55,19 @@ import org.xtreemfs.test.TestEnvironment;
  * @author clorenz
  */
 public class ReplicationTest extends TestCase {
-    OSD[] osds;
-    OSDConfig[] configs;
-    OSDServiceClient client;
+    OSD[]                   osds;
+    OSDConfig[]             configs;
+    OSDServiceClient        client;
 
-    private Capability cap;
-    private String fileID;
-    private XLocations xLoc;
+    private Capability      cap;
+    private String          fileID;
+    private XLocations      xLoc;
 
     // needed for dummy classes
-    private int stripeSize;
-    private ReusableBuffer data;
+    private int             stripeSize;
+    private ReusableBuffer  data;
 
-    private long objectNo;
+    private long            objectNo;
     private TestEnvironment testEnv;
 
     public ReplicationTest() {
@@ -108,7 +108,9 @@ public class ReplicationTest extends TestCase {
 
         fileID = "1:1";
         objectNo = 0;
-        cap = new Capability(fileID, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60, System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
+        cap = new Capability(fileID, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60,
+                System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0,
+                configs[0].getCapabilitySecret());
 
         xLoc = createLocations(4, 3);
     }
@@ -125,16 +127,18 @@ public class ReplicationTest extends TestCase {
                 osdset.add(configs[startOSD + stripe].getUUID().toString());
             }
 
-            Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(osdset.size(), stripeSize / 1024)).
-                    setReplicationFlags(0).addAllOsdUuids(osdset).build();
+            Replica r = Replica.newBuilder()
+                    .setStripingPolicy(SetupUtils.getStripingPolicy(osdset.size(), stripeSize / 1024))
+                    .setReplicationFlags(0).addAllOsdUuids(osdset).build();
             rlist.add(r);
         }
-        XLocSet locSet = XLocSet.newBuilder().setReadOnlyFileSize(0).setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE).setVersion(1).addAllReplicas(rlist).build();
+        XLocSet locSet = XLocSet.newBuilder().setReadOnlyFileSize(0)
+                .setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE).setVersion(1).addAllReplicas(rlist)
+                .build();
         // set the first replica as current replica
 
         // set the first replica as current replica
-        XLocations locations = new XLocations(locSet,
-                new ServiceUUID(locSet.getReplicas(0).getOsdUuids(0)));
+        XLocations locations = new XLocations(locSet, new ServiceUUID(locSet.getReplicas(0).getOsdUuids(0)));
         return locations;
     }
 
@@ -143,18 +147,25 @@ public class ReplicationTest extends TestCase {
 
         List<Replica> rlist = new LinkedList();
 
-        for(int i = 0; i < xLoc.getXLocSet().getReplicasCount(); i++) {
+        for (int i = 0; i < xLoc.getXLocSet().getReplicasCount(); i++) {
             Replica r = xLoc.getXLocSet().getReplicas(i);
             if (i == indexOfFullReplica)
-                rlist.add(r.toBuilder().setReplicationFlags(ReplicationFlags.setReplicaIsComplete(ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0)))).build());
+                rlist.add(r
+                        .toBuilder()
+                        .setReplicationFlags(
+                                ReplicationFlags.setReplicaIsComplete(ReplicationFlags
+                                        .setPartialReplica(ReplicationFlags.setRandomStrategy(0)))).build());
             else
-                rlist.add(r.toBuilder().setReplicationFlags(ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0))).build());
+                rlist.add(r.toBuilder()
+                        .setReplicationFlags(ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0)))
+                        .build());
         }
 
-        XLocSet locSet = xLoc.getXLocSet().toBuilder().clearReplicas().addAllReplicas(rlist).setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY).setReadOnlyFileSize(filesize).build();
+        XLocSet locSet = xLoc.getXLocSet().toBuilder().clearReplicas().addAllReplicas(rlist)
+                .setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY).setReadOnlyFileSize(filesize)
+                .build();
 
-        xLoc = new XLocations(locSet,
-                new ServiceUUID(locSet.getReplicas(0).getOsdUuids(0)));
+        xLoc = new XLocations(locSet, new ServiceUUID(locSet.getReplicas(0).getOsdUuids(0)));
 
     }
 
@@ -167,23 +178,26 @@ public class ReplicationTest extends TestCase {
             osd.shutdown();
 
         testEnv.shutdown();
-        
+
         // free buffers
         BufferPool.free(data);
     }
 
-    /*private ObjectData getObjectData(ReusableBuffer data) {
-        return new ObjectData(0, false, 0, data.createViewBuffer());
-    }*/
+    /*
+     * private ObjectData getObjectData(ReusableBuffer data) { return new ObjectData(0, false, 0,
+     * data.createViewBuffer()); }
+     */
 
     @Test
     public void testStriped() throws Exception {
         FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
 
         // write object to replica 3
-        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
-        RPCResponse<OSDWriteResponse> w = client.write(xLoc.getOSDsForObject(objectNo).get(2).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo, 0, 0, 0, objdata, data.createViewBuffer());
+        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
+        RPCResponse<OSDWriteResponse> w = client.write(xLoc.getOSDsForObject(objectNo).get(2).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID, objectNo, 0, 0, 0, objdata, -1,
+                data.createViewBuffer());
         OSDWriteResponse wResp = w.get();
         w.freeBuffers();
 
@@ -192,28 +206,26 @@ public class ReplicationTest extends TestCase {
         fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
 
         // read object from replica 3 (object exists on this OSD) => normal read
-        RPCResponse<ObjectData> r = client.read(xLoc.getOSDsForObject(objectNo).get(2).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo, 0, 0, stripeSize);
+        RPCResponse<ObjectData> r = client.read(xLoc.getOSDsForObject(objectNo).get(2).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID, objectNo, 0, 0, stripeSize);
         ObjectData rResp = r.get();
         assertTrue(Arrays.equals(data.array(), r.getData().array()));
         r.freeBuffers();
 
         // read object from replica 2 (object not exists on this OSD) => replication
-        r = client.read(xLoc.getOSDsForObject(objectNo).get(1).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo, 0, 0,
-                stripeSize);
+        r = client.read(xLoc.getOSDsForObject(objectNo).get(1).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo, 0, 0, stripeSize);
         rResp = r.get();
         if (data.capacity() > 0) {
             assertNotNull(r.getData());
             assertTrue(Arrays.equals(data.array(), r.getData().array()));
-        }  else
+        } else
             assertNull(r.getData());
         r.freeBuffers();
 
         // read object from replica 4 (object not exists on this OSD) => replication
-        r = client.read(xLoc.getOSDsForObject(objectNo).get(3).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo, 0, 0,
-                stripeSize);
+        r = client.read(xLoc.getOSDsForObject(objectNo).get(3).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo, 0, 0, stripeSize);
         rResp = r.get();
         if (data.capacity() > 0)
             assertTrue(Arrays.equals(data.array(), r.getData().array()));
@@ -222,11 +234,10 @@ public class ReplicationTest extends TestCase {
         r.freeBuffers();
 
         // read part of object from replica 1 (object not exists on this OSD) => replication
-        r = client.read(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo, 0,
-                stripeSize / 4, stripeSize / 4);
+        r = client.read(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo, 0, stripeSize / 4, stripeSize / 4);
         rResp = r.get();
-        int j=stripeSize / 4;
+        int j = stripeSize / 4;
         byte[] responseData = r.getData().array();
         byte[] dataBytes = data.array();
         for (int i = 0; i < responseData.length; i++) {
@@ -240,11 +251,12 @@ public class ReplicationTest extends TestCase {
     public void testHoleAndEOF() throws Exception {
         FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
 
-
         // write object 1 to replica 1 => full object
-        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
-        RPCResponse<OSDWriteResponse> w = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo, 0, 0, 0, objdata, data.createViewBuffer());
+        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
+        RPCResponse<OSDWriteResponse> w = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID, objectNo, 0, 0, 0, objdata, -1,
+                data.createViewBuffer());
         OSDWriteResponse wResp = w.get();
         w.freeBuffers();
 
@@ -252,16 +264,17 @@ public class ReplicationTest extends TestCase {
 
         ReusableBuffer data2 = SetupUtils.generateData(stripeSize / 2);
         // write half object 3 to replica 1 with offset => half object, HOLE
-        w = client.write(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID,
-                objectNo + 2, 0, stripeSize / 4, 0, objdata, data2.createViewBuffer());
+        w = client.write(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo + 2, 0, stripeSize / 4, 0, objdata, -1,
+                data2.createViewBuffer());
         wResp = w.get();
         w.freeBuffers();
 
         // write half object 4 to replica 1 => half object, EOF
-        w = client.write(xLoc.getOSDsForObject(objectNo + 3).get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID,
-                objectNo + 3, 0, 0, 0, objdata, data2.createViewBuffer());
+        w = client
+                .write(xLoc.getOSDsForObject(objectNo + 3).get(0).getAddress(), RPCAuthentication.authNone,
+                        RPCAuthentication.userService, fc, fileID, objectNo + 3, 0, 0, 0, objdata, -1,
+                        data2.createViewBuffer());
         wResp = w.get();
         w.freeBuffers();
 
@@ -270,8 +283,8 @@ public class ReplicationTest extends TestCase {
         fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
 
         // read object from replica 2
-        RPCResponse<ObjectData> r = client.read(xLoc.getOSDsForObject(objectNo).get(1).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo, 0, 0, stripeSize);
+        RPCResponse<ObjectData> r = client.read(xLoc.getOSDsForObject(objectNo).get(1).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID, objectNo, 0, 0, stripeSize);
         ObjectData rResp = r.get();
         if (data.capacity() > 0)
             assertTrue(Arrays.equals(data.array(), r.getData().array()));
@@ -280,9 +293,8 @@ public class ReplicationTest extends TestCase {
         r.freeBuffers();
 
         // read hole from replica 2
-        r = client.read(xLoc.getOSDsForObject(objectNo + 1).get(1).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo + 1,
-                0, 0, stripeSize);
+        r = client.read(xLoc.getOSDsForObject(objectNo + 1).get(1).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo + 1, 0, 0, stripeSize);
         rResp = r.get();
         // filled with zeros
         if (rResp.getZeroPadding() == 0) {
@@ -294,24 +306,22 @@ public class ReplicationTest extends TestCase {
 
         // check whether a padding object for object 2 has been created on
         // replica 2
-        RPCResponse<InternalReadLocalResponse> intRLRsp = client.xtreemfs_internal_read_local(xLoc.getOSDsForObject(
-            objectNo + 1).get(1).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo + 1, 0, 0, stripeSize, false, new ArrayList());
+        RPCResponse<InternalReadLocalResponse> intRLRsp = client.xtreemfs_internal_read_local(
+                xLoc.getOSDsForObject(objectNo + 1).get(1).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo + 1, 0, 0, stripeSize, false, new ArrayList());
         InternalReadLocalResponse intRL = intRLRsp.get();
         assertEquals(stripeSize, intRL.getData().getZeroPadding());
 
         // read EOF from replica 2
-        r = client.read(xLoc.getOSDsForObject(objectNo + 4).get(1).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo + 4,
-                0, 0, stripeSize);
+        r = client.read(xLoc.getOSDsForObject(objectNo + 4).get(1).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo + 4, 0, 0, stripeSize);
         rResp = r.get();
         assertNull(r.getData());
         r.freeBuffers();
 
         // read hole within an object from replica 2
-        r = client.read(xLoc.getOSDsForObject(objectNo + 2).get(1).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo + 2,
-                0, 0, stripeSize);
+        r = client.read(xLoc.getOSDsForObject(objectNo + 2).get(1).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo + 2, 0, 0, stripeSize);
         rResp = r.get();
         byte[] responseData = r.getData().array();
         // correct length
@@ -331,17 +341,15 @@ public class ReplicationTest extends TestCase {
         r.freeBuffers();
 
         // read EOF within data from replica 2
-        r = client.read(xLoc.getOSDsForObject(objectNo + 3).get(1).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo + 3,
-                0, 0, stripeSize);
+        r = client.read(xLoc.getOSDsForObject(objectNo + 3).get(1).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo + 3, 0, 0, stripeSize);
         rResp = r.get();
         assertTrue(Arrays.equals(data2.array(), r.getData().array()));
         r.freeBuffers();
 
         // read hole within an object from replica 2 with offset and length
-        r = client.read(xLoc.getOSDsForObject(objectNo + 2).get(2).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo + 2,
-                0, stripeSize / 4, data2.limit());
+        r = client.read(xLoc.getOSDsForObject(objectNo + 2).get(2).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo + 2, 0, stripeSize / 4, data2.limit());
         rResp = r.get();
         // correct length and data
         assertEquals(data2.limit(), r.getData().array().length);
@@ -364,10 +372,11 @@ public class ReplicationTest extends TestCase {
         FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
 
         // write data
-        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
-        RPCResponse<OSDWriteResponse> r = client.write(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo, 0, 0,
-                0, objdata, this.data.createViewBuffer());
+        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
+        RPCResponse<OSDWriteResponse> r = client
+                .write(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID,
+                        objectNo, 0, 0, 0, objdata, -1, this.data.createViewBuffer());
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
 
@@ -376,8 +385,9 @@ public class ReplicationTest extends TestCase {
         fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
 
         // read data
-        RPCResponse<InternalReadLocalResponse> r2 = client.xtreemfs_internal_read_local(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo, 0, 0, stripeSize, false, new ArrayList());
+        RPCResponse<InternalReadLocalResponse> r2 = client.xtreemfs_internal_read_local(serverID.getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID, objectNo, 0, 0, stripeSize,
+                false, new ArrayList());
         InternalReadLocalResponse resp2 = r2.get();
 
         assertTrue(Arrays.equals(data.array(), r2.getData().array()));
@@ -386,14 +396,15 @@ public class ReplicationTest extends TestCase {
         r2.freeBuffers();
 
         // read only part of data
-        r2 = client.xtreemfs_internal_read_local(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo, 0, stripeSize/4, stripeSize/2, true, new ArrayList());
+        r2 = client.xtreemfs_internal_read_local(serverID.getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo, 0, stripeSize / 4, stripeSize / 2, true,
+                new ArrayList());
         resp2 = r2.get();
 
         int j = stripeSize / 4;
         byte[] responseData = r2.getData().array();
         byte[] dataBytes = data.array();
-        assertEquals(stripeSize/2, responseData.length);
+        assertEquals(stripeSize / 2, responseData.length);
         for (int i = 0; i < responseData.length; i++) {
             assertEquals(dataBytes[j++], responseData[i]);
         }
@@ -401,7 +412,8 @@ public class ReplicationTest extends TestCase {
 
         // check object list
         ObjectList objectList = resp2.getObjectSet(0);
-        ObjectSet list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirst(), objectList.getSet().toByteArray());
+        ObjectSet list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirst(), objectList.getSet()
+                .toByteArray());
         assertNotNull(list);
         assertEquals(1, list.size());
         assertTrue(list.contains(objectNo));
@@ -417,24 +429,28 @@ public class ReplicationTest extends TestCase {
         FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
 
         // read object, before one has been written
-        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
+        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
         RPCResponse<InternalReadLocalResponse> r = client.xtreemfs_internal_read_local(xLoc.getOSDsForObject(objectNo)
-                .get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo, 0, 0, stripeSize, true, new ArrayList());
+                .get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID, objectNo,
+                0, 0, stripeSize, true, new ArrayList());
         InternalReadLocalResponse resp = r.get();
         assertNull(r.getData());
         assertEquals(1, resp.getObjectSetCount());
-        ObjectSet list = new ObjectSet(resp.getObjectSet(0).getStripeWidth(), resp.getObjectSet(0).getFirst(), resp.getObjectSet(0).getSet().toByteArray());
+        ObjectSet list = new ObjectSet(resp.getObjectSet(0).getStripeWidth(), resp.getObjectSet(0).getFirst(), resp
+                .getObjectSet(0).getSet().toByteArray());
         assertEquals(0, list.size());
         r.freeBuffers();
 
         // write data
-        RPCResponse<OSDWriteResponse> r2 = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo, 0, 0, 0, objdata, this.data.createViewBuffer());
+        RPCResponse<OSDWriteResponse> r2 = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID, objectNo, 0, 0, 0, objdata, -1,
+                this.data.createViewBuffer());
         OSDWriteResponse resp2 = r2.get();
         r2.freeBuffers();
-        r2 = client.write(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo + 2, 0, 0, 0, objdata, this.data.createViewBuffer());
+        r2 = client.write(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo + 2, 0, 0, 0, objdata, -1,
+                this.data.createViewBuffer());
         resp2 = r2.get();
         r2.freeBuffers();
 
@@ -443,27 +459,31 @@ public class ReplicationTest extends TestCase {
         fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
 
         // read data
-        r = client.xtreemfs_internal_read_local(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo, 0, 0, stripeSize, false, new ArrayList());
+        r = client.xtreemfs_internal_read_local(xLoc.getOSDsForObject(objectNo).get(0).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID, objectNo, 0, 0, stripeSize,
+                false, new ArrayList());
         resp = r.get();
         assertTrue(Arrays.equals(data.array(), r.getData().array()));
         r.freeBuffers();
-        r = client.xtreemfs_internal_read_local(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo + 2, 0, 0, stripeSize, false, new ArrayList());
+        r = client.xtreemfs_internal_read_local(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID, objectNo + 2, 0, 0, stripeSize,
+                false, new ArrayList());
         resp = r.get();
         assertTrue(Arrays.equals(data.array(), r.getData().array()));
         r.freeBuffers();
 
         // read higher object than has been written (EOF)
-        r = client.xtreemfs_internal_read_local(xLoc.getOSDsForObject(objectNo + 3).get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo + 3, 0, 0, stripeSize, false, new ArrayList());
+        r = client.xtreemfs_internal_read_local(xLoc.getOSDsForObject(objectNo + 3).get(0).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID, objectNo + 3, 0, 0, stripeSize,
+                false, new ArrayList());
         resp = r.get();
         assertNull(r.getData());
         r.freeBuffers();
 
         // read object that has not been written (hole)
-        r = client.xtreemfs_internal_read_local(xLoc.getOSDsForObject(objectNo + 1).get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo + 1, 0, 0, stripeSize, false, new ArrayList());
+        r = client.xtreemfs_internal_read_local(xLoc.getOSDsForObject(objectNo + 1).get(0).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID, objectNo + 1, 0, 0, stripeSize,
+                false, new ArrayList());
         resp = r.get();
         assertNull(r.getData());
         r.freeBuffers();
@@ -486,25 +506,28 @@ public class ReplicationTest extends TestCase {
     @Test
     public void testGetObjectList() throws Exception {
         FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLoc.getXLocSet()).build();
-        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
+        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
 
         // read data
         RPCResponse<ObjectList> r = client.xtreemfs_internal_get_object_set(xLoc.getOSDsForObject(objectNo).get(0)
                 .getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID);
         ObjectList objectList = r.get();
         r.freeBuffers();
-        ObjectSet list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirst(), objectList.getSet().toByteArray());
+        ObjectSet list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirst(), objectList.getSet()
+                .toByteArray());
         assertEquals(0, list.size());
 
         // write object to replica 1 : OSD 1
-        RPCResponse<OSDWriteResponse> w = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo, 0, 0, 0, objdata, this.data.createViewBuffer());
+        RPCResponse<OSDWriteResponse> w = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID, objectNo, 0, 0, 0, objdata, -1,
+                this.data.createViewBuffer());
         OSDWriteResponse wResp = w.get();
         w.freeBuffers();
 
         // read data
-        r = client.xtreemfs_internal_get_object_set(xLoc.getOSDsForObject(objectNo).get(0)
-                .getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID);
+        r = client.xtreemfs_internal_get_object_set(xLoc.getOSDsForObject(objectNo).get(0).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID);
         objectList = r.get();
         r.freeBuffers();
         list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirst(), objectList.getSet().toByteArray());
@@ -512,26 +535,29 @@ public class ReplicationTest extends TestCase {
         assertTrue(list.contains(objectNo));
 
         // write object to replica 1 : OSD 2
-        w = client.write(xLoc.getOSDsForObject(objectNo + 1).get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo + 1, 0, 0, 0, objdata, this.data.createViewBuffer());
+        w = client.write(xLoc.getOSDsForObject(objectNo + 1).get(0).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo + 1, 0, 0, 0, objdata, -1,
+                this.data.createViewBuffer());
         wResp = w.get();
         w.freeBuffers();
 
         // write object to replica 1 : OSD 3
-        w = client.write(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo + 2, 0, 0, 0, objdata, this.data.createViewBuffer());
+        w = client.write(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo + 2, 0, 0, 0, objdata, -1,
+                this.data.createViewBuffer());
         wResp = w.get();
         w.freeBuffers();
 
         // write object to replica 1 : OSD 1
-        w = client.write(xLoc.getOSDsForObject(objectNo + 3).get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileID, objectNo + 3, 0, 0, 0, objdata, this.data.createViewBuffer());
+        w = client.write(xLoc.getOSDsForObject(objectNo + 3).get(0).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo + 3, 0, 0, 0, objdata, -1,
+                this.data.createViewBuffer());
         wResp = w.get();
         w.freeBuffers();
 
         // read object list from OSD 1 : OSD 1
-        r = client.xtreemfs_internal_get_object_set(xLoc.getOSDsForObject(objectNo).get(0)
-                .getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID);
+        r = client.xtreemfs_internal_get_object_set(xLoc.getOSDsForObject(objectNo).get(0).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID);
         objectList = r.get();
         r.freeBuffers();
         list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirst(), objectList.getSet().toByteArray());
@@ -540,8 +566,8 @@ public class ReplicationTest extends TestCase {
         assertTrue(list.contains(objectNo + 3));
 
         // read object list from OSD 1 : OSD 2
-        r = client.xtreemfs_internal_get_object_set(xLoc.getOSDsForObject(objectNo+1).get(0)
-                .getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID);
+        r = client.xtreemfs_internal_get_object_set(xLoc.getOSDsForObject(objectNo + 1).get(0).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID);
         objectList = r.get();
         r.freeBuffers();
         list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirst(), objectList.getSet().toByteArray());
@@ -549,15 +575,15 @@ public class ReplicationTest extends TestCase {
         assertTrue(list.contains(objectNo + 1));
 
         // read object list from OSD 1 : OSD 3
-        r = client.xtreemfs_internal_get_object_set(xLoc.getOSDsForObject(objectNo+2).get(0)
-                .getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID);
+        r = client.xtreemfs_internal_get_object_set(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID);
         objectList = r.get();
         r.freeBuffers();
         list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirst(), objectList.getSet().toByteArray());
         assertEquals(1, list.size());
         assertTrue(list.contains(objectNo + 2));
     }
-    
+
     public static void main(String[] args) {
         TestRunner.run(ReplicationTest.class);
     }

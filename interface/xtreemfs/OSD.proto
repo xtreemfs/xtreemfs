@@ -185,6 +185,17 @@ message writeRequest {
   required fixed64 lease_timeout = 6;
   // Only the checksum of ObjectData is used.
   required ObjectData object_data = 7;
+  // last seen server timestamp (only relevant if COW & snapshots are enabled)
+  optional fixed64 last_seen_server_timestamp = 8;
+}
+
+message closeRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+}
+
+message closeResponse {
+  required fixed64 server_timestamp = 1;
 }
 
 // Internal message sent between OSDs of a striped file.
@@ -362,6 +373,11 @@ service OSDService {
   rpc write(writeRequest) returns(OSDWriteResponse) {
     option(proc_id)=13;
     option(data_in)=true;
+  };
+  
+  // Closes the file.
+  rpc close(closeRequest) returns(closeResponse) {
+    option(proc_id)=14;
   };
 
   // XtreemFS specific ops ----------------------------------------

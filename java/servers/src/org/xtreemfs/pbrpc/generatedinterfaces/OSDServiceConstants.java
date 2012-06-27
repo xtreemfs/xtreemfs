@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Tue Feb 28 11:16:01 CET 2012
+//automatically generated from OSD.proto at Wed Jun 27 17:48:27 CEST 2012
 //(c) 2012. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -12,6 +12,7 @@ public class OSDServiceConstants {
     public static final int PROC_ID_TRUNCATE = 11;
     public static final int PROC_ID_UNLINK = 12;
     public static final int PROC_ID_WRITE = 13;
+    public static final int PROC_ID_CLOSE = 14;
     public static final int PROC_ID_XTREEMFS_BROADCAST_GMAX = 20;
     public static final int PROC_ID_XTREEMFS_CHECK_OBJECT = 21;
     public static final int PROC_ID_XTREEMFS_CLEANUP_GET_RESULTS = 30;
@@ -47,6 +48,7 @@ public class OSDServiceConstants {
            case 11: return OSD.truncateRequest.getDefaultInstance();
            case 12: return OSD.unlink_osd_Request.getDefaultInstance();
            case 13: return OSD.writeRequest.getDefaultInstance();
+           case 14: return OSD.closeRequest.getDefaultInstance();
            case 20: return OSD.xtreemfs_broadcast_gmaxRequest.getDefaultInstance();
            case 21: return OSD.xtreemfs_check_objectRequest.getDefaultInstance();
            case 30: return null;
@@ -86,6 +88,7 @@ public class OSDServiceConstants {
            case 11: return GlobalTypes.OSDWriteResponse.getDefaultInstance();
            case 12: return null;
            case 13: return GlobalTypes.OSDWriteResponse.getDefaultInstance();
+           case 14: return OSD.closeResponse.getDefaultInstance();
            case 20: return null;
            case 21: return OSD.ObjectData.getDefaultInstance();
            case 30: return OSD.xtreemfs_cleanup_get_resultsResponse.getDefaultInstance();

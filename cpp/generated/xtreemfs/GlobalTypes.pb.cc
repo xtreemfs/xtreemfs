@@ -224,9 +224,10 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(VivaldiCoordinates));
   OSDWriteResponse_descriptor_ = file->message_type(9);
-  static const int OSDWriteResponse_offsets_[2] = {
+  static const int OSDWriteResponse_offsets_[3] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDWriteResponse, size_in_bytes_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDWriteResponse, truncate_epoch_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDWriteResponse, server_timestamp_),
   };
   OSDWriteResponse_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -364,51 +365,51 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
     "als\030\001 \001(\0132\037.xtreemfs.pbrpc.FileCredentia"
     "ls\"U\n\022VivaldiCoordinates\022\024\n\014x_coordinate"
     "\030\001 \002(\001\022\024\n\014y_coordinate\030\002 \002(\001\022\023\n\013local_er"
-    "ror\030\003 \002(\001\"A\n\020OSDWriteResponse\022\025\n\rsize_in"
-    "_bytes\030\001 \001(\006\022\026\n\016truncate_epoch\030\002 \001(\007\"*\n\014"
-    "KeyValuePair\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t"
-    "*|\n\027AccessControlPolicyType\022\036\n\032ACCESS_CO"
-    "NTROL_POLICY_NULL\020\001\022\037\n\033ACCESS_CONTROL_PO"
-    "LICY_POSIX\020\002\022 \n\034ACCESS_CONTROL_POLICY_VO"
-    "LUME\020\003*\367\002\n\026OSDSelectionPolicyType\022(\n#OSD"
-    "_SELECTION_POLICY_FILTER_DEFAULT\020\350\007\022%\n O"
-    "SD_SELECTION_POLICY_FILTER_FQDN\020\351\007\022%\n OS"
-    "D_SELECTION_POLICY_FILTER_UUID\020\352\007\022%\n OSD"
-    "_SELECTION_POLICY_GROUP_DCMAP\020\320\017\022$\n\037OSD_"
-    "SELECTION_POLICY_GROUP_FQDN\020\321\017\022$\n\037OSD_SE"
-    "LECTION_POLICY_SORT_DCMAP\020\270\027\022#\n\036OSD_SELE"
-    "CTION_POLICY_SORT_FQDN\020\271\027\022%\n OSD_SELECTI"
-    "ON_POLICY_SORT_RANDOM\020\272\027\022&\n!OSD_SELECTIO"
-    "N_POLICY_SORT_VIVALDI\020\273\027*A\n\032ReplicaSelec"
-    "tionPolicyType\022#\n\037REPLICA_SELECTION_POLI"
-    "CY_SIMPLE\020\001*i\n\nSnapConfig\022\036\n\032SNAP_CONFIG"
-    "_SNAPS_DISABLED\020\000\022\036\n\032SNAP_CONFIG_ACCESS_"
-    "CURRENT\020\001\022\033\n\027SNAP_CONFIG_ACCESS_SNAP\020\002*/"
-    "\n\022StripingPolicyType\022\031\n\025STRIPING_POLICY_"
-    "RAID0\020\000*\270\001\n\005PORTS\022\033\n\025DIR_HTTP_PORT_DEFAU"
-    "LT\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025"
-    "MRC_HTTP_PORT_DEFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_P"
-    "ORT_DEFAULT\020\374\376\001\022\033\n\025OSD_HTTP_PORT_DEFAULT"
-    "\020\260\357\001\022\034\n\026OSD_PBRPC_PORT_DEFAULT\020\200\377\001*+\n\tCO"
-    "NSTANTS\022\036\n\032XCAP_RENEW_INTERVAL_IN_MIN\020\001*"
-    "\202\003\n\016SYSTEM_V_FCNTL\022\035\n\031SYSTEM_V_FCNTL_H_O"
-    "_RDONLY\020\000\022\035\n\031SYSTEM_V_FCNTL_H_O_WRONLY\020\001"
-    "\022\033\n\027SYSTEM_V_FCNTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_"
-    "V_FCNTL_H_O_APPEND\020\010\022\035\n\030SYSTEM_V_FCNTL_H"
-    "_O_CREAT\020\200\002\022\035\n\030SYSTEM_V_FCNTL_H_O_TRUNC\020"
-    "\200\004\022\034\n\027SYSTEM_V_FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYST"
-    "EM_V_FCNTL_H_O_SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_"
-    "H_S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_FCNTL_H_S_IFDI"
-    "R\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n"
-    "\030SYSTEM_V_FCNTL_H_S_IFIFO\020\200 *\330\001\n\tREPL_FL"
-    "AG\022\032\n\026REPL_FLAG_FULL_REPLICA\020\001\022\031\n\025REPL_F"
-    "LAG_IS_COMPLETE\020\002\022\035\n\031REPL_FLAG_STRATEGY_"
-    "RANDOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FI"
-    "RST\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020"
-    "\022-\n)REPL_FLAG_STRATEGY_SEQUENTIAL_PREFET"
-    "CHING\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n"
-    "\003OSD\020\003B(\n&org.xtreemfs.pbrpc.generatedin"
-    "terfaces", 2848);
+    "ror\030\003 \002(\001\"[\n\020OSDWriteResponse\022\025\n\rsize_in"
+    "_bytes\030\001 \001(\006\022\026\n\016truncate_epoch\030\002 \001(\007\022\030\n\020"
+    "server_timestamp\030\003 \001(\006\"*\n\014KeyValuePair\022\013"
+    "\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t*|\n\027AccessCont"
+    "rolPolicyType\022\036\n\032ACCESS_CONTROL_POLICY_N"
+    "ULL\020\001\022\037\n\033ACCESS_CONTROL_POLICY_POSIX\020\002\022 "
+    "\n\034ACCESS_CONTROL_POLICY_VOLUME\020\003*\367\002\n\026OSD"
+    "SelectionPolicyType\022(\n#OSD_SELECTION_POL"
+    "ICY_FILTER_DEFAULT\020\350\007\022%\n OSD_SELECTION_P"
+    "OLICY_FILTER_FQDN\020\351\007\022%\n OSD_SELECTION_PO"
+    "LICY_FILTER_UUID\020\352\007\022%\n OSD_SELECTION_POL"
+    "ICY_GROUP_DCMAP\020\320\017\022$\n\037OSD_SELECTION_POLI"
+    "CY_GROUP_FQDN\020\321\017\022$\n\037OSD_SELECTION_POLICY"
+    "_SORT_DCMAP\020\270\027\022#\n\036OSD_SELECTION_POLICY_S"
+    "ORT_FQDN\020\271\027\022%\n OSD_SELECTION_POLICY_SORT"
+    "_RANDOM\020\272\027\022&\n!OSD_SELECTION_POLICY_SORT_"
+    "VIVALDI\020\273\027*A\n\032ReplicaSelectionPolicyType"
+    "\022#\n\037REPLICA_SELECTION_POLICY_SIMPLE\020\001*i\n"
+    "\nSnapConfig\022\036\n\032SNAP_CONFIG_SNAPS_DISABLE"
+    "D\020\000\022\036\n\032SNAP_CONFIG_ACCESS_CURRENT\020\001\022\033\n\027S"
+    "NAP_CONFIG_ACCESS_SNAP\020\002*/\n\022StripingPoli"
+    "cyType\022\031\n\025STRIPING_POLICY_RAID0\020\000*\270\001\n\005PO"
+    "RTS\022\033\n\025DIR_HTTP_PORT_DEFAULT\020\256\357\001\022\034\n\026DIR_"
+    "PBRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025MRC_HTTP_PORT_"
+    "DEFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_PORT_DEFAULT\020\374\376"
+    "\001\022\033\n\025OSD_HTTP_PORT_DEFAULT\020\260\357\001\022\034\n\026OSD_PB"
+    "RPC_PORT_DEFAULT\020\200\377\001*+\n\tCONSTANTS\022\036\n\032XCA"
+    "P_RENEW_INTERVAL_IN_MIN\020\001*\202\003\n\016SYSTEM_V_F"
+    "CNTL\022\035\n\031SYSTEM_V_FCNTL_H_O_RDONLY\020\000\022\035\n\031S"
+    "YSTEM_V_FCNTL_H_O_WRONLY\020\001\022\033\n\027SYSTEM_V_F"
+    "CNTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_V_FCNTL_H_O_AP"
+    "PEND\020\010\022\035\n\030SYSTEM_V_FCNTL_H_O_CREAT\020\200\002\022\035\n"
+    "\030SYSTEM_V_FCNTL_H_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V"
+    "_FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL_H_O"
+    "_SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_H_S_IFREG\020\200\200\002\022"
+    "\036\n\030SYSTEM_V_FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTE"
+    "M_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_FCNT"
+    "L_H_S_IFIFO\020\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL_FLA"
+    "G_FULL_REPLICA\020\001\022\031\n\025REPL_FLAG_IS_COMPLET"
+    "E\020\002\022\035\n\031REPL_FLAG_STRATEGY_RANDOM\020\004\022#\n\037RE"
+    "PL_FLAG_STRATEGY_RAREST_FIRST\020\010\022!\n\035REPL_"
+    "FLAG_STRATEGY_SEQUENTIAL\020\020\022-\n)REPL_FLAG_"
+    "STRATEGY_SEQUENTIAL_PREFETCHING\020 *%\n\010SER"
+    "VICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org."
+    "xtreemfs.pbrpc.generatedinterfaces", 2874);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/GlobalTypes.proto", &protobuf_RegisterTypes);
   NewFileSize::default_instance_ = new NewFileSize();
@@ -3383,6 +3384,7 @@ void VivaldiCoordinates::Swap(VivaldiCoordinates* other) {
 #ifndef _MSC_VER
 const int OSDWriteResponse::kSizeInBytesFieldNumber;
 const int OSDWriteResponse::kTruncateEpochFieldNumber;
+const int OSDWriteResponse::kServerTimestampFieldNumber;
 #endif  // !_MSC_VER
 
 OSDWriteResponse::OSDWriteResponse()
@@ -3403,6 +3405,7 @@ void OSDWriteResponse::SharedCtor() {
   _cached_size_ = 0;
   size_in_bytes_ = GOOGLE_ULONGLONG(0);
   truncate_epoch_ = 0u;
+  server_timestamp_ = GOOGLE_ULONGLONG(0);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -3439,6 +3442,7 @@ void OSDWriteResponse::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     size_in_bytes_ = GOOGLE_ULONGLONG(0);
     truncate_epoch_ = 0u;
+    server_timestamp_ = GOOGLE_ULONGLONG(0);
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
@@ -3477,6 +3481,22 @@ bool OSDWriteResponse::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
+        if (input->ExpectTag(25)) goto parse_server_timestamp;
+        break;
+      }
+      
+      // optional fixed64 server_timestamp = 3;
+      case 3: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_server_timestamp:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
+                 input, &server_timestamp_)));
+          _set_bit(2);
+        } else {
+          goto handle_uninterpreted;
+        }
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -3509,6 +3529,11 @@ void OSDWriteResponse::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(2, this->truncate_epoch(), output);
   }
   
+  // optional fixed64 server_timestamp = 3;
+  if (_has_bit(2)) {
+    ::google::protobuf::internal::WireFormatLite::WriteFixed64(3, this->server_timestamp(), output);
+  }
+  
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -3525,6 +3550,11 @@ void OSDWriteResponse::SerializeWithCachedSizes(
   // optional fixed32 truncate_epoch = 2;
   if (_has_bit(1)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(2, this->truncate_epoch(), target);
+  }
+  
+  // optional fixed64 server_timestamp = 3;
+  if (_has_bit(2)) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(3, this->server_timestamp(), target);
   }
   
   if (!unknown_fields().empty()) {
@@ -3546,6 +3576,11 @@ int OSDWriteResponse::ByteSize() const {
     // optional fixed32 truncate_epoch = 2;
     if (has_truncate_epoch()) {
       total_size += 1 + 4;
+    }
+    
+    // optional fixed64 server_timestamp = 3;
+    if (has_server_timestamp()) {
+      total_size += 1 + 8;
     }
     
   }
@@ -3581,6 +3616,9 @@ void OSDWriteResponse::MergeFrom(const OSDWriteResponse& from) {
     if (from._has_bit(1)) {
       set_truncate_epoch(from.truncate_epoch());
     }
+    if (from._has_bit(2)) {
+      set_server_timestamp(from.server_timestamp());
+    }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
 }
@@ -3606,6 +3644,7 @@ void OSDWriteResponse::Swap(OSDWriteResponse* other) {
   if (other != this) {
     std::swap(size_in_bytes_, other->size_in_bytes_);
     std::swap(truncate_epoch_, other->truncate_epoch_);
+    std::swap(server_timestamp_, other->server_timestamp_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);

@@ -52,6 +52,8 @@ class readRequest;
 class truncateRequest;
 class unlink_osd_Request;
 class writeRequest;
+class closeRequest;
+class closeResponse;
 class xtreemfs_broadcast_gmaxRequest;
 class xtreemfs_check_objectRequest;
 class xtreemfs_cleanup_get_resultsResponse;
@@ -1726,6 +1728,13 @@ class writeRequest : public ::google::protobuf::Message {
   inline const ::xtreemfs::pbrpc::ObjectData& object_data() const;
   inline ::xtreemfs::pbrpc::ObjectData* mutable_object_data();
   
+  // optional fixed64 last_seen_server_timestamp = 8;
+  inline bool has_last_seen_server_timestamp() const;
+  inline void clear_last_seen_server_timestamp();
+  static const int kLastSeenServerTimestampFieldNumber = 8;
+  inline ::google::protobuf::uint64 last_seen_server_timestamp() const;
+  inline void set_last_seen_server_timestamp(::google::protobuf::uint64 value);
+  
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.writeRequest)
  private:
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
@@ -1739,11 +1748,12 @@ class writeRequest : public ::google::protobuf::Message {
   ::google::protobuf::uint32 offset_;
   ::google::protobuf::uint64 lease_timeout_;
   ::xtreemfs::pbrpc::ObjectData* object_data_;
+  ::google::protobuf::uint64 last_seen_server_timestamp_;
   friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
   
-  ::google::protobuf::uint32 _has_bits_[(7 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(8 + 31) / 32];
   
   // WHY DOES & HAVE LOWER PRECEDENCE THAN != !?
   inline bool _has_bit(int index) const {
@@ -1758,6 +1768,196 @@ class writeRequest : public ::google::protobuf::Message {
   
   void InitAsDefaultInstance();
   static writeRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class closeRequest : public ::google::protobuf::Message {
+ public:
+  closeRequest();
+  virtual ~closeRequest();
+  
+  closeRequest(const closeRequest& from);
+  
+  inline closeRequest& operator=(const closeRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+  
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+  
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const closeRequest& default_instance();
+  
+  void Swap(closeRequest* other);
+  
+  // implements Message ----------------------------------------------
+  
+  closeRequest* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const closeRequest& from);
+  void MergeFrom(const closeRequest& from);
+  void Clear();
+  bool IsInitialized() const;
+  
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  
+  ::google::protobuf::Metadata GetMetadata() const;
+  
+  // nested types ----------------------------------------------------
+  
+  // accessors -------------------------------------------------------
+  
+  // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+  inline bool has_file_credentials() const;
+  inline void clear_file_credentials();
+  static const int kFileCredentialsFieldNumber = 1;
+  inline const ::xtreemfs::pbrpc::FileCredentials& file_credentials() const;
+  inline ::xtreemfs::pbrpc::FileCredentials* mutable_file_credentials();
+  
+  // required string file_id = 2;
+  inline bool has_file_id() const;
+  inline void clear_file_id();
+  static const int kFileIdFieldNumber = 2;
+  inline const ::std::string& file_id() const;
+  inline void set_file_id(const ::std::string& value);
+  inline void set_file_id(const char* value);
+  inline void set_file_id(const char* value, size_t size);
+  inline ::std::string* mutable_file_id();
+  
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.closeRequest)
+ private:
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+  mutable int _cached_size_;
+  
+  ::xtreemfs::pbrpc::FileCredentials* file_credentials_;
+  ::std::string* file_id_;
+  static const ::std::string _default_file_id_;
+  friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
+  
+  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+  
+  // WHY DOES & HAVE LOWER PRECEDENCE THAN != !?
+  inline bool _has_bit(int index) const {
+    return (_has_bits_[index / 32] & (1u << (index % 32))) != 0;
+  }
+  inline void _set_bit(int index) {
+    _has_bits_[index / 32] |= (1u << (index % 32));
+  }
+  inline void _clear_bit(int index) {
+    _has_bits_[index / 32] &= ~(1u << (index % 32));
+  }
+  
+  void InitAsDefaultInstance();
+  static closeRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class closeResponse : public ::google::protobuf::Message {
+ public:
+  closeResponse();
+  virtual ~closeResponse();
+  
+  closeResponse(const closeResponse& from);
+  
+  inline closeResponse& operator=(const closeResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+  
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+  
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const closeResponse& default_instance();
+  
+  void Swap(closeResponse* other);
+  
+  // implements Message ----------------------------------------------
+  
+  closeResponse* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const closeResponse& from);
+  void MergeFrom(const closeResponse& from);
+  void Clear();
+  bool IsInitialized() const;
+  
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  
+  ::google::protobuf::Metadata GetMetadata() const;
+  
+  // nested types ----------------------------------------------------
+  
+  // accessors -------------------------------------------------------
+  
+  // required fixed64 server_timestamp = 1;
+  inline bool has_server_timestamp() const;
+  inline void clear_server_timestamp();
+  static const int kServerTimestampFieldNumber = 1;
+  inline ::google::protobuf::uint64 server_timestamp() const;
+  inline void set_server_timestamp(::google::protobuf::uint64 value);
+  
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.closeResponse)
+ private:
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+  mutable int _cached_size_;
+  
+  ::google::protobuf::uint64 server_timestamp_;
+  friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
+  
+  ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
+  
+  // WHY DOES & HAVE LOWER PRECEDENCE THAN != !?
+  inline bool _has_bit(int index) const {
+    return (_has_bits_[index / 32] & (1u << (index % 32))) != 0;
+  }
+  inline void _set_bit(int index) {
+    _has_bits_[index / 32] |= (1u << (index % 32));
+  }
+  inline void _clear_bit(int index) {
+    _has_bits_[index / 32] &= ~(1u << (index % 32));
+  }
+  
+  void InitAsDefaultInstance();
+  static closeResponse* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -4159,6 +4359,10 @@ class OSDService : public ::google::protobuf::Service {
                        const ::xtreemfs::pbrpc::writeRequest* request,
                        ::xtreemfs::pbrpc::OSDWriteResponse* response,
                        ::google::protobuf::Closure* done);
+  virtual void close(::google::protobuf::RpcController* controller,
+                       const ::xtreemfs::pbrpc::closeRequest* request,
+                       ::xtreemfs::pbrpc::closeResponse* response,
+                       ::google::protobuf::Closure* done);
   virtual void xtreemfs_broadcast_gmax(::google::protobuf::RpcController* controller,
                        const ::xtreemfs::pbrpc::xtreemfs_broadcast_gmaxRequest* request,
                        ::xtreemfs::pbrpc::emptyResponse* response,
@@ -4315,6 +4519,10 @@ class OSDService_Stub : public OSDService {
   void write(::google::protobuf::RpcController* controller,
                        const ::xtreemfs::pbrpc::writeRequest* request,
                        ::xtreemfs::pbrpc::OSDWriteResponse* response,
+                       ::google::protobuf::Closure* done);
+  void close(::google::protobuf::RpcController* controller,
+                       const ::xtreemfs::pbrpc::closeRequest* request,
+                       ::xtreemfs::pbrpc::closeResponse* response,
                        ::google::protobuf::Closure* done);
   void xtreemfs_broadcast_gmax(::google::protobuf::RpcController* controller,
                        const ::xtreemfs::pbrpc::xtreemfs_broadcast_gmaxRequest* request,
@@ -5556,6 +5764,105 @@ inline ::xtreemfs::pbrpc::ObjectData* writeRequest::mutable_object_data() {
   _set_bit(6);
   if (object_data_ == NULL) object_data_ = new ::xtreemfs::pbrpc::ObjectData;
   return object_data_;
+}
+
+// optional fixed64 last_seen_server_timestamp = 8;
+inline bool writeRequest::has_last_seen_server_timestamp() const {
+  return _has_bit(7);
+}
+inline void writeRequest::clear_last_seen_server_timestamp() {
+  last_seen_server_timestamp_ = GOOGLE_ULONGLONG(0);
+  _clear_bit(7);
+}
+inline ::google::protobuf::uint64 writeRequest::last_seen_server_timestamp() const {
+  return last_seen_server_timestamp_;
+}
+inline void writeRequest::set_last_seen_server_timestamp(::google::protobuf::uint64 value) {
+  _set_bit(7);
+  last_seen_server_timestamp_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// closeRequest
+
+// required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+inline bool closeRequest::has_file_credentials() const {
+  return _has_bit(0);
+}
+inline void closeRequest::clear_file_credentials() {
+  if (file_credentials_ != NULL) file_credentials_->::xtreemfs::pbrpc::FileCredentials::Clear();
+  _clear_bit(0);
+}
+inline const ::xtreemfs::pbrpc::FileCredentials& closeRequest::file_credentials() const {
+  return file_credentials_ != NULL ? *file_credentials_ : *default_instance_->file_credentials_;
+}
+inline ::xtreemfs::pbrpc::FileCredentials* closeRequest::mutable_file_credentials() {
+  _set_bit(0);
+  if (file_credentials_ == NULL) file_credentials_ = new ::xtreemfs::pbrpc::FileCredentials;
+  return file_credentials_;
+}
+
+// required string file_id = 2;
+inline bool closeRequest::has_file_id() const {
+  return _has_bit(1);
+}
+inline void closeRequest::clear_file_id() {
+  if (file_id_ != &_default_file_id_) {
+    file_id_->clear();
+  }
+  _clear_bit(1);
+}
+inline const ::std::string& closeRequest::file_id() const {
+  return *file_id_;
+}
+inline void closeRequest::set_file_id(const ::std::string& value) {
+  _set_bit(1);
+  if (file_id_ == &_default_file_id_) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void closeRequest::set_file_id(const char* value) {
+  _set_bit(1);
+  if (file_id_ == &_default_file_id_) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void closeRequest::set_file_id(const char* value, size_t size) {
+  _set_bit(1);
+  if (file_id_ == &_default_file_id_) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* closeRequest::mutable_file_id() {
+  _set_bit(1);
+  if (file_id_ == &_default_file_id_) {
+    file_id_ = new ::std::string;
+  }
+  return file_id_;
+}
+
+// -------------------------------------------------------------------
+
+// closeResponse
+
+// required fixed64 server_timestamp = 1;
+inline bool closeResponse::has_server_timestamp() const {
+  return _has_bit(0);
+}
+inline void closeResponse::clear_server_timestamp() {
+  server_timestamp_ = GOOGLE_ULONGLONG(0);
+  _clear_bit(0);
+}
+inline ::google::protobuf::uint64 closeResponse::server_timestamp() const {
+  return server_timestamp_;
+}
+inline void closeResponse::set_server_timestamp(::google::protobuf::uint64 value) {
+  _set_bit(0);
+  server_timestamp_ = value;
 }
 
 // -------------------------------------------------------------------

@@ -204,6 +204,8 @@ message OSDWriteResponse {
   optional fixed64 size_in_bytes = 1;
   // Truncate epoch.
   optional fixed32 truncate_epoch = 2;
+  // last seen server timestamp for consistent snapshots
+  optional fixed64 server_timestamp = 3;
 }
 
 // TCP ports used by the services.

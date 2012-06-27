@@ -29,7 +29,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class InternalRWRUpdateOperation extends OSDOperation {
 
-    final String sharedSecret;
+    final String      sharedSecret;
     final ServiceUUID localUUID;
 
     public InternalRWRUpdateOperation(OSDRequestDispatcher master) {
@@ -45,24 +45,25 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        final xtreemfs_rwr_updateRequest args = (xtreemfs_rwr_updateRequest)rq.getRequestArgs();
+        final xtreemfs_rwr_updateRequest args = (xtreemfs_rwr_updateRequest) rq.getRequestArgs();
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"RWR update for file %s-%d",args.getFileId(),args.getObjectNumber());
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "RWR update for file %s-%d", args.getFileId(),
+                    args.getObjectNumber());
         }
 
-       prepareLocalWrite(rq, args);
+        prepareLocalWrite(rq, args);
     }
-    
+
     public void localWrite(final OSDRequest rq, final xtreemfs_rwr_updateRequest args) {
         master.replicatedDataReceived(rq.getRPCRequest().getData().capacity());
 
         ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
         master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(),
                 rq.getLocationList().getLocalReplica().getStripingPolicy(), args.getOffset(), viewBuffer,
-                CowPolicy.PolicyNoCow, rq.getLocationList(), false, args.getObjectVersion(), rq, viewBuffer,
+                CowPolicy.PolicyNoCow, rq.getLocationList(), false, args.getObjectVersion(), -1L, rq, viewBuffer,
                 new WriteObjectCallback() {
-                    
+
                     @Override
                     public void writeComplete(OSDWriteResponse result, ErrorResponse error) {
                         sendResult(rq, error);
@@ -72,23 +73,24 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
 
     public void prepareLocalWrite(final OSDRequest rq, final xtreemfs_rwr_updateRequest args) {
         master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(),
-                args.getObjectNumber(), args.getObjectVersion(), RWReplicationStage.Operation.INTERNAL_UPDATE, new RWReplicationStage.RWReplicationCallback() {
+                args.getObjectNumber(), args.getObjectVersion(), RWReplicationStage.Operation.INTERNAL_UPDATE,
+                new RWReplicationStage.RWReplicationCallback() {
 
-            @Override
-            public void success(long newObjectVersion) {
-                localWrite(rq, args);
-            }
+                    @Override
+                    public void success(long newObjectVersion) {
+                        localWrite(rq, args);
+                    }
 
-            @Override
-            public void redirect(String redirectTo) {
-                rq.getRPCRequest().sendRedirect(redirectTo);
-            }
+                    @Override
+                    public void redirect(String redirectTo) {
+                        rq.getRPCRequest().sendRedirect(redirectTo);
+                    }
 
-            @Override
-            public void failed(ErrorResponse err) {
-                rq.sendError(err);
-            }
-        }, rq);
+                    @Override
+                    public void failed(ErrorResponse err) {
+                        rq.sendError(err);
+                    }
+                }, rq);
     }
 
     public void sendResult(final OSDRequest rq, ErrorResponse error) {
@@ -96,21 +98,19 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
         if (error != null) {
             rq.sendError(error);
         } else {
-            //only locally
+            // only locally
             sendResponse(rq);
         }
     }
 
-    
     public void sendResponse(OSDRequest rq) {
-        rq.sendSuccess(null,null);
+        rq.sendSuccess(null, null);
     }
-
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
         try {
-            xtreemfs_rwr_updateRequest rpcrq = (xtreemfs_rwr_updateRequest)rq.getRequestArgs();
+            xtreemfs_rwr_updateRequest rpcrq = (xtreemfs_rwr_updateRequest) rq.getRequestArgs();
             rq.setFileId(rpcrq.getFileId());
             rq.setCapability(new Capability(rpcrq.getFileCredentials().getXcap(), sharedSecret));
             rq.setLocationList(new XLocations(rpcrq.getFileCredentials().getXlocs(), localUUID));
@@ -132,7 +132,5 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
 
 }

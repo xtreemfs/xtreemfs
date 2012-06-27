@@ -67,6 +67,8 @@ public class PreprocStage extends Stage {
 
     public final static int                                 STAGEOP_PING_FILE          = 14;
 
+    public final static int                                 STAGEOP_CLOSE_FILE         = 15;
+
     private final Map<String, LRUCache<String, Capability>> capCache;
 
     private final OpenFileTable                             oft;
@@ -312,6 +314,26 @@ public class PreprocStage extends Stage {
         }
     }
 
+    public void close(String fileId, CloseCallback listener) {
+        this.enqueueOperation(STAGEOP_CLOSE_FILE, new Object[] { fileId }, null, listener);
+    }
+
+    public static interface CloseCallback {
+
+        public void closeResult(boolean delete, LRUCache<String, Capability> cachedCaps, ErrorResponse error);
+    }
+
+    private void doClose(StageRequest m) {
+
+        final String fileId = (String) m.getArgs()[0];
+        final CloseCallback callback = (CloseCallback) m.getCallback();
+
+        OpenFileTableEntry entry = oft.close(fileId);
+        LRUCache<String, Capability> cachedCaps = capCache.remove(entry.getFileId());
+
+        callback.closeResult(entry.isDeleteOnClose(), cachedCaps, null);
+    }
+
     @Override
     public void run() {
 
@@ -416,6 +438,9 @@ public class PreprocStage extends Stage {
             break;
         case STAGEOP_PING_FILE:
             doPingFile(m);
+            break;
+        case STAGEOP_CLOSE_FILE:
+            doClose(m);
             break;
         default:
             Logging.logMessage(Logging.LEVEL_ERROR, this, "unknown stageop called: %d", requestedMethod);

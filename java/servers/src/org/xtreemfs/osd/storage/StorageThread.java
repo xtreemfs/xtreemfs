@@ -238,13 +238,13 @@ public class StorageThread extends Stage {
             final String fileId = (String) rq.getArgs()[0];
             FileMetadata md = cache.removeFileInfo(fileId);
             if (md != null)
-                layout.closeFile(null);
+                layout.closeFile(md);
 
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
                         "removed file info from cache for file %s", fileId);
 
-            cback.cachesFlushed(null);
+            cback.cachesFlushed(null, md);
         } catch (Exception ex) {
             rq.sendInternalServerError(ex);
             return;
@@ -484,6 +484,7 @@ public class StorageThread extends Stage {
             final boolean syncWrite = (Boolean) rq.getArgs()[8];
             // use only if != null
             final Long newVersionArg = (Long) rq.getArgs()[9];
+            final Long receivedServerTimestamp = (Long) rq.getArgs()[10];
 
             final int dataLength = data.remaining();
             final int stripeSize = sp.getStripeSizeForObject(objNo);
@@ -506,7 +507,22 @@ public class StorageThread extends Stage {
             // determine the metadata of the largest object version
             ObjectVersionInfo versionInfo = fi.getVersionManager().getLargestObjectVersion(objNo);
 
-            long newTimestamp = (cow.cowEnabled() || checksumsEnabled) ? TimeSync.getGlobalTime() : -1;
+            // if a server timestamp was received, check if it is in the future and wait if necessary
+            // this is only relevant if COW is enabled, so as to ensure snapshot consistency
+            long currentTime = TimeSync.getGlobalTime();
+            if (cow.cowEnabled() && receivedServerTimestamp != null && receivedServerTimestamp != -1) {
+
+                while (currentTime < receivedServerTimestamp)
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        Logging.logError(Logging.LEVEL_WARN, this, e);
+                    }
+                if (currentTime == receivedServerTimestamp)
+                    currentTime++;
+            }
+
+            long newTimestamp = (cow.cowEnabled() || checksumsEnabled) ? currentTime : -1;
             long newVersion = Math.max(1, versionInfo.version);
             if (newVersionArg != null) {
                 // new version passed via arg always prevails
@@ -595,6 +611,7 @@ public class StorageThread extends Stage {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "new last object=%d gmax=%d",
                         fi.getLastObjectNumber(), fi.getGlobalLastObjectNumber());
             // BufferPool.free(data);
+            response.setServerTimestamp(currentTime);
             cback.writeComplete(response.build(), null);
 
         } catch (IOException ex) {
@@ -733,7 +750,7 @@ public class StorageThread extends Stage {
 
             // append the new file size and epoch number to the response
             OSDWriteResponse response = OSDWriteResponse.newBuilder().setSizeInBytes(newFileSize)
-                    .setTruncateEpoch((int) epochNumber).build();
+                    .setTruncateEpoch((int) epochNumber).setServerTimestamp(TimeSync.getGlobalTime()).build();
             cback.truncateComplete(response, null);
 
         } catch (Exception ex) {

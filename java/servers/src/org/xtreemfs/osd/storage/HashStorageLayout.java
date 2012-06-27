@@ -13,7 +13,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -33,7 +32,6 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDConfig;
-import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.storage.FileVersionLog.FileVersion;
 import org.xtreemfs.osd.storage.VersionManager.ObjectVersionInfo;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
@@ -326,6 +324,12 @@ public class HashStorageLayout extends StorageLayout {
 
         // calculate checksum
         final long newChecksum = calcChecksum(fullObj.getBuffer());
+
+        // correct the timestamp if timestamps are enabled and an object file with the same timestamp exists
+        // already
+        if (newTimestamp != -1)
+            newTimestamp = checkTimestamp(relativePath, objNo, newVersion, newTimestamp, newChecksum);
+
         final String newFilename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, newVersion, newTimestamp,
                 newChecksum);
         if (Logging.isDebug()) {
@@ -373,6 +377,7 @@ public class HashStorageLayout extends StorageLayout {
         // retrieve the largest known object version.
         final ObjectVersionInfo oldVersion = cowEnabled ? md.getVersionManager().getLatestObjectVersionBefore(objNo,
                 Long.MAX_VALUE, md.getLastObjectNumber() + 1) : md.getVersionManager().getLargestObjectVersion(objNo);
+
         final String filename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, oldVersion.version,
                 oldVersion.timestamp, oldVersion.checksum);
         if (Logging.isDebug()) {
@@ -416,12 +421,20 @@ public class HashStorageLayout extends StorageLayout {
         final ObjectVersionInfo oldVersion = md.getVersionManager().getLargestObjectVersion(objNo);
 
         final long newChecksum = calcChecksum(data.getBuffer());
+
+        // correct the timestamp if timestamps are enabled and an object file with the same timestamp exists
+        // already
+        if (newTimestamp != -1)
+            newTimestamp = checkTimestamp(relativePath, objNo, newVersion, newTimestamp, newChecksum);
+
         final String newFilename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, newVersion, newTimestamp,
                 newChecksum);
+        final File file = new File(newFilename);
+
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "writing to file: %s", newFilename);
         }
-        File file = new File(newFilename);
+
         String mode = sync ? "rwd" : "rw";
         RandomAccessFile f = null;
 
@@ -682,7 +695,12 @@ public class HashStorageLayout extends StorageLayout {
             // initialize file size and last object version number; if versioning is enabled, do this by means
             // of the latest version registered in the file version log
             if (vm.isVersioningEnabled()) {
+
                 FileVersion fv = vm.getLatestFileVersionBefore(Long.MAX_VALUE);
+
+                // file version must not be empty version
+                assert (fv != FileVersion.EMPTY_VERSION);
+
                 md.setFilesize(fv == null ? 0 : fv.getFileSize());
                 md.setLastObjectNumber(fv == null ? -1 : fv.getNumObjects() - 1);
             }
@@ -1151,6 +1169,24 @@ public class HashStorageLayout extends StorageLayout {
         }
 
         return newChecksum;
+    }
+
+    private long checkTimestamp(String relativePath, long objNo, long newVersion, long newTimestamp, long newChecksum) {
+
+        assert (newVersion != -1);
+
+        // workaround: If the object is timestamped, make sure that no file with the given timestamp exists
+        // already. If this is the case e.g., because the resolution of timestamps is too small, increment the
+        // new timestamp.
+        for (;;) {
+            File file = new File(generateAbsoluteObjectPathFromRelPath(relativePath, objNo, newVersion, newTimestamp,
+                    newChecksum));
+
+            if (file.exists())
+                newTimestamp++;
+            else
+                return newTimestamp;
+        }
     }
 
 }

@@ -20,7 +20,7 @@ import java.util.Properties;
 import org.xtreemfs.foundation.logging.Logging;
 
 /**
- *
+ * 
  * @author bjko
  */
 abstract public class Config {
@@ -43,37 +43,35 @@ abstract public class Config {
 
     /**
      * Writes out a properties-compatible file at the given location.
+     * 
      * @param filename
-     * @throws IOException 
-     * @throws FileNotFoundException 
+     * @throws IOException
+     * @throws FileNotFoundException
      */
     protected void write(String filename) throws FileNotFoundException, IOException {
         props.store(new FileOutputStream(filename), "");
     }
-    
+
     protected int readRequiredInt(String paramName) {
         String tmp = props.getProperty(paramName);
         if (tmp == null)
-            throw new RuntimeException("property '" + paramName
-                + "' is required but was not found");
+            throw new RuntimeException("property '" + paramName + "' is required but was not found");
         try {
             return Integer.parseInt(tmp.trim());
         } catch (NumberFormatException ex) {
-            throw new RuntimeException("property '" + paramName
-                + "' is an integer but '" + tmp + "' is not a valid number");
+            throw new RuntimeException("property '" + paramName + "' is an integer but '" + tmp
+                    + "' is not a valid number");
         }
     }
 
     protected String readRequiredString(String paramName) {
         String tmp = props.getProperty(paramName);
         if (tmp == null)
-            throw new RuntimeException("property '" + paramName
-                + "' is required but was not found");
+            throw new RuntimeException("property '" + paramName + "' is required but was not found");
         return tmp.trim();
     }
 
-    protected InetSocketAddress readRequiredInetAddr(String hostParam,
-        String portParam) {
+    protected InetSocketAddress readRequiredInetAddr(String hostParam, String portParam) {
         String host = readRequiredString(hostParam);
         int port = readRequiredInt(portParam);
         InetSocketAddress isa = new InetSocketAddress(host, port);
@@ -83,8 +81,7 @@ abstract public class Config {
     protected boolean readRequiredBoolean(String paramName) {
         String tmp = props.getProperty(paramName);
         if (tmp == null)
-            throw new RuntimeException("property '" + paramName
-                + "' is required but was not found");
+            throw new RuntimeException("property '" + paramName + "' is required but was not found");
         return Boolean.parseBoolean(tmp.trim());
     }
 
@@ -95,7 +92,7 @@ abstract public class Config {
         else
             return Boolean.parseBoolean(tmp.trim());
     }
-    
+
     protected int readOptionalInt(String paramName, int defaultValue) {
         String tmp = props.getProperty(paramName);
         if (tmp == null)
@@ -104,37 +101,36 @@ abstract public class Config {
             return Integer.parseInt(tmp.trim());
     }
 
-    protected InetAddress readOptionalInetAddr(String paramName,
-        InetAddress defaultValue) throws UnknownHostException {
+    protected InetAddress readOptionalInetAddr(String paramName, InetAddress defaultValue) throws UnknownHostException {
         String tmp = props.getProperty(paramName);
         if (tmp == null)
             return defaultValue;
         else
             return InetAddress.getByName(tmp);
     }
-    
-    protected InetSocketAddress readOptionalInetSocketAddr(String hostName,
-            String portParam, InetSocketAddress defaultValue) {
-            String host = readOptionalString(hostName, null);
-            int port = readOptionalInt(portParam, -1);
-            if (host==null || port==-1)
-                return defaultValue;
-            else
-                return new InetSocketAddress(host,port);
+
+    protected InetSocketAddress readOptionalInetSocketAddr(String hostName, String portParam,
+            InetSocketAddress defaultValue) {
+        String host = readOptionalString(hostName, null);
+        int port = readOptionalInt(portParam, -1);
+        if (host == null || port == -1)
+            return defaultValue;
+        else
+            return new InetSocketAddress(host, port);
     }
 
     protected String readOptionalString(String paramName, String defaultValue) {
         return props.getProperty(paramName, defaultValue);
     }
-    
+
     protected int readOptionalDebugLevel() {
         String level = props.getProperty("debug.level");
         if (level == null)
             return Logging.LEVEL_WARN;
         else {
-            
+
             level = level.trim().toUpperCase();
-            
+
             if (level.equals("EMERG")) {
                 return Logging.LEVEL_EMERG;
             } else if (level.equals("ALERT")) {
@@ -152,13 +148,12 @@ abstract public class Config {
             } else if (level.equals("DEBUG")) {
                 return Logging.LEVEL_DEBUG;
             } else {
-                
+
                 try {
                     int levelInt = Integer.valueOf(level);
                     return levelInt;
                 } catch (NumberFormatException ex) {
-                    throw new RuntimeException("'" + level + 
-                            "' is not a valid level name nor an integer");
+                    throw new RuntimeException("'" + level + "' is not a valid level name nor an integer");
                 }
             }
         }

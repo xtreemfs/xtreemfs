@@ -33,7 +33,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class WriteOperation extends OSDOperation {
 
-    final String sharedSecret;
+    final String      sharedSecret;
     final ServiceUUID localUUID;
 
     public WriteOperation(OSDRequestDispatcher master) {
@@ -49,7 +49,7 @@ public final class WriteOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        final writeRequest args = (writeRequest)rq.getRequestArgs();
+        final writeRequest args = (writeRequest) rq.getRequestArgs();
 
         if (args.getObjectNumber() < 0) {
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "object number must be >= 0");
@@ -67,25 +67,26 @@ public final class WriteOperation extends OSDOperation {
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "offset must be < stripe size");
             return;
         }
-        
+
         if (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
             // file is read only
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EPERM, "Cannot write on read-only files.");
         } else {
 
-            boolean syncWrite = (rq.getCapability().getAccessMode() & SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_SYNC.getNumber()) > 0;
-
+            boolean syncWrite = (rq.getCapability().getAccessMode() & SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_SYNC
+                    .getNumber()) > 0;
+            long receivedServerTimestamp = args.getLastSeenServerTimestamp();
 
             master.objectReceived();
             master.dataReceived(rq.getRPCRequest().getData().capacity());
 
-            if ( (rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
-               || (rq.getLocationList().getNumReplicas() == 1) ){
+            if ((rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
+                    || (rq.getLocationList().getNumReplicas() == 1)) {
 
                 ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
-                master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(), sp,
-                        args.getOffset(), viewBuffer, rq.getCowPolicy(),
-                        rq.getLocationList(), syncWrite, null, rq, viewBuffer, new WriteObjectCallback() {
+                master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(), sp, args.getOffset(),
+                        viewBuffer, rq.getCowPolicy(), rq.getLocationList(), syncWrite, null, receivedServerTimestamp,
+                        rq, viewBuffer, new WriteObjectCallback() {
 
                             @Override
                             public void writeComplete(OSDWriteResponse result, ErrorResponse error) {
@@ -93,98 +94,102 @@ public final class WriteOperation extends OSDOperation {
                             }
                         });
             } else {
-                replicatedWrite(rq,args,syncWrite);
+                replicatedWrite(rq, args, syncWrite);
             }
         }
     }
 
     public void replicatedWrite(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {
-        //prepareWrite first
+        // prepareWrite first
 
-        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(),args.getObjectNumber(),
-                args.getObjectVersion(), RWReplicationStage.Operation.WRITE,
+        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(),
+                args.getObjectNumber(), args.getObjectVersion(), RWReplicationStage.Operation.WRITE,
                 new RWReplicationStage.RWReplicationCallback() {
 
-            @Override
-            public void success(final long newObjectVersion) {
-                assert(newObjectVersion > 0);
+                    @Override
+                    public void success(final long newObjectVersion) {
+                        assert (newObjectVersion > 0);
 
-                //FIXME: ignore canExecOperation for now...
-                ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
-                master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(),
-                        rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                        args.getOffset(), viewBuffer, rq.getCowPolicy(),
-                        rq.getLocationList(), syncWrite, newObjectVersion, rq, viewBuffer, new WriteObjectCallback() {
+                        // FIXME: ignore canExecOperation for now...
+                        ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
+                        master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(),
+                                rq.getLocationList().getLocalReplica().getStripingPolicy(), args.getOffset(),
+                                viewBuffer, rq.getCowPolicy(), rq.getLocationList(), syncWrite, newObjectVersion, -1L,
+                                rq, viewBuffer, new WriteObjectCallback() {
 
-                            @Override
-                            public void writeComplete(OSDWriteResponse result, ErrorResponse error) {
-                                if (error != null)
-                                    sendResult(rq, null, error);
-                                else
-                                    sendUpdates(rq,args,result,newObjectVersion);
-                            }
-                        });
-            }
+                                    @Override
+                                    public void writeComplete(OSDWriteResponse result, ErrorResponse error) {
+                                        if (error != null)
+                                            sendResult(rq, null, error);
+                                        else
+                                            sendUpdates(rq, args, result, newObjectVersion);
+                                    }
+                                });
+                    }
 
-            @Override
-            public void redirect(String redirectTo) {
-                rq.getRPCRequest().sendRedirect(redirectTo);
-            }
+                    @Override
+                    public void redirect(String redirectTo) {
+                        rq.getRPCRequest().sendRedirect(redirectTo);
+                    }
 
-            @Override
-            public void failed(ErrorResponse err) {
-                rq.sendError(err);
-            }
-        }, rq);
+                    @Override
+                    public void failed(ErrorResponse err) {
+                        rq.sendError(err);
+                    }
+                }, rq);
 
     }
 
-    public void sendUpdates(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result, final long newObjVersion) {
+    public void sendUpdates(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result,
+            final long newObjVersion) {
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
         if (rq.getRPCRequest().getData().remaining() == sp.getStripeSizeForObject(args.getObjectNumber())) {
 
             ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
-            
-            sendUpdates2(rq, args, result, newObjVersion, new InternalObjectData(args.getObjectData(), viewBuffer), viewBuffer);
+
+            sendUpdates2(rq, args, result, newObjVersion, new InternalObjectData(args.getObjectData(), viewBuffer),
+                    viewBuffer);
         } else {
 
-            master.getStorageStage().readObject(args.getFileId(), args.getObjectNumber(), sp, 0, -1, 0l, rq, new ReadObjectCallback() {
+            master.getStorageStage().readObject(args.getFileId(), args.getObjectNumber(), sp, 0, -1, 0l, rq,
+                    new ReadObjectCallback() {
 
-                @Override
-                public void readComplete(ObjectInformation result2, ErrorResponse error) {
-                    if (error != null)
-                        sendResult(rq, null, error);
-                    else {
-                        InternalObjectData od = result2.getObjectData(false, 0, sp.getStripeSizeForObject(args.getObjectNumber()));
-                        sendUpdates2(rq, args, result, newObjVersion, od, null);
-                    }
-                }
-            });
+                        @Override
+                        public void readComplete(ObjectInformation result2, ErrorResponse error) {
+                            if (error != null)
+                                sendResult(rq, null, error);
+                            else {
+                                InternalObjectData od = result2.getObjectData(false, 0,
+                                        sp.getStripeSizeForObject(args.getObjectNumber()));
+                                sendUpdates2(rq, args, result, newObjVersion, od, null);
+                            }
+                        }
+                    });
         }
     }
-    public void sendUpdates2(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result, final long newObjVersion,
-            final InternalObjectData data, final ReusableBuffer createdViewBuffer) {
-        master.getRWReplicationStage().replicatedWrite(args.getFileCredentials(),rq.getLocationList(),
-                    args.getObjectNumber(), newObjVersion, data, createdViewBuffer,
-                    new RWReplicationStage.RWReplicationCallback() {
 
-            @Override
-            public void success(long newObjectVersion) {
-                sendResult(rq, result, null);
-            }
+    public void sendUpdates2(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result,
+            final long newObjVersion, final InternalObjectData data, final ReusableBuffer createdViewBuffer) {
+        master.getRWReplicationStage().replicatedWrite(args.getFileCredentials(), rq.getLocationList(),
+                args.getObjectNumber(), newObjVersion, data, createdViewBuffer,
+                new RWReplicationStage.RWReplicationCallback() {
 
-            @Override
-            public void redirect(String redirectTo) {
-                rq.getRPCRequest().sendRedirect(redirectTo);
-            }
+                    @Override
+                    public void success(long newObjectVersion) {
+                        sendResult(rq, result, null);
+                    }
 
-            @Override
-            public void failed(ErrorResponse err) {
-               rq.sendError(err);
-            }
-        }, rq);
+                    @Override
+                    public void redirect(String redirectTo) {
+                        rq.getRPCRequest().sendRedirect(redirectTo);
+                    }
+
+                    @Override
+                    public void failed(ErrorResponse err) {
+                        rq.sendError(err);
+                    }
+                }, rq);
     }
-
 
     public void sendResult(final OSDRequest rq, OSDWriteResponse result, ErrorResponse error) {
         if (error != null) {
@@ -196,13 +201,13 @@ public final class WriteOperation extends OSDOperation {
     }
 
     public void sendResponse(OSDRequest rq, OSDWriteResponse result) {
-        rq.sendSuccess(result,null);
+        rq.sendSuccess(result, null);
     }
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
         try {
-            writeRequest rpcrq = (writeRequest)rq.getRequestArgs();
+            writeRequest rpcrq = (writeRequest) rq.getRequestArgs();
             rq.setFileId(rpcrq.getFileCredentials().getXcap().getFileId());
             rq.setCapability(new Capability(rpcrq.getFileCredentials().getXcap(), sharedSecret));
             rq.setLocationList(new XLocations(rpcrq.getFileCredentials().getXlocs(), localUUID));
@@ -224,7 +229,5 @@ public final class WriteOperation extends OSDOperation {
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
 
 }

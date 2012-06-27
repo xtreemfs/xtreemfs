@@ -20,7 +20,7 @@ package org.xtreemfs.foundation;
  */
 public class VersionManagement {
     
-    public static final String RELEASE_VERSION   = "1.3.1-trunk";
+    public static final String RELEASE_VERSION   = "jan-xtreemfs-snapshots svn-r3194";
     
     private static final long  mrcDataVersion    = 10;
     

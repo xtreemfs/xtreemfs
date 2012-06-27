@@ -49,23 +49,22 @@ import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class RWReplicationTest extends TestCase {
 
-    private OSD[] osds;
-    private OSDConfig[] configs;
-    private TestEnvironment testEnv;
+    private OSD[]               osds;
+    private OSDConfig[]         configs;
+    private TestEnvironment     testEnv;
 
-    private final static int NUM_OSDS = 3;
-    private static final String fileId = "ABCDEF:1";
+    private final static int    NUM_OSDS = 3;
+    private static final String fileId   = "ABCDEF:1";
 
     public RWReplicationTest() {
         super();
         Logging.start(Logging.LEVEL_DEBUG, Category.all);
     }
-
 
     @Before
     public void setUp() throws Exception {
@@ -76,10 +75,11 @@ public class RWReplicationTest extends TestCase {
         testDir.mkdirs();
 
         // startup: DIR
-        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
-                TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
-                TestEnvironment.Services.OSD_CLIENT, TestEnvironment.Services.MRC,
-                TestEnvironment.Services.MRC_CLIENT});
+        testEnv = new TestEnvironment(
+                new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
+                        TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
+                        TestEnvironment.Services.OSD_CLIENT, TestEnvironment.Services.MRC,
+                        TestEnvironment.Services.MRC_CLIENT });
         testEnv.start();
 
         osds = new OSD[NUM_OSDS];
@@ -113,11 +113,13 @@ public class RWReplicationTest extends TestCase {
         System.out.println("TEST: replication with client");
 
         UserCredentials uc = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
-        Auth passwd = passwd = Auth.newBuilder().setAuthType(AuthType.AUTH_PASSWORD).setAuthPasswd(AuthPassword.newBuilder().setPassword("")).build();
+        Auth passwd = passwd = Auth.newBuilder().setAuthType(AuthType.AUTH_PASSWORD)
+                .setAuthPasswd(AuthPassword.newBuilder().setPassword("")).build();
 
-        Client c = new Client(new InetSocketAddress[]{testEnv.getDIRAddress()}, 15000, 60000, null);
+        Client c = new Client(new InetSocketAddress[] { testEnv.getDIRAddress() }, 15000, 60000, null);
         c.start();
-        c.createVolume("testVol", passwd, uc, SetupUtils.getStripingPolicy(1, 128), AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, 0777);
+        c.createVolume("testVol", passwd, uc, SetupUtils.getStripingPolicy(1, 128),
+                AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX, 0777);
 
         Volume v = c.getVolume("testVol", uc);
         File f = v.getFile("test.file");
@@ -147,44 +149,50 @@ public class RWReplicationTest extends TestCase {
     public void testReplicatedWrite() throws Exception {
         System.out.println("TEST: replicated write");
 
-        Capability cap = new Capability(fileId, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60, System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
+        Capability cap = new Capability(fileId, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
+                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60, System.currentTimeMillis(), "", 0, false,
+                SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
         List<Replica> rlist = new LinkedList();
         for (OSDConfig osd : this.configs) {
-            Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(1, 128)).setReplicationFlags(0).addOsdUuids(osd.getUUID().toString()).build();
+            Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(1, 128))
+                    .setReplicationFlags(0).addOsdUuids(osd.getUUID().toString()).build();
             rlist.add(r);
         }
 
-        XLocSet locSet = XLocSet.newBuilder().setReadOnlyFileSize(0).setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ).setVersion(1).addAllReplicas(rlist).build();
+        XLocSet locSet = XLocSet.newBuilder().setReadOnlyFileSize(0)
+                .setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ).setVersion(1).addAllReplicas(rlist)
+                .build();
         // set the first replica as current replica
         FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(locSet).build();
 
         final OSDServiceClient client = testEnv.getOSDClient();
 
-        final InetSocketAddress osd1 = new InetSocketAddress("localhost",configs[0].getPort());
+        final InetSocketAddress osd1 = new InetSocketAddress("localhost", configs[0].getPort());
 
-        final InetSocketAddress osd2 = new InetSocketAddress("localhost",configs[1].getPort());
+        final InetSocketAddress osd2 = new InetSocketAddress("localhost", configs[1].getPort());
 
-        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
+        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
         ReusableBuffer rb = BufferPool.allocate(1024);
         rb.put("YaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYagga".getBytes());
         rb.limit(rb.capacity());
         rb.position(0);
 
         RPCResponse<OSDWriteResponse> r = client.write(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileId, 0, 0, 0, 0, objdata, rb);
+                fc, fileId, 0, 0, 0, 0, objdata, -1, rb);
         r.get();
         System.out.println("got response");
         r.freeBuffers();
 
-        r = client.write(osd2, RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileId, 0, 0, 0, 0, objdata, BufferPool.allocate(1024*8));
+        r = client.write(osd2, RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileId, 0, 0, 0, 0,
+                objdata, -1, BufferPool.allocate(1024 * 8));
         try {
             r.get();
             fail("expected redirect");
         } catch (PBRPCException ex) {
             if (ex.getErrorType() != ErrorType.REDIRECT)
                 fail("expected redirect");
-            System.out.println("got response: "+ex);
+            System.out.println("got response: " + ex);
         }
         r.freeBuffers();
 
@@ -193,84 +201,88 @@ public class RWReplicationTest extends TestCase {
         rb.limit(rb.capacity());
         rb.position(0);
 
-        r = client.write(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileId, 0, 0, 1024, 0, objdata, rb);
+        r = client.write(osd1, RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileId, 0, 0, 1024, 0,
+                objdata, -1, rb);
         r.get();
         System.out.println("got response");
         r.freeBuffers();
 
-        //read from slave
+        // read from slave
         System.out.println("//// START READ ////");
-        RPCResponse<ObjectData> r2 = client.read(osd2, RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileId, 0, -1, 0, 2048);
+        RPCResponse<ObjectData> r2 = client.read(osd2, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, 0, -1, 0, 2048);
         try {
             r2.get();
             fail("expected redirect");
         } catch (PBRPCException ex) {
             if (ex.getErrorType() != ErrorType.REDIRECT)
                 fail("expected redirect");
-            System.out.println("got response: "+ex);
+            System.out.println("got response: " + ex);
         }
         r2.freeBuffers();
 
-
-        r2 = client.read(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileId, 0, -1, 0, 2048);
+        r2 = client.read(osd1, RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileId, 0, -1, 0, 2048);
         ObjectData od = r2.get();
-        
-        assertEquals(r2.getData().get(0),(byte)'Y');
-        assertEquals(r2.getData().get(1),(byte)'a');
+
+        assertEquals(r2.getData().get(0), (byte) 'Y');
+        assertEquals(r2.getData().get(1), (byte) 'a');
         r2.freeBuffers();
 
         XCap newCap = fc.getXcap().toBuilder().setTruncateEpoch(1).build();
         fc = fc.toBuilder().setXcap(newCap).build();
 
-        RPCResponse r3 = client.truncate(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileId, 128*1024*2);
+        RPCResponse r3 = client.truncate(osd1, RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileId,
+                128 * 1024 * 2);
         r3.get();
         r3.freeBuffers();
 
     }
 
-
     @Test
     public void testReset() throws Exception {
         System.out.println("TEST: replica reset");
 
-        Capability cap = new Capability(fileId, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60, System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
+        Capability cap = new Capability(fileId, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
+                | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 60, System.currentTimeMillis(), "", 0, false,
+                SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
         List<Replica> rlist = new LinkedList();
         for (OSDConfig osd : this.configs) {
-            Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(1, 128)).setReplicationFlags(0).addOsdUuids(osd.getUUID().toString()).build();
+            Replica r = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(1, 128))
+                    .setReplicationFlags(0).addOsdUuids(osd.getUUID().toString()).build();
             rlist.add(r);
         }
 
-        XLocSet locSet = XLocSet.newBuilder().setReadOnlyFileSize(0).setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ).setVersion(1).addAllReplicas(rlist).build();
+        XLocSet locSet = XLocSet.newBuilder().setReadOnlyFileSize(0)
+                .setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ).setVersion(1).addAllReplicas(rlist)
+                .build();
         // set the first replica as current replica
         FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(locSet).build();
 
+        Replica repl = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(1, 128))
+                .setReplicationFlags(0).addOsdUuids(configs[0].getUUID().toString()).build();
 
-        Replica repl = Replica.newBuilder().setStripingPolicy(SetupUtils.getStripingPolicy(1, 128)).setReplicationFlags(0).addOsdUuids(configs[0].getUUID().toString()).build();
-
-        XLocSet oneLocSet = XLocSet.newBuilder().setReadOnlyFileSize(0).setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE).setVersion(1).addReplicas(repl).build();
-                //new XLocSet(0, oneRset, Constants.REPL_UPDATE_PC_NONE, 1);
+        XLocSet oneLocSet = XLocSet.newBuilder().setReadOnlyFileSize(0)
+                .setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE).setVersion(1).addReplicas(repl)
+                .build();
+        // new XLocSet(0, oneRset, Constants.REPL_UPDATE_PC_NONE, 1);
         // set the first replica as current replica
         FileCredentials oneFC = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(oneLocSet).build();
 
-
         final OSDServiceClient client = testEnv.getOSDClient();
 
-        final InetSocketAddress osd1 = new InetSocketAddress("localhost",configs[0].getPort());
+        final InetSocketAddress osd1 = new InetSocketAddress("localhost", configs[0].getPort());
 
-        final InetSocketAddress osd2 = new InetSocketAddress("localhost",configs[1].getPort());
+        final InetSocketAddress osd2 = new InetSocketAddress("localhost", configs[1].getPort());
 
-        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false).build();
+        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
         ReusableBuffer rb = BufferPool.allocate(1024);
         rb.put("YaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYaggaYagga".getBytes());
         rb.limit(rb.capacity());
         rb.position(0);
 
         RPCResponse<OSDWriteResponse> r = client.write(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
-                    oneFC, fileId, 0, 0, 0, 0, objdata, rb);
+                oneFC, fileId, 0, 0, 0, 0, objdata, -1, rb);
         r.get();
         System.out.println("got response");
         r.freeBuffers();
@@ -280,18 +292,18 @@ public class RWReplicationTest extends TestCase {
         rb.limit(rb.capacity());
         rb.position(0);
 
-        r = client.write(osd1, RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileId, 1, 0, 0, 0, objdata, rb);
+        r = client.write(osd1, RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileId, 1, 0, 0, 0,
+                objdata, -1, rb);
         r.get();
         System.out.println("got response");
         r.freeBuffers();
 
         System.out.println("waiting...");
-        Thread.sleep(90*1000);
+        Thread.sleep(90 * 1000);
         System.out.println("continue...\n\n");
 
-        r = client.write(osd2, RPCAuthentication.authNone, RPCAuthentication.userService,
-                    fc, fileId, 0, 0, 0, 0, objdata, BufferPool.allocate(1024*8));
+        r = client.write(osd2, RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileId, 0, 0, 0, 0,
+                objdata, -1, BufferPool.allocate(1024 * 8));
         r.get();
         System.out.println("got response");
         r.freeBuffers();

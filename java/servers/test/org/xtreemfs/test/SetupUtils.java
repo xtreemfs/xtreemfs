@@ -38,19 +38,19 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
  * @author bjko
  */
 public class SetupUtils {
-    
-    public static final String     TEST_DIR         = "/tmp/xtreemfs-test2";
-    
+
+    public static final String     TEST_DIR         = "/tmp/xtreemfs-unit-test";
+
     public static final String     CERT_DIR         = "test/certs/";
-    
+
     public static boolean          SSL_ON           = false;
-    
+
     public static boolean          CHECKSUMS_ON     = false;
-    
+
     public static final int        DEBUG_LEVEL      = Logging.LEVEL_DEBUG;
-    
+
     public static final Category[] DEBUG_CATEGORIES = new Category[] { Category.all };
-    
+
     private static Properties createOSDProperties(int port, String dir) {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
@@ -82,39 +82,71 @@ public class SetupUtils {
         props.setProperty("measure_requests", "false");
         return props;
     }
-    
+
     public static OSDConfig createOSD1Config() throws IOException {
         Properties props = createOSDProperties(33637, TEST_DIR + "/osd0");
         OSDConfig config = new OSDConfig(props);
         config.setDefaults();
         return config;
     }
-    
+
     public static OSDConfig createOSD2Config() throws IOException {
         Properties props = createOSDProperties(33640, TEST_DIR + "/osd1");
         OSDConfig config = new OSDConfig(props);
         config.setDefaults();
         return config;
     }
-    
+
     public static OSDConfig createOSD3Config() throws IOException {
         Properties props = createOSDProperties(33641, TEST_DIR + "/osd2");
         OSDConfig config = new OSDConfig(props);
         config.setDefaults();
         return config;
     }
-    
+
     public static OSDConfig createOSD4Config() throws IOException {
         Properties props = createOSDProperties(33642, TEST_DIR + "/osd3");
         OSDConfig config = new OSDConfig(props);
         config.setDefaults();
         return config;
     }
-    
+
+    public static OSDConfig createOSD1Config(Properties customProps) throws IOException {
+        Properties props = createOSDProperties(33637, TEST_DIR + "/osd0");
+        props.putAll(customProps);
+        OSDConfig config = new OSDConfig(props);
+        config.setDefaults();
+        return config;
+    }
+
+    public static OSDConfig createOSD2Config(Properties customProps) throws IOException {
+        Properties props = createOSDProperties(33640, TEST_DIR + "/osd1");
+        props.putAll(customProps);
+        OSDConfig config = new OSDConfig(props);
+        config.setDefaults();
+        return config;
+    }
+
+    public static OSDConfig createOSD3Config(Properties customProps) throws IOException {
+        Properties props = createOSDProperties(33641, TEST_DIR + "/osd2");
+        props.putAll(customProps);
+        OSDConfig config = new OSDConfig(props);
+        config.setDefaults();
+        return config;
+    }
+
+    public static OSDConfig createOSD4Config(Properties customProps) throws IOException {
+        Properties props = createOSDProperties(33642, TEST_DIR + "/osd3");
+        props.putAll(customProps);
+        OSDConfig config = new OSDConfig(props);
+        config.setDefaults();
+        return config;
+    }
+
     public static OSDConfig[] createMultipleOSDConfigs(int number) throws IOException {
         OSDConfig[] configs = new OSDConfig[number];
         int startPort = 33640;
-        
+
         for (int i = 0; i < configs.length; i++) {
             Properties props = createOSDProperties(startPort, TEST_DIR + "/osd" + i);
             configs[i] = new OSDConfig(props);
@@ -123,7 +155,7 @@ public class SetupUtils {
         }
         return configs;
     }
-    
+
     public static org.xtreemfs.dir.DIRConfig createDIRConfig() throws IOException {
         Properties props = new Properties();
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
@@ -144,13 +176,13 @@ public class SetupUtils {
         props.setProperty("snmp.port", "34638");
         props.setProperty("snmp.address", "localhost");
         props.setProperty("measure_requests", "false");
-        
+
         DIRConfig config = new DIRConfig(props);
         config.setDefaults();
-        
+
         return config;
     }
-    
+
     public static BabuDBConfig createDIRdbsConfig() throws IOException {
         Properties props = new Properties();
         props.setProperty("babudb.debug.level", "" + DEBUG_LEVEL);
@@ -165,10 +197,10 @@ public class SetupUtils {
         props.setProperty("babudb.maxLogfileSize", "16777216");
         props.setProperty("babudb.checkInterval", "300");
         props.setProperty("babudb.pseudoSyncWait", "200");
-        
+
         return new BabuDBConfig(props);
     }
-    
+
     public static MRCConfig createMRC1Config() throws IOException {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
@@ -197,12 +229,12 @@ public class SetupUtils {
         props.setProperty("snmp.port", "34636");
         props.setProperty("snmp.address", "localhost");
         props.setProperty("measure_requests", "false");
-        
+
         MRCConfig config = new MRCConfig(props);
         config.setDefaults();
         return config;
     }
-    
+
     public static BabuDBConfig createMRC1dbsConfig() throws IOException {
         Properties props = new Properties();
         props.setProperty("babudb.debug.level", "" + DEBUG_LEVEL);
@@ -217,10 +249,10 @@ public class SetupUtils {
         props.setProperty("babudb.maxLogfileSize", "16777216");
         props.setProperty("babudb.checkInterval", "300");
         props.setProperty("babudb.pseudoSyncWait", "0");
-        
+
         return new BabuDBConfig(props);
     }
-    
+
     public static MRCConfig createMRC2Config() throws IOException {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
@@ -248,12 +280,12 @@ public class SetupUtils {
         props.setProperty("snmp.enabled", "true");
         props.setProperty("snmp.port", "34639");
         props.setProperty("snmp.address", "localhost");
-        
+
         MRCConfig config = new MRCConfig(props);
         config.setDefaults();
         return config;
     }
-    
+
     public static BabuDBConfig createMRC2dbsConfig() throws IOException {
         Properties props = new Properties();
         props.setProperty("babudb.debug.level", "" + DEBUG_LEVEL);
@@ -268,62 +300,62 @@ public class SetupUtils {
         props.setProperty("babudb.maxLogfileSize", "16777216");
         props.setProperty("babudb.checkInterval", "300");
         props.setProperty("babudb.pseudoSyncWait", "0");
-        
+
         return new BabuDBConfig(props);
     }
-    
+
     public static InetSocketAddress getMRC1Addr() {
         return new InetSocketAddress("localhost", 33636);
     }
-    
+
     public static InetSocketAddress getMRC2Addr() {
         return new InetSocketAddress("localhost", 33639);
     }
-    
+
     public static InetSocketAddress getOSD1Addr() {
         return new InetSocketAddress("localhost", 33637);
     }
-    
+
     public static InetSocketAddress getOSD2Addr() {
         return new InetSocketAddress("localhost", 33640);
     }
-    
+
     public static InetSocketAddress getOSD3Addr() {
         return new InetSocketAddress("localhost", 33641);
     }
-    
+
     public static InetSocketAddress getOSD4Addr() {
         return new InetSocketAddress("localhost", 33642);
     }
-    
+
     public static InetSocketAddress getDIRAddr() {
         return new InetSocketAddress("localhost", 33638);
     }
-    
+
     public static ServiceUUID getMRC1UUID() {
         return new ServiceUUID("UUID:localhost:33636");
     }
-    
+
     public static ServiceUUID getMRC2UUID() {
         return new ServiceUUID("UUID:localhost:33639");
     }
-    
+
     public static ServiceUUID getOSD1UUID() {
         return new ServiceUUID("UUID:localhost:33637");
     }
-    
+
     public static ServiceUUID getOSD2UUID() {
         return new ServiceUUID("UUID:localhost:33640");
     }
-    
+
     public static ServiceUUID getOSD3UUID() {
         return new ServiceUUID("UUID:localhost:33641");
     }
-    
+
     public static ServiceUUID getOSD4UUID() {
         return new ServiceUUID("UUID:localhost:33642");
     }
-    
+
     static void localResolver() {
         UUIDResolver.addLocalMapping(getMRC1UUID(), 33636, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
         UUIDResolver.addLocalMapping(getMRC2UUID(), 33639, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
@@ -332,30 +364,30 @@ public class SetupUtils {
         UUIDResolver.addLocalMapping(getOSD3UUID(), 33641, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
         UUIDResolver.addLocalMapping(getOSD4UUID(), 33642, SSL_ON ? Schemes.SCHEME_PBRPCS : Schemes.SCHEME_PBRPC);
     }
-    
+
     private static ServiceUUID getUUID(String listenAddress, int port) {
         return new ServiceUUID("UUID:" + listenAddress + ":" + port);
     }
-    
+
     public static void setupLocalResolver() throws Exception {
         TimeSync.initialize(null, 100000, 50);
         UUIDResolver.shutdown();
-        
+
         UUIDResolver.start(null, 1000, 1000);
         localResolver();
     }
-    
+
     static RPCNIOSocketClient createRPCClient(int timeout) throws IOException {
         final SSLOptions sslOptions = SSL_ON ? new SSLOptions(new FileInputStream(CERT_DIR + "Client.p12"),
                 "passphrase", SSLOptions.PKCS12_CONTAINER, new FileInputStream(CERT_DIR + "trusted.jks"), "passphrase",
                 SSLOptions.JKS_CONTAINER, false) : null;
         return new RPCNIOSocketClient(sslOptions, timeout, 5 * 60 * 1000, "SetupUtils");
     }
-    
+
     static DIRServiceClient createDIRClient(RPCNIOSocketClient client) throws IOException {
         return new DIRServiceClient(client, new InetSocketAddress("localhost", 33638));
     }
-    
+
     public static OSDConfig createOSD1ConfigForceWithoutSSL() throws IOException {
         boolean tmp = SSL_ON;
         SSL_ON = false;
@@ -363,7 +395,7 @@ public class SetupUtils {
         SSL_ON = tmp;
         return config;
     }
-    
+
     public static OSDConfig createOSD2ConfigForceWithoutSSL() throws IOException {
         boolean tmp = SSL_ON;
         SSL_ON = false;
@@ -371,7 +403,7 @@ public class SetupUtils {
         SSL_ON = tmp;
         return config;
     }
-    
+
     public static OSDConfig createOSD3ConfigForceWithoutSSL() throws IOException {
         boolean tmp = SSL_ON;
         SSL_ON = false;
@@ -379,7 +411,7 @@ public class SetupUtils {
         SSL_ON = tmp;
         return config;
     }
-    
+
     public static MRCConfig createMRC1ConfigForceWithoutSSL() throws IOException {
         boolean tmp = SSL_ON;
         SSL_ON = false;
@@ -387,7 +419,7 @@ public class SetupUtils {
         SSL_ON = tmp;
         return config;
     }
-    
+
     public static MRCConfig createMRC2ConfigForceWithoutSSL() throws IOException {
         boolean tmp = SSL_ON;
         SSL_ON = false;
@@ -395,7 +427,7 @@ public class SetupUtils {
         SSL_ON = tmp;
         return config;
     }
-    
+
     public static DIRConfig createDIRConfigForceWithoutSSL() throws IOException {
         boolean tmp = SSL_ON;
         SSL_ON = false;
@@ -403,7 +435,7 @@ public class SetupUtils {
         SSL_ON = tmp;
         return config;
     }
-    
+
     /**
      * @param size
      *            in byte
@@ -414,7 +446,7 @@ public class SetupUtils {
         random.nextBytes(data);
         return ReusableBuffer.wrap(data);
     }
-    
+
     /**
      * @param size
      *            in byte
@@ -425,10 +457,10 @@ public class SetupUtils {
             data[i] = ch;
         return ReusableBuffer.wrap(data);
     }
-    
+
     public static StripingPolicy getStripingPolicy(int width, int stripeSize) {
         return StripingPolicy.newBuilder().setType(StripingPolicyType.STRIPING_POLICY_RAID0).setStripeSize(stripeSize)
                 .setWidth(width).build();
     }
-    
+
 }
