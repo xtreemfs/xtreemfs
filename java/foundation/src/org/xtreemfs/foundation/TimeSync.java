@@ -81,7 +81,14 @@ public final class TimeSync extends LifeCycleThread {
     /**
      * timestamp of last resync operation
      */
-    private volatile long          lastSync;
+    private volatile long          lastSuccessfulSync;
+    
+    /**
+     * Timestamp of the last resync attempt.
+     * 
+     * @note No need to specify it as volatile since it's only used by run().
+     */
+    private long                   lastSyncAttempt;
 
     private volatile int           syncRTT;
 
@@ -155,7 +162,7 @@ public final class TimeSync extends LifeCycleThread {
         Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "TimeSync is running %s", tsStatus);
         while (!quit) {
             localSysTime = System.currentTimeMillis();
-            if (localSysTime - lastSync > timeSyncInterval) {
+            if (localSysTime - lastSyncAttempt > timeSyncInterval) {
                 resync();
             }
             if (!quit) {
@@ -294,10 +301,10 @@ public final class TimeSync extends LifeCycleThread {
     /**
      *
      * @return the timestamp (local time) when the drift
-     * was calculated
+     * was successfully calculated
      */
-    public static long getLastSyncTimestamp() {
-        return getInstance().lastSync;
+    public static long getLastSuccessfulSyncTimestamp() {
+        return getInstance().lastSuccessfulSync;
     }
     /**
      * returns the current clock drift.
@@ -316,6 +323,7 @@ public final class TimeSync extends LifeCycleThread {
             case XTREEMFS_DIR : {
                 try {
                     long tStart = System.currentTimeMillis();
+                    lastSyncAttempt = tStart;
                     long oldDrift = currentDrift;
                     long globalTime = timeServerClient.xtreemfs_global_time_get(null);
                     if (globalTime <= 0) {
@@ -338,9 +346,8 @@ public final class TimeSync extends LifeCycleThread {
                     globalTime += syncRTT / 2;
                     syncSuccess = true;
 
-
                     currentDrift = globalTime - tEnd;
-                    lastSync = tEnd;
+                    lastSuccessfulSync = tEnd;
 
                     if (Math.abs(oldDrift - currentDrift) > 5000 && oldDrift != 0) {
                         Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this,
@@ -350,7 +357,6 @@ public final class TimeSync extends LifeCycleThread {
                 } catch (Exception ex) {
                     syncSuccess = false;
                     ex.printStackTrace();
-                    lastSync = System.currentTimeMillis();
                 }
                 break;
             }
@@ -360,6 +366,7 @@ public final class TimeSync extends LifeCycleThread {
                     BufferedReader br = new BufferedReader(new InputStreamReader(gpsdSocket.getInputStream()));
                     OutputStream os = gpsdSocket.getOutputStream();
                     long tStart = System.currentTimeMillis();
+                    lastSyncAttempt = tStart;
                     
                     os.write(new byte[]{'d','\n'});
                     os.flush();
@@ -382,7 +389,6 @@ public final class TimeSync extends LifeCycleThread {
                     } else {
                         Logging.logMessage(Logging.LEVEL_WARN, this,"cannot parse GPSd response: %s",response);
                         syncSuccess = false;
-                        lastSync = tEnd;
                         return;
                     }
 
@@ -397,9 +403,8 @@ public final class TimeSync extends LifeCycleThread {
                     globalTime += syncRTT / 2;
                     syncSuccess = true;
 
-
                     currentDrift = globalTime - tEnd;
-                    lastSync = tEnd;
+                    lastSuccessfulSync = tEnd;
 
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                             "resync success, drift: %d ms", Math.abs(oldDrift-currentDrift));
@@ -411,7 +416,6 @@ public final class TimeSync extends LifeCycleThread {
                 } catch (Exception ex) {
                     syncSuccess = false;
                     ex.printStackTrace();
-                    lastSync = System.currentTimeMillis();
                 }
              }
         }
