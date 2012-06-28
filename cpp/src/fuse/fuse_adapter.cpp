@@ -62,7 +62,11 @@ int CheckIfOperationInterrupted() {
     return 0;
   } else {
     // TODO(mberlin): Test for other plattforms that it's safe to call this.
-    return fuse_interrupted();
+    // TODO(mberlin): Temporarily disabled since older Fuse versions to not
+    //                zero the context and therefore the work-around above can
+    //                fail (seen with Fuse 2.8.3).
+    //return fuse_interrupted();
+    return 0;
   }
 }
 
