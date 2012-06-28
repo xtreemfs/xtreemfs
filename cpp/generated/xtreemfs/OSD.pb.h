@@ -1490,6 +1490,13 @@ class truncateRequest : public ::google::protobuf::Message {
   inline ::google::protobuf::uint64 new_file_size() const;
   inline void set_new_file_size(::google::protobuf::uint64 value);
   
+  // optional fixed64 server_timestamp = 4;
+  inline bool has_server_timestamp() const;
+  inline void clear_server_timestamp();
+  static const int kServerTimestampFieldNumber = 4;
+  inline ::google::protobuf::uint64 server_timestamp() const;
+  inline void set_server_timestamp(::google::protobuf::uint64 value);
+  
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.truncateRequest)
  private:
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
@@ -1499,11 +1506,12 @@ class truncateRequest : public ::google::protobuf::Message {
   ::std::string* file_id_;
   static const ::std::string _default_file_id_;
   ::google::protobuf::uint64 new_file_size_;
+  ::google::protobuf::uint64 server_timestamp_;
   friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
   
-  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
   
   // WHY DOES & HAVE LOWER PRECEDENCE THAN != !?
   inline bool _has_bit(int index) const {
@@ -1728,12 +1736,12 @@ class writeRequest : public ::google::protobuf::Message {
   inline const ::xtreemfs::pbrpc::ObjectData& object_data() const;
   inline ::xtreemfs::pbrpc::ObjectData* mutable_object_data();
   
-  // optional fixed64 last_seen_server_timestamp = 8;
-  inline bool has_last_seen_server_timestamp() const;
-  inline void clear_last_seen_server_timestamp();
-  static const int kLastSeenServerTimestampFieldNumber = 8;
-  inline ::google::protobuf::uint64 last_seen_server_timestamp() const;
-  inline void set_last_seen_server_timestamp(::google::protobuf::uint64 value);
+  // optional fixed64 server_timestamp = 8;
+  inline bool has_server_timestamp() const;
+  inline void clear_server_timestamp();
+  static const int kServerTimestampFieldNumber = 8;
+  inline ::google::protobuf::uint64 server_timestamp() const;
+  inline void set_server_timestamp(::google::protobuf::uint64 value);
   
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.writeRequest)
  private:
@@ -1748,7 +1756,7 @@ class writeRequest : public ::google::protobuf::Message {
   ::google::protobuf::uint32 offset_;
   ::google::protobuf::uint64 lease_timeout_;
   ::xtreemfs::pbrpc::ObjectData* object_data_;
-  ::google::protobuf::uint64 last_seen_server_timestamp_;
+  ::google::protobuf::uint64 server_timestamp_;
   friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
@@ -5559,6 +5567,22 @@ inline void truncateRequest::set_new_file_size(::google::protobuf::uint64 value)
   new_file_size_ = value;
 }
 
+// optional fixed64 server_timestamp = 4;
+inline bool truncateRequest::has_server_timestamp() const {
+  return _has_bit(3);
+}
+inline void truncateRequest::clear_server_timestamp() {
+  server_timestamp_ = GOOGLE_ULONGLONG(0);
+  _clear_bit(3);
+}
+inline ::google::protobuf::uint64 truncateRequest::server_timestamp() const {
+  return server_timestamp_;
+}
+inline void truncateRequest::set_server_timestamp(::google::protobuf::uint64 value) {
+  _set_bit(3);
+  server_timestamp_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // unlink_osd_Request
@@ -5766,20 +5790,20 @@ inline ::xtreemfs::pbrpc::ObjectData* writeRequest::mutable_object_data() {
   return object_data_;
 }
 
-// optional fixed64 last_seen_server_timestamp = 8;
-inline bool writeRequest::has_last_seen_server_timestamp() const {
+// optional fixed64 server_timestamp = 8;
+inline bool writeRequest::has_server_timestamp() const {
   return _has_bit(7);
 }
-inline void writeRequest::clear_last_seen_server_timestamp() {
-  last_seen_server_timestamp_ = GOOGLE_ULONGLONG(0);
+inline void writeRequest::clear_server_timestamp() {
+  server_timestamp_ = GOOGLE_ULONGLONG(0);
   _clear_bit(7);
 }
-inline ::google::protobuf::uint64 writeRequest::last_seen_server_timestamp() const {
-  return last_seen_server_timestamp_;
+inline ::google::protobuf::uint64 writeRequest::server_timestamp() const {
+  return server_timestamp_;
 }
-inline void writeRequest::set_last_seen_server_timestamp(::google::protobuf::uint64 value) {
+inline void writeRequest::set_server_timestamp(::google::protobuf::uint64 value) {
   _set_bit(7);
-  last_seen_server_timestamp_ = value;
+  server_timestamp_ = value;
 }
 
 // -------------------------------------------------------------------

@@ -227,7 +227,7 @@ public abstract class StorageLayout {
      * @throws IOException
      */
     public abstract void truncateObject(String fileId, FileMetadata md, long objNo, int newLength, long newVersion,
-            long newTimestamp, boolean cow) throws IOException;
+            long newTimestamp, CowPolicy cow) throws IOException;
 
     /**
      * Deletes all versions of all objects of a file.

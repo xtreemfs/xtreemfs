@@ -31,7 +31,6 @@ import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.osd.storage.SingleFileStorageLayout;
 import org.xtreemfs.osd.storage.StorageLayout;
-import org.xtreemfs.osd.storage.CowPolicy.cowMode;
 import org.xtreemfs.osd.storage.VersionManager.ObjectVersionInfo;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.test.SetupUtils;
@@ -181,7 +180,7 @@ public class StorageLayoutTest extends TestCase {
         BufferPool.free(oinfo.getData());
 
         // truncate to 32 byte
-        layout.truncateObject(fileId, md, 0l, 32, 1, 0, false);
+        layout.truncateObject(fileId, md, 0l, 32, 1, 0, CowPolicy.PolicyNoCow);
         oinfo = layout.readObject(fileId, md, 0l, 32, 64, new ObjectVersionInfo(1l, 0, 0));
         assertTrue(((oinfo.getData() == null) || (oinfo.getData().capacity() == 0)));
         BufferPool.free(oinfo.getData());
@@ -195,7 +194,7 @@ public class StorageLayoutTest extends TestCase {
         BufferPool.free(oinfo.getData());
 
         // truncate extend to 64 bytes
-        layout.truncateObject(fileId, md, 0l, 64, 2, 0, false);
+        layout.truncateObject(fileId, md, 0l, 64, 2, 0, CowPolicy.PolicyNoCow);
         oinfo = layout.readObject(fileId, md, 0l, 32, 64, new ObjectVersionInfo(2l, 0, 0));
         assertEquals(32, oinfo.getData().capacity());
         for (int i = 0; i < 32; i++) {

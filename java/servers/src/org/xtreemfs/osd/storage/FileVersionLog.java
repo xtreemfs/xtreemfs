@@ -65,11 +65,21 @@ public class FileVersionLog {
 
     }
 
-    private List<FileVersion> versionList;
+    /**
+     * memory-resident representation of the truncate log
+     */
+    private List<FileVersion>       versionList;
 
-    private File              logFile;
+    /**
+     * memory-resident representation of all truncate operations performed since the last file version was
+     * appended; the list is only used to record additional versions that have to be written to disk as well
+     * when adding a file version
+     */
+    private final List<FileVersion> truncateList;
 
-    private static final long D_MAX = 2000; // 2s
+    private final File              logFile;
+
+    private static final long       D_MAX = 2000; // 2s
 
     /**
      * Creates a new empty file version log.
@@ -80,6 +90,7 @@ public class FileVersionLog {
     public FileVersionLog(File logFile) {
         this.logFile = logFile;
         this.versionList = new ArrayList<FileVersion>();
+        this.truncateList = new LinkedList<FileVersion>();
     }
 
     /**
@@ -234,9 +245,54 @@ public class FileVersionLog {
         // if no objects exist, the file size must be zero
         assert (numObjects != 0 || fileSize == 0);
 
-        // perform an append write to the log
-
+        // perform append writes to the log
         FileOutputStream fout = new FileOutputStream(logFile, true);
+
+        // append an individual file version for each entry in the truncate record; this is necessary to
+        // ensure correct results when reading data from truncated files
+        for (FileVersion ver : truncateList)
+            writeVersion(fout, ver.getTimestamp(), ver.getFileSize(), ver.getNumObjects());
+
+        // clear the truncate record
+        truncateList.clear();
+
+        // write the actual file version
+        writeVersion(fout, timestamp, fileSize, numObjects);
+
+        // insert the version in the memory-resident data structure
+        versionList.add(new FileVersion(timestamp, fileSize, numObjects));
+
+        fout.close();
+    }
+
+    /**
+     * Records a truncate operation in the memory-resident log.
+     * 
+     * @param timestamp
+     *            the timestamp attached to the file version
+     * @param fileSize
+     *            the file size attached to the file version
+     * @param numObjects
+     *            the number of objects attached to the file version
+     */
+    public void recordTruncate(long timestamp, long fileSize, long numObjects) {
+
+        FileVersion fv = new FileVersion(timestamp, fileSize, numObjects);
+
+        versionList.add(fv);
+        truncateList.add(fv);
+    }
+
+    /**
+     * Returns the total number of versions stored in the log.
+     * 
+     * @return the number of versions
+     */
+    public long getVersionCount() {
+        return versionList.size();
+    }
+
+    private void writeVersion(FileOutputStream fout, long timestamp, long fileSize, long numObjects) throws IOException {
 
         ReusableBuffer versionBuf = BufferPool.allocate(24);
         versionBuf.position(0);
@@ -248,21 +304,7 @@ public class FileVersionLog {
             throw new IOException("could not append file version; only " + bytesWritten
                     + " bytes written; should be 24");
 
-        fout.close();
-
         BufferPool.free(versionBuf);
-
-        // insert the version in the memory-resident data structure
-        versionList.add(new FileVersion(timestamp, fileSize, numObjects));
-    }
-
-    /**
-     * Returns the total number of versions stored in the log.
-     * 
-     * @return the number of versions
-     */
-    public long getVersionCount() {
-        return versionList.size();
     }
 
 }

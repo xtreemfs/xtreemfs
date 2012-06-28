@@ -34,7 +34,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class TruncateOperation extends OSDOperation {
 
-    final String sharedSecret;
+    final String      sharedSecret;
 
     final ServiceUUID localUUID;
 
@@ -59,7 +59,8 @@ public final class TruncateOperation extends OSDOperation {
         }
 
         if (!rq.getLocationList().getLocalReplica().getHeadOsd().equals(localUUID)) {
-            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "truncate must be executed at the head OSD (first OSD in replica)");
+            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
+                    "truncate must be executed at the head OSD (first OSD in replica)");
             return;
         }
 
@@ -69,72 +70,46 @@ public final class TruncateOperation extends OSDOperation {
             return;
         }
 
+        long receivedServerTimestamp = args.getServerTimestamp();
+
         if ((rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
-            || (rq.getLocationList().getNumReplicas() == 1)) {
+                || (rq.getLocationList().getNumReplicas() == 1)) {
 
             master.getStorageStage().truncate(args.getFileId(), args.getNewFileSize(),
-                rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                rq.getLocationList().getLocalReplica(), rq.getCapability().getEpochNo(), rq.getCowPolicy(),
-                null, false, rq,
-                new TruncateCallback() {
+                    rq.getLocationList().getLocalReplica().getStripingPolicy(), rq.getLocationList().getLocalReplica(),
+                    rq.getCapability().getEpochNo(), rq.getCowPolicy(), null, receivedServerTimestamp, false, rq,
+                    new TruncateCallback() {
 
-                    @Override
-                    public void truncateComplete(OSDWriteResponse result, ErrorResponse error) {
-                        step2(rq, args, result, error);
-                    }
-            });
+                        @Override
+                        public void truncateComplete(OSDWriteResponse result, ErrorResponse error) {
+                            step2(rq, args, result, error);
+                        }
+                    });
         } else {
-            rwReplicatedTruncate(rq, args);
+            rwReplicatedTruncate(rq, args, receivedServerTimestamp);
         }
     }
 
-    public void rwReplicatedTruncate(final OSDRequest rq,
-            final truncateRequest args) {
-        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), 0, 0, RWReplicationStage.Operation.TRUNCATE, new RWReplicationStage.RWReplicationCallback() {
-
-            @Override
-            public void success(final long newObjectVersion) {
-                final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
-
-                //FIXME: ignore canExecOperation for now...
-               master.getStorageStage().truncate(args.getFileId(), args.getNewFileSize(),
-                    rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                    rq.getLocationList().getLocalReplica(), rq.getCapability().getEpochNo(), rq.getCowPolicy(),
-                    newObjectVersion, true, rq, new TruncateCallback() {
+    public void rwReplicatedTruncate(final OSDRequest rq, final truncateRequest args, final long receivedServerTimestamp) {
+        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), 0, 0,
+                RWReplicationStage.Operation.TRUNCATE, new RWReplicationStage.RWReplicationCallback() {
 
                     @Override
-                    public void truncateComplete(OSDWriteResponse result, ErrorResponse error) {
-                        replicateTruncate(rq, newObjectVersion, args, result, error);
-                    }
-                });
-            }
+                    public void success(final long newObjectVersion) {
+                        final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
-            @Override
-            public void redirect(String redirectTo) {
-                rq.getRPCRequest().sendRedirect(redirectTo);
-            }
+                        // FIXME: ignore canExecOperation for now...
+                        master.getStorageStage().truncate(args.getFileId(), args.getNewFileSize(),
+                                rq.getLocationList().getLocalReplica().getStripingPolicy(),
+                                rq.getLocationList().getLocalReplica(), rq.getCapability().getEpochNo(),
+                                rq.getCowPolicy(), newObjectVersion, receivedServerTimestamp, true, rq,
+                                new TruncateCallback() {
 
-            @Override
-            public void failed(ErrorResponse err) {
-                rq.sendError(err);
-            }
-        }, rq);
-    }
-
-    public void replicateTruncate(final OSDRequest rq,
-            final long newObjVersion,
-            final truncateRequest args,
-            final OSDWriteResponse result, ErrorResponse error) {
-            if (error != null)
-                step2(rq, args, result, error);
-            else {
-                master.getRWReplicationStage().replicateTruncate(args.getFileCredentials(),
-                    rq.getLocationList(),args.getNewFileSize(), newObjVersion,
-                    new RWReplicationStage.RWReplicationCallback() {
-
-                    @Override
-                    public void success(long newObjectVersion) {
-                        step2(rq, args, result, null);
+                                    @Override
+                                    public void truncateComplete(OSDWriteResponse result, ErrorResponse error) {
+                                        replicateTruncate(rq, newObjectVersion, args, result, error);
+                                    }
+                                });
                     }
 
                     @Override
@@ -147,32 +122,53 @@ public final class TruncateOperation extends OSDOperation {
                         rq.sendError(err);
                     }
                 }, rq);
-
-            }
     }
 
-    public void step2(final OSDRequest rq,
-            final truncateRequest args,
-            OSDWriteResponse result, ErrorResponse error) {
+    public void replicateTruncate(final OSDRequest rq, final long newObjVersion, final truncateRequest args,
+            final OSDWriteResponse result, ErrorResponse error) {
+        if (error != null)
+            step2(rq, args, result, error);
+        else {
+            master.getRWReplicationStage().replicateTruncate(args.getFileCredentials(), rq.getLocationList(),
+                    args.getNewFileSize(), newObjVersion, new RWReplicationStage.RWReplicationCallback() {
+
+                        @Override
+                        public void success(long newObjectVersion) {
+                            step2(rq, args, result, null);
+                        }
+
+                        @Override
+                        public void redirect(String redirectTo) {
+                            rq.getRPCRequest().sendRedirect(redirectTo);
+                        }
+
+                        @Override
+                        public void failed(ErrorResponse err) {
+                            rq.sendError(err);
+                        }
+                    }, rq);
+
+        }
+    }
+
+    public void step2(final OSDRequest rq, final truncateRequest args, OSDWriteResponse result, ErrorResponse error) {
 
         if (error != null) {
             rq.sendError(error);
         } else {
-            //check for striping
+            // check for striping
             if (rq.getLocationList().getLocalReplica().isStriped()) {
-                //disseminate internal truncate to all other OSDs
+                // disseminate internal truncate to all other OSDs
                 disseminateTruncates(rq, args, result);
             } else {
-                //non-striped
+                // non-striped
                 sendResponse(rq, result);
             }
 
         }
     }
 
-    private void disseminateTruncates(final OSDRequest rq,
-            final truncateRequest args,
-            final OSDWriteResponse result) {
+    private void disseminateTruncates(final OSDRequest rq, final truncateRequest args, final OSDWriteResponse result) {
         try {
             final List<ServiceUUID> osds = rq.getLocationList().getLocalReplica().getOSDs();
             final RPCResponse[] gmaxRPCs = new RPCResponse[osds.size() - 1];
@@ -180,8 +176,8 @@ public final class TruncateOperation extends OSDOperation {
             for (ServiceUUID osd : osds) {
                 if (!osd.equals(localUUID)) {
                     gmaxRPCs[cnt++] = master.getOSDClient().xtreemfs_internal_truncate(osd.getAddress(),
-                            RPCAuthentication.authNone,RPCAuthentication.userService,
-                            args.getFileCredentials(), args.getFileId(), args.getNewFileSize());
+                            RPCAuthentication.authNone, RPCAuthentication.userService, args.getFileCredentials(),
+                            args.getFileId(), args.getNewFileSize(), args.getServerTimestamp());
                 }
 
             }
@@ -201,14 +197,12 @@ public final class TruncateOperation extends OSDOperation {
 
         }
 
-
     }
 
     private void analyzeTruncateResponses(OSDRequest rq, OSDWriteResponse result, RPCResponse[] gmaxRPCs) {
-        //analyze results
+        // analyze results
         try {
-            for (int i = 0; i <
-                    gmaxRPCs.length; i++) {
+            for (int i = 0; i < gmaxRPCs.length; i++) {
                 gmaxRPCs[i].get();
             }
 
@@ -227,13 +221,13 @@ public final class TruncateOperation extends OSDOperation {
     }
 
     public void sendResponse(OSDRequest rq, OSDWriteResponse result) {
-        rq.sendSuccess(result,null);
+        rq.sendSuccess(result, null);
     }
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
         try {
-            truncateRequest  rpcrq = (truncateRequest)rq.getRequestArgs();
+            truncateRequest rpcrq = (truncateRequest) rq.getRequestArgs();
             rq.setFileId(rpcrq.getFileId());
             rq.setCapability(new Capability(rpcrq.getFileCredentials().getXcap(), sharedSecret));
             rq.setLocationList(new XLocations(rpcrq.getFileCredentials().getXlocs(), localUUID));
@@ -245,7 +239,6 @@ public final class TruncateOperation extends OSDOperation {
             return ErrorUtils.getInternalServerError(ex);
         }
     }
-
 
     @Override
     public boolean requiresCapability() {

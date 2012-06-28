@@ -22,12 +22,10 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.dir.DIRConfig;
-import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
@@ -49,57 +47,13 @@ public class StripingTestCOW extends TestCase {
 
     private TestEnvironment      testEnv;
 
-    /*
-     * static class MRCDummy implements RPCResponseAvailableListener<OSDWriteResponse> {
-     * 
-     * private long issuedEpoch;
-     * 
-     * private long epoch;
-     * 
-     * private long fileSize;
-     * 
-     * private String capSecret;
-     * 
-     * public MRCDummy(String capSecret) { this.capSecret = capSecret; }
-     * 
-     * Capability open(char mode) { if (mode == 't') issuedEpoch++;
-     * 
-     * return new Capability(FILE_ID, 0, 60, System.currentTimeMillis(), "", (int) issuedEpoch, false, COW ?
-     * SnapConfig.SNAP_CONFIG_ACCESS_CURRENT : SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret); }
-     * 
-     * synchronized long getFileSize() { return fileSize; }
-     * 
-     * @Override public void responseAvailable(RPCResponse<OSDWriteResponse> r) { try {
-     * 
-     * OSDWriteResponse resp = r.get(); System.out.println("fs-update: " + resp);
-     * 
-     * if (resp.getSizeInBytesCount() > 0) {
-     * 
-     * final long newFileSize = resp.getNew_file_size().get(0).getSize_in_bytes(); final long epochNo =
-     * resp.getNew_file_size().get(0).getTruncate_epoch();
-     * 
-     * if (epochNo < epoch) return;
-     * 
-     * if (epochNo > epoch || newFileSize > fileSize) { epoch = epochNo; fileSize = newFileSize; } }
-     * 
-     * } catch (Exception exc) { exc.printStackTrace(); System.exit(1); } }
-     * 
-     * }
-     */
-
     private static final String  FILE_ID            = "1:1";
 
     private static final int     KB                 = 1;
 
     private static final int     SIZE               = KB * 1024;
 
-    private static final byte[]  ZEROS_HALF         = new byte[SIZE / 2];
-
-    private static final byte[]  ZEROS              = new byte[SIZE];
-
     private static final int     CLOSE_TIMEOUT_SPAN = 5000;
-
-    private final DIRConfig      dirConfig;
 
     private final OSDConfig      osdCfg1;
 
@@ -138,8 +92,6 @@ public class StripingTestCOW extends TestCase {
                 .build();
         xloc = XLocSet.newBuilder().setReadOnlyFileSize(0).setVersion(1).addReplicas(r).setReplicaUpdatePolicy("")
                 .build();
-
-        dirConfig = SetupUtils.createDIRConfig();
 
     }
 
@@ -232,21 +184,20 @@ public class StripingTestCOW extends TestCase {
                     r.registerListener(mrcDummy);
                 }
 
-                // wait until all write requests have been completed, i.e. all
-                // file
-                // size updates have been performed
+                // wait until all write requests have been completed, i.e. all file size updates have been
+                // performed
                 for (RPCResponse r : responses) {
                     r.waitForResult();
                     r.freeBuffers();
                 }
                 responses.clear();
 
-                fcred = fcred.toBuilder().setXcap(mrcDummy.open('t').getXCap()).build();
+                fcred = fcred.toBuilder().setXcap(mrcDummy.open('t', COW).getXCap()).build();
 
                 // truncate the file
                 long newSize = (long) (Math.random() * maxSize);
                 RPCResponse<OSDWriteResponse> rt = client.truncate(osdIDs.get(0).getAddress(),
-                        RPCAuthentication.authNone, RPCAuthentication.userService, fcred, FILE_ID, newSize);
+                        RPCAuthentication.authNone, RPCAuthentication.userService, fcred, FILE_ID, newSize, -1);
                 rt.registerListener(mrcDummy);
                 rt.waitForResult();
                 rt.freeBuffers();
@@ -289,6 +240,10 @@ public class StripingTestCOW extends TestCase {
 
         }
 
+    }
+
+    public static void main(String[] args) {
+        TestRunner.run(StripingTestCOW.class);
     }
 
 }

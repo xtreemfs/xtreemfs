@@ -11,6 +11,8 @@ package org.xtreemfs.osd.storage;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -19,7 +21,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.xtreemfs.osd.storage.FileVersionLog.FileVersion;
-import org.xtreemfs.osd.storage.VersionManager.ObjectVersionInfo;
 
 /**
  * This class implements a record-keeping component for versions of files and objects, as well as object
@@ -291,6 +292,21 @@ public class VersionManager {
     public void createFileVersion(long timestamp, long fileSize, long numObjects) throws IOException {
         versioningEnabled = true;
         fileVersionLog.appendVersion(timestamp, fileSize, numObjects);
+    }
+
+    /**
+     * Records a truncate operation.
+     * 
+     * @param timestamp
+     *            the timestamp
+     * @param fileSize
+     *            the file size
+     * @param numObjects
+     *            the number of objects
+     */
+    public void recordTruncate(long timestamp, long fileSize, long numObjects) throws IOException {
+        versioningEnabled = true;
+        fileVersionLog.recordTruncate(timestamp, fileSize, numObjects);
     }
 
     /**

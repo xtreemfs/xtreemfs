@@ -678,7 +678,7 @@ public class RandomAccessFile {
             ServiceUUID osd = new ServiceUUID(currentReplica.getHeadOsd().toString(), parentVolume.uuidResolver);
 
             r = osdClient.truncate(osd.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, tCred,
-                    fileId, newLength);
+                    fileId, newLength, -1);
 
             OSDWriteResponse resp = r.get();
 

@@ -445,14 +445,14 @@ public class VersionManagementTest extends TestCase {
         // created, and append another object
         FileCredentials tCred = getFileCredentials(1, true);
         r1 = client.truncate(osdId.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, tCred,
-                FILE_ID, 0);
-        r1.get();
+                FILE_ID, 0, t1);
+        long ts = r1.get().getServerTimestamp();
         r1.freeBuffers();
 
         // close the file
         r3 = client
                 .close(osdId.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, wCred, FILE_ID);
-        long ts = r3.get().getServerTimestamp();
+        ts = r3.get().getServerTimestamp();
         r3.freeBuffers();
 
         r1 = client.write(osdId.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, wCred,

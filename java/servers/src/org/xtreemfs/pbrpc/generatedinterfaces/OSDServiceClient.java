@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Jun 27 17:48:27 CEST 2012
+//automatically generated from OSD.proto at Thu Jun 28 10:42:53 CEST 2012
 //(c) 2012. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -45,8 +45,8 @@ public class OSDServiceClient {
          return response;
     }
 
-    public RPCResponse<GlobalTypes.OSDWriteResponse> truncate(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long new_file_size) throws IOException {
-         final OSD.truncateRequest msg = OSD.truncateRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setNewFileSize(new_file_size).build();
+    public RPCResponse<GlobalTypes.OSDWriteResponse> truncate(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long new_file_size, long server_timestamp) throws IOException {
+         final OSD.truncateRequest msg = OSD.truncateRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setNewFileSize(new_file_size).setServerTimestamp(server_timestamp).build();
          return truncate(server, authHeader, userCreds,msg);
     }
 
@@ -71,8 +71,8 @@ public class OSDServiceClient {
          return response;
     }
 
-    public RPCResponse<GlobalTypes.OSDWriteResponse> write(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long object_number, long object_version, int offset, long lease_timeout, OSD.ObjectData object_data, long last_seen_server_timestamp, ReusableBuffer data) throws IOException {
-         final OSD.writeRequest msg = OSD.writeRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setObjectNumber(object_number).setObjectVersion(object_version).setOffset(offset).setLeaseTimeout(lease_timeout).setObjectData(object_data).setLastSeenServerTimestamp(last_seen_server_timestamp).build();
+    public RPCResponse<GlobalTypes.OSDWriteResponse> write(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long object_number, long object_version, int offset, long lease_timeout, OSD.ObjectData object_data, long server_timestamp, ReusableBuffer data) throws IOException {
+         final OSD.writeRequest msg = OSD.writeRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setObjectNumber(object_number).setObjectVersion(object_version).setOffset(offset).setLeaseTimeout(lease_timeout).setObjectData(object_data).setServerTimestamp(server_timestamp).build();
          return write(server, authHeader, userCreds,msg, data);
     }
 
@@ -331,8 +331,8 @@ public class OSDServiceClient {
          return response;
     }
 
-    public RPCResponse<GlobalTypes.OSDWriteResponse> xtreemfs_internal_truncate(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long new_file_size) throws IOException {
-         final OSD.truncateRequest msg = OSD.truncateRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setNewFileSize(new_file_size).build();
+    public RPCResponse<GlobalTypes.OSDWriteResponse> xtreemfs_internal_truncate(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long new_file_size, long server_timestamp) throws IOException {
+         final OSD.truncateRequest msg = OSD.truncateRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setNewFileSize(new_file_size).setServerTimestamp(server_timestamp).build();
          return xtreemfs_internal_truncate(server, authHeader, userCreds,msg);
     }
 

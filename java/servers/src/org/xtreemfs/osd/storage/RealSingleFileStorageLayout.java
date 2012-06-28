@@ -364,7 +364,7 @@ public class RealSingleFileStorageLayout extends StorageLayout {
 
     @Override
     public void truncateObject(String fileId, FileMetadata md, long objNo, int newLength, long newVersion,
-            long newTimestamp, boolean cow) throws IOException {
+            long newTimestamp, CowPolicy cow) throws IOException {
 
         openHandles(md, fileId);
         final RandomAccessFile ofile = md.getHandles()[DATA_HANDLE];

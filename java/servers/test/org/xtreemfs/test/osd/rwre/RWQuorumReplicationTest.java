@@ -198,7 +198,7 @@ public class RWQuorumReplicationTest extends TestCase {
         fc = fc.toBuilder().setXcap(newCap).build();
 
         RPCResponse r3 = client.truncate(osd1, RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileId,
-                128 * 1024 * 2);
+                128 * 1024 * 2, -1);
         r3.get();
         r3.freeBuffers();
     }
@@ -294,7 +294,7 @@ public class RWQuorumReplicationTest extends TestCase {
         fc = fc.toBuilder().setXcap(newCap).build();
 
         RPCResponse r3 = client.truncate(osd1, RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileId,
-                128 * 1024 * 2);
+                128 * 1024 * 2, -1);
         r3.get();
         r3.freeBuffers();
     }

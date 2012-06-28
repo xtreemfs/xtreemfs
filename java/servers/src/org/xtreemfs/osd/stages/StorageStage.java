@@ -111,10 +111,11 @@ public class StorageStage extends Stage {
     }
 
     public void truncate(String fileId, long newFileSize, StripingPolicyImpl sp, Replica currentReplica,
-            long truncateEpoch, CowPolicy cow, Long newObjVer, Boolean createTruncateLogEntry, OSDRequest request,
-            TruncateCallback listener) {
+            long truncateEpoch, CowPolicy cow, Long newObjVer, Long serverTimestamp, Boolean createTruncateLogEntry,
+            OSDRequest request, TruncateCallback listener) {
         this.enqueueOperation(fileId, StorageThread.STAGEOP_TRUNCATE, new Object[] { fileId, newFileSize, sp,
-                currentReplica, truncateEpoch, cow, newObjVer, createTruncateLogEntry }, request, listener);
+                currentReplica, truncateEpoch, cow, newObjVer, createTruncateLogEntry, serverTimestamp }, request,
+                listener);
     }
 
     public static interface TruncateCallback {

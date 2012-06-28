@@ -164,6 +164,8 @@ message truncateRequest {
   required string file_id = 2;
   // New file size in bytes.
   required fixed64 new_file_size = 3;
+  // last seen server timestamp (only relevant if COW & snapshots are enabled)
+  optional fixed64 server_timestamp = 4;
 }
 
 message unlink_osd_Request {
@@ -186,7 +188,7 @@ message writeRequest {
   // Only the checksum of ObjectData is used.
   required ObjectData object_data = 7;
   // last seen server timestamp (only relevant if COW & snapshots are enabled)
-  optional fixed64 last_seen_server_timestamp = 8;
+  optional fixed64 server_timestamp = 8;
 }
 
 message closeRequest {
@@ -195,6 +197,7 @@ message closeRequest {
 }
 
 message closeResponse {
+  // last seen server timestamp (only relevant if COW & snapshots are enabled)
   required fixed64 server_timestamp = 1;
 }
 

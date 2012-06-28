@@ -25,7 +25,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class InternalTruncateOperation extends OSDOperation {
 
-    final String sharedSecret;
+    final String      sharedSecret;
     final ServiceUUID localUUID;
 
     public InternalTruncateOperation(OSDRequestDispatcher master) {
@@ -41,7 +41,7 @@ public final class InternalTruncateOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        final truncateRequest args = (truncateRequest)rq.getRequestArgs();
+        final truncateRequest args = (truncateRequest) rq.getRequestArgs();
 
         if (args.getNewFileSize() < 0) {
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "new_file_size for truncate must be >= 0");
@@ -49,16 +49,14 @@ public final class InternalTruncateOperation extends OSDOperation {
         }
 
         master.getStorageStage().truncate(args.getFileId(), args.getNewFileSize(),
-            rq.getLocationList().getLocalReplica().getStripingPolicy(),
-            rq.getLocationList().getLocalReplica(), rq.getCapability().getEpochNo(), rq.getCowPolicy(),
-            null, false, rq,
-            new TruncateCallback() {
+                rq.getLocationList().getLocalReplica().getStripingPolicy(), rq.getLocationList().getLocalReplica(),
+                rq.getCapability().getEpochNo(), rq.getCowPolicy(), null, -1L, false, rq, new TruncateCallback() {
 
-            @Override
-            public void truncateComplete(OSDWriteResponse result, ErrorResponse error) {
-                step2(rq, result, error);
-            }
-        });
+                    @Override
+                    public void truncateComplete(OSDWriteResponse result, ErrorResponse error) {
+                        step2(rq, result, error);
+                    }
+                });
     }
 
     public void step2(final OSDRequest rq, OSDWriteResponse result, ErrorResponse error) {
@@ -66,20 +64,19 @@ public final class InternalTruncateOperation extends OSDOperation {
         if (error != null) {
             rq.sendError(error);
         } else {
-            //only locally
+            // only locally
             sendResponse(rq, result);
         }
     }
 
-    
     public void sendResponse(OSDRequest rq, OSDWriteResponse result) {
-        rq.sendSuccess(result,null);
+        rq.sendSuccess(result, null);
     }
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
         try {
-            truncateRequest rpcrq = (truncateRequest)rq.getRequestArgs();
+            truncateRequest rpcrq = (truncateRequest) rq.getRequestArgs();
             rq.setFileId(rpcrq.getFileId());
             rq.setCapability(new Capability(rpcrq.getFileCredentials().getXcap(), sharedSecret));
             rq.setLocationList(new XLocations(rpcrq.getFileCredentials().getXlocs(), localUUID));
@@ -101,7 +98,5 @@ public final class InternalTruncateOperation extends OSDOperation {
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
 
 }

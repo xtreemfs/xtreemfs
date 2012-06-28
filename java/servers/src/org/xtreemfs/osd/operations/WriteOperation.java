@@ -75,7 +75,7 @@ public final class WriteOperation extends OSDOperation {
 
             boolean syncWrite = (rq.getCapability().getAccessMode() & SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_SYNC
                     .getNumber()) > 0;
-            long receivedServerTimestamp = args.getLastSeenServerTimestamp();
+            long receivedServerTimestamp = args.getServerTimestamp();
 
             master.objectReceived();
             master.dataReceived(rq.getRPCRequest().getData().capacity());
@@ -94,12 +94,13 @@ public final class WriteOperation extends OSDOperation {
                             }
                         });
             } else {
-                replicatedWrite(rq, args, syncWrite);
+                replicatedWrite(rq, args, syncWrite, receivedServerTimestamp);
             }
         }
     }
 
-    public void replicatedWrite(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {
+    public void replicatedWrite(final OSDRequest rq, final writeRequest args, final boolean syncWrite,
+            final long receivedServerTimestamp) {
         // prepareWrite first
 
         master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(),
@@ -114,8 +115,8 @@ public final class WriteOperation extends OSDOperation {
                         ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
                         master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(),
                                 rq.getLocationList().getLocalReplica().getStripingPolicy(), args.getOffset(),
-                                viewBuffer, rq.getCowPolicy(), rq.getLocationList(), syncWrite, newObjectVersion, -1L,
-                                rq, viewBuffer, new WriteObjectCallback() {
+                                viewBuffer, rq.getCowPolicy(), rq.getLocationList(), syncWrite, newObjectVersion,
+                                receivedServerTimestamp, rq, viewBuffer, new WriteObjectCallback() {
 
                                     @Override
                                     public void writeComplete(OSDWriteResponse result, ErrorResponse error) {

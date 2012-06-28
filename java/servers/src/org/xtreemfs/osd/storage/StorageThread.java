@@ -507,22 +507,10 @@ public class StorageThread extends Stage {
             // determine the metadata of the largest object version
             ObjectVersionInfo versionInfo = fi.getVersionManager().getLargestObjectVersion(objNo);
 
-            // if a server timestamp was received, check if it is in the future and wait if necessary
-            // this is only relevant if COW is enabled, so as to ensure snapshot consistency
-            long currentTime = TimeSync.getGlobalTime();
-            if (cow.cowEnabled() && receivedServerTimestamp != null && receivedServerTimestamp != -1) {
+            // if COW is enabled, check if the received server timestamp is in the future and wait if
+            // necessary, so as to ensure snapshot consistency
+            long newTimestamp = cow.cowEnabled() ? ensureSnapshotConsistency(receivedServerTimestamp) : -1;
 
-                while (currentTime < receivedServerTimestamp)
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        Logging.logError(Logging.LEVEL_WARN, this, e);
-                    }
-                if (currentTime == receivedServerTimestamp)
-                    currentTime++;
-            }
-
-            long newTimestamp = (cow.cowEnabled() || checksumsEnabled) ? currentTime : -1;
             long newVersion = Math.max(1, versionInfo.version);
             if (newVersionArg != null) {
                 // new version passed via arg always prevails
@@ -611,7 +599,7 @@ public class StorageThread extends Stage {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "new last object=%d gmax=%d",
                         fi.getLastObjectNumber(), fi.getGlobalLastObjectNumber());
             // BufferPool.free(data);
-            response.setServerTimestamp(currentTime);
+            response.setServerTimestamp(newTimestamp);
             cback.writeComplete(response.build(), null);
 
         } catch (IOException ex) {
@@ -660,6 +648,7 @@ public class StorageThread extends Stage {
             final CowPolicy cow = (CowPolicy) rq.getArgs()[5];
             final Long newObjVer = (Long) rq.getArgs()[6];
             final Boolean createTLogEntry = (Boolean) rq.getArgs()[7];
+            final Long receivedServerTimestamp = (Long) rq.getArgs()[8];
 
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
 
@@ -686,6 +675,10 @@ public class StorageThread extends Stage {
 
             long newLastObject = -1;
             long newGlobalLastObject = -1;
+
+            // if COW is enabled, check if the received server timestamp is in the future and wait if
+            // necessary, so as to ensure snapshot consistency
+            long newTimestamp = cow.cowEnabled() ? ensureSnapshotConsistency(receivedServerTimestamp) : -1;
 
             if (fi.getFilesize() == newFileSize) {
                 // file size remains unchanged
@@ -719,12 +712,12 @@ public class StorageThread extends Stage {
             } else if (fi.getFilesize() > newFileSize) {
                 // shrink file
                 newLastObject = truncateShrink(fileId, newFileSize, epochNumber, sp, fi, relativeOSDNumber, cow,
-                        newObjVer);
+                        newObjVer, newTimestamp);
                 newGlobalLastObject = sp.getObjectNoForOffset(newFileSize - 1);
             } else if (fi.getFilesize() < newFileSize) {
                 // extend file
                 newLastObject = truncateExtend(fileId, newFileSize, epochNumber, sp, fi, relativeOSDNumber, cow,
-                        newObjVer);
+                        newObjVer, newTimestamp);
                 newGlobalLastObject = sp.getObjectNoForOffset(newFileSize - 1);
             }
 
@@ -738,6 +731,12 @@ public class StorageThread extends Stage {
             // store the truncate epoch persistently
             layout.setTruncateEpoch(fileId, epochNumber);
 
+            // If COW is enabled, record the truncate operation in the version manager. This is necessary to
+            // ensure proper read results if multiple truncates are performed within a single open-close
+            // period.
+            if (cow.cowEnabled())
+                fi.getVersionManager().recordTruncate(newTimestamp, newFileSize, newLastObject + 1);
+
             if (createTLogEntry) {
                 TruncateLog log = layout.getTruncateLog(fileId);
                 log = log
@@ -750,7 +749,7 @@ public class StorageThread extends Stage {
 
             // append the new file size and epoch number to the response
             OSDWriteResponse response = OSDWriteResponse.newBuilder().setSizeInBytes(newFileSize)
-                    .setTruncateEpoch((int) epochNumber).setServerTimestamp(TimeSync.getGlobalTime()).build();
+                    .setTruncateEpoch((int) epochNumber).setServerTimestamp(newTimestamp).build();
             cback.truncateComplete(response, null);
 
         } catch (Exception ex) {
@@ -836,7 +835,7 @@ public class StorageThread extends Stage {
     }
 
     private long truncateShrink(String fileId, long fileSize, long epoch, StripingPolicyImpl sp, FileMetadata fi,
-            int relOsdId, CowPolicy cow, Long newObjVer) throws IOException {
+            int relOsdId, CowPolicy cow, Long newObjVer, long newTimestamp) throws IOException {
 
         // first find out which is the new "last object"
         final long newLastObject = sp.getObjectNoForOffset(fileSize - 1);
@@ -865,12 +864,9 @@ public class StorageThread extends Stage {
                 // shrink it
                 if (rowObj == newLastObject) {
                     final int newObjSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
-                    truncateObject(fileId, newLastObject, sp, newObjSize, relOsdId, cow, newObjVer);
+                    truncateObject(fileId, newLastObject, sp, newObjSize, relOsdId, cow, newObjVer, newTimestamp);
                 }
             }
-
-            // create a new file version
-            fi.getVersionManager().createFileVersion(TimeSync.getGlobalTime(), fileSize, newLastObject + 1);
 
         }
 
@@ -888,7 +884,7 @@ public class StorageThread extends Stage {
                     // currently examined object is new last object and local:
                     // shrink it
                     final int newObjSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
-                    truncateObject(fileId, newLastObject, sp, newObjSize, relOsdId, cow, newObjVer);
+                    truncateObject(fileId, newLastObject, sp, newObjSize, relOsdId, cow, newObjVer, newTimestamp);
 
                 } else if (rowObj > newLastObject) {
 
@@ -912,8 +908,8 @@ public class StorageThread extends Stage {
 
                 // create padding object if version does not exist
                 if (v == ObjectVersionInfo.MISSING)
-                    createPaddingObject(fileId, obj, sp, newObjVer != null ? newObjVer : 1,
-                            cow.cowEnabled() ? TimeSync.getGlobalTime() : -1, sp.getStripeSizeForObject(obj), fi);
+                    createPaddingObject(fileId, obj, sp, newObjVer != null ? newObjVer : 1, newTimestamp,
+                            sp.getStripeSizeForObject(obj), fi);
             }
         }
 
@@ -921,7 +917,7 @@ public class StorageThread extends Stage {
     }
 
     private long truncateExtend(String fileId, long fileSize, long epoch, StripingPolicyImpl sp, FileMetadata fi,
-            int relOsdId, CowPolicy cow, Long newObjVer) throws IOException {
+            int relOsdId, CowPolicy cow, Long newObjVer, long newTimestamp) throws IOException {
         // first find out which is the new "last object"
         final long newLastObject = sp.getObjectNoForOffset(fileSize - 1);
         final long oldLastObject = fi.getLastObjectNumber();
@@ -936,7 +932,7 @@ public class StorageThread extends Stage {
         if ((sp.getOSDforObject(newLastObject) == relOsdId) && newLastObject == oldLastObject) {
             // ... simply extend the old one
             truncateObject(fileId, newLastObject, sp, (int) (fileSize - sp.getObjectStartOffset(newLastObject)),
-                    relOsdId, cow, newObjVer);
+                    relOsdId, cow, newObjVer, newTimestamp);
         }
 
         // otherwise ...
@@ -945,7 +941,7 @@ public class StorageThread extends Stage {
             // extend the old last object to full object size
             if ((oldLastObject > -1) && (sp.isLocalObject(oldLastObject, relOsdId))) {
                 truncateObject(fileId, oldLastObject, sp, sp.getStripeSizeForObject(oldLastObject), relOsdId, cow,
-                        newObjVer);
+                        newObjVer, newTimestamp);
             }
 
             // if the new last object is a local object, create a padding
@@ -956,8 +952,7 @@ public class StorageThread extends Stage {
                         .getLargestObjectVersion(newLastObject).version);
                 int objSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
 
-                createPaddingObject(fileId, newLastObject, sp, version, cow.cowEnabled() ? TimeSync.getGlobalTime()
-                        : -1, objSize, fi);
+                createPaddingObject(fileId, newLastObject, sp, version, newTimestamp, objSize, fi);
             }
 
             // make sure that new last objects also exist on all other OSDs
@@ -968,8 +963,8 @@ public class StorageThread extends Stage {
                         // does not exist
                         final long newVersion = newObjVer != null ? newObjVer : Math.max(1, fi.getVersionManager()
                                 .getLargestObjectVersion(obj).version);
-                        createPaddingObject(fileId, obj, sp, newVersion, TimeSync.getGlobalTime(),
-                                sp.getStripeSizeForObject(obj), fi);
+                        createPaddingObject(fileId, obj, sp, newVersion, newTimestamp, sp.getStripeSizeForObject(obj),
+                                fi);
                     }
                 }
             }
@@ -980,7 +975,7 @@ public class StorageThread extends Stage {
     }
 
     private void truncateObject(String fileId, long objNo, StripingPolicyImpl sp, int newSize, long relOsdId,
-            CowPolicy cow, Long newObjVer) throws IOException {
+            CowPolicy cow, Long newObjVer, long newTimestamp) throws IOException {
 
         assert (newSize >= 0) : "new size is " + newSize + " but should be >= 0";
         assert (newSize <= sp.getStripeSizeForObject(objNo));
@@ -991,17 +986,36 @@ public class StorageThread extends Stage {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "truncate object to %d", newSize);
 
         final FileMetadata fi = layout.getFileMetadata(sp, fileId);
-        final boolean cowEnabled = cow.cowEnabled();
         final long newVersion = newObjVer != null ? newObjVer : Math.max(1, fi.getVersionManager()
                 .getLargestObjectVersion(objNo).version);
-        final long newTimestamp = cowEnabled ? TimeSync.getGlobalTime() : -1;
 
-        layout.truncateObject(fileId, fi, objNo, newSize, newVersion, newTimestamp, cowEnabled);
+        layout.truncateObject(fileId, fi, objNo, newSize, newVersion, newTimestamp, cow);
 
     }
 
     private void createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, long version, long timestamp,
             int size, FileMetadata fi) throws IOException {
         layout.createPaddingObject(fileId, fi, objNo, version, timestamp, size);
+    }
+
+    private long ensureSnapshotConsistency(Long receivedServerTimestamp) {
+
+        long currentTime = TimeSync.getPreciseGlobalTime();
+        if (receivedServerTimestamp != null && receivedServerTimestamp != -1) {
+
+            // make sure that the current local time is later than the received server timestamp; if
+            // necessary, repeatedly wait for 10ms
+            while (currentTime < receivedServerTimestamp)
+                try {
+                    Thread.sleep(10);
+                    currentTime = TimeSync.getPreciseGlobalTime();
+                } catch (InterruptedException e) {
+                    Logging.logError(Logging.LEVEL_WARN, this, e);
+                }
+            if (currentTime == receivedServerTimestamp)
+                currentTime++;
+        }
+
+        return currentTime;
     }
 }

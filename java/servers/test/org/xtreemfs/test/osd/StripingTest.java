@@ -61,13 +61,13 @@ public class StripingTest extends TestCase {
             this.capSecret = capSecret;
         }
 
-        Capability open(char mode) {
+        Capability open(char mode, boolean cow) {
             if (mode == 't')
                 issuedEpoch++;
 
             return new Capability(FILE_ID, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
                     | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber(), 60, System.currentTimeMillis(), "",
-                    (int) issuedEpoch, false, COW ? SnapConfig.SNAP_CONFIG_ACCESS_CURRENT
+                    (int) issuedEpoch, false, cow ? SnapConfig.SNAP_CONFIG_ACCESS_CURRENT
                             : SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret);
         }
 
@@ -360,7 +360,7 @@ public class StripingTest extends TestCase {
         fcred = fcred.toBuilder().setXcap(newCap).build();
 
         RPCResponse<OSDWriteResponse> rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone,
-                RPCAuthentication.userService, fcred, FILE_ID, SIZE);
+                RPCAuthentication.userService, fcred, FILE_ID, SIZE, -1);
         OSDWriteResponse resp = rt.get();
         rt.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -392,7 +392,7 @@ public class StripingTest extends TestCase {
         fcred = fcred.toBuilder().setXcap(newCap).build();
 
         rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                fcred, FILE_ID, SIZE * 8);
+                fcred, FILE_ID, SIZE * 8, -1);
         resp = rt.get();
         rt.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -431,7 +431,7 @@ public class StripingTest extends TestCase {
 
         final long size3p5 = (long) (SIZE * 3.5f);
         rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                fcred, FILE_ID, size3p5);
+                fcred, FILE_ID, size3p5, -1);
         resp = rt.get();
         rt.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -473,7 +473,7 @@ public class StripingTest extends TestCase {
         fcred = fcred.toBuilder().setXcap(newCap).build();
 
         rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                fcred, FILE_ID, size3p5);
+                fcred, FILE_ID, size3p5, -1);
         resp = rt.get();
         rt.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -515,7 +515,7 @@ public class StripingTest extends TestCase {
         fcred = fcred.toBuilder().setXcap(newCap).build();
 
         rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                fcred, FILE_ID, 0);
+                fcred, FILE_ID, 0, -1);
         resp = rt.get();
         rt.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -557,7 +557,7 @@ public class StripingTest extends TestCase {
         fcred = fcred.toBuilder().setXcap(newCap).build();
 
         rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                fcred, FILE_ID, SIZE);
+                fcred, FILE_ID, SIZE, -1);
         resp = rt.get();
         rt.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -583,7 +583,7 @@ public class StripingTest extends TestCase {
         fcred = fcred.toBuilder().setXcap(newCap).build();
 
         rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                fcred, FILE_ID, SIZE / 2);
+                fcred, FILE_ID, SIZE / 2, -1);
         resp = rt.get();
         rt.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -618,7 +618,7 @@ public class StripingTest extends TestCase {
 
         for (int l = 0; l < numIterations; l++) {
 
-            Capability cap = mrcDummy.open('w');
+            Capability cap = mrcDummy.open('w', COW);
 
             // randomly write 'numWrittenObjs' objects
             for (int i = 0; i < numWrittenObjs; i++) {
@@ -647,12 +647,12 @@ public class StripingTest extends TestCase {
             }
             responses.clear();
 
-            fcred = fcred.toBuilder().setXcap(mrcDummy.open('t').getXCap()).build();
+            fcred = fcred.toBuilder().setXcap(mrcDummy.open('t', COW).getXCap()).build();
 
             // truncate the file
             long newSize = (long) (Math.random() * maxSize);
             RPCResponse<OSDWriteResponse> rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone,
-                    RPCAuthentication.userService, fcred, FILE_ID, newSize);
+                    RPCAuthentication.userService, fcred, FILE_ID, newSize, -1);
             rt.registerListener(mrcDummy);
             rt.waitForResult();
             rt.freeBuffers();

@@ -352,10 +352,11 @@ void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(readRequest));
   truncateRequest_descriptor_ = file->message_type(12);
-  static const int truncateRequest_offsets_[3] = {
+  static const int truncateRequest_offsets_[4] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(truncateRequest, file_credentials_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(truncateRequest, file_id_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(truncateRequest, new_file_size_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(truncateRequest, server_timestamp_),
   };
   truncateRequest_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -393,7 +394,7 @@ void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto() {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(writeRequest, offset_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(writeRequest, lease_timeout_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(writeRequest, object_data_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(writeRequest, last_seen_server_timestamp_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(writeRequest, server_timestamp_),
   };
   writeRequest_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -1029,182 +1030,182 @@ void protobuf_AddDesc_xtreemfs_2fOSD_2eproto() {
     "(\0132\037.xtreemfs.pbrpc.FileCredentials\022\017\n\007f"
     "ile_id\030\002 \002(\t\022\025\n\robject_number\030\003 \002(\006\022\026\n\016o"
     "bject_version\030\004 \002(\006\022\016\n\006offset\030\005 \002(\007\022\016\n\006l"
-    "ength\030\006 \002(\007\"t\n\017truncateRequest\0229\n\020file_c"
-    "redentials\030\001 \002(\0132\037.xtreemfs.pbrpc.FileCr"
-    "edentials\022\017\n\007file_id\030\002 \002(\t\022\025\n\rnew_file_s"
-    "ize\030\003 \002(\006\"`\n\022unlink_osd_Request\0229\n\020file_"
+    "ength\030\006 \002(\007\"\216\001\n\017truncateRequest\0229\n\020file_"
     "credentials\030\001 \002(\0132\037.xtreemfs.pbrpc.FileC"
-    "redentials\022\017\n\007file_id\030\002 \002(\t\"\205\002\n\014writeReq"
+    "redentials\022\017\n\007file_id\030\002 \002(\t\022\025\n\rnew_file_"
+    "size\030\003 \002(\006\022\030\n\020server_timestamp\030\004 \001(\006\"`\n\022"
+    "unlink_osd_Request\0229\n\020file_credentials\030\001"
+    " \002(\0132\037.xtreemfs.pbrpc.FileCredentials\022\017\n"
+    "\007file_id\030\002 \002(\t\"\373\001\n\014writeRequest\0229\n\020file_"
+    "credentials\030\001 \002(\0132\037.xtreemfs.pbrpc.FileC"
+    "redentials\022\017\n\007file_id\030\002 \002(\t\022\025\n\robject_nu"
+    "mber\030\003 \002(\006\022\026\n\016object_version\030\004 \002(\006\022\016\n\006of"
+    "fset\030\005 \002(\007\022\025\n\rlease_timeout\030\006 \002(\006\022/\n\013obj"
+    "ect_data\030\007 \002(\0132\032.xtreemfs.pbrpc.ObjectDa"
+    "ta\022\030\n\020server_timestamp\030\010 \001(\006\"Z\n\014closeReq"
     "uest\0229\n\020file_credentials\030\001 \002(\0132\037.xtreemf"
     "s.pbrpc.FileCredentials\022\017\n\007file_id\030\002 \002(\t"
-    "\022\025\n\robject_number\030\003 \002(\006\022\026\n\016object_versio"
-    "n\030\004 \002(\006\022\016\n\006offset\030\005 \002(\007\022\025\n\rlease_timeout"
-    "\030\006 \002(\006\022/\n\013object_data\030\007 \002(\0132\032.xtreemfs.p"
-    "brpc.ObjectData\022\"\n\032last_seen_server_time"
-    "stamp\030\010 \001(\006\"Z\n\014closeRequest\0229\n\020file_cred"
-    "entials\030\001 \002(\0132\037.xtreemfs.pbrpc.FileCrede"
-    "ntials\022\017\n\007file_id\030\002 \002(\t\")\n\rcloseResponse"
-    "\022\030\n\020server_timestamp\030\001 \002(\006\"q\n\036xtreemfs_b"
-    "roadcast_gmaxRequest\022\017\n\007file_id\030\001 \002(\t\022\026\n"
-    "\016truncate_epoch\030\002 \002(\006\022\023\n\013last_object\030\003 \002"
-    "(\006\022\021\n\tfile_size\030\004 \002(\006\"\231\001\n\034xtreemfs_check"
-    "_objectRequest\0229\n\020file_credentials\030\001 \002(\013"
-    "2\037.xtreemfs.pbrpc.FileCredentials\022\017\n\007fil"
-    "e_id\030\002 \002(\t\022\025\n\robject_number\030\003 \002(\006\022\026\n\016obj"
-    "ect_version\030\004 \002(\006\"7\n$xtreemfs_cleanup_ge"
-    "t_resultsResponse\022\017\n\007results\030\001 \003(\t\"9\n#xt"
-    "reemfs_cleanup_is_runningResponse\022\022\n\nis_"
-    "running\030\001 \002(\010\"n\n\035xtreemfs_cleanup_startR"
-    "equest\022\026\n\016remove_zombies\030\001 \002(\010\022\035\n\025remove"
-    "_unavail_volume\030\002 \002(\010\022\026\n\016lost_and_found\030"
-    "\003 \002(\010\"1\n\037xtreemfs_cleanup_statusResponse"
-    "\022\016\n\006status\030\001 \002(\t\"\226\001\n\031xtreemfs_rwr_fetchR"
-    "equest\0229\n\020file_credentials\030\001 \002(\0132\037.xtree"
-    "mfs.pbrpc.FileCredentials\022\017\n\007file_id\030\002 \002"
-    "(\t\022\025\n\robject_number\030\003 \002(\006\022\026\n\016object_vers"
-    "ion\030\004 \002(\006\"N\n\036xtreemfs_rwr_flease_msgRequ"
-    "est\022\027\n\017sender_hostname\030\001 \002(\t\022\023\n\013sender_p"
-    "ort\030\002 \002(\007\"\212\001\n%xtreemfs_rwr_set_primary_e"
-    "pochRequest\0229\n\020file_credentials\030\001 \002(\0132\037."
-    "xtreemfs.pbrpc.FileCredentials\022\017\n\007file_i"
-    "d\030\002 \002(\t\022\025\n\rprimary_epoch\030\003 \002(\007\"\207\001\n\032xtree"
-    "mfs_rwr_statusRequest\0229\n\020file_credential"
-    "s\030\001 \002(\0132\037.xtreemfs.pbrpc.FileCredentials"
-    "\022\017\n\007file_id\030\002 \002(\t\022\035\n\025max_local_obj_versi"
-    "on\030\003 \002(\006\"\231\001\n\034xtreemfs_rwr_truncateReques"
+    "\")\n\rcloseResponse\022\030\n\020server_timestamp\030\001 "
+    "\002(\006\"q\n\036xtreemfs_broadcast_gmaxRequest\022\017\n"
+    "\007file_id\030\001 \002(\t\022\026\n\016truncate_epoch\030\002 \002(\006\022\023"
+    "\n\013last_object\030\003 \002(\006\022\021\n\tfile_size\030\004 \002(\006\"\231"
+    "\001\n\034xtreemfs_check_objectRequest\0229\n\020file_"
+    "credentials\030\001 \002(\0132\037.xtreemfs.pbrpc.FileC"
+    "redentials\022\017\n\007file_id\030\002 \002(\t\022\025\n\robject_nu"
+    "mber\030\003 \002(\006\022\026\n\016object_version\030\004 \002(\006\"7\n$xt"
+    "reemfs_cleanup_get_resultsResponse\022\017\n\007re"
+    "sults\030\001 \003(\t\"9\n#xtreemfs_cleanup_is_runni"
+    "ngResponse\022\022\n\nis_running\030\001 \002(\010\"n\n\035xtreem"
+    "fs_cleanup_startRequest\022\026\n\016remove_zombie"
+    "s\030\001 \002(\010\022\035\n\025remove_unavail_volume\030\002 \002(\010\022\026"
+    "\n\016lost_and_found\030\003 \002(\010\"1\n\037xtreemfs_clean"
+    "up_statusResponse\022\016\n\006status\030\001 \002(\t\"\226\001\n\031xt"
+    "reemfs_rwr_fetchRequest\0229\n\020file_credenti"
+    "als\030\001 \002(\0132\037.xtreemfs.pbrpc.FileCredentia"
+    "ls\022\017\n\007file_id\030\002 \002(\t\022\025\n\robject_number\030\003 \002"
+    "(\006\022\026\n\016object_version\030\004 \002(\006\"N\n\036xtreemfs_r"
+    "wr_flease_msgRequest\022\027\n\017sender_hostname\030"
+    "\001 \002(\t\022\023\n\013sender_port\030\002 \002(\007\"\212\001\n%xtreemfs_"
+    "rwr_set_primary_epochRequest\0229\n\020file_cre"
+    "dentials\030\001 \002(\0132\037.xtreemfs.pbrpc.FileCred"
+    "entials\022\017\n\007file_id\030\002 \002(\t\022\025\n\rprimary_epoc"
+    "h\030\003 \002(\007\"\207\001\n\032xtreemfs_rwr_statusRequest\0229"
+    "\n\020file_credentials\030\001 \002(\0132\037.xtreemfs.pbrp"
+    "c.FileCredentials\022\017\n\007file_id\030\002 \002(\t\022\035\n\025ma"
+    "x_local_obj_version\030\003 \002(\006\"\231\001\n\034xtreemfs_r"
+    "wr_truncateRequest\0229\n\020file_credentials\030\001"
+    " \002(\0132\037.xtreemfs.pbrpc.FileCredentials\022\017\n"
+    "\007file_id\030\002 \002(\t\022\025\n\rnew_file_size\030\003 \002(\006\022\026\n"
+    "\016object_version\030\004 \002(\006\"\347\001\n\032xtreemfs_rwr_u"
+    "pdateRequest\0229\n\020file_credentials\030\001 \002(\0132\037"
+    ".xtreemfs.pbrpc.FileCredentials\022\017\n\007file_"
+    "id\030\002 \002(\t\022\025\n\rnew_file_size\030\003 \002(\006\022\025\n\robjec"
+    "t_number\030\007 \002(\006\022\026\n\016object_version\030\004 \002(\006\022\016"
+    "\n\006offset\030\005 \002(\007\022\'\n\003obj\030\006 \002(\0132\032.xtreemfs.p"
+    "brpc.ObjectData\"o\n!xtreemfs_internal_get"
+    "_gmaxRequest\0229\n\020file_credentials\030\001 \002(\0132\037"
+    ".xtreemfs.pbrpc.FileCredentials\022\017\n\007file_"
+    "id\030\002 \002(\t\"t\n&xtreemfs_internal_get_file_s"
+    "izeRequest\0229\n\020file_credentials\030\001 \002(\0132\037.x"
+    "treemfs.pbrpc.FileCredentials\022\017\n\007file_id"
+    "\030\002 \002(\t\"<\n\'xtreemfs_internal_get_file_siz"
+    "eResponse\022\021\n\tfile_size\030\001 \002(\006\"\222\002\n#xtreemf"
+    "s_internal_read_localRequest\0229\n\020file_cre"
+    "dentials\030\001 \002(\0132\037.xtreemfs.pbrpc.FileCred"
+    "entials\022\017\n\007file_id\030\002 \002(\t\022\025\n\robject_numbe"
+    "r\030\003 \002(\006\022\026\n\016object_version\030\004 \002(\006\022\016\n\006offse"
+    "t\030\005 \002(\007\022\016\n\006length\030\006 \002(\007\022\032\n\022attach_object"
+    "_list\030\007 \002(\010\0224\n\020required_objects\030\010 \003(\0132\032."
+    "xtreemfs.pbrpc.ObjectList\"u\n\'xtreemfs_in"
+    "ternal_get_object_setRequest\0229\n\020file_cre"
+    "dentials\030\001 \002(\0132\037.xtreemfs.pbrpc.FileCred"
+    "entials\022\017\n\007file_id\030\002 \002(\t\"=\n)xtreemfs_int"
+    "ernal_get_fileid_listResponse\022\020\n\010file_id"
+    "s\030\001 \003(\t\"t\n\013lockRequest\0229\n\020file_credentia"
+    "ls\030\001 \002(\0132\037.xtreemfs.pbrpc.FileCredential"
+    "s\022*\n\014lock_request\030\002 \002(\0132\024.xtreemfs.pbrpc"
+    ".Lock\"j\n\025xtreemfs_pingMesssage\0227\n\013coordi"
+    "nates\030\001 \002(\0132\".xtreemfs.pbrpc.VivaldiCoor"
+    "dinates\022\030\n\020request_response\030\002 \002(\010\"\246\001\n\036xt"
+    "reemfs_rwr_auth_stateRequest\0229\n\020file_cre"
+    "dentials\030\001 \002(\0132\037.xtreemfs.pbrpc.FileCred"
+    "entials\022\017\n\007file_id\030\002 \002(\t\0228\n\005state\030\003 \002(\0132"
+    ").xtreemfs.pbrpc.AuthoritativeReplicaSta"
+    "te\"\207\001\n\"xtreemfs_rwr_reset_completeReques"
     "t\0229\n\020file_credentials\030\001 \002(\0132\037.xtreemfs.p"
     "brpc.FileCredentials\022\017\n\007file_id\030\002 \002(\t\022\025\n"
-    "\rnew_file_size\030\003 \002(\006\022\026\n\016object_version\030\004"
-    " \002(\006\"\347\001\n\032xtreemfs_rwr_updateRequest\0229\n\020f"
-    "ile_credentials\030\001 \002(\0132\037.xtreemfs.pbrpc.F"
-    "ileCredentials\022\017\n\007file_id\030\002 \002(\t\022\025\n\rnew_f"
-    "ile_size\030\003 \002(\006\022\025\n\robject_number\030\007 \002(\006\022\026\n"
-    "\016object_version\030\004 \002(\006\022\016\n\006offset\030\005 \002(\007\022\'\n"
-    "\003obj\030\006 \002(\0132\032.xtreemfs.pbrpc.ObjectData\"o"
-    "\n!xtreemfs_internal_get_gmaxRequest\0229\n\020f"
-    "ile_credentials\030\001 \002(\0132\037.xtreemfs.pbrpc.F"
-    "ileCredentials\022\017\n\007file_id\030\002 \002(\t\"t\n&xtree"
-    "mfs_internal_get_file_sizeRequest\0229\n\020fil"
-    "e_credentials\030\001 \002(\0132\037.xtreemfs.pbrpc.Fil"
-    "eCredentials\022\017\n\007file_id\030\002 \002(\t\"<\n\'xtreemf"
-    "s_internal_get_file_sizeResponse\022\021\n\tfile"
-    "_size\030\001 \002(\006\"\222\002\n#xtreemfs_internal_read_l"
-    "ocalRequest\0229\n\020file_credentials\030\001 \002(\0132\037."
-    "xtreemfs.pbrpc.FileCredentials\022\017\n\007file_i"
-    "d\030\002 \002(\t\022\025\n\robject_number\030\003 \002(\006\022\026\n\016object"
-    "_version\030\004 \002(\006\022\016\n\006offset\030\005 \002(\007\022\016\n\006length"
-    "\030\006 \002(\007\022\032\n\022attach_object_list\030\007 \002(\010\0224\n\020re"
-    "quired_objects\030\010 \003(\0132\032.xtreemfs.pbrpc.Ob"
-    "jectList\"u\n\'xtreemfs_internal_get_object"
-    "_setRequest\0229\n\020file_credentials\030\001 \002(\0132\037."
-    "xtreemfs.pbrpc.FileCredentials\022\017\n\007file_i"
-    "d\030\002 \002(\t\"=\n)xtreemfs_internal_get_fileid_"
-    "listResponse\022\020\n\010file_ids\030\001 \003(\t\"t\n\013lockRe"
-    "quest\0229\n\020file_credentials\030\001 \002(\0132\037.xtreem"
-    "fs.pbrpc.FileCredentials\022*\n\014lock_request"
-    "\030\002 \002(\0132\024.xtreemfs.pbrpc.Lock\"j\n\025xtreemfs"
-    "_pingMesssage\0227\n\013coordinates\030\001 \002(\0132\".xtr"
-    "eemfs.pbrpc.VivaldiCoordinates\022\030\n\020reques"
-    "t_response\030\002 \002(\010\"\246\001\n\036xtreemfs_rwr_auth_s"
-    "tateRequest\0229\n\020file_credentials\030\001 \002(\0132\037."
-    "xtreemfs.pbrpc.FileCredentials\022\017\n\007file_i"
-    "d\030\002 \002(\t\0228\n\005state\030\003 \002(\0132).xtreemfs.pbrpc."
-    "AuthoritativeReplicaState\"\207\001\n\"xtreemfs_r"
-    "wr_reset_completeRequest\0229\n\020file_credent"
-    "ials\030\001 \002(\0132\037.xtreemfs.pbrpc.FileCredenti"
-    "als\022\017\n\007file_id\030\002 \002(\t\022\025\n\rprimary_epoch\030\003 "
-    "\002(\0072\211\034\n\nOSDService\022L\n\004read\022\033.xtreemfs.pb"
-    "rpc.readRequest\032\032.xtreemfs.pbrpc.ObjectD"
-    "ata\"\013\215\265\030\n\000\000\000\230\265\030\001\022V\n\010truncate\022\037.xtreemfs."
-    "pbrpc.truncateRequest\032 .xtreemfs.pbrpc.O"
-    "SDWriteResponse\"\007\215\265\030\013\000\000\000\022T\n\006unlink\022\".xtr"
-    "eemfs.pbrpc.unlink_osd_Request\032\035.xtreemf"
-    "s.pbrpc.emptyResponse\"\007\215\265\030\014\000\000\000\022T\n\005write\022"
-    "\034.xtreemfs.pbrpc.writeRequest\032 .xtreemfs"
-    ".pbrpc.OSDWriteResponse\"\013\215\265\030\r\000\000\000\240\265\030\001\022M\n\005"
-    "close\022\034.xtreemfs.pbrpc.closeRequest\032\035.xt"
-    "reemfs.pbrpc.closeResponse\"\007\215\265\030\016\000\000\000\022q\n\027x"
-    "treemfs_broadcast_gmax\022..xtreemfs.pbrpc."
-    "xtreemfs_broadcast_gmaxRequest\032\035.xtreemf"
-    "s.pbrpc.emptyResponse\"\007\215\265\030\024\000\000\000\022j\n\025xtreem"
-    "fs_check_object\022,.xtreemfs.pbrpc.xtreemf"
-    "s_check_objectRequest\032\032.xtreemfs.pbrpc.O"
-    "bjectData\"\007\215\265\030\025\000\000\000\022{\n\034xtreemfs_cleanup_g"
-    "et_results\022\034.xtreemfs.pbrpc.emptyRequest"
-    "\0324.xtreemfs.pbrpc.xtreemfs_cleanup_get_r"
-    "esultsResponse\"\007\215\265\030\036\000\000\000\022y\n\033xtreemfs_clea"
-    "nup_is_running\022\034.xtreemfs.pbrpc.emptyReq"
-    "uest\0323.xtreemfs.pbrpc.xtreemfs_cleanup_i"
-    "s_runningResponse\"\007\215\265\030\037\000\000\000\022o\n\026xtreemfs_c"
-    "leanup_start\022-.xtreemfs.pbrpc.xtreemfs_c"
-    "leanup_startRequest\032\035.xtreemfs.pbrpc.emp"
-    "tyResponse\"\007\215\265\030 \000\000\000\022q\n\027xtreemfs_cleanup_"
-    "status\022\034.xtreemfs.pbrpc.emptyRequest\032/.x"
-    "treemfs.pbrpc.xtreemfs_cleanup_statusRes"
-    "ponse\"\007\215\265\030!\000\000\000\022]\n\025xtreemfs_cleanup_stop\022"
-    "\034.xtreemfs.pbrpc.emptyRequest\032\035.xtreemfs"
-    ".pbrpc.emptyResponse\"\007\215\265\030\"\000\000\000\022g\n\037xtreemf"
-    "s_cleanup_versions_start\022\034.xtreemfs.pbrp"
-    "c.emptyRequest\032\035.xtreemfs.pbrpc.emptyRes"
-    "ponse\"\007\215\265\030#\000\000\000\022d\n\022xtreemfs_rwr_fetch\022).x"
-    "treemfs.pbrpc.xtreemfs_rwr_fetchRequest\032"
-    "\032.xtreemfs.pbrpc.ObjectData\"\007\215\265\030I\000\000\000\022u\n\027"
-    "xtreemfs_rwr_flease_msg\022..xtreemfs.pbrpc"
-    ".xtreemfs_rwr_flease_msgRequest\032\035.xtreem"
-    "fs.pbrpc.emptyResponse\"\013\215\265\030G\000\000\000\240\265\030\001\022^\n\023x"
-    "treemfs_rwr_notify\022\037.xtreemfs.pbrpc.File"
-    "Credentials\032\035.xtreemfs.pbrpc.emptyRespon"
-    "se\"\007\215\265\030K\000\000\000\022|\n\036xtreemfs_rwr_set_primary_"
-    "epoch\0225.xtreemfs.pbrpc.xtreemfs_rwr_set_"
-    "primary_epochRequest\032\032.xtreemfs.pbrpc.Ob"
-    "jectData\"\007\215\265\030N\000\000\000\022i\n\023xtreemfs_rwr_status"
-    "\022*.xtreemfs.pbrpc.xtreemfs_rwr_statusReq"
-    "uest\032\035.xtreemfs.pbrpc.ReplicaStatus\"\007\215\265\030"
-    "L\000\000\000\022m\n\025xtreemfs_rwr_truncate\022,.xtreemfs"
-    ".pbrpc.xtreemfs_rwr_truncateRequest\032\035.xt"
-    "reemfs.pbrpc.emptyResponse\"\007\215\265\030J\000\000\000\022m\n\023x"
-    "treemfs_rwr_update\022*.xtreemfs.pbrpc.xtre"
-    "emfs_rwr_updateRequest\032\035.xtreemfs.pbrpc."
-    "emptyResponse\"\013\215\265\030H\000\000\000\240\265\030\001\022q\n\027xtreemfs_r"
-    "wr_auth_state\022..xtreemfs.pbrpc.xtreemfs_"
-    "rwr_auth_stateRequest\032\035.xtreemfs.pbrpc.e"
-    "mptyResponse\"\007\215\265\030O\000\000\000\022y\n\033xtreemfs_rwr_re"
-    "set_complete\0222.xtreemfs.pbrpc.xtreemfs_r"
-    "wr_reset_completeRequest\032\035.xtreemfs.pbrp"
-    "c.emptyResponse\"\007\215\265\030P\000\000\000\022v\n\032xtreemfs_int"
-    "ernal_get_gmax\0221.xtreemfs.pbrpc.xtreemfs"
-    "_internal_get_gmaxRequest\032\034.xtreemfs.pbr"
-    "pc.InternalGmax\"\007\215\265\030(\000\000\000\022h\n\032xtreemfs_int"
-    "ernal_truncate\022\037.xtreemfs.pbrpc.truncate"
-    "Request\032 .xtreemfs.pbrpc.OSDWriteRespons"
-    "e\"\007\215\265\030)\000\000\000\022\233\001\n\037xtreemfs_internal_get_fil"
-    "e_size\0226.xtreemfs.pbrpc.xtreemfs_interna"
-    "l_get_file_sizeRequest\0327.xtreemfs.pbrpc."
-    "xtreemfs_internal_get_file_sizeResponse\""
-    "\007\215\265\030*\000\000\000\022\207\001\n\034xtreemfs_internal_read_loca"
-    "l\0223.xtreemfs.pbrpc.xtreemfs_internal_rea"
-    "d_localRequest\032).xtreemfs.pbrpc.Internal"
-    "ReadLocalResponse\"\007\215\265\030+\000\000\000\022\200\001\n xtreemfs_"
-    "internal_get_object_set\0227.xtreemfs.pbrpc"
-    ".xtreemfs_internal_get_object_setRequest"
-    "\032\032.xtreemfs.pbrpc.ObjectList\"\007\215\265\030,\000\000\000\022\205\001"
-    "\n!xtreemfs_internal_get_fileid_list\022\034.xt"
-    "reemfs.pbrpc.emptyRequest\0329.xtreemfs.pbr"
-    "pc.xtreemfs_internal_get_fileid_listResp"
-    "onse\"\007\215\265\030-\000\000\000\022S\n\025xtreemfs_lock_acquire\022\033"
-    ".xtreemfs.pbrpc.lockRequest\032\024.xtreemfs.p"
-    "brpc.Lock\"\007\215\265\0302\000\000\000\022Q\n\023xtreemfs_lock_chec"
-    "k\022\033.xtreemfs.pbrpc.lockRequest\032\024.xtreemf"
-    "s.pbrpc.Lock\"\007\215\265\0303\000\000\000\022\\\n\025xtreemfs_lock_r"
-    "elease\022\033.xtreemfs.pbrpc.lockRequest\032\035.xt"
-    "reemfs.pbrpc.emptyResponse\"\007\215\265\0304\000\000\000\022f\n\rx"
-    "treemfs_ping\022%.xtreemfs.pbrpc.xtreemfs_p"
-    "ingMesssage\032%.xtreemfs.pbrpc.xtreemfs_pi"
-    "ngMesssage\"\007\215\265\030<\000\000\000\022Y\n\021xtreemfs_shutdown"
-    "\022\034.xtreemfs.pbrpc.emptyRequest\032\035.xtreemf"
-    "s.pbrpc.emptyResponse\"\007\215\265\030F\000\000\000\032\007\225\265\0301u\000\000B"
-    "(\n&org.xtreemfs.pbrpc.generatedinterface"
-    "s", 8401);
+    "\rprimary_epoch\030\003 \002(\0072\211\034\n\nOSDService\022L\n\004r"
+    "ead\022\033.xtreemfs.pbrpc.readRequest\032\032.xtree"
+    "mfs.pbrpc.ObjectData\"\013\215\265\030\n\000\000\000\230\265\030\001\022V\n\010tru"
+    "ncate\022\037.xtreemfs.pbrpc.truncateRequest\032 "
+    ".xtreemfs.pbrpc.OSDWriteResponse\"\007\215\265\030\013\000\000"
+    "\000\022T\n\006unlink\022\".xtreemfs.pbrpc.unlink_osd_"
+    "Request\032\035.xtreemfs.pbrpc.emptyResponse\"\007"
+    "\215\265\030\014\000\000\000\022T\n\005write\022\034.xtreemfs.pbrpc.writeR"
+    "equest\032 .xtreemfs.pbrpc.OSDWriteResponse"
+    "\"\013\215\265\030\r\000\000\000\240\265\030\001\022M\n\005close\022\034.xtreemfs.pbrpc."
+    "closeRequest\032\035.xtreemfs.pbrpc.closeRespo"
+    "nse\"\007\215\265\030\016\000\000\000\022q\n\027xtreemfs_broadcast_gmax\022"
+    "..xtreemfs.pbrpc.xtreemfs_broadcast_gmax"
+    "Request\032\035.xtreemfs.pbrpc.emptyResponse\"\007"
+    "\215\265\030\024\000\000\000\022j\n\025xtreemfs_check_object\022,.xtree"
+    "mfs.pbrpc.xtreemfs_check_objectRequest\032\032"
+    ".xtreemfs.pbrpc.ObjectData\"\007\215\265\030\025\000\000\000\022{\n\034x"
+    "treemfs_cleanup_get_results\022\034.xtreemfs.p"
+    "brpc.emptyRequest\0324.xtreemfs.pbrpc.xtree"
+    "mfs_cleanup_get_resultsResponse\"\007\215\265\030\036\000\000\000"
+    "\022y\n\033xtreemfs_cleanup_is_running\022\034.xtreem"
+    "fs.pbrpc.emptyRequest\0323.xtreemfs.pbrpc.x"
+    "treemfs_cleanup_is_runningResponse\"\007\215\265\030\037"
+    "\000\000\000\022o\n\026xtreemfs_cleanup_start\022-.xtreemfs"
+    ".pbrpc.xtreemfs_cleanup_startRequest\032\035.x"
+    "treemfs.pbrpc.emptyResponse\"\007\215\265\030 \000\000\000\022q\n\027"
+    "xtreemfs_cleanup_status\022\034.xtreemfs.pbrpc"
+    ".emptyRequest\032/.xtreemfs.pbrpc.xtreemfs_"
+    "cleanup_statusResponse\"\007\215\265\030!\000\000\000\022]\n\025xtree"
+    "mfs_cleanup_stop\022\034.xtreemfs.pbrpc.emptyR"
+    "equest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215"
+    "\265\030\"\000\000\000\022g\n\037xtreemfs_cleanup_versions_star"
+    "t\022\034.xtreemfs.pbrpc.emptyRequest\032\035.xtreem"
+    "fs.pbrpc.emptyResponse\"\007\215\265\030#\000\000\000\022d\n\022xtree"
+    "mfs_rwr_fetch\022).xtreemfs.pbrpc.xtreemfs_"
+    "rwr_fetchRequest\032\032.xtreemfs.pbrpc.Object"
+    "Data\"\007\215\265\030I\000\000\000\022u\n\027xtreemfs_rwr_flease_msg"
+    "\022..xtreemfs.pbrpc.xtreemfs_rwr_flease_ms"
+    "gRequest\032\035.xtreemfs.pbrpc.emptyResponse\""
+    "\013\215\265\030G\000\000\000\240\265\030\001\022^\n\023xtreemfs_rwr_notify\022\037.xt"
+    "reemfs.pbrpc.FileCredentials\032\035.xtreemfs."
+    "pbrpc.emptyResponse\"\007\215\265\030K\000\000\000\022|\n\036xtreemfs"
+    "_rwr_set_primary_epoch\0225.xtreemfs.pbrpc."
+    "xtreemfs_rwr_set_primary_epochRequest\032\032."
+    "xtreemfs.pbrpc.ObjectData\"\007\215\265\030N\000\000\000\022i\n\023xt"
+    "reemfs_rwr_status\022*.xtreemfs.pbrpc.xtree"
+    "mfs_rwr_statusRequest\032\035.xtreemfs.pbrpc.R"
+    "eplicaStatus\"\007\215\265\030L\000\000\000\022m\n\025xtreemfs_rwr_tr"
+    "uncate\022,.xtreemfs.pbrpc.xtreemfs_rwr_tru"
+    "ncateRequest\032\035.xtreemfs.pbrpc.emptyRespo"
+    "nse\"\007\215\265\030J\000\000\000\022m\n\023xtreemfs_rwr_update\022*.xt"
+    "reemfs.pbrpc.xtreemfs_rwr_updateRequest\032"
+    "\035.xtreemfs.pbrpc.emptyResponse\"\013\215\265\030H\000\000\000\240"
+    "\265\030\001\022q\n\027xtreemfs_rwr_auth_state\022..xtreemf"
+    "s.pbrpc.xtreemfs_rwr_auth_stateRequest\032\035"
+    ".xtreemfs.pbrpc.emptyResponse\"\007\215\265\030O\000\000\000\022y"
+    "\n\033xtreemfs_rwr_reset_complete\0222.xtreemfs"
+    ".pbrpc.xtreemfs_rwr_reset_completeReques"
+    "t\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030P\000\000"
+    "\000\022v\n\032xtreemfs_internal_get_gmax\0221.xtreem"
+    "fs.pbrpc.xtreemfs_internal_get_gmaxReque"
+    "st\032\034.xtreemfs.pbrpc.InternalGmax\"\007\215\265\030(\000\000"
+    "\000\022h\n\032xtreemfs_internal_truncate\022\037.xtreem"
+    "fs.pbrpc.truncateRequest\032 .xtreemfs.pbrp"
+    "c.OSDWriteResponse\"\007\215\265\030)\000\000\000\022\233\001\n\037xtreemfs"
+    "_internal_get_file_size\0226.xtreemfs.pbrpc"
+    ".xtreemfs_internal_get_file_sizeRequest\032"
+    "7.xtreemfs.pbrpc.xtreemfs_internal_get_f"
+    "ile_sizeResponse\"\007\215\265\030*\000\000\000\022\207\001\n\034xtreemfs_i"
+    "nternal_read_local\0223.xtreemfs.pbrpc.xtre"
+    "emfs_internal_read_localRequest\032).xtreem"
+    "fs.pbrpc.InternalReadLocalResponse\"\007\215\265\030+"
+    "\000\000\000\022\200\001\n xtreemfs_internal_get_object_set"
+    "\0227.xtreemfs.pbrpc.xtreemfs_internal_get_"
+    "object_setRequest\032\032.xtreemfs.pbrpc.Objec"
+    "tList\"\007\215\265\030,\000\000\000\022\205\001\n!xtreemfs_internal_get"
+    "_fileid_list\022\034.xtreemfs.pbrpc.emptyReque"
+    "st\0329.xtreemfs.pbrpc.xtreemfs_internal_ge"
+    "t_fileid_listResponse\"\007\215\265\030-\000\000\000\022S\n\025xtreem"
+    "fs_lock_acquire\022\033.xtreemfs.pbrpc.lockReq"
+    "uest\032\024.xtreemfs.pbrpc.Lock\"\007\215\265\0302\000\000\000\022Q\n\023x"
+    "treemfs_lock_check\022\033.xtreemfs.pbrpc.lock"
+    "Request\032\024.xtreemfs.pbrpc.Lock\"\007\215\265\0303\000\000\000\022\\"
+    "\n\025xtreemfs_lock_release\022\033.xtreemfs.pbrpc"
+    ".lockRequest\032\035.xtreemfs.pbrpc.emptyRespo"
+    "nse\"\007\215\265\0304\000\000\000\022f\n\rxtreemfs_ping\022%.xtreemfs"
+    ".pbrpc.xtreemfs_pingMesssage\032%.xtreemfs."
+    "pbrpc.xtreemfs_pingMesssage\"\007\215\265\030<\000\000\000\022Y\n\021"
+    "xtreemfs_shutdown\022\034.xtreemfs.pbrpc.empty"
+    "Request\032\035.xtreemfs.pbrpc.emptyResponse\"\007"
+    "\215\265\030F\000\000\000\032\007\225\265\0301u\000\000B(\n&org.xtreemfs.pbrpc.g"
+    "eneratedinterfaces", 8418);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/OSD.proto", &protobuf_RegisterTypes);
   InternalGmax::default_instance_ = new InternalGmax();
@@ -4953,6 +4954,7 @@ const ::std::string truncateRequest::_default_file_id_;
 const int truncateRequest::kFileCredentialsFieldNumber;
 const int truncateRequest::kFileIdFieldNumber;
 const int truncateRequest::kNewFileSizeFieldNumber;
+const int truncateRequest::kServerTimestampFieldNumber;
 #endif  // !_MSC_VER
 
 truncateRequest::truncateRequest()
@@ -4975,6 +4977,7 @@ void truncateRequest::SharedCtor() {
   file_credentials_ = NULL;
   file_id_ = const_cast< ::std::string*>(&_default_file_id_);
   new_file_size_ = GOOGLE_ULONGLONG(0);
+  server_timestamp_ = GOOGLE_ULONGLONG(0);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -5022,6 +5025,7 @@ void truncateRequest::Clear() {
       }
     }
     new_file_size_ = GOOGLE_ULONGLONG(0);
+    server_timestamp_ = GOOGLE_ULONGLONG(0);
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
@@ -5075,6 +5079,22 @@ bool truncateRequest::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
+        if (input->ExpectTag(33)) goto parse_server_timestamp;
+        break;
+      }
+      
+      // optional fixed64 server_timestamp = 4;
+      case 4: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_server_timestamp:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
+                 input, &server_timestamp_)));
+          _set_bit(3);
+        } else {
+          goto handle_uninterpreted;
+        }
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -5117,6 +5137,11 @@ void truncateRequest::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(3, this->new_file_size(), output);
   }
   
+  // optional fixed64 server_timestamp = 4;
+  if (_has_bit(3)) {
+    ::google::protobuf::internal::WireFormatLite::WriteFixed64(4, this->server_timestamp(), output);
+  }
+  
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -5147,6 +5172,11 @@ void truncateRequest::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(3, this->new_file_size(), target);
   }
   
+  // optional fixed64 server_timestamp = 4;
+  if (_has_bit(3)) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(4, this->server_timestamp(), target);
+  }
+  
   if (!unknown_fields().empty()) {
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         unknown_fields(), target);
@@ -5174,6 +5204,11 @@ int truncateRequest::ByteSize() const {
     
     // required fixed64 new_file_size = 3;
     if (has_new_file_size()) {
+      total_size += 1 + 8;
+    }
+    
+    // optional fixed64 server_timestamp = 4;
+    if (has_server_timestamp()) {
       total_size += 1 + 8;
     }
     
@@ -5213,6 +5248,9 @@ void truncateRequest::MergeFrom(const truncateRequest& from) {
     if (from._has_bit(2)) {
       set_new_file_size(from.new_file_size());
     }
+    if (from._has_bit(3)) {
+      set_server_timestamp(from.server_timestamp());
+    }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
 }
@@ -5243,6 +5281,7 @@ void truncateRequest::Swap(truncateRequest* other) {
     std::swap(file_credentials_, other->file_credentials_);
     std::swap(file_id_, other->file_id_);
     std::swap(new_file_size_, other->new_file_size_);
+    std::swap(server_timestamp_, other->server_timestamp_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
@@ -5543,7 +5582,7 @@ const int writeRequest::kObjectVersionFieldNumber;
 const int writeRequest::kOffsetFieldNumber;
 const int writeRequest::kLeaseTimeoutFieldNumber;
 const int writeRequest::kObjectDataFieldNumber;
-const int writeRequest::kLastSeenServerTimestampFieldNumber;
+const int writeRequest::kServerTimestampFieldNumber;
 #endif  // !_MSC_VER
 
 writeRequest::writeRequest()
@@ -5571,7 +5610,7 @@ void writeRequest::SharedCtor() {
   offset_ = 0u;
   lease_timeout_ = GOOGLE_ULONGLONG(0);
   object_data_ = NULL;
-  last_seen_server_timestamp_ = GOOGLE_ULONGLONG(0);
+  server_timestamp_ = GOOGLE_ULONGLONG(0);
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -5626,7 +5665,7 @@ void writeRequest::Clear() {
     if (_has_bit(6)) {
       if (object_data_ != NULL) object_data_->::xtreemfs::pbrpc::ObjectData::Clear();
     }
-    last_seen_server_timestamp_ = GOOGLE_ULONGLONG(0);
+    server_timestamp_ = GOOGLE_ULONGLONG(0);
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
@@ -5742,18 +5781,18 @@ bool writeRequest::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(65)) goto parse_last_seen_server_timestamp;
+        if (input->ExpectTag(65)) goto parse_server_timestamp;
         break;
       }
       
-      // optional fixed64 last_seen_server_timestamp = 8;
+      // optional fixed64 server_timestamp = 8;
       case 8: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
-         parse_last_seen_server_timestamp:
+         parse_server_timestamp:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED64>(
-                 input, &last_seen_server_timestamp_)));
+                 input, &server_timestamp_)));
           _set_bit(7);
         } else {
           goto handle_uninterpreted;
@@ -5821,9 +5860,9 @@ void writeRequest::SerializeWithCachedSizes(
       7, this->object_data(), output);
   }
   
-  // optional fixed64 last_seen_server_timestamp = 8;
+  // optional fixed64 server_timestamp = 8;
   if (_has_bit(7)) {
-    ::google::protobuf::internal::WireFormatLite::WriteFixed64(8, this->last_seen_server_timestamp(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteFixed64(8, this->server_timestamp(), output);
   }
   
   if (!unknown_fields().empty()) {
@@ -5878,9 +5917,9 @@ void writeRequest::SerializeWithCachedSizes(
         7, this->object_data(), target);
   }
   
-  // optional fixed64 last_seen_server_timestamp = 8;
+  // optional fixed64 server_timestamp = 8;
   if (_has_bit(7)) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(8, this->last_seen_server_timestamp(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(8, this->server_timestamp(), target);
   }
   
   if (!unknown_fields().empty()) {
@@ -5935,8 +5974,8 @@ int writeRequest::ByteSize() const {
           this->object_data());
     }
     
-    // optional fixed64 last_seen_server_timestamp = 8;
-    if (has_last_seen_server_timestamp()) {
+    // optional fixed64 server_timestamp = 8;
+    if (has_server_timestamp()) {
       total_size += 1 + 8;
     }
     
@@ -5989,7 +6028,7 @@ void writeRequest::MergeFrom(const writeRequest& from) {
       mutable_object_data()->::xtreemfs::pbrpc::ObjectData::MergeFrom(from.object_data());
     }
     if (from._has_bit(7)) {
-      set_last_seen_server_timestamp(from.last_seen_server_timestamp());
+      set_server_timestamp(from.server_timestamp());
     }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
@@ -6028,7 +6067,7 @@ void writeRequest::Swap(writeRequest* other) {
     std::swap(offset_, other->offset_);
     std::swap(lease_timeout_, other->lease_timeout_);
     std::swap(object_data_, other->object_data_);
-    std::swap(last_seen_server_timestamp_, other->last_seen_server_timestamp_);
+    std::swap(server_timestamp_, other->server_timestamp_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);

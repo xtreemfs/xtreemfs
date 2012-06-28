@@ -27,7 +27,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public final class InternalRWRTruncateOperation extends OSDOperation {
 
-    final String sharedSecret;
+    final String      sharedSecret;
     final ServiceUUID localUUID;
 
     public InternalRWRTruncateOperation(OSDRequestDispatcher master) {
@@ -43,76 +43,74 @@ public final class InternalRWRTruncateOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        final xtreemfs_rwr_truncateRequest args = (xtreemfs_rwr_truncateRequest)rq.getRequestArgs();
+        final xtreemfs_rwr_truncateRequest args = (xtreemfs_rwr_truncateRequest) rq.getRequestArgs();
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"RWR truncate for file %s objVer %d",args.getFileId(),
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "RWR truncate for file %s objVer %d", args.getFileId(),
                     args.getObjectVersion());
         }
 
-       prepareLocalTruncate(rq,args);
+        prepareLocalTruncate(rq, args);
     }
-    
+
     public void localTruncate(final OSDRequest rq, final xtreemfs_rwr_truncateRequest args) {
-         if (args.getNewFileSize() < 0) {
+        if (args.getNewFileSize() < 0) {
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "new_file_size for truncate must be >= 0");
             return;
         }
 
         master.getStorageStage().truncate(args.getFileId(), args.getNewFileSize(),
-            rq.getLocationList().getLocalReplica().getStripingPolicy(),
-            rq.getLocationList().getLocalReplica(), rq.getCapability().getEpochNo(), rq.getCowPolicy(),
-            args.getObjectVersion(), true, rq,
-            new TruncateCallback() {
+                rq.getLocationList().getLocalReplica().getStripingPolicy(), rq.getLocationList().getLocalReplica(),
+                rq.getCapability().getEpochNo(), rq.getCowPolicy(), args.getObjectVersion(), -1L, true, rq,
+                new TruncateCallback() {
 
-            @Override
-            public void truncateComplete(OSDWriteResponse result, ErrorResponse error) {
-                sendResult(rq, error);
-            }
-        });
+                    @Override
+                    public void truncateComplete(OSDWriteResponse result, ErrorResponse error) {
+                        sendResult(rq, error);
+                    }
+                });
     }
 
     public void prepareLocalTruncate(final OSDRequest rq, final xtreemfs_rwr_truncateRequest args) {
-        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), 0, args.getObjectVersion(),
-                RWReplicationStage.Operation.INTERNAL_TRUNCATE, new RWReplicationStage.RWReplicationCallback() {
+        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), 0,
+                args.getObjectVersion(), RWReplicationStage.Operation.INTERNAL_TRUNCATE,
+                new RWReplicationStage.RWReplicationCallback() {
 
-            @Override
-            public void success(long newObjectVersion) {
-                localTruncate(rq, args);
-            }
+                    @Override
+                    public void success(long newObjectVersion) {
+                        localTruncate(rq, args);
+                    }
 
-            @Override
-            public void redirect(String redirectTo) {
-                rq.getRPCRequest().sendRedirect(redirectTo);
-            }
+                    @Override
+                    public void redirect(String redirectTo) {
+                        rq.getRPCRequest().sendRedirect(redirectTo);
+                    }
 
-            @Override
-            public void failed(ErrorResponse err) {
-                rq.sendError(err);
-            }
-        }, rq);
+                    @Override
+                    public void failed(ErrorResponse err) {
+                        rq.sendError(err);
+                    }
+                }, rq);
     }
-
 
     public void sendResult(final OSDRequest rq, ErrorResponse error) {
 
         if (error != null) {
             rq.sendError(error);
         } else {
-            //only locally
+            // only locally
             sendResponse(rq);
         }
     }
 
-    
     public void sendResponse(OSDRequest rq) {
-        rq.sendSuccess(null,null);
+        rq.sendSuccess(null, null);
     }
 
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
         try {
-            xtreemfs_rwr_truncateRequest rpcrq = (xtreemfs_rwr_truncateRequest)rq.getRequestArgs();
+            xtreemfs_rwr_truncateRequest rpcrq = (xtreemfs_rwr_truncateRequest) rq.getRequestArgs();
             rq.setFileId(rpcrq.getFileId());
             rq.setCapability(new Capability(rpcrq.getFileCredentials().getXcap(), sharedSecret));
             rq.setLocationList(new XLocations(rpcrq.getFileCredentials().getXlocs(), localUUID));
@@ -134,7 +132,5 @@ public final class InternalRWRTruncateOperation extends OSDOperation {
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
 
 }
