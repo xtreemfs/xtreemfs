@@ -41,7 +41,7 @@ import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.osd.StripingTest.MRCDummy;
 
-public class StripingTestCOW extends TestCase {
+public class StripingWithCOWTest extends TestCase {
 
     private static final boolean COW                = true;
 
@@ -74,7 +74,7 @@ public class StripingTestCOW extends TestCase {
     private XLocSet              xloc;
 
     /** Creates a new instance of StripingTest */
-    public StripingTestCOW(String testName) throws IOException {
+    public StripingWithCOWTest(String testName) throws IOException {
         super(testName);
         Logging.start(Logging.LEVEL_DEBUG);
 
@@ -243,7 +243,7 @@ public class StripingTestCOW extends TestCase {
     }
 
     public static void main(String[] args) {
-        TestRunner.run(StripingTestCOW.class);
+        TestRunner.run(StripingWithCOWTest.class);
     }
 
 }

@@ -93,8 +93,6 @@ public class StorageThread extends Stage {
 
     private OSDRequestDispatcher master;
 
-    private final boolean        checksumsEnabled;
-
     public StorageThread(int id, OSDRequestDispatcher dispatcher, MetadataCache cache, StorageLayout layout,
             int maxQueueLength) {
 
@@ -103,7 +101,6 @@ public class StorageThread extends Stage {
         this.cache = cache;
         this.layout = layout;
         this.master = dispatcher;
-        this.checksumsEnabled = master.getConfig().isUseChecksums();
     }
 
     @Override
@@ -376,7 +373,7 @@ public class StorageThread extends Stage {
 
             // if current version is supposed to be read ...
             if (snapTimestamp == 0) {
-                if (vm.isVersioningEnabled())
+                if (vm.isVersioningEnabled() && rq.getRequest().getCowPolicy().cowEnabled())
                     objVer = vm.getLatestObjectVersionBefore(objNo, Long.MAX_VALUE, fi.getLastObjectNumber() + 1);
                 else
                     objVer = vm.getLargestObjectVersion(objNo);
@@ -384,7 +381,7 @@ public class StorageThread extends Stage {
 
             // if old version is supposed to be read ...
             else {
-                if (vm.isVersioningEnabled())
+                if (vm.isVersioningEnabled() && rq.getRequest().getCowPolicy().cowEnabled())
                     objVer = vm.getLatestObjectVersionBefore(objNo, snapTimestamp, fi.getLastObjectNumber() + 1);
                 else
                     ; // return 'missing' for robustness if an attempt is made to read a version of an
@@ -398,7 +395,7 @@ public class StorageThread extends Stage {
 
             ObjectInformation obj = layout.readObject(fileId, fi, objNo, offset, length, objVer);
 
-            if (vm.isVersioningEnabled() && snapTimestamp != 0) {
+            if (vm.isVersioningEnabled() && rq.getRequest().getCowPolicy().cowEnabled() && snapTimestamp != 0) {
                 int lastObj = (int) vm.getLatestFileVersionBefore(snapTimestamp).getNumObjects() - 1;
                 obj.setLastLocalObjectNo(lastObj);
                 obj.setGlobalLastObjectNo(lastObj);
@@ -457,7 +454,8 @@ public class StorageThread extends Stage {
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             final long version = fi.getVersionManager().getLargestObjectVersion(objNo).version + 1;
 
-            layout.createPaddingObject(fileId, fi, objNo, version, TimeSync.getGlobalTime(), size);
+            layout.createPaddingObject(fileId, fi, objNo, version,
+                    rq.getRequest().getCowPolicy().cowEnabled() ? TimeSync.getPreciseGlobalTime() : -1, size);
 
             OSDWriteResponse response = OSDWriteResponse.newBuilder().build();
             cback.writeComplete(response, null);
@@ -800,7 +798,7 @@ public class StorageThread extends Stage {
 
             // append a new file version to the file version log
             try {
-                fi.getVersionManager().createFileVersion(TimeSync.getGlobalTime(), fileSize, lastObject + 1);
+                fi.getVersionManager().createFileVersion(TimeSync.getPreciseGlobalTime(), fileSize, lastObject + 1);
             } catch (IOException e) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, OutputUtils.stackTraceToString(e));
             }

@@ -240,7 +240,7 @@ public final class CloseOperation extends OSDOperation {
 
         // create a response with the current server time
         closeResponse.Builder response = closeResponse.newBuilder();
-        response.setServerTimestamp(TimeSync.getGlobalTime());
+        response.setServerTimestamp(TimeSync.getPreciseGlobalTime());
 
         // send the response to the client
         rq.sendSuccess(response.build(), null);

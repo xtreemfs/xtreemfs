@@ -102,7 +102,7 @@ public class StorageStage extends Stage {
             ReusableBuffer data, CowPolicy cow, XLocations xloc, boolean sync, Long newVersion, OSDRequest request,
             WriteObjectCallback listener) {
         this.enqueueOperation(fileId, StorageThread.STAGEOP_WRITE_OBJECT, new Object[] { fileId, objNo, sp, offset,
-                data, cow, xloc, true, sync, newVersion }, request, listener);
+                data, cow, xloc, true, sync, newVersion, null }, request, listener);
     }
 
     public static interface WriteObjectCallback {

@@ -33,7 +33,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
-public class OSDRangeReads extends TestCase {
+public class OSDRangeReadsTest extends TestCase {
 
     private final ServiceUUID     serverID;
 
@@ -50,7 +50,7 @@ public class OSDRangeReads extends TestCase {
     private OSD                   osdServer;
     private TestEnvironment       testEnv;
 
-    public OSDRangeReads(String testName) throws Exception {
+    public OSDRangeReadsTest(String testName) throws Exception {
         super(testName);
 
         Logging.start(Logging.LEVEL_DEBUG);
@@ -285,7 +285,7 @@ public class OSDRangeReads extends TestCase {
     }
 
     public static void main(String[] args) {
-        TestRunner.run(OSDRangeReads.class);
+        TestRunner.run(OSDRangeReadsTest.class);
     }
 
 }

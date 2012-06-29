@@ -26,8 +26,6 @@ import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.storage.VersionManager.ObjectVersionInfo;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
 
-import sun.text.normalizer.VersionInfo;
-
 /**
  * Abstracts object data access from underlying on-disk storage layout.
  * 
