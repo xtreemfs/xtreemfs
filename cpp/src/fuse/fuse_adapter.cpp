@@ -396,7 +396,7 @@ void FuseAdapter::GenerateUserCredentials(
 }
 
 void FuseAdapter::SetInterruptQueryFunction() const {
-  Interruptibilizer::Initialize(&CheckIfOperationInterrupted);
+  options_->was_interrupted_function = &CheckIfOperationInterrupted;
 }
 
 void FuseAdapter::ConvertXtreemFSStatToFuse(

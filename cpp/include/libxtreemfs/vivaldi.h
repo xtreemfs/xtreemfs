@@ -80,8 +80,9 @@ class Vivaldi {
   UUIDIterator* dir_service_addresses_;
   UUIDResolver* uuid_resolver_;
 
-  /** libxtreemfs Options object which includes all program options */
-  const xtreemfs::Options& options_;
+  /** Shallow copy of the Client's options, with disabled retry and interrupt
+   *  functionality. */
+  Options vivaldi_options_;
 
   /** The PBRPC protocol requires an Auth & UserCredentials object in every
    *  request. However there are many operations which do not check the content
@@ -106,9 +107,6 @@ class Vivaldi {
   mutable boost::mutex coordinate_mutex_;
 
   xtreemfs::pbrpc::VivaldiCoordinates my_vivaldi_coordinates_;
-
-  /** Default options with max_tries = 1, only used for executing requests. */
-  Options vivaldi_retry_options_;
 };
 
 }  // namespace xtreemfs

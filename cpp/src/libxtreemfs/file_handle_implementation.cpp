@@ -880,7 +880,7 @@ void FileHandleImplementation::WriteBackFileSize(
   response->DeleteBuffers();
 }
 
-void FileHandleImplementation::WriteBackFileSizeAsync() {
+void FileHandleImplementation::WriteBackFileSizeAsync(const Options& options) {
   xtreemfs_update_file_sizeRequest rq;
   {
     boost::mutex::scoped_lock lock(mutex_);
@@ -910,7 +910,7 @@ void FileHandleImplementation::WriteBackFileSizeAsync() {
     string mrc_uuid;
     string mrc_address;
     mrc_uuid_iterator_->GetUUID(&mrc_uuid);
-    uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address);
+    uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address, options);
     mrc_service_client_->xtreemfs_update_file_size(mrc_address,
                                                    auth_bogus_,
                                                    user_credentials_bogus_,
@@ -922,7 +922,7 @@ void FileHandleImplementation::WriteBackFileSizeAsync() {
   }
 }
 
-void FileHandleImplementation::RenewXCapAsync() {
+void FileHandleImplementation::RenewXCapAsync(const Options& options) {
   XCap xcap_copy;
   {
     boost::mutex::scoped_lock lock(mutex_);
@@ -945,7 +945,7 @@ void FileHandleImplementation::RenewXCapAsync() {
   string mrc_address;
   try {
     mrc_uuid_iterator_->GetUUID(&mrc_uuid);
-    uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address);
+    uuid_resolver_->UUIDToAddress(mrc_uuid, &mrc_address, options);
     mrc_service_client_->xtreemfs_renew_capability(
         mrc_address,
         auth_bogus_,

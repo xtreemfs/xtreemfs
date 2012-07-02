@@ -166,7 +166,7 @@ bool FileInfo::TryToUpdateOSDWriteResponse(
   }
 }
 
-void FileInfo::WriteBackFileSizeAsync() {
+void FileInfo::WriteBackFileSizeAsync(const Options& options) {
   boost::mutex::scoped_lock lock(osd_write_response_mutex_);
 
   // Only update pending file size updates.
@@ -177,18 +177,18 @@ void FileInfo::WriteBackFileSizeAsync() {
     osd_write_response_status_ = kDirtyAndAsyncPending;
     file_handle->set_osd_write_response_for_async_write_back(
         *(osd_write_response_.get()));
-    file_handle->WriteBackFileSizeAsync();
+    file_handle->WriteBackFileSizeAsync(options);
   }
 }
 
-void FileInfo::RenewXCapsAsync() {
+void FileInfo::RenewXCapsAsync(const Options& options) {
   boost::mutex::scoped_lock lock(open_file_handles_mutex_);
 
   for (list<FileHandleImplementation*>::iterator it =
            open_file_handles_.begin();
        it != open_file_handles_.end();
        ++it) {
-    (*it)->RenewXCapAsync();
+    (*it)->RenewXCapAsync(options);
   }
 }
 

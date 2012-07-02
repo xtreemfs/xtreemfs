@@ -81,7 +81,7 @@ template<class ReturnMessageType, class F>
 
   // Retry unless maximum tries reached or interrupted.
   while ((++attempt <= max_tries || max_tries == 0) &&
-         !Interruptibilizer::WasInterrupted()) {
+         !Interruptibilizer::WasInterrupted(options)) {
     // Delete any previous response;
     if (response != NULL) {
       response->DeleteBuffers();
@@ -222,7 +222,8 @@ template<class ReturnMessageType, class F>
 
           try {
             Interruptibilizer::SleepInterruptible(
-                delay_time_left.total_milliseconds());
+                delay_time_left.total_milliseconds(),
+                options);
           } catch (const boost::thread_interrupted& e) {
             if (response != NULL) {
               // Free response.
@@ -241,7 +242,7 @@ template<class ReturnMessageType, class F>
     }  // if (response->HasFailed())
 
     // Have we been interrupted?
-    if (Interruptibilizer::WasInterrupted()) {
+    if (Interruptibilizer::WasInterrupted(options)) {
       if (xtreemfs::util::Logging::log->loggingActive(
               xtreemfs::util::LEVEL_INFO)) {
         std::string error = "Caught interrupt, aborting sync request.";

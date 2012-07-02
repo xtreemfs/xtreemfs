@@ -161,14 +161,14 @@ class FileHandleImplementation
                          bool close_file);
 
   /** Sends osd_write_response_for_async_write_back_ asynchronously. */
-  void WriteBackFileSizeAsync();
+  void WriteBackFileSizeAsync(const Options& options);
 
   /** Overwrites the current osd_write_response_ with "owr". */
   void set_osd_write_response_for_async_write_back(
       const xtreemfs::pbrpc::OSDWriteResponse& owr);
 
   /** Renew xcap_ asynchronously. */
-  void RenewXCapAsync();
+  void RenewXCapAsync(const Options& options);
 
   /** Blocks until the callback has completed (if an XCapRenewal is pending). */
   void WaitForPendingXCapRenewal();

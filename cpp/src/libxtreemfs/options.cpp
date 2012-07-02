@@ -162,6 +162,9 @@ Options::Options()
   periodic_xcap_renewal_interval_s = 60;  // Default: 1 Minute.
   vivaldi_zipf_generator_skew = 0.5;
 
+  // Internal options, not available from the command line interface.
+  was_interrupted_function = NULL;
+
   // NOTE: Deprecated options are no longer needed as members
 
 #ifndef WIN32

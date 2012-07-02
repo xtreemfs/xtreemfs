@@ -120,10 +120,10 @@ class FileInfo {
   void MergeStatAndOSDWriteResponse(xtreemfs::pbrpc::Stat* stat);
 
   /** Sends pending file size updates to the MRC asynchronously. */
-  void WriteBackFileSizeAsync();
+  void WriteBackFileSizeAsync(const Options& options);
 
   /** Renews xcap of all file handles of this file asynchronously. */
-  void RenewXCapsAsync();
+  void RenewXCapsAsync(const Options& options);
 
   /** Releases all locks of process_id using file_handle to issue
    *  ReleaseLock(). */

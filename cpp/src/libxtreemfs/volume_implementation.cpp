@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -19,7 +19,6 @@
 #include "libxtreemfs/file_handle_implementation.h"
 #include "libxtreemfs/file_info.h"
 #include "libxtreemfs/helper.h"
-#include "libxtreemfs/options.h"
 #include "libxtreemfs/stripe_translator.h"
 #include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/xtreemfs_exception.h"
@@ -52,6 +51,7 @@ VolumeImplementation::VolumeImplementation(
       volume_name_(volume_name),
       volume_ssl_options_(ssl_options),
       volume_options_(options),
+      periodic_threads_options_(options),
       metadata_cache_(options.metadata_cache_size,
                       options.metadata_cache_ttl_s) {
   // Set AuthType to AUTH_NONE as it's currently not used.
@@ -60,6 +60,10 @@ VolumeImplementation::VolumeImplementation(
   user_credentials_bogus_.set_username("xtreemfs");
 
   mrc_uuid_iterator_.reset(mrc_uuid_iterator);
+
+  // Disable retries for periodic threads. Interrupt support is disabled by
+  // default.
+  periodic_threads_options_.max_tries = 1;
 }
 
 VolumeImplementation::~VolumeImplementation() {
@@ -99,9 +103,11 @@ void VolumeImplementation::Start() {
 
   // Start periodic threads.
   xcap_renewal_thread_.reset(new boost::thread(boost::bind(
-      &xtreemfs::VolumeImplementation::PeriodicXCapRenewal, this)));
+      &xtreemfs::VolumeImplementation::PeriodicXCapRenewal,
+      this)));
   filesize_writeback_thread_.reset(new boost::thread(boost::bind(
-      &xtreemfs::VolumeImplementation::PeriodicFileSizeUpdate, this)));
+      &xtreemfs::VolumeImplementation::PeriodicFileSizeUpdate,
+      this)));
 }
 
 /**
@@ -1475,7 +1481,7 @@ void VolumeImplementation::PeriodicXCapRenewal() {
       map<boost::uint64_t, FileInfo*>::iterator it;
       for (it = open_file_table_.begin();
            it != open_file_table_.end(); ++it) {
-        it->second->RenewXCapsAsync();
+        it->second->RenewXCapsAsync(periodic_threads_options_);
       }
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -1509,7 +1515,7 @@ void VolumeImplementation::PeriodicFileSizeUpdate() {
       map<boost::uint64_t, FileInfo*>::iterator it;
       for (it = open_file_table_.begin();
            it != open_file_table_.end(); ++it) {
-        it->second->WriteBackFileSizeAsync();
+        it->second->WriteBackFileSizeAsync(periodic_threads_options_);
       }
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {

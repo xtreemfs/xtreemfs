@@ -8,24 +8,24 @@
 #include "libxtreemfs/interrupt.h"
 
 #include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <boost/thread/thread.hpp>
+
+#include "libxtreemfs/options.h"
 
 namespace xtreemfs {
 
-Interruptibilizer::query_function Interruptibilizer::f_ = NULL;
-
-void Interruptibilizer::Initialize(query_function f) {
-  f_ = f;
+bool Interruptibilizer::WasInterrupted(const Options& options) {
+  return (options.was_interrupted_function == NULL)
+         ? false
+         : static_cast<bool>(options.was_interrupted_function());
 }
 
-bool Interruptibilizer::WasInterrupted() {
-  return (f_ == NULL) ? false : static_cast<bool>(f_());
-}
-
-void Interruptibilizer::SleepInterruptible(int rel_time_ms) {
+void Interruptibilizer::SleepInterruptible(int rel_time_ms,
+                                           const Options& options) {
   const int sleep_interval_ms = 2000;
 
   int wait_time;
-  while (rel_time_ms > 0 && !Interruptibilizer::WasInterrupted()) {
+  while (rel_time_ms > 0 && !Interruptibilizer::WasInterrupted(options)) {
     wait_time = rel_time_ms > sleep_interval_ms ? sleep_interval_ms
                                                 : rel_time_ms;
     rel_time_ms -= wait_time;

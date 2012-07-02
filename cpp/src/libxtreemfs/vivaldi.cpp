@@ -42,7 +42,7 @@ Vivaldi::Vivaldi(
     osd_client_(rpc_client),
     dir_service_addresses_(dir_service_addresses),
     uuid_resolver_(uuid_resolver),
-    options_(options) {
+    vivaldi_options_(options) {
   srand(static_cast<unsigned int>(time(NULL)));
   // Set AuthType to AUTH_NONE as it's currently not used.
   auth_bogus_.set_auth_type(AUTH_NONE);
@@ -50,7 +50,7 @@ Vivaldi::Vivaldi(
   user_credentials_bogus_.set_username("xtreemfs");
 
   // Vivaldi requests do not have to be retried nor interrupted.
-  vivaldi_retry_options_.max_tries = 1;
+  vivaldi_options_.max_tries = 1;
 }
 
 void Vivaldi::Run() {
@@ -59,7 +59,7 @@ void Vivaldi::Run() {
   my_vivaldi_coordinates_.set_x_coordinate(0.0);
   my_vivaldi_coordinates_.set_y_coordinate(0.0);
 
-  ifstream vivaldi_coordinates_file(options_.vivaldi_filename.c_str());
+  ifstream vivaldi_coordinates_file(vivaldi_options_.vivaldi_filename.c_str());
   if (vivaldi_coordinates_file.is_open()) {
     my_vivaldi_coordinates_.ParseFromIstream(&vivaldi_coordinates_file);
     if (!my_vivaldi_coordinates_.IsInitialized()) {
@@ -88,14 +88,14 @@ void Vivaldi::Run() {
   vector<uint64_t> current_retries;
   int retries_in_a_row = 0;
   list<KnownOSD>::iterator chosen_osd_service;
-  ZipfGenerator rank_generator(options_.vivaldi_zipf_generator_skew);
+  ZipfGenerator rank_generator(vivaldi_options_.vivaldi_zipf_generator_skew);
 
   for (;;) {
     boost::scoped_ptr< SyncCallback<xtreemfs_pingMesssage> > ping_response;
     try {
       // Get a list of OSDs from the DIR(s)
-      if ((vivaldi_iterations % options_.vivaldi_max_iterations_before_updating)
-           == 0) {
+      if ((vivaldi_iterations %
+               vivaldi_options_.vivaldi_max_iterations_before_updating) == 0) {
         valid_known_osds = UpdateKnownOSDs(&known_osds, own_node);
         if (valid_known_osds && !known_osds.empty()) {
           rank_generator.set_size(known_osds.size());
@@ -156,8 +156,8 @@ void Vivaldi::Run() {
                     &ping_message),
                 &pinged_osd,
                 uuid_resolver_,
-                vivaldi_retry_options_.max_tries,
-                vivaldi_retry_options_));
+                vivaldi_options_.max_tries,
+                vivaldi_options_));
 
         // stop timing
         boost::posix_time::ptime end_time(
@@ -174,7 +174,7 @@ void Vivaldi::Run() {
         }
 
         // Recalculate coordinates here
-        if (retries_in_a_row < options_.vivaldi_max_request_retries) {
+        if (retries_in_a_row < vivaldi_options_.vivaldi_max_request_retries) {
           if (!own_node.RecalculatePosition(*random_osd_vivaldi_coordinates,
                                             measured_rtt,
                                             false)) {
@@ -223,13 +223,13 @@ void Vivaldi::Run() {
               << own_node.GetCoordinates()->x_coordinate() << ", "
               << own_node.GetCoordinates()->y_coordinate() << ")" << endl;
         }
-        ofstream file_out(options_.vivaldi_filename.c_str(),
+        ofstream file_out(vivaldi_options_.vivaldi_filename.c_str(),
             ios_base::binary | ios_base::trunc);
         own_node.GetCoordinates()->SerializePartialToOstream(&file_out);
         file_out.close();
 
         // Update client coordinates at the DIR
-        if(options_.vivaldi_enable_dir_updates) {
+        if (vivaldi_options_.vivaldi_enable_dir_updates) {
           if (Logging::log->loggingActive(LEVEL_DEBUG)) {
             Logging::log->getLog(LEVEL_DEBUG)
                 << "Vivaldi: Sending coordinates to DIR." << endl;
@@ -248,8 +248,8 @@ void Vivaldi::Run() {
                         own_node.GetCoordinates()),
                     dir_service_addresses_,
                     NULL,
-                    vivaldi_retry_options_.max_tries,
-                    vivaldi_retry_options_,
+                    vivaldi_options_.max_tries,
+                    vivaldi_options_,
                     true,
                     false));
             response->DeleteBuffers();
@@ -341,10 +341,10 @@ void Vivaldi::Run() {
 
       // Sleep until the next iteration
       uint64_t sleep_in_s = static_cast<uint64_t>(
-          options_.vivaldi_recalculation_interval_s -
-          options_.vivaldi_recalculation_epsilon_s +
+          vivaldi_options_.vivaldi_recalculation_interval_s -
+          vivaldi_options_.vivaldi_recalculation_epsilon_s +
           (static_cast<double>(rand()) / (RAND_MAX - 1)) *
-          2.0 * options_.vivaldi_recalculation_epsilon_s);
+          2.0 * vivaldi_options_.vivaldi_recalculation_epsilon_s);
 
       if (Logging::log->loggingActive(LEVEL_DEBUG)) {
         Logging::log->getLog(LEVEL_DEBUG)
@@ -363,7 +363,8 @@ void Vivaldi::Run() {
       // We must avoid to keep retrying indefinitely against an OSD which is not
       // responding
       if (retries_in_a_row > 0
-          && (++retries_in_a_row >= options_.vivaldi_max_request_retries)) {
+          && (++retries_in_a_row >=
+              vivaldi_options_.vivaldi_max_request_retries)) {
         // If the last retry times out all the previous retries are discarded
         current_retries.clear();
         retries_in_a_row = 0;
@@ -400,8 +401,8 @@ bool Vivaldi::UpdateKnownOSDs(list<KnownOSD>* updated_osds,
             &request),
         dir_service_addresses_,
         NULL,
-        vivaldi_retry_options_.max_tries,
-        vivaldi_retry_options_,
+        vivaldi_options_.max_tries,
+        vivaldi_options_,
         true,
         false));
 

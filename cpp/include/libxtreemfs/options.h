@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2010-2011 by Patrick Schaefer, Zuse Institute Berlin
- *                    2011 by Michael Berlin, Zuse Institute Berlin
+ *               2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -10,6 +10,7 @@
 #define CPP_INCLUDE_LIBXTREEMFS_OPTIONS_H_
 
 #include <boost/cstdint.hpp>
+#include <boost/function.hpp>
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <string>
@@ -29,6 +30,15 @@ enum XtreemFSServiceType {
 
 class Options {
  public:
+  /** Query function which returns 1 when the request was interrupted.
+   *
+   * @note the boost::function typedef could be replaced with
+   *       typedef int (*query_function)(void);
+   *       which would also works without changes, but would not support
+   *       functor objects
+   */
+  typedef boost::function0<int> CheckIfInterruptedQueryFunction;
+
   /** Sets the default values. */
   Options();
 
@@ -191,6 +201,10 @@ class Options {
   int periodic_xcap_renewal_interval_s;
   /** Skewness of the Zipf distribution used for vivaldi OSD selection */
   double vivaldi_zipf_generator_skew;
+
+  // Internal options, not available from the command line interface.
+  /** If not NULL, called to find out if request was interrupted. */
+  CheckIfInterruptedQueryFunction was_interrupted_function;
 
   // NOTE: Deprecated options are no longer needed as members
 
