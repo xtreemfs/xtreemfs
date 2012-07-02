@@ -2421,7 +2421,7 @@ The following predefined policies exist:
 		\item \texttt{distance.A-B=100}\\
 			For each pair of datacenters, the distance must be specified. As distances are symmetric, it is sufficient to specify A to B.
 
-		\item \texttt{addresses.A=192.168.1.1,192.168.2.0/24}\\
+		\item \texttt{A.addresses=192.168.1.1,192.168.2.0/24}\\
 			For each datacenter a list of matching IP addresses or networks must be specified.
 
 		\item \texttt{max\_cache\_size=1000}\\
@@ -2435,9 +2435,9 @@ The following predefined policies exist:
 	distance.BERLIN-LONDON=10
 	distance.BERLIN-NEW_YORK=140
 	distance.LONDON-NEW_YORK=110
-	addresses.BERLIN=192.168.1.0/24
-	addresses.LONDON=192.168.2.0/24
-	addresses.NEW_YORK=192.168.3.0/24,192.168.100.0/25
+	BERLIN.addresses=192.168.1.0/24
+	LONDON.addresses=192.168.2.0/24
+	NEW_YORK.addresses=192.168.3.0/24,192.168.100.0/25
 	max_cache_size=100
 	\end{verbatim}
 
