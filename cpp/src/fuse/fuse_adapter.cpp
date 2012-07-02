@@ -53,21 +53,23 @@ using namespace xtreemfs::pbrpc;
 using namespace xtreemfs::util;
 
 namespace xtreemfs {
-  
+
 int CheckIfOperationInterrupted() {
-  if (fuse_get_context()->fuse == NULL) {
-    // Calling fuse_interrupted() from a non-Fuse thread results in a
-    // segmentation fault since Fuse does not check beforehand if
-    // fuse_context_i->req is NULL.
-    return 0;
-  } else {
-    // TODO(mberlin): Test for other plattforms that it's safe to call this.
-    // TODO(mberlin): Temporarily disabled since older Fuse versions to not
-    //                zero the context and therefore the work-around above can
-    //                fail (seen with Fuse 2.8.3).
-    //return fuse_interrupted();
-    return 0;
-  }
+//  if (fuse_get_context()->fuse == NULL) {
+//    // Calling fuse_interrupted() from a non-Fuse thread results in a
+//    // segmentation fault since Fuse does not check beforehand if
+//    // fuse_context_i->req is NULL.
+//    return 0;
+//  } else {
+//    // TODO(mberlin): Test for other plattforms that it's safe to call this.
+//    // TODO(mberlin): Temporarily disabled since older Fuse versions to not
+//    //                zero the context and therefore the work-around above can
+//    //                fail (seen with Fuse 2.8.3).
+  // TODO(mberlin): Temporarily re-enable calling fuse_interrupted() from all
+  //                threads to test the Fuse fix by Miklos Szeredi.
+    return fuse_interrupted();
+//    return 0;
+//  }
 }
 
 FuseAdapter::FuseAdapter(FuseOptions* options) :
