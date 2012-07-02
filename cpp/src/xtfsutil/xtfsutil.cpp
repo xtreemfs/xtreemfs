@@ -198,7 +198,7 @@ bool getattr(const string& xctl_file,
           cout << "Num. Files/Dirs      "
             << stat["num_files"].asString()
             << " / " << stat["num_dirs"].asString() << endl;
-          
+
           cout << "Access Control p.    ";
           if (stat["ac_policy_id"].asString() == "1") {
             cout << "Null Policy (no access control)";
@@ -459,7 +459,7 @@ bool SetReplicationPolicy(const string& xctl_file,
         << "the replication policy." << endl;
     return false;
   }
-  
+
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
     cout << "Changed replication policy to: "
@@ -866,7 +866,7 @@ int main(int argc, char **argv) {
        "removes an ACL entry, format: u|g|m|o:<name>");
   positional_options_description pd;
   pd.add("path", 1);
-  
+
   options_description cmdline_options;
   cmdline_options.add(desc).add(hidden);
   variables_map vm;
@@ -958,7 +958,9 @@ int main(int argc, char **argv) {
   char* real_path_cstr = realpath(option_path.c_str(), NULL);
   if (!real_path_cstr) {
     cerr << "xtfsutil failed to find the absolute path of: "
-         << option_path << endl;
+         << option_path
+         << " Maybe the path does not exist?"
+         << endl;
     return 1;
   }
   string path_on_volume;
