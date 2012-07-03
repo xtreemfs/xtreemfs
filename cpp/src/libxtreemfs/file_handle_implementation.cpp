@@ -779,6 +779,60 @@ void FileHandleImplementation::WaitForPendingXCapRenewal() {
 void FileHandleImplementation::Close() {
 	try {
 		Flush(true); // true = Tell Flush() the file will be closed.
+
+		// explicitly close the file if snapshots are enabled and the file
+    // was opened for writing or truncating
+		int explicit_close;
+    {
+      boost::mutex::scoped_lock lock(mutex_);
+      explicit_close = xcap_.snap_config() != SNAP_CONFIG_SNAPS_DISABLED
+          && (xcap_.access_mode()
+              & (SYSTEM_V_FCNTL_H_O_RDWR | SYSTEM_V_FCNTL_H_O_TRUNC));
+    }
+
+    if (explicit_close) {
+      closeRequest rq_osd;
+      rq_osd.set_file_id(xcap_.file_id());
+      file_info_->GetXLocSet(rq_osd.mutable_file_credentials()->
+          mutable_xlocs());
+      {
+        boost::mutex::scoped_lock lock(mutex_);
+        rq_osd.mutable_file_credentials()->mutable_xcap()->CopyFrom(xcap_);
+      }
+
+      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+        Logging::log->getLog(LEVEL_DEBUG) << "explicitly closing file "
+            << xcap_.file_id() << endl;
+      }
+
+      // close file across all replicas
+      UUIDIterator osd_uuid_iterator;
+      for (int k = 0;
+          k < rq_osd.mutable_file_credentials()->mutable_xlocs()->
+              replicas_size();
+          k++) {
+
+        osd_uuid_iterator.ClearAndAddUUID(GetOSDUUIDFromXlocSet(
+            rq_osd.mutable_file_credentials()->xlocs(),
+            k,
+            0));
+
+        boost::scoped_ptr<SyncCallback<closeResponse> > response_osd(
+            ExecuteSyncRequest<
+            SyncCallback<closeResponse>*>(boost::bind(
+            &xtreemfs::pbrpc::OSDServiceClient::close_sync,
+            osd_service_client_,
+            _1,
+            boost::cref(auth_bogus_),
+            boost::cref(user_credentials_bogus_),
+            &rq_osd),
+            &osd_uuid_iterator,
+            uuid_resolver_,
+            volume_options_.max_tries,
+            volume_options_));
+        response_osd->DeleteBuffers();
+      }
+    }
 	} catch (const XtreemFSException& e) {
 		// Current C++ does not allow to store the exception and rethrow it outside
 		// the catch block. We also don't want to use an extra meta object with a
@@ -791,53 +845,7 @@ void FileHandleImplementation::Close() {
 		throw;
 	}
 
-	// explicitly close the file if snapshots are enabled and the file
-	// was opened for writing or truncating
-	if (xcap_.snap_config() != SNAP_CONFIG_SNAPS_DISABLED
-			&& (xcap_.access_mode()
-					& (SYSTEM_V_FCNTL_H_O_RDWR | SYSTEM_V_FCNTL_H_O_TRUNC))) {
-
-		closeRequest rq_osd;
-		rq_osd.set_file_id(xcap_.file_id());
-		file_info_->GetXLocSet(
-				rq_osd.mutable_file_credentials()->mutable_xlocs());
-		{
-			boost::mutex::scoped_lock lock(mutex_);
-			rq_osd.mutable_file_credentials()->mutable_xcap()->CopyFrom(xcap_);
-		}
-
-		if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-			Logging::log->getLog(LEVEL_DEBUG) << "explicitly closing file "
-					<< xcap_.file_id() << endl;
-		}
-
-		// close file across all replicas
-		UUIDIterator osd_uuid_iterator;
-		for (int k = 0;
-				k
-						< rq_osd.mutable_file_credentials()->mutable_xlocs()->replicas_size();
-				k++) {
-
-			osd_uuid_iterator.ClearAndAddUUID(
-					GetOSDUUIDFromXlocSet(
-							rq_osd.mutable_file_credentials()->xlocs(), k, 0));
-
-			boost::scoped_ptr<SyncCallback<closeResponse> > response_osd(
-					ExecuteSyncRequest<SyncCallback<closeResponse>*>(
-							boost::bind(
-									&xtreemfs::pbrpc::OSDServiceClient::close_sync,
-									osd_service_client_, _1,
-									boost::cref(auth_bogus_),
-									boost::cref(user_credentials_bogus_),
-									&rq_osd), &osd_uuid_iterator,
-							uuid_resolver_, volume_options_.max_tries,
-							volume_options_));
-			response_osd->DeleteBuffers();
-		}
-	}
-
 	file_info_->CloseFileHandle(this);
-
 }
 
 boost::uint64_t FileHandleImplementation::GetFileId() {
