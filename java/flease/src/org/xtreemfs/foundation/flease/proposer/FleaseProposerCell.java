@@ -273,6 +273,38 @@ public class FleaseProposerCell {
         this.handoverTo = handoverTo;
     }
 
-
+    public String toString() {
+        StringBuilder text = new StringBuilder();
+        text.append(getClass().getSimpleName());
+        text.append(":{");
+        text.append(" cellId:");
+        text.append(cellId);
+        text.append(" ballotNo:");
+        text.append(ballotNo);
+        text.append(" numAcceptors:");
+        text.append(acceptors != null ? acceptors.size() : "null");
+        text.append(" numResponses:");
+        text.append(responses != null ? responses.size() : "null");
+        text.append(" cellState:");
+        text.append(cellState);
+        text.append(" numFail:");
+        text.append(numFailures);
+        text.append(" majority:");
+        text.append(majority);
+        text.append(" lastPTSP:");
+        text.append(lastPrepateTimestamp_ms);
+        text.append(" viewId:");
+        text.append(viewId);
+        text.append(" prevL:");
+        text.append(prevLease != null ? prevLease : "none");
+        text.append(" markedClose:");
+        text.append(markedClose);
+        text.append(" rqME:");
+        text.append(requestMasteEpoch);
+        text.append(" msgSent:");
+        text.append(messageSent);
+        text.append("}");
+        return text.toString();
+    }
 
 }
