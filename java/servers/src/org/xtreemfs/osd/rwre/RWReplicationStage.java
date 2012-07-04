@@ -173,6 +173,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 eventLeaseStateChanged(cellID, null, error);
             }
         }, masterEpochThread);
+        fstage.setLifeCycleListener(master);
     }
 
     @Override
