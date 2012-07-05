@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.security.auth.login.FailedLoginException;
+
 import junit.framework.TestCase;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
@@ -71,7 +74,11 @@ public class FleaseProposerTest extends TestCase {
                     } catch (InterruptedException ex) {
                         Logger.getLogger(FleaseProposerTest.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    proposer.processMessage(msg);
+                    try {
+                        proposer.processMessage(msg);
+                    } catch (Exception ex) {
+                        fail(ex.toString());
+                    }
                 }
             }
         }, new FleaseStatusListener() {

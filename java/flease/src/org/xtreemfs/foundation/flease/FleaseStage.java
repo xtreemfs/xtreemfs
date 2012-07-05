@@ -481,7 +481,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
         this.interrupt();
     }
 
-    private int checkTimers() {
+    private int checkTimers() throws Throwable {
         final long now = TimeSync.getLocalSystemTime();
 
         TimerEntry e = timers.peek();
