@@ -96,7 +96,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
             for (int i = 0; i < responses.length; i++) {
                 responses[i] = client.xtreemfs_rwr_status(remoteOSDUUIDs.get(i).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
                         credentials, credentials.getXcap().getFileId(),
-                        this.localObjVersion);
+                        0);  // maxObjVer = 0 => let the remote OSD assume that we don't have any objects yet. Important to detect wholes (writes not seen by this replica).
             }
         } catch (IOException ex) {
             callback.failed(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(),ex));

@@ -304,6 +304,13 @@ public class StorageThread extends Stage {
             final String fileId = (String) rq.getArgs()[0];
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
             final long remoteMaxObjVer = (Long) rq.getArgs()[2];
+
+            // Do not assume that objects exist on the remote side based on the maxObjVer.
+            // The reason for that is the remote side may not have seen all consecutive writes
+            // up to maxObjVer. As an optimization, one could implement a marker which contains
+            // the minimal version which was actually seen by all replicas. Until then,
+            // remoteMaxObjVer must not be > 0.
+            assert(remoteMaxObjVer == 0);
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
