@@ -11,11 +11,10 @@ package org.xtreemfs.osd.storage;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
@@ -310,7 +309,9 @@ public class StorageThread extends Stage {
             // up to maxObjVer. As an optimization, one could implement a marker which contains
             // the minimal version which was actually seen by all replicas. Until then,
             // remoteMaxObjVer must not be > 0.
-            assert(remoteMaxObjVer == 0);
+            assert remoteMaxObjVer == 0 : "Received a request with remoteMaxObjVer != 0." +
+            		" This probably means that you run OSDs with different versions." +
+            		" Please update all OSDs to the same version.";
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
