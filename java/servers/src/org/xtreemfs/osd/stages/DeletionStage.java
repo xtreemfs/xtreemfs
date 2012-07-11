@@ -35,9 +35,9 @@ public class DeletionStage extends Stage {
     
     private long                 numFilesDeleted;
     
-    public DeletionStage(OSDRequestDispatcher master, MetadataCache cache, StorageLayout layout) {
+    public DeletionStage(OSDRequestDispatcher master, MetadataCache cache, StorageLayout layout, int maxRequestsQueueLength) {
         
-        super("OSD DelSt");
+        super("OSD DelSt", maxRequestsQueueLength);
         
         this.master = master;
         this.cache = cache;

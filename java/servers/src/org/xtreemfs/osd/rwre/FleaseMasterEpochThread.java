@@ -9,6 +9,7 @@
 package org.xtreemfs.osd.rwre;
 
 import java.io.IOException;
+
 import org.xtreemfs.foundation.flease.MasterEpochHandlerInterface;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
@@ -25,8 +26,8 @@ public class FleaseMasterEpochThread extends Stage implements MasterEpochHandler
 
     private final StorageLayout layout;
 
-    public FleaseMasterEpochThread(StorageLayout layout) {
-        super("FlMEpoThr");
+    public FleaseMasterEpochThread(StorageLayout layout, int maxRequestsQueueLength) {
+        super("FlMEpoThr", maxRequestsQueueLength);
         this.layout = layout;
     }
 

@@ -8,8 +8,6 @@
 
 package org.xtreemfs.osd.stages;
 
-import com.google.protobuf.Message;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,15 +35,15 @@ import org.xtreemfs.osd.OpenFileTable.OpenFileTableEntry;
 import org.xtreemfs.osd.operations.EventCloseFile;
 import org.xtreemfs.osd.operations.EventCreateFileVersion;
 import org.xtreemfs.osd.operations.OSDOperation;
-import org.xtreemfs.osd.operations.ReadOperation;
-import org.xtreemfs.osd.operations.WriteOperation;
 import org.xtreemfs.osd.storage.CowPolicy;
-import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.CowPolicy.cowMode;
+import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
+
+import com.google.protobuf.Message;
 
 public class PreprocStage extends Stage {
     
@@ -97,9 +95,9 @@ public class PreprocStage extends Stage {
     private static final int                                MAX_CAP_CACHE              = 20;
     
     /** Creates a new instance of AuthenticationStage */
-    public PreprocStage(OSDRequestDispatcher master, MetadataCache metadataCache) {
+    public PreprocStage(OSDRequestDispatcher master, MetadataCache metadataCache, int maxRequestsQueueLength) {
         
-        super("OSD PreProcSt");
+        super("OSD PreProcSt", maxRequestsQueueLength);
         
         capCache = new HashMap();
         oft = new OpenFileTable();

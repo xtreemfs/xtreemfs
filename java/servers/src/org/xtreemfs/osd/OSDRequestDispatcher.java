@@ -323,19 +323,19 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         udpCom = new RPCUDPSocketServer(config.getPort(), this);
         udpCom.setLifeCycleListener(this);
         
-        preprocStage = new PreprocStage(this, metadataCache);
+        preprocStage = new PreprocStage(this, metadataCache, config.getMaxRequestsQueueLength());
         preprocStage.setLifeCycleListener(this);
         
-        stStage = new StorageStage(this, metadataCache, storageLayout, 1);
+        stStage = new StorageStage(this, metadataCache, storageLayout, 1, config.getMaxRequestsQueueLength());
         stStage.setLifeCycleListener(this);
         
-        delStage = new DeletionStage(this, metadataCache, storageLayout);
+        delStage = new DeletionStage(this, metadataCache, storageLayout, config.getMaxRequestsQueueLength());
         delStage.setLifeCycleListener(this);
         
-        replStage = new ReplicationStage(this);
+        replStage = new ReplicationStage(this, config.getMaxRequestsQueueLength());
         replStage.setLifeCycleListener(this);
         
-        rwrStage = new RWReplicationStage(this, serverSSLopts);
+        rwrStage = new RWReplicationStage(this, serverSSLopts, config.getMaxRequestsQueueLength());
         rwrStage.setLifeCycleListener(this);
         
         // ----------------------------------------
@@ -440,7 +440,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         startupTime = System.currentTimeMillis();
         
-        vStage = new VivaldiStage(this);
+        vStage = new VivaldiStage(this, config.getMaxRequestsQueueLength());
         vStage.setLifeCycleListener(this);
         
         cThread = new CleanupThread(this, storageLayout);

@@ -124,8 +124,8 @@ public class VivaldiStage extends Stage {
      */
     private final int TIMER_INTERVAL_IN_MS;
 
-    public VivaldiStage(OSDRequestDispatcher master) {
-        super("VivaldiSt");
+    public VivaldiStage(OSDRequestDispatcher master, int maxRequestsQueueLength) {
+        super("VivaldiSt", maxRequestsQueueLength);
         this.master = master;
         this.dirClient = master.getDIRClient();
 

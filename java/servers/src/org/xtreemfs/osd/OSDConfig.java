@@ -66,6 +66,7 @@ public class OSDConfig extends ServiceConfig {
             Parameter.FAILOVER_MAX_RETRIES,
             Parameter.FAILOVER_WAIT,
             Parameter.MAX_CLIENT_Q,
+            Parameter.MAX_REQUEST_QUEUE_LENGTH,
             Parameter.VIVALDI_RECALCULATION_INTERVAL_IN_MS,
             Parameter.VIVALDI_RECALCULATION_EPSILON_IN_MS,
             Parameter.VIVALDI_ITERATIONS_BEFORE_UPDATING,
@@ -272,6 +273,10 @@ public class OSDConfig extends ServiceConfig {
 
     public int getMaxClientQ() {
         return (Integer) parameter.get(Parameter.MAX_CLIENT_Q);
+    }
+    
+    public int getMaxRequestsQueueLength() {
+        return (Integer) parameter.get(Parameter.MAX_REQUEST_QUEUE_LENGTH);
     }
     
     public HashMap<String, String> toHashMap() {

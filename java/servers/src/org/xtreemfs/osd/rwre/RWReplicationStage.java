@@ -130,8 +130,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
 
 
-    public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts) throws IOException {
-        super("RWReplSt");
+    public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts, int maxRequestsQueueLength) throws IOException {
+        super("RWReplSt", maxRequestsQueueLength);
         this.master = master;
         client = new RPCNIOSocketClient(sslOpts, 15000, 60000*5, "RWReplicationStage");
         fleaseClient = new RPCNIOSocketClient(sslOpts, 15000, 60000*5, "RWReplicationStage (flease)");
@@ -145,7 +145,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
         localID = new ASCIIString(master.getConfig().getUUID().toString());
 
-        masterEpochThread = new FleaseMasterEpochThread(master.getStorageStage().getStorageLayout());
+        masterEpochThread = new FleaseMasterEpochThread(master.getStorageStage().getStorageLayout(), maxRequestsQueueLength);
 
         FleaseConfig fcfg = new FleaseConfig(master.getConfig().getFleaseLeaseToMS(),
                 master.getConfig().getFleaseDmaxMS(), master.getConfig().getFleaseDmaxMS(),

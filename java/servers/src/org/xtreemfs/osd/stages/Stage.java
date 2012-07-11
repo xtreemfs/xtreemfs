@@ -24,8 +24,6 @@ import org.xtreemfs.osd.OSDRequest;
 
 public abstract class Stage extends LifeCycleThread {
     
-    protected static final int DEFAULT_MAX_QUEUE_LENGTH = 1000; 
-
     /**
      * queue containing all requests
      */
@@ -39,10 +37,6 @@ public abstract class Stage extends LifeCycleThread {
     public AtomicInteger                  _numRq, _maxRqTime, _minRqTime;
     
     public AtomicLong                     _sumRqTime;
-    
-    public Stage(String stageName) {
-        this(stageName, DEFAULT_MAX_QUEUE_LENGTH);
-    }
     
     public Stage(String stageName, int queueCapacity) {
         
