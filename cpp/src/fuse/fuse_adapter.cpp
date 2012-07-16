@@ -64,6 +64,8 @@ FuseAdapter::FuseAdapter(FuseOptions* options) :
     xctl_("/.xctl$$$") {
   osd_user_credentials_.set_username("x");
   osd_user_credentials_.add_groups("x");
+
+  volume_ = NULL;
 }
 
 FuseAdapter::~FuseAdapter() {}
