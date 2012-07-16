@@ -350,6 +350,10 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             }
 
         } catch (Exception ex) {
+            Logging.logMessage(Logging.LEVEL_ERROR,
+                               this,
+                               "Exception was thrown and caught while processing the change of the lease state." +
+                                   " This is an error in the code. Please report it! Caught exception: ");
             Logging.logError(Logging.LEVEL_ERROR, this,ex);
         }
     }
@@ -368,12 +372,12 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 case INITIALIZING:
                 case OPEN:
                 case WAITING_FOR_LEASE: {
-                    Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) enqueued backup reset for file %s",localID, fileId);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) enqueued backup reset for file %s",localID, fileId);
                     state.addPendingRequest(method);
                     break;
                 }
                 case BACKUP: {
-                    Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) backup reset triggered by AUTHSTATE request for file %s",localID, fileId);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) backup reset triggered by AUTHSTATE request for file %s",localID, fileId);
                     state.setState(ReplicaState.RESET);
                     executeSetAuthState(localState, authState, state, fileId);
                     break;
@@ -721,7 +725,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         fstage.closeCell(file.getPolicy().getCellId(), false);
         for (StageRequest rq : file.getPendingRequests()) {
             RWReplicationCallback callback = (RWReplicationCallback) rq.getCallback();
-            callback.failed(ex);
+            if (callback != null) {
+                callback.failed(ex);
+            }
         }
         file.getPendingRequests().clear();
     }
