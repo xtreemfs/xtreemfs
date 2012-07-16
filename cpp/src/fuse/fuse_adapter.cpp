@@ -416,7 +416,7 @@ void FuseAdapter::ConvertXtreemFSStatToFuse(
 #endif
 
   fuse_stat->st_rdev = 0;
-  fuse_stat->st_blocks = 0;
+  fuse_stat->st_blocks = xtreemfs_stat.size() / 512;
 }
 
 xtreemfs::pbrpc::SYSTEM_V_FCNTL FuseAdapter::ConvertFlagsUnixToXtreemFS(
