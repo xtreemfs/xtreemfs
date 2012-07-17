@@ -107,7 +107,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
             
         } catch (NumberFormatException exc) {
             Logging.logError(Logging.LEVEL_ERROR, this, exc);
-            throw new DatabaseException("currpted MRC database", ExceptionType.INTERNAL_DB_ERROR);
+            throw new DatabaseException("corrupted MRC database", ExceptionType.INTERNAL_DB_ERROR);
         }
     }
     
