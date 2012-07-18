@@ -20,7 +20,8 @@
 
 #include "libxtreemfs/client_implementation.h"
 #include "libxtreemfs/async_write_handler.h"
-#include "libxtreemfs/uuid_iterator.h"
+#include "libxtreemfs/simple_uuid_iterator.h"
+#include "libxtreemfs/uuid_container.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 
 namespace xtreemfs {
@@ -237,7 +238,8 @@ class FileInfo {
    *
    * If striping is used, replication is not possible. Therefore, for striped
    * files the UUID Iterator will contain only the head OSD. */
-  UUIDIterator osd_uuid_iterator_;
+  SimpleUUIDIterator osd_uuid_iterator_;
+  UUIDContainer osd_uuid_container_; // TODO(mno): update comment above
 
   /** Use this to protect xlocset_ and replicate_on_close_. */
   boost::mutex xlocset_mutex_;

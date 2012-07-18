@@ -37,6 +37,8 @@ FileInfo::FileInfo(
       replicate_on_close_(replicate_on_close),
       reference_count_(0),
       xlocset_(xlocset),
+      //osd_uuid_iterator_(new SimpleUUIDIterator()), // TODO(mno)
+      osd_uuid_container_(xlocset),
       client_uuid_(client_uuid),
       osd_write_response_(NULL),
       osd_write_response_status_(kClean),
@@ -57,6 +59,7 @@ FileInfo::FileInfo(
 
 FileInfo::~FileInfo() {
   assert(active_locks_.size() == 0);
+  //delete osd_uuid_iterator_; // TODO(mno)
 }
 
 FileHandleImplementation* FileInfo::CreateFileHandle(
@@ -76,6 +79,7 @@ FileHandleImplementation* FileInfo::CreateFileHandle(
       xcap,
       volume_->mrc_uuid_iterator(),
       &osd_uuid_iterator_,
+      &osd_uuid_container_,
       volume_->uuid_resolver(),
       volume_->mrc_service_client(),
       volume_->osd_service_client(),

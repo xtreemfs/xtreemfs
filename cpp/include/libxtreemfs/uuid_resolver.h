@@ -13,7 +13,7 @@
 namespace xtreemfs {
 
 class Options;
-class UUIDIterator;
+class SimpleUUIDIterator;
 
 /** Abstract base class which defines the interface to resolve UUIDs from the
  *  DIR service. */
@@ -50,7 +50,7 @@ class UUIDResolver {
    *  @throws VolumeNotFoundException
    */
   virtual void VolumeNameToMRCUUID(const std::string& volume_name,
-                                   UUIDIterator* uuid_iterator) = 0;
+                                   SimpleUUIDIterator* uuid_iterator) = 0;
 };
 
 }  // namespace xtreemfs

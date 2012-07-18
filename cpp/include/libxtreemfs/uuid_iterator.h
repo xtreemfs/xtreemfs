@@ -13,6 +13,9 @@
 #include <list>
 #include <string>
 
+#include "libxtreemfs/uuid_item.h"
+#include "libxtreemfs/uuid_container.h"
+
 namespace xtreemfs {
 
 /** Stores a list of all UUIDs of a replicated service and allows to iterate
@@ -30,49 +33,32 @@ namespace xtreemfs {
  *  redirect a request to another UUID.
  */
 class UUIDIterator {
-  /** Entry object per UUID in list of UUIDs. */
-  struct UUIDItem {
-    UUIDItem(const std::string& add_uuid)
-      : uuid(add_uuid),
-        marked_as_failed(false) {}
-
-    std::string uuid;
-
-    bool marked_as_failed;
-  };
-
  public:
   UUIDIterator();
 
-  ~UUIDIterator();
-
-  /** Appends "uuid" to the list of UUIDs. Does not change the current UUID. */
-  void AddUUID(const std::string& uuid);
-
-  /** Clears the list of UUIDs. */
-  void Clear();
-
-  /** Atomically clears the list and adds "uuid" to avoid an empty list. */
-  void ClearAndAddUUID(const std::string& uuid);
-
-  /** Returns the list of UUIDs and their status. */
-  std::string DebugString();
+  virtual ~UUIDIterator();
 
   /** Get the current UUID (by default the first in the list).
    *
    * @throws UUIDIteratorListIsEmpyException
    */
-  void GetUUID(std::string* result);
+  virtual void GetUUID(std::string* result);
 
   /** Marks "uuid" as failed. Use this function to advance to the next in the
    *  list. */
-  void MarkUUIDAsFailed(const std::string& uuid);
+  virtual void MarkUUIDAsFailed(const std::string& uuid);
 
   /** Sets "uuid" as current UUID. If uuid was not found in the list of UUIDs,
    *  it will be added to the UUIDIterator. */
-  void SetCurrentUUID(const std::string& uuid);
+  virtual void SetCurrentUUID(const std::string& uuid) = 0;
 
- private:
+  /** Clear the list. */
+  virtual void Clear() = 0;
+
+  /** Returns the list of UUIDs and their status. */
+  virtual std::string DebugString();
+
+ protected:
   /** Obtain a lock on this when accessing uuids_ or current_uuid_. */
   boost::mutex mutex_;
 
@@ -87,9 +73,9 @@ class UUIDIterator {
   /** List of UUIDs. */
   std::list<UUIDItem*> uuids_;
 
-  FRIEND_TEST(UUIDIteratorTest, ClearAndAddUUID);
-  FRIEND_TEST(UUIDIteratorTest, ConcurrentSetAndMarkAsFailed);
+  template<typename T>
   FRIEND_TEST(UUIDIteratorTest, ResetAfterEndOfList);
+  template<typename T>
   FRIEND_TEST(UUIDIteratorTest, SetCurrentUUID);
 };
 

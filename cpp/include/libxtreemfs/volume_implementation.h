@@ -20,6 +20,7 @@
 
 #include "libxtreemfs/metadata_cache.h"
 #include "libxtreemfs/options.h"
+#include "libxtreemfs/uuid_iterator.h"
 #include "rpc/sync_callback.h"
 
 namespace boost {
@@ -42,7 +43,6 @@ class ClientImplementation;
 class FileHandleImplementation;
 class FileInfo;
 class StripeTranslator;
-class UUIDIterator;
 class UUIDResolver;
 
 /**

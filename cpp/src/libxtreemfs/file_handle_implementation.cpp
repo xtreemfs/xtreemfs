@@ -19,6 +19,8 @@
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/stripe_translator.h"
+#include "libxtreemfs/container_uuid_iterator.h"
+#include "libxtreemfs/simple_uuid_iterator.h"
 #include "libxtreemfs/uuid_resolver.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
@@ -50,6 +52,7 @@ FileHandleImplementation::FileHandleImplementation(
     const xtreemfs::pbrpc::XCap& xcap,
     UUIDIterator* mrc_uuid_iterator,
     UUIDIterator* osd_uuid_iterator,
+    UUIDContainer* osd_uuid_container,
     UUIDResolver* uuid_resolver,
     xtreemfs::pbrpc::MRCServiceClient* mrc_service_client,
     xtreemfs::pbrpc::OSDServiceClient* osd_service_client,
@@ -63,6 +66,7 @@ FileHandleImplementation::FileHandleImplementation(
       client_uuid_(client_uuid),
       mrc_uuid_iterator_(mrc_uuid_iterator),
       osd_uuid_iterator_(osd_uuid_iterator),
+      osd_uuid_container_(osd_uuid_container),
       uuid_resolver_(uuid_resolver),
       file_info_(file_info),
       xcap_(xcap),
@@ -115,19 +119,25 @@ int FileHandleImplementation::Read(
         POSIX_ERROR_EIO,
         "No replica found for file: " + path);
   }
-  // Pick the first replica to determine striping policy.
-  // (We assume that all replicas use the same striping policy.)
-  const StripingPolicy& striping_policy = xlocs.replicas(0).striping_policy();
+
+  // get all striping policies
+  StripeTranslator::PolicyContainer striping_policies;
+  for(uint32_t i = 0; i < xlocs.replicas_size(); ++i) {
+    striping_policies.push_back(&(xlocs.replicas(i).striping_policy()));
+  }
+
+  // NOTE: We assume that all replicas use the same striping policy type and
+  //       that all replicas use the same stripe size.
   const StripeTranslator* translator =
-      GetStripeTranslator(striping_policy.type());
+      GetStripeTranslator((*striping_policies.begin())->type());
 
   // Map offset to corresponding OSDs.
   std::vector<ReadOperation> operations;
-  translator->TranslateReadRequest(buf, count, offset, striping_policy,
+  translator->TranslateReadRequest(buf, count, offset, striping_policies,
                                    &operations);
 
-  UUIDIterator temp_uuid_iterator_for_striping;
-  string osd_uuid = "";
+  boost::scoped_ptr<ContainerUUIDIterator> temp_uuid_iterator_for_striping(
+      new ContainerUUIDIterator());
   // Read all objects.
   for (size_t j = 0; j < operations.size(); j++) {
     rq.set_object_number(operations[j].obj_number);
@@ -138,12 +148,10 @@ int FileHandleImplementation::Read(
     // Differ between striping and the rest (replication, no replication).
     UUIDIterator* uuid_iterator;
     if (xlocs.replicas(0).osd_uuids_size() > 1) {
-      // Replica is striped. Pick UUID from xlocset.
-      osd_uuid = GetOSDUUIDFromXlocSet(xlocs,
-                                       0,  // Use first and only replica.
-                                       operations[j].osd_offset);
-      temp_uuid_iterator_for_striping.ClearAndAddUUID(osd_uuid);
-      uuid_iterator = &temp_uuid_iterator_for_striping;
+      // Replica is striped. Get a UUID iterator from OSD offsets
+      osd_uuid_container_->GetUUIDIterator(temp_uuid_iterator_for_striping.get(),
+                                           operations[j].osd_offsets);
+      uuid_iterator = temp_uuid_iterator_for_striping.get();
     } else {
       // TODO(mberlin): Enhance UUIDIterator to read from different replicas.
       uuid_iterator = osd_uuid_iterator_;
@@ -215,15 +223,22 @@ int FileHandleImplementation::Write(
   }
 
   // Map operation to stripes.
-  vector<WriteOperation> operations;
-  const StripingPolicy& striping_policy = xlocs.replicas(0).striping_policy();
+
+  // get all striping policies
+  StripeTranslator::PolicyContainer striping_policies;
+  for(uint32_t i = 0; i < xlocs.replicas_size(); ++i) {
+    striping_policies.push_back(&(xlocs.replicas(i).striping_policy()));
+  }
+
+  // NOTE: We assume that all replicas use the same striping policy type and
+  //       that all replicas use the same stripe size.
   const StripeTranslator* translator =
-      GetStripeTranslator(striping_policy.type());
-  translator->TranslateWriteRequest(buf,
-                                    count,
-                                    offset,
-                                    striping_policy,
-                                    &operations);
+      GetStripeTranslator((*striping_policies.begin())->type());
+
+  // Map offset to corresponding OSDs.
+  std::vector<WriteOperation> operations;
+  translator->TranslateWriteRequest(buf, count, offset, striping_policies,
+                                   &operations);
 
   if (async_writes_enabled_) {
     string osd_uuid = "";
@@ -254,9 +269,10 @@ int FileHandleImplementation::Write(
             operations[j].data,
             operations[j].req_size,
             this,
+
             GetOSDUUIDFromXlocSet(xlocs,
                                   0,  // Use first and only replica.
-                                  operations[j].osd_offset));
+                                  operations[j].osd_offsets[0]));
       } else {
         write_buffer = new AsyncWriteBuffer(write_request,
                                             operations[j].data,
@@ -275,8 +291,6 @@ int FileHandleImplementation::Write(
     }
   } else {
     // Synchronous writes.
-    UUIDIterator temp_uuid_iterator_for_striping;
-    string osd_uuid = "";
     writeRequest write_request;
     write_request.mutable_file_credentials()->CopyFrom(file_credentials);
     write_request.set_file_id(global_file_id);
@@ -295,12 +309,10 @@ int FileHandleImplementation::Write(
       // Differ between striping and the rest (replication, no replication).
       UUIDIterator* uuid_iterator;
       if (xlocs.replicas(0).osd_uuids_size() > 1) {
-        // Replica is striped. Pick UUID from xlocset.
-        osd_uuid = GetOSDUUIDFromXlocSet(xlocs,
-                                         0,  // Use first and only replica.
-                                         operations[j].osd_offset);
-        temp_uuid_iterator_for_striping.ClearAndAddUUID(osd_uuid);
-        uuid_iterator = &temp_uuid_iterator_for_striping;
+        Logging::log->getLog(LEVEL_ERROR)
+           << "Write called for a striped file: operation not supported."
+           << std::endl;
+        assert(false);
       } else {
         // TODO(mberlin): Enhance UUIDIterator to read from different replicas.
         uuid_iterator = osd_uuid_iterator_;
@@ -746,7 +758,7 @@ void FileHandleImplementation::PingReplica(
   read_request.set_offset(0);
   read_request.set_length(1);  // 1 Byte.
 
-  UUIDIterator temp_uuid_iterator;
+  SimpleUUIDIterator temp_uuid_iterator;
   temp_uuid_iterator.AddUUID(osd_uuid);
 
   boost::scoped_ptr< SyncCallback<ObjectData> > response(

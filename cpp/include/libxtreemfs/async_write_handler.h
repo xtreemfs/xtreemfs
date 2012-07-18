@@ -12,6 +12,7 @@
 #include <boost/thread/mutex.hpp>
 #include <list>
 
+#include "libxtreemfs/uuid_iterator.h"
 #include "rpc/callback_interface.h"
 
 namespace xtreemfs {

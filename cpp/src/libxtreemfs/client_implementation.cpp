@@ -149,7 +149,7 @@ Volume* ClientImplementation::OpenVolume(
     const xtreemfs::rpc::SSLOptions* ssl_options,
     const Options& options) {
   // TODO(mberlin): Fix possible leak through the use of scoped_ptr and swap().
-  UUIDIterator* mrc_uuid_iterator = new UUIDIterator;
+  SimpleUUIDIterator* mrc_uuid_iterator = new SimpleUUIDIterator;
   VolumeNameToMRCUUID(volume_name, mrc_uuid_iterator);
 
   VolumeImplementation* volume = new VolumeImplementation(
@@ -219,7 +219,7 @@ void ClientImplementation::CreateVolume(
         ->set_value((*it)->value());
   }
 
-  UUIDIterator temp_uuid_iterator_with_addresses;
+  SimpleUUIDIterator temp_uuid_iterator_with_addresses;
   temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
 
   boost::scoped_ptr< SyncCallback<emptyResponse> > response(
@@ -250,7 +250,7 @@ void ClientImplementation::DeleteVolume(
   xtreemfs_rmvolRequest rmvol_request;
   rmvol_request.set_volume_name(volume_name);
 
-  UUIDIterator temp_uuid_iterator_with_addresses;
+  SimpleUUIDIterator temp_uuid_iterator_with_addresses;
   temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
 
   boost::scoped_ptr< SyncCallback<emptyResponse> > response(
@@ -275,7 +275,7 @@ void ClientImplementation::DeleteVolume(
 xtreemfs::pbrpc::Volumes* ClientImplementation::ListVolumes(
     const std::string& mrc_address,
     const xtreemfs::pbrpc::Auth& auth) {
-  UUIDIterator temp_uuid_iterator_with_addresses;
+  SimpleUUIDIterator temp_uuid_iterator_with_addresses;
   temp_uuid_iterator_with_addresses.AddUUID(mrc_address);
 
   return ListVolumes(&temp_uuid_iterator_with_addresses, auth);
@@ -445,7 +445,7 @@ void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
 }
 
 void ClientImplementation::VolumeNameToMRCUUID(const std::string& volume_name,
-                                               UUIDIterator* uuid_iterator) {
+                                               SimpleUUIDIterator* uuid_iterator) {
   assert(uuid_iterator);
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {

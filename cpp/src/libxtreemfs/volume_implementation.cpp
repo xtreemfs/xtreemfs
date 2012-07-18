@@ -699,7 +699,7 @@ void VolumeImplementation::UnlinkAtOSD(const FileCredentials& fc,
   rq_osd.mutable_file_credentials()->CopyFrom(fc);
   rq_osd.set_file_id(fc.xcap().file_id());
 
-  UUIDIterator osd_uuid_iterator;
+  SimpleUUIDIterator osd_uuid_iterator;
 
   // Remove _all_ replicas.
   for (int k = 0; k < xlocs.replicas_size(); k++) {
@@ -1332,7 +1332,7 @@ void VolumeImplementation::RemoveReplica(
           volume_options_));
 
   // Now unlink the replica at the OSD.
-  UUIDIterator osd_uuid_iterator;
+  SimpleUUIDIterator osd_uuid_iterator;
   osd_uuid_iterator.AddUUID(osd_uuid);
 
   unlink_osd_Request unlink_osd_Request;

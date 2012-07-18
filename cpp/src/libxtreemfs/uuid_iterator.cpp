@@ -6,12 +6,15 @@
  */
 
 #include "libxtreemfs/uuid_iterator.h"
+#include "util/logging.h"
 
 #include <sstream>
 
+#include "libxtreemfs/uuid_container.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 
 using namespace std;
+using namespace xtreemfs::util;
 
 namespace xtreemfs {
 
@@ -21,53 +24,19 @@ UUIDIterator::UUIDIterator() {
 }
 
 UUIDIterator::~UUIDIterator() {
-  for (list<UUIDItem*>::iterator it = uuids_.begin();
-        it != uuids_.end();
-       ++it) {
-    delete (*it);
-  }
 }
 
-void UUIDIterator::AddUUID(const std::string& uuid) {
+void UUIDIterator::GetUUID(std::string* result) {
+  assert(result);
   boost::mutex::scoped_lock lock(mutex_);
 
-  UUIDItem* entry = new UUIDItem(uuid);
-  uuids_.push_back(entry);
-
-  // If its the first element, set the current UUID to the first element.
-  if (uuids_.size() == 1) {
-    current_uuid_ = uuids_.begin();
+  if (current_uuid_ == uuids_.end()) {
+    throw UUIDIteratorListIsEmpyException("GetUUID() failed as no current "
+        " UUID is set. Size of list of UUIDs: " + uuids_.size());
+  } else {
+    assert(!(*current_uuid_)->IsFailed());
+    *result = (*current_uuid_)->uuid;
   }
-}
-
-void UUIDIterator::Clear() {
-  boost::mutex::scoped_lock lock(mutex_);
-
-  for (list<UUIDItem*>::iterator it = uuids_.begin();
-       it != uuids_.end();
-       ++it) {
-    delete (*it);
-  }
-  uuids_.clear();
-  // Empty list, i.e. current UUID is set to the past-the-end element.
-  current_uuid_ = uuids_.end();
-}
-
-void UUIDIterator::ClearAndAddUUID(const std::string& uuid) {
-  boost::mutex::scoped_lock lock(mutex_);
-
-  for (list<UUIDItem*>::iterator it = uuids_.begin();
-       it != uuids_.end();
-       ++it) {
-    delete (*it);
-  }
-  uuids_.clear();
-
-  UUIDItem* entry = new UUIDItem(uuid);
-  uuids_.push_back(entry);
-
-  // Set the current UUID to the first element.
-  current_uuid_ = uuids_.begin();
 }
 
 std::string UUIDIterator::DebugString() {
@@ -82,7 +51,7 @@ std::string UUIDIterator::DebugString() {
     if (it != uuids_.begin()) {
       stream << ", ";
     }
-    stream << "[ " << (*it)->uuid << ", " << (*it)->marked_as_failed << "]";
+    stream << "[ " << (*it)->uuid << ", " << (*it)->IsFailed() << "]";
   }
 
   stream << " ]";
@@ -90,25 +59,12 @@ std::string UUIDIterator::DebugString() {
   return stream.str();
 }
 
-void UUIDIterator::GetUUID(std::string* result) {
-  assert(result);
-  boost::mutex::scoped_lock lock(mutex_);
-
-  if (current_uuid_ == uuids_.end()) {
-    throw UUIDIteratorListIsEmpyException("GetUUID() failed as no current "
-        " UUID is set. Size of list of UUIDs: " + uuids_.size());
-  } else {
-    assert(!(*current_uuid_)->marked_as_failed);
-    *result = (*current_uuid_)->uuid;
-  }
-}
-
 void UUIDIterator::MarkUUIDAsFailed(const std::string& uuid) {
   boost::mutex::scoped_lock lock(mutex_);
 
   // Only take actions if "uuid" is the current UUID.
   if (current_uuid_ != uuids_.end() && (*current_uuid_)->uuid == uuid) {
-    (*current_uuid_)->marked_as_failed = true;
+    (*current_uuid_)->MarkAsFailed();
 
     current_uuid_++;
     if (current_uuid_ == uuids_.end()) {
@@ -116,37 +72,14 @@ void UUIDIterator::MarkUUIDAsFailed(const std::string& uuid) {
       for (list<UUIDItem*>::iterator it = uuids_.begin();
            it != uuids_.end();
            ++it) {
-        (*it)->marked_as_failed = false;
+        (*it)->Reset();
       }
       current_uuid_ = uuids_.begin();
     } else {
       // Reset the current UUID to make sure it is not marked as failed.
-      (*current_uuid_)->marked_as_failed = false;
+      (*current_uuid_)->Reset();
     }
   }
-}
-
-void UUIDIterator::SetCurrentUUID(const std::string& uuid) {
-  boost::mutex::scoped_lock lock(mutex_);
-
-  // Search "uuid" in "uuids_" and set it to the current UUID.
-  for (list<UUIDItem*>::iterator it = uuids_.begin();
-       it != uuids_.end();
-       ++it) {
-    if ((*it)->uuid == uuid) {
-      current_uuid_ = it;
-      // Reset its current state.
-      (*current_uuid_)->marked_as_failed = false;
-      return;
-    }
-  }
-
-  // UUID was not found, add it.
-  UUIDItem* entry = new UUIDItem(uuid);
-  uuids_.push_back(entry);
-  // Add current UUID to the added, last UUID.
-  list<UUIDItem*>::iterator it = uuids_.end();
-  current_uuid_ = --it;
 }
 
 }  // namespace xtreemfs

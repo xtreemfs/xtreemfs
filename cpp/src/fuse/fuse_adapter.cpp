@@ -29,7 +29,7 @@
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/interrupt.h"
 #include "libxtreemfs/user_mapping.h"
-#include "libxtreemfs/uuid_iterator.h"
+#include "libxtreemfs/simple_uuid_iterator.h"
 #include "libxtreemfs/uuid_resolver.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
@@ -185,8 +185,8 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
   // Check the attributes of the Volume.
   // Ugly trick to get the addresses of all MRC UUIDs and pass them to
   // ListVolumes().
-  UUIDIterator mrc_uuids;
-  UUIDIterator mrc_addresses;
+  SimpleUUIDIterator mrc_uuids;
+  SimpleUUIDIterator mrc_addresses;
   client_->GetUUIDResolver()->VolumeNameToMRCUUID(options_->volume_name,
                                                   &mrc_uuids);
   string first_mrc_uuid = "";

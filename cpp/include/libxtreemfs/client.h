@@ -11,6 +11,7 @@
 #include <list>
 #include <string>
 
+#include "libxtreemfs/uuid_iterator.h"
 #include "pbrpc/RPC.pb.h"
 #include "xtreemfs/MRC.pb.h"
 
@@ -21,7 +22,6 @@ class SSLOptions;
 }  // namespace rpc
 
 class Options;
-class UUIDIterator;
 class UUIDResolver;
 class Volume;
 

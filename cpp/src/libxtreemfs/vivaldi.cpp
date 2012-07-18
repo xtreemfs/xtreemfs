@@ -20,6 +20,7 @@
 #include "libxtreemfs/callback/execute_sync_request.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/pbrpc_url.h"
+#include "libxtreemfs/simple_uuid_iterator.h"
 #include "util/logging.h"
 #include "util/zipf_generator.h"
 #include "xtreemfs/GlobalTypes.pb.h"
@@ -137,7 +138,7 @@ void Vivaldi::Run() {
               << chosen_osd_service->GetUUID() << endl;
         }
 
-        UUIDIterator pinged_osd;
+        SimpleUUIDIterator pinged_osd;
         pinged_osd.AddUUID(chosen_osd_service->GetUUID());
 
         // start timing
