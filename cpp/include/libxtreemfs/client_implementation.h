@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -10,6 +10,7 @@
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread/mutex.hpp>
+#include <gtest/gtest_prod.h>
 #include <list>
 #include <string>
 
@@ -38,6 +39,8 @@ class OSDServiceClient;
 namespace rpc {
 class Client;
 class SSLOptions;
+class ClientTestFastLingerTimeout_LingerTests_Test;  // see FRIEND_TEST @bottom.
+class ClientTestFastLingerTimeoutConnectTimeout_LingerTests_Test;
 }  // namespace rpc
 
 /**
@@ -103,6 +106,9 @@ class ClientImplementation : public Client, public UUIDResolver {
   const xtreemfs::pbrpc::VivaldiCoordinates& GetVivaldiCoordinates() const;
 
  private:
+  /** True if Shutdown() was executed. */
+  bool was_shutdown_;
+
   /** Auth of type AUTH_NONE which is required for most operations which do not
    *  check the authentication data (except Create, Delete, ListVolume(s)). */
   xtreemfs::pbrpc::Auth auth_bogus_;
@@ -142,6 +148,12 @@ class ClientImplementation : public Client, public UUIDResolver {
   boost::scoped_ptr<boost::thread> vivaldi_thread_;
   boost::scoped_ptr<xtreemfs::Vivaldi> vivaldi_;
   boost::scoped_ptr<xtreemfs::pbrpc::OSDServiceClient> osd_service_client_;
+
+  /** Thread that handles the callbacks for asynchronous writes. */
+  boost::scoped_ptr<boost::thread> async_write_callback_thread_;
+
+  FRIEND_TEST(xtreemfs::rpc::ClientTestFastLingerTimeout, LingerTests);
+  FRIEND_TEST(xtreemfs::rpc::ClientTestFastLingerTimeoutConnectTimeout, LingerTests);
 };
 
 }  // namespace xtreemfs

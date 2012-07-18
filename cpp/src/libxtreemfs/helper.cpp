@@ -177,7 +177,7 @@ void GenerateVersion4UUID(std::string* result) {
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG) <<
-        "Generated client UUID:" << uuid << endl;
+        "Generated client UUID: " << uuid << endl;
   }
 
   if (urandom) {

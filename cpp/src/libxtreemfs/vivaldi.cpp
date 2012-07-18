@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#include "libxtreemfs/callback/execute_sync_request.h"
+#include "libxtreemfs/execute_sync_request.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/pbrpc_url.h"
 #include "libxtreemfs/simple_uuid_iterator.h"

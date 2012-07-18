@@ -48,9 +48,7 @@ FileInfo::FileInfo(
                            volume->osd_service_client(),
                            volume->auth_bogus(),
                            volume->user_credentials_bogus(),
-                           volume->volume_options().max_writeahead,
-                           volume->volume_options().max_writeahead_requests,
-                           volume->volume_options().max_write_tries) {
+                           volume->volume_options()) {
   // Add the UUIDs of all replicas to the UUID Iterator.
   for (int i = 0; i < xlocset_.replicas_size(); i++) {
     osd_uuid_iterator_.AddUUID(xlocset_.replicas(i).osd_uuids(0));

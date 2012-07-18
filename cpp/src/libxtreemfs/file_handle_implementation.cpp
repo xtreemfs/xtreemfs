@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "libxtreemfs/async_write_buffer.h"
-#include "libxtreemfs/callback/execute_sync_request.h"
+#include "libxtreemfs/execute_sync_request.h"
 #include "libxtreemfs/file_info.h"
 #include "libxtreemfs/helper.h"
 #include "libxtreemfs/options.h"
@@ -269,7 +269,7 @@ int FileHandleImplementation::Write(
             operations[j].data,
             operations[j].req_size,
             this,
-
+						this,
             GetOSDUUIDFromXlocSet(xlocs,
                                   0,  // Use first and only replica.
                                   operations[j].osd_offsets[0]));
@@ -277,13 +277,10 @@ int FileHandleImplementation::Write(
         write_buffer = new AsyncWriteBuffer(write_request,
                                             operations[j].data,
                                             operations[j].req_size,
+                                            this,
                                             this);
       }
 
-      // TODO(mberlin): Currently the UserCredentials are ignored by the OSD and
-      //                therefore we avoid copying them into write_buffer.
-      // TODO(mberlin): Once the retry support for async writes is available,
-      //                modify the implementation to support the new XCapHandler
       file_info_->AsyncWrite(write_buffer);
 
       // Processing of file size updates is handled by the FileInfo's
