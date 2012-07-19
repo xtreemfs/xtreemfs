@@ -32,12 +32,6 @@ class UUIDContainer {
 
   ~UUIDContainer();
 
-  /** Get the current UUID (by default the first in the list).
-   *
-   * @throws UUIDContainerListIsEmpyException
-   */
-  void GetUUIDIterator(ContainerUUIDIterator* uuid_iterator, std::vector<size_t> offsets);
-
  private:
   typedef std::vector<UUIDItem*> innerContainer;
   typedef std::vector<UUIDItem*>::iterator innerIterator;
@@ -46,12 +40,23 @@ class UUIDContainer {
 
   void GetOSDUUIDsFromXlocSet(const xtreemfs::pbrpc::XLocSet& xlocs);
 
+  /** Fills the given uuid_iterator with the uuids corresponding to the
+   *  given offsets. This is private because it is only called by
+   *  ContainerUUIDIterator's ctor. */
+  void FillUUIDIterator(ContainerUUIDIterator* uuid_iterator, std::vector<size_t> offsets);
+
   /** Obtain a lock on this when accessing uuids_ or current_uuid_. */
   boost::mutex mutex_;
 
   /** List of List of UUIDs. */
   container uuids_;
 
+  /** This is needed to only allow ContainerUUIDIterator to call
+   *  FillUUIDIterator. A more strict friend statement which would only
+   *  declare ContainerUUIDIterator's ctor does not work due to circular
+   *  include dependencies.
+   */
+  friend class ContainerUUIDIterator;
 };
 
 }  // namespace xtreemfs

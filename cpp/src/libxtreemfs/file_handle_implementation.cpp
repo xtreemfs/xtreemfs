@@ -136,8 +136,8 @@ int FileHandleImplementation::Read(
   translator->TranslateReadRequest(buf, count, offset, striping_policies,
                                    &operations);
 
-  boost::scoped_ptr<ContainerUUIDIterator> temp_uuid_iterator_for_striping(
-      new ContainerUUIDIterator());
+  boost::scoped_ptr<ContainerUUIDIterator> temp_uuid_iterator_for_striping;
+
   // Read all objects.
   for (size_t j = 0; j < operations.size(); j++) {
     rq.set_object_number(operations[j].obj_number);
@@ -149,8 +149,9 @@ int FileHandleImplementation::Read(
     UUIDIterator* uuid_iterator;
     if (xlocs.replicas(0).osd_uuids_size() > 1) {
       // Replica is striped. Get a UUID iterator from OSD offsets
-      osd_uuid_container_->GetUUIDIterator(temp_uuid_iterator_for_striping.get(),
-                                           operations[j].osd_offsets);
+      temp_uuid_iterator_for_striping.reset(
+          new ContainerUUIDIterator(osd_uuid_container_,
+                                    operations[j].osd_offsets));
       uuid_iterator = temp_uuid_iterator_for_striping.get();
     } else {
       // TODO(mberlin): Enhance UUIDIterator to read from different replicas.

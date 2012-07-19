@@ -58,11 +58,13 @@ void UUIDContainer::GetOSDUUIDsFromXlocSet(const xtreemfs::pbrpc::XLocSet& xlocs
 
 }
 
-void UUIDContainer::GetUUIDIterator(ContainerUUIDIterator* uuid_iterator, std::vector<size_t> offsets) {
+void UUIDContainer::FillUUIDIterator(ContainerUUIDIterator* uuid_iterator, std::vector<size_t> offsets) {
   assert(offsets.size() == uuids_.size());
   boost::mutex::scoped_lock lock(mutex_);
 
-  //uuid_iterator->Clear();
+  // NOTE: is this method would be used in another context than the construction
+  //       of ContainerUUIDIterator, the following line would be needed:
+  //       uuid_iterator->Clear();
 
   iterator replica_iterator = uuids_.begin();
   std::vector<size_t>::iterator offset_iterator = offsets.begin();

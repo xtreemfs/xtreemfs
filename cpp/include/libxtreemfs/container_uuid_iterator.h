@@ -21,17 +21,28 @@ namespace xtreemfs {
 
 class ContainerUUIDIterator : public UUIDIterator {
  public:
+  ContainerUUIDIterator(UUIDContainer* uuid_container, std::vector<size_t> offsets) {
+    uuid_container->FillUUIDIterator(this, offsets);
+  }
   virtual void SetCurrentUUID(const std::string& uuid);
-  virtual void Clear();
  private:
+  // UUIDContainer is a friend of this class
+  friend void UUIDContainer::FillUUIDIterator(
+      ContainerUUIDIterator* uuid_iterator, std::vector<size_t> offsets);
+
+  // the following is for testing
+  template<class T> friend struct UUIDAdder;
+  template<class T> friend UUIDIterator* CreateUUIDIterator();
+
+  /** Only for testing and UUIDContainer */
+  ContainerUUIDIterator() {}
+  /** Only for testing and UUIDContainer */
+  virtual void Clear();
+
   /** Add an existing UUIDItem. Ownership is NOT transferred.
    *  It can only called by UUIDContainer::GetUUIDIterator, hence the
    *  fried-declaration below. */
   void AddUUIDItem(UUIDItem* uuid);
-
-  friend void UUIDContainer::GetUUIDIterator(
-      ContainerUUIDIterator* uuid_iterator, std::vector<size_t> offsets);
-  template<typename T> friend struct UUIDAdder;  // for testing
 };
 
 }  // namespace xtreemfs

@@ -333,12 +333,10 @@ TEST_F(ContainerUUIDIteratorTest, CreateContainerAndGetUUID) {
     translator->TranslateReadRequest(NULL, 128*1024, read_offsets[i], striping_policies,
                                      &operations);
 
+    // Create a UUIDIterator for a specific set of offsets
     boost::scoped_ptr<ContainerUUIDIterator> uuid_iterator(
-        new ContainerUUIDIterator());
-
-    // Get UUID Iterator for a specific set of offsets
-    uuid_container->GetUUIDIterator(uuid_iterator.get(),
-                                    operations[0].osd_offsets);
+        new ContainerUUIDIterator(uuid_container.get(),
+                                  operations[0].osd_offsets));
 
     // check results
     string actual;
