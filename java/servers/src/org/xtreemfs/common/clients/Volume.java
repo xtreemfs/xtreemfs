@@ -101,8 +101,8 @@ public class Volume {
         this.maxRetries = maxRetries;
         this.ofl = new OpenFileList(client);
         /*
-         * this.xattrCache = new LRUCache<String, CachedXAttr>(2048);
-         * this.mdCacheTimeout_ms = mdCacheTimeout_ms;
+         * this.xattrCache = new LRUCache<String, CachedXAttr>(2048); this.mdCacheTimeout_ms =
+         * mdCacheTimeout_ms;
          */
         ofl.start();
     }
@@ -334,6 +334,25 @@ public class Volume {
 
     public void enableSnapshots(boolean enable) throws IOException {
         enableSnapshots(enable, userCreds);
+    }
+
+    public boolean isSnapshotsEnabled() throws IOException {
+        RPCResponse<getxattrResponse> r = null;
+        try {
+            r = mrcClient.getxattr(null, RPCAuthentication.authNone, userCreds, volumeName.replace("/", ""), "",
+                    "xtreemfs.snapshots_enabled");
+            String res = r.get().getValue();
+
+            return "true".equalsIgnoreCase(res);
+
+        } catch (PBRPCException ex) {
+            throw wrapException(ex);
+        } catch (InterruptedException ex) {
+            throw wrapException(ex);
+        } finally {
+            if (r != null)
+                r.freeBuffers();
+        }
     }
 
     public void snapshot(String name, boolean recursive, UserCredentials userCreds) throws IOException {
@@ -574,6 +593,30 @@ public class Volume {
                 if (response != null)
                     response.freeBuffers();
             }
+
+            // if snapshots are enabled, close file across all OSDs
+            if (isSnapshotsEnabled()) {
+
+                for (GlobalTypes.Replica repl : file.getLocationsList().getReplicasList()) {
+                    RPCResponse response2 = null;
+                    try {
+                        // determine head OSD
+                        ServiceUUID osd = new ServiceUUID(repl.getOsdUuids(0), uuidResolver);
+
+                        // close file on head OSD
+                        response2 = osdClient.close(osd.getAddress(), RPCAuthentication.authNone, userCreds,
+                                file.getCredentials(), fileId);
+                        response2.get();
+                    } catch (Exception ex) {
+                        Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                        throw new IOException("file could not be closed due to exception");
+                    } finally {
+                        if (response2 != null)
+                            response2.freeBuffers();
+                    }
+                }
+            }
+
         } finally {
             ofl.closeFile(fileId, file);
         }
@@ -665,7 +708,7 @@ public class Volume {
                 response.freeBuffers();
         }
     }
-    
+
     void chown(String path, String user, UserCredentials userCreds) throws IOException {
 
         Stat stbuf = Stat.newBuilder().setAtimeNs(0).setAttributes(0).setBlksize(0).setCtimeNs(0).setDev(0).setEtag(0)
@@ -687,7 +730,7 @@ public class Volume {
                 response.freeBuffers();
         }
     }
-    
+
     void chgrp(String path, String group, UserCredentials userCreds) throws IOException {
 
         Stat stbuf = Stat.newBuilder().setAtimeNs(0).setAttributes(0).setBlksize(0).setCtimeNs(0).setDev(0).setEtag(0)
@@ -709,9 +752,9 @@ public class Volume {
                 response.freeBuffers();
         }
     }
-    
+
     void setACL(String path, Map<String, Object> aclEntries, UserCredentials userCreds) throws IOException {
-        
+
         // remove all existing entries first
         Map<String, Object> existingACL = getACL(path, userCreds);
         for (Entry<String, Object> entry : existingACL.entrySet()) {
@@ -719,14 +762,14 @@ public class Volume {
             if (!entity.equals("u:") && !entity.equals("g:") && !entity.equals("o:") && !entity.equals("m:"))
                 setxattr(path, "xtreemfs.acl", "x " + entity, userCreds);
         }
-        
+
         // add all entries from the given list
         for (Entry<String, Object> entry : aclEntries.entrySet())
             setxattr(path, "xtreemfs.acl", "m " + entry.getKey() + ":" + entry.getValue(), userCreds);
     }
-    
+
     Map<String, Object> getACL(String path, UserCredentials userCreds) throws IOException {
-        
+
         String aclAsJSON = getxattr(path, "xtreemfs.acl", userCreds);
         try {
             return (Map<String, Object>) JSONParser.parseJSON(new JSONString(aclAsJSON));
@@ -882,5 +925,5 @@ public class Volume {
     public int getMaxRetries() {
         return maxRetries;
     }
-    
+
 }

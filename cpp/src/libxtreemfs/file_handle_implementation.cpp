@@ -777,12 +777,12 @@ void FileHandleImplementation::WaitForPendingXCapRenewal() {
 }
 
 void FileHandleImplementation::Close() {
-	try {
-		Flush(true); // true = Tell Flush() the file will be closed.
+  try {
+    Flush(true); // true = Tell Flush() the file will be closed.
 
 		// explicitly close the file if snapshots are enabled and the file
     // was opened for writing or truncating
-		int explicit_close;
+    int explicit_close;
     {
       boost::mutex::scoped_lock lock(mutex_);
       explicit_close = xcap_.snap_config() != SNAP_CONFIG_SNAPS_DISABLED
@@ -793,8 +793,8 @@ void FileHandleImplementation::Close() {
     if (explicit_close) {
       closeRequest rq_osd;
       rq_osd.set_file_id(xcap_.file_id());
-      file_info_->GetXLocSet(rq_osd.mutable_file_credentials()->
-          mutable_xlocs());
+      file_info_->GetXLocSet(
+          rq_osd.mutable_file_credentials()->mutable_xlocs());
       {
         boost::mutex::scoped_lock lock(mutex_);
         rq_osd.mutable_file_credentials()->mutable_xcap()->CopyFrom(xcap_);
@@ -842,10 +842,10 @@ void FileHandleImplementation::Close() {
 		file_info_->CloseFileHandle(this);
 
 		// Rethrow exception.
-		throw;
-	}
+    throw;
+  }
 
-	file_info_->CloseFileHandle(this);
+  file_info_->CloseFileHandle(this);
 }
 
 boost::uint64_t FileHandleImplementation::GetFileId() {

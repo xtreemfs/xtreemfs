@@ -46,6 +46,7 @@ import org.xtreemfs.osd.stages.StorageStage.InternalGetReplicaStateCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.TruncateCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
+import org.xtreemfs.osd.storage.CowPolicy.cowMode;
 import org.xtreemfs.osd.storage.FileVersionLog.FileVersion;
 import org.xtreemfs.osd.storage.VersionManager.ObjectVersionInfo;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
@@ -592,10 +593,15 @@ public class StorageThread extends Stage {
                         }
                     }
                 }
+
+                if (cow.getMode() == cowMode.ALWAYS_COW)
+                    fi.getVersionManager().createFileVersion(TimeSync.getPreciseGlobalTime(), newFS,
+                            fi.getLastObjectNumber() + 1);
             }
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "new last object=%d gmax=%d",
                         fi.getLastObjectNumber(), fi.getGlobalLastObjectNumber());
+
             // BufferPool.free(data);
             response.setServerTimestamp(newTimestamp);
             cback.writeComplete(response.build(), null);

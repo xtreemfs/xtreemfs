@@ -30,8 +30,8 @@ import org.xtreemfs.osd.stages.DeletionStage.DeleteObjectsCallback;
 import org.xtreemfs.osd.stages.PreprocStage.CloseCallback;
 import org.xtreemfs.osd.stages.StorageStage.CachesFlushedCallback;
 import org.xtreemfs.osd.stages.StorageStage.CreateFileVersionCallback;
+import org.xtreemfs.osd.storage.CowPolicy.cowMode;
 import org.xtreemfs.osd.storage.FileMetadata;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.closeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.closeResponse;
@@ -109,8 +109,8 @@ public final class CloseOperation extends OSDOperation {
             return;
         }
 
-        // if COW is enabled, create a new version
-        if (rq.getCowPolicy().cowEnabled()) {
+        // if versioning on close is enabled, create a new version
+        if (rq.getCowPolicy().getMode() == cowMode.COW_ONCE) {
 
             // first, check if there are any write capabilities among the cached
             // capabilities
