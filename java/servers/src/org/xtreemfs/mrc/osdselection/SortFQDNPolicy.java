@@ -40,6 +40,8 @@ public class SortFQDNPolicy extends FQDNPolicyBase {
         if (allOSDs == null)
             return null;
         
+        logOSDList("OSD list before FQDN sort", allOSDs, clientIP);
+        
         allOSDs = PolicyHelper.sortServiceSet(allOSDs, new Comparator<Service>() {
             public int compare(Service o1, Service o2) {
                 try {
@@ -55,8 +57,38 @@ public class SortFQDNPolicy extends FQDNPolicyBase {
             }
         });
         
+        logOSDList("OSD list after FQDN sort", allOSDs, clientIP);
+        
         return allOSDs;
         
+    }
+
+    /**
+     * @param allOSDs
+     * @param clientIP
+     */
+    private void logOSDList(String msg, ServiceSet.Builder allOSDs, final InetAddress clientIP) {
+        StringBuilder debugOutput = new StringBuilder();
+        debugOutput.append("client IP = ");
+        debugOutput.append(clientIP.getCanonicalHostName());
+        debugOutput.append("; OSDs = [");
+        int i = 1;
+        for (Service s : allOSDs.getServicesList()) {
+            debugOutput.append(i);
+            debugOutput.append(": ");
+            try {
+                debugOutput.append(new ServiceUUID(s.getUuid()).getAddress().getHostName());
+                debugOutput.append(" (");
+                debugOutput.append(s.getUuid().substring(0, 3));
+                debugOutput.append(")");
+            } catch (UnknownUUIDException e) {
+                debugOutput.append("unknown UUID");
+            }
+            debugOutput.append(", ");
+            i++;
+        }
+        debugOutput.append("]");
+        Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this, "%s: %s", msg, debugOutput.toString());
     }
     
     @Override
