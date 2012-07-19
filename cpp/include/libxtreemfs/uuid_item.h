@@ -9,6 +9,7 @@
 #define CPP_INCLUDE_LIBXTREEMFS_UUID_ITEM_H_
 
 #include <boost/interprocess/detail/atomic.hpp>
+#include <boost/version.hpp>
 #include <string>
 
 #if (BOOST_VERSION < 104800)

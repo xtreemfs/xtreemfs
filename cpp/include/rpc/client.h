@@ -16,6 +16,7 @@
 #include <boost/function.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/version.hpp>
 #include <gtest/gtest_prod.h>
 #include <queue>
 #include <string>
@@ -80,7 +81,7 @@ class Client {
   void handleTimeout(const boost::system::error_code& error);
 
   void sendInternalRequest();
-  
+
   void ShutdownHandler();
 
   std::string get_pem_password_callback() const;
