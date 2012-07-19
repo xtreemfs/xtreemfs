@@ -80,6 +80,9 @@ ClientImplementation::~ClientImplementation() {
     ErrorLog::error_log->AppendError(error);
   }
 
+  network_client_->shutdown();
+  network_client_thread_->join();
+
   // Since we wait for outstanding requests, the RPC client (network_client_)
   // has to shutdown first and then we can wait for the Vivaldi thread.
   // The other way around a deadlock might occur.
@@ -129,27 +132,29 @@ void ClientImplementation::Start() {
 }
 
 void ClientImplementation::Shutdown() {
-  boost::mutex::scoped_lock lock(list_open_volumes_mutex_);
+  if (!was_shutdown_) {
+    was_shutdown_ = true;
+    boost::mutex::scoped_lock lock(list_open_volumes_mutex_);
 
-  // Issue Close() on every Volume and remove it's pointer.
-  list<VolumeImplementation*>::iterator it;
-  while (!list_open_volumes_.empty()) {
-    it = list_open_volumes_.begin();
-    (*it)->CloseInternal();
-    delete *it;
-    it = list_open_volumes_.erase(it);
+    // Issue Close() on every Volume and remove it's pointer.
+    list<VolumeImplementation*>::iterator it;
+    while (!list_open_volumes_.empty()) {
+      it = list_open_volumes_.begin();
+      (*it)->CloseInternal();
+      delete *it;
+      it = list_open_volumes_.erase(it);
+    }
+
+    if (async_write_callback_thread_->joinable()) {
+      async_write_callback_thread_->interrupt();
+      async_write_callback_thread_->join();
+    }
+
+    // Stop vivaldi thread if running
+    if (vivaldi_thread_.get() && vivaldi_thread_->joinable()) {
+      vivaldi_thread_->interrupt();
+    }
   }
-
-  if (async_write_callback_thread_->joinable()) {
-    async_write_callback_thread_->interrupt();
-    async_write_callback_thread_->join();
-  }
-
-  // Stop vivaldi thread if running
-  if (vivaldi_thread_.get() && vivaldi_thread_->joinable()) {
-    vivaldi_thread_->interrupt();
-  }
-
 }
 
 Volume* ClientImplementation::OpenVolume(
