@@ -167,11 +167,13 @@ public class RPCClientConnection {
         return responseRecordMarker;
     }
 
-
-    /**
-     * @return the endpoint
-     */
-    public InetSocketAddress getEndpoint() {
+    public String getEndpointString() {
+        String endpoint = "unknown";
+        try {
+            endpoint = endpoint.toString();
+        } catch (Exception ex2) {
+        }
+        
         return endpoint;
     }
 

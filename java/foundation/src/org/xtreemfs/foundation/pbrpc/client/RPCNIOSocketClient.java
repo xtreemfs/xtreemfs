@@ -175,7 +175,11 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 if (isEmpty) {
                     final SelectionKey key = con.getChannel().keyFor(selector);
                     if (key != null) {
-                        key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                        try {
+                            key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                        } catch (CancelledKeyException e) {
+                            // Ignore it since the timeout mechanism will deal with it.
+                        }
                     }
                     selector.wakeup();
                 }
@@ -204,82 +208,82 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         lastCheck = System.currentTimeMillis();
         
         try {
-	        while (!quit) {
-	            if (!toBeEstablished.isEmpty()) {
-	                while (true) {
-	                    RPCClientConnection con = toBeEstablished.poll();
-	                    if (con == null) {
-	                        break;
-	                    }
-	                    try {
-	                        con.getChannel().register(selector,
-	                            SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE | SelectionKey.OP_READ, con);
-	                    } catch (ClosedChannelException ex) {
-	                        closeConnection(con.getChannel().keyFor(selector), ex.toString());
-	                    }
-	                }
-	                toBeEstablished.clear();
-	            }
-	            
-	            int numKeys = 0;
-	            try {
-	                numKeys = selector.select(TIMEOUT_GRANULARITY);
-	            } catch (CancelledKeyException ex) {
-	                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
-	                    ex.toString());
-	                continue;
-	            } catch (IOException ex) {
-	                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
-	                    ex.toString());
-	                continue;
-	            }
-	            if (numKeys > 0) {
-	                // fetch events
-	                Set<SelectionKey> keys = selector.selectedKeys();
-	                Iterator<SelectionKey> iter = keys.iterator();
-	                
-	                // process all events
-	                while (iter.hasNext()) {
-	                    try {
-	                        SelectionKey key = iter.next();
-	                        
-	                        // remove key from the list
-	                        iter.remove();
-	                        
-	                        if (key.isConnectable()) {
-	                            connectConnection(key);
-	                        }
-	                        if (key.isReadable()) {
-	                            readConnection(key);
-	                        }
-	                        if (key.isWritable()) {
-	                            writeConnection(key);
-	                        }
-	                    } catch (CancelledKeyException ex) {
-	                        continue;
-	                    }
-	                }
-	            }
-	
-	            if (numKeys == 0 && brokenSelect) {
-	
-	                try {
-	                    sleep(25);
-	                } catch (InterruptedException ex) {
-	                    break;
-	                }
-	            }
-	            try {
-	                checkForTimers();
-	            } catch (ConcurrentModificationException ce) {
-	                Logging.logMessage(Logging.LEVEL_CRIT, this, 
-	                        OutputUtils.getThreadDump());
-	            }
-	        }
+            while (!quit) {
+                if (!toBeEstablished.isEmpty()) {
+                    while (true) {
+                        RPCClientConnection con = toBeEstablished.poll();
+                        if (con == null) {
+                            break;
+                        }
+                        try {
+                            con.getChannel().register(selector,
+                                SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE | SelectionKey.OP_READ, con);
+                        } catch (ClosedChannelException ex) {
+                            closeConnection(con.getChannel().keyFor(selector), ex.toString());
+                        }
+                    }
+                    toBeEstablished.clear();
+                }
+                
+                int numKeys = 0;
+                try {
+                    numKeys = selector.select(TIMEOUT_GRANULARITY);
+                } catch (CancelledKeyException ex) {
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
+                        ex.toString());
+                    continue;
+                } catch (IOException ex) {
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
+                        ex.toString());
+                    continue;
+                }
+                if (numKeys > 0) {
+                    // fetch events
+                    Set<SelectionKey> keys = selector.selectedKeys();
+                    Iterator<SelectionKey> iter = keys.iterator();
+                    
+                    // process all events
+                    while (iter.hasNext()) {
+                        try {
+                            SelectionKey key = iter.next();
+                            
+                            // remove key from the list
+                            iter.remove();
+                            
+                            if (key.isConnectable()) {
+                                connectConnection(key);
+                            }
+                            if (key.isReadable()) {
+                                readConnection(key);
+                            }
+                            if (key.isWritable()) {
+                                writeConnection(key);
+                            }
+                        } catch (CancelledKeyException ex) {
+                            continue;
+                        }
+                    }
+                }
+    
+                if (numKeys == 0 && brokenSelect) {
+    
+                    try {
+                        sleep(25);
+                    } catch (InterruptedException ex) {
+                        break;
+                    }
+                }
+                try {
+                    checkForTimers();
+                } catch (ConcurrentModificationException ce) {
+                    Logging.logMessage(Logging.LEVEL_CRIT, this, 
+                            OutputUtils.getThreadDump());
+                }
+            }
         } catch (Throwable thr) {
             Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "PBRPC Client CRASHED!");
             notifyCrashed(thr);
-        }	        
+        }            
         
         synchronized (connections) {
             for (RPCClientConnection con : connections.values()) {
@@ -364,11 +368,11 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             } catch (Exception ex) {
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "cannot contact server %s",
-                        con.getEndpoint().toString());
+                        con.getEndpointString());
                 }
                 con.connectFailed();
                 for (RPCClientRequest rq : con.getSendQueue()) {
-                    rq.getResponse().requestFailed("sending RPC failed: server '"+con.getEndpoint()+"' not reachable ("+ex+")");
+                    rq.getResponse().requestFailed("sending RPC failed: server '"+con.getEndpointString()+"' not reachable ("+ex+")");
                     rq.freeBuffers();
                 }
                 con.getSendQueue().clear();
@@ -377,11 +381,11 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         } else {
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                    "reconnect to server still blocked locally to avoid flooding (server: %s)", con.getEndpoint().toString());
+                    "reconnect to server still blocked locally to avoid flooding (server: %s)", con.getEndpointString());
             }
             synchronized (con) {
                 for (RPCClientRequest rq : con.getSendQueue()) {
-                    rq.getResponse().requestFailed("sending RPC failed: reconnecting to the server '"+con.getEndpoint()+"' was blocked locally to avoid flooding");
+                    rq.getResponse().requestFailed("sending RPC failed: reconnecting to the server '"+con.getEndpointString()+"' was blocked locally to avoid flooding");
                     rq.freeBuffers();
                 }
                 con.getSendQueue().clear();
@@ -559,7 +563,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                         ByteBuffer[] buffers = con.getRequestBuffers();
                         RPCClientRequest send = con.getPendingRequest();
                         if (buffers == null) {
-                        	assert(send == null);
+                            assert(send == null);
                             synchronized (con) {
                                 if (con.getSendQueue().isEmpty()) {
                                     // no more responses, stop writing...
@@ -595,27 +599,31 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 
                         //remove from queue
                         synchronized (con) {
-                    		
-                        	if (con.getSendQueue().remove(send)) {
-                        		con.addRequest(send.getRequestHeader().getCallId(), send);
-	                            if (Logging.isDebug()) {
-	                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-	                                    "sent request %d to %s", send.getRequestHeader().getCallId(), con.getEndpoint()
-	                                        .toString());
-	                            }
-                        	} else {
-                        		if (Logging.isDebug()) {
-	                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-	                                    "sent request %d to %s, but it already timed out locally", send.getRequestHeader().getCallId(), con.getEndpoint()
-	                                        .toString());
-	                            }
-                        	}
+                            if (con.getSendQueue().remove(send)) {
+                                con.addRequest(send.getRequestHeader().getCallId(), send);
+                                if (Logging.isDebug()) {
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                                        "sent request %d to %s", send.getRequestHeader().getCallId(), con.getEndpointString());
+                                }
+                            } else {
+                                if (Logging.isDebug()) {
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                                        "sent request %d to %s, but it already timed out locally", send.getRequestHeader().getCallId(), con.getEndpointString());
+                                }
+                            }
                         }
                         con.setRequestBuffers(null);
                         con.setPendingRequest(null);
                     }
                 }
             }
+        } catch (CancelledKeyException ex) {
+            // simply close the connection
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, OutputUtils
+                        .stackTraceToString(ex));
+            }
+            closeConnection(key, "server closed connection: "+ex);
         } catch (IOException ex) {
             // simply close the connection
             if (Logging.isDebug()) {
@@ -648,18 +656,14 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             con.connected();
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "connected from %s to %s", con
-                        .getChannel().socket().getLocalSocketAddress().toString(), con.getEndpoint()
-                        .toString());
+                        .getChannel().socket().getLocalSocketAddress().toString(), con.getEndpointString());
             }
+        } catch (CancelledKeyException ex) {
+            con.connectFailed();
+            closeConnection(key, "server '" + con.getEndpointString() + "' not reachable ("+ex+")");
         } catch (IOException ex) {
             con.connectFailed();
-            String endpoint;
-            try {
-                endpoint = con.getEndpoint().toString();
-            } catch (Exception ex2) {
-                endpoint = "unknown";
-            }
-            closeConnection(key, "server '"+endpoint+"' not reachable ("+ex+")");
+            closeConnection(key, "server '" + con.getEndpointString() + "' not reachable ("+ex+")");
         }
         
     }
@@ -691,7 +695,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "closing connection to %s", con
-                    .getEndpoint().toString());
+                    .getEndpointString());
         }
     }
     

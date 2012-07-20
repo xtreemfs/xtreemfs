@@ -11,6 +11,7 @@ package org.xtreemfs.foundation.pbrpc.server;
 import com.google.protobuf.Message;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
@@ -237,6 +238,8 @@ public class RPCUDPSocketServer extends LifeCycleThread implements RPCServerInte
             selector.close();
             channel.close();
 
+        } catch (CancelledKeyException ex) {
+            // ignore
         } catch (ClosedByInterruptException ex) {
             // ignore
         } catch (IOException ex) {

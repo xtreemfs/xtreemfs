@@ -10,6 +10,7 @@ package org.xtreemfs.foundation.pbrpc.channels;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
@@ -233,7 +234,7 @@ public class SSLHandshakeOnlyChannelIO extends ChannelIO {
      * {@inheritDoc}
      */
     @Override
-    public boolean shutdown(SelectionKey key) throws IOException {
+    public boolean shutdown(SelectionKey key) throws IOException, CancelledKeyException {
         if (!handshakeComplete) { // no SSL connection is established => simple
             // close
             shutdownInProgress = true;
@@ -376,7 +377,7 @@ public class SSLHandshakeOnlyChannelIO extends ChannelIO {
      * until the function returns true
      */
     @Override
-    public boolean doHandshake(SelectionKey key) throws IOException {
+    public boolean doHandshake(SelectionKey key) throws IOException, CancelledKeyException {
         if (handshakeComplete || shutdownInProgress) { // quick return
             return handshakeComplete;
         }
@@ -507,7 +508,7 @@ public class SSLHandshakeOnlyChannelIO extends ChannelIO {
      * 
      * @param key
      */
-    private void handshakeFinished(SelectionKey key) {
+    private void handshakeFinished(SelectionKey key) throws CancelledKeyException {
         
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "SSL-handshake for %s:%d finished",
@@ -533,7 +534,7 @@ public class SSLHandshakeOnlyChannelIO extends ChannelIO {
      * @param handshakeStatus
      * @throws IOException
      */
-    private void analyseHandshakeStatus(SelectionKey key, HandshakeStatus handshakeStatus) throws IOException {
+    private void analyseHandshakeStatus(SelectionKey key, HandshakeStatus handshakeStatus) throws IOException, CancelledKeyException {
         switch (handshakeStatus) {
         case NEED_UNWRAP: {
             key.interestOps(key.interestOps() | SelectionKey.OP_READ & ~SelectionKey.OP_WRITE);
@@ -586,7 +587,7 @@ public class SSLHandshakeOnlyChannelIO extends ChannelIO {
      * @param key
      * @throws IOException
      */
-    protected void doTasks(final SelectionKey key) {
+    protected void doTasks(final SelectionKey key) throws CancelledKeyException {
         // Logging.logMessage(Logging.LEVEL_DEBUG, this,
         // "SSL-handshake doing: doing task");
         

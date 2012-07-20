@@ -24,7 +24,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.foundation.LifeCycleThread;
@@ -203,9 +202,13 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                 boolean isEmpty = connection.getPendingResponses().isEmpty();
                 connection.addPendingResponse(response);
                 if (isEmpty) {
-                	final SelectionKey key = connection.getChannel().keyFor(selector);
+                    final SelectionKey key = connection.getChannel().keyFor(selector);
                     if (key != null) {
-                        key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                        try {
+                            key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+                        } catch (CancelledKeyException e) {
+                         // Ignore it since the timeout mechanism will deal with it.
+                        }
                     }
                     selector.wakeup();
                 }
@@ -450,6 +453,13 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                     }
                 }
             }
+        } catch (CancelledKeyException ex) {
+            if (Logging.isInfo()) {
+                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                    "client closed connection (CancelledKeyException): %s", channel.socket().getRemoteSocketAddress()
+                            .toString());
+            }
+            closeConnection(key);
         } catch (ClosedByInterruptException ex) {
             if (Logging.isInfo()) {
                 Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
