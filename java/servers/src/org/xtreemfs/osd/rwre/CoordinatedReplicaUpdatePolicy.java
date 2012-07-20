@@ -422,7 +422,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                     Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"unknown lease state for %s: %s",this.cellId,lease);
                     throw new RetryException("unknown lease state for cell "+this.cellId+", can't redirect to master. Please retry.");
                 } else
-                    Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this, "(R:%s) local is backup, redirecting for fileid %s to %s",
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) local is backup, redirecting for fileid %s to %s",
                             localUUID, this.cellId,lease.getLeaseHolder().toString());
                     throw new RedirectToMasterException(lease.getLeaseHolder().toString());
             }

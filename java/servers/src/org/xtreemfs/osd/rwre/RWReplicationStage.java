@@ -551,7 +551,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     fetchObjects();
                     if (numPendingFile == 0) {
                         //reset complete!
-                        Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this,"(R:%s) RESET complete for file %s",localID, fileId);
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) RESET complete for file %s",localID, fileId);
                         doOpen(state);
                     }
                 }
