@@ -122,7 +122,7 @@ public class HeartbeatThread extends LifeCycleThread {
     public synchronized void shutdown() {
         try {
             if (client.clientIsAlive()) {
-                client.xtreemfs_service_deregister(null, authNone, uc, uuid.toString(), 0);
+                client.xtreemfs_service_deregister(null, authNone, uc, uuid.toString(), 1);
             }
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_WARN, this, "could not deregister service at DIR");
@@ -282,7 +282,7 @@ public class HeartbeatThread extends LifeCycleThread {
                 synchronized (this) {
                     try {
                         // update data on DIR; do not retry, as this is done periodically anyway
-                        registerServices(0);
+                        registerServices(1);
                     } catch (PBRPCException ex) {
                         if (ex.getPOSIXErrno() == POSIXErrno.POSIX_ERROR_EAGAIN) {
                             if (Logging.isInfo())

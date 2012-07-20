@@ -324,7 +324,7 @@ public class DIRClient implements TimeServerClient {
             public RPCResponse executeCall(DIRServiceClient client, InetSocketAddress server) throws IOException {
                 return client.xtreemfs_global_time_s_get(server, auth, user);
             }
-        }, 0);
+        }, 1);
         return response.getTimeInSeconds();
     }
     
