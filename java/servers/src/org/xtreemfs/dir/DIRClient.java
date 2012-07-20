@@ -342,11 +342,12 @@ public class DIRClient implements TimeServerClient {
     
     protected Object syncCall(CallGenerator call, int maxRetries) throws InterruptedException, PBRPCException,
             IOException {
+        assert maxRetries != 0 : "Current DIRClient implementation supports no infinite retries.";
         InetSocketAddress server = null;
         redirectedBefore = false;
-        int numTries = 0;
+        int numTries = 1;
         Exception lastException = null;
-        do {
+        while (numTries <= maxRetries) {
             boolean countRedirectAsRetry = redirectedBefore;
             
             synchronized (this) {
@@ -364,7 +365,7 @@ public class DIRClient implements TimeServerClient {
                 
                 case REDIRECT: {
                     lastException = ex;
-                    if (numTries < maxRetries) {
+                    if (numTries <= maxRetries) {
                         redirect(ex);
                     } else
                         countRedirectAsRetry = true;
@@ -376,7 +377,7 @@ public class DIRClient implements TimeServerClient {
                     
                 default: {
                     lastException = ex;
-                    if (numTries < maxRetries) {
+                    if (numTries <= maxRetries) {
                         failover(ex);
                     }
                     break;
@@ -384,9 +385,9 @@ public class DIRClient implements TimeServerClient {
                 }
                 
             } catch (IOException ex) {
-                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "Request failed due to exception: %s", ex);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "Request failed due to exception: %s", ex);
                 lastException = ex;
-                if (numTries < maxRetries) {
+                if (numTries <= maxRetries) {
                     failover(ex);
                 }
             } finally {
@@ -401,7 +402,7 @@ public class DIRClient implements TimeServerClient {
                     || (((PBRPCException) lastException).getErrorType() == ErrorType.REDIRECT && countRedirectAsRetry))
                 numTries++;
             
-        } while (numTries <= maxRetries);
+        }
         throw new IOException("Request finally failed after " + (numTries - 1) + " tries.", lastException);
     }
     
@@ -421,7 +422,7 @@ public class DIRClient implements TimeServerClient {
             for (int i = 0; i < servers.length; i++) {
                 final InetSocketAddress server = servers[i];
                 if (server.equals(redirectTo)) {
-                    Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.net, this, "redirected to DIR: %s", server);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.net, this, "redirected to DIR: %s", server);
                     synchronized (this) {
                         currentServer = i;
                     }
@@ -458,7 +459,7 @@ public class DIRClient implements TimeServerClient {
                 currentServer = 0;
             }
         }
-        Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "Switching to server %s", servers[currentServer]);
+        Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "Switching to server %s", servers[currentServer]);
     }
     
 }
