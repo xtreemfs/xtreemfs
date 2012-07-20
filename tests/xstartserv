@@ -63,6 +63,9 @@ class Server:
 
             java_args = [os.path.join(os.environ["JAVA_HOME"], "bin", "java")]
 
+            # Enable assertions.
+            java_args.append("-ea")
+
             # Construct the -cp classpath
             XtreemFS_jar_file_path = os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "servers", "dist", "XtreemFS.jar"))
             if os.path.exists(XtreemFS_jar_file_path):
