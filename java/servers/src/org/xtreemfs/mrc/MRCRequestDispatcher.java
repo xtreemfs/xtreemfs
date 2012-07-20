@@ -338,8 +338,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         httpServ.start();
         
         heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen, config, false);
+        heartbeatThread.setLifeCycleListener(this);
         
         onCloseReplicationThread = new OnCloseReplicationThread(this);
+        onCloseReplicationThread.setLifeCycleListener(this);
         
         if (replicated) {
             mrcMonitor = new MRCStatusManager(this);
