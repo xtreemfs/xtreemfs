@@ -447,8 +447,9 @@ public class DIRClient implements TimeServerClient {
     
     protected void failover(IOException exception) throws InterruptedException {
         
-        Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "Request to server %s failed due to exception: %s",
+        Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "Request to server %s failed due to exception: %s",
                 servers[currentServer], exception);
+        Logging.logError(Logging.LEVEL_INFO, Category.net, exception);
 
         // wait for next retry
         Thread.sleep(retryWaitMs);
