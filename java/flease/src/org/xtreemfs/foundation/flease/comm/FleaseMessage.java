@@ -18,55 +18,6 @@ import org.xtreemfs.foundation.flease.FleaseConfig;
  * @author bjko
  */
 public class FleaseMessage implements Serializable, Cloneable {
-
-    public static final int VIEW_ID_INVALIDATED = -1;
-
-    public static final long IGNORE_MASTER_EPOCH = -1;
-
-    public static final long REQUEST_MASTER_EPOCH = 0;
-
-    /**
-     * @return the prevAcceptedBallotNo
-     */
-    public ProposalNumber getPrevProposalNo() {
-        return prevProposalNo;
-    }
-
-    /**
-     * @param prevAcceptedBallotNo the prevAcceptedBallotNo to set
-     */
-    public void setPrevProposalNo(ProposalNumber prevAcceptedBallotNo) {
-        this.prevProposalNo = prevAcceptedBallotNo;
-    }
-
-    /**
-     * @return the viewId
-     */
-    public int getViewId() {
-        return viewId;
-    }
-
-    /**
-     * @param viewId the viewId to set
-     */
-    public void setViewId(int viewId) {
-        this.viewId = viewId;
-    }
-
-    /**
-     * @return the masterEpochNumber
-     */
-    public long getMasterEpochNumber() {
-        return masterEpochNumber;
-    }
-
-    /**
-     * @param masterEpochNumber the masterEpochNumber to set
-     */
-    public void setMasterEpochNumber(long masterEpochNumber) {
-        this.masterEpochNumber = masterEpochNumber;
-    }
-
     
     /**
      * Message types
@@ -131,6 +82,14 @@ public class FleaseMessage implements Serializable, Cloneable {
         MSG_WRONG_VIEW
 
     };
+    
+    private static final long serialVersionUID = 3187504351237849866L;
+
+    public static final int VIEW_ID_INVALIDATED = -1;
+
+    public static final long IGNORE_MASTER_EPOCH = -1;
+
+    public static final long REQUEST_MASTER_EPOCH = 0;
     
     /**
      * message type
@@ -218,6 +177,55 @@ public class FleaseMessage implements Serializable, Cloneable {
         this.viewId = other.viewId;
         this.masterEpochNumber = other.masterEpochNumber;
     }
+    
+    public void validateMessage() {
+        assert(msgType != null);
+        assert(proposalNo != null);
+        assert(cellId != null);
+    }
+    
+    /**
+     * @return the prevAcceptedBallotNo
+     */
+    public ProposalNumber getPrevProposalNo() {
+        return prevProposalNo;
+    }
+
+    /**
+     * @param prevAcceptedBallotNo the prevAcceptedBallotNo to set
+     */
+    public void setPrevProposalNo(ProposalNumber prevAcceptedBallotNo) {
+        this.prevProposalNo = prevAcceptedBallotNo;
+    }
+
+    /**
+     * @return the viewId
+     */
+    public int getViewId() {
+        return viewId;
+    }
+
+    /**
+     * @param viewId the viewId to set
+     */
+    public void setViewId(int viewId) {
+        this.viewId = viewId;
+    }
+
+    /**
+     * @return the masterEpochNumber
+     */
+    public long getMasterEpochNumber() {
+        return masterEpochNumber;
+    }
+
+    /**
+     * @param masterEpochNumber the masterEpochNumber to set
+     */
+    public void setMasterEpochNumber(long masterEpochNumber) {
+        this.masterEpochNumber = masterEpochNumber;
+    }
+
      
     
     /**

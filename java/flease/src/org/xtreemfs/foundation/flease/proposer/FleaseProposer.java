@@ -442,6 +442,7 @@ public class FleaseProposer {
         cell.touch();
 
         //assert (lastBallotNo < cell.getBallotNo().getProposalNo()) : ("lastBallotNo="+lastBallotNo+", cell="+cell.getBallotNo().getProposalNo());
+        assertState(cell.getBallotNo() != null, cell);
         assertState(cell.getBallotNo().getSenderId() == config.getSenderId(), cell);
 
         //lastBallotNo = cell.getBallotNo().getProposalNo();
@@ -483,6 +484,7 @@ public class FleaseProposer {
         FleaseMessage timer = new FleaseMessage(MsgType.EVENT_TIMEOUT_PREPARE);
         timer.setCellId(cell.getCellId());
         timer.setProposalNo(cell.getBallotNo());
+        timer.validateMessage();
         comm.requestTimer(timer, TimeSync.getLocalSystemTime() + config.getRoundTimeout());
         cell.addAction(ActionName.PROPOSER_SCHEDULED_TIMEOUT);
         
@@ -817,6 +819,7 @@ public class FleaseProposer {
         FleaseMessage timer = new FleaseMessage(MsgType.EVENT_TIMEOUT_ACCEPT);
         timer.setCellId(cell.getCellId());
         timer.setProposalNo(cell.getBallotNo());
+        timer.validateMessage();
         comm.requestTimer(timer, TimeSync.getLocalSystemTime() + config.getRoundTimeout());
 
         final FleaseMessage localResponse = localAcceptor.handleACCEPT(msg);

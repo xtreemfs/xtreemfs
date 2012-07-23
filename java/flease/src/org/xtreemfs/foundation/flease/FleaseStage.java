@@ -555,6 +555,7 @@ public class FleaseStage extends LifeCycleThread implements LearnEventListener, 
     }
 
     protected void createTimer(FleaseMessage msg, long timestamp) {
+        msg.validateMessage();
         TimerEntry e = new TimerEntry(timestamp, msg);
         timers.add(e);
     }
