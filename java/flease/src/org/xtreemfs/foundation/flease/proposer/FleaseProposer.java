@@ -515,6 +515,21 @@ public class FleaseProposer {
         cell.addAction(ActionName.PROPOSER_PREPARE_PROCESS_RESPONSE);
         assertState(cell.getCellState() == State.WAIT_FOR_PREP_ACK, cell);
         assertState(cell.getMessageSent() != null, cell);
+        
+        if (msg.getMsgType() != MsgType.MSG_PREPARE_ACK
+                && msg.getMsgType() != MsgType.MSG_PREPARE_NACK
+                && msg.getMsgType() != MsgType.MSG_WRONG_VIEW
+                && msg.getMsgType() != MsgType.EVENT_TIMEOUT_PREPARE) {
+            if (Logging.isDebug() && config.isDebugPrintMessages()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG,
+                        Logging.Category.replication,
+                        this,
+                        "P ignore message (UNEXPECTED MESSAGE TYPE %s): %s",
+                        msg.getMsgType(),
+                        msg.toString());
+            }
+            return;
+        }
 
         if (msg.getSendTimestamp() + config.getMessageTimeout() < TimeSync.getGlobalTime()) {
             //drop outdated message
@@ -554,21 +569,6 @@ public class FleaseProposer {
                         Logging.Category.replication,
                         this,
                         "P ignore message (before my request): %s",
-                        msg.toString());
-            }
-            return;
-        }
-
-        if ((msg.getMsgType() != MsgType.MSG_PREPARE_ACK) &&
-                (msg.getMsgType() != MsgType.MSG_PREPARE_NACK) &&
-                (msg.getMsgType() != MsgType.MSG_WRONG_VIEW) &&
-                (msg.getMsgType() != MsgType.EVENT_TIMEOUT_PREPARE)) {
-            if (Logging.isDebug() && config.isDebugPrintMessages()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG,
-                        Logging.Category.replication,
-                        this,
-                        "P ignore message (UNEXPECTED MESSAGE TYPE %s): %s",
-                        msg.getMsgType(),
                         msg.toString());
             }
             return;
@@ -844,6 +844,7 @@ public class FleaseProposer {
     protected void processAcceptResponse(FleaseProposerCell cell, FleaseMessage msg) {
         cell.addAction(ActionName.PROPOSER_ACCEPT_PROCESS_RESPONSE);
         assertState(cell.getCellState() == State.WAIT_FOR_ACCEPT_ACK, cell);
+        assertState(cell.getMessageSent() != null, cell);
 
         if (msg.getSendTimestamp() + config.getMessageTimeout() < TimeSync.getGlobalTime()) {
             //drop outdated message
@@ -877,6 +878,20 @@ public class FleaseProposer {
                     new FleaseException("System is not in sync (clock sync drift exceeded)!"), 0);
             return;
         }
+        
+        if (msg.getMsgType() != MsgType.MSG_ACCEPT_ACK
+                && msg.getMsgType() != MsgType.MSG_ACCEPT_NACK
+                && msg.getMsgType() != MsgType.MSG_WRONG_VIEW
+                && msg.getMsgType() != MsgType.EVENT_TIMEOUT_ACCEPT) {
+            if (Logging.isDebug() && config.isDebugPrintMessages()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG,
+                        Logging.Category.replication,
+                        this,
+                        "P ignore message (unexpected message type): %s",
+                        msg.toString());
+            }
+            return;
+        }
 
         if (msg.before(cell.getMessageSent())) {
             if (Logging.isDebug() && config.isDebugPrintMessages()) {
@@ -884,20 +899,6 @@ public class FleaseProposer {
                         Logging.Category.replication,
                         this,
                         "P ignore message (before my request): %s",
-                        msg.toString());
-            }
-            return;
-        }
-
-        if (msg.getMsgType() != MsgType.MSG_ACCEPT_ACK
-            && msg.getMsgType() != MsgType.MSG_ACCEPT_NACK
-            && msg.getMsgType() != MsgType.MSG_WRONG_VIEW
-            && msg.getMsgType() != MsgType.EVENT_TIMEOUT_ACCEPT) {
-            if (Logging.isDebug() && config.isDebugPrintMessages()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG,
-                        Logging.Category.replication,
-                        this,
-                        "P ignore message (unexpected message type): %s",
                         msg.toString());
             }
             return;
