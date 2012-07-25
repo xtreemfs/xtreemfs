@@ -105,7 +105,7 @@ public class FleaseProposer {
     public ProposalNumber getCurrentBallotNo(ASCIIString cellId) {
         FleaseProposerCell cell = cells.get(cellId);
         if (cell == null) {
-            return null;
+            return ProposalNumber.EMPTY_PROPOSAL_NUMBER;
         }
         return cell.getBallotNo();
     }
