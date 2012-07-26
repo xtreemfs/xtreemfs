@@ -446,11 +446,6 @@ public class DIRClient implements TimeServerClient {
     }
     
     protected void failover(IOException exception) throws InterruptedException {
-        
-        Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "Request to server %s failed due to exception: %s",
-                servers[currentServer], exception);
-        Logging.logError(Logging.LEVEL_INFO, Category.net, exception);
-
         // wait for next retry
         Thread.sleep(retryWaitMs);
         
@@ -460,7 +455,9 @@ public class DIRClient implements TimeServerClient {
                 currentServer = 0;
             }
         }
-        Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "Switching to server %s", servers[currentServer]);
+        Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                "Switching to server %s since the last attempt failed with the error: %s",
+                servers[currentServer], exception.getMessage());
     }
     
 }
