@@ -16,13 +16,12 @@ else
         CMAKE_BIN = $(CMAKE_HOME)/bin/cmake
 endif
 
+SHELL := $(shell which bash)
 WHICH_GPP = $(shell which g++)
 
 ifeq "$(shell uname)" "SunOS"
   PROTOBUF_DISABLE_64_BIT_SOLARIS = "--disable-64bit-solaris"
 endif
-
-SHELL=/bin/bash
 
 # Paths used during compilation.
 XTREEMFS_CLIENT_BUILD_DIR=$(shell pwd)/cpp/build
