@@ -43,6 +43,11 @@
 #define ENOATTR EAGAIN
 #endif
 
+// FreeBSD has no ENODATA
+#ifndef ENODATA
+#define ENODATA EAGAIN
+#endif
+
 // Linux and Solaris have no ENOATTR
 #ifndef ENOATTR
 #define ENOATTR ENODATA
