@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011 by Bjoern Kolbeck, Zuse Institute Berlin
+ *               2011-2012 by Michael Berlin, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -11,9 +12,9 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#ifndef __sun
+#if defined __linux || defined __APPLE__
 #include <sys/xattr.h>
-#endif  // !__sun
+#endif  // __linux || __APPLE__
 #include <unistd.h>
 
 #include <boost/algorithm/string/case_conv.hpp>
@@ -778,7 +779,7 @@ string GetPathOnVolume(const char* real_path_cstr) {
         " found in " + string(mtab_file) +
         " for path: " + string(real_path_cstr));
   }
-#else
+#elif defined __linux || __APPLE__
   // get xtreemfs.url xattr.
   char xtfs_url[2048];
   int length = -1;
@@ -807,6 +808,40 @@ string GetPathOnVolume(const char* real_path_cstr) {
     throw xtreemfs::XtreemFSException("Invalid XtreemFS url!");
   }
   path_on_volume = matcher[1];
+#elif __FreeBSD__
+  string real_path = string(real_path_cstr);
+  FILE* in;
+  char buf[1024];
+
+  if (!(in = popen("mount", "r"))) {
+    pclose(in);
+    throw xtreemfs::XtreemFSException("Failed to run the 'mount' command to"
+        " find out the path relative to the volume root.");
+  }
+
+  const boost::regex mount_point_re("^/dev/fuse[0-9] on ([^ ]+) \\(fusefs");  // NOLINT
+  bool entry_found = false;
+  while (fgets(buf, sizeof(buf), in) != NULL) {
+    string line(buf);
+
+    boost::smatch matcher;
+    if (boost::regex_search(line, matcher, mount_point_re)) {
+      string mount_point = matcher[1];
+      if (real_path.substr(0, mount_point.length()) == mount_point) {
+        path_on_volume = real_path.substr(mount_point.length());
+        entry_found = true;
+        break;
+      }
+    }
+  }
+  pclose(in);
+
+  if (!entry_found) {
+    throw xtreemfs::XtreemFSException("No matching mounted XtreemFS volume"
+        " found in 'mount' output for path: " + string(real_path_cstr));
+  }
+#else
+  #error "Plattform not supported yet by xtfsutil. Please add plattform-specific code to GetPathOnVolume() or disable compilation of xtfsutil in the CMake specification."  // NOLINT
 #endif
 
   return path_on_volume;
