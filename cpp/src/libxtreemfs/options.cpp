@@ -212,9 +212,6 @@ void Options::GenerateProgramOptionsDescriptions() {
             ->default_value(max_writeahead_requests),
         "Maximum number of pending write requests per file (Asynchronous writes"
         " will block if this or max-writeahead is reached first).")
-        //TODO(bjko): Insert new OSD parameter.
-//        "\nIf you increase this value, please take care of the value "
-//        " in the OSD config and do not set it to high to avoid flooding.")
     ("readdir-chunk-size",
         po::value(&readdir_chunk_size)->default_value(readdir_chunk_size),
         "Number of entries requested per readdir.");
