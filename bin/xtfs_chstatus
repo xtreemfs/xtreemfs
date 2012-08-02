@@ -28,7 +28,7 @@ check_java() {
 
     JVERS=`$JAVA_HOME/bin/java -version 2>&1 | grep "java version" | \
        cut -d " " -f 3`
-    perl -e " exit 1 if ($JVERS < \"1.6.0\");"
+    test "$JVERS" \> "\"1.6.0"
     if [ $? -eq 1 ]; then
        echo "Java version is $JVERS. You need JAVA 1.6!!!"
        exit 1
