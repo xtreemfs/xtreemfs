@@ -117,7 +117,7 @@ public class OSDConfig extends ServiceConfig {
         
         this.customParams = new HashMap<String, String>();
         for (Entry<String, String> entry : hm.entrySet())
-            if (entry.getKey().startsWith(OSD_CUSTOM_RROPERTY_PREFIX))
+            if (entry.getKey().startsWith(OSD_CUSTOM_PROPERTY_PREFIX))
                 customParams.put(entry.getKey(), entry.getValue());
         
     }
@@ -125,7 +125,7 @@ public class OSDConfig extends ServiceConfig {
     public void read() throws IOException {
         
         for (String propName : this.props.stringPropertyNames()) {
-            if (propName.startsWith(ServiceConfig.OSD_CUSTOM_RROPERTY_PREFIX)) {
+            if (propName.startsWith(ServiceConfig.OSD_CUSTOM_PROPERTY_PREFIX)) {
                 customParams.put(propName, this.props.getProperty(propName));
             }
         }

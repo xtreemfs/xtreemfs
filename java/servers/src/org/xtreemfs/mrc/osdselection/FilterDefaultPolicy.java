@@ -82,7 +82,7 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
                 else
                     for (Entry<String, String> entry : customFilter.entrySet()) {
                         String osdParameterValue = KeyValuePairs.getValue(osd.getData().getDataList(),
-                                ServiceConfig.OSD_CUSTOM_RROPERTY_PREFIX + entry.getKey());
+                                ServiceConfig.OSD_CUSTOM_PROPERTY_PREFIX + entry.getKey());
                         if (matches(entry.getValue(), osdParameterValue))
                             filteredOSDs.addServices(osd);
                     }

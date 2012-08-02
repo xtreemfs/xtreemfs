@@ -189,7 +189,7 @@ public class ServiceConfig extends Config {
     
     protected EnumMap<Parameter, Object> parameter = new EnumMap<Parameter, Object>(Parameter.class);
     
-    public static final String OSD_CUSTOM_RROPERTY_PREFIX = "config.";
+    public static final String OSD_CUSTOM_PROPERTY_PREFIX = "config.";
     
     public ServiceConfig() {
         super();
@@ -212,7 +212,7 @@ public class ServiceConfig extends Config {
         for (Entry<String, String> entry : hm.entrySet()) {
             
             // ignore custom configuration properties for OSDs here
-            if(entry.getKey().startsWith(OSD_CUSTOM_RROPERTY_PREFIX))
+            if(entry.getKey().startsWith(OSD_CUSTOM_PROPERTY_PREFIX))
                 continue;
             
             Parameter param = null;
