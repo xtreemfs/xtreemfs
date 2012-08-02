@@ -150,7 +150,7 @@ namespace xtreemfs {
 
     // Compute relative error of this sample
     double relativeError = static_cast<double> (
-        abs(subtractionMagnitude - measuredRTT)) /
+        std::abs(subtractionMagnitude - measuredRTT)) /
         static_cast<double> (measuredRTT);
 
     // Calculate weight
@@ -159,7 +159,7 @@ namespace xtreemfs {
     } else {
       if (coordinatesJ.local_error() > 0.0) {
         weight = localError / (localError
-                 + static_cast<double> (abs(coordinatesJ.local_error())));
+                 + static_cast<double> (std::abs(coordinatesJ.local_error())));
       } else {
         /* The OSD has not determined its position yet (it has not even
          * started), so we just modify limitly ours. (To allow "One client-One
@@ -179,11 +179,12 @@ namespace xtreemfs {
     if (forceRecalculation ||  // Movement must be made anyway
         (subtractionMagnitude <= 0.0) ||  // They both are in the same position
         (estimatedMovement < 0.0) ||  // They must get closer
-        (abs(estimatedMovement) < subtractionMagnitude * MAX_MOVEMENT_RATIO)) {
+        (std::abs(estimatedMovement) <
+        subtractionMagnitude * MAX_MOVEMENT_RATIO)) {
       // Update local error
       if (localError <= 0) {
         // We initialize the local error with the first absolute error measured
-        localError = static_cast<double> (abs(subtractionMagnitude -  \
+        localError = static_cast<double> (std::abs(subtractionMagnitude -  \
                                         static_cast<double> (measuredRTT)));
       } else {
         // Compute relative weight moving average of local error
@@ -316,7 +317,7 @@ namespace xtreemfs {
     // calculate the value: left-shift the upper 4 bytes by 32 bit and
     // append the lower 32 bit
     int64_t value = (static_cast<int64_t> (high)) << 32 |
-        ((static_cast<int64_t> (low)) & 4294967295L);
+        ((static_cast<int64_t> (low)) & 0xFFFFFFFF);
     return value;
   }
 
