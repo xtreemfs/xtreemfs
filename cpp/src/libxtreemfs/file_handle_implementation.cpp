@@ -981,12 +981,18 @@ void FileHandleImplementation::CallFinished(
   if (error) {
     string path;
     file_info_->GetPath(&path);
-    string error_msg = "Async filesize update for file: " + path
-        + "failed. Error: " + error->DebugString();
-    if (Logging::log->loggingActive(LEVEL_WARN)) {
-      Logging::log->getLog(LEVEL_WARN) << error_msg << endl;
+    LogLevel level = LEVEL_WARN;
+    if (error->posix_errno() == POSIX_ERROR_ENOENT) {
+      level = LEVEL_DEBUG;
     }
-    ErrorLog::error_log->AppendError(error_msg);
+    string error_msg = "Async filesize update for file: " + path
+        + " failed. Error: " + error->DebugString();
+    if (Logging::log->loggingActive(level)) {
+      Logging::log->getLog(level) << error_msg << endl;
+    }
+    if (level != LEVEL_DEBUG) {
+      ErrorLog::error_log->AppendError(error_msg);
+    }
   }
 
   file_info_->AsyncFileSizeUpdateResponseHandler(
