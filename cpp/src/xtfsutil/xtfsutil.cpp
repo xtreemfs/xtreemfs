@@ -126,6 +126,51 @@ string formatBytes(uint64_t bytes) {
   }
 }
 
+void OutputACLs(Json::Value* stat) {
+  if ((*stat).isMember("acl")) {
+    if ((*stat)["acl"].isObject() && !(*stat)["acl"].empty()) {
+      bool no_output_yet = true;
+      const size_t kPaddingCount = 21;
+      const string kACLOutputPrefix = "ACLs";
+      Json::Value::Members acl_entry_names;
+
+      const size_t kACLClassesCount = 4;
+      string acl_classes[kACLClassesCount] = {"u:", "g:", "m:", "o:"};
+
+      for (size_t i = 0; i < kACLClassesCount; i++) {
+        const string& prefix = acl_classes[i];
+
+        // Output default entry first.
+        if ((*stat)["acl"].isMember(prefix)) {
+          cout << (no_output_yet ? kACLOutputPrefix : string(kACLOutputPrefix.length(), ' '))  // NOLINT
+               << string(kPaddingCount - kACLOutputPrefix.length(), ' ')
+               << prefix << ":" << (*stat)["acl"][prefix].asString() << endl;
+          no_output_yet = false;
+
+          (*stat)["acl"].removeMember(prefix);
+        }
+
+        // Output remaining entries of the same class.
+        acl_entry_names = (*stat)["acl"].getMemberNames();
+        for (Json::Value::Members::const_iterator iter
+                 = acl_entry_names.begin();
+             iter != acl_entry_names.end();
+             ++iter) {
+          if ((*iter).substr(0, prefix.length()).compare(prefix) == 0) {
+            cout << (no_output_yet ? kACLOutputPrefix : string(kACLOutputPrefix.length(), ' '))  // NOLINT
+                 << string(kPaddingCount - kACLOutputPrefix.length(), ' ')
+                 << *iter << ":" << (*stat)["acl"][*iter].asString() << endl;
+            no_output_yet = false;
+          }
+        }
+      }
+    } else if ((*stat)["acl"].isString()
+               && !(*stat)["acl"].asString().empty()) {
+      cout << "ACL                  " << (*stat)["acl"].asString() << endl;
+    }  // else: do not output empty ACLs.
+  }
+}
+
 // Stat a file/directory/volume.
 bool getattr(const string& xctl_file,
              const string& path) {
@@ -141,9 +186,7 @@ bool getattr(const string& xctl_file,
     cout << "XtreemFS URL         " << stat["url"].asString() << endl;
     cout << "Owner                " << stat["owner"].asString() << endl;
     cout << "Group                " << stat["group"].asString() << endl;
-    if (stat.isMember("acl") && !stat["acl"].asString().empty()) {
-      cout << "ACL                  " << stat["acl"].asString() << endl;
-    }
+    OutputACLs(&stat);
     cout << "Type                 ";
     int type = boost::lexical_cast<int>(stat["object_type"].asString());
     switch (type) {
