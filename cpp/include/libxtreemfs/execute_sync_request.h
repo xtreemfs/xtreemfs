@@ -282,7 +282,10 @@ template<class ReturnMessageType, class F>
     // Copy error information in order to delete buffers before the throw.
     xtreemfs::pbrpc::RPCHeader::ErrorResponse* error_resp = response->error();
     const xtreemfs::pbrpc::ErrorType error_type = error_resp->error_type();
-    const std::string error_message = error_resp->error_message();
+    std::string error_message = error_resp->error_message();
+    if (error_message.empty()) {
+      error_message = "none given";
+    }
     const xtreemfs::pbrpc::POSIXErrno posix_errno = error_resp->posix_errno();
 
     // Free buffers.
