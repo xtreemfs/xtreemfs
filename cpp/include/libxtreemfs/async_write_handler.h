@@ -180,7 +180,6 @@ class AsyncWriteHandler
   State state_;
 
   /** List of pending writes. */
-  // TODO(mberlin): Limit the size of writes in flight to avoid flooding.
   std::list<AsyncWriteBuffer*> writes_in_flight_;
 
   /** Number of pending bytes. */
@@ -196,7 +195,7 @@ class AsyncWriteHandler
    *  temporarily no new async writes allowed and will be set to false again
    *  once the state IDLE is reached. */
   bool writing_paused_;
-  
+
   /** Used to notify blocked WaitForPendingWrites() callers for the state change
    *  back to IDLE. */
   boost::condition all_pending_writes_did_complete_;
@@ -229,6 +228,9 @@ class AsyncWriteHandler
 
   /** Required for resolving UUIDs to addresses. */
   UUIDResolver* uuid_resolver_;
+
+  /** Options (Max retries, ...) used when resolving UUIDs. */
+  Options uuid_resolver_options_;
 
   /** Client which is used to send out the writes. */
   xtreemfs::pbrpc::OSDServiceClient* osd_service_client_;

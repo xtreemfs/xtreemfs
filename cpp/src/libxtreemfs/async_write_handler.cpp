@@ -61,6 +61,12 @@ AsyncWriteHandler::AsyncWriteHandler(
       fast_redirect_(false),
       worst_write_buffer_(0) {
   assert(file_info && uuid_iterator && uuid_resolver && osd_service_client);
+
+  // Make sure the callback processing thread does not call fuse_interrupted().
+  interrupt_options_.was_interrupted_function = NULL;
+
+  uuid_resolver_options_.max_tries = max_write_tries_;
+  uuid_resolver_options_.was_interrupted_function = NULL;
 }
 
 AsyncWriteHandler::~AsyncWriteHandler() {
@@ -147,7 +153,9 @@ void AsyncWriteHandler::Write(AsyncWriteBuffer* write_buffer) {
     osd_uuid = write_buffer->osd_uuid;
   }
   try {
-    uuid_resolver_->UUIDToAddress(osd_uuid, &osd_address);
+    uuid_resolver_->UUIDToAddress(osd_uuid,
+                                  &osd_address,
+                                  uuid_resolver_options_);
   } catch(const exception& e) {
     // In case of errors, remove write again and throw exception.
     {
@@ -199,7 +207,9 @@ void AsyncWriteHandler::ReWrite(AsyncWriteBuffer* write_buffer,
     osd_uuid = write_buffer->osd_uuid;
   }
   try {
-    uuid_resolver_->UUIDToAddress(osd_uuid, &osd_address);
+    uuid_resolver_->UUIDToAddress(osd_uuid,
+                                  &osd_address,
+                                  uuid_resolver_options_);
   } catch(const exception& e) {
     // In case of errors, throw exception.
     --pending_writes_;
@@ -264,7 +274,7 @@ bool AsyncWriteHandler::WaitForPendingWritesNonBlocking(
     boost::mutex* wait_completed_mutex) {
   assert(condition_variable && wait_completed && wait_completed_mutex);
   boost::mutex::scoped_lock lock(mutex_);
-  
+
   // if ((state_ != IDLE)  && (state_ != FINALLY_FAILED)) {
   if (pending_writes_ > 0) {
     writing_paused_ = true;
@@ -345,7 +355,9 @@ void AsyncWriteHandler::HandleCallback(
       std::string service_uuid = "";
       std::string service_address = "";
       uuid_iterator_->GetUUID(&service_uuid);
-      uuid_resolver_->UUIDToAddress(service_uuid, &service_address);
+      uuid_resolver_->UUIDToAddress(service_uuid,
+                                    &service_address,
+                                    uuid_resolver_options_);
 
       if (((write_buffer->retry_count_ < max_write_tries_ || max_write_tries_ == 0) ||
           // or this last retry should be delayed
