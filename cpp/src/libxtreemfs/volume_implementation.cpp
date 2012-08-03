@@ -61,9 +61,9 @@ VolumeImplementation::VolumeImplementation(
 
   mrc_uuid_iterator_.reset(mrc_uuid_iterator);
 
-  // Disable retries for periodic threads. Interrupt support is disabled by
-  // default.
+  // Disable retries and interrupted querying for periodic threads.
   periodic_threads_options_.max_tries = 1;
+  periodic_threads_options_.was_interrupted_function = NULL;
 }
 
 VolumeImplementation::~VolumeImplementation() {
