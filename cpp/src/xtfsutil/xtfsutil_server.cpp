@@ -109,7 +109,7 @@ void XtfsUtilServer::ParseAndExecute(const xtreemfs::pbrpc::UserCredentials& uc,
   } catch (const exception &e) {
     result["error"] = Json::Value(string("Unknown error: ") + e.what());
   }
-  
+
   Json::FastWriter writer;
   file->set_last_result(writer.write(result));
 }
@@ -146,6 +146,7 @@ void XtfsUtilServer::OpStat(const xtreemfs::pbrpc::UserCredentials& uc,
     }
   }
 
+  Json::Reader reader;
   Json::Value result(Json::objectValue);
 
   result["fileId"] = Json::Value(xtfs_attrs["xtreemfs.file_id"]);
@@ -153,7 +154,12 @@ void XtfsUtilServer::OpStat(const xtreemfs::pbrpc::UserCredentials& uc,
   result["object_type"] = Json::Value(xtfs_attrs["xtreemfs.object_type"]);
   result["group"] = Json::Value(xtfs_attrs["xtreemfs.group"]);
   result["owner"] = Json::Value(xtfs_attrs["xtreemfs.owner"]);
-  result["acl"] = Json::Value(xtfs_attrs["xtreemfs.acl"]);
+  Json::Value acl_json;
+  if (reader.parse(xtfs_attrs["xtreemfs.acl"], acl_json, false)) {
+    result["acl"] = acl_json;
+  } else {
+    result["acl"] = Json::Value(xtfs_attrs["xtreemfs.acl"]);
+  }
 
   if (xtfs_attrs["xtreemfs.object_type"] == "1") {
     // File.
@@ -164,7 +170,6 @@ void XtfsUtilServer::OpStat(const xtreemfs::pbrpc::UserCredentials& uc,
     }
   } else if (xtfs_attrs["xtreemfs.object_type"] == "2") {
     // Directory.
-    Json::Reader reader;
     Json::Value sp_json;
     if (reader.parse(xtfs_attrs["xtreemfs.default_sp"], sp_json, false)) {
       result["default_sp"] = sp_json;
@@ -414,7 +419,7 @@ void XtfsUtilServer::OpAddReplica(
                                      "replication-flags");
     return;
   }
-  
+
   const int repl_flags = input["replication-flags"].asInt();
   const string path = input["path"].asString();
 
@@ -609,7 +614,7 @@ int XtfsUtilServer::getattr(uid_t uid,
   if (!file) {
     return -1 * ENOENT;
   }
-  
+
 #ifdef __linux
   st_buf->st_atim.tv_sec = 0;
   st_buf->st_atim.tv_nsec = 0;
