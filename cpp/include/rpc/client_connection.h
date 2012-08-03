@@ -119,6 +119,7 @@ class ClientConnection {
   const int32_t connect_timeout_s_;
   const int32_t max_reconnect_interval_s_;
   boost::posix_time::ptime next_reconnect_at_;
+  boost::posix_time::ptime last_connect_was_at_;
   int32_t reconnect_interval_s_;
   boost::posix_time::ptime last_used_;
 

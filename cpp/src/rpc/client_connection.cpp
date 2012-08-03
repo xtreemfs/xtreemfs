@@ -55,6 +55,7 @@ ClientConnection::ClientConnection(
       connect_timeout_s_(connect_timeout_s),
       max_reconnect_interval_s_(max_reconnect_interval_s),
       next_reconnect_at_(boost::posix_time::not_a_date_time),
+      last_connect_was_at_(boost::posix_time::not_a_date_time),
       reconnect_interval_s_(1),
       use_gridssl_(use_gridssl),
       ssl_context_(ssl_context) {
@@ -119,7 +120,8 @@ void ClientConnection::DoProcess() {
     } else {
       SendError(POSIX_ERROR_EIO,
                 "cannot connect to server '" + server_name_ + ":" + server_port_
-                    + "', reconnect blocked");
+                    + "', reconnect blocked locally"
+                    " to avoid flooding the server");
     }
   }
 }
@@ -144,6 +146,7 @@ void ClientConnection::CreateChannel() {
 
 void ClientConnection::Connect() {
   connection_state_ = CONNECTING;
+  last_connect_was_at_ = posix_time::second_clock::local_time();
   asio::ip::tcp::resolver::query query(server_name_, server_port_);
   resolver_.async_resolve(query,
                           boost::bind(&ClientConnection::PostResolve,
@@ -157,10 +160,7 @@ void ClientConnection::Connect() {
 }
 
 void ClientConnection::OnConnectTimeout(const boost::system::error_code& err) {
-  if (err == asio::error::operation_aborted) {
-    return;
-  }
-  if (connection_state_ == CLOSED) {
+  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
     return;
   }
   Reset();
@@ -171,10 +171,7 @@ void ClientConnection::OnConnectTimeout(const boost::system::error_code& err) {
 
 void ClientConnection::PostResolve(const boost::system::error_code& err,
                                    tcp::resolver::iterator endpoint_iterator) {
-  if (err == asio::error::operation_aborted) {
-    return;
-  }
-  if (connection_state_ == CLOSED) {
+  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
     return;
   }
   if (err) {
@@ -208,10 +205,7 @@ void ClientConnection::PostResolve(const boost::system::error_code& err,
 
 void ClientConnection::PostConnect(const boost::system::error_code& err,
                                    tcp::resolver::iterator endpoint_iterator) {
-  if (err == asio::error::operation_aborted) {
-    return;
-  }
-  if (connection_state_ == CLOSED) {
+  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
     return;
   }
   timer_.cancel();
@@ -315,15 +309,30 @@ void ClientConnection::Reset() {
   endpoint_ = NULL;
   connection_state_ = WAIT_FOR_RECONNECT;
 
-  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-    Logging::log->getLog(LEVEL_DEBUG)
-        << "Connection reset, next reconnect in " << reconnect_interval_s_
-        << "s." << endl;
+  posix_time::ptime now = posix_time::second_clock::local_time();
+  posix_time::seconds reconnect_interval(reconnect_interval_s_);
+  if (last_connect_was_at_ != boost::posix_time::not_a_date_time) {
+    posix_time::time_duration elapsed_time_since_last_connect =
+        now - last_connect_was_at_;
+    if (elapsed_time_since_last_connect < 0) {
+      next_reconnect_at_ = now;
+    } else if (elapsed_time_since_last_connect <= reconnect_interval) {
+      next_reconnect_at_
+          = now + reconnect_interval - elapsed_time_since_last_connect;
+    } else {
+      next_reconnect_at_ = now;
+    }
+  } else {
+    next_reconnect_at_ = now + reconnect_interval;
   }
 
-  next_reconnect_at_ = posix_time::second_clock::local_time()
-      + posix_time::seconds(reconnect_interval_s_);
-  reconnect_interval_s_ = reconnect_interval_s_ * 2;
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG)
+        << "Connection reset, next reconnect in "
+        << (next_reconnect_at_ - now).seconds() << " seconds." << endl;
+  }
+
+  reconnect_interval_s_ *= 2;
   if (reconnect_interval_s_ > max_reconnect_interval_s_) {
     reconnect_interval_s_ = max_reconnect_interval_s_;
   }
@@ -349,10 +358,7 @@ void ClientConnection::Close(const std::string& error) {
 
 void ClientConnection::PostWrite(const boost::system::error_code& err,
                                  size_t bytes_written) {
-  if (err == boost::asio::error::operation_aborted) {
-    return;
-  }
-  if (connection_state_ == CLOSED) {
+  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
     return;
   }
   if (err) {
@@ -365,19 +371,17 @@ void ClientConnection::PostWrite(const boost::system::error_code& err,
     if (!requests_.empty()) {
       requests_.pop();
       connection_state_ = IDLE;
-    }
-    if (!requests_.empty()) {
-      SendRequest();
+
+      if (!requests_.empty()) {
+        SendRequest();
+      }
     }
   }
 }
 
 void ClientConnection::PostReadRecordMarker(
     const boost::system::error_code& err) {
-  if (err == boost::asio::error::operation_aborted) {
-    return;
-  }
-  if (connection_state_ == CLOSED) {
+  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
     return;
   }
   if (err) {
@@ -415,10 +419,7 @@ void ClientConnection::PostReadRecordMarker(
 }
 
 void ClientConnection::PostReadMessage(const boost::system::error_code& err) {
-  if (err == boost::asio::error::operation_aborted) {
-    return;
-  }
-  if (connection_state_ == CLOSED) {
+  if (err == asio::error::operation_aborted || connection_state_ == CLOSED) {
     return;
   }
   if (err) {
