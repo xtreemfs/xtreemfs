@@ -314,7 +314,7 @@ void ClientConnection::Reset() {
   if (last_connect_was_at_ != boost::posix_time::not_a_date_time) {
     posix_time::time_duration elapsed_time_since_last_connect =
         now - last_connect_was_at_;
-    if (elapsed_time_since_last_connect < 0) {
+    if (elapsed_time_since_last_connect.is_negative()) {
       next_reconnect_at_ = now;
     } else if (elapsed_time_since_last_connect <= reconnect_interval) {
       next_reconnect_at_
