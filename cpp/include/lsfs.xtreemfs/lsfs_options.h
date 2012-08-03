@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef CPP_INCLUDE_FUSE_LSFS_OPTIONS_H_
-#define CPP_INCLUDE_FUSE_LSFS_OPTIONS_H_
+#ifndef CPP_INCLUDE_LSFS_XTREEMFS_LSFS_OPTIONS_H_
+#define CPP_INCLUDE_LSFS_XTREEMFS_LSFS_OPTIONS_H_
 
 #include "libxtreemfs/options.h"
 
@@ -51,4 +51,4 @@ class LsfsOptions : public Options {
 
 }  // namespace xtreemfs
 
-#endif  // CPP_INCLUDE_FUSE_LSFS_OPTIONS_H_
+#endif  // CPP_INCLUDE_LSFS_XTREEMFS_LSFS_OPTIONS_H_

@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef CPP_INCLUDE_FUSE_MKFS_OPTIONS_H_
-#define CPP_INCLUDE_FUSE_MKFS_OPTIONS_H_
+#ifndef CPP_INCLUDE_MKFS_XTREEMFS_MKFS_OPTIONS_H_
+#define CPP_INCLUDE_MKFS_XTREEMFS_MKFS_OPTIONS_H_
 
 #include "libxtreemfs/options.h"
 
@@ -105,4 +105,4 @@ class MkfsOptions : public Options {
 
 }  // namespace xtreemfs
 
-#endif  // CPP_INCLUDE_FUSE_MKFS_OPTIONS_H_
+#endif  // CPP_INCLUDE_MKFS_XTREEMFS_MKFS_OPTIONS_H_
