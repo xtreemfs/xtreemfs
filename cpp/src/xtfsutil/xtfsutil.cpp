@@ -98,6 +98,9 @@ bool executeOperation(const string& xctl_file,
 #ifdef __sun
       cerr << "This is a known issue on Solaris." << endl;
 #endif  // __sun
+#ifdef __FreeBSD__
+      cerr << "This is a known issue of FUSE for FreeBSD 0.4.4." << endl;
+#endif  // __FreeBSD__
     } else {
       cerr << "Read invalid JSON from xctl file: " << result << endl;
     }
