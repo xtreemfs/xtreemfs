@@ -173,7 +173,7 @@ void FuseOptions::ParseCommandLine(int argc, char** argv) {
       // Don't send this option to Fuse.
       fuse_options.erase(fuse_options.begin() + i);
       i--;
-      break;
+      continue;
     }
     if (fuse_options[i] == "xtreemfs_acl") {
       // Fuse may prevent operations based on the evaluation of stat records
@@ -183,7 +183,7 @@ void FuseOptions::ParseCommandLine(int argc, char** argv) {
       // Don't send this option to Fuse.
       fuse_options.erase(fuse_options.begin() + i);
       i--;
-      break;
+      continue;
     }
     if (fuse_options[i] == "intr") {
       // Don't send this option to Fuse.
@@ -206,6 +206,7 @@ void FuseOptions::ParseCommandLine(int argc, char** argv) {
     if (fuse_options[i].substr(0, 15) == "daemon_timeout=") {
       try {
         daemon_timeout = boost::lexical_cast<int>(fuse_options[i].substr(15));
+        continue;
       } catch(const boost::bad_lexical_cast& e) {
         throw InvalidCommandLineParametersException(
             "The integer value after daemon_timeout could not be parsed: "
