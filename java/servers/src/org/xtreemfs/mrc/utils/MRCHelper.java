@@ -401,20 +401,17 @@ public class MRCHelper {
                 if (file.getId() != 1 || sMan.getVolumeInfo().isSnapVolume())
                     return "";
                 
-                StringBuilder sb = new StringBuilder();
-                
                 String[] snaps = sMan.getAllSnapshots();
                 Arrays.sort(snaps);
+                List<String> snapshots = new ArrayList<String>(snaps.length);
                 for (String snap : snaps) {
-                    
                     if (snap.equals(".dump"))
                         continue;
                     
-                    sb.append(snap);
-                    sb.append(" ");
+                    snapshots.add(snap);
                 }
                 
-                return sb.toString();
+                return JSONParser.writeJSON(snapshots);
             }
             
             case snapshots_enabled:
