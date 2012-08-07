@@ -766,31 +766,20 @@ bool ListPolicyAttrs(const string& xctl_file,
   }
 }
 
-bool EnableSnapshots(const string& xctl_file,
+bool EnableDisableSnapshots(const string& xctl_file,
                      const string& path,
                      const variables_map& vm) {
   Json::Value request(Json::objectValue);
   request["operation"] = "enableDisableSnapshots";
   request["path"] = path;
-  request["snapshots_enabled"] = "true";
 
-  Json::Value response;
-  if (executeOperation(xctl_file, request, &response)) {
-    cout << "Success." << endl;
-    return true;
+  if (vm.count("enable-snapshots") > 0) {
+    request["snapshots_enabled"] = "true";
+  } else if (vm.count("disable-snapshots") > 0) {
+    request["snapshots_enabled"] = "false";
   } else {
-    cerr << "FAILED" << endl;
     return false;
   }
-}
-
-bool DisableSnapshots(const string& xctl_file,
-                      const string& path,
-                      const variables_map& vm) {
-  Json::Value request(Json::objectValue);
-  request["operation"] = "enableDisableSnapshots";
-  request["path"] = path;
-  request["snapshots_enabled"] = "false";
 
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
@@ -839,49 +828,22 @@ bool ListSnapshots(const string& xctl_file,
   }
 }
 
-bool CreateSnapshot(const string& xctl_file,
-                    const string& path,
-                    const variables_map& vm) {
+bool CreateDeleteSnapshot(const string& xctl_file,
+                          const string& path,
+                          const variables_map& vm) {
   Json::Value request(Json::objectValue);
   request["operation"] = "createDeleteSnapshot";
   request["path"] = path;
-  request["snapshots"] = "cr " + vm["create-snapshot"].as<string>();
-
-  Json::Value response;
-  if (executeOperation(xctl_file, request, &response)) {
-    cout << "Success." << endl;
-    return true;
+  if (vm.count("create-snapshot") > 0) {
+    request["snapshots"] = "cr " + vm["create-snapshot"].as<string>();
+  } else if (vm.count("create-snapshot-non-recursive") > 0) {
+    request["snapshots"] = "c "
+        + vm["create-snapshot-non-recursive"].as<string>();
+  } else if (vm.count("delete-snapshot") > 0) {
+    request["snapshots"] = "d " + vm["delete-snapshot"].as<string>();
   } else {
-    cerr << "FAILED" << endl;
     return false;
   }
-}
-
-bool CreateSnapshotNonRecursive(const string& xctl_file,
-                                const string& path,
-                                const variables_map& vm) {
-  Json::Value request(Json::objectValue);
-  request["operation"] = "createDeleteSnapshot";
-  request["path"] = path;
-  request["snapshots"] = "c " + vm["create-snapshot-non-recursive"].as<string>();
-
-  Json::Value response;
-  if (executeOperation(xctl_file, request, &response)) {
-    cout << "Success." << endl;
-    return true;
-  } else {
-    cerr << "FAILED" << endl;
-    return false;
-  }
-}
-
-bool DeleteSnapshot(const string& xctl_file,
-                    const string& path,
-                    const variables_map& vm) {
-  Json::Value request(Json::objectValue);
-  request["operation"] = "createDeleteSnapshot";
-  request["path"] = path;
-  request["snapshots"] = "d " + vm["delete-snapshot"].as<string>();
 
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
@@ -1240,18 +1202,15 @@ int main(int argc, char **argv) {
   } else if (vm.count("set-acl") > 0 ||
              vm.count("del-acl") > 0) {
     return SetRemoveACL(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("enable-snapshots") > 0) {
-    return EnableSnapshots(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("disable-snapshots") > 0) {
-    return DisableSnapshots(xctl_file, path_on_volume, vm) ? 0 : 1;
+  } else if (vm.count("enable-snapshots") > 0 ||
+             vm.count("disable-snapshots") > 0) {
+    return EnableDisableSnapshots(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else if (vm.count("list-snapshots") > 0) {
     return ListSnapshots(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("create-snapshot") > 0) {
-    return CreateSnapshot(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("create-snapshot-non-recursive") > 0) {
-    return CreateSnapshotNonRecursive(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("delete-snapshot") > 0) {
-    return DeleteSnapshot(xctl_file, path_on_volume, vm) ? 0 : 1;
+  } else if (vm.count("create-snapshot") > 0 ||
+             vm.count("create-snapshot-non-recursive") > 0 ||
+             vm.count("delete-snapshot") > 0) {
+    return CreateDeleteSnapshot(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else if (vm.count("errors") > 0) {
     return ShowErrors(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else {
