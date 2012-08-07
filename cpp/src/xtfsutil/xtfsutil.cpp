@@ -302,6 +302,13 @@ bool getattr(const string& xctl_file,
           cout << "not set" << endl;
         }
 
+        cout << "Snapshots enabled    ";
+        if (stat.isMember("snapshots_enabled")) {
+          cout << (stat["snapshots_enabled"].asString() == "true" ? "yes" : "no") << endl;
+        } else {
+          cout << "unknown" << endl;
+        }
+
         cout << "Selectable OSDs      ";
         if (stat.isMember("usable_osds") && stat["usable_osds"].size() > 0) {
           Json::Value& usable_osds = stat["usable_osds"];
@@ -759,6 +766,133 @@ bool ListPolicyAttrs(const string& xctl_file,
   }
 }
 
+bool EnableSnapshots(const string& xctl_file,
+                     const string& path,
+                     const variables_map& vm) {
+  Json::Value request(Json::objectValue);
+  request["operation"] = "enableDisableSnapshots";
+  request["path"] = path;
+  request["snapshots_enabled"] = "true";
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Success." << endl;
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
+    return false;
+  }
+}
+
+bool DisableSnapshots(const string& xctl_file,
+                      const string& path,
+                      const variables_map& vm) {
+  Json::Value request(Json::objectValue);
+  request["operation"] = "enableDisableSnapshots";
+  request["path"] = path;
+  request["snapshots_enabled"] = "false";
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Success." << endl;
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
+    return false;
+  }
+}
+
+bool ListSnapshots(const string& xctl_file,
+                     const string& path,
+                     const variables_map& vm) {
+  Json::Value request(Json::objectValue);
+  request["operation"] = "listSnapshots";
+  request["path"] = path;
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    if (response["result"]["list_snapshots"].empty() ||
+        // .empty() does not work for "", check the string directly.
+        (response["result"]["list_snapshots"].isString() &&
+         response["result"]["list_snapshots"].asString().empty())) {
+      cout << "No snapshots available." << endl;
+    } else {
+      if (response["result"]["list_snapshots"].isString()) {
+        cout << "List of available snapshots: "
+             << response["result"]["list_snapshots"].asString()
+             << endl;
+      } else if (response["result"]["list_snapshots"].isArray()) {
+        cout << "List of available snapshots:" << endl;
+        const Json::Value& snapshots = response["result"]["list_snapshots"];
+        for (int i = 0; i < snapshots.size(); i++) {
+          cout << "- " << snapshots[i].asString() << endl;
+        }
+      } else {
+        cerr << "FAILED (to parse the list of snapshots)" << endl;
+        return false;
+      }
+    }
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
+    return false;
+  }
+}
+
+bool CreateSnapshot(const string& xctl_file,
+                    const string& path,
+                    const variables_map& vm) {
+  Json::Value request(Json::objectValue);
+  request["operation"] = "createDeleteSnapshot";
+  request["path"] = path;
+  request["snapshots"] = "cr " + vm["create-snapshot"].as<string>();
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Success." << endl;
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
+    return false;
+  }
+}
+
+bool CreateSnapshotNonRecursive(const string& xctl_file,
+                                const string& path,
+                                const variables_map& vm) {
+  Json::Value request(Json::objectValue);
+  request["operation"] = "createDeleteSnapshot";
+  request["path"] = path;
+  request["snapshots"] = "c " + vm["create-snapshot-non-recursive"].as<string>();
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Success." << endl;
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
+    return false;
+  }
+}
+
+bool DeleteSnapshot(const string& xctl_file,
+                    const string& path,
+                    const variables_map& vm) {
+  Json::Value request(Json::objectValue);
+  request["operation"] = "createDeleteSnapshot";
+  request["path"] = path;
+  request["snapshots"] = "d " + vm["delete-snapshot"].as<string>();
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Success." << endl;
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
+    return false;
+  }
+}
+
 // Sets/Modifies/Removes the ACL.
 bool SetRemoveACL(const string& full_path,
                   const variables_map& vm) {
@@ -945,11 +1079,31 @@ int main(int argc, char **argv) {
        "adds/modifies an ACL entry, format: u|g|m|o:[<name>]:[<rwx>|<octal>]")
       ("del-acl", value<string>(),
        "removes an ACL entry, format: u|g|m|o:<name>");
+
+  options_description snapshot_desc("Snapshot Options");
+  snapshot_desc.add_options()
+      ("enable-snapshots",
+       "Enable snapshots on the volume.")
+      ("disable-snapshots",
+       "Disable snapshots on the volume.")
+      ("list-snapshots",
+       "List all available snapshots.")
+      ("create-snapshot",
+       value<string>(),
+       "Create a snapshot of the volume/directory with the name <arg>. If the argument is \"\", the current server time will be used as snapshot name.")
+      ("create-snapshot-non-recursive",
+       value<string>(),
+       "Same as --create-snapshot, however sub-directories are excluded.")
+      ("delete-snapshot",
+       value<string>(),
+       "Delete the snapshot with the name given as argument.");
+
+
   positional_options_description pd;
   pd.add("path", 1);
 
   options_description cmdline_options;
-  cmdline_options.add(desc).add(hidden);
+  cmdline_options.add(desc).add(snapshot_desc).add(hidden);
   variables_map vm;
   try {
     store(command_line_parser(argc, argv)
@@ -987,7 +1141,7 @@ int main(int argc, char **argv) {
 
   if (vm.count("help") || option_path.empty()) {
     cerr << "Usage: xtfsutil <path>" << endl;
-    cerr << desc << endl;
+    cerr << desc << snapshot_desc << endl;
     return 1;
   }
 
@@ -1092,6 +1246,18 @@ int main(int argc, char **argv) {
   } else if (vm.count("set-acl") > 0
              || vm.count("del-acl") > 0) {
     return SetRemoveACL(string(real_path_cstr), vm) ? 0 : 1;
+  } else if (vm.count("enable-snapshots") > 0) {
+    return EnableSnapshots(xctl_file, path_on_volume, vm) ? 0 : 1;
+  } else if (vm.count("disable-snapshots") > 0) {
+    return DisableSnapshots(xctl_file, path_on_volume, vm) ? 0 : 1;
+  } else if (vm.count("list-snapshots") > 0) {
+    return ListSnapshots(xctl_file, path_on_volume, vm) ? 0 : 1;
+  } else if (vm.count("create-snapshot") > 0) {
+    return CreateSnapshot(xctl_file, path_on_volume, vm) ? 0 : 1;
+  } else if (vm.count("create-snapshot-non-recursive") > 0) {
+    return CreateSnapshotNonRecursive(xctl_file, path_on_volume, vm) ? 0 : 1;
+  } else if (vm.count("delete-snapshot") > 0) {
+    return DeleteSnapshot(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else if (vm.count("errors") > 0) {
     return ShowErrors(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else {

@@ -25,7 +25,7 @@ class Volume;
  */
 class XCtlFile {
  public:
-  XCtlFile() : in_use_(false), last_result_() {}
+  XCtlFile() : in_use_(false), last_result_(), uid_(0), gid_(0) {}
 
   void set_last_result(std::string _last_result) {
     this->last_result_ = _last_result;
@@ -196,6 +196,18 @@ class XtfsUtilServer {
   void OpListPolicyAttr(const xtreemfs::pbrpc::UserCredentials& uc,
                         const Json::Value& input,
                         Json::Value* output);
+
+  void OpEnableDisableSnapshots(const xtreemfs::pbrpc::UserCredentials& uc,
+                                const Json::Value& input,
+                                Json::Value* output);
+
+  void OpListSnapshots(const xtreemfs::pbrpc::UserCredentials& uc,
+                       const Json::Value& input,
+                       Json::Value* output);
+
+  void OpCreateDeleteSnapshot(const xtreemfs::pbrpc::UserCredentials& uc,
+                              const Json::Value& input,
+                              Json::Value* output);
 
   /** Mutex to protect xctl_files_. */
   boost::mutex xctl_files_mutex_;

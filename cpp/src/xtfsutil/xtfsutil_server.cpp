@@ -31,7 +31,10 @@ using namespace xtreemfs::pbrpc;
 namespace xtreemfs {
 
 XtfsUtilServer::XtfsUtilServer(const string& prefix)
-    : prefix_(prefix), xtreemfs_policies_prefix_("xtreemfs.policies.") {
+    : prefix_(prefix),
+      volume_(NULL),
+      uuid_resolver_(NULL),
+      xtreemfs_policies_prefix_("xtreemfs.policies.") {
 }
 
 XtfsUtilServer::~XtfsUtilServer() {
@@ -100,8 +103,15 @@ void XtfsUtilServer::ParseAndExecute(const xtreemfs::pbrpc::UserCredentials& uc,
       OpListPolicyAttr(uc, input, &result);
     } else if (op_name == "setReplicationPolicy") {
       OpSetReplicationPolicy(uc, input, &result);
+    } else if (op_name == "enableDisableSnapshots") {
+      OpEnableDisableSnapshots(uc, input, &result);
+    } else if (op_name == "listSnapshots") {
+      OpListSnapshots(uc, input, &result);
+    } else if (op_name == "createDeleteSnapshot") {
+      OpCreateDeleteSnapshot(uc, input, &result);
     } else {
-      file->set_last_result("{ \"error\":\"Unknown operation.\" }");
+      file->set_last_result(
+          "{ \"error\":\"Unknown operation '" + op_name + "'.\" }\n");
       return;
     }
   } catch (const XtreemFSException &e) {
@@ -154,6 +164,7 @@ void XtfsUtilServer::OpStat(const xtreemfs::pbrpc::UserCredentials& uc,
   result["object_type"] = Json::Value(xtfs_attrs["xtreemfs.object_type"]);
   result["group"] = Json::Value(xtfs_attrs["xtreemfs.group"]);
   result["owner"] = Json::Value(xtfs_attrs["xtreemfs.owner"]);
+  // Since 1.3.2 MRCs output the ACLs as JSON object.
   Json::Value acl_json;
   if (reader.parse(xtfs_attrs["xtreemfs.acl"], acl_json, false)) {
     result["acl"] = acl_json;
@@ -188,6 +199,7 @@ void XtfsUtilServer::OpStat(const xtreemfs::pbrpc::UserCredentials& uc,
       result["rsel_policy"] = Json::Value(xtfs_attrs["xtreemfs.rsel_policy"]);
       result["num_dirs"] = Json::Value(xtfs_attrs["xtreemfs.num_dirs"]);
       result["num_files"] = Json::Value(xtfs_attrs["xtreemfs.num_files"]);
+      result["snapshots_enabled"] = Json::Value(xtfs_attrs["xtreemfs.snapshots_enabled"]);
       Json::Value usable_osds_json;
       if (reader.parse(xtfs_attrs["xtreemfs.usable_osds"],
                        usable_osds_json,
@@ -519,6 +531,74 @@ void XtfsUtilServer::OpGetSuitableOSDs(
       (*output)["result"]["osds"].append(*iter + " (" + address+ ")");
     }
   }
+}
+
+void XtfsUtilServer::OpEnableDisableSnapshots(
+    const xtreemfs::pbrpc::UserCredentials& uc,
+    const Json::Value& input,
+    Json::Value* output) {
+  if (!input.isMember("path") || !input["path"].isString() ||
+      !input.isMember("snapshots_enabled") ||
+      !input["snapshots_enabled"].isString()) {
+    (*output)["error"] = Json::Value(
+        "One of the following fields is missing or has an invalid value:"
+        " path, snapshots_enabled.");
+    return;
+  }
+  const string path = input["path"].asString();
+
+  volume_->SetXAttr(uc,
+                    path,
+                    "xtreemfs.snapshots_enabled",
+                    input["snapshots_enabled"].asString(),
+                    xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+  (*output)["result"] = Json::Value(Json::objectValue);
+}
+
+void XtfsUtilServer::OpListSnapshots(
+    const xtreemfs::pbrpc::UserCredentials& uc,
+    const Json::Value& input,
+    Json::Value* output) {
+  if (!input.isMember("path")
+      || !input["path"].isString()) {
+    (*output)["error"] = Json::Value("One of the following fields is missing or"
+                                     " has an invalid value: path.");
+    return;
+  }
+  const string path = input["path"].asString();
+
+  string snapshots;
+  volume_->GetXAttr(uc, path, "xtreemfs.snapshots", &snapshots);
+
+  (*output)["result"] = Json::Value(Json::objectValue);
+  Json::Reader reader;
+  Json::Value snapshots_json;
+  // Since 1.3.2 MRCs output the list of snapshots as JSON list.
+  if (reader.parse(snapshots, snapshots_json, false)) {
+    (*output)["result"]["list_snapshots"] = snapshots_json;
+  } else {
+    (*output)["result"]["list_snapshots"] = Json::Value(snapshots);
+  }
+}
+
+void XtfsUtilServer::OpCreateDeleteSnapshot(
+    const xtreemfs::pbrpc::UserCredentials& uc,
+    const Json::Value& input,
+    Json::Value* output) {
+  if (!input.isMember("path") || !input["path"].isString() ||
+      !input.isMember("snapshots") || !input["snapshots"].isString()) {
+    (*output)["error"] = Json::Value("One of the following fields is missing or"
+                                     " has an invalid value: path, snapshots.");
+    return;
+  }
+  const string path = input["path"].asString();
+
+  volume_->SetXAttr(uc,
+                    path,
+                    "xtreemfs.snapshots",
+                    input["snapshots"].asString(),
+                    xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+  (*output)["result"] = Json::Value(Json::objectValue);
 }
 
 bool XtfsUtilServer::checkXctlFile(const std::string& path) {
