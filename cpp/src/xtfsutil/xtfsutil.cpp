@@ -894,7 +894,8 @@ bool DeleteSnapshot(const string& xctl_file,
 }
 
 // Sets/Modifies/Removes the ACL.
-bool SetRemoveACL(const string& full_path,
+bool SetRemoveACL(const string& xctl_file,
+                  const string& path,
                   const variables_map& vm) {
   string contents;
   if (vm.count("set-acl") > 0) {
@@ -904,27 +905,20 @@ bool SetRemoveACL(const string& full_path,
   } else {
     return false;
   }
-  int result = -1;
-#ifdef __linux
-  result = setxattr(full_path.c_str(),
-                        "xtreemfs.acl",
-                        contents.c_str(),
-                        contents.size(),
-                        0);
-#elif __APPLE__
-  result = setxattr(full_path.c_str(),
-                        "xtreemfs.acl",
-                        contents.c_str(),
-                        contents.size(),
-                        0,
-                        0);
-#endif
-  if (result != 0) {
-    cerr << "Cannot add/modify/delete ACL entry: " << strerror(errno) << endl;
+
+  Json::Value request(Json::objectValue);
+  request["operation"] = "setRemoveACL";
+  request["path"] = path;
+  request["acl"] = contents;
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Success." << endl;
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
     return false;
   }
-  cout << "Success." << endl;
-  return true;
 }
 
 string GetPathOnVolume(const char* real_path_cstr) {
@@ -1243,9 +1237,9 @@ int main(int argc, char **argv) {
     return DeleteReplica(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else if (vm.count("list-osds") > 0) {
     return GetSuitableOSDs(xctl_file, path_on_volume, vm) ? 0 : 1;
-  } else if (vm.count("set-acl") > 0
-             || vm.count("del-acl") > 0) {
-    return SetRemoveACL(string(real_path_cstr), vm) ? 0 : 1;
+  } else if (vm.count("set-acl") > 0 ||
+             vm.count("del-acl") > 0) {
+    return SetRemoveACL(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else if (vm.count("enable-snapshots") > 0) {
     return EnableSnapshots(xctl_file, path_on_volume, vm) ? 0 : 1;
   } else if (vm.count("disable-snapshots") > 0) {

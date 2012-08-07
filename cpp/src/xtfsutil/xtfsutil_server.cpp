@@ -109,6 +109,8 @@ void XtfsUtilServer::ParseAndExecute(const xtreemfs::pbrpc::UserCredentials& uc,
       OpListSnapshots(uc, input, &result);
     } else if (op_name == "createDeleteSnapshot") {
       OpCreateDeleteSnapshot(uc, input, &result);
+    } else if (op_name == "setRemoveACL") {
+      OpSetRemoveACL(uc, input, &result);
     } else {
       file->set_last_result(
           "{ \"error\":\"Unknown operation '" + op_name + "'.\" }\n");
@@ -597,6 +599,26 @@ void XtfsUtilServer::OpCreateDeleteSnapshot(
                     path,
                     "xtreemfs.snapshots",
                     input["snapshots"].asString(),
+                    xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+  (*output)["result"] = Json::Value(Json::objectValue);
+}
+
+void XtfsUtilServer::OpSetRemoveACL(
+    const xtreemfs::pbrpc::UserCredentials& uc,
+    const Json::Value& input,
+    Json::Value* output) {
+  if (!input.isMember("path") || !input["path"].isString() ||
+      !input.isMember("acl") || !input["acl"].isString()) {
+    (*output)["error"] = Json::Value("One of the following fields is missing or"
+                                     " has an invalid value: path, acl.");
+    return;
+  }
+  const string path = input["path"].asString();
+
+  volume_->SetXAttr(uc,
+                    path,
+                    "xtreemfs.acl",
+                    input["acl"].asString(),
                     xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
   (*output)["result"] = Json::Value(Json::objectValue);
 }
