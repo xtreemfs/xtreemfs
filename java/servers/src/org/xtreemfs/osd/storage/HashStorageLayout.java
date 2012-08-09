@@ -260,6 +260,9 @@ public class HashStorageLayout extends StorageLayout {
                 }
             } finally {
                 f.close();
+                if (bbuf != null) {
+                    BufferPool.free(bbuf);
+                }
             }
 
         } else {
@@ -1170,6 +1173,7 @@ public class HashStorageLayout extends StorageLayout {
             raf = new RandomAccessFile(mepoch, "r");
             masterEpoch = raf.readInt();
         } catch (FileNotFoundException ex) {
+            // Check if an old file exists
         } finally {
             if (raf != null) {
                 raf.close();
