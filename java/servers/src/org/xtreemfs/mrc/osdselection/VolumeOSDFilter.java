@@ -203,7 +203,7 @@ public class VolumeOSDFilter {
 
             String headOSD = repl.getOsdUuids(0);
 
-            // store the mapping in a temprorary replica map
+            // store the mapping in a temporary replica map
             replMap.put(headOSD, repl);
 
             // retrieve the service name from the 'known OSDs' map; if no such
