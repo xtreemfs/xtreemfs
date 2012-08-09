@@ -258,11 +258,18 @@ public class HashStorageLayout extends StorageLayout {
                     f.close();
                     return new ObjectInformation(ObjectInformation.ObjectStatus.EXISTS, bbuf, stripeSize);
                 }
-            } finally {
-                f.close();
+            } catch (IOException e) {
                 if (bbuf != null) {
                     BufferPool.free(bbuf);
                 }
+                throw e;
+            } catch (AssertionError e) {
+                if (bbuf != null) {
+                    BufferPool.free(bbuf);
+                }
+                throw e;
+            } finally {
+                f.close();
             }
 
         } else {
