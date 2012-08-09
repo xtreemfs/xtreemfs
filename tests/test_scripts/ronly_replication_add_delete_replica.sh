@@ -3,14 +3,28 @@
 # Abort if any command fails.
 set -e
 
+export XTREEMFS="$1"
+DIR_URL="$2"
+if [[ "$DIR_URL" == pbrpcs://* || "$DIR_URL" == pbrpcg://* ]]
+then
+  CREDS="-c $XTREEMFS/tests/certs/Client.p12 -cpass passphrase -t $XTREEMFS/tests/certs/trusted.jks -tpass passphrase"
+fi
+VOLUME="$(basename $PWD)"
+
 TEMP_FILENAME="test__ronly_replication_add_delete_replica.bin"
 TEMP_FILENAME_REPLICATED_FULL="test__ronly_replication_add_delete_replica.bin.replicated_full"
 TEMP_FILENAME_REPLICATED_PARTIAL="test__ronly_replication_add_delete_replica.bin.replicated_partial"
-XTFSUTIL="$1/bin/xtfsutil"
+XTFSUTIL="$XTREEMFS/bin/xtfsutil"
+XTFS_SCRUB="$XTREEMFS/bin/xtfs_scrub"
 
 if [ ! -e "$XTFSUTIL" ]
 then
-  echo "xtfsutil not found. Make sure that \$1 is set to the top directory of the XtreemFS source tree (current value: $1)"
+  echo "xtfsutil not found. Make sure that \$1 is set to the top directory of the XtreemFS source tree (current value: $XTREEMFS)"
+  exit 1
+fi
+if [ ! -e "$XTFS_SCRUB" ]
+then
+  echo "xtfs_scrub not found. Make sure that \$1 is set to the top directory of the XtreemFS source tree (current value: $XTREEMFS)"
   exit 1
 fi
 
@@ -45,6 +59,18 @@ fi
 # md5sum "$TEMP_FILENAME_REPLICATED_FULL"
 echo "Waiting at least 5 seconds until the replication of the newly added full replica has probably completed..."
 sleep 5
+
+# Scrub the file and make sure that both replicas are "complete"
+"$XTFS_SCRUB" -dir $DIR_URL $CREDS "$VOLUME"
+if [ $("$XTFSUTIL" "$TEMP_FILENAME_REPLICATED_FULL" | grep "Replication Flags" | grep "complete" | wc -l) -ne 2 ]
+then
+  cat <<EOF
+After changing back the replication policy to 'none', the original permissions of a file should be in effect again.
+
+However, permissions were not restored. Before setting readonly: $original_permissions After setting none: $readwrite_permissions
+EOF
+  exit 1
+fi
 
 # Delete the original replica
 "$XTFSUTIL" -d $original_osd "$TEMP_FILENAME_REPLICATED_FULL"
