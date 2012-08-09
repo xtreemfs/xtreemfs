@@ -2585,15 +2585,15 @@ This section will help you to set up a simple Hadoop configuration with all nece
 
 \textbf{Required software:}
 \begin{itemize}
-\item XtreemFS servers (v 1.3.2 or newer) including XtreemFS.jar and Foundation.jar (\href{http://www.XtreemFS.org}{www.XtreemFS.org})
+\item XtreemFS (\href{http://code.google.com/p/xtreemfs/downloads/list}{www.XtreemFS.org})
 \item XtreemFSHadoopClient.jar (Download it from \href{http://code.google.com/p/xtreemfs/downloads/list}{www.XtreemFS.org} or build it by yourself by excecuting make hadoop-client)
-\item Hadoop (v 1.0.1) (\href{http://hadoop.apache.org}{hadoop.apache.org})
+\item Hadoop (v 1.0.1 or newer) (\href{http://hadoop.apache.org}{hadoop.apache.org})
 \item JDK 1.6+ (\href{http://java.sun.com}{Oracle/SUN})
 \end{itemize}
 
 \textbf{Setup:}
 \begin{enumerate}
- \item Install and start XtreemFS:\\
+\item Install and start XtreemFS:\\
 	Follow the instructions given by the quick start guide for XtreemFS, available at Sec.\ref{sec:quick_start}. Notice 	
 	that the DIR is reachable at \textit{localhost:32638}, beause this information will be important later.
 
@@ -2601,19 +2601,16 @@ This section will help you to set up a simple Hadoop configuration with all nece
 
 \item Configure Hadoop to use XtreemFS instead of HDFS:
 	\begin{enumerate}
-	\item After downloading and extracting Hadoop you first have to add XtreemFS, the XtreemFSHadoopClient, ProtocolBuffer and the Foundation package to its 
-	classpath. To do so edit the \textit{hadoop-env.sh} that can be found in the \textit{conf} directory of Hadoop and 
-	add the paths to XtreemFS.jar, Foundation.jar, protobuf-java-2.3.0.jar and XtreemFSHadoopClient.jar separated by '\textit{:}' to the HADOOP\_CLASSPATH. 
-	If you run a Linux-based OS these jar-libraries are located at '\textit{/usr/share/java/}'. We assume you also put the downloaded HadoopClient.jar there.
-	The resulting class path
+	\item After downloading and extracting Hadoop you have to make sure it will find the XtreemFSHadoopClient package. 
+	The easiest way to do so is to download XtreemFSHadoopClient.jar into Hadoop's \textit{lib} directory, or to symlink it there.
+
+	Alternativly, you can add it to Hadoop's classpath. It can be edited in \textit{hadoop-env.sh} which can be found in the \textit{conf} directory of Hadoop. Assuming you put XtreemFSHadoopClient.jar to the other jar-libraries located at '\textit{/usr/share/java/}', the resulting line should look like this.
 	\begin{verbatim}
-	export HADOOP_CLASSPATH="/usr/share/java/Foundation.jar:
-	/usr/share/java/XtreemFS.jar:/usr/share/XtreemFSHadoopClient.jar:
-	/usr/share/java/protobuf-java-2.3.0.jar"
+	export HADOOP_CLASSPATH="/usr/share/XtreemFSHadoopClient.jar"
 	\end{verbatim}
-	should be sufficient on the most systems.
-	\item Now you have to specify some properties in \textit{core-site.xml} which also has to be in the \textit{conf} 
-	directory of Hadoop. If this file does not exist you can safely create it.
+		
+	\item Now you have to specify some properties in \textit{core-site.xml} (in the \textit{conf} 
+	directory of Hadoop). If this file does not exist you can safely create it.
 	\begin{verbatim}
 <configuration>
 
@@ -2644,7 +2641,7 @@ This section will help you to set up a simple Hadoop configuration with all nece
 </configuration>
 	\end{verbatim}
 	\begin{enumerate}
-	\item The first property is required to register the HadoopClient of XtreemFS at Hadoop. Now you are able to access 	
+	\item The first property is required to register the XtreemFSHadoopClient at Hadoop. Now you are able to access 	
 	XtreemFS by the Hadoop binary using the \textit{fs} argument. 
 	\item The next property makes Hadoop use the DIR instead of a 
 	NameNode, therefore address and port of the DIR has to be populated. In this case the DIR is located at 
@@ -2688,7 +2685,7 @@ This section will help you to set up a simple Hadoop configuration with all nece
 	\end{verbatim}
 	This specifies the address where the JobTracker will be running at.
 
-\item Finally you are now able to start the JobTracker by running '\textit{bin/hadoop jobtracker}' from within the Hadoop root-directory and a TaskTracker by executing '\textit{bin/hadoop tasktracker}'.
+\item Finally you are now able to start the JobTracker and the TaskTracker by running '\textit{bin/start-mapred.sh}' from within the Hadoop root-directory.
 
 \end{enumerate}
 Congratulations! You successfully finished the quick start guide of the XtreemFS-Hadoop integration and are now able to use your Hadoop applications like as is well known or go on with the tutorials available on \href{http://hadoop.apache.org}{hadoop.apache.org}.
