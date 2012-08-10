@@ -275,7 +275,7 @@ public class PBRPCClientServerTest {
             server.start();
             server.waitForStartup();
 
-            client = new RPCNIOSocketClient(clientSSL, 5000, 5*60*1000, "PBRPCClientServerTest::runTest()");
+            client = new RPCNIOSocketClient(clientSSL, 5000, 5*60*1000, "runTest");
             client.start();
             client.waitForStartup();
 

@@ -113,8 +113,8 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     }
     
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
-        int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint, String nameSuffix) throws IOException {
-        super("RPC Client " + nameSuffix);
+        int sendBufferSize, int receiveBufferSize, SocketAddress localBindPoint, String threadName) throws IOException {
+        super(threadName);
         if (requestTimeout >= connectionTimeout - TIMEOUT_GRANULARITY * 2) {
             throw new IllegalArgumentException(
                 "request timeout must be smaller than connection timeout less " + TIMEOUT_GRANULARITY * 2
