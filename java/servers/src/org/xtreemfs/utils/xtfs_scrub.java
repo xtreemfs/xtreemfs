@@ -129,8 +129,10 @@ public class xtfs_scrub {
                                 break;
                             } else {
                                 try {
-                                    if (replica.isFullReplica() && replica.isCompleteReplica())
+                                    // This effectively marks the replica as 'complete' if not done yet.
+                                    if (replica.isCompleteReplica()) {
                                         numComplete++;
+                                    }
                                 } catch (Exception ex) {
                                 }
                             }
