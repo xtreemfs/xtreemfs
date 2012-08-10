@@ -54,6 +54,7 @@ public class StorageStage extends Stage {
         int maxQueueLengthPerThread = maxRequestsQueueLength / numberOfThreads;
         for (int i = 0; i < numberOfThreads; i++) {
             storageThreads[i] = new StorageThread(i, master, cache, layout, maxQueueLengthPerThread);
+            storageThreads[i].setLifeCycleListener(master);
         }
     }
 
