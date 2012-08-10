@@ -156,9 +156,9 @@ public class StorageThread extends Stage {
                 break;
             }
             
-        } catch (Throwable th) {
-            method.sendInternalServerError(th);
-            Logging.logError(Logging.LEVEL_ERROR, this, th);
+        } catch (Exception ex) {
+            method.sendInternalServerError(ex);
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }
     
