@@ -7,20 +7,20 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <vector>
+
 #include "common/test_environment.h"
 #include "common/test_rpc_server_dir.h"
 #include "common/test_rpc_server_mrc.h"
 #include "common/test_rpc_server_osd.h"
-#include "../generated/xtreemfs/OSDServiceConstants.h"
+#include "xtreemfs/OSDServiceConstants.h"
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "rpc/client.h"
-
-#include <vector>
-#include <algorithm>
 
 using namespace std;
 using namespace xtreemfs::pbrpc;
@@ -81,8 +81,9 @@ TEST_F(AsyncWriteHandlerTest, NormalWrite) {
   boost::scoped_array<char> write_buf(new char[buffer_size]);
 
   vector<WriteEntry> expected(blocks);
-  for(int i = 0; i < blocks; ++i)
+  for (int i = 0; i < blocks; ++i) {
     expected[i] = WriteEntry(i, 0, BLOCK_SIZE);
+  }
 
   file->Write(test_env.user_credentials,
               write_buf.get(),
@@ -92,28 +93,30 @@ TEST_F(AsyncWriteHandlerTest, NormalWrite) {
   boost::this_thread::sleep(boost::posix_time::seconds(
       2 * test_env.options.request_timeout_s));
 
-  EXPECT_TRUE(equal(expected.begin(), expected.end(),
-      test_env.osds[0]->GetReceivedWrites().end() - blocks));
+  EXPECT_TRUE(equal(expected.begin(),
+                    expected.end(),
+                    test_env.osds[0]->GetReceivedWrites().end() - blocks));
 
   ASSERT_NO_THROW(file->Close());
 }
 
-/** Let the first write request fail */
+/** Let the first write request fail. The write should be retried and finally
+ *  succeed. */
 TEST_F(AsyncWriteHandlerTest, FirstWriteFail) {
   size_t blocks = 5;
   size_t buffer_size = BLOCK_SIZE * blocks;
   boost::scoped_array<char> write_buf(new char[buffer_size]);
 
   vector<WriteEntry> expected_tail(blocks);
-  for (int i = 0; i < blocks; ++i)
+  for (int i = 0; i < blocks; ++i) {
     expected_tail[i] = WriteEntry(i, 0, BLOCK_SIZE);
+  }
 
-  test_env.osds[0]->AddDropRule(new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE, new DropNRule(1)));
+  test_env.osds[0]->AddDropRule(
+      new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE, new DropNRule(1)));
 
-  file->Write(test_env.user_credentials,
-                    write_buf.get(),
-                    buffer_size,
-                    0);
+  file->Write(test_env.user_credentials, write_buf.get(), buffer_size, 0);
+
   boost::this_thread::sleep(boost::posix_time::seconds(
       test_env.options.connect_timeout_s +
       2 * test_env.options.request_timeout_s +
@@ -125,41 +128,46 @@ TEST_F(AsyncWriteHandlerTest, FirstWriteFail) {
   ASSERT_NO_THROW(file->Close());
 }
 
-/** Let the last write request fail */
+/** Let the last write request fail. The write should be retried and finally
+ *  succeed. */
 TEST_F(AsyncWriteHandlerTest, LastWriteFail) {
   size_t blocks = 5;
   size_t buffer_size = BLOCK_SIZE * blocks;
   boost::scoped_array<char> write_buf(new char[buffer_size]);
 
-  vector<WriteEntry> expected_front(blocks-1);
+  vector<WriteEntry> expected_front(blocks - 1);
   vector<WriteEntry> expected_tail(1);
-  for (int i = 0; i < blocks-1; ++i)
+  for (int i = 0; i < blocks - 1; ++i) {
     expected_front[i] = WriteEntry(i, 0, BLOCK_SIZE);
+  }
 
-  expected_tail[0] = WriteEntry(blocks-1, 0, BLOCK_SIZE);
+  expected_tail[0] = WriteEntry(blocks - 1, 0, BLOCK_SIZE);
 
-  test_env.osds[0]->AddDropRule(new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE, new SkipMDropNRule(blocks-1, 1)));
+  test_env.osds[0]->AddDropRule(
+      new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE,
+                           new SkipMDropNRule(blocks - 1, 1)));
 
-  file->Write(test_env.user_credentials,
-              write_buf.get(),
-              buffer_size,
-              0);
+  file->Write(test_env.user_credentials, write_buf.get(), buffer_size, 0);
 
   boost::this_thread::sleep(boost::posix_time::seconds(
       test_env.options.connect_timeout_s +
       2 * test_env.options.request_timeout_s +
       2 * test_env.options.retry_delay_s));
 
-  EXPECT_TRUE(equal(expected_front.begin(), expected_front.end(),
-      test_env.osds[0]->GetReceivedWrites().begin()));
-  EXPECT_TRUE(equal(expected_tail.begin(), expected_tail.end(),
-      test_env.osds[0]->GetReceivedWrites().end() - expected_tail.size()));
+  EXPECT_TRUE(equal(expected_front.begin(),
+                    expected_front.end(),
+                    test_env.osds[0]->GetReceivedWrites().begin()));
+  EXPECT_TRUE(equal(expected_tail.begin(),
+                    expected_tail.end(),
+                    test_env.osds[0]->GetReceivedWrites().end() -
+                        expected_tail.size()));
 
   ASSERT_NO_THROW(file->Close());
 }
 
 
-/** Let the intermediate write request fail */
+/** Let the intermediate write request fail. The write should be retried and
+ *  finally succeed. */
 TEST_F(AsyncWriteHandlerTest, IntermediateWriteFail) {
   size_t blocks = 5;
   size_t buffer_size = BLOCK_SIZE * blocks;
@@ -168,56 +176,64 @@ TEST_F(AsyncWriteHandlerTest, IntermediateWriteFail) {
 
   vector<WriteEntry> expected_front(middle);
   vector<WriteEntry> expected_tail(blocks - middle);
-  for (int i = 0; i < middle; ++i)
+  for (int i = 0; i < middle; ++i) {
     expected_front[i] = WriteEntry(i, 0, BLOCK_SIZE);
-  for (int i = middle; i < blocks; ++i)
+  }
+
+  for (int i = middle; i < blocks; ++i) {
     expected_tail[i - middle] = WriteEntry(i, 0, BLOCK_SIZE);
+  }
 
-  test_env.osds[0]->AddDropRule(new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE, new SkipMDropNRule(middle, 1)));
+  test_env.osds[0]->AddDropRule(
+      new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE,
+                           new SkipMDropNRule(middle, 1)));
 
-  file->Write(test_env.user_credentials,
-              write_buf.get(),
-              buffer_size,
-              0);
+  file->Write(test_env.user_credentials, write_buf.get(), buffer_size, 0);
 
   boost::this_thread::sleep(boost::posix_time::seconds(
       test_env.options.connect_timeout_s +
       2 * test_env.options.request_timeout_s +
       2 * test_env.options.retry_delay_s));
 
-  EXPECT_TRUE(equal(expected_front.begin(), expected_front.end(),
-      test_env.osds[0]->GetReceivedWrites().begin()));
-  EXPECT_TRUE(equal(expected_tail.begin(), expected_tail.end(),
-        test_env.osds[0]->GetReceivedWrites().end() - expected_tail.size()));
+  EXPECT_TRUE(equal(expected_front.begin(),
+                    expected_front.end(),
+                    test_env.osds[0]->GetReceivedWrites().begin()));
+  EXPECT_TRUE(equal(expected_tail.begin(),
+                    expected_tail.end(),
+                    test_env.osds[0]->GetReceivedWrites().end() -
+                        expected_tail.size()));
 
   ASSERT_NO_THROW(file->Close());
 }
 
 
-/** Let the all writes request fail */
+/** Let the all writes request fail. The write should be retried and finally
+ *  succeed. */
 TEST_F(AsyncWriteHandlerTest, AllWritesFail) {
   size_t blocks = 5;
   size_t buffer_size = BLOCK_SIZE * blocks;
   boost::scoped_array<char> write_buf(new char[buffer_size]);
 
   vector<WriteEntry> expected_tail(blocks);
-  for (int i = 0; i < blocks; ++i)
+  for (int i = 0; i < blocks; ++i) {
     expected_tail[i] = WriteEntry(i, 0, BLOCK_SIZE);
+  }
 
-  test_env.osds[0]->AddDropRule(new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE, new DropNRule(5)));
+  test_env.osds[0]->AddDropRule(
+      new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE,
+                           new DropNRule(blocks)));
 
-  file->Write(test_env.user_credentials,
-              write_buf.get(),
-              buffer_size,
-              0);
+  file->Write(test_env.user_credentials, write_buf.get(), buffer_size, 0);
 
   boost::this_thread::sleep(boost::posix_time::seconds(
       test_env.options.connect_timeout_s +
       2 * test_env.options.request_timeout_s +
       2 * test_env.options.retry_delay_s));
 
-  EXPECT_TRUE(equal(expected_tail.begin(), expected_tail.end(),
-      test_env.osds[0]->GetReceivedWrites().end() - expected_tail.size()));
+  EXPECT_TRUE(equal(expected_tail.begin(),
+                    expected_tail.end(),
+                    test_env.osds[0]->GetReceivedWrites().end() -
+                        expected_tail.size()));
 
   ASSERT_NO_THROW(file->Close());
 }
@@ -225,41 +241,36 @@ TEST_F(AsyncWriteHandlerTest, AllWritesFail) {
 
 
 /** Let the first write request fail when there are more writes than
- * writeahead allows */
+ *  writeahead allows.  The write should be retried and finally succeed. */
 TEST_F(AsyncWriteHandlerTest, FirstWriteFailLong) {
-  size_t blocks = 2* test_env.options.max_writeahead_requests;
+  size_t blocks = 2 * test_env.options.max_writeahead_requests;
   size_t buffer_size = BLOCK_SIZE * blocks;
   boost::scoped_array<char> write_buf(new char[buffer_size]);
 
   vector<WriteEntry> expected_tail(blocks);
-  for (int i = 0; i < blocks; ++i)
+  for (int i = 0; i < blocks; ++i) {
     expected_tail[i] = WriteEntry(i, 0, BLOCK_SIZE);
+  }
 
-  test_env.osds[0]->AddDropRule(new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE, new DropNRule(1)));
+  test_env.osds[0]->AddDropRule(
+      new ProcIDFilterRule(xtreemfs::pbrpc::PROC_ID_WRITE, new DropNRule(1)));
 
-  file->Write(test_env.user_credentials,
-              write_buf.get(),
-              buffer_size,
-              0);
+  file->Write(test_env.user_credentials, write_buf.get(), buffer_size, 0);
 
   boost::this_thread::sleep(boost::posix_time::seconds(
       test_env.options.connect_timeout_s +
       2 * test_env.options.request_timeout_s +
       2 * test_env.options.retry_delay_s));
 
-  EXPECT_TRUE(equal(expected_tail.begin(), expected_tail.end(),
-      test_env.osds[0]->GetReceivedWrites().end() - expected_tail.size()));
+  EXPECT_TRUE(equal(expected_tail.begin(),
+                    expected_tail.end(),
+                    test_env.osds[0]->GetReceivedWrites().end() -
+                        expected_tail.size()));
 
   ASSERT_NO_THROW(file->Close());
 }
 
-/** TODO: Maybe check for additional overlapping cases, b
- *  the current implementation of does NOT check for overlap,
- *  but the sequence of retries should match expectations */
-
-
-/** Let all future requests fail to test the retry count. */
-
+/** TODO(mno): Maybe let all future requests fail to test the retry count. */
 
 }  // namespace rpc
 }  // namespace xtreemfs
