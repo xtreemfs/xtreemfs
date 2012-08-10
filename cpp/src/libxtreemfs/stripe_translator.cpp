@@ -20,8 +20,8 @@ void StripeTranslatorRaid0::TranslateWriteRequest(
     off_t offset,
     PolicyContainer policies,
     std::vector<WriteOperation>* operations) const {
-  // need to know stripe size and stripe width
-  unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;  // strip size in kB
+  // stripe size is stored in kB
+  unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;
 
   size_t start = 0;
   while (start < size) {
@@ -48,8 +48,8 @@ void StripeTranslatorRaid0::TranslateReadRequest(
     off_t offset,
     PolicyContainer policies,
     std::vector<ReadOperation>* operations) const {
-  // need to know stripe size and stripe width
-  unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;  // strip size in kB
+  // stripe size is stored in kB
+  unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;
 
   size_t start = 0;
   while (start < size) {
