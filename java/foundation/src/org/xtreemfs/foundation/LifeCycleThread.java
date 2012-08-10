@@ -34,10 +34,8 @@ public class LifeCycleThread extends Thread {
     private LifeCycleListener listener;
     
     public LifeCycleThread(String name) {
-        // truncate the thread name to 15 characters if necessary, the constant
-    	// 15 comes from the log output format string (see Logging.FORMAT_PATTERN)
-    	super((name.length() > 15) ? (name.substring(0, 14) + "\u2026") : name);
-        startLock = new Object();
+    super(name);
+    startLock = new Object();
         stopLock = new Object();
     }
     

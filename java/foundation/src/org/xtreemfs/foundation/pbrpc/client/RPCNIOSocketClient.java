@@ -56,7 +56,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
 
     
     /**
-     * Maxmimum tries to reconnect to the server
+     * Maximum tries to reconnect to the server
      */
     public static final int                                   MAX_RECONNECT       = 4;
     
@@ -102,9 +102,9 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, "");
     }
 
-    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout, String nameSuffix)
+    public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout, String threadName)
         throws IOException {
-        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, nameSuffix);
+        this(sslOptions, requestTimeout, connectionTimeout, -1, -1, null, threadName);
     }
     
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout,
