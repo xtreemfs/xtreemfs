@@ -9,7 +9,7 @@ if [[ "$DIR_URL" == pbrpcs://* || "$DIR_URL" == pbrpcg://* ]]
 then
   CREDS="-c $XTREEMFS/tests/certs/Client.p12 -cpass passphrase -t $XTREEMFS/tests/certs/trusted.jks -tpass passphrase"
 fi
-VOLUME="$(basename $PWD)"
+VOLUME="$(basename `dirname $PWD`)"
 
 TEMP_FILENAME="test__ronly_replication_add_delete_replica.bin"
 TEMP_FILENAME_REPLICATED_FULL="test__ronly_replication_add_delete_replica.bin.replicated_full"
@@ -65,9 +65,7 @@ sleep 5
 if [ $("$XTFSUTIL" "$TEMP_FILENAME_REPLICATED_FULL" | grep "Replication Flags" | grep "complete" | wc -l) -ne 2 ]
 then
   cat <<EOF
-After changing back the replication policy to 'none', the original permissions of a file should be in effect again.
-
-However, permissions were not restored. Before setting readonly: $original_permissions After setting none: $readwrite_permissions
+The xtfs_scrub run did not set the recently added full replica to "complete" - however, it should have been already complete.
 EOF
   exit 1
 fi
@@ -103,6 +101,23 @@ original_osd=$("$XTFSUTIL" "$TEMP_FILENAME_REPLICATED_PARTIAL" | grep "OSD 1" | 
 # Delete the original replica
 # This should NOT succeed as the left partial replica is not marked as complete yet in the MRC.
 "$XTFSUTIL" -d $original_osd "$TEMP_FILENAME_REPLICATED_PARTIAL" &>/dev/null && echo "ERROR: xtfsutil succeeded to delete the last full replica and now only partial replicas are left, i.e. the data of the file is lost." && false
+
+# Set the Replica Selection Policy to "random". Read the partial replica multiple times, assuming we hit the partial replica at least once.
+"$XTFSUTIL" --set-rsp 3002 ..
+for i in {1..100}
+do
+  cat "$TEMP_FILENAME_REPLICATED_PARTIAL" >/dev/null
+done
+"$XTFSUTIL" --set-rsp "" ..
+# xtfs_scrub the volume and make sure the partial replica was set to 'complete'
+"$XTFS_SCRUB" -dir $DIR_URL $CREDS "$VOLUME"
+if [ $("$XTFSUTIL" "$TEMP_FILENAME_REPLICATED_PARTIAL" | grep "Replication Flags" | grep "complete" | wc -l) -ne 2 ]
+then
+  cat <<EOF
+The xtfs_scrub run did not set the recently added partial replica to "complete" - however, it should have been already complete since it was read multiple times.
+EOF
+  exit 1
+fi
 
 # Cleanup
 rm -f "$TEMP_FILENAME" "$TEMP_FILENAME_REPLICATED_FULL" "$TEMP_FILENAME_REPLICATED_PARTIAL"
