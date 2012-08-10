@@ -112,7 +112,7 @@ public class LifeCycleThread extends Thread {
             while (!started)
                 startLock.wait();
             
-            if (exc != null)
+            if (exc != null && listener == null)
                 throw exc;
         }
     }
@@ -130,9 +130,19 @@ public class LifeCycleThread extends Thread {
             if (!started)
                 return;
             while (!stopped)
-                stopLock.wait();
+                try {
+                    stopLock.wait();
+                } catch (InterruptedException e) {
+                    // In case this thread executes notifyCrashed(), he will
+                    // probably interrupt itself. However, this should not
+                    // interfere with the notifyCrashed() procedure and
+                    // therefore we swallow this exception.
+                    if (listener == null) {
+                        throw e;
+                    }
+                }
             
-            if (exc != null)
+            if (exc != null && listener == null)
                 throw exc;
         }
     }
