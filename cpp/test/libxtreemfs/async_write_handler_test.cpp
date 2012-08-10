@@ -14,13 +14,13 @@
 #include "common/test_rpc_server_dir.h"
 #include "common/test_rpc_server_mrc.h"
 #include "common/test_rpc_server_osd.h"
-#include "xtreemfs/OSDServiceConstants.h"
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/options.h"
 #include "libxtreemfs/volume.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "rpc/client.h"
+#include "xtreemfs/OSDServiceConstants.h"
 
 using namespace std;
 using namespace xtreemfs::pbrpc;
