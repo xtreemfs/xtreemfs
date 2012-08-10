@@ -252,22 +252,25 @@ public class HashStorageLayout extends StorageLayout {
                                 "object %d is read at offset %d, %d bytes read", objNo, offset, bbuf.limit());
                     }
 
-                    assert (!bbuf.hasRemaining());
-                    assert (bbuf.remaining() <= length);
+                    if (bbuf.hasRemaining()) {
+                        String error = "Failed to read the requested number of bytes from the file on disk." +
+                                " Maybe there's a media error or the file was modified outside the scope of the OSD by another process?";
+                        Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "%s. Path to the file on disk: %s", error, fileName);
+                        throw new IOException(error);
+                    }
                     bbuf.position(0);
                     f.close();
                     return new ObjectInformation(ObjectInformation.ObjectStatus.EXISTS, bbuf, stripeSize);
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 if (bbuf != null) {
                     BufferPool.free(bbuf);
                 }
-                throw e;
-            } catch (AssertionError e) {
-                if (bbuf != null) {
-                    BufferPool.free(bbuf);
+                if (e instanceof IOException) {
+                    throw (IOException) e;
+                } else {
+                    throw new IOException(e);
                 }
-                throw e;
             } finally {
                 f.close();
             }
@@ -1180,7 +1183,6 @@ public class HashStorageLayout extends StorageLayout {
             raf = new RandomAccessFile(mepoch, "r");
             masterEpoch = raf.readInt();
         } catch (FileNotFoundException ex) {
-            // Check if an old file exists
         } finally {
             if (raf != null) {
                 raf.close();
