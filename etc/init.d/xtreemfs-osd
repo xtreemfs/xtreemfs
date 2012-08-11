@@ -136,7 +136,8 @@ case "$1" in
     try-restart)
         ## Stop the service and if this succeeds (i.e. the
         ## service was running before), start it again.
-        if [ `$0 status >/dev/null` ]; then
+        $0 status >/dev/null
+        if [ $? -eq 0 ]; then
           $0 restart
           result=$?
         else
