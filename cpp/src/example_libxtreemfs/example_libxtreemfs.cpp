@@ -36,12 +36,16 @@ int main(int argc, char* argv[]) {
     options.ParseCommandLine(argc, argv);
   } catch(const xtreemfs::XtreemFSException& e) {
     cout << "Invalid parameters found, error: " << e.what() << endl << endl;
+    return 1;
   }
 
+  xtreemfs::Client* client = NULL;
+  xtreemfs::FileHandle* file = NULL;
+  int return_code = 0;
   try {
     // Create a new instance of a client using the DIR service at
     // 'demo.xtreemfs.org' (default port 32638).
-    xtreemfs::Client* client = xtreemfs::Client::CreateClient(
+    client = xtreemfs::Client::CreateClient(
         "demo.xtreemfs.org:32638",
         user_credentials,
         NULL,  // No SSL options.
@@ -57,14 +61,13 @@ int main(int argc, char* argv[]) {
                                 options);
 
     // Open a file.
-    xtreemfs::FileHandle* file = volume->OpenFile(
-        user_credentials,
-        "/example_libxtreemfs.txt",
-        static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(
-            xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT |
-            xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC |
-            xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
-        511);  // = 777 Octal.
+    file = volume->OpenFile(user_credentials,
+                            "/example_libxtreemfs.txt",
+                            static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(
+                                xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_CREAT |
+                                xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_TRUNC |
+                                xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
+                            511);  // = 777 Octal.
 
     // Write to file.
     cout << "Writing the string\n"
@@ -98,17 +101,21 @@ int main(int argc, char* argv[]) {
                0);  // Offset.
     cout << "\nReading the content of the file example_libxtreemfs.txt:\n\n"
          << read_buf << endl;
-
+  } catch(const xtreemfs::XtreemFSException& e) {
+    cout << "An error occured:\n" << e.what() << endl;
+    return_code = 1;
+  }
+  
+  if (file != NULL) {
     // Close the file (no need to delete it, see documentation volume.h).
     file->Close();
+  }
 
+  if (client != NULL) {
     // Shutdown() does also invoke a volume->Close().
     client->Shutdown();
     delete client;
-  } catch(const xtreemfs::XtreemFSException& e) {
-    cout << "An error occured:\n" << e.what() << endl;
-    return 1;
   }
 
-  return 0;
+  return return_code;
 }
