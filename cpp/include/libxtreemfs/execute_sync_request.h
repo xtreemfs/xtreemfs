@@ -305,6 +305,9 @@ template<class ReturnMessageType, class F>
         if (posix_errno == xtreemfs::pbrpc::POSIX_ERROR_ENOENT) {
           level = xtreemfs::util::LEVEL_DEBUG;
         }
+        if (posix_errno == xtreemfs::pbrpc::POSIX_ERROR_EIO) {
+          level = xtreemfs::util::LEVEL_ERROR;
+        }
         std::string posix_errono_string
             = boost::lexical_cast<std::string>(posix_errno);
         const ::google::protobuf::EnumValueDescriptor* enum_desc =
