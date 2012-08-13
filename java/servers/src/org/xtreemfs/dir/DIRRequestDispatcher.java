@@ -197,7 +197,13 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             public void handle(HttpExchange httpExchange) throws IOException {
                 byte[] content;
                 try {
-                    content = StatusPage.getStatusPage(DIRRequestDispatcher.this, config).getBytes("ascii");
+                    if (httpExchange.getRequestURI().getPath().contains("strace")) {
+                        content = OutputUtils.getThreadDump().getBytes("ascii");
+                    } else if (httpExchange.getRequestURI().getPath().contains("babudb")) {
+                        content = StatusPage.getDBInfo(database.getRuntimeState()).getBytes("ascii");
+                    } else {
+                        content = StatusPage.getStatusPage(DIRRequestDispatcher.this, config).getBytes("ascii");
+                    }
                     httpExchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
                     httpExchange.sendResponseHeaders(200, content.length);
                     httpExchange.getResponseBody().write(content);

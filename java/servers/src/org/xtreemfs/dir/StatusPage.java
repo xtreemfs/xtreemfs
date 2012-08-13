@@ -425,4 +425,29 @@ public class StatusPage {
         return dump.toString();
     }
     
+    public static String getDBInfo(Map<String, Object> dbStatus) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<HTML><BODY><H1>BABUDB STATE</H1>");
+        
+        if (dbStatus == null) {
+            sb.append("BabuDB has not yet been initialized.");
+        }
+        
+        else {
+            sb.append("<TABLE>");
+            Map<String, Object> status = new TreeMap<String, Object>(dbStatus);
+            for (Entry<String, Object> entry : status.entrySet()) {
+                sb.append("<TR><TD STYLE=\"text-align:right; font-style:italic\">");
+                sb.append(entry.getKey());
+                sb.append(":</TD><TD STYLE=\"font-weight:bold\">");
+                sb.append(entry.getValue());
+                sb.append("</TD></TR>");
+            }
+            sb.append("</TABLE>");
+        }
+        
+        sb.append("</BODY></HTML>");
+        
+        return sb.toString();
+    }
 }
