@@ -2274,6 +2274,11 @@ To configure multiple MRC instances as replicas of each other, it is necessary t
 babudb.plugin.0 = /etc/xos/xtreemfs/server-repl-plugin/mrc.properties
 \end{verbatim}
 
+The replication of the database requires that all records are synchronously written to disk. Therefore, the parameter \texttt{babudb.sync} has to be changed to the value \texttt{SYNC\_WRITE} in the same configuration file \texttt{/etc/xos/xtreemfs/mrcconfig.properties}:
+\begin{verbatim}
+babudb.sync = SYNC_WRITE
+\end{verbatim}
+
 Now, it is necessary to configure the replication plug-in. For this purpose, open \texttt{/etc/xos/xtreemfs/server-repl-plugin/mrc.properties} with a text editor. The configuration file will look as follows:
 
 \begin{verbatim}
@@ -2299,7 +2304,20 @@ Note that it is necessary to explicitly enable SSL if server-to-server authentic
 Please make sure that all replicated instances have consistent configurations before starting them up, which includes replica lists, \texttt{babudb.repl.sync.n} parameters as well as SSL settings if necessary.
 
 \subsubsection{Enabling and Configuring DIR Replication}
-DIR replication is enabled and configured in the exact same way as MRC replication. Change \texttt{/etc/xos/xtreemfs/server-repl-plugin/dir.properties} accordingly to configure the plug-in. In contrast to MRC replication, however, the XtreemFS client does not yet support an automatic fail-over if the DIR is not reachable.
+DIR replication is enabled and configured in the exact same way as MRC replication. Change \texttt{/etc/xos/xtreemfs/server-repl-plugin/dir.properties} accordingly to configure the plug-in and set the sync mode to \texttt{SYNC\_WRITE}.
+
+In order to ensure that MRCs and OSDs know all DIR replicas, you have to add the addresses of all DIR replicas to each MRC and OSD configuration file. Specify the first DIR replica in the options \texttt{dir\_service.host} and \texttt{dir\_service.port} and all subsequent ones in the options \texttt{dir\_service.<i>.host} and \texttt{dir\_service.<i>.port} where i starts from zero. For example:
+
+\begin{verbatim}
+dir_service.host = dir1.example.com
+dir_service.port = 32638
+dir_service.0.host = dir2.example.com
+dir_service.0.port = 32638
+dir_service.1.host = dir3.example.com
+dir_service.1.port = 32638
+\end{verbatim}
+
+This allows the MRCs and OSDs to fail over to each DIR replica. On the contrary, the XtreemFS client does not support yet to specify multiple DIR replicas and therefore cannot automatically fail over between them.
 
 \subsubsection{Startup and Access}
 Once all service instances have been configured, they can be started up individually as described in Section \ref{sec:startstopservice}. From a user's point of view, a replicated MRC behaves exactly like a non-replicated MRC. Failures will be transparently handled by the system and hidden from users to the best possible extent. For the service to remain operable, however, at least a majority of all replicas in the list have to be reachable.
