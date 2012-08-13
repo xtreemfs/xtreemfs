@@ -234,12 +234,15 @@ class FileInfo {
   /** List of corresponding OSDs. */
   xtreemfs::pbrpc::XLocSet xlocset_;
 
-  /** UUIDIterator which contains the UUIDs of all replicas.
-   *
-   * If striping is used, replication is not possible. Therefore, for striped
-   * files the UUID Iterator will contain only the head OSD. */
+  /** UUIDIterator which contains the head OSD UUIDs of all replicas.
+   *  It is used for non-striped files. */
   SimpleUUIDIterator osd_uuid_iterator_;
-  UUIDContainer osd_uuid_container_; // TODO(mno): update comment above
+
+  /** This UUIDContainer contains all OSD UUIDs for all replicas and is
+   *  constructed from the xlocset_ passed to this class on construction.
+   *  It is used to construct a custom ContainerUUIDIterator on the fly when
+   *  accessing striped files. */
+  UUIDContainer osd_uuid_container_;
 
   /** Use this to protect xlocset_ and replicate_on_close_. */
   boost::mutex xlocset_mutex_;

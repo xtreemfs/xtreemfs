@@ -11,11 +11,12 @@
 #include <list>
 #include <string>
 
-#include "libxtreemfs/uuid_iterator.h"
 #include "pbrpc/RPC.pb.h"
 #include "xtreemfs/MRC.pb.h"
 
 namespace xtreemfs {
+
+class UUIDIterator;
 
 namespace rpc {
 class SSLOptions;

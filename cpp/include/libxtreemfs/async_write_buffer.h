@@ -11,9 +11,6 @@
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <string>
 
-#include "libxtreemfs/file_handle_implementation.h"
-#include "libxtreemfs/xcap_handler.h"
-
 namespace xtreemfs {
 
 namespace pbrpc {
@@ -21,6 +18,7 @@ class writeRequest;
 }  // namespace pbrpc
 
 class FileHandleImplementation;
+class XCapHandler;
 
 struct AsyncWriteBuffer {
   /** Possible states of this object. */

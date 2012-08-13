@@ -19,12 +19,25 @@
 
 namespace xtreemfs {
 
+/** This class is a UUIDIterator that does not own its UUIDItems. Instead it
+ *  references a subset of UUIDItems stored in a UUIDContainer. The iterator
+ *  is initialized on construction and does not change during its lifetime.
+ *  The main use-case of this class is the OSD-addressing in a striped setup.
+ *  Such a setup can include multiple replicas, each with a different striping
+ *  configuration. So each object can have its individual list of OSDs over all
+ *  replicas. This list is needed in order to support redirection and automatic
+ *  fail-over. ContainerUUIDIterator stores this list. */
 class ContainerUUIDIterator : public UUIDIterator {
  public:
-  ContainerUUIDIterator(UUIDContainer* uuid_container, std::vector<size_t> offsets) {
+  /** This ctor initializes the iterator from a given UUIDContainer and a
+   *  vector of offsets. The offsets specify indices in the two-dimensional
+   *  container. */
+  ContainerUUIDIterator(UUIDContainer* uuid_container,
+                        std::vector<size_t> offsets) {
     uuid_container->FillUUIDIterator(this, offsets);
   }
   virtual void SetCurrentUUID(const std::string& uuid);
+
  private:
   // UUIDContainer is a friend of this class
   friend void UUIDContainer::FillUUIDIterator(
@@ -40,8 +53,8 @@ class ContainerUUIDIterator : public UUIDIterator {
   virtual void Clear();
 
   /** Add an existing UUIDItem. Ownership is NOT transferred.
-   *  It can only called by UUIDContainer::GetUUIDIterator, hence the
-   *  fried-declaration below. */
+   *  It can only be called by UUIDContainer::GetUUIDIterator, hence the
+   *  friend-declaration above. */
   void AddUUIDItem(UUIDItem* uuid);
 };
 

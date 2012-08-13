@@ -6,12 +6,12 @@
  */
 
 #include "libxtreemfs/uuid_iterator.h"
-#include "util/logging.h"
 
 #include <sstream>
 
 #include "libxtreemfs/uuid_container.h"
 #include "libxtreemfs/xtreemfs_exception.h"
+#include "util/logging.h"
 
 using namespace std;
 using namespace xtreemfs::util;
@@ -23,16 +23,16 @@ UUIDIterator::UUIDIterator() {
   current_uuid_ = uuids_.end();
 }
 
-UUIDIterator::~UUIDIterator() {
-}
+UUIDIterator::~UUIDIterator() {}
 
 void UUIDIterator::GetUUID(std::string* result) {
   assert(result);
   boost::mutex::scoped_lock lock(mutex_);
 
   if (current_uuid_ == uuids_.end()) {
-    throw UUIDIteratorListIsEmpyException("GetUUID() failed as no current "
-        " UUID is set. Size of list of UUIDs: " + uuids_.size());
+    assert(uuids_.size() > 0);
+    throw UUIDIteratorListIsEmpyException("GetUUID() failed because the list of"
+        " UUIDs is empty.");
   } else {
     assert(!(*current_uuid_)->IsFailed());
     *result = (*current_uuid_)->uuid;

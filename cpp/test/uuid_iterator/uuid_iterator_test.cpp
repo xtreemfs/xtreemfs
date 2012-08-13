@@ -37,7 +37,7 @@ template<class IteratorType>
 struct UUIDAdder;
 
 template<>
-struct UUIDAdder<SimpleUUIDIterator>{
+struct UUIDAdder<SimpleUUIDIterator> {
   void operator()(UUIDIterator* it, string uuid) {
     static_cast<SimpleUUIDIterator*>(it)->AddUUID(uuid);
   }
@@ -46,22 +46,23 @@ struct UUIDAdder<SimpleUUIDIterator>{
 template<>
 struct UUIDAdder<ContainerUUIDIterator> {
   void operator()(UUIDIterator* it, string uuid) {
-    createdItems_.push_back(new UUIDItem(uuid));
+    created_tems_.push_back(new UUIDItem(uuid));
     // safe downcast here
-    static_cast<ContainerUUIDIterator*>(it)->AddUUIDItem(createdItems_.back());
+    static_cast<ContainerUUIDIterator*>(it)->AddUUIDItem(created_tems_.back());
   }
 
   typedef vector<UUIDItem*> ItemPtrList;
 
   ~UUIDAdder() {
-    for (ItemPtrList::iterator it = createdItems_.begin();
-        it != createdItems_.end(); ++it) {
+    for (ItemPtrList::iterator it = created_tems_.begin();
+        it != created_tems_.end();
+        ++it) {
       delete *it;
     }
-    createdItems_.clear();
+    created_tems_.clear();
   }
  private:
-  vector<UUIDItem*> createdItems_;
+  vector<UUIDItem*> created_tems_;
 };
 
 
@@ -308,7 +309,7 @@ TEST_F(ContainerUUIDIteratorTest, CreateContainerAndGetUUID) {
       sstream << "uuid" << i << j;
       replica->add_osd_uuids(sstream.str());
       replica->mutable_striping_policy()->set_type(type);
-      replica->mutable_striping_policy()->set_stripe_size(128); // kb
+      replica->mutable_striping_policy()->set_stripe_size(128);  // kb
       replica->mutable_striping_policy()->set_width(stripe_width);
     }
   }
@@ -326,11 +327,14 @@ TEST_F(ContainerUUIDIteratorTest, CreateContainerAndGetUUID) {
   boost::scoped_ptr<StripeTranslator> translator(new StripeTranslatorRaid0());
   // Map offset to corresponding OSDs.
   std::vector<ReadOperation> operations;
-  off_t read_offsets[] = {0, 128*1024};
+  off_t read_offsets[] = {0, 128 * 1024};
 
   for (int i = 0; i < sizeof(read_offsets); ++i) {
     operations.clear();
-    translator->TranslateReadRequest(NULL, 128*1024, read_offsets[i], striping_policies,
+    translator->TranslateReadRequest(NULL,
+                                     128 * 1024,
+                                     read_offsets[i],
+                                     striping_policies,
                                      &operations);
 
     // Create a UUIDIterator for a specific set of offsets
@@ -345,7 +349,7 @@ TEST_F(ContainerUUIDIteratorTest, CreateContainerAndGetUUID) {
       uuid_iterator->MarkUUIDAsFailed(actual);
       sstream.str("");
       sstream << "uuid" << j << operations[0].osd_offsets[j];
-      EXPECT_STREQ(sstream.str().c_str(), actual.c_str());
+      EXPECT_EQ(sstream.str(), actual);
     }
   }
 }

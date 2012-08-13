@@ -247,11 +247,9 @@ void AsyncWriteHandler::ReWrite(AsyncWriteBuffer* write_buffer,
 
 void AsyncWriteHandler::WaitForPendingWrites() {
   boost::mutex::scoped_lock lock(mutex_);
-  //if ((state_ != IDLE) && !(state_ == FINALLY_FAILED && pending_writes_ == 0)) {  // TODO(mno): remove after testing
   if (pending_writes_ > 0) {
     writing_paused_ = true;
     waiting_blocking_threads_count_++;
-    //while ((state_ != IDLE) && (state_ != FINALLY_FAILED) ) { // TODO(mno): remove after testing
     while (pending_writes_ > 0) {
       all_pending_writes_did_complete_.wait(lock);
     }
@@ -279,7 +277,6 @@ bool AsyncWriteHandler::WaitForPendingWritesNonBlocking(
   assert(condition_variable && wait_completed && wait_completed_mutex);
   boost::mutex::scoped_lock lock(mutex_);
 
-  // if ((state_ != IDLE)  && (state_ != FINALLY_FAILED)) {
   if (pending_writes_ > 0) {
     writing_paused_ = true;
     waiting_observers_.push_back(new WaitForCompletionObserver(
@@ -295,15 +292,14 @@ bool AsyncWriteHandler::WaitForPendingWritesNonBlocking(
 
 
 void AsyncWriteHandler::ProcessCallbacks() {
-  while(true) {
+  while (boost::this_thread::interruption_requested() &&
+         boost::this_thread::interruption_enabled()) {
     const CallbackEntry& e = callback_queue.Dequeue();
-    e.handler_->HandleCallback(
-        e.response_message_,
-        e.data_,
-        e.data_length_,
-        e.error_,
-        e.context_);
-    boost::this_thread::interruption_point();
+    e.handler_->HandleCallback(e.response_message_,
+                               e.data_,
+                               e.data_length_,
+                               e.error_,
+                               e.context_);
   }
 }
 
@@ -313,14 +309,12 @@ void AsyncWriteHandler::CallFinished(
     boost::uint32_t data_length,
     xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
     void* context) {
-  callback_queue.Enqueue(CallbackEntry(
-      this,
-      response_message,
-      data,
-      data_length,
-      error,
-      context
-      ));
+  callback_queue.Enqueue(CallbackEntry(this,
+                                       response_message,
+                                       data,
+                                       data_length,
+                                       error,
+                                       context));
 }
 
 void AsyncWriteHandler::HandleCallback(
@@ -333,7 +327,7 @@ void AsyncWriteHandler::HandleCallback(
 
   bool delete_response_message = true;
 
-  --pending_writes_; // we received some answer we were waiting for
+  --pending_writes_;  // we received some answer we were waiting for
 
   // do nothing in case a write has finally failed
   if (state_ !=  FINALLY_FAILED) {
@@ -343,17 +337,11 @@ void AsyncWriteHandler::HandleCallback(
       write_buffer->state_ = AsyncWriteBuffer::FAILED;
       writing_paused_ = true;  // forbid new writes
 
-      if(state_ != HAS_FAILED_WRITES) {
-          state_ = HAS_FAILED_WRITES;
-          worst_error_.MergeFrom(*error);
-          worst_write_buffer_ = write_buffer;
+      if (state_ != HAS_FAILED_WRITES) {
+        state_ = HAS_FAILED_WRITES;
+        worst_error_.MergeFrom(*error);
+        worst_write_buffer_ = write_buffer;
       }
-
-      bool delay_last_attempt = false;
-      // TODO(mno): set this ^ somehow if needed: michael:
-      // das brauch man dann, wenn man sich selber um den retry kuemmert, z. b. in FileHandleImplementation::AcquireLock()
-      // bei connection refused kommt der request sofort zurueck (vor den 120 sekunden timeout) und dann muss man noch warten
-      // aehnlich beim zweiten redirect
 
       // Resolve UUID first.
       std::string service_uuid = "";
@@ -365,10 +353,10 @@ void AsyncWriteHandler::HandleCallback(
 
       if (((write_buffer->retry_count_ < max_write_tries_ || max_write_tries_ == 0) ||
           // or this last retry should be delayed
-          (write_buffer->retry_count_ == max_write_tries_ && delay_last_attempt)) &&
+          (write_buffer->retry_count_ == max_write_tries_)) &&
           // AND it is an recoverable error.
           (error->error_type() == xtreemfs::pbrpc::IO_ERROR ||
-           error->error_type() == xtreemfs::pbrpc::INTERNAL_SERVER_ERROR ||  // NOLINT
+           error->error_type() == xtreemfs::pbrpc::INTERNAL_SERVER_ERROR ||
            error->error_type() == xtreemfs::pbrpc::REDIRECT)) {
         std::string error_str;
         xtreemfs::util::LogLevel level = xtreemfs::util::LEVEL_ERROR;
@@ -379,11 +367,12 @@ void AsyncWriteHandler::HandleCallback(
 
           // set the current error as new worst error if it is worse:
           // REDIRECT is worse than other error types and worse than a
-          // previous REDIRECT error if it is from later sent request
+          // previous REDIRECT error if it is from a more recent request
           if ((worst_error_.error_type() != xtreemfs::pbrpc::REDIRECT) ||
               (worst_write_buffer_->request_sent_time <
                write_buffer->request_sent_time)) {
               worst_error_.CopyFrom(*error);
+              worst_write_buffer_ = write_buffer;
           }
 
           // Log the redirect.
@@ -428,7 +417,7 @@ void AsyncWriteHandler::HandleCallback(
       } else { // if (recoverable error and retries left)
         // FAIL finally after too many retries, or unrecoverable errors
         state_ = FINALLY_FAILED;
-        // finall cleanup is done when the last expected callback arrives
+        // final cleanup is done when the last expected callback arrives
 
         // Log error.
         string error_type_name = boost::lexical_cast<string>(error->error_type());
@@ -492,18 +481,19 @@ void AsyncWriteHandler::HandleCallback(
           (boost::posix_time::microsec_clock::local_time() -   // current time
            worst_write_buffer_->request_sent_time);
 
-      // Log time left
-      if (xtreemfs::util::Logging::log->loggingActive(xtreemfs::util::LEVEL_INFO)) {
-        xtreemfs::util::Logging::log->getLog(xtreemfs::util::LEVEL_INFO)
-            << "Retrying. Waiting " << boost::lexical_cast<std::string>(
-                (delay_time_left.is_negative() || fast_redirect_) ? 0 :
-                    delay_time_left.total_seconds())
-            << " more seconds till next retry."
-            << std::endl;
-      }
 
       if (!(fast_redirect_ || delay_time_left.is_negative())) {
         try {
+          // Log time left
+          if (xtreemfs::util::Logging::log->loggingActive(
+              xtreemfs::util::LEVEL_INFO)) {
+            xtreemfs::util::Logging::log->getLog(xtreemfs::util::LEVEL_INFO)
+                << "Retrying. Waiting " << boost::lexical_cast<std::string>(
+                    (delay_time_left.is_negative() || fast_redirect_) ? 0 :
+                        delay_time_left.total_seconds())
+                << " more seconds till next retry."
+                << std::endl;
+          }
           // boost::thread interruption point
           Interruptibilizer::SleepInterruptible(
               delay_time_left.total_milliseconds(),
@@ -525,7 +515,9 @@ void AsyncWriteHandler::HandleCallback(
       // rewrite all in list (leading successfully sent entries have been
       // deleted by the DeleteBufferHelper() call above)
       std::list<AsyncWriteBuffer*>::iterator it;
-      for(it = writes_in_flight_.begin(); it != writes_in_flight_.end(); ++it) {
+      for (it = writes_in_flight_.begin();
+           it != writes_in_flight_.end();
+           ++it) {
         ReWrite(*it, false, &lock);
       }
       // reset states
@@ -533,12 +525,12 @@ void AsyncWriteHandler::HandleCallback(
       worst_error_.Clear();
       worst_write_buffer_ = 0;
     }
-  } else { // state_ == FINALLY_FAILED
+  } else {  // state_ == FINALLY_FAILED
       // clean up when last expected callback arrives
       if (pending_writes_ == 0) {
           CleanUp(&lock);
       }
-  } // if (state_ != FINALLY_FAILED)
+  }  // if (state_ != FINALLY_FAILED)
 
   // Cleanup.
   if (delete_response_message) {
@@ -568,7 +560,7 @@ void AsyncWriteHandler::DecreasePendingBytesHelper(
 
   pending_bytes_ -= write_buffer->data_length;
 
-  if(delete_buffer) {
+  if (delete_buffer) {
     // the buffer is deleted
     writes_in_flight_.remove(write_buffer);
     delete write_buffer;
@@ -619,7 +611,7 @@ void AsyncWriteHandler::DeleteBufferHelper(
   // delete all leading successfully sent entries
   std::list<AsyncWriteBuffer*>::iterator it = writes_in_flight_.begin();
   while (it != writes_in_flight_.end()) {
-    if((*it)->state_ == AsyncWriteBuffer::SUCCEEDED) {
+    if ((*it)->state_ == AsyncWriteBuffer::SUCCEEDED) {
       DecreasePendingBytesHelper(*it, lock, false);
       delete *it;  // delete buffer
       it = writes_in_flight_.erase(it);  // delete pointer to buffer in list

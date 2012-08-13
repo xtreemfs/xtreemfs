@@ -31,8 +31,10 @@ void StripeTranslatorRaid0::TranslateWriteRequest(
       = min(size - start, static_cast<size_t>(stripe_size - req_offset));
 
     std::vector<size_t> osd_offsets;
-    for(PolicyContainer::iterator i = policies.begin(); i != policies.end(); ++i) {
-        osd_offsets.push_back(obj_number % (*i)->width());
+    for (PolicyContainer::iterator i = policies.begin();
+         i != policies.end();
+         ++i) {
+      osd_offsets.push_back(obj_number % (*i)->width());
     }
 
     operations->push_back(WriteOperation(
@@ -59,8 +61,10 @@ void StripeTranslatorRaid0::TranslateReadRequest(
       = min(size - start, static_cast<size_t>(stripe_size - req_offset));
 
     std::vector<size_t> osd_offsets;
-    for(PolicyContainer::iterator i = policies.begin(); i != policies.end(); ++i) {
-        osd_offsets.push_back(obj_number % (*i)->width());
+    for (PolicyContainer::iterator i = policies.begin();
+         i != policies.end();
+         ++i) {
+      osd_offsets.push_back(obj_number % (*i)->width());
     }
 
     operations->push_back(ReadOperation(

@@ -6,10 +6,10 @@
  */
 
 #include "libxtreemfs/container_uuid_iterator.h"
-#include "util/logging.h"
 
 #include "libxtreemfs/uuid_container.h"
 #include "libxtreemfs/xtreemfs_exception.h"
+#include "util/logging.h"
 
 using namespace std;
 using namespace xtreemfs::util;
@@ -24,7 +24,7 @@ void ContainerUUIDIterator::Clear() {
 }
 
 // NOTE: like simple iterator, BUT without implicit adding
-void ContainerUUIDIterator::SetCurrentUUID(const std::string& uuid) {
+void ContainerUUIDIterator::SetCurrentUUID(const string& uuid) {
   boost::mutex::scoped_lock lock(mutex_);
 
   // Search "uuid" in "uuids_" and set it to the current UUID.
@@ -41,7 +41,7 @@ void ContainerUUIDIterator::SetCurrentUUID(const std::string& uuid) {
 
   // UUID was not found, fail.
   Logging::log->getLog(LEVEL_ERROR)
-     << "ContainerUUIDIterator::SetCurrentUUID: uuid not found. " << std::endl;
+     << "ContainerUUIDIterator::SetCurrentUUID: uuid not found. " << endl;
 }
 
 void ContainerUUIDIterator::AddUUIDItem(UUIDItem* uuid) {

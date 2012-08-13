@@ -6,10 +6,10 @@
  */
 
 #include "libxtreemfs/simple_uuid_iterator.h"
-#include "util/logging.h"
 
 #include "libxtreemfs/uuid_container.h"
 #include "libxtreemfs/xtreemfs_exception.h"
+#include "util/logging.h"
 
 using namespace std;
 using namespace xtreemfs::util;

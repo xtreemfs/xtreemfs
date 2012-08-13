@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 by Matthias Noack, Zuse Institute Berlin
+ * Copyright (c) 2012 by Matthias Noack, Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -21,11 +21,9 @@ namespace xtreemfs {
 
 class ContainerUUIDIterator;
 
-/** Stores a list of all UUIDs of a striped replica and generates UUID Iterators
- *  for a specific stripe index.
- *
- *  It also manages the failure-state of the stored UUIDs.
- */
+/** This class stores a list of all UUIDs of a striped replica and is used to
+ *  construct ContainerUUIDIterators for a specific stripe index.
+ *  It also manages the failure-state of the stored UUIDs. */
 class UUIDContainer {
  public:
   UUIDContainer(const xtreemfs::pbrpc::XLocSet& xlocs);
@@ -33,23 +31,24 @@ class UUIDContainer {
   ~UUIDContainer();
 
  private:
-  typedef std::vector<UUIDItem*> innerContainer;
-  typedef std::vector<UUIDItem*>::iterator innerIterator;
-  typedef std::vector<innerContainer> container;
-  typedef std::vector<innerContainer>::iterator iterator;
+  typedef std::vector<UUIDItem*> InnerContainer;
+  typedef std::vector<UUIDItem*>::iterator InnerIterator;
+  typedef std::vector<InnerContainer> Container;
+  typedef std::vector<InnerContainer>::iterator Iterator;
 
   void GetOSDUUIDsFromXlocSet(const xtreemfs::pbrpc::XLocSet& xlocs);
 
-  /** Fills the given uuid_iterator with the uuids corresponding to the
+  /** Fills the given uuid_iterator with the UUIDs corresponding to the
    *  given offsets. This is private because it is only called by
    *  ContainerUUIDIterator's ctor. */
-  void FillUUIDIterator(ContainerUUIDIterator* uuid_iterator, std::vector<size_t> offsets);
+  void FillUUIDIterator(ContainerUUIDIterator* uuid_iterator,
+                        std::vector<size_t> offsets);
 
-  /** Obtain a lock on this when accessing uuids_ or current_uuid_. */
+  /** Obtain a lock on this when accessing uuids_ */
   boost::mutex mutex_;
 
   /** List of List of UUIDs. */
-  container uuids_;
+  Container uuids_;
 
   /** This is needed to only allow ContainerUUIDIterator to call
    *  FillUUIDIterator. A more strict friend statement which would only

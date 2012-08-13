@@ -113,6 +113,20 @@ class UUIDIteratorListIsEmpyException : public XtreemFSException {
     : XtreemFSException(msg) {}
 };
 
+/** Thrown if there was an empty replicas list in an XlocSet. */
+class EmptyReplicaListInXlocSet : public XtreemFSException {
+ public:
+  explicit EmptyReplicaListInXlocSet(const std::string& msg)
+    : XtreemFSException(msg) {}
+};
+
+/** Thrown if there was no head OSD for a replica listed in an XlocSet. */
+class NoHeadOSDInXlocSet : public XtreemFSException {
+ public:
+  explicit NoHeadOSDInXlocSet(const std::string& msg)
+    : XtreemFSException(msg) {}
+};
+
 /** Thrown if the given URL was not parsed correctly. */
 class InvalidURLException : public XtreemFSException {
  public:

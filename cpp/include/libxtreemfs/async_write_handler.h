@@ -12,7 +12,6 @@
 #include <boost/thread/mutex.hpp>
 #include <list>
 
-#include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/options.h"
 #include "rpc/callback_interface.h"
 #include "util/synchronized_queue.h"
@@ -34,19 +33,21 @@ class AsyncWriteHandler
           xtreemfs::pbrpc::OSDWriteResponse> {
  public:
   struct CallbackEntry {
-    CallbackEntry(
-        AsyncWriteHandler* handler,
-        xtreemfs::pbrpc::OSDWriteResponse* response_message,
-        char* data,
-        boost::uint32_t data_length,
-        xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
-        void* context)
-     : handler_(handler),
-       response_message_(response_message),
-       data_(data),
-       data_length_(data_length),
-       error_(error),
-       context_(context) {}
+    /**
+     * @remark Ownerships of response_message, data and error are transferred.
+     */
+    CallbackEntry(AsyncWriteHandler* handler,
+                  xtreemfs::pbrpc::OSDWriteResponse* response_message,
+                  char* data,
+                  boost::uint32_t data_length,
+                  xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
+                  void* context)
+        : handler_(handler),
+          response_message_(response_message),
+          data_(data),
+          data_length_(data_length),
+          error_(error),
+          context_(context) {}
 
     AsyncWriteHandler* handler_;
     xtreemfs::pbrpc::OSDWriteResponse* response_message_;
@@ -116,13 +117,16 @@ class AsyncWriteHandler
     boost::mutex* wait_completed_mutex;
   };
 
-  /** Implements callback for an async write request. */
+  /** Implements callback for an async write request. This method just enqueues
+   *  data. The actual handling of the callback is done by another thread via
+   *  HandleCallback(). */
   virtual void CallFinished(xtreemfs::pbrpc::OSDWriteResponse* response_message,
                             char* data, boost::uint32_t data_length,
                             xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
                             void* context);
 
-  /** Implements callback for an async write request. */
+  /** Implements callback handling for an async write request. This method is
+   *  called for all queued callbacks in a separate thread.*/
   void HandleCallback(xtreemfs::pbrpc::OSDWriteResponse* response_message,
                       char* data, boost::uint32_t data_length,
                       xtreemfs::pbrpc::RPCHeader::ErrorResponse* error,
@@ -157,13 +161,18 @@ class AsyncWriteHandler
   void DeleteBufferHelper(boost::mutex::scoped_lock* lock);
 
 
+  /** This helper method is used to clean up after the AsyncWriteHandler
+   *  reaches the finally failed state. So all write buffers are deleted,
+   *  and waiting threads are notified.
+   */
   void CleanUp(boost::mutex::scoped_lock* lock);
 
   /**
    * This method is used to repeat failed writes which already are in the list
    * of writes in flight. It bypasses the writeahead limitations.
    */
-  void ReWrite(AsyncWriteBuffer* write_buffer, bool copy_buffer,
+  void ReWrite(AsyncWriteBuffer* write_buffer,
+               bool copy_buffer,
                boost::mutex::scoped_lock* lock);
 
   /** Calls notify_one() on all observers in waiting_observers_, frees each
@@ -244,8 +253,6 @@ class AsyncWriteHandler
   const Options& volume_options_;
   Options interrupt_options_;  // TODO(mno): define was_interrupted_function
                                //            when async writes support inerrupts
-
-  // TODO(mno): maybe use volume_options directly instead max_write*
 
   /** Maximum number in bytes which may be pending. */
   const int max_writeahead_;

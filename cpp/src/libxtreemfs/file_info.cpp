@@ -37,7 +37,6 @@ FileInfo::FileInfo(
       replicate_on_close_(replicate_on_close),
       reference_count_(0),
       xlocset_(xlocset),
-      //osd_uuid_iterator_(new SimpleUUIDIterator()), // TODO(mno)
       osd_uuid_container_(xlocset),
       client_uuid_(client_uuid),
       osd_write_response_(NULL),
@@ -49,7 +48,7 @@ FileInfo::FileInfo(
                            volume->auth_bogus(),
                            volume->user_credentials_bogus(),
                            volume->volume_options()) {
-  // Add the UUIDs of all replicas to the UUID Iterator.
+  // Add the head OSD UUIDs of all replicas to the UUID Iterator.
   for (int i = 0; i < xlocset_.replicas_size(); i++) {
     osd_uuid_iterator_.AddUUID(xlocset_.replicas(i).osd_uuids(0));
   }
@@ -57,7 +56,6 @@ FileInfo::FileInfo(
 
 FileInfo::~FileInfo() {
   assert(active_locks_.size() == 0);
-  //delete osd_uuid_iterator_; // TODO(mno)
 }
 
 FileHandleImplementation* FileInfo::CreateFileHandle(
