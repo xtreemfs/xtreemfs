@@ -143,6 +143,8 @@ void AsyncWriteHandler::Write(AsyncWriteBuffer* write_buffer) {
     IncreasePendingBytesHelper(write_buffer, &lock);
   }
 
+  // TODO(mno): remove code below after testing WriteCommon
+  /*
   // Retrieve address for UUID.
   string osd_uuid, osd_address;
   if (write_buffer->use_uuid_iterator) {
@@ -187,10 +189,11 @@ void AsyncWriteHandler::Write(AsyncWriteBuffer* write_buffer) {
                              write_buffer->data_length,
                              this,
                              reinterpret_cast<void*>(write_buffer));
+  */
+  WriteCommon(write_buffer, false);
 }
 
 void AsyncWriteHandler::ReWrite(AsyncWriteBuffer* write_buffer,
-                                bool copy_buffer,
                                 boost::mutex::scoped_lock* lock) {
   assert(write_buffer && lock && lock->owns_lock() &&
          (state_ == HAS_FAILED_WRITES));
@@ -199,6 +202,8 @@ void AsyncWriteHandler::ReWrite(AsyncWriteBuffer* write_buffer,
   write_buffer->state_ = AsyncWriteBuffer::PENDING;
   ++pending_writes_;
 
+  // TODO(mno): remove code below after testing WriteCommon
+  /*
   // Retrieve address for UUID.
   string osd_uuid, osd_address;
   if (write_buffer->use_uuid_iterator) {
@@ -243,7 +248,69 @@ void AsyncWriteHandler::ReWrite(AsyncWriteBuffer* write_buffer,
                              write_buffer->data_length,
                              this,
                              reinterpret_cast<void*>(write_buffer));
+  */
+  WriteCommon(write_buffer, true);
 }
+
+
+void AsyncWriteHandler::WriteCommon(AsyncWriteBuffer* write_buffer,
+                                    bool is_rewrite) {
+
+  // Retrieve address for UUID.
+  string osd_uuid, osd_address;
+  if (write_buffer->use_uuid_iterator) {
+    uuid_iterator_->GetUUID(&osd_uuid);
+    // Store used OSD in write_buffer for the callback.
+    write_buffer->osd_uuid = osd_uuid;
+  } else {
+    osd_uuid = write_buffer->osd_uuid;
+  }
+  try {
+    uuid_resolver_->UUIDToAddress(osd_uuid,
+                                  &osd_address,
+                                  uuid_resolver_options_);
+  } catch(const exception& e) {
+    if (is_rewrite) {
+      // In case of errors, throw exception.
+      --pending_writes_;
+    } else {
+      // In case of errors, remove write again and throw exception.
+      boost::mutex::scoped_lock lock(mutex_);
+      DecreasePendingBytesHelper(write_buffer, &lock, true);
+      --pending_writes_;
+    }
+    throw;
+  }
+
+  if (is_rewrite) {
+    // make sure to use the potentially renewed XCap
+    write_buffer->xcap_handler_->GetXCap(write_buffer->write_request
+        ->mutable_file_credentials()->mutable_xcap());
+  }
+
+  if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+    Logging::log->getLog(LEVEL_DEBUG)
+        << "AsyncWriteHandler::(Re)Write for file_id: "
+        << write_buffer->write_request->mutable_file_credentials()
+            ->xcap().file_id()
+        << ", XCap Expiration in: " << (write_buffer->write_request
+            ->mutable_file_credentials()->xcap().expire_time_s() - time(NULL))
+        << endl;
+  }
+
+  // Send out request.
+  write_buffer->request_sent_time =
+      boost::posix_time::microsec_clock::local_time();
+  osd_service_client_->write(osd_address,
+                             auth_bogus_,
+                             user_credentials_bogus_,
+                             write_buffer->write_request,
+                             write_buffer->data,
+                             write_buffer->data_length,
+                             this,
+                             reinterpret_cast<void*>(write_buffer));
+}
+
 
 void AsyncWriteHandler::WaitForPendingWrites() {
   boost::mutex::scoped_lock lock(mutex_);
@@ -518,13 +585,13 @@ void AsyncWriteHandler::HandleCallback(
       for (it = writes_in_flight_.begin();
            it != writes_in_flight_.end();
            ++it) {
-        ReWrite(*it, false, &lock);
+        ReWrite(*it, &lock);
       }
       // reset states
       state_ = WRITES_PENDING;
       worst_error_.Clear();
       worst_write_buffer_ = 0;
-    }
+    } // if ((state_ == HAS_FAILED_WRITES) && (pending_writes_ == 0))
   } else {  // state_ == FINALLY_FAILED
       // clean up when last expected callback arrives
       if (pending_writes_ == 0) {
