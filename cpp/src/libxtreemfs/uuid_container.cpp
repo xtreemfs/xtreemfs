@@ -24,9 +24,10 @@ UUIDContainer::UUIDContainer(const xtreemfs::pbrpc::XLocSet& xlocs) {
 
 UUIDContainer::~UUIDContainer() {
   // delete all uuids
-  for (Iterator it = uuids_.begin(); it != uuids_.end(); ++it)
+  for (Iterator it = uuids_.begin(); it != uuids_.end(); ++it) {
     for (InnerIterator iIt = it->begin(); iIt != it->end(); ++iIt) {
       delete (*iIt);
+    }
   }
 }
 

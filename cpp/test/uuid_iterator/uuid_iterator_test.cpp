@@ -46,23 +46,23 @@ struct UUIDAdder<SimpleUUIDIterator> {
 template<>
 struct UUIDAdder<ContainerUUIDIterator> {
   void operator()(UUIDIterator* it, string uuid) {
-    created_tems_.push_back(new UUIDItem(uuid));
+    created_items_.push_back(new UUIDItem(uuid));
     // safe downcast here
-    static_cast<ContainerUUIDIterator*>(it)->AddUUIDItem(created_tems_.back());
+    static_cast<ContainerUUIDIterator*>(it)->AddUUIDItem(created_items_.back());
   }
 
   typedef vector<UUIDItem*> ItemPtrList;
 
   ~UUIDAdder() {
-    for (ItemPtrList::iterator it = created_tems_.begin();
-        it != created_tems_.end();
+    for (ItemPtrList::iterator it = created_items_.begin();
+        it != created_items_.end();
         ++it) {
       delete *it;
     }
-    created_tems_.clear();
+    created_items_.clear();
   }
  private:
-  vector<UUIDItem*> created_tems_;
+  vector<UUIDItem*> created_items_;
 };
 
 
