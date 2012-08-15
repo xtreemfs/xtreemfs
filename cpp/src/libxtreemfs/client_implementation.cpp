@@ -128,7 +128,8 @@ void ClientImplementation::Start() {
                                                         vivaldi_.get())));
   }
 
-  async_write_callback_thread_.reset(new boost::thread(&xtreemfs::AsyncWriteHandler::ProcessCallbacks));
+  async_write_callback_thread_.reset(
+      new boost::thread(&xtreemfs::AsyncWriteHandler::ProcessCallbacks));
 }
 
 void ClientImplementation::Shutdown() {
