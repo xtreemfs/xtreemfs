@@ -20,13 +20,13 @@
 					<folderInfo id="cdt.managedbuild.toolchain.gnu.base.319771584.728158266" name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.base.1818335722" name="cdt.managedbuild.toolchain.gnu.base" superClass="cdt.managedbuild.toolchain.gnu.base">
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="cdt.managedbuild.target.gnu.platform.base.300016110" name="Debug Platform" osList="linux,hpux,aix,qnx" superClass="cdt.managedbuild.target.gnu.platform.base"/>
-							<builder buildPath="${workspace_loc:/libxtreemfs_trunk/build}" id="cdt.managedbuild.target.gnu.builder.base.811551994" incrementalBuildTarget="" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="5" superClass="cdt.managedbuild.target.gnu.builder.base"/>
+							<builder buildPath="${workspace_loc:/xtreemfs_trunk_cpp/build}" id="cdt.managedbuild.target.gnu.builder.base.811551994" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.134758692" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.396597261" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
 								<option id="gnu.cpp.compiler.option.include.paths.690711818" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/libxtreemfs_trunk/generated}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/libxtreemfs_trunk/test/}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/libxtreemfs_trunk/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/xtreemfs_trunk_cpp/generated}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/xtreemfs_trunk_cpp/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/xtreemfs_trunk_cpp/test/}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.2062866380" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -54,7 +54,7 @@
 		<project id="xtreemfs_trunk_cpp.null.1510003615" name="xtreemfs_trunk_cpp"/>
 	</storageModule>
 	<storageModule moduleId="refreshScope" versionNumber="1">
-		<resource resourceType="PROJECT" workspacePath="/libxtreemfs_trunk"/>
+		<resource resourceType="PROJECT" workspacePath="/xtreemfs_trunk_cpp"/>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 	<storageModule moduleId="scannerConfiguration">

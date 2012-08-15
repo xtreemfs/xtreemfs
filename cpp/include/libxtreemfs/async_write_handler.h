@@ -167,19 +167,13 @@ class AsyncWriteHandler
    */
   void CleanUp(boost::mutex::scoped_lock* lock);
 
-  /** This method is used to repeat failed writes which already are in the list
-   *  of writes in flight. It bypasses the writeahead limitations.
+  /**
+   * This method is used to repeat failed writes which already are in the list
+   * of writes in flight. It bypasses the writeahead limitations.
    */
   void ReWrite(AsyncWriteBuffer* write_buffer,
+               bool copy_buffer,
                boost::mutex::scoped_lock* lock);
-
-  /** Common code, used by Write and ReWrite.
-   *  Pay attention to the locking semantics:
-   *  In case of a write (is_rewrite == false), WriteCommon() expects to be
-   *  called from an unlocked context. In case of a rewrite, the opposite
-   *  applies.
-   */
-  void WriteCommon(AsyncWriteBuffer* write_buffer, bool is_rewrite);
 
   /** Calls notify_one() on all observers in waiting_observers_, frees each
    *  element in the list and clears the list afterwards.
