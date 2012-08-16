@@ -436,10 +436,10 @@ bool SetDefaultRP(const string& xctl_file,
   }
   request["replication-factor"] = factor;
   request["replication-flags"] = 0;
-  if (policy == "RONLY" && is_full) {
+  if (request["update-policy"] == "ronly" && is_full) {
     request["replication-flags"] = xtreemfs::pbrpc::REPL_FLAG_FULL_REPLICA
         | xtreemfs::pbrpc::REPL_FLAG_STRATEGY_RAREST_FIRST;
-  } else if (policy == "RONLY" && !is_full) {
+  } else if (request["update-policy"] == "ronly" && !is_full) {
     request["replication-flags"] =
         xtreemfs::pbrpc::REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING;
   }
