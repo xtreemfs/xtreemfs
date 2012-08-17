@@ -193,7 +193,10 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
         try {
             request.freeBuffers();
         } catch (AssertionError ex) {
-            ex.printStackTrace();
+            if (Logging.isInfo()) {
+                Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "Caught an AssertionError while trying to free buffers:");
+                Logging.logError(Logging.LEVEL_INFO, this, ex);
+            }
         }
         assert (connection.getServer() == this);
 
