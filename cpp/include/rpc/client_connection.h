@@ -87,6 +87,10 @@ class ClientConnection {
       return last_used_;
   }
 
+  std::string GetServerAddress() const {
+    return server_name_ + ":" + server_port_;
+  }
+
  private:
   enum State {
     CONNECTING,

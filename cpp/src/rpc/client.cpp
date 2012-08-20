@@ -397,6 +397,7 @@ void Client::handleTimeout(const boost::system::error_code& error) {
             + ", interface id = "
             + boost::lexical_cast<string>(rq->interface_id())
             + ", proc id = " + boost::lexical_cast<string>(rq->proc_id())
+            + ", server = " + respective_con->GetServerAddress()
             + ").";
         RPCHeader::ErrorResponse* err = new RPCHeader::ErrorResponse();
         err->set_error_message(error);
