@@ -255,7 +255,7 @@ public class HashStorageLayout extends StorageLayout {
                     if (bbuf.hasRemaining()) {
                         String error = "Failed to read the requested number of bytes from the file on disk." +
                                 " Maybe there's a media error or the file was modified outside the scope of the OSD by another process?";
-                        Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "%s. Path to the file on disk: %s", error, fileName);
+                        Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "%s Path to the file on disk: %s", error, fileName);
                         throw new IOException(error);
                     }
                     bbuf.position(0);
