@@ -263,16 +263,17 @@ public class HashStorageLayout extends StorageLayout {
                     return new ObjectInformation(ObjectInformation.ObjectStatus.EXISTS, bbuf, stripeSize);
                 }
             } catch (Exception e) {
-                if (bbuf != null) {
-                    BufferPool.free(bbuf);
-                }
                 if (e instanceof IOException) {
+                    Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "Failed to read object file from disk. Error: %s Path to the file on disk: %s", e.getMessage(), fileName);
                     throw (IOException) e;
                 } else {
                     throw new IOException(e);
                 }
             } finally {
                 f.close();
+                if (bbuf != null) {
+                    BufferPool.free(bbuf);
+                }
             }
 
         } else {
@@ -320,7 +321,6 @@ public class HashStorageLayout extends StorageLayout {
         } catch (FileNotFoundException ex) {
             throw new IOException("unable to create file directory or object: " + ex.getMessage());
         }
-
     }
 
     private void partialWriteCOW(String relativePath, String fileId, FileMetadata md, ReusableBuffer data, int offset,
@@ -352,10 +352,14 @@ public class HashStorageLayout extends StorageLayout {
             f = new RandomAccessFile(file, mode);
             fullObj.position(0);
             f.getChannel().write(fullObj.getBuffer());
+        } catch (IOException e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "Failed to write object file to disk. Error: %s Path to the file on disk: %s", e.getMessage(), newFilename);
+            throw e;
         } finally {
             if (f != null) {
                 f.close();
             }
+            BufferPool.free(fullObj);
         }
 
         if (deleteOldVersion) {
@@ -366,7 +370,6 @@ public class HashStorageLayout extends StorageLayout {
 
         md.updateObjectVersion(objNo, newVersion);
         md.updateObjectChecksum(objNo, newVersion, newChecksum);
-        BufferPool.free(fullObj);
     }
 
     private void partialWriteNoCOW(String relativePath, String fileId, FileMetadata md, ReusableBuffer data,
@@ -388,6 +391,9 @@ public class HashStorageLayout extends StorageLayout {
             data.position(0);
             f.seek(offset);
             f.getChannel().write(data.getBuffer());
+        } catch (IOException e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this, "Failed to write object file to disk. Error: %s Path to the file on disk: %s", e.getMessage(), filename);
+            throw e;
         } finally {
             if (f != null) {
                 f.close();
