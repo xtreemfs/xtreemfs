@@ -63,7 +63,7 @@ class VivaldiNode {
 
 class OutputUtils {
  public:
-  static void StringToCoordinates(const std::string &str,
+  static void StringToCoordinates(const std::string& str,
                                   xtreemfs::pbrpc::VivaldiCoordinates &vc);
 };
 

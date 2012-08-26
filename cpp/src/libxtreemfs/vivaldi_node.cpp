@@ -250,7 +250,7 @@ namespace xtreemfs {
   }
 
   void OutputUtils::StringToCoordinates(
-      const std::string &str,
+      const std::string& str,
       xtreemfs::pbrpc::VivaldiCoordinates & vc) {
     int64_t aux_long_x = ReadHexLongLong(str, 0);
     int64_t aux_long_y = ReadHexLongLong(str, 16);
