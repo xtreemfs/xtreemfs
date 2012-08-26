@@ -17,7 +17,7 @@ namespace xtreemfs {
 bool Interruptibilizer::WasInterrupted(const Options& options) {
   return (options.was_interrupted_function == NULL)
          ? false
-         : static_cast<bool>(options.was_interrupted_function());
+         : options.was_interrupted_function() == 1 ? true : false;
 }
 
 void Interruptibilizer::SleepInterruptible(int rel_time_ms,

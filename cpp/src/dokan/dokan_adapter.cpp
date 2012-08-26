@@ -29,6 +29,7 @@
 //#include "libxtreemfs/helper.h"
 #include "libxtreemfs/system_user_mapping.h"
 #include "libxtreemfs/user_mapping.h"
+#include "libxtreemfs/simple_uuid_iterator.h"
 #include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/uuid_resolver.h"
 #include "libxtreemfs/volume.h"
@@ -298,8 +299,8 @@ void DokanAdapter::Start() {
   // Check the attributes of the Volume.
   // Ugly trick to get the addresses of all MRC UUIDs and pass them to
   // ListVolumes().
-  UUIDIterator mrc_uuids;
-  UUIDIterator mrc_addresses;
+  SimpleUUIDIterator mrc_uuids;
+  SimpleUUIDIterator mrc_addresses;
   client_->GetUUIDResolver()->VolumeNameToMRCUUID(options_->volume_name,
                                                   &mrc_uuids);
   string first_mrc_uuid = "";

@@ -89,6 +89,7 @@ IF (APPLE)
 ENDIF(APPLE)
 IF(WIN32)
   SET(Boost_USE_STATIC_LIBS true)
+  LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
   
   ## Find dokan
   #  DOKAN_ROOT        - Input variable: Set to 

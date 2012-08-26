@@ -414,7 +414,7 @@ FileHandle* VolumeImplementation::OpenFile(
     try {
       file_handle->TruncatePhaseTwoAndThree(user_credentials,
                                             truncate_new_file_size);
-    } catch(const XtreemFSException& e) {
+    } catch(const XtreemFSException&) {
       // Truncate did fail, close file again.
       file_handle->Close();
       throw;  // Rethrow error.
@@ -456,7 +456,7 @@ void VolumeImplementation::CloseFile(
     // All locks for the process of this file handle have to be released.
     try {
       file_info->ReleaseAllLocks(file_handle_ptr.get());
-    } catch(const XtreemFSException& e) {
+    } catch(const XtreemFSException&) {
       // Ignore errors.
     }
 
@@ -1270,7 +1270,7 @@ void VolumeImplementation::AddReplica(
                                      SYSTEM_V_FCNTL_H_O_RDONLY);
   try {
     file_handle->PingReplica(user_credentials, new_replica.osd_uuids(0));
-  } catch (const exception& e) {
+  } catch (const exception&) {
     file_handle->Close();  // Cleanup temporary file handle.
     throw;  // Rethrow exception.
   }

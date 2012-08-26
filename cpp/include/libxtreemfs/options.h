@@ -206,7 +206,6 @@ class Options {
 
   // NOTE: Deprecated options are no longer needed as members
 
-#ifndef WIN32
   // User mapping.
   /** Type of the UserMapping used to resolve user and group IDs to names. */
   // Additional User mapping.

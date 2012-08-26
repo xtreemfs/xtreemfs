@@ -9,7 +9,9 @@
 #define CPP_INCLUDE_LIBXTREEMFS_CALLBACK_EXECUTE_SYNC_REQUEST_H_
 
 #ifdef WIN32
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif  // NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
@@ -110,7 +112,7 @@ template<class ReturnMessageType, class F>
     bool has_failed;
     try {
       has_failed = response->HasFailed();
-    } catch (const boost::thread_interrupted& e) {
+    } catch (const boost::thread_interrupted&) {
         if (response != NULL) {
           // Wait until request was processed - otherwise leaks and accesses
           // to deleted memory may occur.
@@ -222,9 +224,9 @@ template<class ReturnMessageType, class F>
 
           try {
             Interruptibilizer::SleepInterruptible(
-                delay_time_left.total_milliseconds(),
+                static_cast<int>(delay_time_left.total_milliseconds()),
                 options);
-          } catch (const boost::thread_interrupted& e) {
+          } catch (const boost::thread_interrupted&) {
             if (response != NULL) {
               // Free response.
               response->DeleteBuffers();

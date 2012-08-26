@@ -9,6 +9,7 @@
 #define CPP_INCLUDE_LIBXTREEMFS_VIVALDI_NODE_H_
 
 #include <string>
+#include <cstdint>
 
 #include "pbrpc/RPC.pb.h"
 #include "xtreemfs/GlobalTypes.pb.h"

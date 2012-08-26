@@ -415,7 +415,7 @@ void XtfsUtilServer::OpSetReplicationPolicy(
     try {
       Stat stat;
       volume_->GetAttr(uc, path, true, &stat);
-    } catch(const exception& e) {
+    } catch(const exception&) {
       // Ignore errors.
     }
   }
@@ -527,7 +527,7 @@ void XtfsUtilServer::OpGetSuitableOSDs(
     try {
       // Try to resolve the UUID to hostname and port.
       uuid_resolver_->UUIDToAddress(*iter, &address);
-    } catch(const XtreemFSException &e) {
+    } catch(const XtreemFSException&) {
       // Ignore errors if the address could not be obtained successfully.
     }
     if (address.empty()) {
