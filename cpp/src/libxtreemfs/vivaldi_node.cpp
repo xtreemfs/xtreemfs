@@ -234,83 +234,11 @@ namespace xtreemfs {
     return MagnitudeCoordinates(coordA);
   }
 
-  char const OutputUtils::trHex[16] =
-      {'0', '1', '2', '3', '4', '5', '6', '7',
-       '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-  char const OutputUtils::frHex[22][2] = {
-    {'0', 0},
-    {'1', 1},
-    {'2', 2},
-    {'3', 3},
-    {'4', 4},
-    {'5', 5},
-    {'6', 6},
-    {'7', 7},
-    {'8', 8},
-    {'9', 9},
-    {'a', 10},
-    {'A', 10},
-    {'b', 11},
-    {'B', 11},
-    {'c', 12},
-    {'C', 12},
-    {'d', 13},
-    {'D', 13},
-    {'e', 14},
-    {'E', 14},
-    {'f', 15},
-    {'F', 15}
-  };
-
-  void OutputUtils::WriteHexInt(std::ostringstream &oss, const int value) {
-    oss << trHex[(value & 0x0F)];
-    oss << trHex[((value >> 4) & 0x0F)];
-    oss << trHex[((value >> 8) & 0x0F)];
-    oss << trHex[((value >> 12) & 0x0F)];
-    oss << trHex[((value >> 16) & 0x0F)];
-    oss << trHex[((value >> 20) & 0x0F)];
-    oss << trHex[((value >> 24) & 0x0F)];
-    oss << trHex[((value >> 28) & 0x0F)];
+  static unsigned int ReadHexInt(const std::string &str, int position) {
+    return strtoul(str.substr(position, 8).c_str(), NULL, 16);
   }
 
-  char OutputUtils::GetEquivalentByte(char ch) {
-    char retval = 0xFF;
-
-    for (int i = 0; i < 22; i++) {
-      if (frHex[i][0] == ch) {
-        retval = frHex[i][1];
-        break;
-      }
-    }
-
-    return retval;
-  }
-
-  int OutputUtils::ReadHexInt(
-      const std::string &str,
-      const int position) {
-    int value = GetEquivalentByte(str[position]);
-    value += static_cast<int> (GetEquivalentByte(str[position + 1])) << 4;
-    value += static_cast<int> (GetEquivalentByte(str[position + 2])) << 8;
-    value += static_cast<int> (GetEquivalentByte(str[position + 3])) << 12;
-    value += static_cast<int> (GetEquivalentByte(str[position + 4])) << 16;
-    value += static_cast<int> (GetEquivalentByte(str[position + 5])) << 20;
-    value += static_cast<int> (GetEquivalentByte(str[position + 6])) << 24;
-    value += static_cast<int> (GetEquivalentByte(str[position + 7])) << 28;
-
-    return value;
-  }
-
-  void OutputUtils::WriteHexLongLong(
-      std::ostringstream &oss,
-      const int64_t value) {
-    WriteHexInt(oss, static_cast<int> (value & 0xFFFFFFFF));
-    WriteHexInt(oss, static_cast<int> (value >> 32));
-  }
-
-  int64_t OutputUtils::ReadHexLongLong(
-      const std::string &str,
-      const int position) {
+  static int64_t ReadHexLongLong(const std::string &str, int position) {
     int low = ReadHexInt(str, position);
     int high = ReadHexInt(str, position + 8);
 
