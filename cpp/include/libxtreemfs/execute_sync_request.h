@@ -8,15 +8,7 @@
 #ifndef CPP_INCLUDE_LIBXTREEMFS_CALLBACK_EXECUTE_SYNC_REQUEST_H_
 #define CPP_INCLUDE_LIBXTREEMFS_CALLBACK_EXECUTE_SYNC_REQUEST_H_
 
-#ifdef WIN32
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif  // NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#else
 #include <ctime>
-#endif
 
 #include <algorithm>
 #include <boost/cstdint.hpp>

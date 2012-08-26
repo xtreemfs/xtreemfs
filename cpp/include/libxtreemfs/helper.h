@@ -10,11 +10,6 @@
 
 #include <boost/cstdint.hpp>
 #include <string>
-#ifdef WIN32
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif  // WIN32
 
 namespace xtreemfs {
 
@@ -92,7 +87,7 @@ int GetMacOSXKernelVersion();
 #ifdef WIN32
 /** Convert a Windows Multibyte string (e.g. a path or username) into
  *  an UTF8 string. */
-void ConvertWindowsToUTF8(const WCHAR* windows_string,
+void ConvertWindowsToUTF8(const wchar_t* windows_string,
                           std::string* utf8_string);
 
 /** Convert an UTF8 string (e.g. a path or username) into

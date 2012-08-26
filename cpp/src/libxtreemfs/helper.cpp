@@ -13,6 +13,11 @@
 #ifdef __APPLE__
 #include <sys/utsname.h>
 #endif  // __APPLE__
+#ifdef WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif  // WIN32
 
 #include <boost/lexical_cast.hpp>
 #include <string>
@@ -284,7 +289,7 @@ int GetMacOSXKernelVersion() {
 #endif  // __APPLE__
 
 #ifdef WIN32
-void ConvertWindowsToUTF8(const WCHAR* windows_string,
+void ConvertWindowsToUTF8(const wchar_t* windows_string,
                           std::string* utf8_string) {
   UINT system_code_page = CP_UTF8;
 
